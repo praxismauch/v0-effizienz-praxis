@@ -1,0 +1,491 @@
+"use client"
+
+import {
+  Search,
+  User,
+  LogOut,
+  HelpCircle,
+  Gift,
+  Moon,
+  Sun,
+  Bug,
+  GraduationCap,
+  Sparkles,
+  PanelLeft,
+  Plus,
+  Clock,
+  MessageSquare,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import Link from "next/link"
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
+import { useAuth } from "@/contexts/auth-context"
+import { usePractice } from "@/contexts/practice-context"
+import { Separator } from "@/components/ui/separator"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { usePathname, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { ReferralDialog } from "@/components/referral-dialog"
+import { Fragment } from "react"
+import { useTheme } from "next-themes"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import ReportBugDialog from "@/components/report-bug-dialog"
+import AIPracticeChatDialog from "@/components/ai-practice-chat-dialog"
+import CreateTodoDialog from "@/components/create-todo-dialog"
+
+// Map paths to German titles
+const pathTitles: Record<string, string> = {
+  dashboard: "Dashboard",
+  team: "Team",
+  goals: "Ziele",
+  workflows: "Workflows",
+  documents: "Dokumente",
+  calendar: "Kalender",
+  analytics: "Analysen",
+  settings: "Einstellungen",
+  profile: "Profil",
+  help: "Hilfe",
+  contacts: "Kontakte",
+  recruiting: "Recruiting",
+  tasks: "Aufgaben",
+  checklists: "Checklisten",
+  "roi-analysis": "ROI Analyse",
+  "igel-analysis": "Selbstzahler-Analyse",
+  wunschpatient: "Wunschpatient",
+  banking: "Banking",
+  onboarding: "Onboarding",
+  offboarding: "Offboarding",
+  "strategy-journey": "Strategiepfad",
+  academy: "Effizienz-Academy",
+  "competitor-analysis": "Konkurrenzanalyse",
+  cockpit: "Cockpit",
+  "ai-analysis": "KI-Analyse",
+  todos: "Aufgaben",
+  responsibilities: "Zuständigkeiten",
+  rooms: "Räume",
+  skills: "Qualifikationen",
+  organigramm: "Organigramm",
+  leitbild: "Leitbild",
+  arbeitsmittel: "Arbeitsmittel",
+  protocols: "Protokolle",
+  training: "Schulungen",
+  blog: "Blog",
+  "practice-journals": "Praxis-Journal",
+  tickets: "Tickets",
+  hiring: "Recruiting",
+  candidates: "Kandidaten",
+  edit: "Bearbeiten",
+  new: "Neu",
+}
+
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(str)
+}
+
+function AppHeader() {
+  const { user, signOut } = useAuth()
+  const { currentPractice } = usePractice()
+  const pathname = usePathname()
+  const router = useRouter()
+  const { theme, setTheme } = useTheme()
+  const { state: sidebarState, toggleSidebar } = useSidebar()
+
+  // Generate breadcrumbs from pathname
+  const pathSegments = pathname.split("/").filter(Boolean)
+  const filteredSegments = pathSegments.filter((segment) => !isUUID(segment))
+  const breadcrumbs = filteredSegments.map((segment, index) => {
+    const path = "/" + pathSegments.slice(0, pathSegments.indexOf(segment) + 1).join("/")
+    const title = pathTitles[segment] || segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ")
+    return { path, title, isLast: index === filteredSegments.length - 1 }
+  })
+
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null)
+  const [isTrialActive, setIsTrialActive] = useState(false)
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
+
+  useEffect(() => {
+    async function fetchTrialInfo() {
+      if (!currentPractice?.id) return
+
+      try {
+        const response = await fetch(`/api/practices/${currentPractice.id}/subscription`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.subscription?.trial_end) {
+            const trialEnd = new Date(data.subscription.trial_end)
+            const now = new Date()
+            const diffTime = trialEnd.getTime() - now.getTime()
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+            if (diffDays > 0 && data.subscription.status === "trialing") {
+              setTrialDaysLeft(diffDays)
+              setIsTrialActive(true)
+            } else {
+              setIsTrialActive(false)
+              setTrialDaysLeft(null)
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching trial info:", error)
+      }
+    }
+
+    fetchTrialInfo()
+  }, [currentPractice?.id])
+
+  useEffect(() => {
+    async function fetchUnreadMessages() {
+      if (!user?.id) return
+      try {
+        const response = await fetch("/api/messages?unreadOnly=true&limit=100", { credentials: "include" })
+        if (response.ok) {
+          const data = await response.json()
+          setUnreadMessagesCount(data.length)
+        }
+      } catch (error) {
+        console.error("Error fetching unread messages:", error)
+      }
+    }
+
+    fetchUnreadMessages()
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadMessages, 30000)
+    return () => clearInterval(interval)
+  }, [user?.id])
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
+  }
+
+  const userInitials = user?.email ? user.email.substring(0, 2).toUpperCase() : "U"
+
+  const [referralDialogOpen, setReferralDialogOpen] = useState(false)
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false)
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false)
+  const [isCreateTodoOpen, setIsCreateTodoOpen] = useState(false)
+
+  return (
+    <>
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
+        {/* Mobile Sidebar Trigger */}
+        <SidebarTrigger className="-ml-1 md:hidden" />
+
+        {sidebarState === "collapsed" && (
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="-ml-1 hidden md:flex h-9 w-9">
+            <PanelLeft className="h-5 w-5" />
+            <span className="sr-only">Sidebar öffnen</span>
+          </Button>
+        )}
+
+        <Separator orientation="vertical" className="mr-2 h-4 md:hidden" />
+
+        {/* Breadcrumbs */}
+        <Breadcrumb className="hidden md:flex">
+          <BreadcrumbList>
+            {breadcrumbs.map((crumb, index) => (
+              <Fragment key={crumb.path}>
+                <BreadcrumbItem>
+                  {crumb.isLast ? (
+                    <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink asChild>
+                      <Link href={crumb.path}>{crumb.title}</Link>
+                    </BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+                {!crumb.isLast && <BreadcrumbSeparator />}
+              </Fragment>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        {/* Practice Name - Mobile */}
+        <span className="text-sm font-medium md:hidden truncate">{currentPractice?.name || "Effizienz Praxis"}</span>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {isTrialActive && trialDaysLeft !== null && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    trialDaysLeft <= 3
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-pulse"
+                      : trialDaysLeft <= 7
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                        : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  }`}
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>
+                    Testzeitraum: {trialDaysLeft} {trialDaysLeft === 1 ? "Tag" : "Tage"}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  Ihr Testzeitraum endet in {trialDaysLeft} {trialDaysLeft === 1 ? "Tag" : "Tagen"}.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upgrade auf einen kostenpflichtigen Plan für vollen Zugriff.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {/* Search */}
+        <div className="hidden md:flex max-w-sm">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input type="search" placeholder="Suchen..." className="w-64 pl-8 bg-muted/50 h-9" />
+          </div>
+        </div>
+
+        {/* Right Side Actions */}
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            {/* Search - Mobile */}
+            <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden">
+              <Search className="h-4 w-4" />
+            </Button>
+
+            {/* Create Todo Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hover:bg-primary/10"
+                  onClick={() => setIsCreateTodoOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Neue Aufgabe</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* AI Chat Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:shadow-lg hover:from-purple-600 hover:to-indigo-600 transition-all border-0 gap-2 px-3 h-9"
+                  onClick={() => setIsAIChatOpen(true)}
+                  size="sm"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span className="font-medium hidden sm:inline">Frag die KI</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>KI-Assistent für Praxisfragen</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Messages & Notifications Button - Unified */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hover:bg-primary/10 relative"
+                  onClick={() => router.push("/messages")}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  {unreadMessagesCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">
+                      {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
+                    </span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  Nachrichten & Benachrichtigungen{unreadMessagesCount > 0 ? ` (${unreadMessagesCount} ungelesen)` : ""}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Academy Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hover:bg-primary/10"
+                  onClick={() => router.push("/academy")}
+                >
+                  <GraduationCap className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Effizienz-Academy</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Bug Report Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <ReportBugDialog
+                  open={isBugReportOpen}
+                  onOpenChange={setIsBugReportOpen}
+                  trigger={
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                      <Bug className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Bug melden</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Theme Toggle */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hover:bg-primary/10"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-5 w-5 text-yellow-500" />
+                  ) : (
+                    <Moon className="h-5 w-5 text-slate-600" />
+                  )}
+                  <span className="sr-only">Design wechseln</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{theme === "dark" ? "Hell-Modus aktivieren" : "Dunkel-Modus aktivieren"}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Help */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hidden sm:flex"
+                  onClick={() => router.push("/help")}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Hilfe</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Referral Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 hidden sm:flex items-center gap-1.5 px-2 hover:bg-emerald-500/10 relative"
+                  onClick={() => setReferralDialogOpen(true)}
+                >
+                  <Gift className="h-4 w-4 text-emerald-500" />
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">100€</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Empfehlungsprogramm - 100€ pro Empfehlung</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-primary/10 text-xs">{userInitials}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user?.user_metadata?.full_name || "Benutzer"}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email || "user@effizienz-praxis.de"}
+                    </p>
+                    {currentPractice && (
+                      <p className="text-xs leading-none text-muted-foreground pt-1">{currentPractice.name}</p>
+                    )}
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    Profil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    Einstellungen
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/help" className="cursor-pointer">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    Hilfe
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Abmelden
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </TooltipProvider>
+      </header>
+
+      {/* Referral Dialog */}
+      <ReferralDialog open={referralDialogOpen} onOpenChange={setReferralDialogOpen} />
+
+      {/* AI Chat Dialog */}
+      <AIPracticeChatDialog open={isAIChatOpen} onOpenChange={setIsAIChatOpen} />
+
+      {/* Create Todo Dialog */}
+      <CreateTodoDialog open={isCreateTodoOpen} onOpenChange={setIsCreateTodoOpen} />
+    </>
+  )
+}
+
+export default AppHeader

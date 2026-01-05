@@ -1,0 +1,45 @@
+import { createServerClient } from "@/lib/supabase/server"
+import { NextResponse } from "next/server"
+
+export async function PATCH(request: Request, { params }: { params: { id: string; itemId: string } }) {
+  try {
+    const supabase = await createServerClient()
+    const body = await request.json()
+
+    const updateData: any = {}
+
+    if ("is_completed" in body) {
+      updateData.is_completed = body.is_completed
+      if (body.is_completed) {
+        updateData.completed_at = new Date().toISOString()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (user) {
+          updateData.completed_by = user.id
+        }
+      } else {
+        updateData.completed_at = null
+        updateData.completed_by = null
+      }
+    }
+
+    if ("notes" in body) {
+      updateData.notes = body.notes
+    }
+
+    const { data, error } = await supabase
+      .from("test_checklist_items")
+      .update(updateData)
+      .eq("id", params.itemId)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error("[v0] Error updating checklist item:", error)
+    return NextResponse.json({ error: "Failed to update checklist item" }, { status: 500 })
+  }
+}

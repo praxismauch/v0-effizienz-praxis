@@ -1,0 +1,68 @@
+import { createAdminClient } from "@/lib/supabase/server"
+import { type NextRequest, NextResponse } from "next/server"
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; teamId: string }> },
+) {
+  try {
+    const { practiceId, teamId } = await params
+    const supabase = await createAdminClient()
+    const body = await request.json()
+
+    const practiceIdText = String(practiceId)
+    const teamIdText = String(teamId)
+
+    const { data, error } = await supabase
+      .from("teams")
+      .update({
+        name: body.name,
+        description: body.description,
+        color: body.color,
+        is_active: body.isActive,
+      })
+      .eq("id", teamIdText)
+      .eq("practice_id", practiceIdText)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("[v0] Error updating team:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error("[v0] Error updating team:", error)
+    return NextResponse.json({ error: "Failed to update team" }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; teamId: string }> },
+) {
+  try {
+    const { practiceId, teamId } = await params
+    const supabase = await createAdminClient()
+
+    const practiceIdText = String(practiceId)
+    const teamIdText = String(teamId)
+
+    // First remove all team assignments
+    await supabase.from("team_assignments").delete().eq("team_id", teamIdText)
+
+    // Then delete the team
+    const { error } = await supabase.from("teams").delete().eq("id", teamIdText).eq("practice_id", practiceIdText)
+
+    if (error) {
+      console.error("[v0] Error deleting team:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("[v0] Error deleting team:", error)
+    return NextResponse.json({ error: "Failed to delete team" }, { status: 500 })
+  }
+}

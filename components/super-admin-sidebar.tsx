@@ -1,0 +1,820 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
+import { createClient as createBrowserClient } from "@/lib/supabase/client"
+import {
+  Building2,
+  Mail,
+  Settings,
+  CreditCard,
+  ChevronDown,
+  ChevronRight,
+  LayoutGrid,
+  GraduationCap,
+  LayoutPanelLeft,
+  Users,
+  FolderKanban,
+  FileText,
+  Workflow,
+  ClipboardCheck,
+  Award,
+  MapIcon,
+  ListTodo,
+  ArrowLeft,
+} from "lucide-react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+
+type SuperAdminSidebarProps = {}
+
+interface MenuItem {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  href?: string
+  badge?: boolean
+  badgeType?:
+    | "tickets"
+    | "practices"
+    | "pendingUsers"
+    | "waitlist"
+    | "subscriptions"
+    | "popups"
+    | "backup"
+    | "criticalLogs"
+    | "recommendations"
+    | "totalUsers"
+  subitems?: MenuItem[]
+}
+
+interface MenuSection {
+  id: string
+  label: string
+  items: MenuItem[]
+}
+
+export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const { currentUser } = useUser()
+  const { currentPractice } = usePractice()
+  const [collapsed, setCollapsed] = useState(false)
+  const [openSections, setOpenSections] = useState<string[]>(["overview", "management"])
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
+  const [waitlistCount, setWaitlistCount] = useState(0)
+  const [ticketCount, setTicketCount] = useState(0)
+  const [backupCount, setBackupCount] = useState(0)
+  const [pendingUsersCount, setPendingUsersCount] = useState(0)
+  const [activePopupsCount, setActivePopupsCount] = useState(0)
+  const [activeSubscriptionsCount, setActiveSubscriptionsCount] = useState(0)
+  const [criticalLogsCount, setCriticalLogsCount] = useState(0)
+  const [activePracticesCount, setActivePracticesCount] = useState(0)
+  const [recommendationsCount, setRecommendationsCount] = useState(0)
+  const [totalUsersCount, setTotalUsersCount] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const loadSidebarState = async () => {
+      if (!currentUser?.id) {
+        const savedSections = localStorage.getItem("superAdminSidebarSections")
+        const savedExpanded = localStorage.getItem("superAdminExpandedItems")
+        const savedCollapsed = localStorage.getItem("superAdminSidebarCollapsed")
+        if (savedSections) {
+          try {
+            const parsed = JSON.parse(savedSections)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setOpenSections(parsed)
+            }
+          } catch (e) {
+            console.warn("Failed to parse saved sections from localStorage:", e)
+          }
+        }
+        if (savedExpanded) {
+          try {
+            const parsed = JSON.parse(savedExpanded)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setExpandedItems(parsed)
+            }
+          } catch (e) {
+            console.warn("Failed to parse expanded items from localStorage:", e)
+          }
+        }
+        if (savedCollapsed) {
+          setCollapsed(savedCollapsed === "true")
+        }
+        return
+      }
+
+      try {
+        const supabase = createBrowserClient()
+        const { data, error } = await supabase
+          .from("user_sidebar_preferences")
+          .select("expanded_groups, sidebar_collapsed, expanded_items")
+          .eq("user_id", currentUser.id)
+          .eq("practice_id", "super-admin")
+          .maybeSingle()
+
+        if (data && !error) {
+          if (Array.isArray(data.expanded_groups) && data.expanded_groups.length > 0) {
+            setOpenSections(data.expanded_groups)
+          }
+          if (Array.isArray(data.expanded_items) && data.expanded_items.length > 0) {
+            setExpandedItems(data.expanded_items)
+          }
+          if (typeof data.sidebar_collapsed === "boolean") {
+            setCollapsed(data.sidebar_collapsed)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading super admin sidebar state from DB:", error)
+      }
+    }
+
+    loadSidebarState()
+  }, [mounted, currentUser?.id])
+
+  useEffect(() => {
+    const loadWaitlistCount = async () => {
+      try {
+        const response = await fetch("/api/admin/waitlist/count")
+        const contentType = response.headers.get("content-type")
+        if (!response.ok || !contentType?.includes("application/json")) {
+          setWaitlistCount(0)
+          return
+        }
+        const text = await response.text()
+        if (text && text.trim()) {
+          try {
+            const data = JSON.parse(text)
+            setWaitlistCount(data.count || 0)
+          } catch (parseError) {
+            setWaitlistCount(0)
+          }
+        } else {
+          setWaitlistCount(0)
+        }
+      } catch (error) {
+        setWaitlistCount(0)
+      }
+    }
+
+    const loadTicketCount = async () => {
+      try {
+        const response = await fetch("/api/tickets/count")
+        if (response.ok) {
+          const text = await response.text()
+          if (text && text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              setTicketCount(data.count || 0)
+            } catch (parseError) {
+              console.debug("Failed to parse ticket data:", parseError)
+              setTicketCount(0)
+            }
+          } else {
+            setTicketCount(0)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading ticket count:", error)
+        setTicketCount(0)
+      }
+    }
+
+    const loadBackupCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/backups/count")
+        if (response.ok) {
+          const text = await response.text()
+          if (text && text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              setBackupCount(data.count || 0)
+            } catch (parseError) {
+              console.debug("Failed to parse backup data:", parseError)
+              setBackupCount(0)
+            }
+          } else {
+            setBackupCount(0)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading backup count:", error)
+        setBackupCount(0)
+      }
+    }
+
+    const loadPendingUsersCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/pending-users/count")
+        if (response.ok) {
+          const text = await response.text()
+          if (text && text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              setPendingUsersCount(data.count || 0)
+            } catch (parseError) {
+              console.debug("Failed to parse pending users data:", parseError)
+              setPendingUsersCount(0)
+            }
+          } else {
+            setPendingUsersCount(0)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading pending users count:", error)
+        setPendingUsersCount(0)
+      }
+    }
+
+    const loadTotalUsersCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/users/count")
+        if (response.ok) {
+          const text = await response.text()
+          if (text && text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              setTotalUsersCount(data.count || 0)
+            } catch (parseError) {
+              console.debug("Failed to parse total users data:", parseError)
+              setTotalUsersCount(0)
+            }
+          } else {
+            setTotalUsersCount(0)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading total users count:", error)
+        setTotalUsersCount(0)
+      }
+    }
+
+    const loadActivePopupsCount = async () => {
+      try {
+        const response = await fetch("/api/popups")
+        if (response.ok) {
+          const text = await response.text()
+          if (text && text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              const activeCount = data.popups?.filter((popup: any) => popup.is_active).length || 0
+              setActivePopupsCount(activeCount)
+            } catch (parseError) {
+              console.debug("Failed to parse popups data:", parseError)
+              setActivePopupsCount(0)
+            }
+          } else {
+            setActivePopupsCount(0)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading active popups count:", error)
+        setActivePopupsCount(0)
+      }
+    }
+
+    const loadActiveSubscriptionsCount = async () => {
+      try {
+        const response = await fetch("/api/superadmin/subscriptions/count")
+        if (response.ok) {
+          const text = await response.text()
+          if (text && text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              setActiveSubscriptionsCount(data.count || 0)
+            } catch (parseError) {
+              console.debug("Failed to parse subscriptions data:", parseError)
+              setActiveSubscriptionsCount(0)
+            }
+          } else {
+            setActiveSubscriptionsCount(0)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading active subscriptions count:", error)
+        setActiveSubscriptionsCount(0)
+      }
+    }
+
+    const loadCriticalLogsCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/logs/count")
+        if (response.ok) {
+          const text = await response.text()
+          if (text && text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              setCriticalLogsCount(data.count || 0)
+            } catch (parseError) {
+              console.debug("Failed to parse critical logs data:", parseError)
+              setCriticalLogsCount(0)
+            }
+          } else {
+            setCriticalLogsCount(0)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading critical logs count:", error)
+        setCriticalLogsCount(0)
+      }
+    }
+
+    const loadActivePracticesCount = async () => {
+      try {
+        const response = await fetch("/api/practices/count")
+        if (response.ok) {
+          const text = await response.text()
+          if (text && text.trim()) {
+            try {
+              const data = JSON.parse(text)
+              setActivePracticesCount(data.count || 0)
+            } catch (parseError) {
+              console.debug("Failed to parse practices data:", parseError)
+              setActivePracticesCount(0)
+            }
+          } else {
+            setActivePracticesCount(0)
+          }
+        }
+      } catch (error) {
+        console.debug("Error loading active practices count:", error)
+        setActivePracticesCount(0)
+      }
+    }
+
+    const loadRecommendationsCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/optimization-metrics")
+        if (response.ok) {
+          const data = await response.json()
+          setRecommendationsCount(data.recommendations?.length || 0)
+        }
+      } catch (error) {
+        console.debug("Error loading recommendations count:", error)
+        setRecommendationsCount(0)
+      }
+    }
+
+    loadWaitlistCount()
+    loadTicketCount()
+    loadBackupCount()
+    loadPendingUsersCount()
+    loadTotalUsersCount()
+    loadActivePopupsCount()
+    loadActiveSubscriptionsCount()
+    loadCriticalLogsCount()
+    loadActivePracticesCount()
+    loadRecommendationsCount()
+
+    const interval = setInterval(() => {
+      loadWaitlistCount()
+      loadTicketCount()
+      loadBackupCount()
+      loadPendingUsersCount()
+      loadTotalUsersCount()
+      loadActivePopupsCount()
+      loadActiveSubscriptionsCount()
+      loadCriticalLogsCount()
+      loadActivePracticesCount()
+      loadRecommendationsCount()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const toggleCollapsed = async () => {
+    const newCollapsed = !collapsed
+    setCollapsed(newCollapsed)
+
+    if (currentUser?.id) {
+      try {
+        const supabase = createBrowserClient()
+        await supabase.from("user_sidebar_preferences").upsert(
+          {
+            user_id: currentUser.id,
+            practice_id: "super-admin",
+            sidebar_collapsed: newCollapsed,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id,practice_id",
+          },
+        )
+      } catch (error) {
+        console.debug("Error saving super admin sidebar collapsed state:", error)
+      }
+    } else if (mounted) {
+      localStorage.setItem("superAdminSidebarCollapsed", String(newCollapsed))
+    }
+  }
+
+  const toggleSection = async (sectionId: string) => {
+    const newSections = openSections.includes(sectionId)
+      ? openSections.filter((s) => s !== sectionId)
+      : [...openSections, sectionId]
+    setOpenSections(newSections)
+
+    if (currentUser?.id) {
+      try {
+        const supabase = createBrowserClient()
+        await supabase.from("user_sidebar_preferences").upsert(
+          {
+            user_id: currentUser.id,
+            practice_id: "super-admin",
+            expanded_groups: newSections,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id,practice_id",
+          },
+        )
+      } catch (error) {
+        console.debug("Error saving super admin sidebar sections state:", error)
+      }
+    } else if (mounted) {
+      localStorage.setItem("superAdminSidebarSections", JSON.stringify(newSections))
+    }
+  }
+
+  const toggleExpandedItem = async (itemId: string) => {
+    const newExpandedItems = expandedItems.includes(itemId)
+      ? expandedItems.filter((id) => id !== itemId)
+      : [...expandedItems, itemId]
+    setExpandedItems(newExpandedItems)
+
+    if (currentUser?.id) {
+      try {
+        const supabase = createBrowserClient()
+        await supabase.from("user_sidebar_preferences").upsert(
+          {
+            user_id: currentUser.id,
+            practice_id: "super-admin",
+            expanded_items: newExpandedItems,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id,practice_id",
+          },
+        )
+      } catch (error) {
+        console.debug("Error saving super admin expanded items state:", error)
+      }
+    } else if (mounted) {
+      localStorage.setItem("superAdminExpandedItems", JSON.stringify(newExpandedItems))
+    }
+  }
+
+  const getBadgeCount = (badgeType?: MenuItem["badgeType"]): number => {
+    if (!badgeType) return 0
+    const counts = {
+      tickets: ticketCount,
+      practices: activePracticesCount,
+      pendingUsers: pendingUsersCount,
+      waitlist: waitlistCount,
+      subscriptions: activeSubscriptionsCount,
+      popups: activePopupsCount,
+      backup: backupCount,
+      criticalLogs: criticalLogsCount,
+      recommendations: recommendationsCount,
+      totalUsers: totalUsersCount,
+    }
+    return counts[badgeType] || 0
+  }
+
+  const isActive = (item: MenuItem): boolean => {
+    if (item.href) {
+      return pathname === item.href || pathname.startsWith(item.href + "/")
+    }
+    return false
+  }
+
+  const menuSections: MenuSection[] = [
+    {
+      id: "overview",
+      label: "Übersicht",
+      items: [
+        {
+          id: "dashboard",
+          label: "Dashboard",
+          icon: LayoutGrid,
+          href: "/super-admin",
+        },
+      ],
+    },
+    {
+      id: "management",
+      label: "Verwaltung",
+      items: [
+        {
+          id: "tickets",
+          label: "Tickets",
+          icon: Mail,
+          href: "/super-admin/tickets",
+          badge: true,
+          badgeType: "tickets" as const,
+        },
+        {
+          id: "practices",
+          label: "Praxen",
+          icon: Building2,
+          href: "/super-admin/verwaltung?tab=practices",
+          badge: true,
+          badgeType: "practices" as const,
+        },
+        {
+          id: "users",
+          label: "Benutzer",
+          icon: Users,
+          href: "/super-admin/verwaltung?tab=users",
+          badge: true,
+          badgeType: "totalUsers" as const,
+        },
+        {
+          id: "vorlagen",
+          label: "Vorlagen",
+          icon: FolderKanban,
+          subitems: [
+            {
+              id: "skills",
+              label: "Skills",
+              icon: Award,
+              href: "/super-admin/content?tab=skills",
+            },
+            {
+              id: "workflows",
+              label: "Workflows",
+              icon: Workflow,
+              href: "/super-admin/content?tab=workflows",
+            },
+            {
+              id: "checklisten",
+              label: "Checklisten",
+              icon: ClipboardCheck,
+              href: "/super-admin/content?tab=checklisten",
+            },
+            {
+              id: "dokumente",
+              label: "Dokumente",
+              icon: FileText,
+              href: "/super-admin/content?tab=dokumente",
+            },
+            {
+              id: "teams",
+              label: "Teams / Gruppen",
+              icon: Users,
+              href: "/super-admin/content?tab=teams",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "content",
+      label: "Content",
+      items: [
+        {
+          id: "academy",
+          label: "Academy",
+          icon: GraduationCap,
+          href: "/super-admin/academy",
+        },
+        {
+          id: "waitlist",
+          label: "Warteliste",
+          icon: ListTodo,
+          href: "/super-admin/academy?tab=waitlist",
+          badge: true,
+          badgeType: "waitlist" as const,
+        },
+      ],
+    },
+    {
+      id: "finance",
+      label: "Finanzen",
+      items: [
+        {
+          id: "zahlungen",
+          label: "Zahlungen",
+          icon: CreditCard,
+          href: "/super-admin/zahlungen",
+          badge: true,
+          badgeType: "subscriptions" as const,
+        },
+      ],
+    },
+    {
+      id: "marketing",
+      label: "Marketing",
+      items: [
+        {
+          id: "roadmap",
+          label: "Roadmap",
+          icon: MapIcon,
+          href: "/super-admin/marketing?tab=roadmap",
+        },
+      ],
+    },
+    {
+      id: "pages",
+      label: "Seiten",
+      items: [
+        {
+          id: "landingpages",
+          label: "Landingpages",
+          icon: LayoutPanelLeft,
+          href: "/super-admin/landingpages",
+        },
+      ],
+    },
+    {
+      id: "system",
+      label: "System",
+      items: [
+        {
+          id: "system",
+          label: "Systemverwaltung",
+          icon: Settings,
+          href: "/super-admin/system",
+          badge: true,
+          badgeType: "backup" as const,
+        },
+      ],
+    },
+  ]
+
+  return (
+    <div
+      className={cn(
+        "flex h-full flex-col bg-slate-900 border-r border-slate-700/50 transition-all duration-300",
+        collapsed ? "w-16" : "w-64",
+      )}
+    >
+      {/* Header */}
+      <div className="flex h-16 items-center justify-between px-4 border-b border-slate-700/50">
+        {!collapsed && <h2 className="text-lg font-semibold text-white">Super Admin</h2>}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleCollapsed}
+          className="text-slate-300 hover:text-white hover:bg-slate-700/50"
+        >
+          <ChevronRight className={cn("h-4 w-4 transition-transform", collapsed ? "" : "rotate-180")} />
+        </Button>
+      </div>
+
+      <div className="px-2 py-2 border-b border-slate-700/50">
+        <Link
+          href="/dashboard"
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+            "text-slate-300 hover:text-white hover:bg-slate-700/50",
+            collapsed && "justify-center",
+          )}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {!collapsed && <span>Zurück zur App</span>}
+        </Link>
+      </div>
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-3 py-4">
+        <nav className="space-y-2">
+          {menuSections.map((section) => (
+            <Collapsible
+              key={section.id}
+              open={openSections.includes(section.id)}
+              onOpenChange={() => toggleSection(section.id)}
+            >
+              <div className="space-y-1">
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-slate-800/50 h-8 px-2",
+                      collapsed && "justify-center px-2",
+                    )}
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "h-3.5 w-3.5 transition-transform shrink-0",
+                        openSections.includes(section.id) && "rotate-90",
+                        collapsed && "hidden",
+                      )}
+                    />
+                    {!collapsed && <span className="text-xs font-medium uppercase tracking-wide">{section.label}</span>}
+                  </Button>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent className="space-y-0.5">
+                  {section.items.map((item) => {
+                    const active = isActive(item)
+                    const badgeCount = item.badge ? getBadgeCount(item.badgeType) : 0
+                    const hasSubitems = item.subitems && item.subitems.length > 0
+                    const isExpanded = expandedItems.includes(item.id)
+
+                    if (hasSubitems) {
+                      return (
+                        <div key={item.id} className="space-y-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleExpandedItem(item.id)}
+                            className={cn(
+                              "w-full justify-start gap-2 text-slate-300 hover:text-white hover:bg-slate-800/50 h-9 px-3",
+                              collapsed && "justify-center px-2",
+                            )}
+                          >
+                            {!collapsed && (
+                              <>
+                                <item.icon className="h-4 w-4 shrink-0" />
+                                <span className="flex-1 text-left text-sm">{item.label}</span>
+                                <ChevronDown
+                                  className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")}
+                                />
+                              </>
+                            )}
+                            {collapsed && <item.icon className="h-4 w-4" />}
+                          </Button>
+
+                          {!collapsed && isExpanded && (
+                            <div className="ml-6 space-y-0.5 border-l border-slate-700/30 pl-2">
+                              {item.subitems!.map((subitem) => {
+                                const subActive = isActive(subitem)
+                                return (
+                                  <Link key={subitem.id} href={subitem.href || "#"}>
+                                    <Button
+                                      variant={subActive ? "secondary" : "ghost"}
+                                      size="sm"
+                                      className={cn(
+                                        "w-full justify-start gap-2 h-8 px-2",
+                                        subActive
+                                          ? "bg-blue-600 text-white hover:bg-blue-700"
+                                          : "text-slate-400 hover:text-white hover:bg-slate-800/50",
+                                      )}
+                                    >
+                                      <subitem.icon className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="text-xs">{subitem.label}</span>
+                                    </Button>
+                                  </Link>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <Link key={item.id} href={item.href || "#"}>
+                        <Button
+                          variant={active ? "secondary" : "ghost"}
+                          size="sm"
+                          className={cn(
+                            "w-full justify-start gap-2 relative h-9 px-3",
+                            active
+                              ? "bg-blue-600 text-white hover:bg-blue-700"
+                              : "text-slate-300 hover:text-white hover:bg-slate-800/50",
+                            collapsed && "justify-center px-2",
+                          )}
+                        >
+                          {!collapsed ? (
+                            <>
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="flex-1 text-left text-sm">{item.label}</span>
+                              {badgeCount > 0 && (
+                                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-semibold text-white">
+                                  {badgeCount > 99 ? "99+" : badgeCount}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <item.icon className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </Link>
+                    )
+                  })}
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          ))}
+        </nav>
+      </ScrollArea>
+    </div>
+  )
+}
+
+export default SuperAdminSidebar

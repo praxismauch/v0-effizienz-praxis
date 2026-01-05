@@ -1,0 +1,479 @@
+@import "tailwindcss";
+/* Removed tw-animate-css import - it has a bug with @utility fill-mode-* in v1.4.0 */
+/* Animation utilities are already defined below in this file */
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Animation defaults */
+  --tw-enter-opacity: 1;
+  --tw-enter-scale: 1;
+  --tw-enter-rotate: 0;
+  --tw-enter-translate-x: 0;
+  --tw-enter-translate-y: 0;
+  --tw-exit-opacity: 1;
+  --tw-exit-scale: 1;
+  --tw-exit-rotate: 0;
+  --tw-exit-translate-x: 0;
+  --tw-exit-translate-y: 0;
+
+  /* HSL colors for maximum compatibility */
+  --background: hsl(220 20% 98%);
+  --foreground: hsl(220 20% 10%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(220 20% 10%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(220 20% 10%);
+  --primary: hsl(220 80% 50%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(220 15% 95%);
+  --secondary-foreground: hsl(220 20% 25%);
+  --muted: hsl(220 15% 95%);
+  --muted-foreground: hsl(220 10% 45%);
+  --accent: hsl(220 15% 93%);
+  --accent-foreground: hsl(220 20% 20%);
+  --destructive: hsl(0 70% 50%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(140 60% 40%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(40 90% 50%);
+  --warning-foreground: hsl(220 20% 10%);
+  --border: hsl(220 15% 90%);
+  --input: hsl(220 15% 90%);
+  --ring: hsl(220 80% 50%);
+  --chart-1: hsl(220 80% 50%);
+  --chart-2: hsl(35 90% 55%);
+  --chart-3: hsl(140 60% 40%);
+  --chart-4: hsl(0 70% 50%);
+  --chart-5: hsl(280 60% 50%);
+  --radius: 0.5rem;
+  --sidebar: hsl(220 50% 20%);
+  --sidebar-foreground: hsl(0 0% 100%);
+  --sidebar-primary: hsl(220 80% 55%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(220 40% 30%);
+  --sidebar-accent-foreground: hsl(220 10% 95%);
+  --sidebar-border: hsl(220 40% 30%);
+  --sidebar-ring: hsl(220 80% 55%);
+  --font-inter: "Inter", sans-serif;
+  --font-jetbrains-mono: "JetBrains Mono", monospace;
+}
+
+.dark {
+  --background: hsl(220 20% 8%);
+  --foreground: hsl(220 10% 92%);
+  --card: hsl(220 20% 12%);
+  --card-foreground: hsl(220 10% 92%);
+  --popover: hsl(220 20% 12%);
+  --popover-foreground: hsl(220 10% 92%);
+  --primary: hsl(220 80% 60%);
+  --primary-foreground: hsl(220 20% 8%);
+  --secondary: hsl(220 15% 18%);
+  --secondary-foreground: hsl(220 10% 92%);
+  --muted: hsl(220 15% 18%);
+  --muted-foreground: hsl(220 10% 65%);
+  --accent: hsl(220 15% 18%);
+  --accent-foreground: hsl(220 10% 85%);
+  --destructive: hsl(0 70% 45%);
+  --destructive-foreground: hsl(220 10% 92%);
+  --success: hsl(140 50% 45%);
+  --success-foreground: hsl(220 10% 92%);
+  --warning: hsl(40 85% 55%);
+  --warning-foreground: hsl(220 20% 8%);
+  --border: hsl(220 15% 22%);
+  --input: hsl(220 15% 22%);
+  --ring: hsl(220 80% 60%);
+  --chart-1: hsl(220 80% 60%);
+  --chart-2: hsl(35 85% 60%);
+  --chart-3: hsl(140 50% 45%);
+  --chart-4: hsl(0 65% 45%);
+  --chart-5: hsl(280 55% 55%);
+  --sidebar: hsl(220 40% 15%);
+  --sidebar-foreground: hsl(0 0% 100%);
+  --sidebar-primary: hsl(220 80% 60%);
+  --sidebar-primary-foreground: hsl(220 20% 5%);
+  --sidebar-accent: hsl(220 35% 25%);
+  --sidebar-accent-foreground: hsl(220 10% 92%);
+  --sidebar-border: hsl(220 35% 25%);
+  --sidebar-ring: hsl(220 80% 60%);
+}
+
+/* Fixed @theme inline block - ensure all custom properties have valid values */
+@theme inline {
+  /* Font families - must be quoted strings */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Border radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Sidebar colors */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Animation utilities - must have valid duration values */
+  --animate-in: enter 0.2s ease-out;
+  --animate-out: exit 0.2s ease-in forwards;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Increased z-index to 9999 for all Radix popper content to ensure dropdowns always appear above everything */
+  [data-radix-popper-content-wrapper] {
+    z-index: 9999 !important;
+  }
+}
+
+/* Animation keyframes */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))
+      rotate(var(--tw-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))
+      rotate(var(--tw-exit-rotate, 0));
+  }
+}
+
+/* Animation utility classes */
+@layer utilities {
+  .animate-in {
+    animation: enter 0.2s ease-out;
+  }
+  .animate-out {
+    animation: exit 0.2s ease-in forwards;
+  }
+  .fade-in-0 {
+    --tw-enter-opacity: 0;
+  }
+  .fade-out-0 {
+    --tw-exit-opacity: 0;
+  }
+  .fade-out-80 {
+    --tw-exit-opacity: 0.8;
+  }
+  .zoom-in-95 {
+    --tw-enter-scale: 0.95;
+  }
+  .zoom-out-95 {
+    --tw-exit-scale: 0.95;
+  }
+  .slide-in-from-top-2 {
+    --tw-enter-translate-y: -0.5rem;
+  }
+  .slide-in-from-bottom-2 {
+    --tw-enter-translate-y: 0.5rem;
+  }
+  .slide-in-from-left-2 {
+    --tw-enter-translate-x: -0.5rem;
+  }
+  .slide-in-from-right-2 {
+    --tw-enter-translate-x: 0.5rem;
+  }
+  .slide-in-from-top-full {
+    --tw-enter-translate-y: -100%;
+  }
+  .slide-in-from-bottom-full {
+    --tw-enter-translate-y: 100%;
+  }
+  .slide-out-to-right-full {
+    --tw-exit-translate-x: 100%;
+  }
+  .slide-out-to-left-full {
+    --tw-exit-translate-x: -100%;
+  }
+  .slide-out-to-top-full {
+    --tw-exit-translate-y: -100%;
+  }
+  .slide-out-to-bottom {
+    --tw-exit-translate-y: 100%;
+  }
+  .slide-in-from-bottom {
+    --tw-enter-translate-y: 100%;
+  }
+  /* Add missing slide utilities for RTL/LTR support */
+  .slide-in-from-start {
+    --tw-enter-translate-x: -100%;
+  }
+  .slide-in-from-end {
+    --tw-enter-translate-x: 100%;
+  }
+  .slide-out-to-start {
+    --tw-exit-translate-x: -100%;
+  }
+  .slide-out-to-end {
+    --tw-exit-translate-x: 100%;
+  }
+}
+
+/* Print styles */
+@media print {
+  header,
+  nav,
+  .print\:hidden,
+  button:not(.print\:block),
+  [role="navigation"],
+  [role="banner"],
+  aside {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  @page {
+    margin: 2cm;
+    size: A4 portrait;
+  }
+
+  main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  [class*="card"],
+  [class*="Card"] {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    background: white !important;
+    page-break-inside: avoid;
+  }
+
+  .print\:break-inside-avoid,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    page-break-inside: avoid;
+    page-break-after: avoid;
+  }
+
+  * {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    text-shadow: none !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+}
+
+/* Delete icon hover effects */
+button:hover svg.lucide-trash-2,
+button:hover svg.lucide-trash,
+button:hover [data-lucide="trash-2"],
+button:hover [data-lucide="trash"],
+button:hover [data-lucide="x"],
+[role="menuitem"]:hover svg.lucide-trash-2,
+[role="menuitem"]:hover svg.lucide-trash,
+[role="alertdialog"] button:hover svg.lucide-trash-2,
+[role="alertdialog"] button:hover svg.lucide-trash,
+button:hover [class*="trash"],
+a:hover svg.lucide-trash-2,
+a:hover svg.lucide-trash {
+  color: hsl(0 70% 50%) !important;
+  stroke: hsl(0 70% 50%) !important;
+  transition: color 0.2s ease-in-out, stroke 0.2s ease-in-out;
+}
+
+.dark button:hover svg.lucide-trash-2,
+.dark button:hover svg.lucide-trash,
+.dark button:hover [data-lucide="trash-2"],
+.dark button:hover [data-lucide="trash"],
+.dark button:hover [data-lucide="x"],
+.dark [role="menuitem"]:hover svg.lucide-trash-2,
+.dark [role="menuitem"]:hover svg.lucide-trash,
+.dark [role="alertdialog"] button:hover svg.lucide-trash-2,
+.dark [role="alertdialog"] button:hover svg.lucide-trash,
+.dark button:hover [class*="trash"],
+.dark a:hover svg.lucide-trash-2,
+.dark a:hover svg.lucide-trash {
+  color: hsl(0 65% 55%) !important;
+  stroke: hsl(0 65% 55%) !important;
+  transition: color 0.2s ease-in-out, stroke 0.2s ease-in-out;
+}
+
+button:hover .text-destructive,
+[role="menuitem"]:hover .text-destructive {
+  color: hsl(0 70% 50%) !important;
+  transition: color 0.2s ease-in-out;
+}
+
+.dark button:hover .text-destructive,
+.dark [role="menuitem"]:hover .text-destructive {
+  color: hsl(0 65% 55%) !important;
+  transition: color 0.2s ease-in-out;
+}
+
+button:has(svg.lucide-trash-2):hover,
+button:has(svg.lucide-trash):hover,
+[role="menuitem"]:has(svg.lucide-trash-2):hover,
+[role="menuitem"]:has(svg.lucide-trash):hover {
+  background-color: hsl(0 70% 95%);
+}
+
+.dark button:has(svg.lucide-trash-2):hover,
+.dark button:has(svg.lucide-trash):hover,
+.dark [role="menuitem"]:has(svg.lucide-trash-2):hover,
+.dark [role="menuitem"]:has(svg.lucide-trash):hover {
+  background-color: hsl(0 50% 20%);
+}
+
+/* Formatted text styles */
+.formatted-text {
+  @apply text-sm;
+}
+
+.formatted-text p {
+  @apply mb-3 last:mb-0;
+}
+
+.formatted-text strong {
+  @apply font-semibold text-foreground;
+}
+
+.formatted-text em {
+  @apply italic;
+}
+
+.formatted-text ul {
+  @apply list-none space-y-2 mb-3;
+}
+
+.formatted-text li {
+  @apply relative pl-6;
+}
+
+.formatted-text li:before {
+  content: "•";
+  @apply absolute left-2 text-primary font-bold;
+}
+
+.formatted-text h1,
+.formatted-text h2,
+.formatted-text h3,
+.formatted-text h4 {
+  @apply font-semibold text-foreground mt-4 mb-2;
+}
+
+.formatted-text h1 {
+  @apply text-xl;
+}
+
+.formatted-text h2 {
+  @apply text-lg;
+}
+
+.formatted-text h3 {
+  @apply text-base;
+}
+
+/* Custom sidebar scrollbar styles with auto-hide and themed colors */
+/* Sidebar scrollbar - thin, themed, auto-hide */
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.sidebar-scrollbar:hover {
+  scrollbar-color: hsl(220 40% 40%) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+.sidebar-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: hsl(220 40% 40%);
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(220 50% 50%);
+}
+
+/* Dark mode sidebar scrollbar */
+.dark .sidebar-scrollbar:hover {
+  scrollbar-color: hsl(220 35% 35%) transparent;
+}
+
+.dark .sidebar-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: hsl(220 35% 35%);
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(220 40% 45%);
+}

@@ -1,0 +1,442 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter, useParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { useTeam } from "@/contexts/team-context"
+import { useUser } from "@/contexts/user-context"
+import {
+  Shield,
+  UserIcon,
+  ArrowLeft,
+  Edit,
+  Mail,
+  Calendar,
+  Users,
+  CheckCircle2,
+  XCircle,
+  CircleUser as FileUser,
+} from "lucide-react"
+import { ContractsManager } from "@/components/team/contracts-manager"
+import { ArbeitsmittelAssignments } from "@/components/team/arbeitsmittel-assignments"
+import { useTranslation } from "@/contexts/translation-context"
+import { useRoleColors } from "@/lib/use-role-colors"
+import { TeamMemberSkillsTab } from "@/components/team/team-member-skills-tab"
+import { AppLayout } from "@/components/app-layout"
+
+const roleLabels = {
+  admin: "Praxis Admin",
+  practiceadmin: "Praxis Admin",
+  poweruser: "Power User",
+  user: "Benutzer",
+  superadmin: "Super Admin",
+}
+
+const roleDescriptions = {
+  practiceadmin: "Vollständiger administrativer Zugriff auf alle Praxisfunktionen und Einstellungen",
+  admin: "Vollständiger administrativer Zugriff auf alle Praxisfunktionen und Einstellungen",
+  poweruser: "Erweiterte Berechtigungen für wichtige Funktionen und Teamverwaltung",
+  user: "Standardzugriff für grundlegende Funktionen und tägliche Aufgaben",
+  superadmin: "Systemweiter Zugriff auf alle Praxen und Funktionen",
+}
+
+const availablePermissions = [
+  { id: "all", label: "Alle Berechtigungen", description: "Voller Zugriff auf alle Systemfunktionen" },
+  { id: "dashboard", label: "Dashboard", description: "Übersichtsseite und Statistiken anzeigen" },
+  { id: "analytics", label: "Analysen", description: "Praxisanalysen und Auswertungen einsehen" },
+  { id: "leitbild", label: "Leitbild", description: "Praxisleitbild und Vision verwalten" },
+  { id: "wunschpatient", label: "Wunschpatient", description: "Wunschpatienten-Profile erstellen und bearbeiten" },
+  { id: "profile", label: "Praxisprofil", description: "Praxisprofil und Informationen bearbeiten" },
+  { id: "team", label: "Teamverwaltung", description: "Teammitglieder und Zuweisungen verwalten" },
+  { id: "hiring", label: "Recruiting", description: "Stellenausschreibungen und Bewerber verwalten" },
+  { id: "training", label: "Fortbildungen", description: "Fortbildungen und Schulungen verwalten" },
+  { id: "skills", label: "Kompetenzen", description: "Mitarbeiterkompetenzen und Fähigkeiten pflegen" },
+  { id: "responsibilities", label: "Zuständigkeiten", description: "Verantwortungsbereiche definieren" },
+  { id: "calendar", label: "Kalenderverwaltung", description: "Praxiskalender und Termine verwalten" },
+  { id: "tasks", label: "Aufgaben", description: "Aufgaben erstellen und verwalten" },
+  { id: "goals", label: "Ziele", description: "Praxis- und Teamziele definieren" },
+  { id: "workflows", label: "Workflows", description: "Arbeitsabläufe und Prozesse verwalten" },
+  { id: "documents", label: "Dokumente", description: "Dokumente hochladen und verwalten" },
+  { id: "knowledge", label: "Wissensdatenbank", description: "Wissensdatenbank pflegen und nutzen" },
+  { id: "contacts", label: "Kontakte", description: "Geschäftskontakte und Partner verwalten" },
+  { id: "rooms", label: "Räume", description: "Praxisräume verwalten" },
+  { id: "workplaces", label: "Arbeitsplätze", description: "Arbeitsplätze konfigurieren" },
+  { id: "equipment", label: "Ausstattung", description: "Geräte und Ausstattung verwalten" },
+  { id: "billing", label: "Abrechnung", description: "Abrechnungs- und Finanzunterlagen verwalten" },
+  { id: "reports", label: "Berichte", description: "Praxisberichte generieren und einsehen" },
+  { id: "settings", label: "Einstellungen", description: "Praxiseinstellungen konfigurieren" },
+  { id: "security", label: "Sicherheit", description: "Sicherheitseinstellungen und Benutzerrechte" },
+]
+
+const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat("de-DE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date)
+}
+
+export default function TeamMemberDetailPage() {
+  const router = useRouter()
+  const params = useParams()
+  const memberId = params.id as string
+  const { t } = useTranslation()
+  const { roleColors } = useRoleColors()
+
+  const { teamMembers, teams } = useTeam()
+  const { currentUser, isAdmin } = useUser()
+
+  const member = teamMembers.find((m) => m.id === memberId)
+
+  const canEdit = isAdmin || currentUser?.id === memberId
+
+  const [activeTab, setActiveTab] = useState("profile")
+
+  const calculateAge = (dateOfBirth: string | null): number | null => {
+    if (!dateOfBirth) return null
+    const today = new Date()
+    const birthDate = new Date(dateOfBirth)
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  if (!member) {
+    return (
+      <AppLayout>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <UserIcon className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Teammitglied nicht gefunden</h3>
+            <p className="text-muted-foreground mb-4">
+              Das angeforderte Teammitglied existiert nicht oder Sie haben keine Berechtigung, es anzuzeigen.
+            </p>
+            <Button onClick={() => router.push("/team")}>Zurück zur Übersicht</Button>
+          </CardContent>
+        </Card>
+      </AppLayout>
+    )
+  }
+
+  const age = calculateAge(member.date_of_birth)
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => router.push("/team")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Zurück zum Team
+          </Button>
+          {member.candidate_id && (
+            <Button variant="outline" onClick={() => router.push(`/hiring/candidates/${member.candidate_id}`)}>
+              <FileUser className="mr-2 h-4 w-4" />
+              Kandidatenprofil ansehen
+            </Button>
+          )}
+        </div>
+
+        {member.candidate_id && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+            <FileUser className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="flex-1">
+              <div className="font-medium text-blue-900">Konvertiert aus Kandidat</div>
+              <div className="text-sm text-blue-700">
+                Dieses Teammitglied wurde aus einem Kandidatenprofil übernommen. Sie können das ursprüngliche
+                Kandidatenprofil mit allen Bewerbungsunterlagen einsehen.
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={member.avatar || ""} alt={member.name} />
+            <AvatarFallback>
+              {member.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h2 className="text-2xl font-semibold">
+              {member.name} {age && <span className="text-muted-foreground">({age})</span>}
+            </h2>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex-1" />
+              {canEdit && (
+                <Button onClick={() => router.push(`/team/${memberId}/edit`)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Bearbeiten
+                </Button>
+              )}
+            </div>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="profile">Profil</TabsTrigger>
+              <TabsTrigger value="skills">Skills</TabsTrigger>
+              <TabsTrigger value="permissions">Berechtigungen</TabsTrigger>
+              <TabsTrigger value="contracts">Verträge</TabsTrigger>
+              <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="profile" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Persönliche Informationen</CardTitle>
+                  <CardDescription>Grundlegende Profilinformationen und Kontaktdaten</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={member.avatar || ""} alt={member.name} />
+                      <AvatarFallback className="text-2xl">
+                        {member.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-xl font-semibold">{member.name}</h3>
+                      {age && <p className="text-muted-foreground">{age} Jahre alt</p>}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground flex items-center gap-2">
+                        <UserIcon className="h-4 w-4" />
+                        Vollständiger Name
+                      </Label>
+                      <p className="font-medium">{member.name}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        E-Mail-Adresse
+                      </Label>
+                      <p className="font-medium">
+                        {member.email?.includes("@placeholder.local") ? "Keine E-Mail" : member.email}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Rolle
+                      </Label>
+                      <Badge className={roleColors[member.role as keyof typeof roleColors] || roleColors.user}>
+                        {roleLabels[member.role as keyof typeof roleLabels] || member.role}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Mitglied seit
+                      </Label>
+                      <p className="font-medium">
+                        {member.created_at ? formatDate(new Date(member.created_at)) : "Unbekannt"}
+                      </p>
+                    </div>
+
+                    {member.date_of_birth && (
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Geburtsdatum</Label>
+                        <p className="font-medium">{formatDate(new Date(member.date_of_birth))}</p>
+                      </div>
+                    )}
+
+                    <div className="space-y-2 col-span-2">
+                      <Label className="text-muted-foreground flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Teamzuweisungen
+                      </Label>
+                      {member.teamIds && member.teamIds.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {member.teamIds.map((teamId) => {
+                            const team = teams.find((t) => t.id === teamId)
+                            if (!team) return null
+                            return (
+                              <Badge
+                                key={teamId}
+                                variant="outline"
+                                className="px-2 py-1"
+                                style={{
+                                  backgroundColor: `${team.color}15`,
+                                  borderColor: team.color,
+                                  color: team.color,
+                                }}
+                              >
+                                <div className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: team.color }} />
+                                {team.name}
+                              </Badge>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Keine Teamzuweisungen</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label className="text-base">Rollenbeschreibung</Label>
+                    <div className="space-y-2">
+                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <Badge className="bg-blue-600 text-white">Praxis Admin</Badge>
+                          <p className="text-sm text-muted-foreground">
+                            Voller administrativer Zugriff auf alle Funktionen der Praxis, kann Mitglieder und
+                            Einstellungen verwalten
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <Badge className="bg-green-600 text-white">Power User</Badge>
+                          <p className="text-sm text-muted-foreground">
+                            Erweiterte Zugriffsrechte, kann wichtige Funktionen nutzen und Daten bearbeiten
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <Badge variant="secondary">Benutzer</Badge>
+                          <p className="text-sm text-muted-foreground">
+                            Standardzugriff für Mitarbeiter, kann grundlegende Funktionen nutzen und eigene Daten
+                            verwalten
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Team
+                  </CardTitle>
+                  <CardDescription>Team, dem dieses Mitglied zugewiesen ist</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {member.teamIds && member.teamIds.length > 0 ? (
+                    <div className="space-y-3">
+                      {member.teamIds.map((teamId) => {
+                        const team = teams.find((t) => t.id === teamId)
+                        if (!team) return null
+                        return (
+                          <div key={teamId} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: team.color || "#3b82f6" }}
+                              />
+                              <div>
+                                <div className="font-medium">{team.name}</div>
+                                <div className="text-sm text-muted-foreground">{team.description}</div>
+                              </div>
+                            </div>
+                            <Badge variant="outline">{team.memberCount || 0} Mitglieder</Badge>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>Dieses Mitglied ist keinem Team zugewiesen</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="skills" className="space-y-4">
+              {member && (
+                <TeamMemberSkillsTab
+                  memberId={memberId}
+                  practiceId={member.practice_id || ""}
+                  memberName={member.name}
+                  memberTeamId={member.team_id}
+                  isAdmin={isAdmin}
+                  currentUserId={currentUser?.id}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="permissions" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Berechtigungen</CardTitle>
+                  <CardDescription>Spezifische Zugriffsrechte und Berechtigungen des Mitglieds</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    {availablePermissions.map((permission) => {
+                      const hasPermission = member.permissions?.includes(permission.id)
+                      return (
+                        <div
+                          key={permission.id}
+                          className={`flex items-start gap-3 p-3 rounded-lg border ${
+                            hasPermission ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
+                          }`}
+                        >
+                          <div className="mt-0.5">
+                            {hasPermission ? (
+                              <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            ) : (
+                              <XCircle className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{permission.label}</div>
+                            <div className="text-xs text-muted-foreground">{permission.description}</div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="contracts" className="space-y-4">
+              {member && <ContractsManager teamMemberId={memberId} isAdmin={isAdmin} />}
+            </TabsContent>
+
+            <TabsContent value="arbeitsmittel" className="space-y-4">
+              {member && (
+                <ArbeitsmittelAssignments
+                  teamMemberId={memberId}
+                  practiceId={member.practice_id || ""}
+                  isAdmin={isAdmin}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </AppLayout>
+  )
+}

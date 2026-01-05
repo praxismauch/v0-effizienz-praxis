@@ -10,19 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { useTeam } from "@/contexts/team-context"
 import { useUser } from "@/contexts/user-context"
-import {
-  Shield,
-  UserIcon,
-  ArrowLeft,
-  Edit,
-  Mail,
-  Calendar,
-  Users,
-  CheckCircle2,
-  XCircle,
-  CircleUser as FileUser,
-} from "lucide-react"
-import { ContractsManager } from "@/components/team/contracts-manager"
+import { Shield, UserIcon, ArrowLeft, Edit, Mail, Calendar, Users, CircleUser as FileUser } from "lucide-react"
 import { ArbeitsmittelAssignments } from "@/components/team/arbeitsmittel-assignments"
 import { useTranslation } from "@/contexts/translation-context"
 import { useRoleColors } from "@/lib/use-role-colors"
@@ -97,7 +85,7 @@ export default function TeamMemberDetailPage() {
 
   const canEdit = isAdmin || currentUser?.id === memberId
 
-  const [activeTab, setActiveTab] = useState("profile")
+  const [activeTab, setActiveTab] = useState("overview")
 
   const calculateAge = (dateOfBirth: string | null): number | null => {
     if (!dateOfBirth) return null
@@ -188,17 +176,17 @@ export default function TeamMemberDetailPage() {
                 </Button>
               )}
             </div>
-            <TabsList className="grid w-full grid-cols-7">
-              <TabsTrigger value="profile">Profil</TabsTrigger>
-              <TabsTrigger value="skills">Skills</TabsTrigger>
-              <TabsTrigger value="permissions">Berechtigungen</TabsTrigger>
-              <TabsTrigger value="contracts">Verträge</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-7 mb-6">
+              <TabsTrigger value="overview">Übersicht</TabsTrigger>
+              <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
+              <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
               <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
-              <TabsTrigger value="geraete">Geräte</TabsTrigger>
-              <TabsTrigger value="zustaendigkeiten">Zuständigkeiten</TabsTrigger>
+              <TabsTrigger value="devices">Geräte</TabsTrigger>
+              <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
+              <TabsTrigger value="documents">Dokumente</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="profile" className="space-y-4">
+            <TabsContent value="overview" className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Persönliche Informationen</CardTitle>
@@ -357,44 +345,8 @@ export default function TeamMemberDetailPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="permissions" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Berechtigungen</CardTitle>
-                  <CardDescription>Spezifische Zugriffsrechte und Berechtigungen des Mitglieds</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {availablePermissions.map((permission) => {
-                      const hasPermission = member.permissions?.includes(permission.id)
-                      return (
-                        <div
-                          key={permission.id}
-                          className={`flex items-start gap-3 p-3 rounded-lg border ${
-                            hasPermission ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
-                          }`}
-                        >
-                          <div className="mt-0.5">
-                            {hasPermission ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-600" />
-                            ) : (
-                              <XCircle className="h-5 w-5 text-gray-400" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{permission.label}</div>
-                            <div className="text-xs text-muted-foreground">{permission.description}</div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="contracts" className="space-y-4">
-              {member && <ContractsManager teamMemberId={memberId} isAdmin={isAdmin} />}
+            <TabsContent value="zeiterfassung" className="space-y-4">
+              {/* Zeiterfassung content here */}
             </TabsContent>
 
             <TabsContent value="arbeitsmittel" className="space-y-4">
@@ -407,7 +359,7 @@ export default function TeamMemberDetailPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="geraete" className="space-y-4">
+            <TabsContent value="devices" className="space-y-4">
               {member && (
                 <TeamMemberDevicesTab
                   memberId={memberId}
@@ -417,7 +369,7 @@ export default function TeamMemberDetailPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="zustaendigkeiten" className="space-y-4">
+            <TabsContent value="responsibilities" className="space-y-4">
               {member && (
                 <TeamMemberResponsibilitiesTab
                   memberId={memberId}
@@ -425,6 +377,10 @@ export default function TeamMemberDetailPage() {
                   memberName={member.name}
                 />
               )}
+            </TabsContent>
+
+            <TabsContent value="documents" className="space-y-4">
+              {/* Documents content here */}
             </TabsContent>
           </Tabs>
         </div>

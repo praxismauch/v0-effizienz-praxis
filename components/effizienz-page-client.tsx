@@ -494,10 +494,10 @@ export function EffizienzPageClient() {
                       <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-2", benefit.iconBg)}>
                         <benefit.icon className={cn("h-6 w-6", benefit.color)} />
                       </div>
-                      <CardTitle className="text-xl">{benefit.title}</CardTitle>
+                      <CardTitle className="text-xl text-foreground">{benefit.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">{benefit.description}</p>
+                      <p className="text-foreground/80">{benefit.description}</p>
                     </CardContent>
                   </Card>
                 </ScrollReveal>

@@ -4,7 +4,7 @@ import PageHeader from "@/components/page-header"
 import CustomizableAnalytics from "@/components/customizable-analytics"
 import ReportsGenerator from "@/components/reports-generator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, FileText, Receipt, Star } from "lucide-react"
+import { TrendingUp, FileText, Receipt, Star, Building2, Table2, BarChart3 } from "lucide-react"
 import ExcelUploadAnalyzer from "@/components/excel-upload-analyzer"
 import AnalyticsDataManager from "@/components/analytics-data-manager"
 import { usePersistedTab } from "@/hooks/use-persisted-tab"
@@ -40,11 +40,18 @@ export default function AnalyticsPageClient() {
               {t("analytics.tabs.analytics", "Auswertung")}
             </TabsTrigger>
             <TabsTrigger
-              value="reports"
+              value="data"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
             >
-              <FileText className="h-4 w-4" />
-              {t("analytics.tabs.reports", "Berichte")}
+              <BarChart3 className="h-4 w-4" />
+              {t("analytics.tabs.data", "Kennzahlen")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="reviews"
+              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+            >
+              <Star className="h-4 w-4" />
+              {t("analytics.tabs.reviews", "Bewertungen")}
             </TabsTrigger>
             <TabsTrigger
               value="kv-abrechnung"
@@ -54,32 +61,25 @@ export default function AnalyticsPageClient() {
               {t("analytics.tabs.kv", "KV-Abrechnung")}
             </TabsTrigger>
             <TabsTrigger
-              value="excel"
+              value="reports"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
             >
               <FileText className="h-4 w-4" />
-              {t("analytics.tabs.excel", "Excel")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="data"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <FileText className="h-4 w-4" />
-              {t("analytics.tabs.data", "Kennzahlen")}
+              {t("analytics.tabs.reports", "Berichte")}
             </TabsTrigger>
             <TabsTrigger
               value="bank"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
             >
-              <FileText className="h-4 w-4" />
+              <Building2 className="h-4 w-4" />
               {t("analytics.tabs.bank", "Bankkonten")}
             </TabsTrigger>
             <TabsTrigger
-              value="reviews"
+              value="excel"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
             >
-              <Star className="h-4 w-4" />
-              {t("analytics.tabs.reviews", "Bewertungen")}
+              <Table2 className="h-4 w-4" />
+              {t("analytics.tabs.excel", "Excel")}
             </TabsTrigger>
           </TabsList>
 
@@ -87,28 +87,28 @@ export default function AnalyticsPageClient() {
             <CustomizableAnalytics />
           </TabsContent>
 
-          <TabsContent value="reports" className="space-y-4">
-            <ReportsGenerator />
+          <TabsContent value="data" className="space-y-4">
+            <AnalyticsDataManager />
+          </TabsContent>
+
+          <TabsContent value="reviews" className="space-y-4">
+            <ReviewsManager />
           </TabsContent>
 
           <TabsContent value="kv-abrechnung" className="space-y-4">
             <KVAbrechnungManager />
           </TabsContent>
 
-          <TabsContent value="excel" className="space-y-4">
-            <ExcelUploadAnalyzer />
-          </TabsContent>
-
-          <TabsContent value="data" className="space-y-4">
-            <AnalyticsDataManager />
+          <TabsContent value="reports" className="space-y-4">
+            <ReportsGenerator />
           </TabsContent>
 
           <TabsContent value="bank" className="space-y-4">
             <BankAccountManager />
           </TabsContent>
 
-          <TabsContent value="reviews" className="space-y-4">
-            <ReviewsManager />
+          <TabsContent value="excel" className="space-y-4">
+            <ExcelUploadAnalyzer />
           </TabsContent>
         </Tabs>
       </div>

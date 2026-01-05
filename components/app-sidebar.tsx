@@ -53,6 +53,7 @@ import {
   Clock,
   Heart,
   CircleDot,
+  MessageCircle,
 } from "lucide-react"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -246,6 +247,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: Users,
         key: "team",
         badge: "teamMembers",
+      },
+      {
+        name: t("sidebar.mitarbeitergespraeche", "Mitarbeitergespräche"),
+        href: "/mitarbeitergespraeche",
+        icon: MessageCircle,
+        key: "mitarbeitergespraeche",
       },
       {
         name: t("sidebar.skills", "Kompetenzen"),

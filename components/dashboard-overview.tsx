@@ -157,6 +157,10 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   const hasLoadedRef = useRef(false)
   const loadingPracticeIdRef = useRef<string | null>(null)
 
+  useEffect(() => {
+    console.log("[v0] Dashboard config structure:", JSON.stringify(dashboardConfig, null, 2))
+  }, [dashboardConfig])
+
   const fetchDashboardData = useCallback(async () => {
     if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
       console.log("[v0] DashboardOverview: Invalid practiceId, skipping fetch:", practiceId)
@@ -558,6 +562,14 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   const orderedWidgets = useMemo(() => {
     const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
     const order = widgets.widgetOrder || DEFAULT_ORDER
+    console.log("[v0] orderedWidgets - dashboardConfig:", typeof dashboardConfig, dashboardConfig)
+    console.log("[v0] orderedWidgets - widgets:", typeof widgets, widgets)
+    console.log("[v0] orderedWidgets - order:", typeof order, order)
+
+    if (!Array.isArray(order)) {
+      console.error("[v0] widgetOrder is not an array:", order)
+      return []
+    }
     return order.map((id) => renderWidget(id)).filter(Boolean)
   }, [dashboardConfig, renderWidget])
 
@@ -684,6 +696,17 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
     )
   }
 
+  const handleSaveConfig = useCallback((newConfig: { widgets: any }) => {
+    // Ensure we have a proper structure
+    if (newConfig && newConfig.widgets) {
+      // Check if widgets is already wrapped (double nested)
+      const widgets = newConfig.widgets.widgets || newConfig.widgets
+      setDashboardConfig({ widgets })
+    } else {
+      setDashboardConfig({ widgets: DEFAULT_WIDGETS })
+    }
+  }, [])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -732,7 +755,7 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
         open={isEditorOpen}
         onOpenChange={setIsEditorOpen}
         config={dashboardConfig}
-        onSave={setDashboardConfig}
+        onSave={handleSaveConfig}
       />
     </div>
   )

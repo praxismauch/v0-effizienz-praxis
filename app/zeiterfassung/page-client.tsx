@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useUser } from "@/contexts/user-context"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { format, parseISO, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns"
@@ -413,8 +413,15 @@ export default function ZeiterfassungPageClient() {
   }, [practiceId, user?.id])
 
   // Initial Load
+  const hasLoadedRef = useRef(false)
+  const loadingPracticeIdRef = useRef<number | null>(null)
+
   useEffect(() => {
     const loadData = async () => {
+      // Prevent duplicate loads for same practice
+      if (loadingPracticeIdRef.current === practiceId) return
+      loadingPracticeIdRef.current = practiceId
+
       setIsLoading(true)
       await loadCurrentStatus()
       await loadTeamOverview()
@@ -422,28 +429,24 @@ export default function ZeiterfassungPageClient() {
       await loadCorrectionRequests()
       await loadPlausibilityIssues()
       setIsLoading(false)
+      hasLoadedRef.current = true
     }
 
-    if (user && practiceId) {
+    if (user && practiceId && !hasLoadedRef.current) {
       loadData()
-      loadHomeofficePolicy() // Load policy on mount
+      loadHomeofficePolicy()
     }
 
     // Refresh alle 30 Sekunden
     const interval = setInterval(() => {
-      loadCurrentStatus()
-      loadTeamOverview()
+      if (user && practiceId) {
+        loadCurrentStatus()
+        loadTeamOverview()
+      }
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [
-    loadCurrentStatus,
-    loadTeamOverview,
-    loadMonthlyData,
-    loadCorrectionRequests,
-    loadPlausibilityIssues,
-    loadHomeofficePolicy,
-  ]) // Added loadHomeofficePolicy dependency
+  }, [user, practiceId]) // Simplified dependencies to prevent infinite loop
 
   // Stempel-Funktion
   const handleStamp = async () => {

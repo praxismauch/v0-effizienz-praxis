@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback, memo } from "react"
+import { useState, useEffect, useMemo, useCallback, memo, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import {
   Users,
@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { DashboardEditorDialog, type DashboardConfig } from "./dashboard-editor-dialog"
+import { DashboardEditorDialog, type DashboardConfig, DEFAULT_ORDER } from "./dashboard-editor-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
@@ -78,9 +78,11 @@ const DEFAULT_WIDGETS = {
   showRecentActivities: true,
   showGoogleReviews: true,
   showTodos: true,
+  showJournalActions: true,
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
   todosFilterPriority: undefined,
+  widgetOrder: DEFAULT_ORDER,
 }
 
 const StatCard = memo(function StatCard({
@@ -139,7 +141,7 @@ const StatCard = memo(function StatCard({
   )
 })
 
-export default function DashboardOverview({ practiceId, userId }: DashboardOverviewProps) {
+export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps) {
   const { toast } = useToast()
   const { currentPractice } = usePractice()
   const { isEnabled } = useAiEnabled()
@@ -152,9 +154,26 @@ export default function DashboardOverview({ practiceId, userId }: DashboardOverv
   })
   const [isEditorOpen, setIsEditorOpen] = useState(false)
 
-  const fetchDashboardData = useCallback(async () => {
-    if (!practiceId || !userId) return
+  const hasLoadedRef = useRef(false)
+  const loadingPracticeIdRef = useRef<string | null>(null)
 
+  const fetchDashboardData = useCallback(async () => {
+    if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
+      console.log("[v0] DashboardOverview: Invalid practiceId, skipping fetch:", practiceId)
+      return
+    }
+
+    if (!userId) {
+      console.log("[v0] DashboardOverview: No userId, skipping fetch")
+      return
+    }
+
+    if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) {
+      console.log("[v0] DashboardOverview: Already loaded for practiceId:", practiceId)
+      return
+    }
+
+    loadingPracticeIdRef.current = practiceId
     setLoading(true)
     setError(null)
 
@@ -249,6 +268,7 @@ export default function DashboardOverview({ practiceId, userId }: DashboardOverv
         filteredTodos: statsData?.filteredTodos,
       })
 
+      hasLoadedRef.current = true
       console.log("[v0] Dashboard data loaded successfully")
     } catch (err) {
       console.error("[v0] Dashboard fetch error:", err)
@@ -259,137 +279,287 @@ export default function DashboardOverview({ practiceId, userId }: DashboardOverv
   }, [practiceId, userId])
 
   useEffect(() => {
+    if (loadingPracticeIdRef.current !== practiceId) {
+      hasLoadedRef.current = false
+    }
     fetchDashboardData()
   }, [fetchDashboardData])
 
-  const statCards = useMemo(() => {
-    if (!stats) return []
+  const renderWidget = useCallback(
+    (widgetId: string) => {
+      const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
 
-    const cards = []
+      switch (widgetId) {
+        // Stat cards (small cards in the grid)
+        case "showTeamMembers":
+          if (!widgets.showTeamMembers || !stats) return null
+          return (
+            <StatCard
+              key="team"
+              title={t("Team-Mitglieder", "Team-Mitglieder")}
+              value={stats.teamMembers}
+              trend={stats.teamMembersTrend}
+              icon={Users}
+              color="blue"
+              href="/team"
+            />
+          )
+        case "showGoals":
+          if (!widgets.showGoals || !stats) return null
+          return (
+            <StatCard
+              key="goals"
+              title={t("Aktive Ziele", "Aktive Ziele")}
+              value={stats.activeGoals}
+              trend={stats.goalsTrend}
+              icon={Target}
+              color="green"
+              href="/goals"
+            />
+          )
+        case "showWorkflows":
+          if (!widgets.showWorkflows || !stats) return null
+          return (
+            <StatCard
+              key="workflows"
+              title={t("Workflows", "Workflows")}
+              value={stats.workflows}
+              trend={stats.workflowsTrend}
+              icon={Workflow}
+              color="purple"
+              href="/workflows"
+            />
+          )
+        case "showDocuments":
+          if (!widgets.showDocuments || !stats) return null
+          return (
+            <StatCard
+              key="documents"
+              title={t("Dokumente", "Dokumente")}
+              value={stats.documents}
+              trend={stats.documentsTrend}
+              icon={FileText}
+              color="amber"
+              href="/documents"
+            />
+          )
+        case "showRecruiting":
+          if (!widgets.showRecruiting || !stats || stats.openPositions === undefined) return null
+          return (
+            <StatCard
+              key="recruiting"
+              title={t("Offene Stellen", "Offene Stellen")}
+              value={stats.openPositions || 0}
+              trend={stats.recruitingTrend}
+              icon={Briefcase}
+              color="pink"
+              href="/hiring"
+              subtitle={`${stats.applications || 0} Bewerbungen`}
+            />
+          )
+        case "showOpenTasks":
+          if (!widgets.showOpenTasks || !stats || stats.openTasks === undefined) return null
+          return (
+            <StatCard
+              key="tasks"
+              title={t("Offene Aufgaben", "Offene Aufgaben")}
+              value={stats.openTasks}
+              trend={stats.tasksTrend}
+              icon={CheckSquare}
+              color="orange"
+              href="/todos"
+            />
+          )
+        case "showTodayAppointments":
+          if (!widgets.showTodayAppointments || !stats || stats.todayAppointments === undefined) return null
+          return (
+            <StatCard
+              key="appointments"
+              title={t("Termine heute", "Termine heute")}
+              value={stats.todayAppointments}
+              trend={stats.appointmentsTrend}
+              icon={Calendar}
+              color="blue"
+              href="/calendar"
+            />
+          )
+        case "showActiveCandidates":
+          if (!widgets.showActiveCandidates || !stats || stats.activeCandidates === undefined) return null
+          return (
+            <StatCard
+              key="candidates"
+              title={t("Aktive Kandidaten", "Aktive Kandidaten")}
+              value={stats.activeCandidates}
+              trend={stats.candidatesTrend}
+              icon={Users}
+              color="green"
+              href="/hiring"
+            />
+          )
+        case "showDrafts":
+          if (!widgets.showDrafts || !stats || stats.drafts === undefined) return null
+          return (
+            <StatCard
+              key="drafts"
+              title={t("Entwürfe", "Entwürfe")}
+              value={stats.drafts}
+              trend={stats.draftsTrend}
+              icon={FileText}
+              color="gray"
+              href="/goals?tab=draft"
+            />
+          )
+        case "showTodos":
+          if (!widgets.showTodos || !stats || stats.filteredTodos === undefined) return null
+          return (
+            <StatCard
+              key="filtered-todos"
+              title={t("Gefilterte Aufgaben", "Gefilterte Aufgaben")}
+              value={stats.filteredTodos}
+              icon={CheckSquare}
+              color="purple"
+              href="/todos"
+            />
+          )
+        case "showGoogleReviews":
+          if (!widgets.showGoogleReviews || !currentPractice) return null
+          return (
+            <GoogleReviewsWidget
+              key="google-reviews"
+              practiceId={currentPractice.id}
+              practiceName={currentPractice.name}
+              practiceWebsiteUrl={currentPractice.website}
+            />
+          )
+
+        // Full-width widgets (charts, etc.)
+        case "showWeeklyTasks":
+          if (!widgets.showWeeklyTasks || !stats?.weeklyTasksData) return null
+          return (
+            <Card key="weekly-tasks" className="p-6 border-muted col-span-full">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold">Wöchentliche Aufgaben</h2>
+                  <p className="text-sm text-muted-foreground">Erledigte und ausstehende Aufgaben diese Woche</p>
+                </div>
+                {renderBarChart(stats.weeklyTasksData)}
+                <div className="flex items-center justify-center gap-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-primary rounded" />
+                    <span className="text-muted-foreground">Erledigt</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-muted rounded" />
+                    <span className="text-muted-foreground">Ausstehend</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )
+        case "showTodaySchedule":
+          if (!widgets.showTodaySchedule || !stats?.todayScheduleData) return null
+          return (
+            <Card key="today-schedule" className="p-6 border-muted col-span-full">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold">Heutiger Terminplan</h2>
+                  <p className="text-sm text-muted-foreground">Verteilung der Termine über den Tag</p>
+                </div>
+                {renderLineChart(stats.todayScheduleData)}
+              </div>
+            </Card>
+          )
+        case "showActivityChart":
+          if (!widgets.showActivityChart || !stats?.activityData) return null
+          return (
+            <Card key="activity-chart" className="p-6 border-muted col-span-full">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold">Aktivität</h2>
+                  <p className="text-sm text-muted-foreground">Praxisaktivität der letzten 7 Tage</p>
+                </div>
+                {renderAreaChart(stats.activityData)}
+              </div>
+            </Card>
+          )
+        case "showKPIs":
+          if (!widgets.showKPIs || !stats) return null
+          return (
+            <Card key="kpis" className="p-6 border-muted col-span-full">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground font-medium">Praxis-Score</p>
+                  <p className="text-4xl font-bold tracking-tight">{stats.kpiScore || 85}/100</p>
+                  <p className="text-xs text-muted-foreground">Gesamtbewertung Ihrer Praxisleistung</p>
+                  {(stats.kpiTrend || 5) !== 0 && (
+                    <div
+                      className={`flex items-center text-sm ${(stats.kpiTrend || 5) >= 0 ? "text-emerald-600" : "text-red-600"}`}
+                    >
+                      {(stats.kpiTrend || 5) >= 0 ? (
+                        <TrendingUp className="h-3.5 w-3.5 mr-1" />
+                      ) : (
+                        <TrendingDown className="h-3.5 w-3.5 mr-1" />
+                      )}
+                      <span>{Math.abs(stats.kpiTrend || 5)}%</span>
+                      <span className="text-muted-foreground ml-1">vs. letzte Woche</span>
+                    </div>
+                  )}
+                </div>
+                <div className="bg-primary/10 text-primary p-4 rounded-lg">
+                  <TrendingUp className="h-6 w-6" />
+                </div>
+              </div>
+            </Card>
+          )
+        case "showRecentActivities":
+          if (!widgets.showRecentActivities || !stats?.recentActivities?.length) return null
+          return (
+            <Card key="recent-activities" className="p-6 border-muted col-span-full">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold">Letzte Aktivitäten</h2>
+                  <p className="text-sm text-muted-foreground">Die neuesten Ereignisse in Ihrer Praxis</p>
+                </div>
+                <div className="space-y-3">
+                  {stats.recentActivities.slice(0, 5).map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div
+                        className={`p-2 rounded-lg ${activity.priority === "high" ? "bg-red-500/10 text-red-500" : activity.priority === "medium" ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500"}`}
+                      >
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{activity.title}</p>
+                        <p className="text-sm text-muted-foreground">{activity.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )
+        case "showJournalActions":
+          if (widgets.showJournalActions === false || !practiceId) return null
+          return <JournalActionItemsCard key="journal-actions" practiceId={practiceId} className="col-span-full" />
+        case "showQuickActions":
+          // Quick actions are handled separately if needed
+          return null
+        default:
+          return null
+      }
+    },
+    [dashboardConfig, stats, currentPractice, t, practiceId],
+  )
+
+  const orderedWidgets = useMemo(() => {
     const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
-
-    if (widgets.showTeamMembers) {
-      cards.push({
-        key: "team",
-        title: t("Team-Mitglieder", "Team-Mitglieder"),
-        value: stats.teamMembers,
-        trend: stats.teamMembersTrend,
-        icon: Users,
-        color: "blue",
-        href: "/team",
-      })
-    }
-
-    if (widgets.showGoals) {
-      cards.push({
-        key: "goals",
-        title: t("Aktive Ziele", "Aktive Ziele"),
-        value: stats.activeGoals,
-        trend: stats.goalsTrend,
-        icon: Target,
-        color: "green",
-        href: "/goals",
-      })
-    }
-
-    if (widgets.showWorkflows) {
-      cards.push({
-        key: "workflows",
-        title: t("Workflows", "Workflows"),
-        value: stats.workflows,
-        trend: stats.workflowsTrend,
-        icon: Workflow,
-        color: "purple",
-        href: "/workflows",
-      })
-    }
-
-    if (widgets.showDocuments) {
-      cards.push({
-        key: "documents",
-        title: t("Dokumente", "Dokumente"),
-        value: stats.documents,
-        trend: stats.documentsTrend,
-        icon: FileText,
-        color: "amber",
-        href: "/documents",
-      })
-    }
-
-    if (widgets.showRecruiting && (stats.openPositions !== undefined || stats.applications !== undefined)) {
-      cards.push({
-        key: "recruiting",
-        title: t("Offene Stellen", "Offene Stellen"),
-        value: stats.openPositions || 0,
-        trend: stats.recruitingTrend,
-        icon: Briefcase,
-        color: "pink",
-        href: "/hiring",
-        subtitle: `${stats.applications || 0} Bewerbungen`,
-      })
-    }
-
-    if (widgets.showOpenTasks && stats.openTasks !== undefined) {
-      cards.push({
-        key: "tasks",
-        title: t("Offene Aufgaben", "Offene Aufgaben"),
-        value: stats.openTasks,
-        trend: stats.tasksTrend,
-        icon: CheckSquare,
-        color: "orange",
-        href: "/todos",
-      })
-    }
-
-    if (widgets.showTodayAppointments && stats.todayAppointments !== undefined) {
-      cards.push({
-        key: "appointments",
-        title: t("Termine heute", "Termine heute"),
-        value: stats.todayAppointments,
-        trend: stats.appointmentsTrend,
-        icon: Calendar,
-        color: "blue",
-        href: "/calendar",
-      })
-    }
-
-    if (widgets.showActiveCandidates && stats.activeCandidates !== undefined) {
-      cards.push({
-        key: "candidates",
-        title: t("Aktive Kandidaten", "Aktive Kandidaten"),
-        value: stats.activeCandidates,
-        trend: stats.candidatesTrend,
-        icon: Users,
-        color: "green",
-        href: "/hiring",
-      })
-    }
-
-    if (widgets.showDrafts && stats.drafts !== undefined) {
-      cards.push({
-        key: "drafts",
-        title: t("Entwürfe", "Entwürfe"),
-        value: stats.drafts,
-        trend: stats.draftsTrend,
-        icon: FileText,
-        color: "gray",
-        href: "/goals?tab=draft",
-      })
-    }
-
-    if (widgets.showTodos && stats.filteredTodos !== undefined) {
-      cards.push({
-        key: "filtered-todos",
-        title: t("Gefilterte Aufgaben", "Gefilterte Aufgaben"),
-        value: stats.filteredTodos,
-        icon: CheckSquare,
-        color: "purple",
-        href: "/todos",
-      })
-    }
-
-    return cards
-  }, [stats, dashboardConfig.widgets, t])
+    const order = widgets.widgetOrder || DEFAULT_ORDER
+    return order.map((id) => renderWidget(id)).filter(Boolean)
+  }, [dashboardConfig, renderWidget])
 
   const renderBarChart = (data: Array<{ day: string; completed: number; pending: number }>) => {
     if (!data || data.length === 0) {
@@ -538,8 +708,8 @@ export default function DashboardOverview({ practiceId, userId }: DashboardOverv
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Willkommen zurück! Hier ist ein Überblick über Ihre Praxis.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Cockpit</h1>
+          <p className="text-muted-foreground mt-1">Willkommen zurück! Hier ist ein 360° Überblick über Ihre Praxis.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsEditorOpen(true)}>
@@ -547,148 +717,15 @@ export default function DashboardOverview({ practiceId, userId }: DashboardOverv
             Cockpit bearbeiten
           </Button>
           <Link href={isEnabled ? "/analysis" : "#"}>
-            <Button variant="outline" size="sm" disabled={!isEnabled}>
-              <Sparkles className="h-4 w-4 mr-2" />
+            <Button size="sm" variant="outline" disabled={!isEnabled} className="gap-2 bg-transparent">
+              <Sparkles className="h-4 w-4" />
               KI-Analyse starten
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Stat Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0">
-        {statCards.map((card) => (
-          <StatCard
-            key={card.key}
-            title={card.title}
-            value={card.value}
-            trend={card.trend}
-            icon={card.icon}
-            color={card.color}
-            href={card.href}
-            subtitle={card.subtitle}
-          />
-        ))}
-        {dashboardConfig.widgets.showGoogleReviews && currentPractice && (
-          <GoogleReviewsWidget
-            practiceId={currentPractice.id}
-            practiceName={currentPractice.name}
-            practiceWebsiteUrl={currentPractice.website}
-          />
-        )}
-      </div>
-
-      {/* Weekly Tasks Chart */}
-      {dashboardConfig.widgets.showWeeklyTasks && stats.weeklyTasksData && (
-        <Card className="p-6 border-muted">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold">Wöchentliche Aufgaben</h2>
-              <p className="text-sm text-muted-foreground">Erledigte und ausstehende Aufgaben diese Woche</p>
-            </div>
-            {renderBarChart(stats.weeklyTasksData)}
-            <div className="flex items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-primary rounded" />
-                <span className="text-muted-foreground">Erledigt</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-muted rounded" />
-                <span className="text-muted-foreground">Ausstehend</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Today's Schedule Chart */}
-      {dashboardConfig.widgets.showTodaySchedule && stats.todayScheduleData && (
-        <Card className="p-6 border-muted">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold">Heutiger Terminplan</h2>
-              <p className="text-sm text-muted-foreground">Verteilung der Termine über den Tag</p>
-            </div>
-            {renderLineChart(stats.todayScheduleData)}
-          </div>
-        </Card>
-      )}
-
-      {/* Activity Chart */}
-      {dashboardConfig.widgets.showActivityChart && stats.activityData && (
-        <Card className="p-6 border-muted">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold">Aktivität</h2>
-              <p className="text-sm text-muted-foreground">Praxisaktivität der letzten 7 Tage</p>
-            </div>
-            {renderAreaChart(stats.activityData)}
-          </div>
-        </Card>
-      )}
-
-      {/* KPI Score */}
-      {dashboardConfig.widgets.showKPIs && (
-        <Card className="p-6 border-muted">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground font-medium">Praxis-Score</p>
-              <p className="text-4xl font-bold tracking-tight">{stats.kpiScore || 85}/100</p>
-              <p className="text-xs text-muted-foreground">Gesamtbewertung Ihrer Praxisleistung</p>
-              {(stats.kpiTrend || 5) !== 0 && (
-                <div
-                  className={`flex items-center text-sm ${(stats.kpiTrend || 5) >= 0 ? "text-emerald-600" : "text-red-600"}`}
-                >
-                  {(stats.kpiTrend || 5) >= 0 ? (
-                    <TrendingUp className="h-3.5 w-3.5 mr-1" />
-                  ) : (
-                    <TrendingDown className="h-3.5 w-3.5 mr-1" />
-                  )}
-                  <span>{Math.abs(stats.kpiTrend || 5)}%</span>
-                  <span className="text-muted-foreground ml-1">vs. letzte Woche</span>
-                </div>
-              )}
-            </div>
-            <div className="bg-primary/10 text-primary p-4 rounded-lg">
-              <TrendingUp className="h-6 w-6" />
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Recent Activities */}
-      {dashboardConfig.widgets.showRecentActivities && stats.recentActivities && stats.recentActivities.length > 0 && (
-        <Card className="p-6 border-muted">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold">Letzte Aktivitäten</h2>
-              <p className="text-sm text-muted-foreground">Die neuesten Ereignisse in Ihrer Praxis</p>
-            </div>
-            <div className="space-y-3">
-              {stats.recentActivities.slice(0, 5).map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div
-                    className={`p-2 rounded-lg ${activity.priority === "high" ? "bg-red-500/10 text-red-500" : activity.priority === "medium" ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500"}`}
-                  >
-                    <Clock className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{activity.title}</p>
-                    <p className="text-sm text-muted-foreground">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Journal Action Items */}
-      <JournalActionItemsCard practiceId={practiceId} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0">{orderedWidgets}</div>
 
       {/* Dashboard Editor Dialog */}
       <DashboardEditorDialog

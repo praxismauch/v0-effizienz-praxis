@@ -24,6 +24,7 @@ import {
   ClipboardList,
   Clock,
   Building2,
+  GripVertical,
 } from "lucide-react"
 import { AppLayout } from "@/components/app-layout"
 import { PageHeader } from "@/components/page-header"
@@ -59,6 +60,23 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { isPracticeAdminRole } from "@/lib/auth-utils"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 const HolidayPlanner = lazy(() =>
   import("@/components/holiday-planner").then((mod) => ({ default: mod.HolidayPlanner })),
@@ -89,6 +107,88 @@ interface Responsibility {
   is_active?: boolean
 }
 
+interface SortableTeamCardProps {
+  team: {
+    id: string
+    name: string
+    description?: string
+    color?: string
+  }
+  teamMemberCount: number
+  cardStyles: { backgroundColor: string; borderLeftColor: string }
+  teamColor: string
+  onEdit: () => void
+  onDelete: () => void
+  isPracticeAdmin: boolean
+}
+
+function SortableTeamCard({
+  team,
+  teamMemberCount,
+  cardStyles,
+  teamColor,
+  onEdit,
+  onDelete,
+  isPracticeAdmin,
+}: SortableTeamCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: team.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    backgroundColor: cardStyles.backgroundColor,
+    borderLeftColor: cardStyles.borderLeftColor,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-lg border-l-4 p-4 transition-shadow hover:shadow-md ${isDragging ? "shadow-lg z-50" : ""}`}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {/* Drag handle - only show for practice admins */}
+          {isPracticeAdmin && (
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-black/5 rounded"
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+          <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: teamColor }} />
+          <h3 className="font-semibold text-foreground">{team.name}</h3>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onEdit}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Bearbeiten
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Löschen
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">{team.description || "Keine Beschreibung"}</p>
+      <div>
+        <span className="text-2xl font-bold text-foreground">{teamMemberCount}</span>
+        <p className="text-sm text-muted-foreground">Mitglieder</p>
+      </div>
+    </div>
+  )
+}
+
 export default function TeamPageClient() {
   const { currentUser, isLoading: userLoading, isSuperAdmin } = useUser()
   const { currentPractice } = usePractice()
@@ -102,6 +202,7 @@ export default function TeamPageClient() {
     addTeam,
     updateTeam,
     deleteTeam,
+    reorderTeams, // Get reorderTeams from context
     assignMemberToTeam,
     removeMemberFromTeam,
     inviteTeamMember,
@@ -128,12 +229,35 @@ export default function TeamPageClient() {
   const [createMemberDialogOpen, setCreateMemberDialogOpen] = useState(false)
 
   const isAdmin = currentUser?.role === "admin"
+  const isPracticeAdmin = isPracticeAdminRole(currentUser?.role)
 
   const [orgaCategories, setOrgaCategories] = useState<Array<{ id: string; name: string; color: string }>>([])
 
   const [useWorkloadCalculator, setUseWorkloadCalculator] = useState(false)
   const [totalHours, setTotalHours] = useState<string>("")
   const [timePeriod, setTimePeriod] = useState<"month" | "quarter" | "year">("month")
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
+
+  const handleTeamDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = teams.findIndex((t) => t.id === active.id)
+      const newIndex = teams.findIndex((t) => t.id === over.id)
+      const newOrder = arrayMove(teams, oldIndex, newIndex)
+      reorderTeams(newOrder.map((t) => t.id))
+    }
+  }
 
   useEffect(() => {
     if (useWorkloadCalculator && totalHours) {
@@ -1290,71 +1414,44 @@ export default function TeamPageClient() {
                     </Card>
                   ) : (
                     <Card className="p-6">
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {teams.map((team) => {
-                          const teamMemberCount = teamMembers.filter(
-                            (m) => m.team_ids?.includes(team.id) || m.team_id === team.id,
-                          ).length
-                          const teamColor = team.color || "#3b82f6"
-                          const cardStyles = getTeamCardStyles(teamColor)
+                      {isPracticeAdmin && (
+                        <p className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
+                          <GripVertical className="h-4 w-4" />
+                          Ziehen Sie die Teams per Drag & Drop, um die Reihenfolge zu ändern
+                        </p>
+                      )}
+                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTeamDragEnd}>
+                        <SortableContext items={teams.map((t) => t.id)} strategy={rectSortingStrategy}>
+                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {teams.map((team) => {
+                              const teamMemberCount = teamMembers.filter(
+                                (m) => m.team_ids?.includes(team.id) || m.team_id === team.id,
+                              ).length
+                              const teamColor = team.color || "#3b82f6"
+                              const cardStyles = getTeamCardStyles(teamColor)
 
-                          return (
-                            <div
-                              key={team.id}
-                              className="rounded-lg border-l-4 p-4 transition-shadow hover:shadow-md"
-                              style={{
-                                backgroundColor: cardStyles.backgroundColor,
-                                borderLeftColor: cardStyles.borderLeftColor,
-                              }}
-                            >
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="h-3 w-3 rounded-full flex-shrink-0"
-                                    style={{ backgroundColor: teamColor }}
-                                  />
-                                  <h3 className="font-semibold text-foreground">{team.name}</h3>
-                                </div>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setEditingTeam(team)
-                                        setNewTeamName(team.name)
-                                        setNewTeamDescription(team.description || "")
-                                        setNewTeamColor(team.color || "#3b82f6")
-                                        setEditTeamDialogOpen(true)
-                                      }}
-                                    >
-                                      <Pencil className="h-4 w-4 mr-2" />
-                                      Bearbeiten
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-destructive"
-                                      onClick={() => setTeamToDelete({ id: team.id, name: team.name })}
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      Löschen
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-4">
-                                {team.description || "Keine Beschreibung"}
-                              </p>
-                              <div>
-                                <span className="text-2xl font-bold text-foreground">{teamMemberCount}</span>
-                                <p className="text-sm text-muted-foreground">Mitglieder</p>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                              return (
+                                <SortableTeamCard
+                                  key={team.id}
+                                  team={team}
+                                  teamMemberCount={teamMemberCount}
+                                  cardStyles={cardStyles}
+                                  teamColor={teamColor}
+                                  isPracticeAdmin={isPracticeAdmin}
+                                  onEdit={() => {
+                                    setEditingTeam(team)
+                                    setNewTeamName(team.name)
+                                    setNewTeamDescription(team.description || "")
+                                    setNewTeamColor(team.color || "#3b82f6")
+                                    setEditTeamDialogOpen(true)
+                                  }}
+                                  onDelete={() => setTeamToDelete({ id: team.id, name: team.name })}
+                                />
+                              )
+                            })}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
                     </Card>
                   )}
                 </TabsContent>

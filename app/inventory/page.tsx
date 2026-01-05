@@ -459,17 +459,23 @@ export default function InventoryPage() {
 
   // Handle item creation
   const handleCreateItem = async () => {
+    console.log("[v0] handleCreateItem called", { practiceId, newItem })
+
     if (!practiceId) {
+      console.log("[v0] No practiceId found")
       toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
       return
     }
 
     try {
+      console.log("[v0] Sending POST request to create item")
       const res = await fetch(`/api/practices/${practiceId}/inventory`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newItem),
       })
+
+      console.log("[v0] Response status:", res.status)
 
       if (res.ok) {
         toast.success("Artikel erstellt")
@@ -487,6 +493,8 @@ export default function InventoryPage() {
         })
         fetchData()
       } else {
+        const errorData = await res.text()
+        console.log("[v0] Error response:", errorData)
         toast.error("Fehler beim Erstellen")
       }
     } catch (error) {
@@ -1465,7 +1473,7 @@ export default function InventoryPage() {
               <Button variant="outline" onClick={() => setCreateItemOpen(false)}>
                 Abbrechen
               </Button>
-              <Button onClick={handleCreateItem} disabled={!newItem.name}>
+              <Button onClick={handleCreateItem} disabled={!newItem.name.trim() || !practiceId}>
                 Erstellen
               </Button>
             </DialogFooter>

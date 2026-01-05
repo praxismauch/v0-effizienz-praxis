@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,13 +8,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { createBrowserClient } from "@/lib/supabase/client"
 import CreateContactDialog from "@/components/contacts/create-contact-dialog"
 import EditContactDialog from "@/components/contacts/edit-contact-dialog"
 import AIContactExtractorDialog from "@/components/contacts/ai-contact-extractor-dialog"
 import BatchImportContactsDialog from "@/components/contacts/batch-import-contacts-dialog"
 import { AppLayout } from "@/components/app-layout"
 import { usePractice } from "@/contexts/practice-context"
+import { useUser } from "@/contexts/user-context"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,33 +59,36 @@ export default function ContactsPage() {
   const [showBatchDialog, setShowBatchDialog] = useState(false)
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const { currentUser, loading: userLoading } = useUser()
 
-  useEffect(() => {
-    if (practiceLoading) return
-    if (!currentPractice?.id) {
-      setLoading(false)
-      return
-    }
-    loadContacts()
-  }, [currentPractice, practiceLoading])
+  const hasLoadedRef = useRef(false)
+  const loadingPracticeIdRef = useRef<string | null>(null)
 
-  async function loadContacts() {
-    if (!currentPractice?.id) return
+  const practiceId = currentPractice?.id || currentUser?.practice_id
+
+  const loadContacts = useCallback(async () => {
+    if (!practiceId) return
+
+    // Prevent duplicate loads for same practice
+    if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) return
+    loadingPracticeIdRef.current = practiceId
 
     try {
       setLoading(true)
 
-      const { data, error } = await supabase
-        .from("contacts")
-        .select("*")
-        .eq("practice_id", currentPractice.id)
-        .order("last_name", { ascending: true })
+      const response = await fetch(`/api/practices/${practiceId}/contacts`)
 
-      if (error) throw error
-      setContacts(data || [])
+      if (!response.ok) {
+        throw new Error("Failed to fetch contacts")
+      }
+
+      const data = await response.json()
+      const activeContacts = data.filter((c: Contact & { deleted_at?: string }) => !c.deleted_at)
+      setContacts(activeContacts)
+      hasLoadedRef.current = true
     } catch (error: any) {
+      console.error("[v0] Error loading contacts:", error)
       toast({
         title: "Fehler",
         description: "Kontakte konnten nicht geladen werden",
@@ -94,21 +97,40 @@ export default function ContactsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [practiceId, toast])
+
+  useEffect(() => {
+    if (practiceLoading || userLoading) return
+    if (!practiceId) {
+      setLoading(false)
+      return
+    }
+    loadContacts()
+  }, [practiceId, practiceLoading, userLoading, loadContacts])
+
+  const handleReload = useCallback(() => {
+    hasLoadedRef.current = false
+    loadingPracticeIdRef.current = null
+    loadContacts()
+  }, [loadContacts])
 
   async function confirmDelete() {
-    if (!contactToDelete) return
+    if (!contactToDelete || !practiceId) return
 
     try {
-      const { error } = await supabase.from("contacts").delete().eq("id", contactToDelete.id)
+      const response = await fetch(`/api/practices/${practiceId}/contacts?id=${contactToDelete.id}`, {
+        method: "DELETE",
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error("Failed to delete contact")
+      }
 
       toast({
         title: "Erfolg",
         description: "Kontakt wurde gelöscht",
       })
-      loadContacts()
+      handleReload()
     } catch (error: any) {
       toast({
         title: "Fehler",
@@ -289,23 +311,23 @@ export default function ContactsPage() {
             </CardContent>
           </Card>
 
-          <CreateContactDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} onSuccess={loadContacts} />
+          <CreateContactDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} onSuccess={handleReload} />
 
           {selectedContact && (
             <EditContactDialog
               open={showEditDialog}
               onOpenChange={setShowEditDialog}
               contact={selectedContact}
-              onSuccess={loadContacts}
+              onSuccess={handleReload}
             />
           )}
 
-          <AIContactExtractorDialog open={showAIDialog} onOpenChange={setShowAIDialog} onSuccess={loadContacts} />
+          <AIContactExtractorDialog open={showAIDialog} onOpenChange={setShowAIDialog} onSuccess={handleReload} />
 
           <BatchImportContactsDialog
             open={showBatchDialog}
             onOpenChange={setShowBatchDialog}
-            onSuccess={loadContacts}
+            onSuccess={handleReload}
           />
 
           <AlertDialog open={!!contactToDelete} onOpenChange={(open) => !open && setContactToDelete(null)}>

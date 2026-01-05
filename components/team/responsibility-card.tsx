@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Clock } from "lucide-react"
+import { Edit, Trash2, Clock, User, Users } from "lucide-react"
 import { formatGermanNumber } from "@/lib/utils/number-format"
 
 interface ResponsibilityCardProps {
@@ -22,18 +22,85 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
   const responsiblePerson = responsibility.responsible_user_name
   const deputyPerson = responsibility.deputy_user_name
 
-  const getCategoryColor = () => {
-    if (!responsibility.group_name) return "#6366f1"
+  const getCategoryStyles = () => {
+    if (!responsibility.group_name) {
+      return {
+        color: "#6366f1",
+        bg: "bg-indigo-500",
+        gradient: "from-indigo-50 to-indigo-100/50",
+        text: "text-indigo-700",
+        border: "border-l-indigo-500",
+      }
+    }
 
     let hash = 0
     for (let i = 0; i < responsibility.group_name.length; i++) {
       hash = responsibility.group_name.charCodeAt(i) + ((hash << 5) - hash)
     }
 
-    const colors = ["#6366f1", "#8b5cf6", "#ec4899", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6"]
+    const styles = [
+      {
+        color: "#6366f1",
+        bg: "bg-indigo-500",
+        gradient: "from-indigo-50 to-indigo-100/50",
+        text: "text-indigo-700",
+        border: "border-l-indigo-500",
+      },
+      {
+        color: "#8b5cf6",
+        bg: "bg-violet-500",
+        gradient: "from-violet-50 to-violet-100/50",
+        text: "text-violet-700",
+        border: "border-l-violet-500",
+      },
+      {
+        color: "#ec4899",
+        bg: "bg-pink-500",
+        gradient: "from-pink-50 to-pink-100/50",
+        text: "text-pink-700",
+        border: "border-l-pink-500",
+      },
+      {
+        color: "#f97316",
+        bg: "bg-orange-500",
+        gradient: "from-orange-50 to-orange-100/50",
+        text: "text-orange-700",
+        border: "border-l-orange-500",
+      },
+      {
+        color: "#eab308",
+        bg: "bg-yellow-500",
+        gradient: "from-yellow-50 to-yellow-100/50",
+        text: "text-yellow-700",
+        border: "border-l-yellow-500",
+      },
+      {
+        color: "#22c55e",
+        bg: "bg-emerald-500",
+        gradient: "from-emerald-50 to-emerald-100/50",
+        text: "text-emerald-700",
+        border: "border-l-emerald-500",
+      },
+      {
+        color: "#06b6d4",
+        bg: "bg-cyan-500",
+        gradient: "from-cyan-50 to-cyan-100/50",
+        text: "text-cyan-700",
+        border: "border-l-cyan-500",
+      },
+      {
+        color: "#3b82f6",
+        bg: "bg-blue-500",
+        gradient: "from-blue-50 to-blue-100/50",
+        text: "text-blue-700",
+        border: "border-l-blue-500",
+      },
+    ]
 
-    return colors[Math.abs(hash) % colors.length]
+    return styles[Math.abs(hash) % styles.length]
   }
+
+  const categoryStyles = getCategoryStyles()
 
   const handleDelete = () => {
     if (!isValidId) {
@@ -45,20 +112,39 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
 
   return (
     <Card
-      className="p-4 hover:shadow-lg transition-shadow cursor-pointer group"
+      className={`group overflow-hidden border-l-4 ${categoryStyles.border} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${isAdmin ? "cursor-pointer" : ""}`}
       onClick={() => isAdmin && onEdit(responsibility)}
     >
-      <div className="space-y-3">
-        {/* Header row with category indicator and title */}
-        <div className="flex items-start gap-3">
-          <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: getCategoryColor() }} />
+      {/* Gradient header background */}
+      <div className={`bg-gradient-to-r ${categoryStyles.gradient} px-4 pt-4 pb-3`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            {/* Category icon container */}
+            <div
+              className={`w-10 h-10 rounded-xl ${categoryStyles.bg} bg-opacity-15 flex items-center justify-center flex-shrink-0`}
+            >
+              <div className={`w-3 h-3 rounded-full ${categoryStyles.bg} shadow-sm`} />
+            </div>
 
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg leading-tight">{responsibility.name}</h3>
+            <div className="min-w-0 flex-1">
+              {/* Title - full width */}
+              <h3 className="font-semibold text-base text-foreground leading-tight line-clamp-2">
+                {responsibility.name}
+              </h3>
+
+              {/* Category/Group badge */}
+              {responsibility.group_name && (
+                <span
+                  className={`inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${categoryStyles.bg} bg-opacity-15 ${categoryStyles.text}`}
+                >
+                  {responsibility.group_name}
+                </span>
+              )}
+            </div>
           </div>
 
           {isAdmin && (
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden flex-shrink-0">
+            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity print:hidden flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
@@ -66,7 +152,7 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
                   e.stopPropagation()
                   onEdit(responsibility)
                 }}
-                className="h-8 w-8"
+                className="h-8 w-8 hover:bg-white/80"
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -77,7 +163,7 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
                   e.stopPropagation()
                   handleDelete()
                 }}
-                className="h-8 w-8 text-destructive hover:text-destructive"
+                className="h-8 w-8 hover:bg-destructive/10 text-destructive hover:text-destructive"
                 disabled={!isValidId}
               >
                 <Trash2 className="h-4 w-4" />
@@ -85,23 +171,45 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
             </div>
           )}
         </div>
+      </div>
 
-        {/* Info row with assigned person and hours */}
-        <div className="flex items-center justify-between gap-4 pl-6">
-          <p className="text-sm text-muted-foreground truncate">
-            {responsiblePerson || "Noch nicht zugewiesen"}
-            {responsiblePerson && deputyPerson && ` • ${deputyPerson}`}
-          </p>
-
-          {responsibility.suggested_hours_per_week !== null && (
-            <div className="flex items-center gap-1.5 text-primary flex-shrink-0">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                {formatGermanNumber(responsibility.suggested_hours_per_week)}h
-              </span>
+      {/* Content section */}
+      <div className="px-4 py-3 bg-card">
+        <div className="flex items-center justify-between gap-4">
+          {/* Assignee info */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+              {deputyPerson ? (
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+              ) : (
+                <User className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
             </div>
-          )}
+            <span className="text-sm text-muted-foreground truncate">
+              {responsiblePerson || "Noch nicht zugewiesen"}
+              {responsiblePerson && deputyPerson && <span className="text-xs opacity-75"> + {deputyPerson}</span>}
+            </span>
+          </div>
+
+          {/* Hours badge */}
+          {responsibility.suggested_hours_per_week !== null &&
+            responsibility.suggested_hours_per_week !== undefined &&
+            responsibility.suggested_hours_per_week > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 flex-shrink-0">
+                <Clock className="h-3.5 w-3.5 text-primary" />
+                <span className="text-sm font-semibold text-primary">
+                  {formatGermanNumber(responsibility.suggested_hours_per_week)}h
+                </span>
+              </div>
+            )}
         </div>
+
+        {/* Description preview if exists */}
+        {responsibility.description && (
+          <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+            {responsibility.description}
+          </p>
+        )}
       </div>
     </Card>
   )

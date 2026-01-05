@@ -18,6 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("contacts")
       .select("*")
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
       .order("last_name", { ascending: true })
 
     if (error) {
@@ -140,7 +141,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     const supabase = createAdminClient()
-    const { error } = await supabase.from("contacts").delete().eq("id", contactId).eq("practice_id", practiceId)
+
+    const { error } = await supabase
+      .from("contacts")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", contactId)
+      .eq("practice_id", practiceId)
 
     if (error) {
       console.error("[v0] Error deleting contact:", error)

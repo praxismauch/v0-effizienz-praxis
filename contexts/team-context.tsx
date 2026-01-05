@@ -10,7 +10,7 @@ interface TeamMember extends User {
   permissions: string[]
   lastActive: string
   teamIds: string[]
-  dateOfBirth?: string // Added dateOfBirth field for age calculations
+  dateOfBirth?: string
   status?: string
   first_name?: string
   last_name?: string
@@ -25,14 +25,16 @@ interface Team {
   memberCount: number
   createdAt: string
   isActive: boolean
+  sortOrder: number
 }
 
 interface TeamContextType {
   teamMembers: TeamMember[]
   teams: Team[]
-  addTeam: (team: Omit<Team, "id" | "createdAt" | "memberCount">) => void
+  addTeam: (team: Omit<Team, "id" | "createdAt" | "memberCount" | "sortOrder">) => void
   updateTeam: (id: string, updates: Partial<Team>) => void
   deleteTeam: (id: string) => void
+  reorderTeams: (teamIds: string[]) => Promise<void>
   assignMemberToTeam: (memberId: string, teamId: string) => void
   removeMemberFromTeam: (memberId: string, teamId: string) => void
   addTeamMember: (member: Omit<TeamMember, "id" | "joinedAt">) => void
@@ -83,7 +85,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
         const teamsData = teamsRes.ok ? await safeJsonParse(teamsRes, []) : []
         if (!isMounted.current) return
-        setTeams(teamsData)
+        setTeams(teamsData.map((t: any) => ({ ...t, sortOrder: t.sortOrder ?? 0 })))
 
         await new Promise((resolve) => setTimeout(resolve, 200))
 
@@ -170,7 +172,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const addTeam = async (teamData: Omit<Team, "id" | "createdAt" | "memberCount">) => {
+  const addTeam = async (teamData: Omit<Team, "id" | "createdAt" | "memberCount" | "sortOrder">) => {
     if (!currentPractice?.id) {
       toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
       return
@@ -192,6 +194,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
             memberCount: 0,
             createdAt: newTeam.created_at,
             isActive: newTeam.is_active,
+            sortOrder: newTeam.sort_order ?? prev.length,
           },
         ])
         toast.success("Team erfolgreich erstellt")
@@ -201,6 +204,41 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       toast.error("Fehler beim Erstellen des Teams")
       console.error("Add team error:", error)
+    }
+  }
+
+  const reorderTeams = async (teamIds: string[]) => {
+    if (!currentPractice?.id) {
+      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
+      return
+    }
+
+    const reorderedTeams = teamIds
+      .map((id, index) => {
+        const team = teams.find((t) => t.id === id)
+        return team ? { ...team, sortOrder: index } : null
+      })
+      .filter(Boolean) as Team[]
+
+    setTeams(reorderedTeams)
+
+    try {
+      const res = await fetch(`/api/practices/${currentPractice.id}/teams`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamIds }),
+      })
+
+      if (!res.ok) {
+        await fetchData(currentPractice.id, { current: true })
+        toast.error("Fehler beim Speichern der Reihenfolge")
+      } else {
+        toast.success("Reihenfolge gespeichert")
+      }
+    } catch (error) {
+      await fetchData(currentPractice.id, { current: true })
+      toast.error("Fehler beim Speichern der Reihenfolge")
+      console.error("Reorder teams error:", error)
     }
   }
 
@@ -422,6 +460,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         addTeam,
         updateTeam,
         deleteTeam,
+        reorderTeams,
         assignMemberToTeam,
         removeMemberFromTeam,
         addTeamMember,

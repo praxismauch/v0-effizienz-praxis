@@ -37,6 +37,11 @@ import {
   Lightbulb,
   Play,
   X,
+  HeadphonesIcon,
+  Mail,
+  MessageSquare,
+  Bug,
+  ExternalLink,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 
@@ -133,6 +138,13 @@ const FEATURES = [
     icon: GraduationCap,
     color: "bg-pink-500",
   },
+  {
+    id: "support",
+    title: "Support & Feedback",
+    description: "Wir sind für Sie da – Hilfe erhalten und das System gemeinsam verbessern.",
+    icon: HeadphonesIcon,
+    color: "bg-indigo-500",
+  },
 ]
 
 const STEPS = [
@@ -140,6 +152,7 @@ const STEPS = [
   { id: "practice", title: "Praxis-Info", icon: Building2 },
   { id: "goals", title: "Ihre Ziele", icon: Target },
   { id: "features", title: "Funktionen", icon: Lightbulb },
+  { id: "support", title: "Support", icon: HeadphonesIcon },
   { id: "complete", title: "Fertig", icon: CheckCircle2 },
 ]
 
@@ -239,6 +252,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
       case 3:
         return <FeaturesStep features={FEATURES} activeFeature={activeFeature} setActiveFeature={setActiveFeature} />
       case 4:
+        return <SupportStep />
+      case 5:
         return <CompleteStep settings={settings} onComplete={onComplete} />
       default:
         return null
@@ -341,7 +356,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
               {STEPS.map((_, index) => (
                 <div
                   key={index}
-                  className={`h-2 w-2 rounded-full transition-colors ${
+                  className={`h-2 rounded-full transition-all duration-300 ${
                     index === currentStep ? "bg-primary" : index < currentStep ? "bg-primary/50" : "bg-border"
                   }`}
                 />
@@ -713,7 +728,178 @@ function FeaturesStep({
   )
 }
 
-// Step 5: Complete
+// Step 5: Support & Contact
+function SupportStep() {
+  const [feedbackSent, setFeedbackSent] = useState(false)
+
+  const supportOptions = [
+    {
+      icon: Mail,
+      title: "E-Mail Support",
+      description: "Schreiben Sie uns direkt bei Fragen oder Problemen",
+      action: "support@effizienz-praxis.de",
+      actionType: "email" as const,
+      color: "bg-blue-500",
+    },
+    {
+      icon: Bug,
+      title: "Fehler melden",
+      description: "Helfen Sie uns, das System zu verbessern",
+      action: "/feedback",
+      actionType: "link" as const,
+      color: "bg-red-500",
+    },
+    {
+      icon: MessageSquare,
+      title: "Feature-Wünsche",
+      description: "Teilen Sie uns Ihre Ideen für neue Funktionen mit",
+      action: "/feedback?type=feature",
+      actionType: "link" as const,
+      color: "bg-purple-500",
+    },
+    {
+      icon: BookOpen,
+      title: "Dokumentation",
+      description: "Ausführliche Anleitungen und Hilfe-Artikel",
+      action: "/help",
+      actionType: "link" as const,
+      color: "bg-emerald-500",
+    },
+  ]
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center mb-8">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", duration: 0.5 }}
+          className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white mb-6 shadow-lg shadow-indigo-500/30"
+        >
+          <HeadphonesIcon className="h-10 w-10" />
+        </motion.div>
+        <motion.h2
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-3xl font-bold mb-3"
+        >
+          Wir sind für Sie da
+        </motion.h2>
+        <motion.p
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-muted-foreground text-lg max-w-2xl mx-auto"
+        >
+          Ihr Feedback ist uns wichtig! Gemeinsam machen wir Effizienz Praxis noch besser für Sie und Ihr Team.
+        </motion.p>
+      </div>
+
+      {/* Support Options Grid */}
+      <motion.div
+        initial={{ y: 30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto"
+      >
+        {supportOptions.map((option, index) => {
+          const Icon = option.icon
+          return (
+            <motion.div
+              key={option.title}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 + index * 0.1 }}
+            >
+              <Card
+                className="group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 h-full"
+                onClick={() => {
+                  if (option.actionType === "email") {
+                    window.location.href = `mailto:${option.action}?subject=Support-Anfrage%20Effizienz%20Praxis`
+                  } else {
+                    window.open(option.action, "_blank")
+                  }
+                }}
+              >
+                <CardContent className="pt-6 pb-6">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`p-3 rounded-xl ${option.color} text-white group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                        {option.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{option.description}</p>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )
+        })}
+      </motion.div>
+
+      {/* Quick Feedback Section */}
+      <motion.div
+        initial={{ y: 30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.7 }}
+        className="max-w-2xl mx-auto"
+      >
+        <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-2 text-primary">
+                <Heart className="h-5 w-5" />
+                <span className="font-medium">Helfen Sie uns, besser zu werden</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Jedes Feedback – ob Lob, Kritik oder Verbesserungsvorschlag – hilft uns, Effizienz Praxis kontinuierlich
+                zu verbessern. Wir lesen und beantworten jede Nachricht persönlich.
+              </p>
+              <div className="flex flex-wrap justify-center gap-3 pt-2">
+                <Badge variant="secondary" className="px-3 py-1.5">
+                  <Clock className="h-3 w-3 mr-1.5" />
+                  Antwort innerhalb 24h
+                </Badge>
+                <Badge variant="secondary" className="px-3 py-1.5">
+                  <Shield className="h-3 w-3 mr-1.5" />
+                  Datenschutz garantiert
+                </Badge>
+                <Badge variant="secondary" className="px-3 py-1.5">
+                  <Star className="h-3 w-3 mr-1.5" />
+                  Persönlicher Support
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Contact Info Footer */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.9 }}
+        className="text-center pt-4"
+      >
+        <p className="text-sm text-muted-foreground">
+          Direkter Kontakt:{" "}
+          <a href="mailto:support@effizienz-praxis.de" className="text-primary hover:underline font-medium">
+            support@effizienz-praxis.de
+          </a>
+        </p>
+      </motion.div>
+    </div>
+  )
+}
+
+// Step 6: Complete (previously Step 5)
 function CompleteStep({ settings, onComplete }: { settings: PracticeSettings; onComplete: () => void }) {
   return (
     <div className="text-center space-y-8">

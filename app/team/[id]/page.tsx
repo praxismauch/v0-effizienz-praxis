@@ -28,6 +28,8 @@ import { useTranslation } from "@/contexts/translation-context"
 import { useRoleColors } from "@/lib/use-role-colors"
 import { TeamMemberSkillsTab } from "@/components/team/team-member-skills-tab"
 import { AppLayout } from "@/components/app-layout"
+import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
+import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 
 const roleLabels = {
   admin: "Praxis Admin",
@@ -186,12 +188,14 @@ export default function TeamMemberDetailPage() {
                 </Button>
               )}
             </div>
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="profile">Profil</TabsTrigger>
               <TabsTrigger value="skills">Skills</TabsTrigger>
               <TabsTrigger value="permissions">Berechtigungen</TabsTrigger>
               <TabsTrigger value="contracts">Verträge</TabsTrigger>
               <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
+              <TabsTrigger value="geraete">Geräte</TabsTrigger>
+              <TabsTrigger value="zustaendigkeiten">Zuständigkeiten</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-4">
@@ -294,38 +298,6 @@ export default function TeamMemberDetailPage() {
                       ) : (
                         <p className="text-sm text-muted-foreground">Keine Teamzuweisungen</p>
                       )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 pt-4 border-t">
-                    <Label className="text-base">Rollenbeschreibung</Label>
-                    <div className="space-y-2">
-                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                        <div className="flex items-start gap-2">
-                          <Badge className="bg-blue-600 text-white">Praxis Admin</Badge>
-                          <p className="text-sm text-muted-foreground">
-                            Voller administrativer Zugriff auf alle Funktionen der Praxis, kann Mitglieder und
-                            Einstellungen verwalten
-                          </p>
-                        </div>
-                      </div>
-                      <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                        <div className="flex items-start gap-2">
-                          <Badge className="bg-green-600 text-white">Power User</Badge>
-                          <p className="text-sm text-muted-foreground">
-                            Erweiterte Zugriffsrechte, kann wichtige Funktionen nutzen und Daten bearbeiten
-                          </p>
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                        <div className="flex items-start gap-2">
-                          <Badge variant="secondary">Benutzer</Badge>
-                          <p className="text-sm text-muted-foreground">
-                            Standardzugriff für Mitarbeiter, kann grundlegende Funktionen nutzen und eigene Daten
-                            verwalten
-                          </p>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -431,6 +403,26 @@ export default function TeamMemberDetailPage() {
                   teamMemberId={memberId}
                   practiceId={member.practice_id || ""}
                   isAdmin={isAdmin}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="geraete" className="space-y-4">
+              {member && (
+                <TeamMemberDevicesTab
+                  memberId={memberId}
+                  practiceId={member.practice_id || ""}
+                  memberName={member.name}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="zustaendigkeiten" className="space-y-4">
+              {member && (
+                <TeamMemberResponsibilitiesTab
+                  memberId={memberId}
+                  practiceId={member.practice_id || ""}
+                  memberName={member.name}
                 />
               )}
             </TabsContent>

@@ -654,3 +654,5 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
     </>
   )
 }
+
+export default ArbeitsmittelAssignments

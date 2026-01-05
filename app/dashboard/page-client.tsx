@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, memo } from "react"
+import { useEffect, useState, memo, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
@@ -72,23 +72,20 @@ export default function DashboardPageClient() {
   const { currentPractice, isLoading: practiceLoading, practices } = usePractice()
   const router = useRouter()
   const [loadingTimeout, setLoadingTimeout] = useState(false)
-  const [isReady, setIsReady] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
 
+  const hadValidPracticeRef = useRef(false)
+
+  const practiceId = currentPractice?.id || currentUser?.practice_id || currentUser?.practiceId || ""
+  const hasValidPracticeId = practiceId && practiceId !== "undefined" && practiceId !== "null" && practiceId !== "0"
+
   useEffect(() => {
-    console.log("[v0] Dashboard state:", {
-      userLoading,
-      practiceLoading,
-      hasUser: !!currentUser,
-      hasPractice: !!currentPractice,
-      practiceCount: practices?.length || 0,
-      userId: currentUser?.id,
-      userPracticeId: currentUser?.practice_id || currentUser?.practiceId,
-      currentPracticeId: currentPractice?.id,
-      loadingTimeout,
-      isReady,
-    })
-  }, [currentUser, currentPractice, userLoading, practiceLoading, practices, loadingTimeout, isReady])
+    if (hasValidPracticeId) {
+      hadValidPracticeRef.current = true
+    }
+  }, [hasValidPracticeId])
+
+  const isContextLoading = userLoading || practiceLoading
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -99,31 +96,20 @@ export default function DashboardPageClient() {
   }, [retryCount])
 
   useEffect(() => {
-    if (!userLoading && !practiceLoading) {
-      // Small delay to ensure all data is propagated
-      const readyTimer = setTimeout(() => {
-        setIsReady(true)
-      }, 100)
-      return () => clearTimeout(readyTimer)
-    }
-  }, [userLoading, practiceLoading])
-
-  useEffect(() => {
     if (loadingTimeout && !currentUser) {
-      console.log("[v0] Redirecting to login - no user after timeout")
       router.push("/auth/login")
     }
   }, [loadingTimeout, currentUser, router])
 
   const handleRetry = () => {
     setLoadingTimeout(false)
-    setIsReady(false)
+    hadValidPracticeRef.current = false
     setRetryCount((prev) => prev + 1)
     window.location.reload()
   }
 
   // Show loading state while contexts are loading
-  if ((userLoading || practiceLoading) && !loadingTimeout) {
+  if (isContextLoading && !loadingTimeout) {
     return <DashboardSkeleton />
   }
 
@@ -132,20 +118,18 @@ export default function DashboardPageClient() {
     return <LoadingOverlay message="Weiterleitung zur Anmeldung..." />
   }
 
-  // Wait for ready state
-  if (!isReady && !loadingTimeout) {
+  if (!hasValidPracticeId && hadValidPracticeRef.current && !loadingTimeout) {
     return <DashboardSkeleton />
   }
 
-  const practiceId = currentPractice?.id || currentUser.practice_id || currentUser.practiceId || ""
-
-  if (!practiceId && isReady) {
-    console.log("[v0] No practice ID found after loading")
+  // Show error only if loading is complete and we never had a valid practiceId
+  if (!hasValidPracticeId && !isContextLoading) {
     toast.error("Keine Praxis-ID gefunden. Bitte melden Sie sich neu an oder kontaktieren Sie den Support.")
     return <NoPracticeFound onRetry={handleRetry} />
   }
 
-  if (!practiceId) {
+  // Still waiting for practiceId
+  if (!hasValidPracticeId) {
     return <DashboardSkeleton />
   }
 

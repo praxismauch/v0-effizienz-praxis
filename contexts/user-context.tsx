@@ -261,18 +261,73 @@ export function UserProvider({
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!currentUser) return
-    if (currentUser.role !== "superadmin") return
+    if (!isSuperAdminRole(currentUser.role)) return
 
-    const loadSuperAdmins = async () => {
+    const loadSuperAdmins = async (retryCount = 0) => {
       try {
         const res = await fetch("/api/super-admin/users", { credentials: "include" })
-        if (!res.ok) return
-        const data = await res.json()
-        if (data.superAdmins) {
-          setSuperAdmins(data.superAdmins)
+
+        // Handle rate limiting with retry
+        if (res.status === 429 && retryCount < 3) {
+          const delay = Math.pow(2, retryCount) * 1000 // 1s, 2s, 4s
+          console.warn(`[v0] Rate limited fetching super admins, retrying in ${delay}ms...`)
+          setTimeout(() => loadSuperAdmins(retryCount + 1), delay)
+          return
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          // Not authorized - don't retry, just return empty
+          return
+        }
+
+        if (!res.ok) {
+          console.error(`[v0] Failed to load super admins: ${res.status}`)
+          return
+        }
+
+        // Safely parse JSON - check content type first
+        const contentType = res.headers.get("content-type")
+        if (!contentType || !contentType.includes("application/json")) {
+          console.error("[v0] Non-JSON response from super-admin/users")
+          return
+        }
+
+        const text = await res.text()
+        let data: any
+        try {
+          data = JSON.parse(text)
+        } catch (parseError) {
+          // Check if it's a rate limit text response
+          if (text.includes("Too Many") || text.includes("rate")) {
+            if (retryCount < 3) {
+              const delay = Math.pow(2, retryCount) * 1000
+              console.warn(`[v0] Rate limited (text response), retrying in ${delay}ms...`)
+              setTimeout(() => loadSuperAdmins(retryCount + 1), delay)
+              return
+            }
+          }
+          console.error("[v0] Error parsing super admins response:", parseError)
+          return
+        }
+
+        if (data.users && Array.isArray(data.users)) {
+          const superAdminUsers = data.users
+            .filter((u: any) => isSuperAdminRole(u.role))
+            .map((u: any) => ({
+              id: u.id,
+              name: u.name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || "Unknown",
+              email: u.email,
+              role: u.role,
+              isActive: u.is_active ?? true,
+              practiceId: u.practice_id?.toString() || null,
+              joinedAt: u.created_at || new Date().toISOString(),
+              avatar: u.avatar,
+              preferred_language: u.preferred_language,
+            }))
+          setSuperAdmins(superAdminUsers)
         }
       } catch (e) {
-        console.error("Failed to load super admins", e)
+        console.error("[v0] Failed to load super admins", e)
       }
     }
 

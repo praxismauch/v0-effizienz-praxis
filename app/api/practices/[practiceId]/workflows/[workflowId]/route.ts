@@ -52,11 +52,14 @@ export async function DELETE(
   try {
     const { practiceId, workflowId } = await params
 
-    await supabase.from("workflow_steps").delete().eq("workflow_id", String(workflowId))
+    await supabase
+      .from("workflow_steps")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("workflow_id", String(workflowId))
 
     const { error } = await supabase
       .from("workflows")
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq("id", String(workflowId))
       .eq("practice_id", String(practiceId))
 

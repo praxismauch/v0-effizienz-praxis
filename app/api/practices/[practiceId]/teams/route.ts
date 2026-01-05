@@ -15,13 +15,13 @@ async function syncDefaultTeamsForPractice(supabase: any, practiceId: string) {
       return []
     }
 
-    // Insert default teams for this practice
-    const teamsToInsert = defaultTeams.map((dt: any) => ({
+    const teamsToInsert = defaultTeams.map((dt: any, index: number) => ({
       practice_id: practiceId,
       name: dt.name,
       description: dt.description || "",
       color: dt.color || "#64748b",
       is_active: true,
+      sort_order: dt.display_order ?? index,
     }))
 
     const { data: insertedTeams, error: insertError } = await supabase.from("teams").insert(teamsToInsert).select()
@@ -65,11 +65,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           description,
           color,
           is_active,
+          sort_order,
           created_at,
           team_assignments!left(user_id)
         `)
         .eq("practice_id", practiceIdText)
-        .order("name")
+        .order("sort_order", { ascending: true, nullsFirst: false })
+        .order("name", { ascending: true })
 
       teams = result.data
       error = result.error
@@ -105,11 +107,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             description,
             color,
             is_active,
+            sort_order,
             created_at,
             team_assignments!left(user_id)
           `)
           .eq("practice_id", practiceIdText)
-          .order("name")
+          .order("sort_order", { ascending: true, nullsFirst: false })
+          .order("name", { ascending: true })
 
         teams = newTeams
       }
@@ -122,6 +126,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         description: team.description || "",
         color: team.color || "#64748b",
         isActive: team.is_active,
+        sortOrder: team.sort_order ?? 0,
         createdAt: team.created_at,
         memberCount: Array.isArray(team.team_assignments) ? team.team_assignments.length : 0,
       })) || []
@@ -143,6 +148,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const practiceIdText = String(practiceId)
 
+    const { data: existingTeams } = await supabase
+      .from("teams")
+      .select("sort_order")
+      .eq("practice_id", practiceIdText)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+
+    const maxSortOrder = existingTeams?.[0]?.sort_order ?? -1
+    const newSortOrder = maxSortOrder + 1
+
     const { data, error } = await supabase
       .from("teams")
       .insert({
@@ -151,6 +166,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         description: body.description,
         color: body.color,
         is_active: true,
+        sort_order: newSortOrder,
       })
       .select()
       .single()
@@ -162,5 +178,34 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json(data)
   } catch (error) {
     return NextResponse.json({ error: "Failed to create team" }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  try {
+    const { practiceId } = await params
+    const supabase = await createAdminClient()
+    const body = await request.json()
+
+    const practiceIdText = String(practiceId)
+
+    // Expect body to be { teamIds: string[] } - array of team IDs in new order
+    const { teamIds } = body
+
+    if (!Array.isArray(teamIds)) {
+      return NextResponse.json({ error: "teamIds must be an array" }, { status: 400 })
+    }
+
+    // Update each team's sort_order based on its position in the array
+    const updates = teamIds.map((teamId: string, index: number) =>
+      supabase.from("teams").update({ sort_order: index }).eq("id", teamId).eq("practice_id", practiceIdText),
+    )
+
+    await Promise.all(updates)
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("[v0] Error reordering teams:", error)
+    return NextResponse.json({ error: "Failed to reorder teams" }, { status: 500 })
   }
 }

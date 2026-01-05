@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -20,12 +19,22 @@ import { useTranslation } from "@/contexts/translation-context"
 import { toast } from "sonner"
 import { useRoleColors } from "@/lib/use-role-colors"
 import { ContractsManager } from "@/components/team/contracts-manager"
-import { ArrowLeft } from "lucide-react"
-import { ArbeitsmittelAssignments } from "@/components/team/arbeitsmittel-assignments"
-import { format } from "date-fns"
-import { de } from "date-fns/locale"
-import { AppLayout } from "@/components/app-layout"
-import { Clipboard } from "lucide-react"
+import { ArrowLeft, Clipboard, Trash2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import AppLayout from "@/components/app-layout" // Import AppLayout
+import ArbeitsmittelAssignments from "@/components/team/arbeitsmittel-assignments" // Import ArbeitsmittelAssignments
+import { format } from "date-fns" // Import format
+import { de } from "date-fns/locale" // Import de
 
 const availablePermissions = [
   { id: "all", label: "Alle Berechtigungen", description: "Voller Zugriff auf alle Systemfunktionen" },
@@ -72,15 +81,15 @@ const formatDate = (date: Date | string) => {
   }).format(d)
 }
 
-export default function TeamMemberEditPage() {
+export default function EditTeamMemberPage() {
   const router = useRouter()
   const params = useParams()
   const memberId = params.id as string
   const { t } = useTranslation()
   const { roleColors } = useRoleColors()
 
-  const { teamMembers, updateTeamMember, teams, assignMemberToTeam, removeMemberFromTeam } = useTeam()
-  const { currentUser, isAdmin } = useUser()
+  const { teamMembers, updateTeamMember, teams, assignMemberToTeam, removeMemberFromTeam, currentPractice } = useTeam()
+  const { currentUser, isAdmin, isSuperAdmin } = useUser()
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -96,6 +105,7 @@ export default function TeamMemberEditPage() {
   const [activeTab, setActiveTab] = useState("profile")
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const member = teamMembers.find((m) => m.id === memberId)
 
@@ -104,6 +114,7 @@ export default function TeamMemberEditPage() {
   const canEditPermissions = isAdmin
   const canEditTeams = isAdmin
   const canEditStatus = isAdmin
+  const canDeleteMember = (isAdmin || isSuperAdmin) && currentUser?.id !== memberId
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pasteInputRef = useRef<HTMLInputElement>(null)
@@ -359,6 +370,30 @@ export default function TeamMemberEditPage() {
     toast.error("Kein Bild in der Zwischenablage gefunden")
   }
 
+  const handleDeleteMember = async () => {
+    if (!member || !currentPractice?.id) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/team-members/${memberId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Fehler beim Löschen")
+      }
+
+      toast.success(`${member.first_name} ${member.last_name} wurde deaktiviert`)
+      router.push("/team")
+    } catch (error) {
+      console.error("Error deleting team member:", error)
+      toast.error(error instanceof Error ? error.message : "Fehler beim Löschen des Teammitglieds")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -373,6 +408,38 @@ export default function TeamMemberEditPage() {
             ) : null}
           </Button>
           <div className="flex gap-2">
+            {canDeleteMember && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isDeleting}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {isDeleting ? "Wird gelöscht..." : "Mitglied löschen"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Teammitglied löschen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Sind Sie sicher, dass Sie{" "}
+                      <span className="font-semibold">
+                        {member?.first_name} {member?.last_name}
+                      </span>{" "}
+                      löschen möchten? Das Mitglied wird deaktiviert und kann sich nicht mehr anmelden. Diese Aktion
+                      kann rückgängig gemacht werden, indem der Status wieder auf "Aktiv" gesetzt wird.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteMember}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? "Wird gelöscht..." : "Löschen"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             <Button variant="outline" onClick={() => router.push("/team")}>
               Abbrechen
             </Button>
@@ -572,35 +639,6 @@ export default function TeamMemberEditPage() {
                         <SelectItem value="practiceadmin">Praxis Admin</SelectItem>
                       </SelectContent>
                     </Select>
-                    {!canEditRole && (
-                      <p className="text-sm text-muted-foreground">Nur Administratoren können Rollen ändern</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Rollenbeschreibungen</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Badge className={roleColors.admin}>Praxis Admin</Badge>
-                        <span className="text-muted-foreground">
-                          Voller administrativer Zugriff auf alle Funktionen der Praxis, kann Mitglieder und
-                          Einstellungen verwalten
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={roleColors.poweruser}>Power User</Badge>
-                        <span className="text-muted-foreground">
-                          Erweiterte Zugriffsrechte, kann wichtige Funktionen nutzen und Daten bearbeiten
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={roleColors.user}>Benutzer</Badge>
-                        <span className="text-muted-foreground">
-                          Standardzugriff für Mitarbeiter, kann grundlegende Funktionen nutzen und eigene Daten
-                          verwalten
-                        </span>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -611,10 +649,7 @@ export default function TeamMemberEditPage() {
             <TabsContent value="permissions" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    {/* Settings icon here */}
-                    Berechtigungen
-                  </CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">Berechtigungen</CardTitle>
                   <CardDescription>Spezifische Berechtigungen für dieses Teammitglied anpassen</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">

@@ -49,11 +49,13 @@ export async function DELETE(
     const practiceIdText = String(practiceId)
     const teamIdText = String(teamId)
 
-    // First remove all team assignments
-    await supabase.from("team_assignments").delete().eq("team_id", teamIdText)
+    await supabase.from("team_assignments").update({ deleted_at: new Date().toISOString() }).eq("team_id", teamIdText)
 
-    // Then delete the team
-    const { error } = await supabase.from("teams").delete().eq("id", teamIdText).eq("practice_id", practiceIdText)
+    const { error } = await supabase
+      .from("teams")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", teamIdText)
+      .eq("practice_id", practiceIdText)
 
     if (error) {
       console.error("[v0] Error deleting team:", error)

@@ -58,6 +58,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
         .from("goals")
         .select("*")
         .eq("parent_goal_id", goalIdText)
+        .eq("practice_id", practiceIdText)
         .order("created_at", { ascending: true })
 
       subgoals = (subgoalsData || []).map((sub) => ({
@@ -192,7 +193,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { pract
     const goalIdText = String(goalId)
     const supabase = await createAdminClient()
 
-    const { error } = await supabase.from("goals").delete().eq("id", goalIdText).eq("practice_id", practiceIdText)
+    const { error } = await supabase
+      .from("goals")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", goalIdText)
+      .eq("practice_id", practiceIdText)
 
     if (error) {
       console.error("[v0] Error deleting goal:", error)

@@ -1,7 +1,7 @@
 "use client"
 
 import { AppLayout } from "@/components/app-layout"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -81,101 +81,120 @@ export default function ArbeitsmittelPage() {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
 
+  const loadedPracticeIdRef = useRef<string | null>(null)
+  const isLoadingRef = useRef(false)
+
+  const loadData = useCallback(
+    async (practiceId: string) => {
+      // Prevent concurrent loads
+      if (isLoadingRef.current) {
+        return
+      }
+
+      isLoadingRef.current = true
+      setError(null)
+      setLoading(true)
+
+      try {
+        const { data: items, error: itemsError } = await supabase
+          .from("arbeitsmittel")
+          .select("*")
+          .eq("practice_id", practiceId)
+          .order("created_at", { ascending: false })
+
+        if (itemsError) {
+          const errorMessage = itemsError.message || String(itemsError)
+          if (
+            errorMessage.includes("Too Many Requests") ||
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes("429")
+          ) {
+            setError("Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.")
+            setArbeitsmittel([])
+            setLoading(false)
+            isLoadingRef.current = false
+            return
+          } else {
+            setError("Fehler beim Laden der Arbeitsmittel: " + errorMessage)
+          }
+        } else {
+          setArbeitsmittel(items || [])
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        try {
+          const { data: members, error: membersError } = await supabase
+            .from("team_members")
+            .select("id, first_name, last_name, role")
+            .eq("practice_id", practiceId)
+            .order("first_name")
+
+          if (membersError) {
+            const errorMessage = membersError.message || String(membersError)
+            if (
+              !errorMessage.includes("Too Many Requests") &&
+              !errorMessage.includes("rate limit") &&
+              !errorMessage.includes("429")
+            ) {
+              console.error("Error loading team members:", membersError.message)
+            }
+            setTeamMembers([])
+          } else {
+            setTeamMembers(members || [])
+          }
+        } catch (memberError: any) {
+          const errorStr = String(memberError)
+          if (errorStr.includes("Too Many") || errorStr.includes("Unexpected token")) {
+            console.warn("Rate limited when fetching team members, using empty list")
+          } else {
+            console.error("Error loading team members:", memberError)
+          }
+          setTeamMembers([])
+        }
+      } catch (error: any) {
+        const errorMessage = error?.message || String(error)
+        if (
+          errorMessage.includes("Too Many Requests") ||
+          errorMessage.includes("rate limit") ||
+          errorMessage.includes("429") ||
+          errorMessage.includes("Unexpected token")
+        ) {
+          setError("Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.")
+        } else {
+          console.error("Error loading data:", error)
+          setError("Ein unerwarteter Fehler ist aufgetreten.")
+        }
+      } finally {
+        setLoading(false)
+        isLoadingRef.current = false
+      }
+    },
+    [supabase],
+  )
+
   useEffect(() => {
     if (!user && !authLoading) {
       router.push("/auth/login")
       return
     }
 
+    // Only load if we have a practice ID and haven't loaded this practice yet
+    const practiceId = currentPractice?.id
+    if (practiceId && loadedPracticeIdRef.current !== practiceId && !isLoadingRef.current) {
+      loadedPracticeIdRef.current = practiceId
+      loadData(practiceId)
+    } else if (!practiceLoading && !practiceId) {
+      setLoading(false)
+    }
+  }, [user, authLoading, currentPractice?.id, practiceLoading, loadData, router])
+
+  const handleReload = useCallback(() => {
     if (currentPractice?.id) {
-      loadData()
-    } else if (!practiceLoading && !currentPractice?.id) {
-      setLoading(false)
+      loadedPracticeIdRef.current = null // Reset to allow reload
+      loadData(currentPractice.id)
     }
-  }, [user, authLoading, currentPractice?.id, practiceLoading])
-
-  async function loadData() {
-    if (!currentPractice?.id) {
-      setLoading(false)
-      return
-    }
-
-    setError(null)
-    setLoading(true)
-
-    try {
-      const { data: items, error: itemsError } = await supabase
-        .from("arbeitsmittel")
-        .select("*")
-        .eq("practice_id", currentPractice.id)
-        .order("created_at", { ascending: false })
-
-      if (itemsError) {
-        const errorMessage = itemsError.message || String(itemsError)
-        if (
-          errorMessage.includes("Too Many Requests") ||
-          errorMessage.includes("rate limit") ||
-          errorMessage.includes("429")
-        ) {
-          setError("Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.")
-          setArbeitsmittel([])
-          setLoading(false)
-          return
-        } else {
-          setError("Fehler beim Laden der Arbeitsmittel: " + errorMessage)
-        }
-      } else {
-        setArbeitsmittel(items || [])
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      try {
-        const { data: members, error: membersError } = await supabase
-          .from("team_members")
-          .select("id, first_name, last_name, role")
-          .eq("practice_id", currentPractice.id)
-          .order("first_name")
-
-        if (membersError) {
-          const errorMessage = membersError.message || String(membersError)
-          if (
-            !errorMessage.includes("Too Many Requests") &&
-            !errorMessage.includes("rate limit") &&
-            !errorMessage.includes("429")
-          ) {
-            console.error("Error loading team members:", membersError.message)
-          }
-          setTeamMembers([])
-        } else {
-          setTeamMembers(members || [])
-        }
-      } catch (memberError: any) {
-        const errorStr = String(memberError)
-        if (errorStr.includes("Too Many") || errorStr.includes("Unexpected token")) {
-          console.warn("Rate limited when fetching team members, using empty list")
-        } else {
-          console.error("Error loading team members:", memberError)
-        }
-        setTeamMembers([])
-      }
-    } catch (error: any) {
-      const errorMessage = error?.message || String(error)
-      if (
-        errorMessage.includes("Too Many Requests") ||
-        errorMessage.includes("rate limit") ||
-        errorMessage.includes("429") ||
-        errorMessage.includes("Unexpected token")
-      ) {
-        setError("Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.")
-      } else {
-        console.error("Error loading data:", error)
-        setError("Ein unerwarteter Fehler ist aufgetreten.")
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [currentPractice?.id, loadData])
 
   function handleDeleteClick(id: string) {
     setItemToDelete(id)
@@ -195,7 +214,7 @@ export default function ArbeitsmittelPage() {
         description: "Arbeitsmittel wurde erfolgreich gelöscht.",
       })
 
-      await loadData()
+      handleReload()
     } catch (error: any) {
       console.error("Error deleting arbeitsmittel:", error)
       toast({
@@ -270,7 +289,7 @@ export default function ArbeitsmittelPage() {
             <AlertTitle>Fehler</AlertTitle>
             <AlertDescription className="flex items-center justify-between">
               <span>{error}</span>
-              <Button variant="outline" size="sm" onClick={loadData} className="ml-4 bg-transparent">
+              <Button variant="outline" size="sm" onClick={handleReload} className="ml-4 bg-transparent">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Erneut versuchen
               </Button>
@@ -457,7 +476,7 @@ export default function ArbeitsmittelPage() {
         <CreateArbeitsmittelDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
-          onSuccess={loadData}
+          onSuccess={handleReload}
           teamMembers={teamMembers}
         />
 
@@ -465,7 +484,7 @@ export default function ArbeitsmittelPage() {
           <EditArbeitsmittelDialog
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
-            onSuccess={loadData}
+            onSuccess={handleReload}
             item={selectedItem}
             teamMembers={teamMembers}
           />

@@ -63,12 +63,19 @@ export function CreateArbeitsmittelDialog({
   const { user } = useAuth()
   const { toast } = useToast()
 
+  console.log("[v0] CreateArbeitsmittelDialog - open:", open)
+  console.log("[v0] CreateArbeitsmittelDialog - currentPractice:", currentPractice)
+  console.log("[v0] CreateArbeitsmittelDialog - user:", user?.id)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    console.log("[v0] handleSubmit called - formData:", formData)
+    console.log("[v0] handleSubmit - currentPractice?.id:", currentPractice?.id)
     setLoading(true)
 
     try {
       if (!currentPractice?.id) {
+        console.log("[v0] ERROR: No practice ID")
         toast({
           title: "Fehler",
           description: "Keine Praxis zugeordnet. Bitte laden Sie die Seite neu.",
@@ -77,6 +84,7 @@ export function CreateArbeitsmittelDialog({
         return
       }
 
+      console.log("[v0] Inserting arbeitsmittel with practice_id:", currentPractice.id)
       const { error } = await supabase.from("arbeitsmittel").insert({
         name: formData.name,
         type: formData.type,

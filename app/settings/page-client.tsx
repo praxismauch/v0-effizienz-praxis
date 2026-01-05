@@ -68,6 +68,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { TeamRoleOrderSettings } from "@/components/settings/team-role-order-settings"
 
 interface HandbookChapterItem {
   id: string
@@ -908,6 +909,13 @@ export default function SettingsPageClient() {
               <LayoutGrid className="h-4 w-4" />
               <span className="hidden sm:inline">Orga-Kategorien</span>
             </TabsTrigger>
+            {/* CHANGE: Add new Team Order tab */}
+            {isAdmin && (
+              <TabsTrigger value="team-order" className="gap-2 flex-1">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Team-Reihenfolge</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Practice Settings Tab */}
@@ -1914,6 +1922,13 @@ export default function SettingsPageClient() {
           <TabsContent value="orga-categories" className="space-y-4">
             <OrgaCategoriesManager />
           </TabsContent>
+
+          {/* CHANGE: Add Team Role Order Settings Tab */}
+          {isAdmin && (
+            <TabsContent value="team-order" className="space-y-4">
+              <TeamRoleOrderSettings />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 

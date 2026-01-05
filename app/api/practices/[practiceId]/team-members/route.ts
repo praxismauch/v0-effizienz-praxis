@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
+import { sortTeamMembersByRole } from "@/lib/team-role-order"
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 500): Promise<T> {
   let lastError: any
@@ -49,6 +50,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json([])
       }
       return NextResponse.json([])
+    }
+
+    let customRoleOrder: string[] | undefined
+    try {
+      const { data: practiceSettings } = await supabase
+        .from("practice_settings")
+        .select("system_settings")
+        .eq("practice_id", practiceId)
+        .single()
+
+      customRoleOrder = practiceSettings?.system_settings?.team_member_role_order
+    } catch (settingsError) {
+      // Use default order if settings not found
+      console.log("[v0] TEAM MEMBERS GET - Using default role order")
     }
 
     let members: any[] = []
@@ -160,8 +175,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     })
 
-    console.log("[v0] TEAM MEMBERS GET - Returning:", teamMembers.length, "members")
-    return NextResponse.json(teamMembers || [])
+    const sortedTeamMembers = sortTeamMembersByRole(teamMembers, customRoleOrder)
+
+    console.log("[v0] TEAM MEMBERS GET - Returning:", sortedTeamMembers.length, "members (sorted by role)")
+    return NextResponse.json(sortedTeamMembers || [])
   } catch (error: any) {
     console.log("[v0] TEAM MEMBERS GET - Exception:", error.message)
     if (isRateLimitError(error)) {

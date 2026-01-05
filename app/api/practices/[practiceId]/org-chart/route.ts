@@ -13,12 +13,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         practice_id,
         position_title,
         department,
-        person_name,
-        person_role,
+        user_id,
         reports_to_position_id,
         level,
         display_order,
         is_active,
+        is_management,
         color,
         created_by,
         created_at,
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const positionsWithManagement = (positions || []).map((pos: any) => ({
       ...pos,
-      is_management: pos.level <= 1,
+      is_management: pos.is_management ?? pos.level <= 1,
     }))
 
     return NextResponse.json(positionsWithManagement)
@@ -75,12 +75,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       practice_id: practiceId,
       position_title: body.position_title || body.positionTitle,
       department: body.department || null,
-      person_name: body.person_name || body.personName || null,
-      person_role: body.person_role || body.personRole || null,
+      user_id: body.user_id || body.userId || null,
       reports_to_position_id: reportsToPositionId === "none" ? null : reportsToPositionId || null,
       level: body.level || 0,
       display_order: body.display_order || body.displayOrder || 0,
       is_active: true,
+      is_management: body.is_management || body.isManagement || false,
       color: body.color || null,
       created_by: createdBy,
       created_at: new Date().toISOString(),

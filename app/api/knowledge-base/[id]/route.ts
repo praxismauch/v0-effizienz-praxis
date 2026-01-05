@@ -52,7 +52,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const supabase = await createAdminClient()
     const { id } = params
 
-    const { error } = await supabase.from("knowledge_base").delete().eq("id", id)
+    const { error } = await supabase
+      .from("knowledge_base")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id)
 
     if (error) {
       console.error("[v0] Error deleting knowledge base article:", error)

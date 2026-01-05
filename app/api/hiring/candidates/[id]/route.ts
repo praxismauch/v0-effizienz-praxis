@@ -1,10 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = await params
+    const { id } = params
     const { data, error } = await supabase.from("candidates").select("*").eq("id", id).maybeSingle()
 
     if (error) {
@@ -23,10 +23,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = await params
+    const { id } = params
     const body = await request.json()
 
     const { stage, ...validFields } = body
@@ -63,10 +63,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = await params
+    const { id } = params
     const body = await request.json()
 
     const { stage, ...validFields } = body
@@ -103,15 +103,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = await params
+    const { id } = params
 
     const { data: existing, error: checkError } = await supabase
       .from("candidates")
       .select("id")
       .eq("id", id)
+      .is("deleted_at", null)
       .maybeSingle()
 
     if (checkError) {
@@ -123,7 +124,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: "Kandidat nicht gefunden" }, { status: 404 })
     }
 
-    const { error: deleteError } = await supabase.from("candidates").delete().eq("id", id)
+    const { error: deleteError } = await supabase
+      .from("candidates")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id)
 
     if (deleteError) {
       console.error("Error deleting candidate:", deleteError)

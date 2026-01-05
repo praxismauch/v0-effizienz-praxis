@@ -9,8 +9,6 @@ import {
   Users,
   AlertCircle,
   Clock,
-  List,
-  Grid,
   Edit,
   Trash2,
   User,
@@ -29,6 +27,7 @@ import { AIResponsibilityGeneratorDialog } from "@/components/responsibilities/a
 import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useToast } from "@/hooks/use-toast"
+import { useTeam } from "@/contexts/team-context"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,50 +82,43 @@ function ResponsibilityCard({
   onEdit: (r: Responsibility) => void
   onDelete: (r: Responsibility) => void
 }) {
-  // Category colors for the dot indicator
-  const getCategoryColor = (category?: string) => {
-    const colors: Record<string, string> = {
-      Sonstige: "bg-blue-500",
-      Abrechnung: "bg-purple-500",
-      Verwaltung: "bg-green-500",
-      Patientenversorgung: "bg-orange-500",
-      Qualitätsmanagement: "bg-teal-500",
-      Personal: "bg-pink-500",
-    }
-    return colors[category || "Sonstige"] || "bg-blue-500"
-  }
-
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => onEdit(responsibility)}>
-      <CardContent className="p-5">
-        <div className="flex items-start gap-3">
-          {/* Color dot indicator */}
-          <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${getCategoryColor(responsibility.category)}`} />
+    <Card
+      className="group cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200"
+      onClick={() => onEdit(responsibility)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {/* Status dot */}
+            <div className="w-3 h-3 rounded-full bg-primary flex-shrink-0" />
 
-          <div className="flex-1 min-w-0">
-            {/* Title and hours */}
-            <div className="flex items-center justify-between gap-2">
-              <h4 className="font-semibold text-base truncate">{responsibility.name}</h4>
-              {responsibility.suggested_hours_per_week !== null &&
-                responsibility.suggested_hours_per_week !== undefined &&
-                responsibility.suggested_hours_per_week > 0 && (
-                  <div className="flex items-center gap-1.5 text-primary flex-shrink-0">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-base font-medium">
-                      {formatGermanNumber(responsibility.suggested_hours_per_week)}h
-                    </span>
-                  </div>
-                )}
+            <div className="min-w-0 flex-1">
+              {/* Title */}
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-sm text-foreground truncate">{responsibility.name}</h4>
+                {/* Hours badge */}
+                {responsibility.suggested_hours_per_week !== null &&
+                  responsibility.suggested_hours_per_week !== undefined &&
+                  responsibility.suggested_hours_per_week > 0 && (
+                    <div className="flex items-center gap-1 text-primary flex-shrink-0">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span className="text-sm font-medium">
+                        {formatGermanNumber(responsibility.suggested_hours_per_week)}h
+                      </span>
+                    </div>
+                  )}
+              </div>
+
+              {/* Assignee */}
+              <p className="text-sm text-muted-foreground mt-1 truncate">
+                {responsibility.responsible_user_name || "Noch nicht zugewiesen"}
+              </p>
             </div>
-
-            {/* Assignee */}
-            <p className="text-sm text-muted-foreground mt-1 truncate">
-              {responsibility.responsible_user_name || "Noch nicht zugewiesen"}
-            </p>
           </div>
 
           {/* Edit/Delete buttons - visible on hover */}
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -141,7 +133,7 @@ function ResponsibilityCard({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 hover:bg-destructive/10"
               onClick={(e) => {
                 e.stopPropagation()
                 onDelete(responsibility)
@@ -228,8 +220,8 @@ export default function ResponsibilitiesPageClient() {
   const [selectedResponsibility, setSelectedResponsibility] = useState<Responsibility | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list") // This state was removed in updates
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(["Alle"])) // This state was removed in updates
+  const [teamMemberFilter, setTeamMemberFilter] = useState("all")
+  // const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(["Alle"])) // This state was removed in updates
 
   const [formData, setFormData] = useState({
     name: "",
@@ -252,6 +244,7 @@ export default function ResponsibilitiesPageClient() {
 
   const { user } = useAuth()
   const { currentPractice } = usePractice()
+  const { teamMembers } = useTeam()
   const { toast } = useToast()
 
   const sensors = useSensors(
@@ -509,24 +502,28 @@ export default function ResponsibilitiesPageClient() {
     }
   }
 
-  const toggleGroup = (groupName: string) => {
-    setExpandedGroups((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(groupName)) {
-        newSet.delete(groupName)
-      } else {
-        newSet.add(groupName)
-      }
-      return newSet
-    })
-  }
+  // const toggleGroup = (groupName: string) => {
+  //   setExpandedGroups((prev) => {
+  //     const newSet = new Set(prev)
+  //     if (newSet.has(groupName)) {
+  //       newSet.delete(groupName)
+  //     } else {
+  //       newSet.add(groupName)
+  //     }
+  //     return newSet
+  //   })
+  // }
 
   const filteredResponsibilities = responsibilities.filter((r) => {
     const matchesSearch =
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.description?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = categoryFilter === "all" || r.category === categoryFilter
-    return matchesSearch && matchesCategory
+    const matchesTeamMember =
+      teamMemberFilter === "all" || teamMemberFilter === "unassigned"
+        ? !r.responsible_user_id
+        : r.responsible_user_id === teamMemberFilter
+    return matchesSearch && matchesCategory && matchesTeamMember
   })
 
   const groupedResponsibilities = filteredResponsibilities.reduce(
@@ -598,8 +595,8 @@ export default function ResponsibilitiesPageClient() {
 
         {/* View Mode Toggle and Filters Row */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex items-center gap-4 flex-1 flex-wrap">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Suche nach Namen oder Beschreibung..."
@@ -608,6 +605,22 @@ export default function ResponsibilitiesPageClient() {
                 className="pl-9"
               />
             </div>
+            {/* Team Member Filter Dropdown */}
+            <Select value={teamMemberFilter} onValueChange={setTeamMemberFilter}>
+              <SelectTrigger className="w-[200px]">
+                <User className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Alle Mitarbeiter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Mitarbeiter</SelectItem>
+                <SelectItem value="unassigned">Nicht zugewiesen</SelectItem>
+                {teamMembers.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.first_name} {member.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[200px]">
                 <Filter className="h-4 w-4 mr-2" />
@@ -622,28 +635,6 @@ export default function ResponsibilitiesPageClient() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* View Mode Toggle - Removed from updates, keeping original logic */}
-          <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg">
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">Liste</span>
-            </Button>
-            <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setViewMode("grid")}
-            >
-              <Grid className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">Gitter</span>
-            </Button>
           </div>
         </div>
 
@@ -677,12 +668,12 @@ export default function ResponsibilitiesPageClient() {
               <div className="text-center">
                 <h3 className="font-semibold">Keine Zuständigkeiten gefunden</h3>
                 <p className="text-sm text-muted-foreground">
-                  {searchTerm || categoryFilter !== "all"
+                  {searchTerm || categoryFilter !== "all" || teamMemberFilter !== "all"
                     ? "Versuchen Sie andere Filteroptionen"
                     : "Erstellen Sie Ihre erste Zuständigkeit oder nutzen Sie die KI-Vorschläge"}
                 </p>
               </div>
-              {!searchTerm && categoryFilter === "all" && (
+              {!searchTerm && categoryFilter === "all" && teamMemberFilter === "all" && (
                 <div className="flex gap-2">
                   <Button
                     onClick={() => setAiDialogOpen(true)}

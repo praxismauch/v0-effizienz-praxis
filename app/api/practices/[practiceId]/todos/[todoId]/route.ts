@@ -56,7 +56,7 @@ export async function DELETE(
     const todoIdText = String(todoId)
     const supabase = await createAdminClient()
 
-    const { error } = await supabase.from("todos").delete().eq("id", todoIdText)
+    const { error } = await supabase.from("todos").update({ deleted_at: new Date().toISOString() }).eq("id", todoIdText)
 
     if (error) {
       console.error("[v0] Error deleting todo:", error)

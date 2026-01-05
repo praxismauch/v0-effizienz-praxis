@@ -760,3 +760,5 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
     </div>
   )
 }
+
+export default DashboardOverview

@@ -477,3 +477,9 @@ button:has(svg.lucide-trash):hover,
 .dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: hsl(220 40% 45%);
 }
+
+/* Add utility class for 5-column stats grid */
+/* Stats card grid - 5 columns on large screens */
+.stats-grid-5 {
+  @apply grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5;
+}

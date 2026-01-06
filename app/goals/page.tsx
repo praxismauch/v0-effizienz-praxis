@@ -259,9 +259,26 @@ export default function GoalsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Ziele</h1>
-          <p className="text-muted-foreground">Verwalten Sie Ihre Praxisziele und verfolgen Sie deren Fortschritt</p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">Ziele</h1>
+            <p className="text-muted-foreground">Verwalten Sie Ihre Praxisziele und verfolgen Sie deren Fortschritt</p>
+          </div>
+          {currentPractice && (
+            <div className="flex gap-2 shrink-0">
+              <Button
+                className="bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white shadow-md hover:shadow-lg transition-all border-0"
+                onClick={() => setAiGeneratorOpen(true)}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                KI-Ziel generieren
+              </Button>
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Neues Ziel
+              </Button>
+            </div>
+          )}
         </div>
 
         {!currentPractice ? (
@@ -274,23 +291,7 @@ export default function GoalsPage() {
           </Card>
         ) : (
           <>
-            <div className="flex items-center justify-end">
-              <div className="flex gap-2">
-                <Button
-                  className="bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white shadow-md hover:shadow-lg transition-all border-0"
-                  onClick={() => setAiGeneratorOpen(true)}
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  KI-Ziel generieren
-                </Button>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Neues Ziel
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-5">
               <StatCard label="Gesamtziele" value={goalCounts.all} icon={Target} {...statCardColors.primary} />
               <StatCard label="Entwürfe" value={goalCounts.draft} icon={Circle} {...statCardColors.info} />
               <StatCard label="Praxis" value={goalCounts.practice} icon={TrendingUp} {...statCardColors.orange} />

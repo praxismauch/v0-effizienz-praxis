@@ -135,7 +135,7 @@ interface TeamMember {
 }
 
 export default function QualitaetszirkelPageClient() {
-  const { user, practiceId } = useUser()
+  const { user, practiceId, loading: userLoading } = useUser()
   const [activeTab, setActiveTab] = useState("sessions")
   const [sessions, setSessions] = useState<Session[]>([])
   const [topics, setTopics] = useState<Topic[]>([])
@@ -320,10 +320,10 @@ export default function QualitaetszirkelPageClient() {
   useEffect(() => {
     if (practiceId) {
       loadData()
-    } else {
+    } else if (!userLoading) {
       setLoading(false)
     }
-  }, [practiceId, loadData])
+  }, [practiceId, loadData, userLoading])
 
   const generateAITopics = async () => {
     if (!practiceId) {
@@ -470,27 +470,6 @@ export default function QualitaetszirkelPageClient() {
     if (!error) {
       await loadTopics()
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Lade Qualitätszirkel...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!practiceId) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-muted-foreground">Keine Praxis ausgewählt.</p>
-        </div>
-      </div>
-    )
   }
 
   const getPriorityColor = (priority: string) => {

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { AppLayout } from "@/components/app-layout"
 import { usePractice } from "@/contexts/practice-context"
@@ -37,7 +37,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -131,6 +131,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
 }
 
 export default function MitarbeitergespraechePage() {
+  const router = useRouter()
   const { currentPractice } = usePractice()
   const { currentUser, isAdmin, isSuperAdmin } = useUser()
   const [appraisals, setAppraisals] = useState<Appraisal[]>([])
@@ -142,7 +143,6 @@ export default function MitarbeitergespraechePage() {
   const [selectedAppraisal, setSelectedAppraisal] = useState<Appraisal | null>(null)
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [appraisalToDelete, setAppraisalToDelete] = useState<Appraisal | null>(null)
   const hasLoadedRef = useRef(false)
@@ -276,7 +276,7 @@ export default function MitarbeitergespraechePage() {
               Planen und verwalten Sie strukturierte Mitarbeitergespräche für Ihr Team
             </p>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button onClick={() => router.push("/mitarbeitergespraeche/neu")}>
             <Plus className="h-4 w-4 mr-2" />
             Neues Gespräch
           </Button>
@@ -414,7 +414,7 @@ export default function MitarbeitergespraechePage() {
                       : "Erstellen Sie Ihr erstes Mitarbeitergespräch, um loszulegen"}
                   </p>
                   {!searchQuery && statusFilter === "all" && typeFilter === "all" && (
-                    <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+                    <Button className="mt-4" onClick={() => router.push("/mitarbeitergespraeche/neu")}>
                       <Plus className="h-4 w-4 mr-2" />
                       Neues Gespräch
                     </Button>
@@ -574,48 +574,6 @@ export default function MitarbeitergespraechePage() {
             </div>
           </TabsContent>
         </Tabs>
-
-        {/* Create Dialog - Select Team Member */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Neues Mitarbeitergespräch</DialogTitle>
-              <DialogDescription>Wählen Sie einen Mitarbeiter für das Gespräch aus</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {teamMembers.map((member) => (
-                <Card
-                  key={member.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => {
-                    setSelectedMember(member)
-                    setSelectedAppraisal(null)
-                    setIsCreateDialogOpen(false)
-                    setIsViewDialogOpen(true)
-                  }}
-                >
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
-                        <AvatarFallback>
-                          {member.name
-                            ?.split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h4 className="font-medium">{member.name}</h4>
-                        <p className="text-sm text-muted-foreground">{member.role}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* View/Edit Dialog - Full Appraisal Tab */}
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>

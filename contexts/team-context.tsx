@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
 import type { User } from "./user-context"
 import { usePractice } from "./practice-context"
 import { fetchWithRetry, safeJsonParse } from "@/lib/fetch-with-retry"
@@ -62,89 +62,90 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
-  const [retryCount, setRetryCount] = useState(0)
+  const fetchInProgress = useRef(false)
+  const lastFetchTime = useRef(0)
   const { currentPractice, isLoading: practiceLoading } = usePractice()
 
   const filterNonSuperAdmins = (members: TeamMember[]) => {
     return members.filter((member) => member.role !== "superadmin")
   }
 
-  const fetchData = useCallback(
-    async (practiceId: string, isMounted: { current: boolean }) => {
-      if (!practiceId) {
-        toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-        setLoading(false)
+  const fetchData = useCallback(async (practiceId: string, isMounted: { current: boolean }) => {
+    if (!practiceId) {
+      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
+      setLoading(false)
+      return
+    }
+
+    const now = Date.now()
+    if (fetchInProgress.current) {
+      return
+    }
+    if (now - lastFetchTime.current < 2000) {
+      // Minimum 2 seconds between fetches
+      return
+    }
+
+    fetchInProgress.current = true
+    lastFetchTime.current = now
+
+    try {
+      setLoading(true)
+
+      const teamsRes = await fetchWithRetry(`/api/practices/${practiceId}/teams`, undefined, { maxRetries: 3 })
+      if (!isMounted.current) return
+
+      const teamsData = teamsRes.ok ? await safeJsonParse(teamsRes, []) : []
+      if (!isMounted.current) return
+      setTeams(teamsData.map((t: any) => ({ ...t, sortOrder: t.sortOrder ?? 0 })))
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      const membersRes = await fetchWithRetry(`/api/practices/${practiceId}/team-members`, undefined, {
+        maxRetries: 3,
+      })
+      if (!isMounted.current) return
+
+      if (membersRes.status === 503) {
+        setTeamMembers([])
         return
       }
 
-      try {
-        setLoading(true)
+      const membersData = membersRes.ok ? await safeJsonParse(membersRes, []) : []
+      if (!isMounted.current) return
 
-        const teamsRes = await fetchWithRetry(`/api/practices/${practiceId}/teams`, undefined, { maxRetries: 5 })
-        if (!isMounted.current) return
+      const mappedMembers = membersData
+        .filter((member: any) => member.id && member.id.trim() !== "")
+        .map((member: any) => ({
+          ...member,
+          dateOfBirth: member.date_of_birth,
+          status: member.status,
+          first_name: member.first_name,
+          last_name: member.last_name,
+          user_id: member.user_id,
+        }))
 
-        const teamsData = teamsRes.ok ? await safeJsonParse(teamsRes, []) : []
-        if (!isMounted.current) return
-        setTeams(teamsData.map((t: any) => ({ ...t, sortOrder: t.sortOrder ?? 0 })))
-
-        await new Promise((resolve) => setTimeout(resolve, 200))
-
-        const membersRes = await fetchWithRetry(`/api/practices/${practiceId}/team-members`, undefined, {
-          maxRetries: 5,
-        })
-        if (!isMounted.current) return
-
-        if (membersRes.status === 503) {
-          const data = await membersRes.json().catch(() => ({}))
-          if (data.retryable && retryCount < 3) {
-            setRetryCount((c) => c + 1)
-            await new Promise((resolve) => setTimeout(resolve, 2000))
-            if (isMounted.current) {
-              fetchData(practiceId, isMounted)
-            }
-            return
-          }
+      const uniqueMembersMap = new Map<string, any>()
+      mappedMembers.forEach((member: any) => {
+        if (!uniqueMembersMap.has(member.id)) {
+          uniqueMembersMap.set(member.id, member)
         }
+      })
+      const deduplicatedMembers = Array.from(uniqueMembersMap.values())
 
-        const membersData = membersRes.ok ? await safeJsonParse(membersRes, []) : []
-        if (!isMounted.current) return
-
-        setRetryCount(0)
-
-        const mappedMembers = membersData
-          .filter((member: any) => member.id && member.id.trim() !== "")
-          .map((member: any) => ({
-            ...member,
-            dateOfBirth: member.date_of_birth,
-            status: member.status,
-            first_name: member.first_name,
-            last_name: member.last_name,
-            user_id: member.user_id,
-          }))
-
-        const uniqueMembersMap = new Map<string, any>()
-        mappedMembers.forEach((member: any) => {
-          if (!uniqueMembersMap.has(member.id)) {
-            uniqueMembersMap.set(member.id, member)
-          }
-        })
-        const deduplicatedMembers = Array.from(uniqueMembersMap.values())
-
-        setTeamMembers(deduplicatedMembers)
-      } catch (error) {
-        if (!isMounted.current) return
-        toast.error("Fehler beim Laden der Team-Daten. Bitte erneut versuchen.")
-        console.error("Team fetch error:", error)
-        setTeams([])
-        setTeamMembers([])
-      } finally {
-        if (isMounted.current) {
-          setLoading(false)
-        }
+      setTeamMembers(deduplicatedMembers)
+    } catch (error) {
+      if (!isMounted.current) return
+      console.error("Team fetch error:", error)
+      setTeams([])
+      setTeamMembers([])
+    } finally {
+      fetchInProgress.current = false
+      if (isMounted.current) {
+        setLoading(false)
       }
-    },
-    [retryCount],
-  )
+    }
+  }, [])
 
   useEffect(() => {
     const isMounted = { current: true }

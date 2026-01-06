@@ -20,10 +20,10 @@ export const metadata: Metadata = {
   title: "Effizienz Praxis",
   description: "Struktur. Erfolg. Leichtigkeit. - Moderne Praxismanagement Software",
   icons: {
-    icon: "/favicon.png",
-    apple: "/apple-icon.png",
+    icon: "/favicon.svg",
+    apple: "/icon.svg",
   },
-    generator: 'v0.app'
+  generator: "v0.app",
 }
 
 export default async function RootLayout({

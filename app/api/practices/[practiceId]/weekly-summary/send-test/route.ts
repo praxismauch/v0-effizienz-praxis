@@ -1,8 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { sendEmail } from "@/lib/email/send-email"
-import { format, startOfWeek, endOfWeek, subWeeks } from "date-fns"
+import { format, startOfWeek, endOfWeek, subWeeks, addDays, isWithinInterval } from "date-fns"
 import { de } from "date-fns/locale"
+
+interface ForecastItem {
+  type: "birthday" | "event" | "todo" | "maintenance" | "contract" | "training"
+  date: Date
+  title: string
+  description?: string
+  priority?: "low" | "medium" | "high" | "urgent"
+  icon: string
+}
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
@@ -21,6 +30,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
     const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 })
     const lastWeekStart = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 })
+
+    const nextWeekStart = addDays(weekEnd, 1)
+    const nextWeekEnd = addDays(nextWeekStart, 6)
 
     // Get todos count
     const { count: openTodos } = await supabase
@@ -58,6 +70,133 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .eq("practice_id", Number.parseInt(practiceId))
       .gte("created_at", lastWeekStart.toISOString())
 
+    const forecastItems: ForecastItem[] = []
+
+    if (settings.include_weekly_forecast) {
+      // 1. Get team member birthdays for next week
+      const { data: teamMembers } = await supabase
+        .from("practice_users")
+        .select("users(id, first_name, last_name, date_of_birth)")
+        .eq("practice_id", Number.parseInt(practiceId))
+        .eq("is_active", true)
+
+      if (teamMembers) {
+        const currentYear = new Date().getFullYear()
+        teamMembers.forEach((member: any) => {
+          if (member.users?.date_of_birth) {
+            const birthDate = new Date(member.users.date_of_birth)
+            const birthdayThisYear = new Date(currentYear, birthDate.getMonth(), birthDate.getDate())
+
+            // Check if birthday falls in next week
+            if (isWithinInterval(birthdayThisYear, { start: nextWeekStart, end: nextWeekEnd })) {
+              const age = currentYear - birthDate.getFullYear()
+              forecastItems.push({
+                type: "birthday",
+                date: birthdayThisYear,
+                title: `🎂 ${member.users.first_name} ${member.users.last_name}`,
+                description: `wird ${age} Jahre alt`,
+                icon: "🎂",
+              })
+            }
+          }
+        })
+      }
+
+      // 2. Get calendar events for next week
+      const { data: nextWeekEvents } = await supabase
+        .from("calendar_events")
+        .select("id, title, start_time, event_type, description")
+        .eq("practice_id", Number.parseInt(practiceId))
+        .gte("start_time", nextWeekStart.toISOString())
+        .lte("start_time", nextWeekEnd.toISOString())
+        .order("start_time", { ascending: true })
+        .limit(10)
+
+      if (nextWeekEvents) {
+        nextWeekEvents.forEach((event: any) => {
+          forecastItems.push({
+            type: "event",
+            date: new Date(event.start_time),
+            title: event.title,
+            description: event.event_type || "Termin",
+            icon: "📅",
+          })
+        })
+      }
+
+      // 3. Get todos due next week
+      const { data: dueTodos } = await supabase
+        .from("todos")
+        .select("id, title, due_date, priority, category")
+        .eq("practice_id", Number.parseInt(practiceId))
+        .eq("completed", false)
+        .gte("due_date", nextWeekStart.toISOString().split("T")[0])
+        .lte("due_date", nextWeekEnd.toISOString().split("T")[0])
+        .order("due_date", { ascending: true })
+        .limit(10)
+
+      if (dueTodos) {
+        dueTodos.forEach((todo: any) => {
+          forecastItems.push({
+            type: "todo",
+            date: new Date(todo.due_date),
+            title: todo.title,
+            description: todo.category || "Aufgabe",
+            priority: todo.priority,
+            icon: todo.priority === "urgent" || todo.priority === "high" ? "🔴" : "📋",
+          })
+        })
+      }
+
+      // 4. Get device maintenance due next week
+      const { data: maintenanceDue } = await supabase
+        .from("devices")
+        .select("id, name, next_maintenance_date, device_type")
+        .eq("practice_id", Number.parseInt(practiceId))
+        .gte("next_maintenance_date", nextWeekStart.toISOString().split("T")[0])
+        .lte("next_maintenance_date", nextWeekEnd.toISOString().split("T")[0])
+        .limit(5)
+
+      if (maintenanceDue) {
+        maintenanceDue.forEach((device: any) => {
+          forecastItems.push({
+            type: "maintenance",
+            date: new Date(device.next_maintenance_date),
+            title: `Wartung: ${device.name}`,
+            description: device.device_type || "Gerät",
+            icon: "🔧",
+          })
+        })
+      }
+
+      // 5. Get training/certifications expiring next week
+      const { data: expiringCerts } = await supabase
+        .from("team_member_skills")
+        .select("id, certification_expires_at, skills(name), team_members(users(first_name, last_name))")
+        .eq("practice_id", Number.parseInt(practiceId))
+        .gte("certification_expires_at", nextWeekStart.toISOString().split("T")[0])
+        .lte("certification_expires_at", nextWeekEnd.toISOString().split("T")[0])
+        .limit(5)
+
+      if (expiringCerts) {
+        expiringCerts.forEach((cert: any) => {
+          if (cert.skills?.name && cert.team_members?.users) {
+            forecastItems.push({
+              type: "training",
+              date: new Date(cert.certification_expires_at),
+              title: `Zertifikat läuft ab: ${cert.skills.name}`,
+              description: `${cert.team_members.users.first_name} ${cert.team_members.users.last_name}`,
+              priority: "high",
+              icon: "📜",
+            })
+          }
+        })
+      }
+
+      // Sort forecast items by date
+      forecastItems.sort((a, b) => a.date.getTime() - b.date.getTime())
+    }
+
     // Build recipients list
     const recipients: string[] = []
 
@@ -86,6 +225,144 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Generate email HTML
     const weekNumber = format(new Date(), "w", { locale: de })
     const monthYear = format(new Date(), "MMMM yyyy", { locale: de })
+
+    const generateForecastHtml = () => {
+      if (!settings.include_weekly_forecast || forecastItems.length === 0) return ""
+
+      const nextWeekFormatted = `${format(nextWeekStart, "dd.MM.", { locale: de })} - ${format(nextWeekEnd, "dd.MM.yyyy", { locale: de })}`
+
+      // Group items by date
+      const itemsByDate = forecastItems.reduce(
+        (acc, item) => {
+          const dateKey = format(item.date, "yyyy-MM-dd")
+          if (!acc[dateKey]) acc[dateKey] = []
+          acc[dateKey].push(item)
+          return acc
+        },
+        {} as Record<string, ForecastItem[]>,
+      )
+
+      let forecastHtml = `
+      <div style="margin-bottom: 24px; padding: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+        <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          🔮 Vorschau nächste Woche
+        </h3>
+        <p style="margin: 0 0 20px 0; font-size: 14px; opacity: 0.9;">${nextWeekFormatted}</p>
+      `
+
+      // Birthdays section (special highlight)
+      const birthdays = forecastItems.filter((i) => i.type === "birthday")
+      if (birthdays.length > 0) {
+        forecastHtml += `
+        <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">🎉 Geburtstage</h4>
+          ${birthdays
+            .map(
+              (b) => `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span style="font-size: 12px; opacity: 0.8;">${format(b.date, "EEEE, dd.MM.", { locale: de })}</span>
+              <span style="font-weight: 500;">${b.title}</span>
+              <span style="font-size: 12px; opacity: 0.8;">${b.description}</span>
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+        `
+      }
+
+      // Other items grouped by type
+      const events = forecastItems.filter((i) => i.type === "event")
+      const todos = forecastItems.filter((i) => i.type === "todo")
+      const maintenance = forecastItems.filter((i) => i.type === "maintenance")
+      const training = forecastItems.filter((i) => i.type === "training")
+
+      if (events.length > 0) {
+        forecastHtml += `
+        <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">📅 Wichtige Termine (${events.length})</h4>
+          ${events
+            .slice(0, 5)
+            .map(
+              (e) => `
+            <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <div style="font-size: 11px; opacity: 0.7;">${format(e.date, "EEEE, dd.MM. HH:mm", { locale: de })} Uhr</div>
+              <div style="font-weight: 500;">${e.title}</div>
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+        `
+      }
+
+      if (todos.length > 0) {
+        forecastHtml += `
+        <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">📋 Fällige Aufgaben (${todos.length})</h4>
+          ${todos
+            .slice(0, 5)
+            .map(
+              (t) => `
+            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 11px; opacity: 0.7; min-width: 60px;">${format(t.date, "dd.MM.", { locale: de })}</span>
+              <span style="font-weight: 500;">${t.icon} ${t.title}</span>
+              ${t.priority === "urgent" || t.priority === "high" ? '<span style="background: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 10px;">Dringend</span>' : ""}
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+        `
+      }
+
+      if (maintenance.length > 0) {
+        forecastHtml += `
+        <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">🔧 Anstehende Wartungen (${maintenance.length})</h4>
+          ${maintenance
+            .map(
+              (m) => `
+            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 11px; opacity: 0.7; min-width: 60px;">${format(m.date, "dd.MM.", { locale: de })}</span>
+              <span style="font-weight: 500;">${m.title}</span>
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+        `
+      }
+
+      if (training.length > 0) {
+        forecastHtml += `
+        <div style="background: rgba(239,68,68,0.2); border-radius: 8px; padding: 16px; margin-bottom: 12px; border: 1px solid rgba(239,68,68,0.3);">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">⚠️ Ablaufende Zertifikate (${training.length})</h4>
+          ${training
+            .map(
+              (t) => `
+            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 11px; opacity: 0.7; min-width: 60px;">${format(t.date, "dd.MM.", { locale: de })}</span>
+              <span style="font-weight: 500;">${t.title}</span>
+              <span style="font-size: 11px; opacity: 0.8;">(${t.description})</span>
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+        `
+      }
+
+      // Summary count
+      forecastHtml += `
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); text-align: center; font-size: 13px; opacity: 0.9;">
+          ${forecastItems.length} wichtige Ereignisse in der kommenden Woche
+        </div>
+      </div>
+      `
+
+      return forecastHtml
+    }
 
     const emailHtml = `
 <!DOCTYPE html>
@@ -123,6 +400,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           <div style="font-size: 12px; color: #71717a; margin-top: 4px;">Offene Aufgaben</div>
         </div>
       </div>
+
+      ${/* Added forecast section */ ""}
+      ${generateForecastHtml()}
 
       ${
         settings.include_todos
@@ -255,6 +535,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       summary_data: {
         team_count: teamCount,
         documents_count: documentsCount,
+        forecast_items_count: forecastItems.length,
+        forecast_birthdays: forecastItems.filter((i) => i.type === "birthday").length,
+        forecast_events: forecastItems.filter((i) => i.type === "event").length,
+        forecast_todos: forecastItems.filter((i) => i.type === "todo").length,
       },
     })
 
@@ -273,6 +557,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       sent: successCount,
       failed: failedCount,
       recipients: recipients.length,
+      forecastItemsCount: forecastItems.length,
     })
   } catch (error: any) {
     console.error("Error sending weekly summary:", error)

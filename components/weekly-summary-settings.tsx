@@ -62,6 +62,7 @@ interface WeeklySummarySettings {
   include_device_maintenance: boolean
   include_financial_summary: boolean
   include_ai_insights: boolean
+  include_weekly_forecast: boolean
   custom_intro: string
   custom_footer: string
   branding_color: string
@@ -124,6 +125,12 @@ const CONTENT_SECTIONS = [
     icon: Sparkles,
     description: "Automatische Verbesserungsvorschläge",
   },
+  {
+    key: "include_weekly_forecast",
+    label: "Wochenvorschau",
+    icon: CalendarDays,
+    description: "Geburtstage, wichtige Termine, fällige Aufgaben der kommenden Woche",
+  },
 ]
 
 interface WeeklySummarySettingsProps {
@@ -144,11 +151,12 @@ export default function WeeklySummarySettings({ practiceId }: WeeklySummarySetti
     include_team_updates: true,
     include_documents: true,
     include_goals: true,
-    include_workflows: true,
+    include_workflows: false,
     include_inventory_alerts: true,
     include_device_maintenance: true,
     include_financial_summary: false,
     include_ai_insights: true,
+    include_weekly_forecast: true,
     custom_intro: "",
     custom_footer: "",
     branding_color: "#3b82f6",
@@ -680,6 +688,17 @@ export default function WeeklySummarySettings({ practiceId }: WeeklySummarySetti
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           Basierend auf den Daten empfehlen wir, die Terminplanung am Mittwoch zu optimieren...
+                        </p>
+                      </div>
+                    )}
+                    {settings.include_weekly_forecast && (
+                      <div className="p-4 border rounded-lg bg-muted/50">
+                        <h3 className="font-semibold flex items-center gap-2 mb-2">
+                          <CalendarDays className="h-4 w-4" />
+                          Wochenvorschau
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Geburtstage, wichtige Termine, fällige Aufgaben der kommenden Woche
                         </p>
                       </div>
                     )}

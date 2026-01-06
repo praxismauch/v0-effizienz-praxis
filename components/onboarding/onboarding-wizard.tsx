@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import Link from "next/link"
 
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -9,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { usePractice } from "@/contexts/practice-context"
@@ -42,6 +42,16 @@ import {
   MessageSquare,
   Bug,
   ExternalLink,
+  BarChart3Icon,
+  LayoutDashboard,
+  Settings,
+  Contact,
+  ClipboardList,
+  CalendarDays,
+  BriefcaseBusiness,
+  CircleDot,
+  LineChart,
+  Compass,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 
@@ -59,6 +69,89 @@ interface PracticeSettings {
   website: string
   teamSize: string
   mainGoals: string[]
+}
+
+interface QuickLink {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  description?: string
+}
+
+function StepQuickLinks({ links, title = "Schnellzugriff" }: { links: QuickLink[]; title?: string }) {
+  return (
+    <div className="mt-8 pt-6 border-t">
+      <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+        <ExternalLink className="h-4 w-4" />
+        {title}
+      </h4>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {links.map((link) => {
+          const Icon = link.icon
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="flex flex-col items-center gap-2 p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/50 transition-all group"
+            >
+              <div className="p-2 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Icon className="h-5 w-5" />
+              </div>
+              <span className="text-sm font-medium text-center">{link.name}</span>
+              {link.description && (
+                <span className="text-xs text-muted-foreground text-center">{link.description}</span>
+              )}
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const STEP_QUICK_LINKS: Record<number, QuickLink[]> = {
+  0: [
+    // Welcome
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "KI-Analyse", href: "/analysis", icon: BarChart3Icon }, // Use aliased icon
+    { name: "Einstellungen", href: "/settings", icon: Settings },
+    { name: "Hilfe", href: "/help", icon: BookOpen },
+  ],
+  1: [
+    // Practice Info
+    { name: "Einstellungen", href: "/settings", icon: Settings },
+    { name: "Team", href: "/team", icon: Users },
+    { name: "Kontakte", href: "/contacts", icon: Contact },
+    { name: "Dokumente", href: "/documents", icon: FileText },
+  ],
+  2: [
+    // Goals
+    { name: "Ziele", href: "/goals", icon: Target },
+    { name: "Aufgaben", href: "/todos", icon: ClipboardList },
+    { name: "Workflows", href: "/workflows", icon: Workflow },
+    { name: "Strategiepfad", href: "/strategy-journey", icon: Compass },
+  ],
+  3: [
+    // Features
+    { name: "Kennzahlen", href: "/analytics", icon: LineChart },
+    { name: "Dienstplan", href: "/dienstplan", icon: CalendarDays },
+    { name: "Personalsuche", href: "/hiring", icon: BriefcaseBusiness },
+    { name: "Qualitätszirkel", href: "/qualitaetszirkel", icon: CircleDot },
+  ],
+  4: [
+    // Support
+    { name: "Hilfe", href: "/help", icon: BookOpen },
+    { name: "Feedback", href: "/feedback", icon: MessageSquare },
+    { name: "Einstellungen", href: "/settings", icon: Settings },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  ],
+  5: [
+    // Complete
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Team", href: "/team", icon: Users },
+    { name: "Kalender", href: "/calendar", icon: CalendarDays },
+    { name: "Aufgaben", href: "/todos", icon: ClipboardList },
+  ],
 }
 
 const PRACTICE_TYPES = [
@@ -286,7 +379,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 
         {/* Progress bar */}
         <div className="px-6 py-3 bg-background/60 backdrop-blur-sm border-b">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               {STEPS.map((step, index) => {
                 const StepIcon = step.icon
@@ -318,13 +411,12 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 )
               })}
             </div>
-            <Progress value={progress} className="h-1" />
           </div>
         </div>
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="max-w-6xl mx-auto px-6 py-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
@@ -340,8 +432,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
         </main>
 
         {/* Footer navigation */}
-        <footer className="px-6 py-4 border-t bg-background/80 backdrop-blur-sm">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <footer className="border-t bg-background/80 backdrop-blur-sm px-6 py-4">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
             <Button
               variant="outline"
               onClick={handleBack}
@@ -384,12 +476,12 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 // Step 1: Welcome
 function WelcomeStep({ userName }: { userName: string }) {
   return (
-    <div className="text-center space-y-8">
+    <div className="space-y-6 text-center">
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-        className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-lg shadow-primary/30"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", duration: 0.5 }}
+        className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/60 text-white mb-6 shadow-lg shadow-primary/30"
       >
         <Sparkles className="h-12 w-12" />
       </motion.div>
@@ -444,6 +536,10 @@ function WelcomeStep({ userName }: { userName: string }) {
           </CardContent>
         </Card>
       </motion.div>
+
+      <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
+        <StepQuickLinks links={STEP_QUICK_LINKS[0]} title="Direkt loslegen" />
+      </motion.div>
     </div>
   )
 }
@@ -473,6 +569,7 @@ function PracticeInfoStep({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* ... existing form fields ... */}
         <div className="space-y-2">
           <Label htmlFor="practiceName">Praxisname *</Label>
           <Input
@@ -570,6 +667,8 @@ function PracticeInfoStep({
           />
         </div>
       </div>
+
+      <StepQuickLinks links={STEP_QUICK_LINKS[1]} title="Verwandte Funktionen" />
     </div>
   )
 }
@@ -607,28 +706,29 @@ function GoalsStep({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => toggleGoal(goal.id)}
-              className={`relative p-6 rounded-xl border-2 text-left transition-all duration-200 ${
+              className={`relative p-5 rounded-xl border-2 transition-all duration-200 text-left ${
                 isSelected
-                  ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
-                  : "border-border bg-card hover:border-primary/50 hover:bg-accent/50"
+                  ? "border-primary bg-primary/5 shadow-md"
+                  : "border-border hover:border-primary/50 hover:bg-accent"
               }`}
             >
               <div className="flex items-start gap-4">
                 <div
-                  className={`p-3 rounded-lg ${isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                  className={`p-2 rounded-lg ${isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                 >
-                  <Icon className="h-6 w-6" />
+                  <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1">{goal.label}</h3>
+                  <span className="font-medium">{goal.label}</span>
+                </div>
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    isSelected ? "border-primary bg-primary" : "border-muted-foreground"
+                  }`}
+                >
+                  {isSelected && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
                 </div>
               </div>
-
-              {isSelected && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-3 right-3">
-                  <CheckCircle2 className="h-6 w-6 text-primary" />
-                </motion.div>
-              )}
             </motion.button>
           )
         })}
@@ -637,6 +737,8 @@ function GoalsStep({
       <p className="text-center text-sm text-muted-foreground mt-4">
         Ausgewählt: {settings.mainGoals.length} von {goals.length}
       </p>
+
+      <StepQuickLinks links={STEP_QUICK_LINKS[2]} title="Ziele verwalten in" />
     </div>
   )
 }
@@ -724,6 +826,8 @@ function FeaturesStep({
           />
         ))}
       </div>
+
+      <StepQuickLinks links={STEP_QUICK_LINKS[3]} title="Beliebte Funktionen entdecken" />
     </div>
   )
 }
@@ -895,6 +999,9 @@ function SupportStep() {
           </a>
         </p>
       </motion.div>
+
+      {/* Add quick links to support step */}
+      <StepQuickLinks links={STEP_QUICK_LINKS[4]} title="Support-Bereich" />
     </div>
   )
 }
@@ -976,6 +1083,9 @@ function CompleteStep({ settings, onComplete }: { settings: PracticeSettings; on
           </div>
         </motion.div>
       )}
+
+      {/* Add quick links to complete step */}
+      <StepQuickLinks links={STEP_QUICK_LINKS[5]} title="Direkt zu Ihren Funktionen" />
     </div>
   )
 }

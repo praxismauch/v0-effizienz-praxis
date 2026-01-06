@@ -368,93 +368,97 @@ export default function TimeReportsPageClient() {
         <CardContent>
           {filteredReports.length > 0 ? (
             <ScrollArea className="h-[500px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mitarbeiter</TableHead>
-                    <TableHead>Zeitraum</TableHead>
-                    <TableHead className="text-right">Arbeitstage</TableHead>
-                    <TableHead className="text-right">Arbeitszeit</TableHead>
-                    <TableHead className="text-right">Über-/Unterstunden</TableHead>
-                    <TableHead className="text-center">Homeoffice</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredReports.map((report) => (
-                    <TableRow
-                      key={report.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => {
-                        setSelectedReport(report)
-                        setShowDetailDialog(true)
-                      }}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={report.team_members?.avatar_url || "/placeholder.svg"} />
-                            <AvatarFallback>
-                              {report.team_members?.first_name?.[0]}
-                              {report.team_members?.last_name?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">
-                              {report.team_members?.first_name} {report.team_members?.last_name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">{report.team_members?.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {MONTHS[report.month - 1]} {report.year}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">{report.total_work_days}</TableCell>
-                      <TableCell className="text-right font-mono">{formatMinutes(report.total_net_minutes)}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge
-                          variant={report.overtime_minutes >= 0 ? "default" : "destructive"}
-                          className={cn("font-mono", report.overtime_minutes >= 0 ? "bg-green-500" : "bg-red-500")}
-                        >
-                          {formatMinutes(report.overtime_minutes)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                          <Home className="h-3 w-3 mr-1" />
-                          {report.homeoffice_days}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {report.plausibility_warnings > 0 ? (
-                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            {report.plausibility_warnings}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-green-50 text-green-700">
-                            OK
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            exportAsCSV(report)
-                          }}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[180px]">Mitarbeiter</TableHead>
+                      <TableHead className="min-w-[120px]">Zeitraum</TableHead>
+                      <TableHead className="text-right min-w-[90px]">Arbeitstage</TableHead>
+                      <TableHead className="text-right min-w-[90px]">Arbeitszeit</TableHead>
+                      <TableHead className="text-right min-w-[120px]">Über-/Unterstunden</TableHead>
+                      <TableHead className="text-center min-w-[90px]">Homeoffice</TableHead>
+                      <TableHead className="text-center min-w-[70px]">Status</TableHead>
+                      <TableHead className="min-w-[50px]"></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredReports.map((report) => (
+                      <TableRow
+                        key={report.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setSelectedReport(report)
+                          setShowDetailDialog(true)
+                        }}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={report.team_members?.avatar_url || "/placeholder.svg"} />
+                              <AvatarFallback>
+                                {report.team_members?.first_name?.[0]}
+                                {report.team_members?.last_name?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">
+                                {report.team_members?.first_name} {report.team_members?.last_name}
+                              </div>
+                              <div className="text-xs text-muted-foreground">{report.team_members?.email}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {MONTHS[report.month - 1]} {report.year}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{report.total_work_days}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatMinutes(report.total_net_minutes)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={report.overtime_minutes >= 0 ? "default" : "destructive"}
+                            className={cn("font-mono", report.overtime_minutes >= 0 ? "bg-green-500" : "bg-red-500")}
+                          >
+                            {formatMinutes(report.overtime_minutes)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                            <Home className="h-3 w-3 mr-1" />
+                            {report.homeoffice_days}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {report.plausibility_warnings > 0 ? (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              {report.plausibility_warnings}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-green-50 text-green-700">
+                              OK
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              exportAsCSV(report)
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </ScrollArea>
           ) : (
             <div className="text-center py-12 text-muted-foreground">

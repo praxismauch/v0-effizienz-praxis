@@ -64,11 +64,41 @@ export async function GET(request: NextRequest) {
       throw usersError
     }
 
+    const { data: practiceUsers } = await supabase
+      .from("practice_users")
+      .select("user_id, practice_id, notification_settings")
+      .in("user_id", userIds)
+
+    // Create a map of user notification preferences
+    const userNotificationPrefs = new Map<string, { taskReminders: boolean; todoDueDateEmail: boolean }>()
+    for (const pu of practiceUsers || []) {
+      const settings = pu.notification_settings as { taskReminders?: boolean; todoDueDateEmail?: boolean } | null
+      userNotificationPrefs.set(`${pu.user_id}-${pu.practice_id}`, {
+        taskReminders: settings?.taskReminders !== false, // Default to true
+        todoDueDateEmail: settings?.todoDueDateEmail !== false, // Default to true
+      })
+    }
+
     const userMap = new Map(users?.map((u) => [u.id, u]) || [])
 
     const todosByUser = new Map<string, typeof todos>()
     for (const todo of todos) {
       if (!todo.assigned_to) continue
+
+      const prefKey = `${todo.assigned_to}-${todo.practice_id}`
+      const prefs = userNotificationPrefs.get(prefKey) || { taskReminders: true, todoDueDateEmail: true }
+
+      // Check if this is a due-today todo and if user wants due date emails
+      const isDueToday = todo.due_date === todayStr
+      if (isDueToday && !prefs.todoDueDateEmail) {
+        continue // Skip if user disabled due date emails
+      }
+
+      // Check if this is a reminder (not due today) and if user wants reminders
+      if (!isDueToday && !prefs.taskReminders) {
+        continue // Skip if user disabled task reminders
+      }
+
       if (!todosByUser.has(todo.assigned_to)) {
         todosByUser.set(todo.assigned_to, [])
       }
@@ -84,6 +114,9 @@ export async function GET(request: NextRequest) {
       }
 
       const sortedTodos = userTodos.sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+
+      const dueTodayTodos = sortedTodos.filter((t) => t.due_date === todayStr)
+      const upcomingTodos = sortedTodos.filter((t) => t.due_date !== todayStr)
 
       const todosHtml = sortedTodos
         .map((todo) => {
@@ -120,10 +153,19 @@ export async function GET(request: NextRequest) {
         })
         .join("")
 
+      let subject: string
+      if (dueTodayTodos.length > 0 && upcomingTodos.length === 0) {
+        subject = `🚨 ${dueTodayTodos.length} ${dueTodayTodos.length === 1 ? "Aufgabe ist" : "Aufgaben sind"} heute fällig!`
+      } else if (dueTodayTodos.length > 0) {
+        subject = `🚨 ${dueTodayTodos.length} heute fällig + ${upcomingTodos.length} bald fällig`
+      } else {
+        subject = `🔔 Erinnerung: ${sortedTodos.length} ${sortedTodos.length === 1 ? "Aufgabe" : "Aufgaben"} ${sortedTodos.length === 1 ? "ist" : "sind"} bald fällig`
+      }
+
       try {
         const emailResult = await sendEmail({
           to: user.email,
-          subject: `🔔 Erinnerung: ${sortedTodos.length} ${sortedTodos.length === 1 ? "Aufgabe" : "Aufgaben"} ${sortedTodos.length === 1 ? "ist" : "sind"} bald fällig`,
+          subject,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <div style="text-align: center; margin-bottom: 30px;">
@@ -134,6 +176,11 @@ export async function GET(request: NextRequest) {
               <h2 style="color: #111827; margin-bottom: 16px;">Hallo ${user.name || ""},</h2>
               
               <p style="color: #374151; font-size: 16px; line-height: 1.5;">
+                ${
+                  dueTodayTodos.length > 0
+                    ? `<strong style="color: #dc2626;">⚠️ ${dueTodayTodos.length} ${dueTodayTodos.length === 1 ? "Aufgabe ist" : "Aufgaben sind"} heute fällig!</strong><br/><br/>`
+                    : ""
+                }
                 Sie haben <strong>${sortedTodos.length}</strong> ${sortedTodos.length === 1 ? "Aufgabe" : "Aufgaben"}, 
                 ${sortedTodos.length === 1 ? "die" : "die"} in den nächsten 3 Tagen ${sortedTodos.length === 1 ? "fällig ist" : "fällig sind"}:
               </p>
@@ -144,13 +191,14 @@ export async function GET(request: NextRequest) {
 
               <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
                 <p style="text-align: center; margin: 20px 0;">
-                  <a href="${process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || "http://localhost:3000"}/todos" 
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || "http://localhost:3000"}/todos" 
                      style="background-color: #0070f3; color: white; padding: 12px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
                     Aufgaben anzeigen
                   </a>
                 </p>
                 <p style="color: #9ca3af; font-size: 14px; text-align: center; margin-top: 16px;">
-                  Diese E-Mail wurde automatisch von Effizienz Praxis gesendet.
+                  Diese E-Mail wurde automatisch von Effizienz Praxis gesendet.<br/>
+                  Sie können diese Benachrichtigungen in Ihren Einstellungen deaktivieren.
                 </p>
               </div>
             </div>
@@ -172,6 +220,7 @@ export async function GET(request: NextRequest) {
             success: true,
             emailId: emailResult.emailId,
             todoCount: userTodos.length,
+            dueTodayCount: dueTodayTodos.length,
           })
         }
       } catch (emailError) {

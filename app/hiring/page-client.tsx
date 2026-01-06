@@ -94,35 +94,37 @@ export default function HiringPageClient() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-            <TabsTrigger value="postings" className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("hiring.tabs.postings", "Stellen")}</span>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1">
+            <TabsTrigger value="postings" className="flex items-center justify-center gap-1.5 py-2.5 px-2">
+              <Briefcase className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline truncate">{t("hiring.tabs.postings", "Stellen")}</span>
               <CountBadge count={counts?.jobPostings} />
             </TabsTrigger>
-            <TabsTrigger value="candidates" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("hiring.tabs.candidates", "Kandidaten")}</span>
+            <TabsTrigger value="candidates" className="flex items-center justify-center gap-1.5 py-2.5 px-2">
+              <Users className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline truncate">{t("hiring.tabs.candidates", "Kandidaten")}</span>
               <CountBadge count={counts?.candidates} />
             </TabsTrigger>
-            <TabsTrigger value="pipeline" className="flex items-center gap-2">
-              <Kanban className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("hiring.tabs.pipeline", "Pipeline")}</span>
+            <TabsTrigger value="pipeline" className="flex items-center justify-center gap-1.5 py-2.5 px-2">
+              <Kanban className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline truncate">{t("hiring.tabs.pipeline", "Pipeline")}</span>
               <CountBadge count={counts?.pipeline} />
             </TabsTrigger>
-            <TabsTrigger value="interviews" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("hiring.tabs.interviews", "Interviews")}</span>
+            <TabsTrigger value="interviews" className="flex items-center justify-center gap-1.5 py-2.5 px-2">
+              <FileText className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline truncate">{t("hiring.tabs.interviews", "Interviews")}</span>
               <CountBadge count={counts?.interviews} />
             </TabsTrigger>
-            <TabsTrigger value="questionnaires" className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("hiring.tabs.questionnaires", "Fragebögen")}</span>
+            <TabsTrigger value="questionnaires" className="flex items-center justify-center gap-1.5 py-2.5 px-2">
+              <ClipboardList className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline truncate">
+                {t("hiring.tabs.questionnaires", "Fragebögen")}
+              </span>
               <CountBadge count={counts?.questionnaires} />
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("hiring.tabs.settings", "Einstellungen")}</span>
+            <TabsTrigger value="settings" className="flex items-center justify-center gap-1.5 py-2.5 px-2">
+              <Settings className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline truncate">{t("hiring.tabs.settings", "Einstellungen")}</span>
             </TabsTrigger>
           </TabsList>
 

@@ -1,12 +1,30 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, ThumbsUp, ThumbsDown, Lightbulb } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Calendar, ThumbsUp, ThumbsDown, Lightbulb, Pencil, Save, X, Plus, Trash2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { formatCurrency } from "@/lib/format-currency"
+import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
+
+interface CostItem {
+  name: string
+  amount: number
+}
 
 interface ViewRoiAnalysisDialogProps {
   open: boolean
@@ -18,6 +36,20 @@ interface ViewRoiAnalysisDialogProps {
 export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdated }: ViewRoiAnalysisDialogProps) {
   const [analysis, setAnalysis] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  // Edit form state
+  const [serviceName, setServiceName] = useState("")
+  const [description, setDescription] = useState("")
+  const [fixedCosts, setFixedCosts] = useState<CostItem[]>([])
+  const [variableCosts, setVariableCosts] = useState<CostItem[]>([])
+  const [pricePessimistic, setPricePessimistic] = useState(0)
+  const [priceRealistic, setPriceRealistic] = useState(0)
+  const [priceOptimistic, setPriceOptimistic] = useState(0)
+  const [demandPessimistic, setDemandPessimistic] = useState(0)
+  const [demandRealistic, setDemandRealistic] = useState(0)
+  const [demandOptimistic, setDemandOptimistic] = useState(0)
 
   useEffect(() => {
     if (open && analysisId) {
@@ -32,12 +64,104 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
       if (response.ok) {
         const data = await response.json()
         setAnalysis(data)
+        // Initialize edit form state
+        setServiceName(data.service_name || "")
+        setDescription(data.description || "")
+        setFixedCosts(data.fixed_costs || [])
+        setVariableCosts(data.variable_costs || [])
+        setPricePessimistic(data.scenario_pessimistic || 0)
+        setPriceRealistic(data.scenario_realistic || 0)
+        setPriceOptimistic(data.scenario_optimistic || 0)
+        setDemandPessimistic(data.demand_pessimistic || 0)
+        setDemandRealistic(data.demand_realistic || 0)
+        setDemandOptimistic(data.demand_optimistic || 0)
       }
     } catch (error) {
       console.error("Error fetching analysis:", error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSave = async () => {
+    if (!serviceName.trim()) {
+      alert("Bitte geben Sie einen Namen für die Leistung ein.")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const totalFixed = fixedCosts.reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0)
+      const totalVariable = variableCosts.reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0)
+
+      const response = await fetch(`/api/roi-analysis/${analysisId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          service_name: serviceName,
+          description,
+          fixed_costs: fixedCosts.filter((c) => c.name && c.amount > 0),
+          variable_costs: variableCosts.filter((c) => c.name && c.amount > 0),
+          total_fixed_costs: totalFixed,
+          total_variable_costs: totalVariable,
+          scenario_pessimistic: pricePessimistic,
+          scenario_realistic: priceRealistic,
+          scenario_optimistic: priceOptimistic,
+          demand_pessimistic: demandPessimistic,
+          demand_realistic: demandRealistic,
+          demand_optimistic: demandOptimistic,
+        }),
+      })
+
+      if (response.ok) {
+        const updatedAnalysis = await response.json()
+        setAnalysis(updatedAnalysis)
+        setIsEditing(false)
+        onUpdated()
+      } else {
+        const error = await response.json()
+        alert(error.error || "Fehler beim Speichern")
+      }
+    } catch (error) {
+      console.error("Error saving analysis:", error)
+      alert("Fehler beim Speichern")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const cancelEdit = () => {
+    // Reset to original values
+    if (analysis) {
+      setServiceName(analysis.service_name || "")
+      setDescription(analysis.description || "")
+      setFixedCosts(analysis.fixed_costs || [])
+      setVariableCosts(analysis.variable_costs || [])
+      setPricePessimistic(analysis.scenario_pessimistic || 0)
+      setPriceRealistic(analysis.scenario_realistic || 0)
+      setPriceOptimistic(analysis.scenario_optimistic || 0)
+      setDemandPessimistic(analysis.demand_pessimistic || 0)
+      setDemandRealistic(analysis.demand_realistic || 0)
+      setDemandOptimistic(analysis.demand_optimistic || 0)
+    }
+    setIsEditing(false)
+  }
+
+  // Cost management functions
+  const addFixedCost = () => setFixedCosts([...fixedCosts, { name: "", amount: 0 }])
+  const removeFixedCost = (index: number) => setFixedCosts(fixedCosts.filter((_, i) => i !== index))
+  const updateFixedCost = (index: number, field: "name" | "amount", value: string | number) => {
+    const updated = [...fixedCosts]
+    updated[index] = { ...updated[index], [field]: field === "amount" ? Math.max(0, Number(value) || 0) : value }
+    setFixedCosts(updated)
+  }
+
+  const addVariableCost = () => setVariableCosts([...variableCosts, { name: "", amount: 0 }])
+  const removeVariableCost = (index: number) => setVariableCosts(variableCosts.filter((_, i) => i !== index))
+  const updateVariableCost = (index: number, field: "name" | "amount", value: string | number) => {
+    const updated = [...variableCosts]
+    updated[index] = { ...updated[index], [field]: field === "amount" ? Math.max(0, Number(value) || 0) : value }
+    setVariableCosts(updated)
   }
 
   const getRecommendationBadge = (recommendation: string) => {
@@ -93,6 +217,9 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
     )
   }
 
+  const totalFixed = fixedCosts.reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0)
+  const totalVariable = variableCosts.reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0)
+
   const pessimisticProfit = calculateProfit(
     analysis.scenario_pessimistic,
     analysis.total_variable_costs,
@@ -112,12 +239,281 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
     analysis.total_fixed_costs,
   )
 
+  // Edit Mode UI
+  if (isEditing) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Analyse bearbeiten</DialogTitle>
+            <DialogDescription>Ändern Sie die Daten der ROI-Analyse</DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basic">Grunddaten</TabsTrigger>
+              <TabsTrigger value="fixed">Fixkosten</TabsTrigger>
+              <TabsTrigger value="variable">Variable Kosten</TabsTrigger>
+              <TabsTrigger value="scenarios">Szenarien</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="serviceName">Name der Leistung*</Label>
+                <Input
+                  id="serviceName"
+                  value={serviceName}
+                  onChange={(e) => setServiceName(e.target.value)}
+                  placeholder="z.B. Akupunktur, IGEL-Leistung"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Beschreibung</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Optionale Beschreibung"
+                  rows={4}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="fixed" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Fixkosten (einmalig)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {fixedCosts.map((cost, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        value={cost.name}
+                        onChange={(e) => updateFixedCost(index, "name", e.target.value)}
+                        placeholder="Kostenart"
+                        className="flex-1"
+                      />
+                      <div className="flex items-center gap-1">
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            value={cost.amount}
+                            onChange={(e) => updateFixedCost(index, "amount", Number(e.target.value))}
+                            placeholder="Betrag"
+                            className="w-32 pr-12"
+                            min="0"
+                            step="0.01"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                            EUR
+                          </span>
+                        </div>
+                        <NettoBruttoCalculator onApply={(brutto) => updateFixedCost(index, "amount", brutto)} />
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => removeFixedCost(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={addFixedCost} className="w-full bg-transparent">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Weitere Fixkosten hinzufügen
+                  </Button>
+                  <div className="pt-3 border-t flex justify-between items-center font-semibold">
+                    <span>Gesamt Fixkosten:</span>
+                    <span className="text-lg">{formatCurrency(totalFixed)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="variable" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Variable Kosten (pro Leistung)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {variableCosts.map((cost, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        value={cost.name}
+                        onChange={(e) => updateVariableCost(index, "name", e.target.value)}
+                        placeholder="Kostenart"
+                        className="flex-1"
+                      />
+                      <div className="flex items-center gap-1">
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            value={cost.amount}
+                            onChange={(e) => updateVariableCost(index, "amount", Number(e.target.value))}
+                            placeholder="Betrag"
+                            className="w-32 pr-12"
+                            min="0"
+                            step="0.01"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                            EUR
+                          </span>
+                        </div>
+                        <NettoBruttoCalculator onApply={(brutto) => updateVariableCost(index, "amount", brutto)} />
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => removeVariableCost(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={addVariableCost} className="w-full bg-transparent">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Weitere variable Kosten hinzufügen
+                  </Button>
+                  <div className="pt-3 border-t flex justify-between items-center font-semibold">
+                    <span>Gesamt variable Kosten:</span>
+                    <span className="text-lg">{formatCurrency(totalVariable)} pro Leistung</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="scenarios" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Preis-Szenarien</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="font-semibold">Pessimistisch</Label>
+                      <div className="flex items-center gap-1">
+                        <div className="relative flex-1">
+                          <Input
+                            type="number"
+                            value={pricePessimistic}
+                            onChange={(e) => setPricePessimistic(Math.max(0, Number(e.target.value) || 0))}
+                            min="0"
+                            step="0.01"
+                            className="pr-12"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                            EUR
+                          </span>
+                        </div>
+                        <NettoBruttoCalculator onApply={(brutto) => setPricePessimistic(Math.max(0, brutto))} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-semibold">Realistisch</Label>
+                      <div className="flex items-center gap-1">
+                        <div className="relative flex-1">
+                          <Input
+                            type="number"
+                            value={priceRealistic}
+                            onChange={(e) => setPriceRealistic(Math.max(0, Number(e.target.value) || 0))}
+                            min="0"
+                            step="0.01"
+                            className="pr-12"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                            EUR
+                          </span>
+                        </div>
+                        <NettoBruttoCalculator onApply={(brutto) => setPriceRealistic(Math.max(0, brutto))} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-semibold">Optimistisch</Label>
+                      <div className="flex items-center gap-1">
+                        <div className="relative flex-1">
+                          <Input
+                            type="number"
+                            value={priceOptimistic}
+                            onChange={(e) => setPriceOptimistic(Math.max(0, Number(e.target.value) || 0))}
+                            min="0"
+                            step="0.01"
+                            className="pr-12"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                            EUR
+                          </span>
+                        </div>
+                        <NettoBruttoCalculator onApply={(brutto) => setPriceOptimistic(Math.max(0, brutto))} />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Nachfrage-Szenarien (Leistungen/Monat)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Pessimistisch</Label>
+                      <Input
+                        type="number"
+                        value={demandPessimistic}
+                        onChange={(e) => setDemandPessimistic(Math.max(0, Number(e.target.value) || 0))}
+                        min="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Realistisch</Label>
+                      <Input
+                        type="number"
+                        value={demandRealistic}
+                        onChange={(e) => setDemandRealistic(Math.max(0, Number(e.target.value) || 0))}
+                        min="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Optimistisch</Label>
+                      <Input
+                        type="number"
+                        value={demandOptimistic}
+                        onChange={(e) => setDemandOptimistic(Math.max(0, Number(e.target.value) || 0))}
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelEdit} disabled={saving}>
+              <X className="h-4 w-4 mr-2" />
+              Abbrechen
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? "Speichern..." : "Speichern"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  // View Mode UI (original)
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{analysis.service_name}</DialogTitle>
-          {analysis.description && <DialogDescription className="text-base">{analysis.description}</DialogDescription>}
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-2xl">{analysis.service_name}</DialogTitle>
+              {analysis.description && (
+                <DialogDescription className="text-base">{analysis.description}</DialogDescription>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Bearbeiten
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">

@@ -9,7 +9,7 @@ export async function fetchWithRetry(
   options?: RequestInit,
   retryOptions?: FetchWithRetryOptions,
 ): Promise<Response> {
-  const { maxRetries = 5, baseDelay = 1000, maxDelay = 10000 } = retryOptions || {}
+  const { maxRetries = 3, baseDelay = 1000, maxDelay = 8000 } = retryOptions || {}
 
   let lastError: Error | null = null
   let lastResponse: Response | null = null
@@ -21,7 +21,11 @@ export async function fetchWithRetry(
 
       if (response.status === 429 || response.status === 503) {
         if (attempt < maxRetries) {
-          const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay)
+          const retryAfter = response.headers.get("Retry-After")
+          const jitter = Math.random() * 500
+          const delay = retryAfter
+            ? Number.parseInt(retryAfter, 10) * 1000 + jitter
+            : Math.min(baseDelay * Math.pow(2, attempt), maxDelay) + jitter
           await new Promise((resolve) => setTimeout(resolve, delay))
           continue
         }
@@ -32,7 +36,8 @@ export async function fetchWithRetry(
       lastError = error as Error
 
       if (attempt < maxRetries) {
-        const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay)
+        const jitter = Math.random() * 500
+        const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay) + jitter
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
     }
@@ -45,17 +50,33 @@ export async function fetchWithRetry(
   throw lastError || new Error(`Failed to fetch ${url} after ${maxRetries} retries`)
 }
 
-// Helper to safely parse JSON with fallback
 export async function safeJsonParse<T>(response: Response, fallback: T): Promise<T> {
   try {
+    // Clone response in case we need to read it multiple times
     const text = await response.text()
-    if (!text || text.trim() === "" || text.startsWith("Too Many") || text.includes('"retryable":true')) {
+
+    // Check for empty or error responses
+    if (!text || text.trim() === "") {
       return fallback
     }
+
+    // Check for rate limit text responses
+    if (text.startsWith("Too Many") || text.includes("Too Many Requests")) {
+      return fallback
+    }
+
+    // Check for HTML error pages
+    if (text.startsWith("<!DOCTYPE") || text.startsWith("<html")) {
+      return fallback
+    }
+
     const parsed = JSON.parse(text)
-    if (parsed && typeof parsed === "object" && "error" in parsed) {
+
+    // Check for error objects with retryable flag
+    if (parsed && typeof parsed === "object" && "error" in parsed && "retryable" in parsed) {
       return fallback
     }
+
     return parsed as T
   } catch {
     return fallback

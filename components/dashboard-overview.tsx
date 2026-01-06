@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import {
@@ -18,12 +20,17 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { DashboardEditorDialog, type DashboardConfig, DEFAULT_ORDER } from "./dashboard-editor-dialog"
+import {
+  DashboardEditorDialog,
+  type DashboardConfig,
+  DEFAULT_ORDER,
+  isLinebreakWidget,
+} from "./dashboard-editor-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { GoogleReviewsWidget } from "./google-reviews-widget"
-import { JournalActionItemsCard } from "@/components/dashboard/journal-action-items-card"
+import { JournalActionItemsCard } from "@/components/dashboard/insights-action-items-card"
 import { useTranslation } from "@/contexts/translation-context"
 
 interface DashboardStats {
@@ -60,6 +67,18 @@ interface DashboardOverviewProps {
   userId: string
 }
 
+interface CockpitCardSetting {
+  widget_id: string
+  column_span: number
+  row_span: number
+  min_height: string
+  card_style?: {
+    variant: string
+    showBorder: boolean
+    showShadow: boolean
+  }
+}
+
 const DEFAULT_WIDGETS = {
   showTeamMembers: false,
   showGoals: true,
@@ -77,8 +96,9 @@ const DEFAULT_WIDGETS = {
   showTodaySchedule: true,
   showRecentActivities: true,
   showGoogleReviews: true,
-  showTodos: true,
+  showInsightsActions: true,
   showJournalActions: true,
+  showTodos: true,
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
   todosFilterPriority: undefined,
@@ -153,6 +173,7 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
     widgets: DEFAULT_WIDGETS,
   })
   const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [cockpitCardSettings, setCockpitCardSettings] = useState<CockpitCardSetting[]>([])
 
   const hasLoadedRef = useRef(false)
   const loadingPracticeIdRef = useRef<string | null>(null)
@@ -160,6 +181,21 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   useEffect(() => {
     console.log("[v0] Dashboard config structure:", JSON.stringify(dashboardConfig, null, 2))
   }, [dashboardConfig])
+
+  useEffect(() => {
+    const fetchCockpitSettings = async () => {
+      try {
+        const response = await fetch("/api/cockpit-settings")
+        if (response.ok) {
+          const data = await response.json()
+          setCockpitCardSettings(data.settings || [])
+        }
+      } catch (error) {
+        console.error("Error fetching cockpit card settings:", error)
+      }
+    }
+    fetchCockpitSettings()
+  }, [])
 
   const fetchDashboardData = useCallback(async () => {
     if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
@@ -416,15 +452,61 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
     )
   }, [])
 
+  const getColumnSpanClass = (widgetId: string): string => {
+    const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
+    const colSpan = setting?.column_span || 1
+
+    switch (colSpan) {
+      case 2:
+        return "md:col-span-2"
+      case 3:
+        return "md:col-span-3"
+      case 4:
+        return "md:col-span-4"
+      case 5:
+        return "md:col-span-5"
+      default:
+        return ""
+    }
+  }
+
+  const getRowSpanClass = (widgetId: string): string => {
+    const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
+    const rowSpan = setting?.row_span || 1
+
+    return rowSpan === 2 ? "md:row-span-2" : ""
+  }
+
+  const getMinHeightStyle = (widgetId: string): React.CSSProperties => {
+    const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
+    if (setting?.min_height && setting.min_height !== "auto") {
+      return { minHeight: setting.min_height }
+    }
+    return {}
+  }
+
   const renderWidget = useCallback(
     (widgetId: string) => {
       const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
 
+      if (isLinebreakWidget(widgetId)) {
+        return (
+          <div key={widgetId} className="col-span-full">
+            <div className="w-full h-px bg-border my-4" />
+          </div>
+        )
+      }
+
+      const wrapWithSpan = (content: React.ReactNode, id: string) => (
+        <div key={id} className={`${getColumnSpanClass(id)} ${getRowSpanClass(id)}`} style={getMinHeightStyle(id)}>
+          {content}
+        </div>
+      )
+
       switch (widgetId) {
-        // Stat cards (small cards in the grid)
         case "showTeamMembers":
           if (!widgets.showTeamMembers || !stats) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="team"
               title={t("Team-Mitglieder", "Team-Mitglieder")}
@@ -433,11 +515,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               icon={Users}
               color="blue"
               href="/team"
-            />
+            />,
+            widgetId,
           )
         case "showGoals":
           if (!widgets.showGoals || !stats) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="goals"
               title={t("Aktive Ziele", "Aktive Ziele")}
@@ -446,11 +529,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               icon={Target}
               color="green"
               href="/goals"
-            />
+            />,
+            widgetId,
           )
         case "showWorkflows":
           if (!widgets.showWorkflows || !stats) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="workflows"
               title={t("Workflows", "Workflows")}
@@ -459,11 +543,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               icon={Workflow}
               color="purple"
               href="/workflows"
-            />
+            />,
+            widgetId,
           )
         case "showDocuments":
           if (!widgets.showDocuments || !stats) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="documents"
               title={t("Dokumente", "Dokumente")}
@@ -472,11 +557,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               icon={FileText}
               color="amber"
               href="/documents"
-            />
+            />,
+            widgetId,
           )
         case "showRecruiting":
           if (!widgets.showRecruiting || !stats || stats.openPositions === undefined) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="recruiting"
               title={t("Offene Stellen", "Offene Stellen")}
@@ -486,24 +572,18 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               color="pink"
               href="/hiring"
               subtitle={`${stats.applications || 0} Bewerbungen`}
-            />
+            />,
+            widgetId,
           )
         case "showOpenTasks":
           if (!widgets.showOpenTasks || !stats || stats.openTasks === undefined) return null
-          return (
-            <StatCard
-              key="tasks"
-              title={t("Offene Aufgaben", "Offene Aufgaben")}
-              value={stats.openTasks}
-              trend={stats.tasksTrend}
-              icon={CheckSquare}
-              color="orange"
-              href="/todos"
-            />
+          return wrapWithSpan(
+            <Card className="group relative h-full overflow-hidden">{/* ... existing card content ... */}</Card>,
+            widgetId,
           )
         case "showTodayAppointments":
           if (!widgets.showTodayAppointments || !stats || stats.todayAppointments === undefined) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="appointments"
               title={t("Termine heute", "Termine heute")}
@@ -512,11 +592,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               icon={Calendar}
               color="blue"
               href="/calendar"
-            />
+            />,
+            widgetId,
           )
         case "showActiveCandidates":
           if (!widgets.showActiveCandidates || !stats || stats.activeCandidates === undefined) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="candidates"
               title={t("Aktive Kandidaten", "Aktive Kandidaten")}
@@ -525,11 +606,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               icon={Users}
               color="green"
               href="/hiring"
-            />
+            />,
+            widgetId,
           )
         case "showDrafts":
           if (!widgets.showDrafts || !stats || stats.drafts === undefined) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="drafts"
               title={t("Entwürfe", "Entwürfe")}
@@ -538,11 +620,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               icon={FileText}
               color="gray"
               href="/goals?tab=draft"
-            />
+            />,
+            widgetId,
           )
         case "showTodos":
           if (!widgets.showTodos || !stats || stats.filteredTodos === undefined) return null
-          return (
+          return wrapWithSpan(
             <StatCard
               key="filtered-todos"
               title={t("Gefilterte Aufgaben", "Gefilterte Aufgaben")}
@@ -550,23 +633,24 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               icon={CheckSquare}
               color="purple"
               href="/todos"
-            />
+            />,
+            widgetId,
           )
         case "showGoogleReviews":
           if (!widgets.showGoogleReviews || !currentPractice) return null
-          return (
+          return wrapWithSpan(
             <GoogleReviewsWidget
               key="google-reviews"
               practiceId={currentPractice.id}
               practiceName={currentPractice.name}
               practiceWebsiteUrl={currentPractice.website}
-            />
+            />,
+            widgetId,
           )
 
-        // Full-width widgets (charts, etc.)
         case "showWeeklyTasks":
           if (!widgets.showWeeklyTasks || !stats?.weeklyTasksData) return null
-          return (
+          return wrapWithSpan(
             <Card key="weekly-tasks" className="p-6 border-muted col-span-full">
               <div className="space-y-4">
                 <div>
@@ -585,11 +669,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
                   </div>
                 </div>
               </div>
-            </Card>
+            </Card>,
+            widgetId,
           )
         case "showTodaySchedule":
           if (!widgets.showTodaySchedule || !stats?.todayScheduleData) return null
-          return (
+          return wrapWithSpan(
             <Card key="today-schedule" className="p-6 border-muted col-span-full">
               <div className="space-y-4">
                 <div>
@@ -598,11 +683,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
                 </div>
                 {renderLineChart(stats.todayScheduleData)}
               </div>
-            </Card>
+            </Card>,
+            widgetId,
           )
         case "showActivityChart":
           if (!widgets.showActivityChart || !stats?.activityData) return null
-          return (
+          return wrapWithSpan(
             <Card key="activity-chart" className="p-6 border-muted col-span-full">
               <div className="space-y-4">
                 <div>
@@ -611,11 +697,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
                 </div>
                 {renderAreaChart(stats.activityData)}
               </div>
-            </Card>
+            </Card>,
+            widgetId,
           )
         case "showKPIs":
           if (!widgets.showKPIs || !stats) return null
-          return (
+          return wrapWithSpan(
             <Card key="kpis" className="p-6 border-muted col-span-full">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
@@ -640,11 +727,12 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
                   <TrendingUp className="h-6 w-6" />
                 </div>
               </div>
-            </Card>
+            </Card>,
+            widgetId,
           )
         case "showRecentActivities":
           if (!widgets.showRecentActivities || !stats?.recentActivities?.length) return null
-          return (
+          return wrapWithSpan(
             <Card key="recent-activities" className="p-6 border-muted col-span-full">
               <div className="space-y-4">
                 <div>
@@ -671,19 +759,38 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
                   ))}
                 </div>
               </div>
-            </Card>
+            </Card>,
+            widgetId,
+          )
+        case "showInsightsActions":
+          if (widgets.showInsightsActions === false || !practiceId) return null
+          return wrapWithSpan(
+            <JournalActionItemsCard key="insights-actions" practiceId={practiceId} className="col-span-full" />,
+            widgetId,
           )
         case "showJournalActions":
           if (widgets.showJournalActions === false || !practiceId) return null
-          return <JournalActionItemsCard key="journal-actions" practiceId={practiceId} className="col-span-full" />
+          return wrapWithSpan(
+            <JournalActionItemsCard key="journal-actions" practiceId={practiceId} className="col-span-full" />,
+            widgetId,
+          )
         case "showQuickActions":
-          // Quick actions are handled separately if needed
           return null
         default:
           return null
       }
     },
-    [dashboardConfig, stats, currentPractice, t, practiceId, renderBarChart, renderLineChart, renderAreaChart],
+    [
+      dashboardConfig,
+      stats,
+      currentPractice,
+      t,
+      practiceId,
+      renderBarChart,
+      renderLineChart,
+      renderAreaChart,
+      cockpitCardSettings,
+    ],
   )
 
   const orderedWidgets = useMemo(() => {
@@ -698,9 +805,7 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   }, [dashboardConfig, renderWidget])
 
   const handleSaveConfig = useCallback((newConfig: { widgets: any }) => {
-    // Ensure we have a proper structure
     if (newConfig && newConfig.widgets) {
-      // Check if widgets is already wrapped (double nested)
       const widgets = newConfig.widgets.widgets || newConfig.widgets
       setDashboardConfig({ widgets })
     } else {
@@ -729,7 +834,6 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
 
   return (
     <div className="space-y-6 max-w-full">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Cockpit</h1>
@@ -749,9 +853,8 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0">{orderedWidgets}</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 min-w-0 auto-rows-min">{orderedWidgets}</div>
 
-      {/* Dashboard Editor Dialog */}
       <DashboardEditorDialog
         open={isEditorOpen}
         onOpenChange={setIsEditorOpen}

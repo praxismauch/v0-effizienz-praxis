@@ -201,112 +201,123 @@ export default function ContactsPage() {
               ) : filteredContacts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">Keine Kontakte gefunden</div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Firma</TableHead>
-                      <TableHead>Kontakt</TableHead>
-                      <TableHead>Adresse</TableHead>
-                      <TableHead>Kategorie</TableHead>
-                      <TableHead className="text-right">Aktionen</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredContacts.map((contact) => (
-                      <TableRow key={contact.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {contact.image_url && (
-                              <img
-                                src={contact.image_url || "/placeholder.svg"}
-                                alt={contact.last_name}
-                                className="h-8 w-8 rounded-full object-cover"
-                              />
-                            )}
-                            <div>
-                              <div className="font-medium">
-                                {contact.salutation && `${contact.salutation} `}
-                                {contact.title && `${contact.title} `}
-                                {contact.first_name} {contact.last_name}
-                              </div>
-                              {contact.position && (
-                                <div className="text-sm text-muted-foreground">{contact.position}</div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {contact.company && (
-                            <div className="flex items-center gap-2">
-                              <Building2 className="h-4 w-4 text-muted-foreground" />
-                              {contact.company}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {contact.email && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <Mail className="h-3 w-3 text-muted-foreground" />
-                                <a href={`mailto:${contact.email}`} className="hover:underline">
-                                  {contact.email}
-                                </a>
-                              </div>
-                            )}
-                            {(contact.phone || contact.mobile) && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <Phone className="h-3 w-3 text-muted-foreground" />
-                                {contact.phone || contact.mobile}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {(contact.street || contact.city) && (
-                            <div className="text-sm">
-                              {contact.street && (
-                                <div>
-                                  {contact.street} {contact.house_number}
-                                </div>
-                              )}
-                              {contact.city && (
-                                <div>
-                                  {contact.postal_code} {contact.city}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {contact.category && <Badge variant="outline">{contact.category}</Badge>}
-                          {contact.ai_extracted && (
-                            <Badge variant="secondary" className="ml-2">
-                              KI
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedContact(contact)
-                                setShowEditDialog(true)
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setContactToDelete(contact)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[180px]">Name</TableHead>
+                        <TableHead className="min-w-[140px]">Firma</TableHead>
+                        <TableHead className="min-w-[180px]">Kontakt</TableHead>
+                        <TableHead className="min-w-[160px]">Adresse</TableHead>
+                        <TableHead className="min-w-[100px]">Kategorie</TableHead>
+                        <TableHead className="text-right min-w-[100px]">Aktionen</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredContacts.map((contact) => (
+                        <TableRow key={contact.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {contact.image_url && (
+                                <img
+                                  src={contact.image_url || "/placeholder.svg"}
+                                  alt={contact.last_name}
+                                  className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                                />
+                              )}
+                              <div>
+                                <div className="font-medium whitespace-nowrap">
+                                  {contact.salutation && `${contact.salutation} `}
+                                  {contact.title && `${contact.title} `}
+                                  {contact.first_name} {contact.last_name}
+                                </div>
+                                {contact.position && (
+                                  <div className="text-sm text-muted-foreground">{contact.position}</div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {contact.company && (
+                              <div className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <span className="truncate max-w-[120px]">{contact.company}</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {contact.email && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Mail className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                  <a
+                                    href={`mailto:${contact.email}`}
+                                    className="hover:underline truncate max-w-[150px]"
+                                  >
+                                    {contact.email}
+                                  </a>
+                                </div>
+                              )}
+                              {(contact.phone || contact.mobile) && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                  <span className="whitespace-nowrap">{contact.phone || contact.mobile}</span>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {(contact.street || contact.city) && (
+                              <div className="text-sm">
+                                {contact.street && (
+                                  <div className="whitespace-nowrap">
+                                    {contact.street} {contact.house_number}
+                                  </div>
+                                )}
+                                {contact.city && (
+                                  <div className="whitespace-nowrap">
+                                    {contact.postal_code} {contact.city}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {contact.category && <Badge variant="outline">{contact.category}</Badge>}
+                            {contact.ai_extracted && (
+                              <Badge variant="secondary" className="ml-2">
+                                KI
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-9 p-0"
+                                onClick={() => {
+                                  setSelectedContact(contact)
+                                  setShowEditDialog(true)
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-9 p-0"
+                                onClick={() => setContactToDelete(contact)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

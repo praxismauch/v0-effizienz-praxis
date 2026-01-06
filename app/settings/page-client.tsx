@@ -233,6 +233,7 @@ export default function SettingsPageClient() {
   const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
     taskReminders: true,
+    todoDueDateEmail: true,
     appointmentReminders: true,
     weeklyReport: false,
     marketingEmails: false,
@@ -1488,6 +1489,21 @@ export default function SettingsPageClient() {
                     checked={notificationSettings.taskReminders}
                     onCheckedChange={(checked) =>
                       setNotificationSettings((prev) => ({ ...prev, taskReminders: checked }))
+                    }
+                  />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>E-Mail bei Fälligkeit</Label>
+                    <p className="text-sm text-muted-foreground">
+                      E-Mail erhalten, wenn eine Aufgabe ihr Fälligkeitsdatum erreicht
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.todoDueDateEmail}
+                    onCheckedChange={(checked) =>
+                      setNotificationSettings((prev) => ({ ...prev, todoDueDateEmail: checked }))
                     }
                   />
                 </div>

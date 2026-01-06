@@ -60,6 +60,7 @@ import { createBrowserClient } from "@/lib/supabase/client"
 // REMOVED IMPORT: import { SidebarProvider } from "@/components/ui/sidebar" // ADDED IMPORT
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { TaskDistributionTab } from "@/components/task-distribution-tab" // Added import for TaskDistributionTab
+import CreateTodoDialog from "@/components/create-todo-dialog"
 
 export default function TodosPage() {
   const { todos, addTodo, updateTodo, deleteTodo, isLoading, fetchTodos } = useTodos() // Added fetchTodos
@@ -2629,6 +2630,59 @@ export default function TodosPage() {
           )}
         </div>
       </div>
+
+      <CreateTodoDialog
+        open={showCreateDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDialog()
+          }
+          setShowCreateDialog(open)
+        }}
+        formData={formData}
+        setFormData={setFormData}
+        assignedUserIds={assignedUserIds}
+        setAssignedUserIds={setAssignedUserIds}
+        attachments={attachments}
+        setAttachments={setAttachments}
+        pastedFiles={pastedFiles}
+        setPastedFiles={setPastedFiles}
+        isUploadingFile={isUploadingFile}
+        teamMembers={teamMembers}
+        editingTodo={editingTodo}
+        setEditingTodo={setEditingTodo}
+        onDescriptionPaste={handleDescriptionPaste}
+      />
+      {/* Dialog for deleting todo */}
+      {todoToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl">
+            <h2 className="text-lg font-semibold mb-4">Aufgabe löschen?</h2>
+            <p className="mb-6">
+              Sind Sie sicher, dass Sie diese Aufgabe löschen möchten? Diese Aktion kann nicht rückgängig gemacht
+              werden.
+            </p>
+            <div className="flex justify-end gap-4">
+              <Button variant="outline" onClick={() => setTodoToDelete(null)}>
+                Abbrechen
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  await deleteTodo(todoToDelete)
+                  toast({
+                    title: "Gelöscht",
+                    description: "Aufgabe wurde gelöscht",
+                  })
+                  setTodoToDelete(null)
+                }}
+              >
+                Löschen
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   )
 }

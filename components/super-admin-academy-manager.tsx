@@ -1,15 +1,17 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+
+import { useState, useCallback, useEffect } from "react"
+import { createBrowserClient } from "@/lib/supabase"
+import { toast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -18,46 +20,56 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Plus,
-  GraduationCap,
-  BookOpen,
-  HelpCircle,
-  Trophy,
-  BarChart3,
-  MoreHorizontal,
   Pencil,
   Trash2,
   Eye,
   Search,
-  Filter,
+  MoreHorizontal,
+  GraduationCap,
+  BookOpen,
   Users,
   Star,
-  Award,
+  Clock,
+  Trophy,
   Layers,
-  FileText,
-  ChevronRight,
   ChevronDown,
+  ChevronRight,
   Play,
-  CheckCircle2,
+  FileText,
+  HelpCircle,
+  Award,
   Sparkles,
+  RefreshCw,
+  BarChart3,
   Target,
-  Flame,
   Zap,
   Medal,
   Crown,
-  Heart,
-  Save,
-  RefreshCw,
+  Flame,
+  CheckCircle,
+  Globe,
   Loader2,
   Wand2,
-  Clock,
+  Save,
+  Heart,
 } from "lucide-react"
-import { createBrowserClient } from "@/lib/supabase/client"
-import { toast } from "@/components/ui/use-toast"
 
 interface Course {
   id: string
@@ -74,6 +86,9 @@ interface Course {
   xp_reward: number
   is_published: boolean
   is_featured: boolean
+  is_landing_page_featured: boolean // Added visibility setting
+  visibility: "public" | "logged_in" | "premium" // Added visibility setting
+  target_audience: string[] // Added target audience
   total_enrollments: number
   average_rating: number
   total_reviews: number
@@ -199,7 +214,7 @@ const BADGE_TYPES = [
   { value: "milestone", label: "Meilenstein", icon: Target },
   { value: "streak", label: "Streak", icon: Flame },
   { value: "skill", label: "Skill", icon: Zap },
-  { value: "completion", label: "Abschluss", icon: CheckCircle2 },
+  { value: "completion", label: "Abschluss", icon: CheckCircle },
   { value: "special", label: "Spezial", icon: Crown },
 ]
 
@@ -216,12 +231,26 @@ const BADGE_ICONS = [
   { value: "award", label: "Auszeichnung", icon: Award },
   { value: "medal", label: "Medaille", icon: Medal },
   { value: "star", label: "Stern", icon: Star },
-  { value: "crown", label: "Krone", icon: Crown },
-  { value: "flame", label: "Flamme", icon: Flame },
-  { value: "zap", label: "Blitz", icon: Zap },
+  { value: "crown", icon: Crown },
+  { value: "flame", icon: Flame },
+  { value: "zap", icon: Zap },
   { value: "target", icon: Target },
   { value: "heart", icon: Heart },
   { value: "sparkles", icon: Sparkles },
+]
+
+const VISIBILITY_OPTIONS = [
+  { value: "public", label: "Öffentlich", description: "Für alle Besucher sichtbar (auch ohne Login)", icon: Globe },
+  { value: "logged_in", label: "Angemeldete Nutzer", description: "Nur für eingeloggte Benutzer", icon: Users },
+  { value: "premium", label: "Premium", description: "Nur für zahlende Abonnenten", icon: Crown },
+]
+
+const TARGET_AUDIENCE_OPTIONS = [
+  { value: "all", label: "Alle" },
+  { value: "admin", label: "Administratoren" },
+  { value: "manager", label: "Praxismanager" },
+  { value: "employee", label: "Mitarbeiter" },
+  { value: "external", label: "Externe Benutzer" },
 ]
 
 export function SuperAdminAcademyManager() {
@@ -243,7 +272,7 @@ export function SuperAdminAcademyManager() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showAiCourseDialog, setShowAiCourseDialog] = useState(false)
   const [aiCourseDescription, setAiCourseDescription] = useState("")
-  const [aiCourseCategory, setAiCourseCategory] = useState("praxis-management")
+  const [aiCourseCategory, setAiCourseCategory] = useState("praxismanagement") // Changed default to match constant
   const [aiCourseDifficulty, setAiCourseDifficulty] = useState("beginner")
   const [aiCourseGenerating, setAiCourseGenerating] = useState(false)
   const [generatedCourse, setGeneratedCourse] = useState<any>(null)
@@ -276,6 +305,9 @@ export function SuperAdminAcademyManager() {
     xp_reward: 100,
     is_published: false,
     is_featured: false,
+    is_landing_page_featured: false, // Added
+    visibility: "logged_in" as "public" | "logged_in" | "premium", // Added
+    target_audience: ["all"] as string[], // Added
     tags: [] as string[],
     learning_objectives: [] as string[],
   })
@@ -438,6 +470,7 @@ export function SuperAdminAcademyManager() {
     }
   }, [])
 
+  // Updated handleSaveCourse to include visibility
   const handleSaveCourse = async () => {
     const supabase = createBrowserClient() // Use browser client
     if (!supabase) {
@@ -680,16 +713,18 @@ export function SuperAdminAcademyManager() {
         id: courseId,
         title: generatedCourse.title,
         description: generatedCourse.description,
-        category: aiCourseCategory,
-        difficulty_level: aiCourseDifficulty,
+        category: aiCourseCategory, // Use the selected category
+        difficulty_level: aiCourseDifficulty, // Use the selected difficulty
         learning_objectives: generatedCourse.learning_objectives,
-        target_audience: generatedCourse.target_audience,
+        target_audience: generatedCourse.target_audience || ["all"], // Default to 'all' if not provided by AI
         estimated_hours: generatedCourse.estimated_hours,
         xp_reward: generatedCourse.xp_reward,
         instructor_name: generatedCourse.instructor_name,
         instructor_bio: generatedCourse.instructor_bio,
         is_published: false,
         is_featured: false,
+        is_landing_page_featured: false, // Default to false
+        visibility: "logged_in", // Default visibility
         total_enrollments: 0,
         average_rating: 0,
         total_reviews: 0,
@@ -818,9 +853,13 @@ export function SuperAdminAcademyManager() {
       xp_reward: 100,
       is_published: false,
       is_featured: false,
+      is_landing_page_featured: false, // Added
+      visibility: "logged_in", // Added
+      target_audience: ["all"], // Added
       tags: [],
       learning_objectives: [],
     })
+    setEditingCourse(null) // Reset editing state as well
   }
 
   const resetModuleForm = () => {
@@ -877,6 +916,9 @@ export function SuperAdminAcademyManager() {
       xp_reward: course.xp_reward || 100,
       is_published: course.is_published || false,
       is_featured: course.is_featured || false,
+      is_landing_page_featured: course.is_landing_page_featured || false, // Added
+      visibility: course.visibility || "logged_in", // Added
+      target_audience: course.target_audience || ["all"], // Added
       tags: course.tags || [],
       learning_objectives: course.learning_objectives || [],
     })
@@ -934,6 +976,25 @@ export function SuperAdminAcademyManager() {
 
   const getRarityColor = (rarity: string) => {
     return BADGE_RARITIES.find((r) => r.value === rarity)?.color || "text-gray-500"
+  }
+
+  const getVisibilityBadge = (visibility: string) => {
+    const config = VISIBILITY_OPTIONS.find((v) => v.value === visibility)
+    const Icon = config?.icon || Users
+    const colors = {
+      public: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      logged_in: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      premium: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+    }
+    return (
+      <Badge
+        variant="outline"
+        className={`${colors[visibility as keyof typeof colors] || colors.logged_in} border-0 gap-1`}
+      >
+        <Icon className="h-3 w-3" />
+        {config?.label || visibility}
+      </Badge>
+    )
   }
 
   if (loading) {
@@ -1057,6 +1118,7 @@ export function SuperAdminAcademyManager() {
                             {course.is_published ? "Veröffentlicht" : "Entwurf"}
                           </Badge>
                           {getDifficultyBadge(course.difficulty_level)}
+                          {getVisibilityBadge(course.visibility)} {/* Display visibility badge */}
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => openCourseDetails(course)}>
@@ -1108,20 +1170,19 @@ export function SuperAdminAcademyManager() {
 
         {/* Courses Tab */}
         <TabsContent value="courses" className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between gap-4">
-            <div className="flex flex-1 gap-2">
-              <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <div className="flex gap-2 flex-1">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Kurse suchen..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-10"
                 />
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Kategorie" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1146,111 +1207,114 @@ export function SuperAdminAcademyManager() {
             </Button>
           </div>
 
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Kurs</TableHead>
-                    <TableHead>Kategorie</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead className="text-center">Einschreibungen</TableHead>
-                    <TableHead className="text-center">Bewertung</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCourses.map((course) => (
-                    <TableRow key={course.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-                            {course.thumbnail_url ? (
-                              <img
-                                src={course.thumbnail_url || "/placeholder.svg"}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <GraduationCap className="h-5 w-5 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium">{course.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {course.instructor_name || "Kein Instructor"}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {CATEGORIES.find((c) => c.value === course.category)?.label || course.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{getDifficultyBadge(course.difficulty_level)}</TableCell>
-                      <TableCell className="text-center">{course.total_enrollments || 0}</TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {(course.average_rating || 0).toFixed(1)}
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={course.is_published ? "default" : "secondary"}>
-                            {course.is_published ? "Veröffentlicht" : "Entwurf"}
-                          </Badge>
-                          {course.is_featured && (
-                            <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">
-                              Featured
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openCourseDetails(course)}>
-                              <Layers className="h-4 w-4 mr-2" />
-                              Inhalte verwalten
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditCourse(course)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Bearbeiten
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setDeleteItem({ type: "course", id: course.id, name: course.title })
-                                setShowDeleteDialog(true)
-                              }}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Löschen
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredCourses.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        Keine Kurse gefunden
-                      </TableCell>
-                    </TableRow>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredCourses.map((course) => (
+              <Card key={course.id} className="overflow-hidden">
+                <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                  {course.thumbnail_url ? (
+                    <img
+                      src={course.thumbnail_url || "/placeholder.svg"}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <GraduationCap className="h-12 w-12 text-muted-foreground" />
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                </div>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg line-clamp-1">{course.title}</CardTitle>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openCourseDetails(course)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditCourse(course)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Bearbeiten
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setDeleteItem({ type: "course", id: course.id, name: course.title })
+                            setShowDeleteDialog(true)
+                          }}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Löschen
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <CardDescription className="line-clamp-2">
+                    {course.description || "Keine Beschreibung"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {getVisibilityBadge(course.visibility || "logged_in")}
+                    {getDifficultyBadge(course.difficulty_level)}
+                    <Badge variant={course.is_published ? "default" : "secondary"}>
+                      {course.is_published ? "Veröffentlicht" : "Entwurf"}
+                    </Badge>
+                    {course.is_landing_page_featured && (
+                      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-0">
+                        <Star className="h-3 w-3 mr-1 fill-amber-500" />
+                        Landing Page
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {course.total_enrollments || 0}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {course.estimated_hours}h
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      {course.average_rating?.toFixed(1) || "0.0"}
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Button variant="outline" className="w-full bg-transparent" onClick={() => openCourseDetails(course)}>
+                    Kursinhalt verwalten
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+            {filteredCourses.length === 0 && (
+              <Card className="col-span-full">
+                <CardContent className="text-center py-12">
+                  <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">Keine Kurse gefunden</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm || categoryFilter !== "all"
+                      ? "Keine Kurse entsprechen Ihren Filterkriterien"
+                      : "Erstellen Sie Ihren ersten Kurs"}
+                  </p>
+                  <Button
+                    onClick={() => {
+                      resetCourseForm()
+                      setShowCourseDialog(true)
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Kurs erstellen
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         {/* Course Detail Tab */}
@@ -1651,138 +1715,230 @@ export function SuperAdminAcademyManager() {
             <DialogTitle>{editingCourse ? "Kurs bearbeiten" : "Neuer Kurs"}</DialogTitle>
             <DialogDescription>Füllen Sie die Kursinformationen aus</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <Label>Titel *</Label>
-                <Input
-                  value={courseForm.title}
-                  onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
-                  placeholder="z.B. Praxismanagement für Einsteiger"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label>Beschreibung</Label>
-                <Textarea
-                  value={courseForm.description}
-                  onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-                  placeholder="Kurze Beschreibung des Kursinhalts..."
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label>Kategorie</Label>
-                <Select
-                  value={courseForm.category}
-                  onValueChange={(v) => setCourseForm({ ...courseForm, category: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Schwierigkeitsgrad</Label>
-                <Select
-                  value={courseForm.difficulty_level}
-                  onValueChange={(v) => setCourseForm({ ...courseForm, difficulty_level: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DIFFICULTY_LEVELS.map((level) => (
-                      <SelectItem key={level.value} value={level.value}>
-                        {level.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Geschätzte Dauer (Stunden)</Label>
-                <Input
-                  type="number"
-                  min={0.5}
-                  step={0.5}
-                  value={courseForm.estimated_hours}
-                  onChange={(e) => setCourseForm({ ...courseForm, estimated_hours: Number.parseFloat(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label>XP-Belohnung</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={25}
-                  value={courseForm.xp_reward}
-                  onChange={(e) => setCourseForm({ ...courseForm, xp_reward: Number.parseInt(e.target.value) })}
-                />
-              </div>
-              <Separator className="col-span-2" />
-              <div className="col-span-2">
-                <Label>Instructor Name</Label>
-                <Input
-                  value={courseForm.instructor_name}
-                  onChange={(e) => setCourseForm({ ...courseForm, instructor_name: e.target.value })}
-                  placeholder="Name des Dozenten"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label>Instructor Bio</Label>
-                <Textarea
-                  value={courseForm.instructor_bio}
-                  onChange={(e) => setCourseForm({ ...courseForm, instructor_bio: e.target.value })}
-                  placeholder="Kurze Biografie des Dozenten..."
-                  rows={2}
-                />
-              </div>
-              <div>
-                <Label>Thumbnail URL</Label>
-                <Input
-                  value={courseForm.thumbnail_url}
-                  onChange={(e) => setCourseForm({ ...courseForm, thumbnail_url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
-              <div>
-                <Label>Featured Image URL</Label>
-                <Input
-                  value={courseForm.featured_image_url}
-                  onChange={(e) => setCourseForm({ ...courseForm, featured_image_url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
-              <Separator className="col-span-2" />
-              <div className="col-span-2 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Veröffentlicht</Label>
-                  <p className="text-sm text-muted-foreground">Kurs für Benutzer sichtbar machen</p>
+          <ScrollArea className="h-[calc(90vh-10rem)] pr-2">
+            <div className="space-y-4 pr-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label>Titel *</Label>
+                  <Input
+                    value={courseForm.title}
+                    onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+                    placeholder="z.B. Praxismanagement für Einsteiger"
+                  />
                 </div>
-                <Switch
-                  checked={courseForm.is_published}
-                  onCheckedChange={(v) => setCourseForm({ ...courseForm, is_published: v })}
-                />
-              </div>
-              <div className="col-span-2 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Featured</Label>
-                  <p className="text-sm text-muted-foreground">Kurs auf der Startseite hervorheben</p>
+                <div className="col-span-2">
+                  <Label>Beschreibung</Label>
+                  <Textarea
+                    value={courseForm.description}
+                    onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+                    placeholder="Kurze Beschreibung des Kursinhalts..."
+                    rows={3}
+                  />
                 </div>
-                <Switch
-                  checked={courseForm.is_featured}
-                  onCheckedChange={(v) => setCourseForm({ ...courseForm, is_featured: v })}
-                />
+
+                <div className="col-span-2 space-y-3 p-4 rounded-lg border bg-muted/50">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Sichtbarkeit & Zielgruppe
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {VISIBILITY_OPTIONS.map((option) => {
+                      const Icon = option.icon
+                      const isSelected = courseForm.visibility === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() =>
+                            setCourseForm({
+                              ...courseForm,
+                              visibility: option.value as "public" | "logged_in" | "premium",
+                            })
+                          }
+                          className={`p-3 rounded-lg border-2 text-left transition-all ${
+                            isSelected
+                              ? "border-primary bg-primary/10"
+                              : "border-transparent bg-background hover:border-muted-foreground/20"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Icon className={`h-4 w-4 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`font-medium text-sm ${isSelected ? "text-primary" : ""}`}>
+                              {option.label}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{option.description}</p>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {courseForm.visibility === "public" && (
+                    <div className="flex items-center space-x-2 pt-2">
+                      <Switch
+                        id="landing-featured"
+                        checked={courseForm.is_landing_page_featured}
+                        onCheckedChange={(checked) =>
+                          setCourseForm({ ...courseForm, is_landing_page_featured: checked })
+                        }
+                      />
+                      <Label htmlFor="landing-featured" className="text-sm">
+                        Auf Landing Page anzeigen
+                      </Label>
+                    </div>
+                  )}
+
+                  <div className="pt-2">
+                    <Label className="text-sm">Zielgruppe</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {TARGET_AUDIENCE_OPTIONS.map((option) => {
+                        const isSelected = courseForm.target_audience.includes(option.value)
+                        return (
+                          <Badge
+                            key={option.value}
+                            variant={isSelected ? "default" : "outline"}
+                            className="cursor-pointer"
+                            onClick={() => {
+                              if (option.value === "all") {
+                                setCourseForm({ ...courseForm, target_audience: ["all"] })
+                              } else {
+                                const newAudience = isSelected
+                                  ? courseForm.target_audience.filter((a) => a !== option.value)
+                                  : [...courseForm.target_audience.filter((a) => a !== "all"), option.value]
+                                setCourseForm({
+                                  ...courseForm,
+                                  target_audience: newAudience.length === 0 ? ["all"] : newAudience,
+                                })
+                              }
+                            }}
+                          >
+                            {option.label}
+                          </Badge>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Kategorie</Label>
+                  <Select
+                    value={courseForm.category}
+                    onValueChange={(v) => setCourseForm({ ...courseForm, category: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Schwierigkeitsgrad</Label>
+                  <Select
+                    value={courseForm.difficulty_level}
+                    onValueChange={(v) => setCourseForm({ ...courseForm, difficulty_level: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIFFICULTY_LEVELS.map((level) => (
+                        <SelectItem key={level.value} value={level.value}>
+                          {level.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Geschätzte Dauer (Stunden)</Label>
+                  <Input
+                    type="number"
+                    min={0.5}
+                    step={0.5}
+                    value={courseForm.estimated_hours}
+                    onChange={(e) =>
+                      setCourseForm({ ...courseForm, estimated_hours: Number.parseFloat(e.target.value) })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>XP-Belohnung</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={25}
+                    value={courseForm.xp_reward}
+                    onChange={(e) => setCourseForm({ ...courseForm, xp_reward: Number.parseInt(e.target.value) })}
+                  />
+                </div>
+                <Separator className="col-span-2" />
+                <div className="col-span-2">
+                  <Label>Instructor Name</Label>
+                  <Input
+                    value={courseForm.instructor_name}
+                    onChange={(e) => setCourseForm({ ...courseForm, instructor_name: e.target.value })}
+                    placeholder="Name des Dozenten"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Instructor Bio</Label>
+                  <Textarea
+                    value={courseForm.instructor_bio}
+                    onChange={(e) => setCourseForm({ ...courseForm, instructor_bio: e.target.value })}
+                    placeholder="Kurze Biografie des Dozenten..."
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label>Thumbnail URL</Label>
+                  <Input
+                    value={courseForm.thumbnail_url}
+                    onChange={(e) => setCourseForm({ ...courseForm, thumbnail_url: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div>
+                  <Label>Featured Image URL</Label>
+                  <Input
+                    value={courseForm.featured_image_url}
+                    onChange={(e) => setCourseForm({ ...courseForm, featured_image_url: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <Separator className="col-span-2" />
+
+                <div className="col-span-2 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Veröffentlicht</Label>
+                    <p className="text-sm text-muted-foreground">Kurs für Benutzer sichtbar machen</p>
+                  </div>
+                  <Switch
+                    checked={courseForm.is_published}
+                    onCheckedChange={(v) => setCourseForm({ ...courseForm, is_published: v })}
+                  />
+                </div>
+                <div className="col-span-2 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Featured</Label>
+                    <p className="text-sm text-muted-foreground">Kurs auf der Startseite hervorheben</p>
+                  </div>
+                  <Switch
+                    checked={courseForm.is_featured}
+                    onCheckedChange={(v) => setCourseForm({ ...courseForm, is_featured: v })}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCourseDialog(false)}>
               Abbrechen
@@ -1860,114 +2016,118 @@ export function SuperAdminAcademyManager() {
             <DialogTitle>{editingLesson ? "Lektion bearbeiten" : "Neue Lektion"}</DialogTitle>
             <DialogDescription>Erstellen Sie eine Lektion für das Modul</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <Label>Titel *</Label>
-                <Input
-                  value={lessonForm.title}
-                  onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
-                  placeholder="z.B. Was ist Praxismanagement?"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label>Beschreibung</Label>
-                <Textarea
-                  value={lessonForm.description}
-                  onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
-                  placeholder="Kurze Beschreibung der Lektion..."
-                  rows={2}
-                />
-              </div>
-              <div>
-                <Label>Typ</Label>
-                <Select
-                  value={lessonForm.lesson_type}
-                  onValueChange={(v) => setLessonForm({ ...lessonForm, lesson_type: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="video">Video</SelectItem>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="interactive">Interaktiv</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Geschätzte Dauer (Min.)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={lessonForm.estimated_minutes}
-                  onChange={(e) => setLessonForm({ ...lessonForm, estimated_minutes: Number.parseInt(e.target.value) })}
-                />
-              </div>
-              {lessonForm.lesson_type === "video" && (
-                <>
-                  <div className="col-span-2">
-                    <Label>Video URL</Label>
-                    <Input
-                      value={lessonForm.video_url}
-                      onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div>
-                    <Label>Video Dauer (Sekunden)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={lessonForm.video_duration_seconds}
-                      onChange={(e) =>
-                        setLessonForm({ ...lessonForm, video_duration_seconds: Number.parseInt(e.target.value) })
-                      }
-                    />
-                  </div>
-                </>
-              )}
-              <div>
-                <Label>XP-Belohnung</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={5}
-                  value={lessonForm.xp_reward}
-                  onChange={(e) => setLessonForm({ ...lessonForm, xp_reward: Number.parseInt(e.target.value) })}
-                />
-              </div>
-              <div className="col-span-2">
-                <Label>Inhalt</Label>
-                <Textarea
-                  value={lessonForm.content}
-                  onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
-                  placeholder="Lektionsinhalt (Markdown unterstützt)..."
-                  rows={6}
-                />
-              </div>
-              <div className="col-span-2 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Veröffentlicht</Label>
-                  <p className="text-sm text-muted-foreground">Lektion sichtbar machen</p>
+          <ScrollArea className="h-[calc(90vh-10rem)] pr-2">
+            <div className="space-y-4 pr-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label>Titel *</Label>
+                  <Input
+                    value={lessonForm.title}
+                    onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                    placeholder="z.B. Was ist Praxismanagement?"
+                  />
                 </div>
-                <Switch
-                  checked={lessonForm.is_published}
-                  onCheckedChange={(v) => setLessonForm({ ...lessonForm, is_published: v })}
-                />
-              </div>
-              <div className="col-span-2 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Kostenlose Vorschau</Label>
-                  <p className="text-sm text-muted-foreground">Lektion als Vorschau freigeben</p>
+                <div className="col-span-2">
+                  <Label>Beschreibung</Label>
+                  <Textarea
+                    value={lessonForm.description}
+                    onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
+                    placeholder="Kurze Beschreibung der Lektion..."
+                    rows={2}
+                  />
                 </div>
-                <Switch
-                  checked={lessonForm.is_free_preview}
-                  onCheckedChange={(v) => setLessonForm({ ...lessonForm, is_free_preview: v })}
-                />
+                <div>
+                  <Label>Typ</Label>
+                  <Select
+                    value={lessonForm.lesson_type}
+                    onValueChange={(v) => setLessonForm({ ...lessonForm, lesson_type: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="video">Video</SelectItem>
+                      <SelectItem value="text">Text</SelectItem>
+                      <SelectItem value="interactive">Interaktiv</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Geschätzte Dauer (Min.)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={lessonForm.estimated_minutes}
+                    onChange={(e) =>
+                      setLessonForm({ ...lessonForm, estimated_minutes: Number.parseInt(e.target.value) })
+                    }
+                  />
+                </div>
+                {lessonForm.lesson_type === "video" && (
+                  <>
+                    <div className="col-span-2">
+                      <Label>Video URL</Label>
+                      <Input
+                        value={lessonForm.video_url}
+                        onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })}
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Video Dauer (Sekunden)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={lessonForm.video_duration_seconds}
+                        onChange={(e) =>
+                          setLessonForm({ ...lessonForm, video_duration_seconds: Number.parseInt(e.target.value) })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <Label>XP-Belohnung</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={5}
+                    value={lessonForm.xp_reward}
+                    onChange={(e) => setLessonForm({ ...lessonForm, xp_reward: Number.parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Inhalt</Label>
+                  <Textarea
+                    value={lessonForm.content}
+                    onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
+                    placeholder="Lektionsinhalt (Markdown unterstützt)..."
+                    rows={6}
+                  />
+                </div>
+                <div className="col-span-2 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Veröffentlicht</Label>
+                    <p className="text-sm text-muted-foreground">Lektion sichtbar machen</p>
+                  </div>
+                  <Switch
+                    checked={lessonForm.is_published}
+                    onCheckedChange={(v) => setLessonForm({ ...lessonForm, is_published: v })}
+                  />
+                </div>
+                <div className="col-span-2 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Kostenlose Vorschau</Label>
+                    <p className="text-sm text-muted-foreground">Lektion als Vorschau freigeben</p>
+                  </div>
+                  <Switch
+                    checked={lessonForm.is_free_preview}
+                    onCheckedChange={(v) => setLessonForm({ ...lessonForm, is_free_preview: v })}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLessonDialog(false)}>
               Abbrechen
@@ -1987,120 +2147,125 @@ export function SuperAdminAcademyManager() {
             <DialogTitle>{editingBadge ? "Badge bearbeiten" : "Neues Badge"}</DialogTitle>
             <DialogDescription>Erstellen Sie ein Gamification-Badge</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div
-                className="h-16 w-16 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: badgeForm.color + "20", color: badgeForm.color }}
-              >
-                {getBadgeIcon(badgeForm.icon_name)}
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label>Name *</Label>
-                <Input
-                  value={badgeForm.name}
-                  onChange={(e) => setBadgeForm({ ...badgeForm, name: e.target.value })}
-                  placeholder="z.B. Schnelllerner"
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Beschreibung</Label>
-              <Textarea
-                value={badgeForm.description}
-                onChange={(e) => setBadgeForm({ ...badgeForm, description: e.target.value })}
-                placeholder="Wofür wird dieses Badge verliehen?"
-                rows={2}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Typ</Label>
-                <Select
-                  value={badgeForm.badge_type}
-                  onValueChange={(v) => setBadgeForm({ ...badgeForm, badge_type: v })}
+          <ScrollArea className="h-[calc(90vh-10rem)] pr-2">
+            <div className="space-y-4 pr-2">
+              <div className="flex items-center gap-4">
+                <div
+                  className="h-16 w-16 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: badgeForm.color + "20", color: badgeForm.color }}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BADGE_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Seltenheit</Label>
-                <Select value={badgeForm.rarity} onValueChange={(v) => setBadgeForm({ ...badgeForm, rarity: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BADGE_RARITIES.map((rarity) => (
-                      <SelectItem key={rarity.value} value={rarity.value}>
-                        <span className={rarity.color}>{rarity.label}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Icon</Label>
-                <Select value={badgeForm.icon_name} onValueChange={(v) => setBadgeForm({ ...badgeForm, icon_name: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BADGE_ICONS.map((icon) => (
-                      <SelectItem key={icon.value} value={icon.value}>
-                        <div className="flex items-center gap-2">
-                          <icon.icon className="h-4 w-4" />
-                          {icon.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Farbe</Label>
-                <div className="flex gap-2">
+                  {getBadgeIcon(badgeForm.icon_name)}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Label>Name *</Label>
                   <Input
-                    type="color"
-                    value={badgeForm.color}
-                    onChange={(e) => setBadgeForm({ ...badgeForm, color: e.target.value })}
-                    className="w-12 h-9 p-1"
-                  />
-                  <Input
-                    value={badgeForm.color}
-                    onChange={(e) => setBadgeForm({ ...badgeForm, color: e.target.value })}
-                    placeholder="#3b82f6"
-                    className="flex-1"
+                    value={badgeForm.name}
+                    onChange={(e) => setBadgeForm({ ...badgeForm, name: e.target.value })}
+                    placeholder="z.B. Schnelllerner"
                   />
                 </div>
               </div>
               <div>
-                <Label>XP-Belohnung</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={10}
-                  value={badgeForm.xp_reward}
-                  onChange={(e) => setBadgeForm({ ...badgeForm, xp_reward: Number.parseInt(e.target.value) })}
+                <Label>Beschreibung</Label>
+                <Textarea
+                  value={badgeForm.description}
+                  onChange={(e) => setBadgeForm({ ...badgeForm, description: e.target.value })}
+                  placeholder="Wofür wird dieses Badge verliehen?"
+                  rows={2}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={badgeForm.is_active}
-                  onCheckedChange={(v) => setBadgeForm({ ...badgeForm, is_active: v })}
-                />
-                <Label>Aktiv</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Typ</Label>
+                  <Select
+                    value={badgeForm.badge_type}
+                    onValueChange={(v) => setBadgeForm({ ...badgeForm, badge_type: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BADGE_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Seltenheit</Label>
+                  <Select value={badgeForm.rarity} onValueChange={(v) => setBadgeForm({ ...badgeForm, rarity: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BADGE_RARITIES.map((rarity) => (
+                        <SelectItem key={rarity.value} value={rarity.value}>
+                          <span className={rarity.color}>{rarity.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Icon</Label>
+                  <Select
+                    value={badgeForm.icon_name}
+                    onValueChange={(v) => setBadgeForm({ ...badgeForm, icon_name: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BADGE_ICONS.map((icon) => (
+                        <SelectItem key={icon.value} value={icon.value}>
+                          <div className="flex items-center gap-2">
+                            <icon.icon className="h-4 w-4" />
+                            {icon.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Farbe</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="color"
+                      value={badgeForm.color}
+                      onChange={(e) => setBadgeForm({ ...badgeForm, color: e.target.value })}
+                      className="w-12 h-9 p-1"
+                    />
+                    <Input
+                      value={badgeForm.color}
+                      onChange={(e) => setBadgeForm({ ...badgeForm, color: e.target.value })}
+                      placeholder="#3b82f6"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>XP-Belohnung</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={10}
+                    value={badgeForm.xp_reward}
+                    onChange={(e) => setBadgeForm({ ...badgeForm, xp_reward: Number.parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={badgeForm.is_active}
+                    onCheckedChange={(v) => setBadgeForm({ ...badgeForm, is_active: v })}
+                  />
+                  <Label>Aktiv</Label>
+                </div>
               </div>
             </div>
-          </div>
+          </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowBadgeDialog(false)}>
               Abbrechen
@@ -2114,25 +2279,22 @@ export function SuperAdminAcademyManager() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Löschen bestätigen</DialogTitle>
-            <DialogDescription>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Löschen bestätigen</AlertDialogTitle>
+            <AlertDialogDescription>
               Möchten Sie "{deleteItem?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-2" />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/80">
               Löschen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={showAiCourseDialog} onOpenChange={setShowAiCourseDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -2147,143 +2309,144 @@ export function SuperAdminAcademyManager() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            {!generatedCourse ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="ai-course-description">Kursbeschreibung</Label>
-                  <Textarea
-                    id="ai-course-description"
-                    placeholder="Beschreiben Sie den Kurs, den Sie erstellen möchten. z.B. 'Ein Kurs über effektive Patientenkommunikation für MFA, der Themen wie aktives Zuhören, Umgang mit schwierigen Patienten und telefonische Kommunikation abdeckt.'"
-                    value={aiCourseDescription}
-                    onChange={(e) => setAiCourseDescription(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+          <ScrollArea className="h-[calc(90vh-10rem)] pr-2">
+            <div className="space-y-6 py-4 pr-2">
+              {!generatedCourse ? (
+                <>
                   <div className="space-y-2">
-                    <Label htmlFor="ai-course-category">Kategorie</Label>
-                    <Select value={aiCourseCategory} onValueChange={setAiCourseCategory}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="praxis-management">Praxis-Management</SelectItem>
-                        <SelectItem value="kommunikation">Kommunikation</SelectItem>
-                        <SelectItem value="medizinisches-wissen">Medizinisches Wissen</SelectItem>
-                        <SelectItem value="qualitaetsmanagement">Qualitätsmanagement</SelectItem>
-                        <SelectItem value="digitalisierung">Digitalisierung</SelectItem>
-                        <SelectItem value="personal">Personal & Führung</SelectItem>
-                        <SelectItem value="abrechnung">Abrechnung</SelectItem>
-                        <SelectItem value="recht">Recht & Datenschutz</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="ai-course-description">Kursbeschreibung</Label>
+                    <Textarea
+                      id="ai-course-description"
+                      placeholder="Beschreiben Sie den Kurs, den Sie erstellen möchten. z.B. 'Ein Kurs über effektive Patientenkommunikation für MFA, der Themen wie aktives Zuhören, Umgang mit schwierigen Patienten und telefonische Kommunikation abdeckt.'"
+                      value={aiCourseDescription}
+                      onChange={(e) => setAiCourseDescription(e.target.value)}
+                      rows={4}
+                      className="resize-none"
+                    />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="ai-course-difficulty">Schwierigkeitsgrad</Label>
-                    <Select value={aiCourseDifficulty} onValueChange={setAiCourseDifficulty}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">Anfänger</SelectItem>
-                        <SelectItem value="intermediate">Fortgeschritten</SelectItem>
-                        <SelectItem value="advanced">Experte</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleGenerateAiCourse}
-                  disabled={aiCourseGenerating || !aiCourseDescription.trim()}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                >
-                  {aiCourseGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generiere Kurs...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="mr-2 h-4 w-4" />
-                      Kurs generieren
-                    </>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <div className="space-y-6">
-                <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 p-4 dark:from-purple-950/20 dark:to-pink-950/20">
-                  <h3 className="font-semibold text-lg">{generatedCourse.title}</h3>
-                  <p className="text-muted-foreground mt-1">{generatedCourse.description}</p>
-                  <div className="flex gap-4 mt-3 text-sm">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {generatedCourse.estimated_hours} Stunden
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Award className="h-4 w-4" />
-                      {generatedCourse.xp_reward} XP
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="h-4 w-4" />
-                      {generatedCourse.modules?.length || 0} Module
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="font-medium">Lernziele:</h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    {generatedCourse.learning_objectives?.map((obj: string, i: number) => (
-                      <li key={i}>{obj}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="font-medium">Module & Lektionen:</h4>
-                  {generatedCourse.modules?.map((module: any, i: number) => (
-                    <div key={i} className="rounded-lg border p-3">
-                      <div className="font-medium">
-                        {i + 1}. {module.title}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{module.description}</p>
-                      <div className="mt-2 pl-4 space-y-1">
-                        {module.lessons?.map((lesson: any, j: number) => (
-                          <div key={j} className="text-sm flex items-center gap-2">
-                            <FileText className="h-3 w-3 text-muted-foreground" />
-                            {lesson.title}
-                            <span className="text-muted-foreground">({lesson.estimated_minutes} Min.)</span>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ai-course-category">Kategorie</Label>
+                      <Select value={aiCourseCategory} onValueChange={setAiCourseCategory}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map((cat) => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              {cat.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ))}
-                </div>
 
-                <div className="flex gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="ai-course-difficulty">Schwierigkeitsgrad</Label>
+                      <Select value={aiCourseDifficulty} onValueChange={setAiCourseDifficulty}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DIFFICULTY_LEVELS.map((level) => (
+                            <SelectItem key={level.value} value={level.value}>
+                              {level.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <Button
-                    variant="outline"
-                    onClick={() => {
-                      setGeneratedCourse(null)
-                    }}
-                    className="flex-1"
+                    onClick={handleGenerateAiCourse}
+                    disabled={aiCourseGenerating || !aiCourseDescription.trim()}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                   >
-                    Neu generieren
+                    {aiCourseGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generiere Kurs...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Kurs generieren
+                      </>
+                    )}
                   </Button>
-                  <Button onClick={handleSaveGeneratedCourse} className="flex-1">
-                    <Save className="mr-2 h-4 w-4" />
-                    Kurs speichern
-                  </Button>
+                </>
+              ) : (
+                <div className="space-y-6">
+                  <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 p-4 dark:from-purple-950/20 dark:to-pink-950/20">
+                    <h3 className="font-semibold text-lg">{generatedCourse.title}</h3>
+                    <p className="text-muted-foreground mt-1">{generatedCourse.description}</p>
+                    <div className="flex gap-4 mt-3 text-sm">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {generatedCourse.estimated_hours} Stunden
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Award className="h-4 w-4" />
+                        {generatedCourse.xp_reward} XP
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="h-4 w-4" />
+                        {generatedCourse.modules?.length || 0} Module
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Lernziele:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                      {generatedCourse.learning_objectives?.map((obj: string, i: number) => (
+                        <li key={i}>{obj}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Module & Lektionen:</h4>
+                    {generatedCourse.modules?.map((module: any, i: number) => (
+                      <div key={i} className="rounded-lg border p-3">
+                        <div className="font-medium">
+                          {i + 1}. {module.title}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{module.description}</p>
+                        <div className="mt-2 pl-4 space-y-1">
+                          {module.lessons?.map((lesson: any, j: number) => (
+                            <div key={j} className="text-sm flex items-center gap-2">
+                              <FileText className="h-3 w-3 text-muted-foreground" />
+                              {lesson.title}
+                              <span className="text-muted-foreground">({lesson.estimated_minutes} Min.)</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setGeneratedCourse(null)
+                      }}
+                      className="flex-1"
+                    >
+                      Neu generieren
+                    </Button>
+                    <Button onClick={handleSaveGeneratedCourse} className="flex-1">
+                      <Save className="mr-2 h-4 w-4" />
+                      Kurs speichern
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

@@ -216,6 +216,18 @@ export default function InventoryPage() {
     unit_cost: 0,
   })
 
+  const [editItem, setEditItem] = useState({
+    name: "",
+    sku: "",
+    category: "general",
+    current_stock: 0,
+    minimum_stock: 5,
+    reorder_point: 10,
+    optimal_stock: 50,
+    unit: "Stück",
+    unit_cost: 0,
+  })
+
   const practiceId = user?.practice_id
 
   // Fetch data
@@ -527,6 +539,51 @@ export default function InventoryPage() {
     }
   }
 
+  const handleUpdateItem = async () => {
+    if (!practiceId || !selectedItem) {
+      toast.error("Keine Praxis-ID oder Artikel gefunden.")
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/inventory/${selectedItem.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editItem),
+      })
+
+      if (res.ok) {
+        toast.success("Artikel aktualisiert")
+        setEditItemOpen(false)
+        setSelectedItem(null)
+        fetchData()
+      } else {
+        const errorData = await res.text()
+        console.error("[v0] Error response:", errorData)
+        toast.error("Fehler beim Aktualisieren")
+      }
+    } catch (error) {
+      console.error("[v0] Error updating item:", error)
+      toast.error("Fehler beim Aktualisieren")
+    }
+  }
+
+  useEffect(() => {
+    if (selectedItem && editItemOpen) {
+      setEditItem({
+        name: selectedItem.name || "",
+        sku: selectedItem.sku || "",
+        category: selectedItem.category || "general",
+        current_stock: selectedItem.current_stock || 0,
+        minimum_stock: selectedItem.minimum_stock || 5,
+        reorder_point: selectedItem.reorder_point || 10,
+        optimal_stock: selectedItem.optimal_stock || 50,
+        unit: selectedItem.unit || "Stück",
+        unit_cost: selectedItem.unit_cost || 0,
+      })
+    }
+  }, [selectedItem, editItemOpen])
+
   // Filter items
   const filteredItems = items.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -796,119 +853,124 @@ export default function InventoryPage() {
                     ))}
                   </div>
                 ) : filteredItems.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Keine Artikel gefunden</p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="font-semibold text-lg mb-2">Keine Artikel gefunden</h3>
+                    <p className="text-muted-foreground max-w-md">
+                      Erstellen Sie Ihren ersten Bestandsartikel, um mit der Inventarverwaltung zu beginnen.
+                    </p>
                     <Button variant="outline" className="mt-4 bg-transparent" onClick={() => setCreateItemOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Ersten Artikel anlegen
                     </Button>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Artikel</TableHead>
-                        <TableHead>Kategorie</TableHead>
-                        <TableHead className="text-center">Bestand</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                        <TableHead className="text-right">Stückpreis</TableHead>
-                        <TableHead className="text-right">Aktionen</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredItems.map((item) => {
-                        const stockPercent = Math.round((item.current_stock / item.optimal_stock) * 100)
-                        const isCritical = item.current_stock <= item.minimum_stock
-                        const isLow = item.current_stock <= item.reorder_point
-                        const category = CATEGORIES.find((c) => c.value === item.category)
+                  <div className="overflow-x-auto -mx-6 px-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[150px]">Artikel</TableHead>
+                          <TableHead className="min-w-[120px]">Kategorie</TableHead>
+                          <TableHead className="text-center min-w-[100px]">Bestand</TableHead>
+                          <TableHead className="text-center min-w-[80px]">Status</TableHead>
+                          <TableHead className="text-right min-w-[100px]">Stückpreis</TableHead>
+                          <TableHead className="text-right min-w-[80px]">Aktionen</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredItems.map((item) => {
+                          const stockPercent = Math.round((item.current_stock / item.optimal_stock) * 100)
+                          const isCritical = item.current_stock <= item.minimum_stock
+                          const isLow = item.current_stock <= item.reorder_point
+                          const category = CATEGORIES.find((c) => c.value === item.category)
 
-                        return (
-                          <TableRow key={item.id}>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{item.name}</p>
-                                {item.sku && <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
-                                {category?.icon} {category?.label || item.category}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="font-medium">
-                                  {item.current_stock} {item.unit}
-                                </span>
-                                <Progress
-                                  value={stockPercent}
-                                  className={`w-16 h-1.5 ${isCritical ? "[&>div]:bg-red-500" : isLow ? "[&>div]:bg-amber-500" : "[&>div]:bg-emerald-500"}`}
-                                />
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge
-                                variant="outline"
-                                className={
-                                  isCritical
-                                    ? URGENCY_COLORS.critical
-                                    : isLow
-                                      ? URGENCY_COLORS.high
-                                      : URGENCY_COLORS.low
-                                }
-                              >
-                                {isCritical ? "Kritisch" : isLow ? "Niedrig" : "OK"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.unit_cost ? `${item.unit_cost.toFixed(2)} €` : "-"}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedItem(item)
-                                      setConsumeDialogOpen(true)
-                                    }}
-                                  >
-                                    <PackageMinus className="mr-2 h-4 w-4" />
-                                    Verbrauch erfassen
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedItem(item)
-                                      setEditItemOpen(true)
-                                    }}
-                                  >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Bearbeiten
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setItemToDelete(item)
-                                      setDeleteDialogOpen(true)
-                                    }}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Löschen
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
+                          return (
+                            <TableRow key={item.id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{item.name}</p>
+                                  {item.sku && <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {category?.icon} {category?.label || item.category}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="font-medium">
+                                    {item.current_stock} {item.unit}
+                                  </span>
+                                  <Progress
+                                    value={stockPercent}
+                                    className={`w-16 h-1.5 ${isCritical ? "[&>div]:bg-red-500" : isLow ? "[&>div]:bg-amber-500" : "[&>div]:bg-emerald-500"}`}
+                                  />
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    isCritical
+                                      ? URGENCY_COLORS.critical
+                                      : isLow
+                                        ? URGENCY_COLORS.high
+                                        : URGENCY_COLORS.low
+                                  }
+                                >
+                                  {isCritical ? "Kritisch" : isLow ? "Niedrig" : "OK"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {item.unit_cost ? `${item.unit_cost.toFixed(2)} €` : "-"}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedItem(item)
+                                        setConsumeDialogOpen(true)
+                                      }}
+                                    >
+                                      <PackageMinus className="mr-2 h-4 w-4" />
+                                      Verbrauch erfassen
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedItem(item)
+                                        setEditItemOpen(true)
+                                      }}
+                                    >
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Bearbeiten
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setItemToDelete(item)
+                                        setDeleteDialogOpen(true)
+                                      }}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Löschen
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1480,6 +1542,123 @@ export default function InventoryPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Edit Item Dialog */}
+        <Dialog
+          open={editItemOpen}
+          onOpenChange={(open) => {
+            setEditItemOpen(open)
+            if (!open) setSelectedItem(null)
+          }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Artikel bearbeiten</DialogTitle>
+              <DialogDescription>Bearbeiten Sie die Artikelinformationen</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={editItem.name}
+                  onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
+                  placeholder="Artikelname"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-category">Kategorie</Label>
+                  <Select value={editItem.category} onValueChange={(v) => setEditItem({ ...editItem, category: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.icon} {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-unit">Einheit</Label>
+                  <Input
+                    id="edit-unit"
+                    value={editItem.unit}
+                    onChange={(e) => setEditItem({ ...editItem, unit: e.target.value })}
+                    placeholder="Stück"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-current_stock">Aktueller Bestand</Label>
+                  <Input
+                    id="edit-current_stock"
+                    type="number"
+                    value={editItem.current_stock}
+                    onChange={(e) => setEditItem({ ...editItem, current_stock: Number.parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-unit_cost">Stückpreis (€)</Label>
+                  <Input
+                    id="edit-unit_cost"
+                    type="number"
+                    step="0.01"
+                    value={editItem.unit_cost}
+                    onChange={(e) => setEditItem({ ...editItem, unit_cost: Number.parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-minimum_stock">Mindestbestand</Label>
+                  <Input
+                    id="edit-minimum_stock"
+                    type="number"
+                    value={editItem.minimum_stock}
+                    onChange={(e) => setEditItem({ ...editItem, minimum_stock: Number.parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-reorder_point">Nachbestellpunkt</Label>
+                  <Input
+                    id="edit-reorder_point"
+                    type="number"
+                    value={editItem.reorder_point}
+                    onChange={(e) => setEditItem({ ...editItem, reorder_point: Number.parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-optimal_stock">Optimal</Label>
+                  <Input
+                    id="edit-optimal_stock"
+                    type="number"
+                    value={editItem.optimal_stock}
+                    onChange={(e) => setEditItem({ ...editItem, optimal_stock: Number.parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditItemOpen(false)
+                  setSelectedItem(null)
+                }}
+              >
+                Abbrechen
+              </Button>
+              <Button onClick={handleUpdateItem} disabled={!editItem.name.trim() || !practiceId}>
+                Speichern
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Bill Detail Dialog */}
         <Dialog open={billDetailOpen} onOpenChange={setBillDetailOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1540,7 +1719,7 @@ export default function InventoryPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            if (selectedItemsToApply.length === selectedBill.extracted_items!.length) {
+                            if (selectedItemsToApply.length === selectedBill.extracted_items.length) {
                               setSelectedItemsToApply([])
                             } else {
                               setSelectedItemsToApply(selectedBill.extracted_items!.map((_, i) => i))

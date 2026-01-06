@@ -519,10 +519,17 @@ export default function ResponsibilitiesPageClient() {
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.description?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = categoryFilter === "all" || r.category === categoryFilter
-    const matchesTeamMember =
-      teamMemberFilter === "all" || teamMemberFilter === "unassigned"
-        ? !r.responsible_user_id
-        : r.responsible_user_id === teamMemberFilter
+
+    // Fixed: "all" shows all, "unassigned" shows unassigned only, otherwise match specific user
+    let matchesTeamMember = true
+    if (teamMemberFilter === "all") {
+      matchesTeamMember = true
+    } else if (teamMemberFilter === "unassigned") {
+      matchesTeamMember = !r.responsible_user_id
+    } else {
+      matchesTeamMember = r.responsible_user_id === teamMemberFilter
+    }
+
     return matchesSearch && matchesCategory && matchesTeamMember
   })
 

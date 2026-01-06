@@ -13,7 +13,6 @@ import { useUser } from "@/contexts/user-context"
 import { useTranslation } from "@/contexts/translation-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useOnboarding } from "@/contexts/onboarding-context"
-import { createClient as createBrowserClient } from "@/lib/supabase/client"
 import { PracticeSelector } from "@/components/practice-selector"
 import {
   LayoutDashboard,
@@ -44,7 +43,6 @@ import {
   Wrench,
   ClipboardCheck,
   Compass,
-  UserCog,
   Award,
   ChevronDown,
   StarOff,
@@ -54,6 +52,7 @@ import {
   Heart,
   CircleDot,
   MessageCircle,
+  GraduationCap,
 } from "lucide-react"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -81,6 +80,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/analysis",
         icon: BarChart3,
         key: "aiAnalysis",
+      },
+      {
+        name: t("sidebar.academy", "Academy"),
+        href: "/academy",
+        icon: GraduationCap,
+        key: "academy",
       },
     ],
   },
@@ -261,12 +266,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "skills",
       },
       {
-        name: t("sidebar.profile", "Profil"),
-        href: "/profile",
-        icon: UserCog,
-        key: "profile",
-      },
-      {
         name: t("sidebar.organigramm", "Organigramm"),
         href: "/organigramm",
         icon: FolderKanban,
@@ -345,14 +344,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const { onboardingComplete } = useOnboarding()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const hasRestoredScroll = useRef(false)
-  const [expandedGroups, setExpandedGroups] = useState<string[]>([
-    "overview",
-    "planning",
-    "data",
-    "strategy",
-    "team-personal",
-    "praxis-einstellungen",
-  ])
+  const pendingScrollPosition = useRef<number | null>(null)
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([])
   const [lastActivePath, setLastActivePath] = useState<string | null>(null)
   const { open: sidebarOpen, setOpen: setSidebarOpen, setOpenMobile, isMobile } = useSidebar()
   const [sidebarPermissions, setSidebarPermissions] = useState<{ [key: string]: boolean }>({})
@@ -387,224 +380,215 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [mounted, setMounted] = useState(false)
   const [missionStatement, setMissionStatement] = useState<string | null>(null)
   const [loadingMission, setLoadingMission] = useState(false)
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false)
 
   const isAdmin = isPracticeAdminRole(currentUser?.role) || currentUser?.role === "admin"
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true
   const sidebarGroups = getNavigationGroups(isAdmin, isSuperAdmin, t)
 
   useEffect(() => {
-    const loadSidebarState = async () => {
+    const loadSidebarPreferences = async () => {
       if (!currentUser?.id || !currentPractice?.id) return
 
       try {
-        const supabase = createBrowserClient()
-        const { data, error } = await supabase
-          .from("user_sidebar_preferences")
-          .select("expanded_groups, expanded_items")
-          .eq("user_id", currentUser.id)
-          .eq("practice_id", currentPractice.id)
-          .maybeSingle()
+        const response = await fetch(
+          `/api/users/${currentUser.id}/sidebar-preferences?practice_id=${currentPractice.id}`,
+        )
+        if (response.ok) {
+          const data = await response.json()
+          if (data.preferences) {
+            if (data.preferences.expanded_groups && Array.isArray(data.preferences.expanded_groups)) {
+              setExpandedGroups(data.preferences.expanded_groups)
+            } else {
+              setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
+            }
 
-        if (data && !error) {
-          if (Array.isArray(data.expanded_groups)) {
-            setExpandedGroups(data.expanded_groups)
+            if (data.preferences.favorites && Array.isArray(data.preferences.favorites)) {
+              setFavorites(data.preferences.favorites)
+            }
+
+            if (data.preferences.expanded_items) {
+              if (data.preferences.expanded_items.lastPath) {
+                setLastActivePath(data.preferences.expanded_items.lastPath)
+                const allItems = getAllNavItems()
+                const activeItem = allItems.find((item) => item.href === data.preferences.expanded_items.lastPath)
+                if (activeItem) {
+                  const navGroups = getNavigationGroups(isAdmin, isSuperAdmin, t)
+                  const activeGroup = navGroups.find((group) =>
+                    group.items.some((item) => item.href === data.preferences.expanded_items.lastPath),
+                  )
+                  if (activeGroup && !expandedGroups.includes(activeGroup.id)) {
+                    setExpandedGroups((prev) => (Array.isArray(prev) ? [...prev, activeGroup.id] : [activeGroup.id]))
+                  }
+                }
+              }
+
+              if (data.preferences.expanded_items.scrollPosition !== undefined && !hasRestoredScroll.current) {
+                hasRestoredScroll.current = true
+                const targetPosition = data.preferences.expanded_items.scrollPosition
+
+                const restoreScrollWhenReady = () => {
+                  const container = scrollContainerRef.current
+                  if (!container) {
+                    requestAnimationFrame(restoreScrollWhenReady)
+                    return
+                  }
+
+                  const observer = new MutationObserver(() => {
+                    const canScroll = container.scrollHeight > container.clientHeight
+                    const positionValid = targetPosition <= container.scrollHeight - container.clientHeight
+
+                    if (canScroll && positionValid) {
+                      container.scrollTop = targetPosition
+                      observer.disconnect()
+                    } else if (canScroll) {
+                      container.scrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+                      observer.disconnect()
+                    }
+                  })
+
+                  observer.observe(container, { childList: true, subtree: true })
+
+                  setTimeout(() => {
+                    observer.disconnect()
+                    if (container.scrollHeight > container.clientHeight) {
+                      container.scrollTop = Math.min(targetPosition, container.scrollHeight - container.clientHeight)
+                    }
+                  }, 2000)
+                }
+
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(restoreScrollWhenReady)
+                })
+              }
+            }
           } else {
             setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
-          }
-
-          if (data.expanded_items?.lastPath) {
-            setLastActivePath(data.expanded_items.lastPath)
-            const activeGroup = sidebarGroups.find((group) =>
-              group.items?.some((item) => item.href === data.expanded_items.lastPath),
-            )
-            if (activeGroup && !expandedGroups.includes(activeGroup.id)) {
-              setExpandedGroups((prev) => (Array.isArray(prev) ? [...prev, activeGroup.id] : [activeGroup.id]))
-            }
-          }
-
-          if (data.expanded_items?.scrollPosition !== undefined && !hasRestoredScroll.current) {
-            hasRestoredScroll.current = true
-            setTimeout(() => {
-              if (scrollContainerRef.current) {
-                scrollContainerRef.current.scrollTop = data.expanded_items.scrollPosition
-              }
-            }, 100)
           }
         } else {
           setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
         }
       } catch (error) {
-        console.error("Error loading sidebar state:", error)
+        console.error("Error loading sidebar preferences:", error)
         setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
+      } finally {
+        setPreferencesLoaded(true)
       }
     }
 
-    loadSidebarState()
+    loadSidebarPreferences()
   }, [currentUser?.id, currentPractice?.id])
 
   useEffect(() => {
-    if (!pathname || !currentUser?.id || !currentPractice?.id) return
+    if (!currentUser?.id || !currentPractice?.id || !preferencesLoaded) return
 
-    const activeGroup = sidebarGroups.find((group) => group.items?.some((item) => item.href === pathname))
-
-    if (activeGroup && !expandedGroups.includes(activeGroup.id)) {
-      setExpandedGroups((prev) => [...prev, activeGroup.id])
-    }
-
-    const saveLastPath = async () => {
+    const saveExpandedGroups = async () => {
       try {
         await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             practice_id: currentPractice.id,
-            expanded_items: { lastPath: pathname },
+            expanded_groups: expandedGroups,
           }),
         })
       } catch (error) {
-        console.error("Error saving last path:", error)
+        // Silently fail - not critical
       }
     }
 
-    saveLastPath()
-  }, [pathname, currentUser?.id, currentPractice?.id])
-
-  const toggleGroup = async (groupId: string) => {
-    const currentGroups = Array.isArray(expandedGroups) ? expandedGroups : ["overview"]
-    const newExpandedGroups = currentGroups.includes(groupId)
-      ? currentGroups.filter((group) => group !== groupId)
-      : [...currentGroups, groupId]
-    setExpandedGroups(newExpandedGroups)
-
-    if (!currentUser?.id || !currentPractice?.id) return
-
-    try {
-      await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          practice_id: currentPractice.id,
-          expanded_groups: newExpandedGroups,
-        }),
-      })
-    } catch (error) {
-      console.error("Error saving sidebar state:", error)
-    }
-  }
+    const timeoutId = setTimeout(saveExpandedGroups, 500)
+    return () => clearTimeout(timeoutId)
+  }, [expandedGroups, currentUser?.id, currentPractice?.id, preferencesLoaded])
 
   useEffect(() => {
-    const loadSidebarPermissions = async () => {
-      if (!currentUser?.id) return
+    if (!currentUser?.id || !currentPractice?.id || !preferencesLoaded) return
 
+    const saveFavorites = async () => {
       try {
-        const response = await fetch(`/api/users/${currentUser.id}/sidebar-permissions`)
-        if (response.ok) {
-          const data = await response.json()
-          const permissionsMap: { [key: string]: boolean } = {}
-          data.permissions?.forEach((perm: any) => {
-            permissionsMap[perm.sidebar_item] = perm.is_visible
-          })
-          setSidebarPermissions(permissionsMap)
-        }
+        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            practice_id: currentPractice.id,
+            favorites: favorites,
+          }),
+        })
       } catch (error) {
-        console.error("[v0] Error loading sidebar permissions:", error)
+        // Silently fail - not critical
       }
     }
 
-    loadSidebarPermissions()
-  }, [currentUser?.id])
+    const timeoutId = setTimeout(saveFavorites, 500)
+    return () => clearTimeout(timeoutId)
+  }, [favorites, currentUser?.id, currentPractice?.id, preferencesLoaded])
 
   useEffect(() => {
-    const loadBadgeData = async () => {
-      if (!currentPractice?.id) return
+    if (!currentUser?.id || !currentPractice?.id || !scrollContainerRef.current) return
 
-      try {
-        if (mounted) {
-          const savedDisplaySettings = localStorage.getItem("displaySettings")
-          if (savedDisplaySettings) {
-            const displaySettings = JSON.parse(savedDisplaySettings)
-            if (displaySettings.sidebarBadges) {
-              setBadgeSettings(displaySettings.sidebarBadges)
-            }
-          }
-        }
+    let scrollTimeout: NodeJS.Timeout
 
-        const fetchPromises: Promise<any>[] = [
-          fetch(`/api/practices/${currentPractice.id}/sidebar-badges`)
-            .then((res) => (res.ok ? res.json() : null))
-            .catch(() => null),
-        ]
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout)
+      scrollTimeout = setTimeout(async () => {
+        if (!scrollContainerRef.current) return
+        const scrollPosition = scrollContainerRef.current.scrollTop
 
-        if (isSuperAdminRole(currentUser?.role)) {
-          fetchPromises.push(
-            fetch("/api/admin/waitlist/count")
-              .then((res) => (res.ok ? res.json() : null))
-              .catch(() => null),
-          )
-        }
-
-        const [badgeData, waitlistData] = await Promise.all(fetchPromises)
-
-        setBadgeCounts((prev) => ({
-          ...prev,
-          tasks: badgeData?.tasks || 0,
-          goals: badgeData?.goals || 0,
-          workflows: badgeData?.workflows || 0,
-          candidates: badgeData?.candidates || 0,
-          tickets: badgeData?.tickets || 0,
-          teamMembers: badgeData?.teamMembers || 0,
-          responsibilities: badgeData?.responsibilities || 0,
-          surveys: badgeData?.surveys || 0,
-          inventory: badgeData?.inventory || 0,
-          devices: badgeData?.devices || 0,
-          ...(waitlistData && { waitlist: waitlistData.count || 0 }),
-        }))
-      } catch (error) {
-        console.error("[v0] Error loading badge data:", error)
-      }
-    }
-
-    loadBadgeData()
-
-    const interval = setInterval(loadBadgeData, 300000)
-    return () => clearInterval(interval)
-  }, [currentPractice?.id, currentUser?.role, mounted])
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    const loadFavoritesFromLocalStorage = () => {
-      if (!currentPractice?.id) return
-
-      const localFavorites = localStorage.getItem(`sidebar_favorites_${currentPractice.id}`)
-      if (localFavorites) {
         try {
-          setFavorites(JSON.parse(localFavorites))
-        } catch {
-          // Ignore parse errors
+          await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              practice_id: currentPractice.id,
+              expanded_items: {
+                lastPath: pathname,
+                scrollPosition,
+                selectedItem: pathname,
+              },
+            }),
+          })
+        } catch (error) {
+          // Silently fail - scroll position is not critical
         }
+      }, 500)
+    }
+
+    const container = scrollContainerRef.current
+    container.addEventListener("scroll", handleScroll, { passive: true })
+
+    return () => {
+      clearTimeout(scrollTimeout)
+      container.removeEventListener("scroll", handleScroll)
+    }
+  }, [currentUser?.id, currentPractice?.id, pathname])
+
+  useEffect(() => {
+    if (!currentUser?.id || !currentPractice?.id || !pathname || !preferencesLoaded) return
+
+    const saveSelectedItem = async () => {
+      try {
+        const scrollPosition = scrollContainerRef.current?.scrollTop || 0
+
+        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            practice_id: currentPractice.id,
+            expanded_items: {
+              lastPath: pathname,
+              scrollPosition,
+              selectedItem: pathname,
+            },
+          }),
+        })
+      } catch (error) {
+        // Silently fail
       }
     }
 
-    loadFavoritesFromLocalStorage()
-  }, [currentPractice?.id])
-
-  const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-
-    const newFavorites = favorites.includes(href) ? favorites.filter((f) => f !== href) : [...favorites, href]
-
-    setFavorites(newFavorites)
-
-    if (currentPractice?.id) {
-      localStorage.setItem(`sidebar_favorites_${currentPractice.id}`, JSON.stringify(newFavorites))
-    }
-  }
+    const timeoutId = setTimeout(saveSelectedItem, 300)
+    return () => clearTimeout(timeoutId)
+  }, [pathname, currentUser?.id, currentPractice?.id, preferencesLoaded])
 
   const getAllNavItems = () => {
     const items: Array<{ name: string; href: string; icon: any; key?: string; badge?: string }> = []
@@ -625,40 +609,22 @@ export function AppSidebar({ className }: AppSidebarProps) {
     router.push(href)
   }
 
-  useEffect(() => {
-    if (!scrollContainerRef.current || !currentUser?.id || !currentPractice?.id) return
-
-    let scrollTimeout: NodeJS.Timeout
-
-    const handleScroll = () => {
-      clearTimeout(scrollTimeout)
-      scrollTimeout = setTimeout(async () => {
-        if (!scrollContainerRef.current) return
-        const scrollPosition = scrollContainerRef.current.scrollTop
-
-        try {
-          await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              practice_id: currentPractice.id,
-              expanded_items: { lastPath: pathname, scrollPosition },
-            }),
-          })
-        } catch (error) {
-          // Silently fail - scroll position is not critical
-        }
-      }, 500)
+  const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
     }
 
-    const container = scrollContainerRef.current
-    container.addEventListener("scroll", handleScroll, { passive: true })
+    const newFavorites = favorites.includes(href) ? favorites.filter((f) => f !== href) : [...favorites, href]
 
-    return () => {
-      clearTimeout(scrollTimeout)
-      container.removeEventListener("scroll", handleScroll)
-    }
-  }, [currentUser?.id, currentPractice?.id, pathname])
+    setFavorites(newFavorites)
+  }
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prevGroups) =>
+      prevGroups.includes(groupId) ? prevGroups.filter((group) => group !== groupId) : [...prevGroups, groupId],
+    )
+  }
 
   function TourButton({ sidebarOpen }: { sidebarOpen: boolean }) {
     const { isNewPractice, daysRemaining, setIsOnboardingOpen, shouldShowOnboarding } = useOnboarding()

@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import {
   Search,
   User,
@@ -12,9 +14,10 @@ import {
   GraduationCap,
   Sparkles,
   PanelLeft,
-  Plus,
   Clock,
   MessageSquare,
+  X,
+  CheckSquare,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -41,7 +44,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { usePathname, useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { ReferralDialog } from "@/components/referral-dialog"
 import { Fragment } from "react"
 import { useTheme } from "next-themes"
@@ -93,7 +96,168 @@ const pathTitles: Record<string, string> = {
   candidates: "Kandidaten",
   edit: "Bearbeiten",
   new: "Neu",
+  zeiterfassung: "Zeiterfassung",
+  dienstplan: "Dienstplan",
+  inventory: "Inventar",
 }
+
+type SearchItem = {
+  title: string
+  description: string
+  href: string
+  icon: string
+  keywords: string[]
+}
+
+const searchableItems: SearchItem[] = [
+  {
+    title: "Dashboard",
+    description: "Übersicht und Statistiken",
+    href: "/dashboard",
+    icon: "📊",
+    keywords: ["start", "übersicht", "home", "cockpit"],
+  },
+  {
+    title: "Aufgaben",
+    description: "To-dos und Aufgabenverwaltung",
+    href: "/todos",
+    icon: "✅",
+    keywords: ["todo", "tasks", "aufgaben", "erledigen"],
+  },
+  {
+    title: "Team",
+    description: "Teammitglieder verwalten",
+    href: "/team",
+    icon: "👥",
+    keywords: ["mitarbeiter", "personal", "kollegen"],
+  },
+  {
+    title: "Kalender",
+    description: "Termine und Events",
+    href: "/calendar",
+    icon: "📅",
+    keywords: ["termine", "events", "planung", "datum"],
+  },
+  {
+    title: "Dokumente",
+    description: "Dokumentenverwaltung",
+    href: "/documents",
+    icon: "📄",
+    keywords: ["files", "dateien", "unterlagen"],
+  },
+  {
+    title: "Analysen",
+    description: "Praxis-Analysen und Reports",
+    href: "/analytics",
+    icon: "📈",
+    keywords: ["statistiken", "reports", "auswertung"],
+  },
+  {
+    title: "Einstellungen",
+    description: "Praxis-Einstellungen",
+    href: "/settings",
+    icon: "⚙️",
+    keywords: ["config", "konfiguration", "setup"],
+  },
+  {
+    title: "Profil",
+    description: "Ihr Benutzerprofil",
+    href: "/profile",
+    icon: "👤",
+    keywords: ["account", "konto", "benutzer"],
+  },
+  {
+    title: "Workflows",
+    description: "Prozesse und Abläufe",
+    href: "/workflows",
+    icon: "🔄",
+    keywords: ["prozesse", "abläufe", "automatisierung"],
+  },
+  {
+    title: "Ziele",
+    description: "Praxisziele verwalten",
+    href: "/goals",
+    icon: "🎯",
+    keywords: ["objectives", "targets", "okr"],
+  },
+  {
+    title: "Kontakte",
+    description: "Kontaktverwaltung",
+    href: "/contacts",
+    icon: "📇",
+    keywords: ["adressen", "telefon", "email"],
+  },
+  {
+    title: "Recruiting",
+    description: "Bewerbungen und Stellen",
+    href: "/hiring",
+    icon: "💼",
+    keywords: ["jobs", "stellen", "bewerbung", "personal"],
+  },
+  {
+    title: "Schulungen",
+    description: "Fortbildungen verwalten",
+    href: "/training",
+    icon: "🎓",
+    keywords: ["weiterbildung", "kurse", "fortbildung"],
+  },
+  {
+    title: "Academy",
+    description: "Effizienz-Academy",
+    href: "/academy",
+    icon: "📚",
+    keywords: ["lernen", "kurse", "tutorials"],
+  },
+  {
+    title: "Protokolle",
+    description: "Sitzungsprotokolle",
+    href: "/protocols",
+    icon: "📝",
+    keywords: ["meetings", "notizen", "sitzungen"],
+  },
+  {
+    title: "Nachrichten",
+    description: "Interne Kommunikation",
+    href: "/messages",
+    icon: "💬",
+    keywords: ["chat", "kommunikation", "inbox"],
+  },
+  {
+    title: "Zeiterfassung",
+    description: "Arbeitszeiten erfassen",
+    href: "/zeiterfassung",
+    icon: "⏱️",
+    keywords: ["stunden", "arbeitszeit", "tracking"],
+  },
+  {
+    title: "Dienstplan",
+    description: "Schichtplanung",
+    href: "/dienstplan",
+    icon: "📋",
+    keywords: ["schichten", "rota", "planung"],
+  },
+  {
+    title: "Inventar",
+    description: "Bestandsverwaltung",
+    href: "/inventory",
+    icon: "📦",
+    keywords: ["lager", "bestand", "material"],
+  },
+  {
+    title: "Tickets",
+    description: "Support-Anfragen",
+    href: "/tickets",
+    icon: "🎫",
+    keywords: ["support", "hilfe", "anfragen"],
+  },
+  {
+    title: "Hilfe",
+    description: "Hilfe und Support",
+    href: "/help",
+    icon: "❓",
+    keywords: ["faq", "support", "anleitung"],
+  },
+]
 
 function isUUID(str: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -121,62 +285,47 @@ function AppHeader() {
   const [isTrialActive, setIsTrialActive] = useState(false)
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
 
-  useEffect(() => {
-    async function fetchTrialInfo() {
-      if (!currentPractice?.id) return
+  // Global search state
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
 
-      try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/subscription`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.subscription?.trial_end) {
-            const trialEnd = new Date(data.subscription.trial_end)
-            const now = new Date()
-            const diffTime = trialEnd.getTime() - now.getTime()
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-            if (diffDays > 0 && data.subscription.status === "trialing") {
-              setTrialDaysLeft(diffDays)
-              setIsTrialActive(true)
-            } else {
-              setIsTrialActive(false)
-              setTrialDaysLeft(null)
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching trial info:", error)
-      }
-    }
-
-    fetchTrialInfo()
-  }, [currentPractice?.id])
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return []
+    const query = searchQuery.toLowerCase()
+    return searchableItems
+      .filter(
+        (item) =>
+          item.title.toLowerCase().includes(query) ||
+          item.description.toLowerCase().includes(query) ||
+          item.keywords.some((k) => k.includes(query)),
+      )
+      .slice(0, 8)
+  }, [searchQuery])
 
   useEffect(() => {
-    async function fetchUnreadMessages() {
-      if (!user?.id) return
-      try {
-        const response = await fetch("/api/messages?unreadOnly=true&limit=100", { credentials: "include" })
-        if (response.ok) {
-          const data = await response.json()
-          setUnreadMessagesCount(data.length)
-        }
-      } catch (error) {
-        console.error("Error fetching unread messages:", error)
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchFocused(false)
       }
     }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
-    fetchUnreadMessages()
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchUnreadMessages, 30000)
-    return () => clearInterval(interval)
-  }, [user?.id])
+  const handleSearchSelect = (href: string) => {
+    router.push(href)
+    setSearchQuery("")
+    setIsSearchFocused(false)
+  }
 
-  const handleSignOut = async () => {
-    try {
-      await signOut()
-    } catch (error) {
-      console.error("Error signing out:", error)
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && searchResults.length > 0) {
+      handleSearchSelect(searchResults[0].href)
+    }
+    if (e.key === "Escape") {
+      setSearchQuery("")
+      setIsSearchFocused(false)
     }
   }
 
@@ -186,6 +335,10 @@ function AppHeader() {
   const [isBugReportOpen, setIsBugReportOpen] = useState(false)
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
   const [isCreateTodoOpen, setIsCreateTodoOpen] = useState(false)
+
+  const handleSignOut = () => {
+    signOut()
+  }
 
   return (
     <>
@@ -260,10 +413,54 @@ function AppHeader() {
         )}
 
         {/* Search */}
-        <div className="hidden md:flex max-w-sm">
+        <div className="hidden md:flex max-w-sm" ref={searchRef}>
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Suchen..." className="w-64 pl-8 bg-muted/50 h-9" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="search"
+              placeholder="Suchen..."
+              className="w-64 pl-8 pr-8 bg-muted/50 h-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onKeyDown={handleSearchKeyDown}
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1 h-7 w-7"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+            {/* Search Results Dropdown */}
+            {isSearchFocused && searchQuery && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-50 max-h-80 overflow-auto">
+                {searchResults.length > 0 ? (
+                  <div className="p-1">
+                    {searchResults.map((item) => (
+                      <button
+                        key={item.href}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-sm transition-colors"
+                        onClick={() => handleSearchSelect(item.href)}
+                      >
+                        <span className="text-lg">{item.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{item.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Keine Ergebnisse für "{searchQuery}"
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -274,23 +471,6 @@ function AppHeader() {
             <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden">
               <Search className="h-4 w-4" />
             </Button>
-
-            {/* Create Todo Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 hover:bg-primary/10"
-                  onClick={() => setIsCreateTodoOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Neue Aufgabe</p>
-              </TooltipContent>
-            </Tooltip>
 
             {/* AI Chat Button */}
             <Tooltip>
@@ -306,6 +486,23 @@ function AppHeader() {
               </TooltipTrigger>
               <TooltipContent>
                 <p>KI-Assistent für Praxisfragen</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Create Todo Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hover:bg-primary/10"
+                  onClick={() => setIsCreateTodoOpen(true)}
+                >
+                  <CheckSquare className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Neue Aufgabe erstellen</p>
               </TooltipContent>
             </Tooltip>
 

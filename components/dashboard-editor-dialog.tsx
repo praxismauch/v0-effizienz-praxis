@@ -25,6 +25,9 @@ import {
   GripVertical,
   TrendingUp,
   Lightbulb,
+  Minus,
+  Plus,
+  Trash2,
 } from "lucide-react"
 import {
   DndContext,
@@ -75,10 +78,13 @@ export interface WidgetConfig {
   todosFilterDringend?: boolean
   todosFilterPriority?: string
   widgetOrder?: string[]
+  linebreaks?: string[]
 }
 
 // Keep DashboardConfig as alias for backward compatibility
 export type DashboardConfig = WidgetConfig
+
+export const isLinebreakWidget = (id: string) => id.startsWith("linebreak_")
 
 export const WIDGET_DEFINITIONS = [
   {
@@ -216,6 +222,7 @@ const defaultWidgetConfig: WidgetConfig = {
   todosFilterDringend: undefined,
   todosFilterPriority: undefined,
   widgetOrder: DEFAULT_ORDER,
+  linebreaks: [],
 }
 
 interface SortableWidgetProps {
@@ -334,6 +341,59 @@ function SortableWidget({ widget, config, setConfig }: SortableWidgetProps) {
   )
 }
 
+interface SortableLinebreakProps {
+  id: string
+  onRemove: (id: string) => void
+}
+
+function SortableLinebreak({ id, onRemove }: SortableLinebreakProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 1,
+  }
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`p-3 bg-muted/50 border-dashed ${isDragging ? "shadow-lg ring-2 ring-primary" : ""}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div
+          {...attributes}
+          {...listeners}
+          className="p-1.5 rounded hover:bg-muted cursor-grab active:cursor-grabbing touch-none"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex items-center gap-3 flex-1">
+          <div className="p-2 rounded-lg bg-muted">
+            <Minus className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-muted-foreground">Trennlinie</p>
+            <p className="text-xs text-muted-foreground/70">Visuelle Trennung zwischen Widgets</p>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={() => onRemove(id)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </Card>
+  )
+}
+
 export function DashboardEditorDialog({
   open,
   onOpenChange,
@@ -351,12 +411,14 @@ export function DashboardEditorDialog({
   const initialWidgets = getWidgetsFromConfig(configProp || currentConfig)
   const [config, setConfig] = useState<WidgetConfig>(initialWidgets)
   const [widgetOrder, setWidgetOrder] = useState<string[]>(initialWidgets.widgetOrder || DEFAULT_ORDER)
+  const [linebreaks, setLinebreaks] = useState<string[]>(initialWidgets.linebreaks || [])
 
   useEffect(() => {
     if (open) {
       const widgets = getWidgetsFromConfig(configProp || currentConfig)
       setConfig(widgets)
       setWidgetOrder(widgets.widgetOrder || DEFAULT_ORDER)
+      setLinebreaks(widgets.linebreaks || [])
     }
   }, [open, configProp, currentConfig])
 
@@ -383,18 +445,41 @@ export function DashboardEditorDialog({
     }
   }
 
-  const sortedWidgets = widgetOrder
-    .map((id) => WIDGET_DEFINITIONS.find((w) => w.id === id))
-    .filter(Boolean) as typeof WIDGET_DEFINITIONS
+  const handleAddLinebreak = () => {
+    const newId = `linebreak_${Date.now()}`
+    setLinebreaks((prev) => [...prev, newId])
+    setWidgetOrder((prev) => [...prev, newId])
+  }
+
+  const handleRemoveLinebreak = (id: string) => {
+    setLinebreaks((prev) => prev.filter((lb) => lb !== id))
+    setWidgetOrder((prev) => prev.filter((w) => w !== id))
+  }
+
+  const sortedItems = widgetOrder
+    .map((id) => {
+      if (isLinebreakWidget(id)) {
+        return { type: "linebreak" as const, id }
+      }
+      const widget = WIDGET_DEFINITIONS.find((w) => w.id === id)
+      if (widget) {
+        return { type: "widget" as const, widget }
+      }
+      return null
+    })
+    .filter(Boolean) as Array<
+    { type: "linebreak"; id: string } | { type: "widget"; widget: (typeof WIDGET_DEFINITIONS)[0] }
+  >
 
   const handleSave = () => {
-    onSave({ widgets: { ...config, widgetOrder } })
+    onSave({ widgets: { ...config, widgetOrder, linebreaks } })
     onOpenChange(false)
   }
 
   const handleReset = () => {
     setConfig(defaultWidgetConfig)
     setWidgetOrder(DEFAULT_ORDER)
+    setLinebreaks([])
   }
 
   return (
@@ -405,12 +490,24 @@ export function DashboardEditorDialog({
           <DialogDescription>Wählen Sie die Widgets aus und ordnen Sie sie per Drag & Drop an.</DialogDescription>
         </DialogHeader>
 
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={handleAddLinebreak} className="gap-2 bg-transparent">
+            <Plus className="h-4 w-4" />
+            <Minus className="h-4 w-4" />
+            Trennlinie hinzufügen
+          </Button>
+        </div>
+
         <div className="space-y-3 py-4">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
-              {sortedWidgets.map((widget) => (
-                <SortableWidget key={widget.id} widget={widget} config={config} setConfig={setConfig} />
-              ))}
+              {sortedItems.map((item) =>
+                item.type === "linebreak" ? (
+                  <SortableLinebreak key={item.id} id={item.id} onRemove={handleRemoveLinebreak} />
+                ) : (
+                  <SortableWidget key={item.widget.id} widget={item.widget} config={config} setConfig={setConfig} />
+                ),
+              )}
             </SortableContext>
           </DndContext>
         </div>

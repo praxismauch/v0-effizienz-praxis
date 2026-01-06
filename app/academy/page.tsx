@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { LandingPageLayout } from "@/components/landing-page-layout"
 import { AcademyPageClient } from "./page-client"
 
 export const metadata: Metadata = {
@@ -8,9 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function AcademyPage() {
-  return (
-    <LandingPageLayout>
-      <AcademyPageClient />
-    </LandingPageLayout>
-  )
+  return <AcademyPageClient />
 }

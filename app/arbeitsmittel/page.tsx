@@ -374,12 +374,12 @@ export default function ArbeitsmittelPage() {
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <CardTitle>Arbeitsmittel-Liste</CardTitle>
                     <CardDescription>Alle Arbeitsmittel Ihrer Praxis</CardDescription>
                   </div>
-                  <div className="relative w-64">
+                  <div className="relative w-full sm:w-64">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Suchen..."
@@ -391,83 +391,86 @@ export default function ArbeitsmittelPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Typ</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Seriennummer</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Zugewiesen an</TableHead>
-                      <TableHead>Zustand</TableHead>
-                      <TableHead className="text-right">Aktionen</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredItems.length === 0 ? (
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground">
-                          Keine Arbeitsmittel gefunden
-                        </TableCell>
+                        <TableHead className="min-w-[100px]">Typ</TableHead>
+                        <TableHead className="min-w-[120px]">Name</TableHead>
+                        <TableHead className="min-w-[120px]">Seriennummer</TableHead>
+                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="min-w-[140px]">Zugewiesen an</TableHead>
+                        <TableHead className="min-w-[100px]">Zustand</TableHead>
+                        <TableHead className="text-right min-w-[80px]">Aktionen</TableHead>
                       </TableRow>
-                    ) : (
-                      filteredItems.map((item) => {
-                        const Icon = typeIcons[item.type] || Package
-                        const assignedMember = item.assigned_to
-                          ? teamMembers.find((m) => m.id === item.assigned_to)
-                          : null
-                        return (
-                          <TableRow key={item.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Icon className="h-4 w-4 text-muted-foreground" />
-                                <span>{item.type}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell>{item.serial_number || "-"}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={statusColors[item.status]}>
-                                {statusLabels[item.status]}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "-"}
-                            </TableCell>
-                            <TableCell>{item.condition || "-"}</TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedItem(item)
-                                      setEditDialogOpen(true)
-                                    }}
-                                  >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Bearbeiten
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteClick(item.id)}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Löschen
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredItems.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground">
+                            Keine Arbeitsmittel gefunden
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredItems.map((item) => {
+                          const Icon = typeIcons[item.type] || Package
+                          const assignedMember = item.assigned_to
+                            ? teamMembers.find((m) => m.id === item.assigned_to)
+                            : null
+                          return (
+                            <TableRow key={item.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <span className="whitespace-nowrap">{item.type}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium">{item.name}</TableCell>
+                              <TableCell>{item.serial_number || "-"}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={statusColors[item.status]}>
+                                  {statusLabels[item.status]}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "-"}
+                              </TableCell>
+                              <TableCell>{item.condition || "-"}</TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedItem(item)
+                                        setEditDialogOpen(true)
+                                      }}
+                                      className="py-3"
+                                    >
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Bearbeiten
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteClick(item.id)}
+                                      className="text-destructive py-3"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Löschen
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </>

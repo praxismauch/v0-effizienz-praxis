@@ -56,6 +56,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       include_device_maintenance: body.include_device_maintenance,
       include_financial_summary: body.include_financial_summary,
       include_ai_insights: body.include_ai_insights,
+      include_weekly_forecast: body.include_weekly_forecast,
       custom_intro: body.custom_intro,
       custom_footer: body.custom_footer,
       branding_color: body.branding_color,

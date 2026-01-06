@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { sortTeamMembersByRole } from "@/lib/team-role-order"
 
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 500): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelay = 1000): Promise<T> {
   let lastError: any
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -12,7 +12,9 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 50
     } catch (error: any) {
       lastError = error
       if (isRateLimitError(error) && i < maxRetries - 1) {
-        const delay = baseDelay * Math.pow(2, i)
+        // Add jitter to prevent thundering herd
+        const jitter = Math.random() * 500
+        const delay = baseDelay * Math.pow(2, i) + jitter
         await new Promise((resolve) => setTimeout(resolve, delay))
         continue
       }
@@ -34,10 +36,8 @@ function isValidName(name: string | null | undefined): boolean {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] TEAM MEMBERS GET - practiceId:", practiceId)
 
     if (!practiceId || practiceId === "undefined") {
-      console.log("[v0] TEAM MEMBERS GET - Invalid practiceId")
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })
     }
 
@@ -45,9 +45,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     try {
       supabase = await createAdminClient()
     } catch (clientError: any) {
-      console.log("[v0] TEAM MEMBERS GET - Supabase client error:", clientError.message)
       if (isRateLimitError(clientError)) {
-        return NextResponse.json([])
+        return NextResponse.json(
+          { error: "Service temporarily unavailable", retryable: true },
+          { status: 503, headers: { "Retry-After": "5" } },
+        )
       }
       return NextResponse.json([])
     }
@@ -63,7 +65,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       customRoleOrder = practiceSettings?.system_settings?.team_member_role_order
     } catch (settingsError) {
       // Use default order if settings not found
-      console.log("[v0] TEAM MEMBERS GET - Using default role order")
     }
 
     let members: any[] = []
@@ -87,27 +88,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .order("created_at", { ascending: false })
 
         if (res.error) {
-          console.log("[v0] TEAM MEMBERS GET - Query error:", res.error.message)
           if (isRateLimitError(res.error)) {
             throw res.error
           }
           return { data: [], error: res.error }
         }
-        console.log("[v0] TEAM MEMBERS GET - Query returned:", res.data?.length, "members")
         return res
       })
 
       members = result.data || []
     } catch (queryError: any) {
-      console.log("[v0] TEAM MEMBERS GET - Query exception:", queryError.message)
       if (isRateLimitError(queryError)) {
-        return NextResponse.json({ error: "Service temporarily unavailable", retryable: true }, { status: 503 })
+        return NextResponse.json(
+          { error: "Service temporarily unavailable", retryable: true },
+          { status: 503, headers: { "Retry-After": "5" } },
+        )
       }
       return NextResponse.json([])
     }
 
     if (!members || !Array.isArray(members)) {
-      console.log("[v0] TEAM MEMBERS GET - No members array")
       return NextResponse.json([])
     }
 
@@ -117,7 +117,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
       return true
     })
-    console.log("[v0] TEAM MEMBERS GET - After superadmin filter:", activeMembers.length, "members")
 
     const userIds = activeMembers.map((m: any) => m.user_id).filter(Boolean)
     let teamAssignments: any[] = []
@@ -177,12 +176,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const sortedTeamMembers = sortTeamMembersByRole(teamMembers, customRoleOrder)
 
-    console.log("[v0] TEAM MEMBERS GET - Returning:", sortedTeamMembers.length, "members (sorted by role)")
     return NextResponse.json(sortedTeamMembers || [])
   } catch (error: any) {
-    console.log("[v0] TEAM MEMBERS GET - Exception:", error.message)
     if (isRateLimitError(error)) {
-      return NextResponse.json({ error: "Service temporarily unavailable", retryable: true }, { status: 503 })
+      return NextResponse.json(
+        { error: "Service temporarily unavailable", retryable: true },
+        { status: 503, headers: { "Retry-After": "5" } },
+      )
     }
     return NextResponse.json([])
   }

@@ -58,7 +58,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         beschreibung: body.beschreibung || null,
         raum_id: body.raum_id || null,
         image_url: body.image_url || null,
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         created_by: user.id,
       })
       .select()

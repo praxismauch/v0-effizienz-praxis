@@ -5,8 +5,9 @@ import { CardTitle } from "@/components/ui/card"
 import { CardHeader } from "@/components/ui/card"
 import { CardContent } from "@/components/ui/card"
 import { Card } from "@/components/ui/card"
-import { useState } from "react"
-import { useAuth } from "@/contexts/auth-context"
+import { useState, useEffect } from "react"
+import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,22 +57,33 @@ import {
 } from "lucide-react"
 
 export default function ProfilePageClient() {
-  const { currentUser, currentPractice, refreshUser } = useAuth()
+  const { currentUser, setCurrentUser } = useUser()
+  const { currentPractice } = usePractice()
   const { toast } = useToast()
   const { roleColors } = useRoleColors()
 
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("selfcheck")
 
-  // Form states
+  // Form states - initialize empty, will be set in useEffect
   const [formData, setFormData] = useState({
-    name: currentUser?.name || "",
-    email: currentUser?.email || "",
-    avatar: currentUser?.avatar || "",
-    preferred_language: currentUser?.preferred_language || "de",
+    name: "",
+    email: "",
+    avatar: "",
+    preferred_language: "de",
   })
 
-  // Notification settings
+  useEffect(() => {
+    if (currentUser) {
+      setFormData({
+        name: currentUser.name || "",
+        email: currentUser.email || "",
+        avatar: currentUser.avatar || "",
+        preferred_language: currentUser.preferred_language || "de",
+      })
+    }
+  }, [currentUser])
+
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     taskReminders: true,
@@ -103,7 +115,7 @@ export default function ProfilePageClient() {
     setIsLoading(true)
     try {
       const response = await fetch(`/api/users/${currentUser.id}`, {
-        method: "PATCH",
+        method: "PUT", // Use PUT instead of PATCH to match the API
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
@@ -117,15 +129,24 @@ export default function ProfilePageClient() {
         throw new Error("Fehler beim Speichern")
       }
 
-      // Update local user state
-      refreshUser()
+      const data = await response.json()
+
+      if (data.user) {
+        setCurrentUser({
+          ...currentUser,
+          name: data.user.name,
+          email: data.user.email,
+          avatar: data.user.avatar,
+          preferred_language: data.user.preferred_language,
+        })
+      }
 
       toast({
         title: "Profil aktualisiert",
         description: "Ihre Änderungen wurden erfolgreich gespeichert.",
       })
     } catch (error) {
-      console.error("[v0] Error saving profile:", error)
+      console.error("Error saving profile:", error)
       toast({
         title: "Fehler",
         description: "Profil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
@@ -188,8 +209,13 @@ export default function ProfilePageClient() {
         throw new Error(data.error || "Verifizierung fehlgeschlagen")
       }
 
-      // Update local user state
-      refreshUser()
+      const userResponse = await fetch(`/api/users/${currentUser.id}`)
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        if (userData.user) {
+          setCurrentUser({ ...currentUser, ...userData.user })
+        }
+      }
 
       setShow2FADialog(false)
       setMfaSetupData(null)
@@ -200,7 +226,7 @@ export default function ProfilePageClient() {
         description: "Zwei-Faktor-Authentifizierung wurde erfolgreich aktiviert.",
       })
     } catch (error: any) {
-      console.error("[v0] Error verifying 2FA:", error)
+      console.error("Error verifying 2FA:", error)
       toast({
         title: "Fehler",
         description: error.message || "Der Verifizierungscode ist ungültig.",
@@ -229,8 +255,13 @@ export default function ProfilePageClient() {
         throw new Error(data.error || "Deaktivierung fehlgeschlagen")
       }
 
-      // Update local user state
-      refreshUser()
+      const userResponse = await fetch(`/api/users/${currentUser.id}`)
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        if (userData.user) {
+          setCurrentUser({ ...currentUser, ...userData.user })
+        }
+      }
 
       setShow2FADisableDialog(false)
       setDisableCode("")
@@ -240,7 +271,7 @@ export default function ProfilePageClient() {
         description: "Zwei-Faktor-Authentifizierung wurde deaktiviert.",
       })
     } catch (error: any) {
-      console.error("[v0] Error disabling 2FA:", error)
+      console.error("Error disabling 2FA:", error)
       toast({
         title: "Fehler",
         description: error.message || "2FA konnte nicht deaktiviert werden.",

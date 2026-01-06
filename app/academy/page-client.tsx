@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { BadgeEarnedPopup } from "@/components/badge-earned-popup"
 import {
   BookOpen,
   Clock,
@@ -23,8 +24,6 @@ import {
   Target,
   Zap,
   GraduationCap,
-  TrendingUp,
-  ChevronRight,
   Medal,
   Crown,
   Sparkles,
@@ -35,6 +34,8 @@ import {
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import Link from "next/link"
+import { AppLayout } from "@/components/app-layout"
+import { LandingPageLayout } from "@/components/landing-page-layout"
 
 interface Course {
   id: string
@@ -102,8 +103,8 @@ interface LeaderboardEntry {
 }
 
 export function AcademyPageClient() {
-  const { currentPractice } = usePractice()
-  const { user: currentUser } = useUser()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const { user: currentUser, loading: userLoading } = useUser()
   const [courses, setCourses] = useState<Course[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [userStats, setUserStats] = useState<UserStats | null>(null)
@@ -113,8 +114,11 @@ export function AcademyPageClient() {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
+  const [activeTab, setActiveTab] = useState("courses")
+  const [pendingBadge, setPendingBadge] = useState<any>(null)
 
-  const isAuthenticated = !!currentUser?.id && !!currentPractice?.id
+  const isAuthenticated = !!currentUser?.id
+  const hasPractice = !!currentPractice?.id
 
   useEffect(() => {
     fetchAcademyData()
@@ -132,7 +136,7 @@ export function AcademyPageClient() {
       let badgesPromise = Promise.resolve([])
       let leaderboardPromise = Promise.resolve([])
 
-      if (isAuthenticated && currentPractice?.id) {
+      if (isAuthenticated && hasPractice && currentPractice?.id) {
         enrollmentsPromise = fetch(`/api/practices/${currentPractice.id}/academy/enrollments`)
           .then((res) => (res.ok ? res.json() : []))
           .catch(() => [])
@@ -172,6 +176,54 @@ export function AcademyPageClient() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
+    const checkUnseenBadges = async () => {
+      if (!currentUser?.id) return
+
+      try {
+        const response = await fetch(`/api/badges/unseen?userId=${currentUser.id}`)
+        if (response.ok) {
+          const unseenBadges = await response.json()
+          if (unseenBadges.length > 0) {
+            // Show the first unseen badge
+            const firstBadge = unseenBadges[0]
+            setPendingBadge({
+              id: firstBadge.badge?.badge_id,
+              name: firstBadge.badge?.name,
+              description: firstBadge.badge?.description,
+              icon_name: firstBadge.badge?.icon_name,
+              color: firstBadge.badge?.color,
+              rarity: firstBadge.badge?.rarity,
+              points: firstBadge.badge?.points,
+              userBadgeId: firstBadge.id,
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error checking unseen badges:", error)
+      }
+    }
+
+    checkUnseenBadges()
+  }, [currentUser?.id])
+
+  const handleBadgePopupClose = async () => {
+    if (pendingBadge?.userBadgeId) {
+      try {
+        await fetch("/api/badges/unseen", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ badgeIds: [pendingBadge.userBadgeId] }),
+        })
+      } catch (error) {
+        console.error("Error marking badge as seen:", error)
+      }
+    }
+    setPendingBadge(null)
+    // Refresh badges
+    fetchAcademyData()
   }
 
   const filteredCourses = courses.filter((course) => {
@@ -282,16 +334,21 @@ export function AcademyPageClient() {
     </Card>
   )
 
-  if (isLoading) {
+  if (userLoading || practiceLoading || isLoading) {
+    if (currentUser?.id) {
+      return <AppLayout loading loadingMessage="Lade Academy..." />
+    }
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="text-muted-foreground ml-4">Lade Academy...</p>
-      </div>
+      <LandingPageLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground ml-4">Lade Academy...</p>
+        </div>
+      </LandingPageLayout>
     )
   }
 
-  return (
+  const content = (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -328,6 +385,74 @@ export function AcademyPageClient() {
         )}
       </div>
 
+      {/* Quick Actions for Authenticated Users */}
+      {isAuthenticated && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("courses")}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold">Kurse durchsuchen</p>
+                  <p className="text-sm text-muted-foreground">{courses.length} verfügbar</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveTab("my-learning")}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <Play className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold">Lernen fortsetzen</p>
+                  <p className="text-sm text-muted-foreground">{enrollments.length} aktive Kurse</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("badges")}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Award className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-semibold">Meine Abzeichen</p>
+                  <p className="text-sm text-muted-foreground">{userBadges.length} verdient</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveTab("leaderboard")}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Trophy className="h-6 w-6 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-semibold">Rangliste</p>
+                  <p className="text-sm text-muted-foreground">Platzierung anzeigen</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Stats Cards for Authenticated Users */}
       {isAuthenticated && (
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
@@ -400,6 +525,7 @@ export function AcademyPageClient() {
         </div>
       )}
 
+      {/* Public CTA Banner */}
       {!isAuthenticated && (
         <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-100">
           <CardContent className="py-6">
@@ -436,7 +562,7 @@ export function AcademyPageClient() {
       )}
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="courses" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="courses">Kurse</TabsTrigger>
           <TabsTrigger value="my-learning" className="flex items-center gap-1">
@@ -453,7 +579,7 @@ export function AcademyPageClient() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Courses Tab - Always accessible */}
+        {/* Courses Tab */}
         <TabsContent value="courses" className="space-y-6">
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4">
@@ -541,164 +667,108 @@ export function AcademyPageClient() {
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
                         <AvatarImage src={course.instructor_avatar_url || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {course.instructor_name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
+                        <AvatarFallback>{course.instructor_name?.charAt(0) || "?"}</AvatarFallback>
                       </Avatar>
                       <span className="text-sm text-muted-foreground">{course.instructor_name}</span>
                     </div>
-                    <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                        <span>{course.average_rating?.toFixed(1) || "N/A"}</span>
-                        <span>({course.total_reviews || 0})</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span>{course.total_enrollments || 0}</span>
-                      </div>
-                    </div>
                   </CardContent>
-                  <CardFooter className="pt-2">
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-1 text-purple-600">
-                        <Zap className="h-4 w-4" />
-                        <span className="font-semibold">+{course.xp_reward} XP</span>
-                      </div>
-                      {isAuthenticated ? (
-                        <Button size="sm">
-                          Kurs starten
-                          <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      ) : (
-                        <Button size="sm" asChild>
-                          <Link href="/auth/sign-up">
-                            <Lock className="h-4 w-4 mr-1" />
-                            Registrieren
-                          </Link>
-                        </Button>
-                      )}
+                  <CardFooter className="pt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      <span>{course.average_rating?.toFixed(1) || "Neu"}</span>
+                      <span className="text-muted-foreground">({course.total_reviews || 0})</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>{course.total_enrollments || 0}</span>
                     </div>
                   </CardFooter>
+                  <div className="px-6 pb-4">
+                    <Button className="w-full" asChild>
+                      <Link href={`/academy/courses/${course.id}`}>
+                        <Play className="h-4 w-4 mr-2" />
+                        Kurs starten
+                      </Link>
+                    </Button>
+                  </div>
                 </Card>
               ))}
             </div>
           )}
         </TabsContent>
 
-        {/* My Learning Tab - Requires authentication */}
+        {/* My Learning Tab */}
         <TabsContent value="my-learning" className="space-y-6">
           {!isAuthenticated ? (
             <LoginPrompt
-              title="Anmeldung erforderlich"
-              description="Melden Sie sich an, um Ihre Lernfortschritte zu sehen, Kurse fortzusetzen und Ihren persönlichen Lernpfad zu verfolgen."
+              title="Anmelden für Lernfortschritt"
+              description="Melden Sie sich an, um Ihre eingeschriebenen Kurse zu sehen und Ihren Fortschritt zu verfolgen."
             />
-          ) : (
-            <>
-              <h2 className="text-xl font-semibold">Aktuelle Kurse</h2>
-              {enrollments.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                      <Play className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">Keine aktiven Kurse</h3>
-                      <p className="text-muted-foreground mt-1">
-                        Sie haben noch keine Kurse begonnen. Stöbern Sie im Kurskatalog und starten Sie Ihre Lernreise!
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => document.querySelector('[value="courses"]')?.dispatchEvent(new Event("click"))}
-                    >
-                      Kurse entdecken
-                    </Button>
-                  </div>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {enrollments.map((enrollment) => (
-                    <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
-                          <img
-                            src={enrollment.course?.thumbnail_url || "/placeholder.svg?height=64&width=96&query=course"}
-                            alt={enrollment.course?.title || "Kurs"}
-                            className="w-24 h-16 object-cover rounded"
-                          />
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{enrollment.course?.title || "Unbekannter Kurs"}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {enrollment.course?.instructor_name || "Unbekannt"}
-                            </p>
-                            <div className="mt-2">
-                              <div className="flex justify-between text-sm mb-1">
-                                <span>{enrollment.progress_percentage}% abgeschlossen</span>
-                              </div>
-                              <Progress value={enrollment.progress_percentage} className="h-2" />
-                            </div>
-                          </div>
-                          <Button>
-                            <Play className="h-4 w-4 mr-2" />
-                            Fortsetzen
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+          ) : enrollments.length === 0 ? (
+            <Card className="p-12 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                  <BookOpen className="h-8 w-8 text-muted-foreground" />
                 </div>
-              )}
-
-              {/* Completed Courses Section */}
-              {displayStats.courses_completed > 0 && (
-                <>
-                  <h2 className="text-xl font-semibold mt-8">Abgeschlossene Kurse</h2>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {courses
-                      .filter((course) =>
-                        enrollments.some((e) => e.course_id === course.id && e.progress_percentage === 100),
-                      )
-                      .map((course) => (
-                        <Card key={course.id} className="relative overflow-hidden">
-                          <div className="absolute top-0 right-0 bg-green-500 text-white px-3 py-1 text-sm rounded-bl-lg">
-                            <CheckCircle className="h-4 w-4 inline mr-1" />
-                            Abgeschlossen
+                <div>
+                  <h3 className="text-lg font-semibold">Noch keine Kurse begonnen</h3>
+                  <p className="text-muted-foreground mt-1">
+                    Starten Sie Ihren ersten Kurs und beginnen Sie Ihre Lernreise!
+                  </p>
+                </div>
+                <Button onClick={() => setActiveTab("courses")}>
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Kurse entdecken
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {enrollments.map((enrollment) => (
+                <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="py-4">
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={enrollment.course?.thumbnail_url || "/placeholder.svg?height=80&width=120&query=course"}
+                        alt={enrollment.course?.title}
+                        className="w-24 h-16 object-cover rounded-lg"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">{enrollment.course?.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Zuletzt gelernt:{" "}
+                          {enrollment.last_accessed_at
+                            ? new Date(enrollment.last_accessed_at).toLocaleDateString("de-DE")
+                            : "Noch nicht gestartet"}
+                        </p>
+                        <div className="mt-2">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Fortschritt</span>
+                            <span>{enrollment.progress_percentage}%</span>
                           </div>
-                          <CardContent className="p-4">
-                            <div className="flex items-center gap-4">
-                              <img
-                                src={course.thumbnail_url || "/placeholder.svg?height=64&width=96&query=course"}
-                                alt={course.title}
-                                className="w-24 h-16 object-cover rounded"
-                              />
-                              <div>
-                                <h3 className="font-semibold">{course.title}</h3>
-                                <p className="text-sm text-muted-foreground">{course.instructor_name}</p>
-                                <div className="flex items-center gap-1 text-purple-600 mt-1">
-                                  <Zap className="h-4 w-4" />
-                                  <span className="text-sm font-medium">+{course.xp_reward} XP verdient</span>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                </>
-              )}
-            </>
+                          <Progress value={enrollment.progress_percentage} className="h-2" />
+                        </div>
+                      </div>
+                      <Button asChild>
+                        <Link href={`/academy/courses/${enrollment.course_id}`}>
+                          <Play className="h-4 w-4 mr-2" />
+                          Fortsetzen
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </TabsContent>
 
-        {/* Badges Tab - Requires authentication */}
+        {/* Badges Tab */}
         <TabsContent value="badges" className="space-y-6">
           {!isAuthenticated ? (
             <LoginPrompt
-              title="Abzeichen freischalten"
-              description="Registrieren Sie sich, um Abzeichen zu verdienen, Erfolge zu sammeln und Ihren Fortschritt zu zeigen."
+              title="Anmelden für Abzeichen"
+              description="Melden Sie sich an, um Abzeichen zu verdienen und Ihre Erfolge zu sammeln."
             />
           ) : userBadges.length === 0 ? (
             <Card className="p-12 text-center">
@@ -707,37 +777,37 @@ export function AcademyPageClient() {
                   <Award className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">Keine Abzeichen verdient</h3>
+                  <h3 className="text-lg font-semibold">Noch keine Abzeichen</h3>
                   <p className="text-muted-foreground mt-1">
                     Schließen Sie Kurse ab und erreichen Sie Meilensteine, um Abzeichen zu verdienen!
                   </p>
                 </div>
+                <Button onClick={() => setActiveTab("courses")}>
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Kurse entdecken
+                </Button>
               </div>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {userBadges.map((userBadge) => {
-                const badge = userBadge.badge
-                if (!badge) return null
-                const IconComponent = getIconComponent(badge.icon_name)
+                const IconComponent = getIconComponent(userBadge.badge?.icon_name || "award")
                 return (
-                  <Card key={userBadge.id} className="relative">
-                    <CardContent className="pt-6">
-                      <div className="text-center">
-                        <div
-                          className="h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-3"
-                          style={{ backgroundColor: `${badge.color}20` }}
-                        >
-                          <IconComponent className="h-8 w-8" style={{ color: badge.color }} />
-                        </div>
-                        <h4 className="font-semibold">{badge.name}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">{badge.description}</p>
-                        <Badge className="mt-3 bg-green-100 text-green-700 border-green-200">Verdient</Badge>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(userBadge.earned_at).toLocaleDateString("de-DE")}
-                        </p>
-                      </div>
-                    </CardContent>
+                  <Card key={userBadge.id} className="text-center p-6">
+                    <div
+                      className="h-16 w-16 rounded-full mx-auto flex items-center justify-center mb-4"
+                      style={{ backgroundColor: `${userBadge.badge?.color}20` }}
+                    >
+                      <IconComponent className="h-8 w-8" style={{ color: userBadge.badge?.color }} />
+                    </div>
+                    <h3 className="font-semibold">{userBadge.badge?.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{userBadge.badge?.description}</p>
+                    <Badge variant="outline" className="mt-3">
+                      {userBadge.badge?.rarity}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Verdient am {new Date(userBadge.earned_at).toLocaleDateString("de-DE")}
+                    </p>
                   </Card>
                 )
               })}
@@ -745,87 +815,77 @@ export function AcademyPageClient() {
           )}
         </TabsContent>
 
-        {/* Leaderboard Tab - Requires authentication */}
+        {/* Leaderboard Tab */}
         <TabsContent value="leaderboard" className="space-y-6">
           {!isAuthenticated ? (
             <LoginPrompt
-              title="Rangliste anzeigen"
-              description="Melden Sie sich an, um die Rangliste zu sehen, sich mit anderen zu messen und Ihren Rang zu verbessern."
+              title="Anmelden für Rangliste"
+              description="Melden Sie sich an, um Ihre Platzierung in der Rangliste zu sehen und mit anderen zu konkurrieren."
             />
+          ) : leaderboard.length === 0 ? (
+            <Card className="p-12 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                  <Trophy className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Rangliste noch leer</h3>
+                  <p className="text-muted-foreground mt-1">
+                    Seien Sie der Erste, der Kurse abschließt und XP sammelt!
+                  </p>
+                </div>
+              </div>
+            </Card>
           ) : (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-amber-500" />
-                  Rangliste - Diese Woche
+                  Praxis-Rangliste
                 </CardTitle>
-                <CardDescription>Top-Lerner in Ihrer Praxis</CardDescription>
+                <CardDescription>Top-Lernende in Ihrer Praxis</CardDescription>
               </CardHeader>
               <CardContent>
-                {leaderboard.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                      <Trophy className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Keine Rangliste verfügbar</h3>
-                    <p className="text-muted-foreground mt-1">
-                      Beginnen Sie mit dem Lernen, um auf der Rangliste zu erscheinen!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {leaderboard.map((entry) => (
-                      <div
-                        key={entry.user_id}
-                        className={`flex items-center gap-4 p-4 rounded-lg border ${
-                          entry.user_id === currentUser?.id ? "bg-primary/5 border-primary/20" : ""
-                        }`}
-                      >
-                        <div
-                          className={`h-10 w-10 rounded-full flex items-center justify-center font-bold ${
-                            entry.rank === 1
-                              ? "bg-gradient-to-br from-amber-400 to-amber-600 text-white"
-                              : entry.rank === 2
-                                ? "bg-gradient-to-br from-gray-300 to-gray-500 text-white"
-                                : entry.rank === 3
-                                  ? "bg-gradient-to-br from-orange-400 to-orange-600 text-white"
-                                  : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {entry.rank <= 3 ? (
-                            entry.rank === 1 ? (
-                              <Crown className="h-5 w-5" />
-                            ) : (
-                              <Medal className="h-5 w-5" />
-                            )
-                          ) : (
-                            entry.rank
-                          )}
-                        </div>
-                        <Avatar>
-                          <AvatarImage src={entry.avatar_url || "/placeholder.svg"} />
-                          <AvatarFallback>
-                            {entry.user_name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-semibold">{entry.user_name}</p>
-                          <p className="text-sm text-muted-foreground">{entry.courses_completed} Kurse abgeschlossen</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-purple-600">{entry.xp_earned.toLocaleString()} XP</p>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <TrendingUp className="h-3 w-3 text-green-500" />
-                            <span>Diese Woche</span>
-                          </div>
-                        </div>
+                <div className="space-y-3">
+                  {leaderboard.map((entry, index) => (
+                    <div
+                      key={entry.user_id}
+                      className={`flex items-center gap-4 p-3 rounded-lg ${
+                        entry.user_id === currentUser?.id ? "bg-primary/5 border border-primary/20" : "bg-muted/50"
+                      }`}
+                    >
+                      <div className="w-8 text-center font-bold">
+                        {index === 0 ? (
+                          <Crown className="h-6 w-6 text-amber-500 mx-auto" />
+                        ) : index === 1 ? (
+                          <Medal className="h-6 w-6 text-gray-400 mx-auto" />
+                        ) : index === 2 ? (
+                          <Medal className="h-6 w-6 text-amber-700 mx-auto" />
+                        ) : (
+                          <span className="text-muted-foreground">{entry.rank}</span>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <Avatar>
+                        <AvatarImage src={entry.avatar_url || "/placeholder.svg"} />
+                        <AvatarFallback>{entry.user_name?.charAt(0) || "?"}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium">
+                          {entry.user_name}
+                          {entry.user_id === currentUser?.id && (
+                            <Badge variant="outline" className="ml-2">
+                              Sie
+                            </Badge>
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{entry.courses_completed} Kurse abgeschlossen</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">{entry.xp_earned.toLocaleString()} XP</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -833,6 +893,22 @@ export function AcademyPageClient() {
       </Tabs>
     </div>
   )
-}
 
-export default AcademyPageClient
+  if (isAuthenticated) {
+    return (
+      <AppLayout>
+        <BadgeEarnedPopup badge={pendingBadge} onClose={handleBadgePopupClose} />
+        {content}
+      </AppLayout>
+    )
+  }
+
+  return (
+    <LandingPageLayout>
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
+        <BadgeEarnedPopup badge={pendingBadge} onClose={handleBadgePopupClose} />
+        {content}
+      </div>
+    </LandingPageLayout>
+  )
+}

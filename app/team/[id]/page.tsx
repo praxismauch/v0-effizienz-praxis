@@ -163,19 +163,16 @@ export default function TeamMemberDetailPage() {
               {member.name} {age && <span className="text-muted-foreground">({age})</span>}
             </h2>
           </div>
+          {canEdit && (
+            <Button onClick={() => router.push(`/team/${memberId}/edit`)} className="ml-auto">
+              <Edit className="mr-2 h-4 w-4" />
+              Bearbeiten
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex-1" />
-              {canEdit && (
-                <Button onClick={() => router.push(`/team/${memberId}/edit`)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Bearbeiten
-                </Button>
-              )}
-            </div>
             <TabsList className="grid w-full grid-cols-7 mb-6">
               <TabsTrigger value="overview">Übersicht</TabsTrigger>
               <TabsTrigger value="skills">Kompetenzen</TabsTrigger>

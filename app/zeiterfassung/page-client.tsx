@@ -1253,81 +1253,83 @@ export default function ZeiterfassungPageClient() {
 
               {/* Zeitblöcke-Tabelle */}
               <ScrollArea className="h-[400px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Datum</TableHead>
-                      <TableHead>Start</TableHead>
-                      <TableHead>Ende</TableHead>
-                      <TableHead>Pause</TableHead>
-                      <TableHead>Netto</TableHead>
-                      <TableHead>Ort</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {timeBlocks.map((block) => {
-                      const location = WORK_LOCATIONS.find((l) => l.value === block.work_location)
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[100px]">Datum</TableHead>
+                        <TableHead className="min-w-[70px]">Start</TableHead>
+                        <TableHead className="min-w-[70px]">Ende</TableHead>
+                        <TableHead className="min-w-[70px]">Pause</TableHead>
+                        <TableHead className="min-w-[70px]">Netto</TableHead>
+                        <TableHead className="min-w-[80px]">Ort</TableHead>
+                        <TableHead className="min-w-[60px]">Status</TableHead>
+                        <TableHead className="min-w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {timeBlocks.map((block) => {
+                        const location = WORK_LOCATIONS.find((l) => l.value === block.work_location)
 
-                      return (
-                        <TableRow key={block.id}>
-                          <TableCell className="font-medium">
-                            {format(parseISO(block.date), "EEE, d.M.", { locale: de })}
-                          </TableCell>
-                          <TableCell>{format(parseISO(block.start_time), "HH:mm")}</TableCell>
-                          <TableCell>
-                            {block.end_time ? (
-                              format(parseISO(block.end_time), "HH:mm")
-                            ) : (
-                              <Badge variant="secondary">Offen</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>{block.break_minutes || 0} min</TableCell>
-                          <TableCell className="font-mono">
-                            {block.net_minutes ? formatMinutes(block.net_minutes) : "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={location?.color}>
-                              {location?.label || block.work_location}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {block.plausibility_status === "ok" ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            ) : block.plausibility_status === "hinweis" ? (
-                              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-red-500" />
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setCorrectionBlock(block)
-                                    setCorrectionNewStart(block.start_time)
-                                    setCorrectionNewEnd(block.end_time || "")
-                                    setShowCorrectionDialog(true)
-                                  }}
-                                >
-                                  <Edit2 className="h-4 w-4 mr-2" />
-                                  Korrektur beantragen
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+                        return (
+                          <TableRow key={block.id}>
+                            <TableCell className="font-medium">
+                              {format(parseISO(block.date), "EEE, d.M.", { locale: de })}
+                            </TableCell>
+                            <TableCell>{format(parseISO(block.start_time), "HH:mm")}</TableCell>
+                            <TableCell>
+                              {block.end_time ? (
+                                format(parseISO(block.end_time), "HH:mm")
+                              ) : (
+                                <Badge variant="secondary">Offen</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>{block.break_minutes || 0} min</TableCell>
+                            <TableCell className="font-mono">
+                              {block.net_minutes ? formatMinutes(block.net_minutes) : "-"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={location?.color}>
+                                {location?.label || block.work_location}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {block.plausibility_status === "ok" ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              ) : block.plausibility_status === "hinweis" ? (
+                                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-500" />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setCorrectionBlock(block)
+                                      setCorrectionNewStart(block.start_time)
+                                      setCorrectionNewEnd(block.end_time || "")
+                                      setShowCorrectionDialog(true)
+                                    }}
+                                  >
+                                    <Edit2 className="h-4 w-4 mr-2" />
+                                    Korrektur beantragen
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>

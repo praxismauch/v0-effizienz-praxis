@@ -756,6 +756,7 @@ export default function TeamPageClient() {
         }),
       })
       if (res.ok) {
+        const newTeam = await res.json()
         toast({
           title: "Erfolg",
           description: "Team erfolgreich erstellt.",
@@ -764,15 +765,9 @@ export default function TeamPageClient() {
         setNewTeamName("")
         setNewTeamDescription("")
         setNewTeamColor("#3b82f6")
-        // Re-fetch teams to update the list
-        const { data: teamsData } = await createClient().from("teams").select("*").eq("practice_id", currentPractice.id)
-        // Assuming useTeam() context has a way to update its teams state or re-fetch
-        // For simplicity here, we'll manually update if no direct context setter is available
-        // If `teams` is managed by context, a refetch function should be called.
-        // Let's assume useTeam context has a refetchTeams function or similar
-        // If not, you'd need to adapt the context provider.
-        // For now, assuming `teams` state in context can be updated or re-fetched.
-        // This part might need adjustment based on the actual implementation of `useTeam` context.
+        if (addTeam && newTeam) {
+          addTeam(newTeam)
+        }
       } else {
         const errorData = await res.json()
         toast({
@@ -807,6 +802,7 @@ export default function TeamPageClient() {
         }),
       })
       if (res.ok) {
+        const updatedTeam = await res.json()
         toast({
           title: "Erfolg",
           description: "Team erfolgreich aktualisiert.",
@@ -816,9 +812,9 @@ export default function TeamPageClient() {
         setNewTeamName("")
         setNewTeamDescription("")
         setNewTeamColor("#3b82f6")
-        // Re-fetch teams
-        const { data: teamsData } = await createClient().from("teams").select("*").eq("practice_id", currentPractice.id)
-        // Similar to handleCreateTeam, update context state or re-fetch
+        if (updatedTeam) {
+          updateTeam(updatedTeam.id, updatedTeam)
+        }
       } else {
         const errorData = await res.json()
         toast({

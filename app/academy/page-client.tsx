@@ -104,7 +104,7 @@ interface LeaderboardEntry {
 
 export function AcademyPageClient() {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const { user: currentUser, loading: userLoading } = useUser()
+  const { currentUser, loading: userLoading } = useUser()
   const [courses, setCourses] = useState<Course[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [userStats, setUserStats] = useState<UserStats | null>(null)
@@ -308,7 +308,7 @@ export function AcademyPageClient() {
 
   const LoginPrompt = ({ title, description }: { title: string; description: string }) => (
     <Card className="p-8 text-center border-dashed border-2">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center justify-center gap-4">
         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
           <Lock className="h-8 w-8 text-primary" />
         </div>

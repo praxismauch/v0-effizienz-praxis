@@ -578,7 +578,15 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
         case "showOpenTasks":
           if (!widgets.showOpenTasks || !stats || stats.openTasks === undefined) return null
           return wrapWithSpan(
-            <Card className="group relative h-full overflow-hidden">{/* ... existing card content ... */}</Card>,
+            <StatCard
+              key="openTasks"
+              title={t("Offene Aufgaben", "Offene Aufgaben")}
+              value={stats.openTasks}
+              trend={stats.tasksTrend}
+              icon={CheckSquare}
+              color="orange"
+              href="/todos"
+            />,
             widgetId,
           )
         case "showTodayAppointments":

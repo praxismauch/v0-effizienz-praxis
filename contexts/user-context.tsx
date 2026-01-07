@@ -29,6 +29,7 @@ interface UserContextType {
   isAdmin: boolean
   isSuperAdmin: boolean
   loading: boolean
+  isLoggingOut: boolean
   superAdmins: User[]
   createSuperAdmin: (userData: Omit<User, "id" | "joinedAt">) => void
   updateSuperAdmin: (id: string, userData: Partial<User>) => void
@@ -154,6 +155,8 @@ export function UserProvider({
       return true
     }
   })
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -481,18 +484,32 @@ export function UserProvider({
   )
 
   const signOut = useCallback(async () => {
+    if (isLoggingOut) return // Prevent double-clicks
+
+    setIsLoggingOut(true)
+
     try {
-      await fetch("/api/auth/logout", { method: "POST" })
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include", // Ensure cookies are sent
+      })
+
+      if (!response.ok) {
+        console.error("[user-context] Logout API returned error:", response.status)
+      }
     } catch (error) {
       console.error("[user-context] Logout error:", error)
     } finally {
+      // Always clear client state after backend call attempt
       persistUserToStorage(null)
       setCurrentUser(null)
+      setIsLoggingOut(false)
+
       if (typeof window !== "undefined") {
         window.location.href = "/auth/login"
       }
     }
-  }, [persistUserToStorage])
+  }, [persistUserToStorage, isLoggingOut])
 
   const contextValue = useMemo(
     () => ({
@@ -501,6 +518,7 @@ export function UserProvider({
       isAdmin: isPracticeAdminRole(normalizedRole) || normalizedRole === "admin",
       isSuperAdmin: isSuperAdminRole(normalizedRole),
       loading: isLoading,
+      isLoggingOut,
       superAdmins,
       createSuperAdmin,
       updateSuperAdmin,
@@ -512,6 +530,7 @@ export function UserProvider({
       currentUser,
       normalizedRole,
       isLoading,
+      isLoggingOut,
       superAdmins,
       createSuperAdmin,
       updateSuperAdmin,

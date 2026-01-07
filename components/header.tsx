@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Settings, HelpCircle, MessageSquare } from "lucide-react"
+import { Search, Settings, HelpCircle, MessageSquare, LogOut, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -13,22 +13,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useUser } from "@/contexts/user-context"
-import { useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 
 export function Header() {
-  const { currentUser } = useUser()
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" })
-      router.push("/auth/login")
-    } catch (error) {
-      console.error("Logout error:", error)
-    }
-  }
+  const { currentUser, signOut, isLoggingOut } = useUser()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -101,7 +90,10 @@ export function Header() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>Abmelden</DropdownMenuItem>
+              <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive" disabled={isLoggingOut}>
+                {isLoggingOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
+                {isLoggingOut ? "Abmelden..." : "Abmelden"}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

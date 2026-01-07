@@ -11,6 +11,7 @@ interface AuthContextType {
     name?: string
   } | null
   loading: boolean
+  isLoggingOut: boolean
   signOut: () => Promise<void>
 }
 
@@ -21,28 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const { currentUser, loading } = useUser()
-
-  // Simple logout helper that redirects to login
-  const signOut = async () => {
-    try {
-      // Call the logout API route
-      await fetch("/api/auth/logout", { method: "POST" })
-
-      // Clear user from context
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("effizienz_current_user")
-        sessionStorage.removeItem("effizienz_current_user")
-        window.location.href = "/auth/login"
-      }
-    } catch (error) {
-      console.error("Logout error:", error)
-      // Force redirect even on error
-      if (typeof window !== "undefined") {
-        window.location.href = "/auth/login"
-      }
-    }
-  }
+  const { currentUser, loading, signOut, isLoggingOut } = useUser()
 
   // Map UserProvider data to AuthProvider interface for backward compatibility
   const authUser = currentUser
@@ -56,6 +36,7 @@ export function useAuth() {
   return {
     user: authUser,
     loading,
+    isLoggingOut,
     signOut,
   }
 }

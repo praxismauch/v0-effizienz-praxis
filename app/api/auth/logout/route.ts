@@ -33,12 +33,25 @@ export async function POST() {
     // Sign out from Supabase (this will clear the session)
     await supabase.auth.signOut()
 
-    // Clear all Supabase cookies explicitly
     const allCookies = cookieStore.getAll()
     allCookies.forEach((cookie) => {
       if (cookie.name.startsWith("sb-")) {
-        response.cookies.delete(cookie.name)
+        response.cookies.set(cookie.name, "", {
+          expires: new Date(0),
+          path: "/",
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        })
       }
+    })
+
+    response.cookies.set("effizienz_session", "", {
+      expires: new Date(0),
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     })
 
     return response

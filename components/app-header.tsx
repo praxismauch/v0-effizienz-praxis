@@ -18,6 +18,7 @@ import {
   MessageSquare,
   X,
   CheckSquare,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -265,7 +266,7 @@ function isUUID(str: string): boolean {
 }
 
 function AppHeader() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, isLoggingOut } = useAuth()
   const { currentPractice } = usePractice()
   const pathname = usePathname()
   const router = useRouter()
@@ -663,9 +664,17 @@ function AppHeader() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Abmelden
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="cursor-pointer text-destructive"
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <LogOut className="mr-2 h-4 w-4" />
+                  )}
+                  {isLoggingOut ? "Abmelden..." : "Abmelden"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

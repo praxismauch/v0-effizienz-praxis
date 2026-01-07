@@ -1,14 +1,14 @@
-import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 // GET - Fetch all unique suppliers from inventory items
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createClient()
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
     // Get unique suppliers from inventory_items
-    const { data: items, error } = await supabase
+    const { data: items, error } = await adminClient
       .from("inventory_items")
       .select("supplier")
       .eq("practice_id", Number.parseInt(practiceId))
@@ -30,7 +30,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(suppliers)
   } catch (error) {
-    console.error("[v0] Suppliers GET error:", error)
-    return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 })
+    return handleApiError(error)
   }
 }

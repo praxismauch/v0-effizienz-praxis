@@ -1,19 +1,18 @@
-import { createClient } from "@/lib/supabase/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { NextResponse } from "next/server"
 
-export async function PATCH(request: Request, { params }: { params: { practiceId: string; id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
-    const practiceIdText = String(params.practiceId)
-    const idText = String(params.id)
+    const { practiceId, id } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
-    const supabase = await createClient()
     const { category } = await request.json()
 
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("bank_transactions")
       .update({ category, updated_at: new Date().toISOString() })
-      .eq("id", idText)
-      .eq("practice_id", practiceIdText)
+      .eq("id", id)
+      .eq("practice_id", practiceId)
       .select()
       .single()
 
@@ -24,7 +23,6 @@ export async function PATCH(request: Request, { params }: { params: { practiceId
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("Error in PATCH bank transaction:", error)
-    return NextResponse.json({ error: "Failed to update transaction" }, { status: 500 })
+    return handleApiError(error)
   }
 }

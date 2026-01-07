@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
     const { practiceId, id } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
+
     const body = await request.json()
 
-    const supabase = await createAdminClient()
-
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("bank_transaction_categories")
       .update({
         name: body.name,
@@ -30,18 +30,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
       headers: { "Content-Type": "application/json" },
     })
   } catch (error) {
-    console.error("Error in PATCH bank transaction category:", error)
-    return NextResponse.json({ error: "Failed to update category" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
     const { practiceId, id } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
-    const supabase = await createAdminClient()
-
-    const { error } = await supabase
+    const { error } = await adminClient
       .from("bank_transaction_categories")
       .delete()
       .eq("id", id)
@@ -59,7 +57,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ p
       },
     )
   } catch (error) {
-    console.error("Error in DELETE bank transaction category:", error)
-    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 })
+    return handleApiError(error)
   }
 }

@@ -1,17 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { safeSupabaseQuery } from "@/lib/supabase/safe-query"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
     const { practiceId } = await params
-    const supabase = await createAdminClient()
-
-    const userSupabase = await createClient()
-    const {
-      data: { user },
-    } = await userSupabase.auth.getUser()
-    const currentUserId = user?.id
+    const { user, adminClient: supabase } = await requirePracticeAccess(practiceId)
+    const currentUserId = user.id
 
     const { searchParams } = new URL(request.url)
 
@@ -146,28 +141,18 @@ export async function GET(request: NextRequest, { params }: { params: { practice
       },
     )
   } catch (error) {
-    console.error(
-      "[v0] Error in GET /api/practices/[practiceId]/goals:",
-      error instanceof Error ? error.message : error,
-    )
-    return NextResponse.json({ goals: [] }, { status: 200 })
+    return handleApiError(error)
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
     const { practiceId } = await params
+    const { user, adminClient: supabase } = await requirePracticeAccess(practiceId)
+
     const body = await request.json()
-    const supabase = await createAdminClient()
 
-    const userId = body.created_by || body.createdBy || body.assignedTo || body.assigned_to
-
-    if (!userId) {
-      console.error("[v0] No user ID provided for goal creation")
-      return NextResponse.json({ error: "User ID is required to create a goal. Please log in again." }, { status: 400 })
-    }
-
-    const createdByValue = String(userId).trim()
+    const createdByValue = user.id
 
     const goalData = {
       practice_id: practiceId,
@@ -243,7 +228,6 @@ export async function POST(request: NextRequest, { params }: { params: { practic
 
     return NextResponse.json({ goal }, { status: 201 })
   } catch (error) {
-    console.error("[v0] Error in POST /api/practices/[practiceId]/goals:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }

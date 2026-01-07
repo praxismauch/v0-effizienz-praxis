@@ -1,15 +1,15 @@
-import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
+
     const { searchParams } = new URL(request.url)
     const archived = searchParams.get("archived") === "true"
 
-    const supabase = createAdminClient()
-
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("inventory_bills")
       .select("*")
       .eq("practice_id", practiceId)
@@ -24,19 +24,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     return NextResponse.json(data || [])
   } catch (error) {
-    console.error("[v0] Error in inventory bills GET:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
+    const { adminClient, user } = await requirePracticeAccess(practiceId)
+
     const body = await request.json()
 
-    const supabase = createAdminClient()
-
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("inventory_bills")
       .insert({
         practice_id: practiceId,
@@ -44,7 +43,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         file_url: body.file_url,
         file_type: body.file_type,
         file_size: body.file_size,
-        uploaded_by: body.uploaded_by,
+        uploaded_by: user.id,
         notes: body.notes,
         status: "pending",
       })
@@ -58,7 +57,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Error in inventory bills POST:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }

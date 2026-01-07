@@ -140,8 +140,11 @@ export async function updateSession(request: NextRequest) {
   const isLocked = refreshTokenLock.has(lockKey)
   if (isLocked) {
     const startTime = Date.now()
-    while (refreshTokenLock.has(lockKey) && Date.now() - startTime < 5000) {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    while (refreshTokenLock.has(lockKey) && Date.now() - startTime < 500) {
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    }
+    if (refreshTokenLock.has(lockKey)) {
+      // Lock timeout - proceed without waiting further
     }
   }
 

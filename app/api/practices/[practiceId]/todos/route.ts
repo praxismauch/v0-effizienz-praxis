@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 500): Promise<T | null> {
   let lastError: Error | null = null
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json([])
     }
 
-    const supabase = createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const result = await withRetry(() =>
       supabase
@@ -66,13 +66,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(todos || [])
   } catch (error: unknown) {
-    const errorMessage = (error as Error)?.message || String(error)
-    if (errorMessage.includes("Too Many") || errorMessage.includes("rate") || errorMessage.includes("429")) {
-      console.log("[v0] Todos GET - Rate limited exception, returning empty array")
-      return NextResponse.json([])
-    }
-    console.error("Todos GET error:", error)
-    return NextResponse.json([])
+    return handleApiError(error)
   }
 }
 
@@ -81,7 +75,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { practiceId } = await params
     const body = await request.json()
 
-    const supabase = createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const createdBy = body.created_by || body.createdBy
     const assignedTo = body.assigned_to || body.assignedTo
@@ -107,6 +101,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(data)
   } catch (error: unknown) {
-    return NextResponse.json({ error: "Failed to create todo" }, { status: 500 })
+    return handleApiError(error)
   }
 }

@@ -1,10 +1,5 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { type NextRequest, NextResponse } from "next/server"
-
-// Helper to check v0 preview environment
-function isV0Preview(): boolean {
-  return process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.NODE_ENV === "development"
-}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
@@ -13,7 +8,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+
     const { data: contacts, error } = await supabase
       .from("contacts")
       .select("*")
@@ -28,8 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(contacts || [])
   } catch (error) {
-    console.error("[v0] Error in GET /contacts:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
@@ -40,8 +35,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
+    const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
+
     const body = await request.json()
-    const supabase = createAdminClient()
 
     const contactData = {
       salutation: body.salutation || null,
@@ -63,7 +59,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       category: body.category || null,
       notes: body.notes || null,
       practice_id: practiceId,
-      created_by: body.created_by || null,
+      created_by: user.id,
     }
 
     const { data: contact, error } = await supabase.from("contacts").insert(contactData).select().single()
@@ -75,8 +71,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(contact, { status: 201 })
   } catch (error) {
-    console.error("[v0] Error in POST /contacts:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
@@ -89,7 +84,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Contact ID required" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+
     const { data: contact, error } = await supabase
       .from("contacts")
       .update({
@@ -125,8 +121,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(contact)
   } catch (error) {
-    console.error("[v0] Error in PUT /contacts:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
@@ -140,7 +135,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Contact ID required" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const { error } = await supabase
       .from("contacts")
@@ -155,7 +150,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Error in DELETE /contacts:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }

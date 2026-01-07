@@ -1,8 +1,8 @@
-import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { sortTeamMembersByRole } from "@/lib/team-role-order"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelay = 1000): Promise<T> {
   let lastError: any
@@ -43,15 +43,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let supabase
     try {
-      supabase = await createAdminClient()
-    } catch (clientError: any) {
-      if (isRateLimitError(clientError)) {
-        return NextResponse.json(
-          { error: "Service temporarily unavailable", retryable: true },
-          { status: 503, headers: { "Retry-After": "5" } },
-        )
-      }
-      return NextResponse.json([])
+      const access = await requirePracticeAccess(practiceId)
+      supabase = access.adminClient
+    } catch (error) {
+      return handleApiError(error)
     }
 
     let customRoleOrder: string[] | undefined
@@ -184,16 +179,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         { status: 503, headers: { "Retry-After": "5" } },
       )
     }
-    return NextResponse.json([])
+    return handleApiError(error)
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] TEAM MEMBERS POST - practiceId:", practiceId)
 
-    const supabase = await createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+
     const body = await request.json()
 
     const firstName = body.firstName?.trim()
@@ -216,7 +211,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (body.email && body.email.trim() !== "") {
       userId = uuidv4()
-      console.log("[v0] TEAM MEMBERS POST - Creating user with email:", body.email)
 
       const { data: userData, error: userError } = await supabase
         .from("users")
@@ -239,8 +233,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         console.error("[v0] User insert error:", userError.message)
         return NextResponse.json({ error: userError.message }, { status: 500 })
       }
-    } else {
-      console.log("[v0] TEAM MEMBERS POST - Creating team member without user (no email provided)")
     }
 
     const { data: memberData, error: memberError } = await supabase
@@ -276,7 +268,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
     }
 
-    console.log("[v0] TEAM MEMBERS POST - Success, created member:", teamMemberId)
     return NextResponse.json({
       id: userId || teamMemberId,
       teamMemberId: teamMemberId,
@@ -298,6 +289,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
   } catch (error) {
     console.error("[v0] Team members POST exception:", error)
-    return NextResponse.json({ error: "Failed to create team member" }, { status: 500 })
+    return handleApiError(error)
   }
 }

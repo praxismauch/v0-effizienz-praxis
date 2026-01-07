@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -15,14 +15,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let supabase
     try {
-      supabase = await createAdminClient()
-    } catch (clientError) {
-      if (isRateLimitError(clientError)) {
-        console.warn("[v0] Workflows GET - Rate limited creating client")
-        return NextResponse.json({ workflows: [] }, { status: 200 })
-      }
-      console.error("[v0] Workflows GET - Failed to create client")
-      return NextResponse.json({ workflows: [] }, { status: 200 })
+      const access = await requirePracticeAccess(practiceId)
+      supabase = access.adminClient
+    } catch (error) {
+      return handleApiError(error)
     }
 
     let data: any[] = []
@@ -106,8 +102,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       console.warn("[v0] Workflows GET - Rate limited at outer level")
       return NextResponse.json({ workflows: [] }, { status: 200 })
     }
-    console.error("[v0] Workflows GET - Fatal error:", error)
-    return NextResponse.json({ workflows: [], error: "Internal server error" }, { status: 200 })
+    return handleApiError(error)
   }
 }
 
@@ -120,21 +115,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
     }
 
-    let userId = "system"
-    try {
-      const userSupabase = await createClient()
-      const {
-        data: { user },
-      } = await userSupabase.auth.getUser()
-
-      if (user) {
-        userId = user.id
-      }
-    } catch (authError) {
-      console.error("[v0] Workflows POST - Auth error, using system:", authError)
-    }
-
-    const supabase = await createAdminClient()
+    const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
+    const userId = user.id
 
     let body
     try {
@@ -254,10 +236,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json(response)
   } catch (error) {
     console.error("[v0] Workflows POST - Unexpected error:", error)
-    return NextResponse.json(
-      { error: "Interner Serverfehler", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+    return handleApiError(error)
   }
 }
 
@@ -270,7 +249,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
     }
 
-    const supabase = await createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     let body
     try {
@@ -362,9 +341,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json(response)
   } catch (error) {
     console.error("[v0] Workflows PATCH - Unexpected error:", error)
-    return NextResponse.json(
-      { error: "Interner Serverfehler", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    )
+    return handleApiError(error)
   }
 }

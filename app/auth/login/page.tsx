@@ -9,7 +9,6 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useState, Suspense } from "react"
-import { useUser } from "@/contexts/user-context"
 import { createClient } from "@/lib/supabase/client"
 
 function LoginForm() {
@@ -20,8 +19,6 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const redirectTo = searchParams.get("redirectTo") || "/dashboard"
-
-  const { setCurrentUser } = useUser()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,10 +39,6 @@ function LoginForm() {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}${redirectTo}`,
-        },
       })
 
       if (authError) {
@@ -57,54 +50,6 @@ function LoginForm() {
         throw new Error("Keine Benutzerdaten erhalten")
       }
 
-      console.log("[v0] Login: Supabase auth successful, fetching user profile")
-
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id, email, name, role, is_active, practice_id")
-        .eq("id", authData.user.id)
-        .maybeSingle()
-
-      if (userError) {
-        console.error("[v0] Error fetching user profile:", userError)
-        throw new Error("Fehler beim Laden des Benutzerprofils")
-      }
-
-      if (!userData) {
-        throw new Error("Benutzerprofil nicht gefunden")
-      }
-
-      if (!userData.is_active) {
-        await supabase.auth.signOut()
-        throw new Error("Ihr Konto wartet noch auf die Genehmigung durch einen Administrator.")
-      }
-
-      console.log("[v0] Login: User profile loaded, setting current user")
-
-      setCurrentUser({
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        practiceId: userData.practice_id,
-        isActive: userData.is_active,
-        joinedAt: new Date().toISOString(),
-      })
-
-      localStorage.setItem(
-        "effizienz_current_user",
-        JSON.stringify({
-          id: userData.id,
-          email: userData.email,
-          name: userData.name,
-          role: userData.role,
-          practiceId: userData.practice_id,
-          isActive: userData.is_active,
-          joinedAt: new Date().toISOString(),
-        }),
-      )
-
-      console.log("[v0] Login: Redirecting to", redirectTo)
       router.push(redirectTo)
       router.refresh()
     } catch (error) {

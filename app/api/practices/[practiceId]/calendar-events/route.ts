@@ -1,27 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import Logger from "@/lib/logger"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
 
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+
     Logger.info("calendar-events-api", "Fetching calendar events", { practiceId })
 
     if (!practiceId || practiceId === "undefined") {
       return NextResponse.json({ events: [] }, { status: 200 })
-    }
-
-    let supabase
-    try {
-      supabase = createAdminClient()
-    } catch (clientError) {
-      if (isRateLimitError(clientError)) {
-        Logger.warn("calendar-events-api", "Rate limited creating client")
-        return NextResponse.json({ events: [] }, { status: 200 })
-      }
-      throw clientError
     }
 
     let calendarData, calendarError
@@ -208,15 +199,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ events: allEvents })
   } catch (error: any) {
-    if (isRateLimitError(error)) {
-      Logger.warn("calendar-events-api", "Rate limited (outer catch)")
-      return NextResponse.json({ events: [] }, { status: 200 })
-    }
-    Logger.error("calendar-events-api", "Error in GET calendar-events", {
-      error: error.message,
-      stack: error.stack,
-    })
-    return NextResponse.json({ events: [] }, { status: 200 })
+    return handleApiError(error)
   }
 }
 
@@ -224,7 +207,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
 
-    const supabase = createAdminClient()
+    const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
 
     const body = await request.json()
 
@@ -232,8 +215,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Titel ist erforderlich" }, { status: 400 })
     }
 
-    // Use createdBy from request if provided (client should pass the current user ID)
-    const userId = body.createdBy || null
+    const userId = user.id
 
     const eventType = body.type || "meeting"
 
@@ -298,13 +280,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ event })
   } catch (error: any) {
-    if (isRateLimitError(error)) {
-      return NextResponse.json({ error: "Zu viele Anfragen. Bitte versuchen Sie es später erneut." }, { status: 429 })
-    }
-    Logger.error("calendar-events-api", "Error in POST calendar-events", {
-      error: error.message,
-      stack: error.stack,
-    })
-    return NextResponse.json({ error: `Serverfehler: ${error.message}` }, { status: 500 })
+    return handleApiError(error)
   }
 }

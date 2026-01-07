@@ -1,13 +1,13 @@
-import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 // GET - Fetch all inventory items for a practice
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createClient()
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("inventory_items")
       .select("*")
       .eq("practice_id", Number.parseInt(practiceId))
@@ -21,8 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(data || [])
   } catch (error) {
-    console.error("[v0] Inventory GET error:", error)
-    return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
@@ -30,10 +29,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const body = await request.json()
-    const supabase = await createClient()
+    const { adminClient, user } = await requirePracticeAccess(practiceId)
 
-    const { data, error } = await supabase
+    const body = await request.json()
+
+    const { data, error } = await adminClient
       .from("inventory_items")
       .insert({
         ...body,
@@ -52,8 +52,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(data, { status: 201 })
   } catch (error) {
-    console.error("[v0] Inventory POST error:", error)
-    return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
@@ -61,15 +60,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
+
     const body = await request.json()
     const { id, ...updateData } = body
-    const supabase = await createClient()
 
     if (!id) {
       return NextResponse.json({ error: "Artikel-ID erforderlich" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("inventory_items")
       .update({
         ...updateData,
@@ -87,8 +87,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Inventory PUT error:", error)
-    return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
@@ -96,16 +95,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
-    const supabase = await createClient()
 
     if (!id) {
       return NextResponse.json({ error: "Artikel-ID erforderlich" }, { status: 400 })
     }
 
     // Soft delete by setting is_active to false
-    const { error } = await supabase
+    const { error } = await adminClient
       .from("inventory_items")
       .update({
         is_active: false,
@@ -121,7 +121,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Inventory DELETE error:", error)
-    return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 })
+    return handleApiError(error)
   }
 }

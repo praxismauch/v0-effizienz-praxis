@@ -1,17 +1,13 @@
-import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
   const practiceId = String(params.practiceId)
 
   try {
-    const supabase = await createAdminClient()
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("bank_transactions")
       .select("*", { count: "exact" })
       .eq("practice_id", practiceId)
@@ -37,23 +33,8 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
     }
 
     return NextResponse.json(data || [])
-  } catch (error: any) {
-    console.error("Bank transactions GET - Error:", error)
-
-    if (error?.message?.includes("Too Many Requests") || error?.message?.includes("rate limit")) {
-      return NextResponse.json(
-        { error: "Zu viele Anfragen. Bitte versuchen Sie es in einem Moment erneut." },
-        { status: 429 },
-      )
-    }
-
-    return NextResponse.json(
-      {
-        error: "Fehler beim Laden der Transaktionen",
-        details: error?.message || "Unbekannter Fehler",
-      },
-      { status: 500 },
-    )
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
@@ -61,9 +42,9 @@ export async function DELETE(request: Request, { params }: { params: { practiceI
   try {
     const practiceId = String(params.practiceId)
 
-    const supabase = await createAdminClient()
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
-    const { error } = await supabase.from("bank_transactions").delete().eq("practice_id", practiceId)
+    const { error } = await adminClient.from("bank_transactions").delete().eq("practice_id", practiceId)
 
     if (error) {
       console.error("Bank transactions DELETE - Error:", error)
@@ -79,11 +60,7 @@ export async function DELETE(request: Request, { params }: { params: { practiceI
         headers: { "Content-Type": "application/json" },
       },
     )
-  } catch (error: any) {
-    console.error("Bank transactions DELETE - Error:", error?.message || error)
-    return NextResponse.json(
-      { error: error?.message || "Failed to delete transactions" },
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    )
+  } catch (error) {
+    return handleApiError(error)
   }
 }

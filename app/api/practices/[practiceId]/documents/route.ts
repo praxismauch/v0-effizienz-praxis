@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { type NextRequest, NextResponse } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 
@@ -6,16 +6,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
-    let supabase
-    try {
-      supabase = await createAdminClient()
-    } catch (clientError) {
-      if (isRateLimitError(clientError)) {
-        return NextResponse.json([])
-      }
-      console.warn("[v0] Documents: Failed to create client")
-      return NextResponse.json([])
-    }
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const { searchParams } = new URL(request.url)
     const folderId = searchParams.get("folderId")
@@ -59,18 +50,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(data)
   } catch (error: any) {
-    if (isRateLimitError(error)) {
-      return NextResponse.json([])
-    }
-    console.error("Error in GET /documents:", error)
-    return NextResponse.json([])
+    return handleApiError(error)
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createAdminClient()
+
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const body = await request.json()
 
@@ -107,10 +95,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       throw queryError
     }
   } catch (error: any) {
-    if (isRateLimitError(error)) {
-      return NextResponse.json({ error: "Rate limited" }, { status: 429 })
-    }
-    console.error("[v0] Error in POST /documents:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }

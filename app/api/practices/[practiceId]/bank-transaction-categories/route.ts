@@ -1,21 +1,12 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
-export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    const isPreview = !user && process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
-
-    const client = isPreview ? await createAdminClient() : supabase
-
-    const { data, error } = await client
+    const { data, error } = await adminClient
       .from("bank_transaction_categories")
       .select("*")
       .eq("practice_id", practiceId)
@@ -29,19 +20,18 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
 
     return NextResponse.json(data || [])
   } catch (error) {
-    console.error("Error in GET bank transaction categories:", error)
-    return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
+
     const body = await request.json()
 
-    const supabase = await createAdminClient()
-
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("bank_transaction_categories")
       .insert({
         practice_id: practiceId,
@@ -63,7 +53,6 @@ export async function POST(request: Request, { params }: { params: { practiceId:
       headers: { "Content-Type": "application/json" },
     })
   } catch (error) {
-    console.error("Error in POST bank transaction category:", error)
-    return NextResponse.json({ error: "Failed to create category" }, { status: 500 })
+    return handleApiError(error)
   }
 }

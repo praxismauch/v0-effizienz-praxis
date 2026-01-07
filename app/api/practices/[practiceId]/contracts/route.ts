@@ -1,15 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
+
     const { searchParams } = new URL(request.url)
     const teamMemberId = searchParams.get("teamMemberId")
 
-    const supabase = await createAdminClient()
-
-    let query = supabase
+    let query = adminClient
       .from("contracts")
       .select("*")
       .eq("practice_id", practiceId)
@@ -24,19 +24,19 @@ export async function GET(request: NextRequest, { params }: { params: { practice
     if (error) throw error
 
     return NextResponse.json(data || [])
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
+
     const body = await request.json()
 
-    const supabase = await createAdminClient()
-
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("contracts")
       .insert({
         practice_id: practiceId,
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     if (error) throw error
 
     return NextResponse.json(data)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error)
   }
 }

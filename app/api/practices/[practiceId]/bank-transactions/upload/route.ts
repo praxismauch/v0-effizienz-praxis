@@ -1,6 +1,6 @@
-import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import crypto from "crypto"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 function parseCSVLine(line: string, delimiter: string): string[] {
   const result: string[] = []
@@ -76,7 +76,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       )
     }
 
-    const supabase = await createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+
     const formData = await request.formData()
     const file = formData.get("file") as File
     const mappingStr = formData.get("mapping") as string
@@ -226,14 +227,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       { headers: { "Content-Type": "application/json" } },
     )
   } catch (error) {
-    console.error("Bank CSV Upload - Fatal error:", error)
-
-    return NextResponse.json(
-      {
-        error: "Fehler beim Verarbeiten der CSV-Datei",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    )
+    return handleApiError(error)
   }
 }

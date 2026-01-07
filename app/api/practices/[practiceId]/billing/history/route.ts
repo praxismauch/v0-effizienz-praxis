@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 // GET - Get billing history for practice
-export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const supabase = await createServerClient()
+    const { practiceId } = await params
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
-    const { data: history, error } = await supabase
+    const { data: history, error } = await adminClient
       .from("billing_history")
       .select("*")
-      .eq("practice_id", params.practiceId)
+      .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
     if (error) throw error
 
     return NextResponse.json(history || [])
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error)
   }
 }

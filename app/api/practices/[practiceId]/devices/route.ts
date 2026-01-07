@@ -1,10 +1,5 @@
-import { createAdminClient } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
-
-function isV0Preview(): boolean {
-  return process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.NODE_ENV === "development"
-}
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
@@ -13,19 +8,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
-    let userId: string | null = null
-    if (!isV0Preview()) {
-      const supabase = await createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-      userId = user.id
-    }
+    const { adminClient } = await requirePracticeAccess(practiceId)
 
-    const adminClient = createAdminClient()
     const { data: devices, error } = await adminClient
       .from("medical_devices")
       .select("*")
@@ -61,8 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ devices: devicesWithRooms || [] })
   } catch (error) {
-    console.error("[v0] Error in GET /devices:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
@@ -73,20 +56,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
-    let userId = "preview-user"
-    if (!isV0Preview()) {
-      const supabase = await createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-      userId = user.id
-    }
+    const { user, adminClient } = await requirePracticeAccess(practiceId)
+    const userId = user.id
 
     const body = await request.json()
-    const adminClient = createAdminClient()
 
     // Calculate next maintenance date if interval is provided
     let nextMaintenanceDate = body.next_maintenance_date
@@ -163,7 +136,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ device })
   } catch (error) {
-    console.error("[v0] Error in POST /devices:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }

@@ -3,9 +3,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SystemOptimizationReport } from "@/components/system-optimization-report"
 import { Suspense } from "react"
-import { LayoutGrid, Activity, TrendingUp, Users, Building2, TicketCheck, RefreshCw } from "lucide-react"
+import { LayoutGrid, Activity, TrendingUp, Users, Building2, TicketCheck, RefreshCw, Map } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import dynamic from "next/dynamic"
+import { useSearchParams, useRouter } from "next/navigation"
+
+const RoadmapManager = dynamic(() => import("@/components/roadmap-manager"), {
+  loading: () => <div className="flex items-center justify-center h-96">Lädt Roadmap...</div>,
+})
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
@@ -17,6 +24,10 @@ interface DashboardStats {
 }
 
 function DashboardContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const activeTab = searchParams.get("tab") || "overview"
+
   const {
     data: stats,
     error: statsError,
@@ -68,131 +79,158 @@ function DashboardContent() {
 
   const systemStatus = getSystemStatus()
 
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", value)
+    router.push(`/super-admin?${params.toString()}`, { scroll: false })
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Super Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Übersicht und Systemoptimierung</p>
-        </div>
-        <button
-          onClick={() => refreshStats()}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          disabled={isLoading}
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          {isLoading ? "Laden..." : "Aktualisieren"}
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="grid w-full grid-cols-2 lg:w-auto">
+          <TabsTrigger value="overview" className="gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="roadmap" className="gap-2">
+            <Map className="h-4 w-4" />
+            Roadmap & KI-Ideen
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Main Status Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Dashboard</CardTitle>
-            <LayoutGrid className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${systemStatus.color}`}>{systemStatus.label}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats ? "Alle Systeme betriebsbereit" : "Status wird geladen..."}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System-Status</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats ? `${stats.system.uptime.toFixed(1)}%` : "..."}</div>
-            <p className="text-xs text-muted-foreground">Verfügbarkeit (30 Tage)</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Performance</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div
-              className={`text-2xl font-bold ${performanceScore >= 75 ? "text-green-600" : performanceScore >= 50 ? "text-yellow-600" : "text-red-600"}`}
+        <TabsContent value="overview" className="mt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Super Admin Dashboard</h1>
+              <p className="text-muted-foreground mt-2">Übersicht und Systemoptimierung</p>
+            </div>
+            <button
+              onClick={() => refreshStats()}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isLoading}
             >
-              {metrics ? getPerformanceLabel(performanceScore) : "..."}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {metrics ? `Score: ${performanceScore}%` : "System wird analysiert..."}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              {isLoading ? "Laden..." : "Aktualisieren"}
+            </button>
+          </div>
 
-      {/* Secondary Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Benutzer</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.users.total ?? "..."}</div>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-xs text-muted-foreground">{stats ? `${stats.users.active} aktiv` : "Laden..."}</p>
-              {stats && stats.users.superAdmins > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {stats.users.superAdmins} Super Admins
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          {/* Main Status Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Dashboard</CardTitle>
+                <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${systemStatus.color}`}>{systemStatus.label}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stats ? "Alle Systeme betriebsbereit" : "Status wird geladen..."}
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Praxen</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.practices.total ?? "..."}</div>
-            <p className="text-xs text-muted-foreground">{stats ? `${stats.practices.active} aktiv` : "Laden..."}</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">System-Status</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats ? `${stats.system.uptime.toFixed(1)}%` : "..."}</div>
+                <p className="text-xs text-muted-foreground">Verfügbarkeit (30 Tage)</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tickets</CardTitle>
-            <TicketCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.tickets.total ?? "..."}</div>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-xs text-muted-foreground">{stats ? `${stats.tickets.open} offen` : "Laden..."}</p>
-              {stats && stats.tickets.critical > 0 && (
-                <Badge variant="destructive" className="text-xs">
-                  {stats.tickets.critical} kritisch
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Performance</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div
+                  className={`text-2xl font-bold ${performanceScore >= 75 ? "text-green-600" : performanceScore >= 50 ? "text-yellow-600" : "text-red-600"}`}
+                >
+                  {metrics ? getPerformanceLabel(performanceScore) : "..."}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics ? `Score: ${performanceScore}%` : "System wird analysiert..."}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Datenbank</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metrics ? `${metrics.database?.tablesWithRLS ?? 0}/${metrics.database?.totalTables ?? 0}` : "..."}
-            </div>
-            <p className="text-xs text-muted-foreground">Tabellen mit RLS</p>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Secondary Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Benutzer</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.users.total ?? "..."}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-xs text-muted-foreground">{stats ? `${stats.users.active} aktiv` : "Laden..."}</p>
+                  {stats && stats.users.superAdmins > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {stats.users.superAdmins} Super Admins
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-      <SystemOptimizationReport />
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Praxen</CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.practices.total ?? "..."}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stats ? `${stats.practices.active} aktiv` : "Laden..."}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tickets</CardTitle>
+                <TicketCheck className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.tickets.total ?? "..."}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-xs text-muted-foreground">{stats ? `${stats.tickets.open} offen` : "Laden..."}</p>
+                  {stats && stats.tickets.critical > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      {stats.tickets.critical} kritisch
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Datenbank</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {metrics ? `${metrics.database?.tablesWithRLS ?? 0}/${metrics.database?.totalTables ?? 0}` : "..."}
+                </div>
+                <p className="text-xs text-muted-foreground">Tabellen mit RLS</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <SystemOptimizationReport />
+        </TabsContent>
+
+        <TabsContent value="roadmap" className="mt-6">
+          <RoadmapManager userId="super-admin" />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

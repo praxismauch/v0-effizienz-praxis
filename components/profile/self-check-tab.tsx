@@ -223,6 +223,8 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
   }, [loadHistory])
 
   const handleSave = async () => {
+    console.log("[v0] handleSave called", { userId, practiceId })
+
     // Check if at least one dimension is filled
     const hasData = Object.values(currentAssessment).some((v) => v !== null)
     if (!hasData) {
@@ -236,20 +238,37 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
 
     setIsSaving(true)
     try {
+      const payload = {
+        practice_id: practiceId,
+        ...currentAssessment,
+        notes,
+      }
+      console.log("[v0] Sending POST request", {
+        url: `/api/users/${userId}/self-checks`,
+        payload,
+      })
+
       const response = await fetch(`/api/users/${userId}/self-checks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          practice_id: practiceId,
-          ...currentAssessment,
-          notes,
-        }),
+        body: JSON.stringify(payload),
       })
 
-      if (!response.ok) throw new Error("Failed to save")
+      console.log("[v0] Response received", {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText,
+      })
 
-      const savedData = await response.json()
-      setSavedAssessmentId(savedData.id)
+      const responseData = await response.json()
+      console.log("[v0] Response data", responseData)
+
+      if (!response.ok) {
+        console.error("[v0] Save failed", responseData)
+        throw new Error(responseData.error || responseData.message || "Failed to save")
+      }
+
+      setSavedAssessmentId(responseData.id)
 
       toast({
         title: "Gespeichert",
@@ -258,14 +277,15 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
 
       await loadHistory()
     } catch (error) {
-      console.error("Error saving self-check:", error)
+      console.error("[v0] Error saving self-check:", error)
       toast({
         title: "Fehler",
-        description: "Die Selbsteinschätzung konnte nicht gespeichert werden.",
+        description: error instanceof Error ? error.message : "Die Selbsteinschätzung konnte nicht gespeichert werden.",
         variant: "destructive",
       })
     } finally {
       setIsSaving(false)
+      console.log("[v0] handleSave completed")
     }
   }
 

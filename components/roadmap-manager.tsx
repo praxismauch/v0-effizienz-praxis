@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { RoadmapAIIdeasDialog } from "@/components/roadmap-ai-ideas-dialog"
 import {
   Plus,
   Sparkles,
@@ -332,6 +333,13 @@ function RoadmapManager({ userId }: RoadmapManagerProps) {
       const data = await response.json()
       setAISuggestions(data.features || [])
       setIsAIDialogOpen(true)
+
+      if (data.feedbackStats) {
+        toast({
+          title: "KI-Vorschläge generiert",
+          description: `Basierend auf ${data.feedbackStats.good} guten und ${data.feedbackStats.bad} schlechten vergangenen Bewertungen`,
+        })
+      }
     } catch (error) {
       console.error("[v0] Error generating AI suggestions:", error)
       toast({
@@ -917,93 +925,13 @@ function RoadmapManager({ userId }: RoadmapManagerProps) {
       </Dialog>
 
       {/* AI Suggestions Dialog */}
-      <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-emerald-500" />
-              KI-generierte Feature-Ideen
-            </DialogTitle>
-            <DialogDescription>Wählen Sie Features aus, die Sie zur Roadmap hinzufügen möchten.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {aiSuggestions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                <p>Alle Vorschläge wurden hinzugefügt!</p>
-              </div>
-            ) : (
-              aiSuggestions.map((suggestion, index) => (
-                <Card key={index} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{suggestion.title}</h4>
-                        <p className="text-sm text-muted-foreground mt-1">{suggestion.description}</p>
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          <Badge variant="outline" className={priorityConfig[suggestion.priority].color}>
-                            {priorityConfig[suggestion.priority].label}
-                          </Badge>
-                          {categoryConfig[suggestion.category] && (
-                            <Badge variant="outline" className={categoryConfig[suggestion.category].color}>
-                              {categoryConfig[suggestion.category].label}
-                            </Badge>
-                          )}
-                          <Badge variant="outline">
-                            Aufwand:{" "}
-                            {suggestion.effort === "low"
-                              ? "Niedrig"
-                              : suggestion.effort === "medium"
-                                ? "Mittel"
-                                : "Hoch"}
-                          </Badge>
-                          <Badge variant="outline">
-                            Impact:{" "}
-                            {suggestion.impact === "low"
-                              ? "Niedrig"
-                              : suggestion.impact === "medium"
-                                ? "Mittel"
-                                : "Hoch"}
-                          </Badge>
-                          <Badge variant="outline" className="gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {suggestion.suggestedQuarter}
-                          </Badge>
-                        </div>
-                        {suggestion.reasoning && (
-                          <p className="text-xs text-muted-foreground mt-2 italic">💡 {suggestion.reasoning}</p>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddAISuggestion(suggestion)}
-                        disabled={isSaving}
-                        className="flex-shrink-0"
-                      >
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAIDialogOpen(false)}>
-              Schließen
-            </Button>
-            <Button
-              onClick={handleGenerateAI}
-              disabled={isGeneratingAI}
-              variant="outline"
-              className="gap-2 bg-transparent"
-            >
-              {isGeneratingAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Neue Ideen generieren
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RoadmapAIIdeasDialog
+        isOpen={isAIDialogOpen}
+        onClose={() => setIsAIDialogOpen(false)}
+        suggestions={aiSuggestions}
+        onAddSuggestion={handleAddAISuggestion}
+        userId={userId}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -1028,5 +956,4 @@ function RoadmapManager({ userId }: RoadmapManagerProps) {
   )
 }
 
-export { RoadmapManager }
 export default RoadmapManager

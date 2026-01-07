@@ -193,6 +193,9 @@ export function UserProvider({
     }
   }, [])
 
+  const isRateLimitedRef = useRef(false)
+  const rateLimitResetTimeRef = useRef<number>(0)
+
   useEffect(() => {
     if (typeof window === "undefined") return
 
@@ -211,15 +214,29 @@ export function UserProvider({
     const loadUser = async (retryCount = 0) => {
       hasAttemptedLoad.current = true
 
+      if (isRateLimitedRef.current && Date.now() < rateLimitResetTimeRef.current) {
+        const waitTime = rateLimitResetTimeRef.current - Date.now()
+        console.warn(`[user-context] Skipping request - rate limited for ${waitTime}ms`)
+        setTimeout(() => loadUser(retryCount), waitTime)
+        return
+      }
+
       try {
         const res = await fetch("/api/user/me", { credentials: "include" })
 
         if (res.status === 429 && retryCount < 3) {
+          isRateLimitedRef.current = true
           const delay = Math.pow(2, retryCount) * 5000 // 5s, 10s, 20s
+          rateLimitResetTimeRef.current = Date.now() + delay
           console.warn(`[user-context] Rate limited, retrying in ${delay}ms...`)
-          setTimeout(() => loadUser(retryCount + 1), delay)
+          setTimeout(() => {
+            isRateLimitedRef.current = false
+            loadUser(retryCount + 1)
+          }, delay)
           return
         }
+
+        isRateLimitedRef.current = false
 
         const text = await res.text()
         let data: any
@@ -229,9 +246,14 @@ export function UserProvider({
         } catch (parseError) {
           if (text.includes("Too Many") || text.includes("rate")) {
             if (retryCount < 3) {
+              isRateLimitedRef.current = true
               const delay = Math.pow(2, retryCount) * 5000
+              rateLimitResetTimeRef.current = Date.now() + delay
               console.warn(`[user-context] Rate limited (text), retrying in ${delay}ms...`)
-              setTimeout(() => loadUser(retryCount + 1), delay)
+              setTimeout(() => {
+                isRateLimitedRef.current = false
+                loadUser(retryCount + 1)
+              }, delay)
               return
             }
           }
@@ -267,16 +289,30 @@ export function UserProvider({
     if (!isSuperAdminRole(currentUser.role)) return
 
     const loadSuperAdmins = async (retryCount = 0) => {
+      if (isRateLimitedRef.current && Date.now() < rateLimitResetTimeRef.current) {
+        const waitTime = rateLimitResetTimeRef.current - Date.now()
+        console.warn(`[user-context] Skipping superadmin request - rate limited for ${waitTime}ms`)
+        setTimeout(() => loadSuperAdmins(retryCount), waitTime)
+        return
+      }
+
       try {
         const res = await fetch("/api/super-admin/users", { credentials: "include" })
 
         // Handle rate limiting with retry
         if (res.status === 429 && retryCount < 3) {
+          isRateLimitedRef.current = true
           const delay = Math.pow(2, retryCount) * 5000 // 5s, 10s, 20s
-          console.warn(`[v0] Rate limited fetching super admins, retrying in ${delay}ms...`)
-          setTimeout(() => loadSuperAdmins(retryCount + 1), delay)
+          rateLimitResetTimeRef.current = Date.now() + delay
+          console.warn(`[user-context] Rate limited fetching super admins, retrying in ${delay}ms...`)
+          setTimeout(() => {
+            isRateLimitedRef.current = false
+            loadSuperAdmins(retryCount + 1)
+          }, delay)
           return
         }
+
+        isRateLimitedRef.current = false
 
         if (res.status === 401 || res.status === 403) {
           // Not authorized - don't retry, just return empty
@@ -284,14 +320,14 @@ export function UserProvider({
         }
 
         if (!res.ok) {
-          console.error(`[v0] Failed to load super admins: ${res.status}`)
+          console.error(`[user-context] Failed to load super admins: ${res.status}`)
           return
         }
 
         // Safely parse JSON - check content type first
         const contentType = res.headers.get("content-type")
         if (!contentType || !contentType.includes("application/json")) {
-          console.error("[v0] Non-JSON response from super-admin/users")
+          console.error("[user-context] Non-JSON response from super-admin/users")
           return
         }
 
@@ -303,9 +339,14 @@ export function UserProvider({
           // Check if it's a rate limit text response
           if (text.includes("Too Many") || text.includes("rate")) {
             if (retryCount < 3) {
+              isRateLimitedRef.current = true
               const delay = Math.pow(2, retryCount) * 5000
+              rateLimitResetTimeRef.current = Date.now() + delay
               console.warn(`[v0] Rate limited (text response), retrying in ${delay}ms...`)
-              setTimeout(() => loadSuperAdmins(retryCount + 1), delay)
+              setTimeout(() => {
+                isRateLimitedRef.current = false
+                loadSuperAdmins(retryCount + 1)
+              }, delay)
               return
             }
           }
@@ -330,7 +371,7 @@ export function UserProvider({
           setSuperAdmins(superAdminUsers)
         }
       } catch (e) {
-        console.error("[v0] Failed to load super admins", e)
+        console.error("[user-context] Failed to load super admins", e)
       }
     }
 
@@ -557,16 +598,30 @@ export function UserProvider({
         }
       } else if (event === "SIGNED_IN" && session?.user) {
         const fetchUserWithRetry = async (retryCount = 0) => {
+          if (isRateLimitedRef.current && Date.now() < rateLimitResetTimeRef.current) {
+            const waitTime = rateLimitResetTimeRef.current - Date.now()
+            console.warn(`[user-context] Skipping sign-in fetch - rate limited for ${waitTime}ms`)
+            setTimeout(() => fetchUserWithRetry(retryCount), waitTime)
+            return
+          }
+
           try {
             const res = await fetch("/api/user/me", { credentials: "include" })
 
             // Handle rate limiting with retry
             if (res.status === 429 && retryCount < 3) {
+              isRateLimitedRef.current = true
               const delay = Math.pow(2, retryCount) * 5000
+              rateLimitResetTimeRef.current = Date.now() + delay
               console.warn(`[user-context] Rate limited on sign in, retrying in ${delay}ms...`)
-              setTimeout(() => fetchUserWithRetry(retryCount + 1), delay)
+              setTimeout(() => {
+                isRateLimitedRef.current = false
+                fetchUserWithRetry(retryCount + 1)
+              }, delay)
               return
             }
+
+            isRateLimitedRef.current = false
 
             const text = await res.text()
 
@@ -575,8 +630,14 @@ export function UserProvider({
               data = JSON.parse(text)
             } catch (parseError) {
               if (text.includes("Too Many") && retryCount < 3) {
+                isRateLimitedRef.current = true
                 const delay = Math.pow(2, retryCount) * 5000
-                setTimeout(() => fetchUserWithRetry(retryCount + 1), delay)
+                rateLimitResetTimeRef.current = Date.now() + delay
+                console.warn(`[user-context] Rate limited (text), retrying in ${delay}ms...`)
+                setTimeout(() => {
+                  isRateLimitedRef.current = false
+                  fetchUserWithRetry(retryCount + 1)
+                }, delay)
                 return
               }
               return

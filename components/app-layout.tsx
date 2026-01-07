@@ -35,7 +35,10 @@ export function AppLayout({
 }: AppLayoutProps) {
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen w-full bg-background">
+      <div
+        className="flex flex-col min-h-screen w-full bg-background"
+        style={{ "--footer-height": "44px" } as React.CSSProperties}
+      >
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar />
           <div className="flex flex-1 flex-col overflow-hidden">
@@ -56,7 +59,10 @@ export function AppLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-background">
+    <div
+      className="flex flex-col min-h-screen w-full bg-background"
+      style={{ "--footer-height": showFooter ? "44px" : "0px" } as React.CSSProperties}
+    >
       <div className="flex flex-1 overflow-hidden">
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">

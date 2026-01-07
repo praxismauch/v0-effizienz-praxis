@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
     // Generate referral code based on user ID
     const code = `REF-${userId.substring(0, 8).toUpperCase()}`
 
-    // Create referral
     const { data, error } = await supabase
       .from("referrals")
       .insert({
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest) {
         referral_code: code,
         referred_email: referredEmail,
         status: "pending",
-        reward_amount: 5000, // 50 EUR
+        reward_months: 3, // 3 months free for both parties
       })
       .select()
       .single()

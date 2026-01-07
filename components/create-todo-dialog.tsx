@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
   const { addTodo } = useTodos()
   const { currentPractice } = usePractice()
   const { toast } = useToast()
+  const router = useRouter()
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([])
@@ -81,7 +83,7 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
     try {
       const todoData = {
         ...formData,
-        assigned_user_ids: assignedUserIds.length > 0 ? assignedUserIds : [], // Always send array, even if empty
+        assigned_user_ids: assignedUserIds.length > 0 ? assignedUserIds : [],
         completed: false,
         due_date: formData.due_date || null,
         recurrence_end_date: formData.recurrence_end_date || null,
@@ -117,6 +119,8 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
       setAssignedUserIds([])
       setAttachments([])
       onOpenChange(false)
+
+      router.push("/todos")
     } catch (error) {
       console.error("[v0] Error saving todo:", error)
       toast({

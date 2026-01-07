@@ -611,15 +611,15 @@ function AppHeader() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-9 hidden sm:flex items-center gap-1.5 px-2 hover:bg-emerald-500/10 relative"
+                  className="h-9 hidden sm:flex items-center gap-1.5 px-2 hover:bg-purple-500/10 relative"
                   onClick={() => setReferralDialogOpen(true)}
                 >
-                  <Gift className="h-4 w-4 text-emerald-500" />
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">100€</span>
+                  <Gift className="h-4 w-4 text-purple-500" />
+                  <span className="text-xs font-bold text-purple-600 dark:text-purple-400">3 Mon.</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Empfehlungsprogramm - 100€ pro Empfehlung</p>
+                <p>Einladen – beide erhalten 3 Monate kostenlos!</p>
               </TooltipContent>
             </Tooltip>
 

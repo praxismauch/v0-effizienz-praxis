@@ -16,14 +16,15 @@ const ROLE_CONFIG = {
 // Permission categories - no hardcoding
 const PERMISSION_CATEGORIES = [
   "Übersicht",
-  "Team & Personal",
   "Planung & Organisation",
   "Daten & Dokumente",
+  "Strategie & Führung",
+  "Team & Personal",
+  "Praxismanagement",
   "Administration",
   "Finanzen & Abrechnung",
   "Marketing",
   "Qualitätsmanagement",
-  "Praxismanagement",
   "Infrastruktur",
 ] as const
 

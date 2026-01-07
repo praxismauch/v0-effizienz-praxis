@@ -385,73 +385,6 @@ export function AcademyPageClient() {
         )}
       </div>
 
-      {/* Quick Actions for Authenticated Users */}
-      {isAuthenticated && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("courses")}>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <BookOpen className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-semibold">Kurse durchsuchen</p>
-                  <p className="text-sm text-muted-foreground">{courses.length} verfügbar</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setActiveTab("my-learning")}
-          >
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <Play className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-semibold">Lernen fortsetzen</p>
-                  <p className="text-sm text-muted-foreground">{enrollments.length} aktive Kurse</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("badges")}>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Award className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-semibold">Meine Abzeichen</p>
-                  <p className="text-sm text-muted-foreground">{userBadges.length} verdient</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setActiveTab("leaderboard")}
-          >
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
-                  <Trophy className="h-6 w-6 text-amber-600" />
-                </div>
-                <div>
-                  <p className="font-semibold">Rangliste</p>
-                  <p className="text-sm text-muted-foreground">Platzierung anzeigen</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Stats Cards for Authenticated Users */}
       {isAuthenticated && (
         <div className="grid gap-4 md:grid-cols-4">
@@ -518,6 +451,73 @@ export function AcademyPageClient() {
                 <div>
                   <p className="text-2xl font-bold">{displayStats.quizzes_passed}</p>
                   <p className="text-sm text-muted-foreground">Quizze bestanden</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Quick Actions for Authenticated Users - Now below stats */}
+      {isAuthenticated && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("courses")}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold">Kurse durchsuchen</p>
+                  <p className="text-sm text-muted-foreground">{courses.length} verfügbar</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveTab("my-learning")}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <Play className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold">Lernen fortsetzen</p>
+                  <p className="text-sm text-muted-foreground">{enrollments.length} aktive Kurse</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("badges")}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Award className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-semibold">Meine Abzeichen</p>
+                  <p className="text-sm text-muted-foreground">{userBadges.length} verdient</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveTab("leaderboard")}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Trophy className="h-6 w-6 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-semibold">Rangliste</p>
+                  <p className="text-sm text-muted-foreground">Platzierung anzeigen</p>
                 </div>
               </div>
             </CardContent>

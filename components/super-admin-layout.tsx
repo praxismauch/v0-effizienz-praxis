@@ -18,6 +18,17 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   const router = useRouter()
   const { isSuperAdmin, loading, currentUser } = useUser()
 
+  console.log(
+    "[v0] SuperAdminLayout - loading:",
+    loading,
+    "isSuperAdmin:",
+    isSuperAdmin,
+    "currentUser:",
+    currentUser?.email,
+    "role:",
+    currentUser?.role,
+  )
+
   // Loading state
   if (loading) {
     return (
@@ -45,6 +56,9 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
               <div className="text-xs text-muted-foreground mb-4 p-2 bg-muted rounded">
                 <p>Angemeldet als: {currentUser.email || "Unbekannt"}</p>
                 <p>Rolle: {currentUser.role || "Unbekannt"}</p>
+                <p className="mt-1 text-orange-500">
+                  Debug: isSuperAdmin={String(isSuperAdmin)}, role="{currentUser.role}"
+                </p>
               </div>
             )}
             <Button asChild>

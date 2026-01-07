@@ -126,11 +126,14 @@ export default function ContactsPage() {
         throw new Error("Failed to delete contact")
       }
 
+      setContacts((prevContacts) => prevContacts.filter((c) => c.id !== contactToDelete.id))
+
       toast({
         title: "Erfolg",
         description: "Kontakt wurde gelöscht",
       })
-      handleReload()
+      // Reload is no longer needed since we update state directly, but keep for sync
+      // handleReload()
     } catch (error: any) {
       toast({
         title: "Fehler",

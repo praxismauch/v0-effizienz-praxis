@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Gift, Copy, Mail, Check, Users, Euro, Loader2 } from "lucide-react"
+import { Gift, Copy, Mail, Check, Users, Calendar, Loader2, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
@@ -20,7 +20,7 @@ interface Referral {
   referral_code: string
   referred_email: string
   status: string
-  reward_amount: number
+  reward_months: number
   created_at: string
 }
 
@@ -63,16 +63,13 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
 
     setLoadingData(true)
     try {
-      console.log("[v0] Loading referral data for user:", user.id)
       const response = await fetch(`/api/referrals?userId=${user.id}`)
 
       if (!response.ok) {
-        console.log("[v0] Referral API response not ok:", response.status)
         throw new Error("Failed to load referral data")
       }
 
       const data = await response.json()
-      console.log("[v0] Referral data received:", data)
 
       if (data.referralCode) {
         setReferralCode(data.referralCode)
@@ -86,7 +83,7 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
         setReferrals(data.referrals)
       }
     } catch (error) {
-      console.error("[v0] Error loading referral data:", error)
+      console.error("Error loading referral data:", error)
       if (user && !referralCode) {
         const fallbackCode = `REF-${user.id.substring(0, 8).toUpperCase()}`
         setReferralCode(fallbackCode)
@@ -155,8 +152,9 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
 
   const completedReferrals = referrals.filter((r) => r.status === "completed").length
   const pendingReferrals = referrals.filter((r) => r.status === "pending" || r.status === "registered").length
-  const totalEarned =
-    referrals.filter((r) => r.status === "completed").reduce((sum, r) => sum + r.reward_amount, 0) / 100
+  const totalMonthsEarned = referrals
+    .filter((r) => r.status === "completed")
+    .reduce((sum, r) => sum + (r.reward_months || 3), 0)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -164,15 +162,15 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Gift className="h-6 w-6 text-primary" />
-            Empfehlungsprogramm
+            Freunde einladen
           </DialogTitle>
-          <DialogDescription>
-            Empfehlen Sie Effizienz Praxis und erhalten Sie 100€ pro erfolgreicher Empfehlung!
+          <DialogDescription className="text-base">
+            Einladen – und beide erhalten{" "}
+            <span className="font-semibold text-primary">3 Monate Effizienz-Praxis kostenlos!</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-primary/10 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -188,16 +186,24 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
               </div>
               <p className="text-2xl font-bold">{completedReferrals}</p>
             </div>
-            <div className="bg-yellow-500/10 rounded-lg p-4">
+            <div className="bg-purple-500/10 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Euro className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm font-medium">Verdient</span>
+                <Calendar className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium">Gratis-Monate</span>
               </div>
-              <p className="text-2xl font-bold">{totalEarned}€</p>
+              <p className="text-2xl font-bold">{totalMonthsEarned}</p>
             </div>
           </div>
 
-          {/* How it works */}
+          <div className="bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 rounded-xl p-6 text-center">
+            <Sparkles className="h-8 w-8 mx-auto mb-3 text-primary" />
+            <h3 className="text-xl font-bold mb-2">3 Monate geschenkt – für Sie und Ihre Empfehlung!</h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Laden Sie Kollegen ein und Sie beide erhalten jeweils 3 Monate Effizienz-Praxis kostenlos nach
+              erfolgreicher Registrierung.
+            </p>
+          </div>
+
           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
             <h3 className="font-semibold text-lg">So funktioniert es:</h3>
             <ol className="space-y-2 text-sm">
@@ -211,7 +217,9 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
               </li>
               <li className="flex gap-2">
                 <span className="font-semibold text-primary">3.</span>
-                <span>Nach vollständiger Registrierung und Aktivierung erhalten Sie 100€ Guthaben</span>
+                <span>
+                  Nach erfolgreicher Registrierung erhalten <strong>Sie beide</strong> jeweils 3 Monate kostenlos!
+                </span>
               </li>
             </ol>
           </div>
@@ -287,7 +295,7 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
                             : "Ausstehend"}
                       </span>
                       {referral.status === "completed" && (
-                        <p className="text-xs text-muted-foreground mt-1">+{referral.reward_amount / 100}€</p>
+                        <p className="text-xs text-muted-foreground mt-1">+{referral.reward_months || 3} Monate</p>
                       )}
                     </div>
                   </div>

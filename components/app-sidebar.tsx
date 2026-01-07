@@ -260,6 +260,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "mitarbeitergespraeche",
       },
       {
+        name: t("sidebar.selbst_check", "Selbst-Check"),
+        href: "/selbst-check",
+        icon: Heart,
+        key: "selbst_check",
+      },
+      {
         name: t("sidebar.skills", "Kompetenzen"),
         href: "/skills",
         icon: Award,
@@ -686,9 +692,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           >
             {sidebarOpen && (
               <Link href="/dashboard" className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
-                  <Logo className="h-4 w-4 text-primary" />
-                </div>
+                <Logo className="h-8 w-8 rounded-lg" />
                 <span className="text-base font-bold text-sidebar-foreground">Effizienz Praxis</span>
               </Link>
             )}
@@ -701,13 +705,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
                 !sidebarOpen ? "h-10 w-10" : "h-8 w-8 p-0",
               )}
             >
-              {!sidebarOpen ? (
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
-                  <Logo className="h-4 w-4 text-primary" />
-                </div>
-              ) : (
-                <ChevronRight className="h-5 w-5" />
-              )}
+              {!sidebarOpen ? <Logo className="h-8 w-8 rounded-lg" /> : <ChevronRight className="h-5 w-5" />}
             </Button>
           </div>
         </SidebarHeader>

@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useCallback } from "react"
 import {
   Plus,
@@ -378,7 +380,11 @@ export default function ResponsibilitiesPageClient() {
     }
   }
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
+
     if (!currentPractice?.id) {
       console.error("[v0] Cannot save: No practice ID")
       toast({ title: "Fehler", description: "Keine Praxis ausgewählt", variant: "destructive" })
@@ -413,20 +419,24 @@ export default function ResponsibilitiesPageClient() {
     }
 
     try {
+      console.log("[v0] Saving responsibility:", { url, method, name: formData.name })
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          responsible_user_id: formData.responsible_user_id || null, // Ensure null if empty
+          responsible_user_id: formData.responsible_user_id || null,
           suggested_hours_per_week: parsedHours,
-          // Add created_by when creating new responsibility
           ...(!selectedResponsibility && user.id ? { created_by: user.id } : {}),
         }),
       })
 
+      console.log("[v0] Response status:", response.status)
+
       if (!response.ok) {
         const errorText = await response.text()
+        console.error("[v0] Save error response:", errorText)
         let errorData
         try {
           errorData = JSON.parse(errorText)
@@ -436,14 +446,16 @@ export default function ResponsibilitiesPageClient() {
         throw new Error(errorData.error || `Fehler beim Speichern (Status: ${response.status})`)
       }
 
-      const result = await response.json() // Assuming API returns created/updated object
+      const result = await response.json()
+      console.log("[v0] Save successful:", result.id)
+
       toast({
         title: "Erfolg",
         description: selectedResponsibility ? "Zuständigkeit aktualisiert" : "Zuständigkeit erstellt",
       })
-      await fetchResponsibilities() // Re-fetch to get the latest data
+      await fetchResponsibilities()
       setFormDialogOpen(false)
-      setSelectedResponsibility(null) // Clear selection after save
+      setSelectedResponsibility(null)
     } catch (err) {
       console.error("[v0] Error saving responsibility:", err)
       toast({

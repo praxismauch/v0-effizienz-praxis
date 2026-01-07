@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +39,7 @@ interface CandidateDetails {
 }
 
 export default function CandidateDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
   const router = useRouter()
   const [details, setDetails] = useState<CandidateDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -56,14 +57,13 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     if (mounted) {
       loadCandidateDetails()
     }
-  }, [params, mounted])
+  }, [resolvedParams.id, mounted])
 
   const loadCandidateDetails = async () => {
     try {
       setLoading(true)
       setError(null)
       console.log("[v0] Loading candidate details...")
-      const resolvedParams = await params
       console.log("[v0] Resolved params:", resolvedParams)
       const response = await fetch(`/api/hiring/candidates/${resolvedParams.id}/details`)
       console.log("[v0] Response status:", response.status)

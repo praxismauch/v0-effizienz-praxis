@@ -8,7 +8,20 @@ import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Sparkles, Plus, Search, BookOpen, FileText, Loader2, Archive, Package, Cpu, Wrench } from "lucide-react"
+import {
+  Sparkles,
+  Plus,
+  Search,
+  BookOpen,
+  FileText,
+  Loader2,
+  Archive,
+  Package,
+  Cpu,
+  Wrench,
+  Pencil,
+  Trash2,
+} from "lucide-react"
 import { AiSearchDialog } from "./ai-search-dialog"
 import { AIKnowledgeAnalyzerDialog } from "./ai-knowledge-analyzer-dialog"
 import { CreateKnowledgeDialog } from "./create-knowledge-dialog"
@@ -16,6 +29,16 @@ import { EditKnowledgeDialog } from "./edit-knowledge-dialog"
 import { PracticeHandbookView } from "./practice-handbook-view"
 import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface KnowledgeArticle {
   id: string
@@ -104,6 +127,9 @@ export function KnowledgeBaseManager() {
   const [devices, setDevices] = useState<MedicalDevice[]>([])
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [workEquipment, setWorkEquipment] = useState<WorkEquipment[]>([])
+
+  const [articleToDelete, setArticleToDelete] = useState<KnowledgeArticle | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (currentPractice?.id) {
@@ -302,6 +328,36 @@ export function KnowledgeBaseManager() {
   const deviceCount = deviceArticles.length
   const materialCount = inventoryArticles.length
   const equipmentCount = workEquipmentArticles.length
+
+  const handleDeleteArticle = async () => {
+    if (!articleToDelete?.id || !currentPractice?.id) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/knowledge-base/${articleToDelete.id}?practiceId=${currentPractice.id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) throw new Error("Failed to delete article")
+
+      toast({
+        title: "Artikel gelöscht",
+        description: "Der Artikel wurde erfolgreich gelöscht.",
+      })
+
+      fetchArticles()
+    } catch (error) {
+      console.error("Error deleting article:", error)
+      toast({
+        title: "Fehler",
+        description: "Der Artikel konnte nicht gelöscht werden.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+      setArticleToDelete(null)
+    }
+  }
 
   if (practiceLoading || loading) {
     return (
@@ -572,9 +628,35 @@ export function KnowledgeBaseManager() {
                   .map((article) => (
                     <Card
                       key={article.id}
-                      className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="group relative p-4 hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => setEditingArticle(article)}
                     >
+                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEditingArticle(article)
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Bearbeiten</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setArticleToDelete(article)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Löschen</span>
+                        </Button>
+                      </div>
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-2">
@@ -645,6 +727,34 @@ export function KnowledgeBaseManager() {
           orgaCategories={orgaCategories}
         />
       )}
+      <AlertDialog open={!!articleToDelete} onOpenChange={(open) => !open && setArticleToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Artikel löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie den Artikel &quot;{articleToDelete?.title}&quot; wirklich löschen? Diese Aktion kann nicht
+              rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteArticle}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Löschen...
+                </>
+              ) : (
+                "Löschen"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

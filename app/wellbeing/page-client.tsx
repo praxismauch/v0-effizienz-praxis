@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -22,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import {
   Heart,
@@ -46,7 +44,6 @@ import {
   Clock,
   RefreshCw,
   Plus,
-  EyeOff,
   Zap,
   HandHeart,
   PartyPopper,
@@ -687,14 +684,10 @@ export default function WellbeingPageClient() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">
               <BarChart3 className="h-4 w-4 mr-2" />
               Übersicht
-            </TabsTrigger>
-            <TabsTrigger value="mood">
-              <Smile className="h-4 w-4 mr-2" />
-              Stimmung
             </TabsTrigger>
             <TabsTrigger value="workload">
               <Activity className="h-4 w-4 mr-2" />
@@ -872,153 +865,6 @@ export default function WellbeingPageClient() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          {/* Mood Survey Tab */}
-          <TabsContent value="mood" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Shield className="h-5 w-5 text-green-500" />
-                      Anonyme Stimmungsumfrage
-                    </CardTitle>
-                    <CardDescription>
-                      Ihre Antworten sind vollständig anonym. Keine Rückverfolgung möglich.
-                    </CardDescription>
-                  </div>
-                  {hasSubmittedToday && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Heute ausgefüllt
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {hasSubmittedToday ? (
-                  <Alert>
-                    <CheckCircle className="h-4 w-4" />
-                    <AlertTitle>Vielen Dank!</AlertTitle>
-                    <AlertDescription>
-                      Sie haben heute bereits Feedback gegeben. Die nächste Umfrage ist morgen verfügbar.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <>
-                    {/* Mood Sliders */}
-                    <div className="grid gap-6 md:grid-cols-2">
-                      {[
-                        { key: "energy_level", label: "Energie-Level", desc: "Wie energiegeladen fühlen Sie sich?" },
-                        { key: "stress_level", label: "Stress-Level", desc: "Wie gestresst fühlen Sie sich?" },
-                        {
-                          key: "work_satisfaction",
-                          label: "Arbeitszufriedenheit",
-                          desc: "Wie zufrieden sind Sie mit Ihrer Arbeit?",
-                        },
-                        { key: "team_harmony", label: "Team-Harmonie", desc: "Wie ist die Stimmung im Team?" },
-                        {
-                          key: "work_life_balance",
-                          label: "Work-Life-Balance",
-                          desc: "Wie gut ist Ihre Work-Life-Balance?",
-                        },
-                        {
-                          key: "leadership_support",
-                          label: "Führungsunterstützung",
-                          desc: "Fühlen Sie sich von der Führung unterstützt?",
-                        },
-                        {
-                          key: "growth_opportunities",
-                          label: "Entwicklungsmöglichkeiten",
-                          desc: "Sehen Sie Wachstumsmöglichkeiten?",
-                        },
-                        {
-                          key: "workload_fairness",
-                          label: "Faire Arbeitsverteilung",
-                          desc: "Ist die Arbeit fair verteilt?",
-                        },
-                      ].map(({ key, label, desc }) => (
-                        <div key={key} className="space-y-3">
-                          <div className="flex justify-between">
-                            <div>
-                              <Label>{label}</Label>
-                              <p className="text-xs text-muted-foreground">{desc}</p>
-                            </div>
-                            <span className={`font-medium ${getMoodColor(moodResponse[key as keyof MoodResponse])}`}>
-                              {moodResponse[key as keyof MoodResponse]}
-                            </span>
-                          </div>
-                          <Slider
-                            value={[moodResponse[key as keyof MoodResponse]]}
-                            onValueChange={([value]) => setMoodResponse({ ...moodResponse, [key]: value })}
-                            min={1}
-                            max={5}
-                            step={1}
-                            className="w-full"
-                          />
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>Niedrig</span>
-                            <span>Hoch</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <Separator />
-
-                    {/* Open Feedback */}
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="positive">Was läuft gut? (optional)</Label>
-                        <Textarea
-                          id="positive"
-                          placeholder="Teilen Sie positive Erfahrungen..."
-                          value={positiveFeedback}
-                          onChange={(e) => setPositiveFeedback(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="improvements">Verbesserungsvorschläge (optional)</Label>
-                        <Textarea
-                          id="improvements"
-                          placeholder="Was könnte verbessert werden?"
-                          value={improvementSuggestions}
-                          onChange={(e) => setImprovementSuggestions(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="concerns">Bedenken oder Sorgen (optional)</Label>
-                        <Textarea
-                          id="concerns"
-                          placeholder="Gibt es etwas, das Sie besorgt?"
-                          value={concerns}
-                          onChange={(e) => setConcerns(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <EyeOff className="h-4 w-4" />
-                        Vollständig anonym
-                      </div>
-                      <Button onClick={handleSubmitMoodResponse} disabled={isSubmittingMood}>
-                        {isSubmittingMood ? (
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4 mr-2" />
-                        )}
-                        Feedback senden
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Workload Analysis Tab */}

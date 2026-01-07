@@ -85,8 +85,11 @@ export default function HiringPageClient() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setShowAIAnalysis(true)}>
-              <Sparkles className="h-4 w-4 mr-2" />
+            <Button
+              onClick={() => setShowAIAnalysis(true)}
+              className="gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white"
+            >
+              <Sparkles className="h-4 w-4" />
               {t("hiring.aiAnalysis", "KI-Analyse")}
             </Button>
           </div>

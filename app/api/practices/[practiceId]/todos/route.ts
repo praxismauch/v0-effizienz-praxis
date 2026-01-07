@@ -80,25 +80,36 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const createdBy = body.created_by || body.createdBy
     const assignedTo = body.assigned_to || body.assignedTo
 
+    // Also changed default status from "pending" to "offen" to match German frontend values
     const newTodo = {
       title: body.title,
-      description: body.description,
-      status: body.status || "pending",
+      description: body.description || null,
+      status: body.status || "offen", // Changed from "pending" to "offen"
       priority: body.priority || "medium",
-      due_date: body.due_date || body.dueDate,
-      created_by: createdBy,
-      assigned_to: assignedTo,
+      due_date: body.due_date || body.dueDate || null,
+      created_by: createdBy || null,
+      assigned_to: assignedTo || null,
+      assigned_user_ids: body.assigned_user_ids || [], // Added
       practice_id: practiceId,
+      dringend: body.dringend || false, // Added
+      wichtig: body.wichtig || false, // Added
+      completed: body.completed || false, // Added
+      recurrence_type: body.recurrence_type || "none", // Added
+      recurrence_end_date: body.recurrence_end_date || null, // Added
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
 
+    console.log("[v0] Creating todo with data:", JSON.stringify(newTodo, null, 2))
+
     const { data, error } = await supabase.from("todos").insert(newTodo).select().single()
 
     if (error) {
+      console.error("[v0] Error creating todo:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    console.log("[v0] Todo created successfully:", data?.id)
     return NextResponse.json(data)
   } catch (error: unknown) {
     return handleApiError(error)

@@ -11,27 +11,54 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const supabase = await createAdminClient()
 
-    // Fetch all reviews from all platforms in parallel
+    // Fetch all reviews from all platforms in parallel with error handling
     const [googleResult, jamedaResult, sanegoResult] = await Promise.all([
       supabase
         .from("google_ratings")
         .select("*")
-        .eq("practice_id", practiceId)
+        .eq("practice_id", String(practiceId))
         .is("deleted_at", null)
-        .order("review_date", { ascending: false }),
+        .order("review_date", { ascending: false })
+        .then((res) => {
+          // Handle table not existing (42P01 error code)
+          if (res.error?.code === "42P01") {
+            console.log("[v0] google_ratings table does not exist")
+            return { data: [], error: null }
+          }
+          return res
+        }),
       supabase
         .from("jameda_ratings")
         .select("*")
-        .eq("practice_id", practiceId)
+        .eq("practice_id", String(practiceId))
         .is("deleted_at", null)
-        .order("review_date", { ascending: false }),
+        .order("review_date", { ascending: false })
+        .then((res) => {
+          if (res.error?.code === "42P01") {
+            console.log("[v0] jameda_ratings table does not exist")
+            return { data: [], error: null }
+          }
+          return res
+        }),
       supabase
         .from("sanego_ratings")
         .select("*")
-        .eq("practice_id", practiceId)
+        .eq("practice_id", String(practiceId))
         .is("deleted_at", null)
-        .order("review_date", { ascending: false }),
+        .order("review_date", { ascending: false })
+        .then((res) => {
+          if (res.error?.code === "42P01") {
+            console.log("[v0] sanego_ratings table does not exist")
+            return { data: [], error: null }
+          }
+          return res
+        }),
     ])
+
+    // Log errors for debugging
+    if (googleResult.error) console.error("[v0] Google ratings error:", googleResult.error)
+    if (jamedaResult.error) console.error("[v0] Jameda ratings error:", jamedaResult.error)
+    if (sanegoResult.error) console.error("[v0] Sanego ratings error:", sanegoResult.error)
 
     // Calculate statistics
     const googleReviews = googleResult.data || []
@@ -69,8 +96,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
   } catch (error) {
-    console.error("Error fetching reviews:", error)
-    return NextResponse.json({ error: "Failed to fetch reviews" }, { status: 500 })
+    console.error("[v0] Error fetching reviews:", error)
+    return NextResponse.json({
+      google: { reviews: [], stats: { count: 0, average: 0, distribution: [0, 0, 0, 0, 0] } },
+      jameda: { reviews: [], stats: { count: 0, average: 0, distribution: [0, 0, 0, 0, 0] } },
+      sanego: { reviews: [], stats: { count: 0, average: 0, distribution: [0, 0, 0, 0, 0] } },
+    })
   }
 }
 

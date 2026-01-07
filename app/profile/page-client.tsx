@@ -22,7 +22,6 @@ import { ProfileImageEditor } from "@/components/profile-image-editor"
 import { DataManagementSection } from "@/components/profile/data-management-section"
 import { useToast } from "@/hooks/use-toast"
 import { useRoleColors } from "@/lib/use-role-colors"
-import { SelfCheckTab } from "@/components/profile/self-check-tab"
 import {
   Dialog,
   DialogContent,
@@ -53,7 +52,6 @@ import {
   ShieldOff,
   Copy,
   Check,
-  Heart,
 } from "lucide-react"
 
 export default function ProfilePageClient() {
@@ -63,7 +61,7 @@ export default function ProfilePageClient() {
   const { roleColors } = useRoleColors()
 
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("selfcheck")
+  const [activeTab, setActiveTab] = useState("profile") // Changed default tab from "selfcheck" to "profile"
 
   // Form states - initialize empty, will be set in useEffect
   const [formData, setFormData] = useState({
@@ -397,11 +395,7 @@ export default function ProfilePageClient() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="selfcheck" className="gap-2">
-              <Heart className="h-4 w-4" />
-              <span className="hidden sm:inline">Selbst-Check</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profil</span>
@@ -419,11 +413,6 @@ export default function ProfilePageClient() {
               <span className="hidden sm:inline">Daten</span>
             </TabsTrigger>
           </TabsList>
-
-          {/* Self-Check Tab */}
-          <TabsContent value="selfcheck">
-            <SelfCheckTab userId={currentUser.id} practiceId={currentPractice?.id || ""} />
-          </TabsContent>
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-4">

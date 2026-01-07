@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { useTranslation } from "@/contexts/translation-context"
+import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
   DialogContent,
@@ -32,11 +33,12 @@ export function CreateKnowledgeDialog({ open, onOpenChange, onSuccess }: CreateK
   const { currentPractice } = usePractice()
   const { currentUser } = useUser()
   const { t } = useTranslation()
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     title: "",
     content: "",
     category: "",
-    status: "draft",
+    status: "published",
   })
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
@@ -94,13 +96,35 @@ export function CreateKnowledgeDialog({ open, onOpenChange, onSuccess }: CreateK
       })
 
       if (response.ok) {
-        onSuccess()
-        onOpenChange(false)
-        setFormData({ title: "", content: "", category: "", status: "draft" })
+        const newArticle = await response.json()
+        toast({
+          title: "Artikel erstellt",
+          description:
+            formData.status === "published"
+              ? "Der Artikel wurde veröffentlicht und ist im Handbuch sichtbar."
+              : "Der Artikel wurde als Entwurf gespeichert.",
+        })
+        setFormData({ title: "", content: "", category: "", status: "published" })
         setTags([])
+        onOpenChange(false)
+        setTimeout(() => {
+          onSuccess()
+        }, 100)
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Fehler",
+          description: error.error || "Der Artikel konnte nicht erstellt werden.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("[v0] Error creating article:", error)
+      toast({
+        title: "Fehler",
+        description: "Ein unerwarteter Fehler ist aufgetreten.",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -210,20 +234,25 @@ export function CreateKnowledgeDialog({ open, onOpenChange, onSuccess }: CreateK
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">{t("knowledge.createDialog.statusDraft", "Entwurf")}</SelectItem>
                 <SelectItem value="published">
                   {t("knowledge.createDialog.statusPublished", "Veröffentlicht")}
                 </SelectItem>
+                <SelectItem value="draft">{t("knowledge.createDialog.statusDraft", "Entwurf")}</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              {formData.status === "published"
+                ? "Der Artikel wird sofort im Praxis Handbuch sichtbar sein."
+                : "Entwürfe sind nur im Tab 'Entwürfe' sichtbar, nicht im Handbuch."}
+            </p>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common.cancel", "Cancel")}
+              {t("common.cancel", "Abbrechen")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? t("common.creating", "Creating...") : t("common.create", "Create")}
+              {isSubmitting ? t("common.creating", "Wird erstellt...") : t("common.create", "Erstellen")}
             </Button>
           </DialogFooter>
         </form>

@@ -15,9 +15,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEffect, useState } from "react"
 import { usePractice } from "@/contexts/practice-context"
-import { Loader2, Sparkles, ChevronDown, Upload } from "lucide-react"
+import { Loader2, Sparkles, ChevronDown, Upload, User, Building2, Clock } from "lucide-react"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 
 interface OrgaCategory {
@@ -34,6 +35,24 @@ interface TeamMember {
   name?: string
   isActive?: boolean
   status?: string
+}
+
+interface Arbeitsplatz {
+  id: string
+  name: string
+  beschreibung?: string
+  raum_name?: string
+  is_active?: boolean
+}
+
+interface ShiftType {
+  id: string
+  name: string
+  short_name?: string
+  start_time?: string
+  end_time?: string
+  color?: string
+  is_active?: boolean
 }
 
 interface ResponsibilityFormDialogProps {
@@ -53,6 +72,8 @@ interface ResponsibilityFormDialogProps {
     estimated_time_period?: string | null
     link_url?: string
     link_title?: string
+    assigned_arbeitsplaetze?: string[]
+    assigned_shifts?: string[]
   }
   setFormData: (data: any) => void
   hoursDisplayValue: string
@@ -74,11 +95,16 @@ export function ResponsibilityFormDialog({
   const { currentPractice } = usePractice()
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [orgaCategories, setOrgaCategories] = useState<OrgaCategory[]>([])
+  const [arbeitsplaetze, setArbeitsplaetze] = useState<Arbeitsplatz[]>([])
+  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([])
   const [loadingTeamMembers, setLoadingTeamMembers] = useState(false)
   const [loadingCategories, setLoadingCategories] = useState(false)
+  const [loadingArbeitsplaetze, setLoadingArbeitsplaetze] = useState(false)
+  const [loadingShiftTypes, setLoadingShiftTypes] = useState(false)
   const [isGeneratingOptimization, setIsGeneratingOptimization] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [timeAmountDisplay, setTimeAmountDisplay] = useState("")
+  const [activeTab, setActiveTab] = useState("person")
 
   useEffect(() => {
     const fetchData = async () => {
@@ -123,6 +149,34 @@ export function ResponsibilityFormDialog({
         console.error("[v0] Error fetching orga categories:", error)
       } finally {
         setLoadingCategories(false)
+      }
+
+      setLoadingArbeitsplaetze(true)
+      try {
+        const response = await fetch(`/api/practices/${currentPractice.id}/arbeitsplaetze`)
+        if (response.ok) {
+          const data = await response.json()
+          const workplaces = (data?.arbeitsplaetze || data || []).filter((a: Arbeitsplatz) => a.is_active !== false)
+          setArbeitsplaetze(workplaces)
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching arbeitsplaetze:", error)
+      } finally {
+        setLoadingArbeitsplaetze(false)
+      }
+
+      setLoadingShiftTypes(true)
+      try {
+        const response = await fetch(`/api/practices/${currentPractice.id}/dienstplan/shift-types`)
+        if (response.ok) {
+          const data = await response.json()
+          const shifts = (data?.shiftTypes || data || []).filter((s: ShiftType) => s.is_active !== false)
+          setShiftTypes(shifts)
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching shift types:", error)
+      } finally {
+        setLoadingShiftTypes(false)
       }
     }
 
@@ -215,6 +269,18 @@ export function ResponsibilityFormDialog({
     } finally {
       setIsGeneratingOptimization(false)
     }
+  }
+
+  const toggleArbeitsplatz = (id: string) => {
+    const current = formData.assigned_arbeitsplaetze || []
+    const updated = current.includes(id) ? current.filter((a) => a !== id) : [...current, id]
+    setFormData({ ...formData, assigned_arbeitsplaetze: updated })
+  }
+
+  const toggleShift = (id: string) => {
+    const current = formData.assigned_shifts || []
+    const updated = current.includes(id) ? current.filter((s) => s !== id) : [...current, id]
+    setFormData({ ...formData, assigned_shifts: updated })
   }
 
   return (
@@ -327,161 +393,315 @@ export function ResponsibilityFormDialog({
             )}
           </div>
 
-          {/* Hauptverantwortlicher and Stellvertreter - Side by Side */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="responsible_user">Hauptverantwortlicher</Label>
-              {loadingTeamMembers ? (
-                <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/50">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">Lade...</span>
+          <div className="pt-2">
+            <Label className="text-base font-semibold">Zuordnung</Label>
+            <p className="text-sm text-muted-foreground mb-3">
+              Weisen Sie diese Zuständigkeit Personen, Arbeitsplätzen oder Schichten zu.
+            </p>
+
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="person" className="gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">Personenbezogen</span>
+                  <span className="sm:hidden">Person</span>
+                </TabsTrigger>
+                <TabsTrigger value="arbeitsplatz" className="gap-2">
+                  <Building2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Arbeitsplatzbezogen</span>
+                  <span className="sm:hidden">Arbeitsplatz</span>
+                </TabsTrigger>
+                <TabsTrigger value="schicht" className="gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span>Schicht</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab 1: Personenbezogen */}
+              <TabsContent value="person" className="space-y-4 mt-4">
+                {/* Hauptverantwortlicher and Stellvertreter - Side by Side */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="responsible_user">Hauptverantwortlicher</Label>
+                    {loadingTeamMembers ? (
+                      <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/50">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Lade...</span>
+                      </div>
+                    ) : (
+                      <Select
+                        value={formData.responsible_user_id || "none"}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, responsible_user_id: value === "none" ? "" : value })
+                        }
+                      >
+                        <SelectTrigger id="responsible_user">
+                          <SelectValue placeholder="Nicht zugewiesen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nicht zugewiesen</SelectItem>
+                          {teamMembers.map((member) => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {getTeamMemberName(member)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="deputy_user">Stellvertreter</Label>
+                    {loadingTeamMembers ? (
+                      <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/50">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Lade...</span>
+                      </div>
+                    ) : (
+                      <Select
+                        value={formData.deputy_user_id || "none"}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, deputy_user_id: value === "none" ? "" : value })
+                        }
+                      >
+                        <SelectTrigger id="deputy_user">
+                          <SelectValue placeholder="Nicht zugewiesen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nicht zugewiesen</SelectItem>
+                          {teamMembers
+                            .filter((m) => m.id !== formData.responsible_user_id)
+                            .map((member) => (
+                              <SelectItem key={member.id} value={member.id}>
+                                {getTeamMemberName(member)}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <Select
-                  value={formData.responsible_user_id || "none"}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, responsible_user_id: value === "none" ? "" : value })
-                  }
-                >
-                  <SelectTrigger id="responsible_user">
-                    <SelectValue placeholder="Nicht zugewiesen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nicht zugewiesen</SelectItem>
-                    {teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {getTeamMemberName(member)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
 
-            <div>
-              <Label htmlFor="deputy_user">Stellvertreter</Label>
-              {loadingTeamMembers ? (
-                <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/50">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">Lade...</span>
-                </div>
-              ) : (
-                <Select
-                  value={formData.deputy_user_id || "none"}
-                  onValueChange={(value) => setFormData({ ...formData, deputy_user_id: value === "none" ? "" : value })}
-                >
-                  <SelectTrigger id="deputy_user">
-                    <SelectValue placeholder="Nicht zugewiesen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nicht zugewiesen</SelectItem>
-                    {teamMembers
-                      .filter((m) => m.id !== formData.responsible_user_id)
-                      .map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {getTeamMemberName(member)}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </div>
-
-          {/* Zeitaufwand Berechnen Checkbox */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="calculate_time"
-              checked={formData.calculate_time_automatically || false}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, calculate_time_automatically: checked as boolean })
-              }
-            />
-            <Label htmlFor="calculate_time" className="text-sm font-normal cursor-pointer">
-              Zeitaufwand Berechnen
-            </Label>
-          </div>
-
-          {/* Geschätzter Zeitaufwand */}
-          <div>
-            <Label htmlFor="hours">Geschätzter Zeitaufwand (Std./Woche)</Label>
-            <Input
-              id="hours"
-              type="text"
-              placeholder="z.B. 4,0"
-              value={hoursDisplayValue}
-              onChange={(e) => handleHoursChange(e.target.value)}
-              disabled={formData.calculate_time_automatically}
-              className={formData.calculate_time_automatically ? "bg-muted" : ""}
-            />
-          </div>
-
-          {/* Zeitaufwand Berechnung - shown when calculate_time_automatically is checked */}
-          {formData.calculate_time_automatically && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Zeitaufwand Berechnung</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="time_amount" className="text-xs text-muted-foreground">
-                    Anzahl Stunden pro
+                {/* Zeitaufwand Berechnen Checkbox */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="calculate_time"
+                    checked={formData.calculate_time_automatically || false}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, calculate_time_automatically: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="calculate_time" className="text-sm font-normal cursor-pointer">
+                    Zeitaufwand Berechnen
                   </Label>
+                </div>
+
+                {/* Geschätzter Zeitaufwand */}
+                <div>
+                  <Label htmlFor="hours">Geschätzter Zeitaufwand (Std./Woche)</Label>
                   <Input
-                    id="time_amount"
+                    id="hours"
                     type="text"
-                    placeholder="z.B. 2 oder 2,5"
-                    value={timeAmountDisplay}
-                    onChange={(e) => handleTimeAmountChange(e.target.value)}
+                    placeholder="z.B. 4,0"
+                    value={hoursDisplayValue}
+                    onChange={(e) => handleHoursChange(e.target.value)}
+                    disabled={formData.calculate_time_automatically}
+                    className={formData.calculate_time_automatically ? "bg-muted" : ""}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="time_period" className="text-xs text-muted-foreground">
-                    Zeitraum
-                  </Label>
-                  <Select
-                    value={formData.estimated_time_period || "none"}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, estimated_time_period: value === "none" ? null : value })
+
+                {/* Zeitaufwand Berechnung - shown when calculate_time_automatically is checked */}
+                {formData.calculate_time_automatically && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Zeitaufwand Berechnung</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="time_amount" className="text-xs text-muted-foreground">
+                          Anzahl Stunden pro
+                        </Label>
+                        <Input
+                          id="time_amount"
+                          type="text"
+                          placeholder="z.B. 2 oder 2,5"
+                          value={timeAmountDisplay}
+                          onChange={(e) => handleTimeAmountChange(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="time_period" className="text-xs text-muted-foreground">
+                          Zeitraum
+                        </Label>
+                        <Select
+                          value={formData.estimated_time_period || "none"}
+                          onValueChange={(value) =>
+                            setFormData({ ...formData, estimated_time_period: value === "none" ? null : value })
+                          }
+                        >
+                          <SelectTrigger id="time_period">
+                            <SelectValue placeholder="Nicht ausgewählt" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nicht ausgewählt</SelectItem>
+                            <SelectItem value="Monat">Monat</SelectItem>
+                            <SelectItem value="Quartal">Quartal</SelectItem>
+                            <SelectItem value="Jahr">Jahr</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Kann nicht während Sprechstunde */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="consultation"
+                    checked={formData.cannot_complete_during_consultation}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, cannot_complete_during_consultation: checked as boolean })
                     }
-                  >
-                    <SelectTrigger id="time_period">
-                      <SelectValue placeholder="Nicht ausgewählt" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nicht ausgewählt</SelectItem>
-                      <SelectItem value="Monat">Monat</SelectItem>
-                      <SelectItem value="Quartal">Quartal</SelectItem>
-                      <SelectItem value="Jahr">Jahr</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
+                  <Label htmlFor="consultation" className="text-sm font-normal cursor-pointer">
+                    Kann nicht während Sprechstunde erledigt werden
+                  </Label>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* Kann nicht während Sprechstunde */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="consultation"
-              checked={formData.cannot_complete_during_consultation}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, cannot_complete_during_consultation: checked as boolean })
-              }
-            />
-            <Label htmlFor="consultation" className="text-sm font-normal cursor-pointer">
-              Kann nicht während Sprechstunde erledigt werden
-            </Label>
+                {formData.cannot_complete_during_consultation && (
+                  <div className="ml-6 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
+                    <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                      <span className="font-medium">Außerhalb der Sprechstunde</span>
+                      <span className="text-amber-600 dark:text-amber-400">
+                        — Diese Aufgabe wird außerhalb der regulären Sprechzeiten erledigt
+                      </span>
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Tab 2: Arbeitsplatzbezogen */}
+              <TabsContent value="arbeitsplatz" className="space-y-4 mt-4">
+                <div>
+                  <Label className="mb-2 block">Arbeitsplätze zuweisen</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Wählen Sie die Arbeitsplätze aus, an denen diese Zuständigkeit ausgeführt wird.
+                  </p>
+
+                  {loadingArbeitsplaetze ? (
+                    <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-muted-foreground">Lade Arbeitsplätze...</span>
+                    </div>
+                  ) : arbeitsplaetze.length === 0 ? (
+                    <div className="p-4 border rounded-lg bg-muted/30 text-center">
+                      <Building2 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Keine Arbeitsplätze verfügbar. Erstellen Sie zuerst Arbeitsplätze unter{" "}
+                        <span className="font-medium">Arbeitsplätze</span>.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+                      {arbeitsplaetze.map((ap) => {
+                        const isSelected = (formData.assigned_arbeitsplaetze || []).includes(ap.id)
+                        return (
+                          <div
+                            key={ap.id}
+                            onClick={() => toggleArbeitsplatz(ap.id)}
+                            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                              isSelected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-border hover:border-primary/50 hover:bg-muted/50"
+                            }`}
+                          >
+                            <Checkbox checked={isSelected} onChange={() => {}} className="pointer-events-none" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{ap.name}</p>
+                              {ap.raum_name && (
+                                <p className="text-xs text-muted-foreground truncate">Raum: {ap.raum_name}</p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {(formData.assigned_arbeitsplaetze || []).length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(formData.assigned_arbeitsplaetze || []).length} Arbeitsplatz/Arbeitsplätze ausgewählt
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Tab 3: Schicht */}
+              <TabsContent value="schicht" className="space-y-4 mt-4">
+                <div>
+                  <Label className="mb-2 block">Schichten zuweisen</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Wählen Sie die Schichten aus, während denen diese Zuständigkeit ausgeführt wird.
+                  </p>
+
+                  {loadingShiftTypes ? (
+                    <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-muted-foreground">Lade Schichten...</span>
+                    </div>
+                  ) : shiftTypes.length === 0 ? (
+                    <div className="p-4 border rounded-lg bg-muted/30 text-center">
+                      <Clock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Keine Schichttypen verfügbar. Erstellen Sie zuerst Schichten im{" "}
+                        <span className="font-medium">Dienstplan</span>.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+                      {shiftTypes.map((shift) => {
+                        const isSelected = (formData.assigned_shifts || []).includes(shift.id)
+                        return (
+                          <div
+                            key={shift.id}
+                            onClick={() => toggleShift(shift.id)}
+                            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                              isSelected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-border hover:border-primary/50 hover:bg-muted/50"
+                            }`}
+                          >
+                            <Checkbox checked={isSelected} onChange={() => {}} className="pointer-events-none" />
+                            <div
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: shift.color || "#6366f1" }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">
+                                {shift.name}
+                                {shift.short_name && (
+                                  <span className="text-muted-foreground ml-1">({shift.short_name})</span>
+                                )}
+                              </p>
+                              {shift.start_time && shift.end_time && (
+                                <p className="text-xs text-muted-foreground">
+                                  {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {(formData.assigned_shifts || []).length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(formData.assigned_shifts || []).length} Schicht(en) ausgewählt
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
-
-          {formData.cannot_complete_during_consultation && (
-            <div className="ml-6 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
-              <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
-                <span className="font-medium">Außerhalb der Sprechstunde</span>
-                <span className="text-amber-600 dark:text-amber-400">
-                  — Diese Aufgabe wird außerhalb der regulären Sprechzeiten erledigt
-                </span>
-              </p>
-            </div>
-          )}
 
           {/* Erweiterte Einstellungen */}
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>

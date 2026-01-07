@@ -23,10 +23,9 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
       .select("*")
       .eq("practice_id", Number.parseInt(practiceId))
       .eq("user_id", user.id)
-      .single()
+      .maybeSingle()
 
-    if (error && error.code !== "PGRST116") {
-      // PGRST116 = no rows found
+    if (error) {
       console.error("Error fetching onboarding progress:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }

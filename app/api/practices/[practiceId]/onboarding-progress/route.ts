@@ -1,11 +1,11 @@
-import { createAdminClient } from "@/lib/supabase/admin-client"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 // GET - Fetch onboarding progress for current user
-export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = await params
+    const { practiceId } = params
     const supabase = await createClient()
 
     const {
@@ -39,9 +39,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 }
 
 // POST - Create or update onboarding progress
-export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = await params
+    const { practiceId } = params
     const supabase = await createClient()
 
     const {

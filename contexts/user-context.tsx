@@ -215,7 +215,7 @@ export function UserProvider({
         const res = await fetch("/api/user/me", { credentials: "include" })
 
         if (res.status === 429 && retryCount < 3) {
-          const delay = Math.pow(2, retryCount) * 1000 // 1s, 2s, 4s
+          const delay = Math.pow(2, retryCount) * 5000 // 5s, 10s, 20s
           console.warn(`[user-context] Rate limited, retrying in ${delay}ms...`)
           setTimeout(() => loadUser(retryCount + 1), delay)
           return
@@ -229,7 +229,7 @@ export function UserProvider({
         } catch (parseError) {
           if (text.includes("Too Many") || text.includes("rate")) {
             if (retryCount < 3) {
-              const delay = Math.pow(2, retryCount) * 1000
+              const delay = Math.pow(2, retryCount) * 5000
               console.warn(`[user-context] Rate limited (text), retrying in ${delay}ms...`)
               setTimeout(() => loadUser(retryCount + 1), delay)
               return
@@ -272,7 +272,7 @@ export function UserProvider({
 
         // Handle rate limiting with retry
         if (res.status === 429 && retryCount < 3) {
-          const delay = Math.pow(2, retryCount) * 1000 // 1s, 2s, 4s
+          const delay = Math.pow(2, retryCount) * 5000 // 5s, 10s, 20s
           console.warn(`[v0] Rate limited fetching super admins, retrying in ${delay}ms...`)
           setTimeout(() => loadSuperAdmins(retryCount + 1), delay)
           return
@@ -303,7 +303,7 @@ export function UserProvider({
           // Check if it's a rate limit text response
           if (text.includes("Too Many") || text.includes("rate")) {
             if (retryCount < 3) {
-              const delay = Math.pow(2, retryCount) * 1000
+              const delay = Math.pow(2, retryCount) * 5000
               console.warn(`[v0] Rate limited (text response), retrying in ${delay}ms...`)
               setTimeout(() => loadSuperAdmins(retryCount + 1), delay)
               return
@@ -562,7 +562,7 @@ export function UserProvider({
 
             // Handle rate limiting with retry
             if (res.status === 429 && retryCount < 3) {
-              const delay = Math.pow(2, retryCount) * 1000
+              const delay = Math.pow(2, retryCount) * 5000
               console.warn(`[user-context] Rate limited on sign in, retrying in ${delay}ms...`)
               setTimeout(() => fetchUserWithRetry(retryCount + 1), delay)
               return
@@ -575,7 +575,7 @@ export function UserProvider({
               data = JSON.parse(text)
             } catch (parseError) {
               if (text.includes("Too Many") && retryCount < 3) {
-                const delay = Math.pow(2, retryCount) * 1000
+                const delay = Math.pow(2, retryCount) * 5000
                 setTimeout(() => fetchUserWithRetry(retryCount + 1), delay)
                 return
               }

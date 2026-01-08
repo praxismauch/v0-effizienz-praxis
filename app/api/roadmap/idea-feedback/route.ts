@@ -1,10 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL
+  if (!connectionString) {
+    throw new Error("Database connection string not configured")
+  }
+  return neon(connectionString)
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const sql = getDb() // Get connection inside handler
     const body = await request.json()
     const {
       ideaTitle,
@@ -63,6 +70,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const sql = getDb() // Get connection inside handler
     const { searchParams } = new URL(request.url)
     const feedbackType = searchParams.get("type")
 

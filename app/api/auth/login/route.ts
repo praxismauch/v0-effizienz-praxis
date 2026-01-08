@@ -17,8 +17,7 @@ export async function POST(request: Request) {
 
     const cookieStore = await cookies()
 
-    // This is the same pattern used in the logout route that works correctly
-    let response = NextResponse.json({ success: false }, { status: 401 })
+    const cookiesToSetOnResponse: Array<{ name: string; value: string; options?: any }> = []
 
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
@@ -26,15 +25,20 @@ export async function POST(request: Request) {
           return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
-          // This ensures cookies are sent back to the browser
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, {
-              ...options,
-              httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
-              sameSite: "lax",
-              path: "/",
-            })
+            cookiesToSetOnResponse.push({ name, value, options })
+            // Also set on cookieStore for server-side reads
+            try {
+              cookieStore.set(name, value, {
+                ...options,
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+              })
+            } catch {
+              // Ignore - happens in read-only contexts
+            }
           })
         },
       },
@@ -71,7 +75,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to create user profile" }, { status: 500 })
       }
 
-      response = NextResponse.json(
+      const response = NextResponse.json(
         {
           success: true,
           user: {
@@ -87,18 +91,18 @@ export async function POST(request: Request) {
         { status: 200 },
       )
 
-      // Re-apply any cookies that were set during auth
-      const allCookies = cookieStore.getAll()
-      allCookies.forEach((cookie) => {
-        if (cookie.name.startsWith("sb-")) {
-          response.cookies.set(cookie.name, cookie.value, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/",
-          })
-        }
+      // Apply all cookies that Supabase set during auth
+      cookiesToSetOnResponse.forEach(({ name, value, options }) => {
+        response.cookies.set(name, value, {
+          ...options,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+        })
       })
+
+      console.log("[auth/login] Cookies set on response:", cookiesToSetOnResponse.map((c) => c.name).join(", "))
 
       return response
     }
@@ -134,9 +138,10 @@ export async function POST(request: Request) {
       { status: 200 },
     )
 
-    // Copy all cookies from the intermediate response to the final response
-    response.cookies.getAll().forEach((cookie) => {
-      successResponse.cookies.set(cookie.name, cookie.value, {
+    // Apply all cookies that Supabase set during auth
+    cookiesToSetOnResponse.forEach(({ name, value, options }) => {
+      successResponse.cookies.set(name, value, {
+        ...options,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -144,18 +149,7 @@ export async function POST(request: Request) {
       })
     })
 
-    // Also check if there are any sb- cookies in the cookieStore that need to be forwarded
-    const allCookies = cookieStore.getAll()
-    allCookies.forEach((cookie) => {
-      if (cookie.name.startsWith("sb-")) {
-        successResponse.cookies.set(cookie.name, cookie.value, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-        })
-      }
-    })
+    console.log("[auth/login] Success - Cookies set:", cookiesToSetOnResponse.map((c) => c.name).join(", "))
 
     return successResponse
   } catch (error) {

@@ -9,7 +9,6 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useState, Suspense } from "react"
-import { createClient } from "@/lib/supabase/client"
 
 function LoginForm() {
   const [email, setEmail] = useState("")
@@ -22,34 +21,33 @@ function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
-
-    if (!supabase) {
-      setError("Supabase client konnte nicht initialisiert werden")
-      setIsLoading(false)
-      return
-    }
-
     setIsLoading(true)
     setError(null)
 
     try {
       console.log("[v0] Login: Starting for:", email)
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: "include", // Important: include cookies in request/response
       })
 
-      if (authError) {
-        console.error("[v0] Login error:", authError)
-        throw authError
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error("[v0] Login error:", data.error)
+        throw new Error(data.error || "Authentifizierung fehlgeschlagen")
       }
 
-      if (!authData?.user) {
-        throw new Error("Keine Benutzerdaten erhalten")
+      if (!data.success) {
+        throw new Error(data.error || "Keine Benutzerdaten erhalten")
       }
 
+      console.log("[v0] Login successful, redirecting to:", redirectTo)
       router.push(redirectTo)
       router.refresh()
     } catch (error) {

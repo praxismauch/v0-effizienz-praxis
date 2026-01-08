@@ -41,6 +41,10 @@ const PUBLIC_ROUTE_PREFIXES = ["/features", "/blog"]
 
 const PUBLIC_API_ROUTES = new Set(["/api/webhooks", "/api/cron", "/api/public", "/api/csrf", "/api/landing-chatbot"])
 
+const PUBLIC_AUTH_API_PREFIXES = [
+  "/api/auth/", // All auth endpoints (login, logout, register, callback, etc.)
+]
+
 let cachedSupabaseUrl: string | undefined
 let cachedSupabaseAnonKey: string | undefined
 
@@ -56,6 +60,12 @@ function isPublicRoute(pathname: string): boolean {
   }
 
   if (pathname.startsWith("/api/")) {
+    for (const prefix of PUBLIC_AUTH_API_PREFIXES) {
+      if (pathname.startsWith(prefix)) {
+        return true
+      }
+    }
+
     for (const publicApiRoute of PUBLIC_API_ROUTES) {
       if (pathname.startsWith(publicApiRoute)) {
         return true

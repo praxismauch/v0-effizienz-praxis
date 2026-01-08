@@ -188,20 +188,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .eq("completed", false)
           .order("created_at", { ascending: false })
           .limit(5),
-        // Using completed todos as proxy for checkups metric instead
         supabase
-          .from("todos")
+          .from("test_checklist_items")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
-          .eq("completed", true)
-          .gte("updated_at", sevenDaysAgo.toISOString()),
+          .eq("is_completed", true)
+          .gte("completed_at", sevenDaysAgo.toISOString()),
         supabase
-          .from("todos")
+          .from("test_checklist_items")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
-          .eq("completed", true)
-          .gte("updated_at", fourteenDaysAgo.toISOString())
-          .lt("updated_at", sevenDaysAgo.toISOString()),
+          .eq("is_completed", true)
+          .gte("completed_at", fourteenDaysAgo.toISOString())
+          .lt("completed_at", sevenDaysAgo.toISOString()),
       ])
     } catch (queryError) {
       if (isRateLimitError(queryError)) {

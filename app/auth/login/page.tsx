@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useState, Suspense } from "react"
+import { useUser } from "@/contexts/user-context"
 
 function LoginForm() {
   const [email, setEmail] = useState("")
@@ -18,6 +19,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const redirectTo = searchParams.get("redirectTo") || "/dashboard"
+  const { setCurrentUser } = useUser()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,33 +27,30 @@ function LoginForm() {
     setError(null)
 
     try {
-      console.log("[v0] Login: Starting for:", email)
-
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // Important: include cookies in request/response
+        credentials: "include",
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        console.error("[v0] Login error:", data.error)
         throw new Error(data.error || "Authentifizierung fehlgeschlagen")
       }
 
-      if (!data.success) {
+      if (!data.success || !data.user) {
         throw new Error(data.error || "Keine Benutzerdaten erhalten")
       }
 
-      console.log("[v0] Login successful, redirecting to:", redirectTo)
+      setCurrentUser(data.user)
+      await new Promise((resolve) => setTimeout(resolve, 100))
       router.push(redirectTo)
       router.refresh()
     } catch (error) {
-      console.error("[v0] Login error:", error)
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error instanceof Error) {
         const msg = error.message.toLowerCase()

@@ -1,4 +1,4 @@
-import { streamText } from "ai"
+import { consumeStream, convertToModelMessages, streamText, type UIMessage } from "ai"
 
 export const maxDuration = 30
 
@@ -79,16 +79,72 @@ Effizienz Praxis ist eine umfassende Praxismanagement Software mit folgenden Hau
 - Verweise bei Interesse auf die Demo oder das Kontaktformular
 `
 
-export async function POST(req: Request) {
-  const { messages } = await req.json()
+interface SimpleMessage {
+  role: "user" | "assistant" | "system"
+  content: string
+}
 
-  const result = await streamText({
-    model: "openai/gpt-4o-mini" as any,
-    system: systemPrompt,
-    messages,
-    maxTokens: 500,
-    temperature: 0.7,
+function isUIMessage(msg: unknown): msg is UIMessage {
+  return typeof msg === "object" && msg !== null && "parts" in msg && Array.isArray((msg as UIMessage).parts)
+}
+
+function convertToUIMessages(messages: (SimpleMessage | UIMessage)[]): UIMessage[] {
+  return messages.map((msg, index) => {
+    if (isUIMessage(msg)) {
+      return msg
+    }
+    return {
+      id: `msg-${index}-${Date.now()}`,
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+      parts: [{ type: "text" as const, text: msg.content }],
+    }
   })
+}
 
-  return result.toDataStreamResponse()
+export async function POST(req: Request) {
+  try {
+    const body = await req.json()
+    const messages = body.messages
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: "Keine Nachricht erhalten" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      })
+    }
+
+    const uiMessages = convertToUIMessages(messages)
+
+    // Prepend system message
+    const messagesWithSystem: UIMessage[] = [
+      {
+        id: "system-0",
+        role: "assistant" as const,
+        content: systemPrompt,
+        parts: [{ type: "text" as const, text: systemPrompt }],
+      },
+      ...uiMessages,
+    ]
+
+    const prompt = convertToModelMessages(messagesWithSystem)
+
+    const result = streamText({
+      model: "openai/gpt-4o",
+      prompt,
+      maxOutputTokens: 500,
+      temperature: 0.7,
+      abortSignal: req.signal,
+    })
+
+    return result.toUIMessageStreamResponse({
+      consumeSseStream: consumeStream,
+    })
+  } catch (error) {
+    console.error("[v0] Landing chatbot error:", error)
+    return new Response(JSON.stringify({ error: "Chat fehlgeschlagen" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
 }

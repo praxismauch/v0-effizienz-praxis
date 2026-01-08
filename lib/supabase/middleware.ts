@@ -39,7 +39,13 @@ const publicRoutesSet = new Set([
 
 const PUBLIC_ROUTE_PREFIXES = ["/features", "/blog"]
 
-const PUBLIC_API_ROUTES = new Set(["/api/webhooks", "/api/cron", "/api/public", "/api/csrf", "/api/landing-chatbot"])
+const PUBLIC_API_ROUTES = new Set([
+  "/api/webhooks",
+  "/api/cron",
+  "/api/public", // This already covers /api/public/chat-upload
+  "/api/csrf",
+  "/api/landing-chatbot",
+])
 
 const PUBLIC_AUTH_API_PREFIXES = [
   "/api/auth/", // All auth endpoints (login, logout, register, callback, etc.)

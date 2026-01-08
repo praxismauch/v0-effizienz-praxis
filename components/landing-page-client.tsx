@@ -41,6 +41,7 @@ import Image from "next/image"
 import { Logo } from "@/components/logo"
 import { LandingPageFooter } from "@/components/landing-page-footer"
 import { LandingPageChatbot } from "@/components/landing-page-chatbot"
+import { LandingAIQuestionBox } from "@/components/landing-ai-question-box"
 import { useEffect, useState } from "react"
 import { ScrollReveal, StaggeredReveal } from "@/components/scroll-reveal"
 import { Progress } from "@/components/ui/progress"
@@ -1072,6 +1073,9 @@ export default function LandingPageClient() {
           </div>
         </div>
       </section>
+
+      {/* Moved LandingAIQuestionBox here */}
+      <LandingAIQuestionBox />
 
       {/* Academy Coming Soon Section */}
       <section className="w-full py-16 md:py-24 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 dark:from-amber-950/30 dark:via-orange-950/20 dark:to-yellow-950/30">

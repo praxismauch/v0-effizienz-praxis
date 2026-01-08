@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { X, Send, Loader2, User, Upload, ImageIcon, Sparkles } from "lucide-react"
-import { useChat } from "ai/react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 
@@ -17,21 +18,17 @@ export function LandingPageChatbot() {
   const [attachedImages, setAttachedImages] = useState<Array<{ url: string; file: File }>>([])
   const [isDragging, setIsDragging] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [inputValue, setInputValue] = useState("")
   const chatAreaRef = useRef<HTMLDivElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
 
-  const {
-    messages,
-    input,
-    setInput,
-    handleSubmit: handleChatSubmit,
-    isLoading,
-    append,
-  } = useChat({
-    api: "/api/landing-chatbot",
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/landing-chatbot" }),
   })
+
+  const isLoading = status === "streaming" || status === "submitted"
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -103,10 +100,10 @@ export function LandingPageChatbot() {
       return
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "Fehler",
-        description: "Bild ist zu groß (max. 10MB)",
+        description: "Bild ist zu groß (max. 5MB)",
         variant: "destructive",
       })
       return
@@ -117,12 +114,15 @@ export function LandingPageChatbot() {
       const formData = new FormData()
       formData.append("file", file)
 
-      const response = await fetch("/api/ai-analysis/chat-upload", {
+      const response = await fetch("/api/public/chat-upload", {
         method: "POST",
         body: formData,
       })
 
-      if (!response.ok) throw new Error("Upload fehlgeschlagen")
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "Upload fehlgeschlagen")
+      }
 
       const { url } = await response.json()
       setAttachedImages((prev) => [...prev, { url, file }])
@@ -134,7 +134,7 @@ export function LandingPageChatbot() {
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Bild konnte nicht hochgeladen werden",
+        description: error instanceof Error ? error.message : "Bild konnte nicht hochgeladen werden",
         variant: "destructive",
       })
     } finally {
@@ -151,11 +151,12 @@ export function LandingPageChatbot() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() && attachedImages.length === 0) return
+    if (!inputValue.trim() && attachedImages.length === 0) return
+    if (status !== "ready") return
 
-    // Clear images after submit
+    sendMessage({ text: inputValue })
+    setInputValue("")
     setAttachedImages([])
-    handleChatSubmit(e)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -169,11 +170,9 @@ export function LandingPageChatbot() {
   }
 
   const handleQuickQuestion = async (question: string) => {
+    if (status !== "ready") return
     try {
-      await append({
-        role: "user",
-        content: question,
-      })
+      sendMessage({ text: question })
     } catch (error) {
       console.error("Error sending quick question:", error)
       toast({
@@ -182,6 +181,20 @@ export function LandingPageChatbot() {
         variant: "destructive",
       })
     }
+  }
+
+  const getMessageText = (message: (typeof messages)[0]) => {
+    if (typeof message.content === "string") {
+      return message.content
+    }
+    // For v5 UIMessage with parts
+    if (message.parts) {
+      return message.parts
+        .filter((part): part is { type: "text"; text: string } => part.type === "text")
+        .map((part) => part.text)
+        .join("")
+    }
+    return ""
   }
 
   return (
@@ -305,79 +318,82 @@ export function LandingPageChatbot() {
                 </div>
               )}
 
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-2 sm:gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {message.role === "assistant" && (
-                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center shrink-0">
-                      <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                    </div>
-                  )}
+              {messages.map((message) => {
+                const messageText = getMessageText(message)
+                return (
                   <div
-                    className={cn(
-                      "rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-[85%] shadow-sm",
-                      message.role === "user"
-                        ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
-                        : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
-                    )}
+                    key={message.id}
+                    className={`flex gap-2 sm:gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {message.role === "assistant" ? (
-                      <div className="text-xs sm:text-sm leading-relaxed space-y-2">
-                        {message.content.split("\n\n").map((paragraph, i) => {
-                          // Handle markdown-style headers
-                          if (paragraph.startsWith("# ")) {
-                            return (
-                              <h3 key={i} className="font-bold text-sm sm:text-base mt-2 first:mt-0">
-                                {paragraph.slice(2)}
-                              </h3>
-                            )
-                          }
-                          if (paragraph.startsWith("## ")) {
-                            return (
-                              <h4 key={i} className="font-semibold text-xs sm:text-sm mt-2">
-                                {paragraph.slice(3)}
-                              </h4>
-                            )
-                          }
-                          // Handle bullet points
-                          if (paragraph.includes("\n- ") || paragraph.startsWith("- ")) {
-                            const lines = paragraph.split("\n")
-                            return (
-                              <ul key={i} className="space-y-1 ml-1">
-                                {lines.map((line, j) => (
-                                  <li key={j} className="flex items-start gap-2">
-                                    {line.startsWith("- ") && (
-                                      <>
-                                        <span className="text-purple-500 mt-0.5">•</span>
-                                        <span>{line.slice(2)}</span>
-                                      </>
-                                    )}
-                                    {!line.startsWith("- ") && line.trim() && <span>{line}</span>}
-                                  </li>
-                                ))}
-                              </ul>
-                            )
-                          }
-                          return (
-                            <p key={i} className="whitespace-pre-wrap">
-                              {paragraph}
-                            </p>
-                          )
-                        })}
+                    {message.role === "assistant" && (
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center shrink-0">
+                        <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                       </div>
-                    ) : (
-                      <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    )}
+                    <div
+                      className={cn(
+                        "rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-[85%] shadow-sm",
+                        message.role === "user"
+                          ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+                          : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
+                      )}
+                    >
+                      {message.role === "assistant" ? (
+                        <div className="text-xs sm:text-sm leading-relaxed space-y-2">
+                          {messageText.split("\n\n").map((paragraph, i) => {
+                            // Handle markdown-style headers
+                            if (paragraph.startsWith("# ")) {
+                              return (
+                                <h3 key={i} className="font-bold text-sm sm:text-base mt-2 first:mt-0">
+                                  {paragraph.slice(2)}
+                                </h3>
+                              )
+                            }
+                            if (paragraph.startsWith("## ")) {
+                              return (
+                                <h4 key={i} className="font-semibold text-xs sm:text-sm mt-2">
+                                  {paragraph.slice(3)}
+                                </h4>
+                              )
+                            }
+                            // Handle bullet points
+                            if (paragraph.includes("\n- ") || paragraph.startsWith("- ")) {
+                              const lines = paragraph.split("\n")
+                              return (
+                                <ul key={i} className="space-y-1 ml-1">
+                                  {lines.map((line, j) => (
+                                    <li key={j} className="flex items-start gap-2">
+                                      {line.startsWith("- ") && (
+                                        <>
+                                          <span className="text-purple-500 mt-0.5">•</span>
+                                          <span>{line.slice(2)}</span>
+                                        </>
+                                      )}
+                                      {!line.startsWith("- ") && line.trim() && <span>{line}</span>}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )
+                            }
+                            return (
+                              <p key={i} className="whitespace-pre-wrap">
+                                {paragraph}
+                              </p>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">{messageText}</p>
+                      )}
+                    </div>
+                    {message.role === "user" && (
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center shrink-0">
+                        <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                      </div>
                     )}
                   </div>
-                  {message.role === "user" && (
-                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center shrink-0">
-                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                    </div>
-                  )}
-                </div>
-              ))}
+                )
+              })}
 
               {isLoading && (
                 <div className="flex gap-2 sm:gap-3 justify-start">
@@ -440,8 +456,8 @@ export function LandingPageChatbot() {
                 </Button>
               </label>
               <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ihre Frage hier eingeben..."
                 disabled={isLoading}
@@ -450,7 +466,7 @@ export function LandingPageChatbot() {
               <Button
                 type="submit"
                 size="icon"
-                disabled={isLoading || (!input.trim() && attachedImages.length === 0)}
+                disabled={isLoading || (!inputValue.trim() && attachedImages.length === 0)}
                 aria-label="Nachricht senden"
                 className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 h-9 w-9 sm:h-10 sm:w-10"
               >

@@ -530,9 +530,27 @@ export function UserProvider({
     setIsLoggingOut(true)
 
     try {
+      // First clear all client-side state immediately
+      persistUserToStorage(null)
+      setCurrentUser(null)
+      setSuperAdmins([])
+
+      // Reset the load attempt flag so next login will fetch fresh data
+      hasAttemptedLoad.current = false
+
+      // Clear the Supabase client cache
+      const supabase = getSupabase()
+      if (supabase) {
+        await supabase.auth.signOut({ scope: "global" })
+      }
+
+      // Reset the Supabase client reference to force a new client on next login
+      supabaseRef.current = null
+
+      // Call the logout API to clear server-side cookies
       const response = await fetch("/api/auth/logout", {
         method: "POST",
-        credentials: "include", // Ensure cookies are sent
+        credentials: "include",
       })
 
       if (!response.ok) {
@@ -541,16 +559,30 @@ export function UserProvider({
     } catch (error) {
       console.error("[user-context] Logout error:", error)
     } finally {
-      // Always clear client state after backend call attempt
-      persistUserToStorage(null)
-      setCurrentUser(null)
       setIsLoggingOut(false)
+      setIsAuthInitialized(false)
 
+      // Force a hard navigation to clear all client state
       if (typeof window !== "undefined") {
-        window.location.href = "/auth/login"
+        // Clear any remaining storage items
+        try {
+          localStorage.removeItem("effizienz_current_user")
+          sessionStorage.removeItem("effizienz_current_user")
+          // Clear all sb- prefixed items from localStorage
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith("sb-") || key.includes("supabase")) {
+              localStorage.removeItem(key)
+            }
+          })
+        } catch (e) {
+          console.error("[user-context] Error clearing storage:", e)
+        }
+
+        // Use window.location.replace for a clean navigation without history
+        window.location.replace("/auth/login")
       }
     }
-  }, [persistUserToStorage, isLoggingOut])
+  }, [persistUserToStorage, isLoggingOut, getSupabase])
 
   const contextValue = useMemo(
     () => ({

@@ -31,13 +31,15 @@ export async function POST() {
     })
 
     // Sign out from Supabase (this will clear the session)
-    await supabase.auth.signOut()
+    await supabase.auth.signOut({ scope: "global" })
 
     const allCookies = cookieStore.getAll()
     allCookies.forEach((cookie) => {
-      if (cookie.name.startsWith("sb-")) {
+      // Clear all Supabase cookies
+      if (cookie.name.startsWith("sb-") || cookie.name.includes("supabase")) {
         response.cookies.set(cookie.name, "", {
           expires: new Date(0),
+          maxAge: 0,
           path: "/",
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
@@ -46,12 +48,24 @@ export async function POST() {
       }
     })
 
-    response.cookies.set("effizienz_session", "", {
-      expires: new Date(0),
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+    const supabaseProjectRef = supabaseUrl.split("//")[1]?.split(".")[0] || ""
+    const commonCookieNames = [
+      `sb-${supabaseProjectRef}-auth-token`,
+      `sb-${supabaseProjectRef}-auth-token-code-verifier`,
+      "sb-access-token",
+      "sb-refresh-token",
+      "effizienz_session",
+    ]
+
+    commonCookieNames.forEach((name) => {
+      response.cookies.set(name, "", {
+        expires: new Date(0),
+        maxAge: 0,
+        path: "/",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      })
     })
 
     return response

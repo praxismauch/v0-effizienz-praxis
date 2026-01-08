@@ -418,35 +418,67 @@ export default function ZeiterfassungPageClient() {
 
   useEffect(() => {
     const loadData = async () => {
+      if (!user?.id || !practiceId) {
+        console.log("[v0] Zeiterfassung: Waiting for user/practice", { userId: user?.id, practiceId })
+        return
+      }
+
       // Prevent duplicate loads for same practice
-      if (loadingPracticeIdRef.current === practiceId) return
+      if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) {
+        console.log("[v0] Zeiterfassung: Already loaded for practice", practiceId)
+        return
+      }
+
       loadingPracticeIdRef.current = practiceId
+      console.log("[v0] Zeiterfassung: Starting data load", { userId: user.id, practiceId })
 
       setIsLoading(true)
-      await loadCurrentStatus()
-      await loadTeamOverview()
-      await loadMonthlyData()
-      await loadCorrectionRequests()
-      await loadPlausibilityIssues()
-      setIsLoading(false)
-      hasLoadedRef.current = true
+      try {
+        await Promise.all([
+          loadCurrentStatus(),
+          loadTeamOverview(),
+          loadMonthlyData(),
+          loadCorrectionRequests(),
+          loadPlausibilityIssues(),
+          loadHomeofficePolicy(),
+        ])
+        hasLoadedRef.current = true
+        console.log("[v0] Zeiterfassung: Data loaded successfully")
+      } catch (error) {
+        console.error("[v0] Zeiterfassung: Error loading data", error)
+        toast.error("Fehler beim Laden der Zeiterfassung")
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    if (user && practiceId && !hasLoadedRef.current) {
-      loadData()
-      loadHomeofficePolicy()
-    }
+    loadData()
 
     // Refresh alle 30 Sekunden
     const interval = setInterval(() => {
-      if (user && practiceId) {
+      if (user?.id && practiceId && hasLoadedRef.current) {
         loadCurrentStatus()
         loadTeamOverview()
       }
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [user, practiceId]) // Simplified dependencies to prevent infinite loop
+  }, [
+    user?.id,
+    practiceId,
+    loadCurrentStatus,
+    loadTeamOverview,
+    loadMonthlyData,
+    loadCorrectionRequests,
+    loadPlausibilityIssues,
+    loadHomeofficePolicy,
+  ])
+
+  useEffect(() => {
+    if (practiceId && loadingPracticeIdRef.current !== practiceId) {
+      hasLoadedRef.current = false
+    }
+  }, [practiceId])
 
   // Stempel-Funktion
   const handleStamp = async () => {

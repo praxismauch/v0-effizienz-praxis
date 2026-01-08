@@ -1,12 +1,24 @@
 import { createAdminClient, createServerClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Authorization check
+    const userId = request.headers.get("x-user-id")
+
+    if (!userId) {
+      const authSupabase = await createServerClient()
+      const {
+        data: { user: authUser },
+      } = await authSupabase.auth.getUser()
+
+      if (!authUser) {
+        return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
+      }
+    }
+
     const authSupabase = await createServerClient()
     const {
       data: { user: authUser },
@@ -16,8 +28,11 @@ export async function GET() {
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
     }
 
-    // Check if user is super admin using isSuperAdminRole helper
-    const { data: userData } = await authSupabase.from("users").select("role").eq("id", authUser.id).single()
+    const { data: userData, error: userDataError } = await authSupabase
+      .from("users")
+      .select("role")
+      .eq("id", authUser.id)
+      .single()
 
     if (!userData || !isSuperAdminRole(userData.role)) {
       return NextResponse.json({ error: "Zugriff verweigert: Super-Admin-Berechtigung erforderlich" }, { status: 403 })
@@ -45,7 +60,7 @@ export async function GET() {
       .order("created_at", { ascending: false })
 
     if (usersError) {
-      console.error("[v0] Error fetching users:", usersError)
+      console.error("Error fetching users:", usersError)
       return NextResponse.json({ error: usersError.message }, { status: 500 })
     }
 
@@ -56,7 +71,7 @@ export async function GET() {
       .is("deleted_at", null)
 
     if (practicesError) {
-      console.error("[v0] Error fetching practices:", practicesError)
+      console.error("Error fetching practices:", practicesError)
       return NextResponse.json({ error: practicesError.message }, { status: 500 })
     }
 
@@ -67,7 +82,7 @@ export async function GET() {
       .eq("status", "active")
 
     if (puError) {
-      console.error("[v0] Error fetching practice_users:", puError)
+      console.error("Error fetching practice_users:", puError)
     }
 
     // Build maps for efficient lookups
@@ -147,14 +162,26 @@ export async function GET() {
       practices: practices?.map((p) => ({ id: p.id, name: p.name, color: p.color })) || [],
     })
   } catch (error) {
-    console.error("[v0] Error in GET /api/super-admin/users:", error)
+    console.error("Error in GET /api/super-admin/users:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    // Authorization check
+    const userId = request.headers.get("x-user-id")
+
+    if (!userId) {
+      const authSupabase = await createServerClient()
+      const {
+        data: { user: authUser },
+      } = await authSupabase.auth.getUser()
+
+      if (!authUser) {
+        return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
+      }
+    }
+
     const authSupabase = await createServerClient()
     const {
       data: { user: authUser },
@@ -164,8 +191,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
     }
 
-    // Check if user is super admin using isSuperAdminRole helper
-    const { data: userData } = await authSupabase.from("users").select("role").eq("id", authUser.id).single()
+    const { data: userData, error: userDataError } = await authSupabase
+      .from("users")
+      .select("role")
+      .eq("id", authUser.id)
+      .single()
 
     if (!userData || !isSuperAdminRole(userData.role)) {
       return NextResponse.json({ error: "Zugriff verweigert: Super-Admin-Berechtigung erforderlich" }, { status: 403 })
@@ -188,7 +218,7 @@ export async function POST(request: Request) {
     }
 
     // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: createAuthError } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -198,10 +228,10 @@ export async function POST(request: Request) {
       },
     })
 
-    if (authError || !authData.user) {
-      console.error("[v0] Error creating auth user:", authError)
+    if (createAuthError || !authData.user) {
+      console.error("Error creating auth user:", createAuthError)
       return NextResponse.json(
-        { error: authError?.message || "Benutzer konnte nicht erstellt werden" },
+        { error: createAuthError?.message || "Benutzer konnte nicht erstellt werden" },
         { status: 500 },
       )
     }
@@ -212,7 +242,7 @@ export async function POST(request: Request) {
     const firstName = nameParts[0] || name
     const lastName = nameParts.slice(1).join(" ") || ""
 
-    const { data: newUser, error: userError } = await supabase
+    const { data: newUser, error: createUserError } = await supabase
       .from("users")
       .insert({
         id: authData.user.id,
@@ -223,20 +253,20 @@ export async function POST(request: Request) {
         role: role || "user",
         is_active: true,
         practice_id: validPracticeId,
-        approval_status: "approved", // Auto-approve when created by super admin
+        approval_status: "approved",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .select()
       .single()
 
-    if (userError) {
-      console.error("[v0] Error creating user record:", userError)
+    if (createUserError) {
+      console.error("Error creating user record:", createUserError)
       // Cleanup auth user on failure
       await supabase.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json(
         {
-          error: `Benutzerdatensatz konnte nicht erstellt werden: ${userError.message}`,
+          error: `Benutzerdatensatz konnte nicht erstellt werden: ${createUserError.message}`,
         },
         { status: 500 },
       )
@@ -255,8 +285,7 @@ export async function POST(request: Request) {
       })
 
       if (puError) {
-        console.error("[v0] Error creating practice_users entry:", puError)
-        // Non-fatal, user is still created
+        console.error("Error creating practice_users entry:", puError)
       }
     }
 
@@ -273,7 +302,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error("[v0] Exception in POST /api/super-admin/users:", error)
+    console.error("Exception in POST /api/super-admin/users:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -33,9 +33,13 @@ const publicRoutesSet = new Set([
   "/kontakt",
   "/karriere",
   "/effizienz",
+  "/academy",
+  "/leitbild",
 ])
 
 const PUBLIC_ROUTE_PREFIXES = ["/features", "/blog"]
+
+const PUBLIC_API_ROUTES = new Set(["/api/webhooks", "/api/cron", "/api/public", "/api/csrf", "/api/landing-chatbot"])
 
 let cachedSupabaseUrl: string | undefined
 let cachedSupabaseAnonKey: string | undefined
@@ -51,14 +55,15 @@ function isPublicRoute(pathname: string): boolean {
     }
   }
 
-  return (
-    pathname.startsWith("/api/webhooks") ||
-    pathname.startsWith("/api/cron") ||
-    pathname.startsWith("/api/public") ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon.ico") ||
-    pathname.includes(".")
-  )
+  if (pathname.startsWith("/api/")) {
+    for (const publicApiRoute of PUBLIC_API_ROUTES) {
+      if (pathname.startsWith(publicApiRoute)) {
+        return true
+      }
+    }
+  }
+
+  return pathname.startsWith("/_next") || pathname.startsWith("/favicon.ico") || pathname.includes(".")
 }
 
 async function localSignOut(supabase: ReturnType<typeof createServerClient>, response: NextResponse): Promise<void> {
@@ -143,9 +148,6 @@ export async function updateSession(request: NextRequest) {
     while (refreshTokenLock.has(lockKey) && Date.now() - startTime < 500) {
       await new Promise((resolve) => setTimeout(resolve, 50))
     }
-    if (refreshTokenLock.has(lockKey)) {
-      // Lock timeout - proceed without waiting further
-    }
   }
 
   refreshTokenLock.set(lockKey, Date.now())
@@ -183,13 +185,34 @@ export async function updateSession(request: NextRequest) {
 
     const { user, error } = await retryGetUser(supabase)
 
-    if (error && error.message?.toLowerCase().includes("refresh token")) {
-      await localSignOut(supabase, supabaseResponse)
+    if (!user || error) {
+      if (error && error.message?.toLowerCase().includes("refresh token")) {
+        await localSignOut(supabase, supabaseResponse)
+      }
+
+      if (pathname.startsWith("/api/")) {
+        // Return 401 for API routes
+        return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
+      } else {
+        // Redirect to login for page routes
+        const loginUrl = new URL("/auth/login", request.url)
+        loginUrl.searchParams.set("redirect", pathname)
+        return NextResponse.redirect(loginUrl)
+      }
     }
+
+    supabaseResponse.headers.set("x-user-id", user.id)
+    supabaseResponse.headers.set("x-user-email", user.email || "")
 
     return supabaseResponse
   } catch (error) {
-    return supabaseResponse
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Authentifizierungsfehler" }, { status: 500 })
+    } else {
+      const loginUrl = new URL("/auth/login", request.url)
+      loginUrl.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(loginUrl)
+    }
   } finally {
     refreshTokenLock.delete(lockKey)
   }

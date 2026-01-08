@@ -1,27 +1,35 @@
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
-
-function getAdminClient() {
-  return createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
+    console.log("[v0] GET sidebar-preferences - starting")
     const { userId } = await params
     const supabase = await createClient()
 
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser()
+
+    console.log("[v0] GET sidebar-preferences - auth check:", {
+      userId,
+      authenticatedUser: user?.id,
+      authError: authError?.message,
+    })
+
     if (!user || user.id !== userId) {
+      console.log("[v0] GET sidebar-preferences - unauthorized")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const practiceId = searchParams.get("practice_id")
 
-    const adminClient = getAdminClient()
+    console.log("[v0] GET sidebar-preferences - fetching for:", { userId, practiceId })
+
+    const adminClient = createAdminClient()
     let query = adminClient.from("user_sidebar_preferences").select("*").eq("user_id", userId)
 
     if (practiceId) {
@@ -31,37 +39,55 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data, error } = await query.maybeSingle()
 
     if (error) {
-      console.error("Error fetching sidebar preferences:", error)
+      console.error("[v0] Error fetching sidebar preferences:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    console.log("[v0] GET sidebar-preferences - success:", { hasData: !!data })
     return NextResponse.json({ preferences: data || null })
   } catch (error) {
-    console.error("Error in sidebar preferences GET:", error)
+    console.error("[v0] Error in sidebar preferences GET:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
+    console.log("[v0] POST sidebar-preferences - starting")
     const { userId } = await params
     const supabase = await createClient()
 
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser()
+
+    console.log("[v0] POST sidebar-preferences - auth check:", {
+      userId,
+      authenticatedUser: user?.id,
+      authError: authError?.message,
+    })
+
     if (!user || user.id !== userId) {
+      console.log("[v0] POST sidebar-preferences - unauthorized")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
     const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites, collapsed_sections } = body
 
+    console.log("[v0] POST sidebar-preferences - body:", {
+      practice_id,
+      hasExpandedGroups: !!expanded_groups,
+      hasExpandedItems: !!expanded_items,
+      hasFavorites: !!favorites,
+    })
+
     if (!practice_id) {
       return NextResponse.json({ error: "practice_id is required" }, { status: 400 })
     }
 
-    const adminClient = getAdminClient()
+    const adminClient = createAdminClient()
 
     // First check if the preference exists
     const { data: existing } = await adminClient
@@ -81,6 +107,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (favorites !== undefined) updateData.favorites = favorites
       if (collapsed_sections !== undefined) updateData.collapsed_sections = collapsed_sections
 
+      console.log("[v0] POST sidebar-preferences - updating existing")
       result = await adminClient
         .from("user_sidebar_preferences")
         .update(updateData)
@@ -90,6 +117,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .single()
     } else {
       // Insert new
+      console.log("[v0] POST sidebar-preferences - inserting new")
       result = await adminClient
         .from("user_sidebar_preferences")
         .insert({
@@ -113,13 +141,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     if (result.error) {
-      console.error("Error saving sidebar preferences:", result.error)
+      console.error("[v0] Error saving sidebar preferences:", result.error)
       return NextResponse.json({ error: result.error.message }, { status: 500 })
     }
 
+    console.log("[v0] POST sidebar-preferences - success")
     return NextResponse.json({ preferences: result.data })
   } catch (error) {
-    console.error("Error in sidebar preferences POST:", error)
+    console.error("[v0] Error in sidebar preferences POST:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

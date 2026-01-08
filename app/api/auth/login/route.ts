@@ -17,14 +17,18 @@ export async function POST(request: Request) {
 
     const cookieStore = await cookies()
 
+    // This is the same pattern used in the logout route that works correctly
+    let response = NextResponse.json({ success: false }, { status: 401 })
+
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
+          // This ensures cookies are sent back to the browser
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, {
+            response.cookies.set(name, value, {
               ...options,
               httpOnly: true,
               secure: process.env.NODE_ENV === "production",
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
           id: authData.user.id,
           email: authData.user.email!,
           name: authData.user.user_metadata?.name ?? authData.user.email!.split("@")[0],
-          role: authData.user.user_metadata?.role ?? "user", // generic default
+          role: authData.user.user_metadata?.role ?? "user",
           is_active: true,
           practice_id: authData.user.user_metadata?.practice_id ?? null,
         })
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to create user profile" }, { status: 500 })
       }
 
-      return NextResponse.json(
+      response = NextResponse.json(
         {
           success: true,
           user: {
@@ -82,6 +86,21 @@ export async function POST(request: Request) {
         },
         { status: 200 },
       )
+
+      // Re-apply any cookies that were set during auth
+      const allCookies = cookieStore.getAll()
+      allCookies.forEach((cookie) => {
+        if (cookie.name.startsWith("sb-")) {
+          response.cookies.set(cookie.name, cookie.value, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+          })
+        }
+      })
+
+      return response
     }
 
     if (userError) {
@@ -99,7 +118,7 @@ export async function POST(request: Request) {
       )
     }
 
-    return NextResponse.json(
+    const successResponse = NextResponse.json(
       {
         success: true,
         user: {
@@ -114,6 +133,31 @@ export async function POST(request: Request) {
       },
       { status: 200 },
     )
+
+    // Copy all cookies from the intermediate response to the final response
+    response.cookies.getAll().forEach((cookie) => {
+      successResponse.cookies.set(cookie.name, cookie.value, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      })
+    })
+
+    // Also check if there are any sb- cookies in the cookieStore that need to be forwarded
+    const allCookies = cookieStore.getAll()
+    allCookies.forEach((cookie) => {
+      if (cookie.name.startsWith("sb-")) {
+        successResponse.cookies.set(cookie.name, cookie.value, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+        })
+      }
+    })
+
+    return successResponse
   } catch (error) {
     console.error("[auth/login] Error:", error)
     const message = error instanceof Error ? error.message : "Unbekannter Fehler"

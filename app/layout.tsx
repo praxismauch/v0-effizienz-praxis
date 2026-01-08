@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   title: "Effizienz Praxis",
   description: "Struktur. Erfolg. Leichtigkeit. - Moderne Praxismanagement Software",
   icons: {
-    icon: "/favicon.svg",
-    apple: "/icon.svg",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
   generator: "v0.app",
 }

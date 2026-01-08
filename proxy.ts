@@ -118,6 +118,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
+  const supabaseResponse = await updateSession(request)
+
   if (pathname.startsWith("/api/")) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "unknown"
 
@@ -137,11 +139,8 @@ export async function proxy(request: NextRequest) {
       )
     }
 
-    const response = NextResponse.next()
-    return addSecurityHeaders(response)
+    return addSecurityHeaders(supabaseResponse)
   }
-
-  const supabaseResponse = await updateSession(request)
 
   // If updateSession returned a response (e.g., with updated cookies), use it
   if (supabaseResponse && supabaseResponse !== NextResponse.next()) {

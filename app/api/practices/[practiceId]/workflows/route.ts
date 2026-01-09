@@ -13,6 +13,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ workflows: [] }, { status: 200 })
     }
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     let supabase
     try {
       const access = await requirePracticeAccess(practiceId)
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           *,
           steps:workflow_steps(*)
         `)
-        .eq("practice_id", practiceId)
+        .eq("practice_id", practiceIdInt)
         .order("created_at", { ascending: false })
 
       if (error) {
@@ -115,6 +117,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
     }
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
     const userId = user.id
 
@@ -140,7 +144,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       category: body.category || "general",
       status: body.status || "draft",
       created_by: userId,
-      practice_id: practiceId,
+      practice_id: practiceIdInt,
       is_template: body.isTemplate || false,
       template_id: body.templateId || null,
       trigger_type: "manual",
@@ -249,6 +253,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
     }
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     let body
@@ -283,7 +289,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .from("workflows")
       .update(dbUpdates)
       .eq("id", id)
-      .eq("practice_id", practiceId)
+      .eq("practice_id", practiceIdInt)
       .select(`
         *,
         steps:workflow_steps(*)

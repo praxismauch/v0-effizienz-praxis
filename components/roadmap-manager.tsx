@@ -71,6 +71,10 @@ interface RoadmapItem {
   completed_at: string | null
   created_at: string
   updated_at: string
+  is_ai_generated: boolean
+  ai_reasoning: string
+  ai_suggested_quarter: string
+  target_quarter: string
 }
 
 interface AIFeatureSuggestion {
@@ -366,6 +370,10 @@ function RoadmapManager({ userId }: RoadmapManagerProps) {
           effort: suggestion.effort,
           impact: suggestion.impact,
           category: suggestion.category,
+          is_ai_generated: true,
+          ai_reasoning: suggestion.reasoning,
+          ai_suggested_quarter: suggestion.suggestedQuarter,
+          target_quarter: suggestion.suggestedQuarter,
           metadata: { aiGenerated: true, reasoning: suggestion.reasoning },
           created_by: userId,
         }),

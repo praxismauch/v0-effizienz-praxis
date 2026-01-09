@@ -8,6 +8,8 @@ export async function GET(request: NextRequest, { params }: { params: { practice
     const { user, adminClient: supabase } = await requirePracticeAccess(practiceId)
     const currentUserId = user.id
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     const { searchParams } = new URL(request.url)
 
     const includeSubgoals = searchParams.get("includeSubgoals") === "true"
@@ -18,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
     let query = supabase
       .from("goals")
       .select("*")
-      .eq("practice_id", String(practiceId))
+      .eq("practice_id", practiceIdInt)
       .is("deleted_at", null)
       .order("end_date", { ascending: true })
 
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
           supabase
             .from("user_goal_order")
             .select("goal_id, display_order")
-            .eq("practice_id", String(practiceId))
+            .eq("practice_id", practiceIdInt)
             .eq("user_id", currentUserId)
             .is("deleted_at", null),
         { data: null, error: null },
@@ -150,12 +152,14 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     const { practiceId } = await params
     const { user, adminClient: supabase } = await requirePracticeAccess(practiceId)
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     const body = await request.json()
 
     const createdByValue = user.id
 
     const goalData = {
-      practice_id: practiceId,
+      practice_id: practiceIdInt,
       created_by: createdByValue,
       assigned_to: body.assignedTo || body.assigned_to || null,
       parent_goal_id: body.parentGoalId || body.parent_goal_id || null,

@@ -14,6 +14,21 @@ export async function POST(request: Request) {
 
     const supabase = await createAdminClient()
 
+    const { data: existingEntry, error: checkError } = await supabase
+      .from("waitlist")
+      .select("id, email")
+      .eq("email", email)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error("[v0] Error checking existing email:", checkError)
+    }
+
+    if (existingEntry) {
+      console.log("[v0] Email already exists:", existingEntry.id)
+      return NextResponse.json({ error: "Diese E-Mail-Adresse ist bereits registriert." }, { status: 409 })
+    }
+
     const { data: waitlistEntry, error: insertError } = await supabase
       .from("waitlist")
       .insert({
@@ -34,6 +49,7 @@ export async function POST(request: Request) {
         // Unique constraint violation - email already exists
         return NextResponse.json({ error: "Diese E-Mail-Adresse ist bereits registriert." }, { status: 409 })
       }
+      console.error("[v0] Insert error:", insertError)
       throw insertError
     }
 

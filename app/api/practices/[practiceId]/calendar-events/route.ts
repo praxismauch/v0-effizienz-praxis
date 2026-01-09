@@ -9,6 +9,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     Logger.info("calendar-events-api", "Fetching calendar events", { practiceId })
 
     if (!practiceId || practiceId === "undefined") {
@@ -25,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         supabase
           .from("calendar_events")
           .select("*")
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .is("deleted_at", null)
           .order("start_date", { ascending: true }),
 
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
               candidate:candidates(first_name, last_name, email)
             )
           `)
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .is("deleted_at", null)
           .not("scheduled_date", "is", null)
           .order("scheduled_date", { ascending: true }),
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             *,
             training_course:training_courses(name, category)
           `)
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .is("deleted_at", null)
           .order("start_date", { ascending: true }),
       ])
@@ -112,7 +114,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ? `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim()
         : "Unbekannt"
 
-      // Calculate end time based on duration
       let endTime = interview.scheduled_time
       if (interview.scheduled_time && interview.duration_minutes) {
         const [hours, minutes] = interview.scheduled_time.split(":").map(Number)
@@ -143,7 +144,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         isRecurringInstance: false,
         parentEventId: null,
         lastGeneratedDate: null,
-        // Additional interview-specific fields
         interviewType: interview.interview_type,
         interviewStatus: interview.status,
         candidateEmail: candidate?.email,
@@ -176,7 +176,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         isRecurringInstance: false,
         parentEventId: null,
         lastGeneratedDate: null,
-        // Additional training-specific fields
         trainingCourseId: training.training_course_id,
         trainingStatus: training.status,
         meetingLink: training.meeting_link,
@@ -209,6 +208,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     const body = await request.json()
 
     if (!body.title || body.title.trim() === "") {
@@ -229,7 +230,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       type: eventType,
       priority: body.priority || "medium",
       created_by: userId,
-      practice_id: practiceId,
+      practice_id: practiceIdInt,
       is_all_day: body.isAllDay || false,
       attendees: body.attendees || [],
       location: body.location || null,

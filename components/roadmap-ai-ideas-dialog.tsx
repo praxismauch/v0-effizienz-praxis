@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
-import { ThumbsUp, ThumbsDown, Plus, Loader2, Sparkles, TrendingUp, Target, Zap } from "lucide-react"
+import { ThumbsUp, ThumbsDown, Plus, Loader2, Sparkles, TrendingUp, Target, Zap, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface AIFeatureSuggestion {
@@ -64,6 +64,7 @@ export function RoadmapAIIdeasDialog({
   const [feedbackStates, setFeedbackStates] = useState<Record<string, "good" | "bad" | null>>({})
   const [feedbackReasons, setFeedbackReasons] = useState<Record<string, string>>({})
   const [processingIdeas, setProcessingIdeas] = useState<Set<string>>(new Set())
+  const [addedIdeas, setAddedIdeas] = useState<Set<string>>(new Set())
   const { toast } = useToast()
 
   const handleFeedback = async (suggestion: AIFeatureSuggestion, type: "good" | "bad") => {
@@ -104,6 +105,8 @@ export function RoadmapAIIdeasDialog({
     try {
       await onAddSuggestion(suggestion)
 
+      setAddedIdeas((prev) => new Set(prev).add(key))
+
       // Mark as implemented feedback
       await fetch("/api/roadmap/idea-feedback", {
         method: "POST",
@@ -119,6 +122,18 @@ export function RoadmapAIIdeasDialog({
           userId: userId || "super-admin",
           aiReasoning: suggestion.reasoning,
         }),
+      })
+
+      toast({
+        title: "Zur Roadmap hinzugefügt",
+        description: `"${suggestion.title}" wurde gespeichert`,
+      })
+    } catch (error) {
+      console.error("[v0] Error adding suggestion:", error)
+      toast({
+        title: "Fehler",
+        description: "Konnte nicht zur Roadmap hinzugefügt werden",
+        variant: "destructive",
       })
     } finally {
       setProcessingIdeas((prev) => {
@@ -139,6 +154,7 @@ export function RoadmapAIIdeasDialog({
           </DialogTitle>
           <DialogDescription>
             Bewerten Sie die Vorschläge mit Daumen hoch/runter. Ihr Feedback verbessert zukünftige KI-Generierungen.
+            Hinzugefügte Ideen werden dauerhaft in der Roadmap gespeichert.
           </DialogDescription>
         </DialogHeader>
 
@@ -148,17 +164,20 @@ export function RoadmapAIIdeasDialog({
               const key = suggestion.title
               const feedback = feedbackStates[key]
               const isProcessing = processingIdeas.has(key)
+              const isAdded = addedIdeas.has(key)
               const PriorityIcon = priorityConfig[suggestion.priority].icon
 
               return (
                 <div
                   key={index}
                   className={`p-4 border rounded-lg space-y-3 transition-all ${
-                    feedback === "good"
-                      ? "bg-green-50 border-green-200 dark:bg-green-950/20"
-                      : feedback === "bad"
-                        ? "bg-red-50 border-red-200 dark:bg-red-950/20"
-                        : "bg-card"
+                    isAdded
+                      ? "bg-green-50 border-green-300 dark:bg-green-950/30"
+                      : feedback === "good"
+                        ? "bg-green-50 border-green-200 dark:bg-green-950/20"
+                        : feedback === "bad"
+                          ? "bg-red-50 border-red-200 dark:bg-red-950/20"
+                          : "bg-card"
                   }`}
                 >
                   {/* Header */}
@@ -167,6 +186,12 @@ export function RoadmapAIIdeasDialog({
                       <h3 className="font-semibold text-lg flex items-center gap-2">
                         <PriorityIcon className="h-4 w-4" />
                         {suggestion.title}
+                        {isAdded && (
+                          <Badge variant="default" className="bg-green-600 ml-2">
+                            <Check className="h-3 w-3 mr-1" />
+                            Hinzugefügt
+                          </Badge>
+                        )}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">{suggestion.description}</p>
                     </div>
@@ -178,6 +203,7 @@ export function RoadmapAIIdeasDialog({
                         variant={feedback === "good" ? "default" : "outline"}
                         onClick={() => handleFeedback(suggestion, "good")}
                         className="gap-1"
+                        disabled={isAdded}
                       >
                         <ThumbsUp className="h-3.5 w-3.5" />
                       </Button>
@@ -186,16 +212,25 @@ export function RoadmapAIIdeasDialog({
                         variant={feedback === "bad" ? "destructive" : "outline"}
                         onClick={() => handleFeedback(suggestion, "bad")}
                         className="gap-1"
+                        disabled={isAdded}
                       >
                         <ThumbsDown className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="sm" onClick={() => handleAdd(suggestion)} disabled={isProcessing} className="gap-1">
+                      <Button
+                        size="sm"
+                        onClick={() => handleAdd(suggestion)}
+                        disabled={isProcessing || isAdded}
+                        className="gap-1"
+                        variant={isAdded ? "outline" : "default"}
+                      >
                         {isProcessing ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : isAdded ? (
+                          <Check className="h-3.5 w-3.5" />
                         ) : (
                           <Plus className="h-3.5 w-3.5" />
                         )}
-                        Hinzufügen
+                        {isAdded ? "Gespeichert" : "Hinzufügen"}
                       </Button>
                     </div>
                   </div>
@@ -219,7 +254,7 @@ export function RoadmapAIIdeasDialog({
                   <p className="text-xs text-muted-foreground italic">💡 {suggestion.reasoning}</p>
 
                   {/* Feedback reason textarea (shown after bad feedback) */}
-                  {feedback === "bad" && (
+                  {feedback === "bad" && !isAdded && (
                     <Textarea
                       placeholder="Warum ist diese Idee nicht gut? (Optional)"
                       value={feedbackReasons[key] || ""}

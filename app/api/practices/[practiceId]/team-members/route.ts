@@ -41,6 +41,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })
     }
 
+    const practiceIdStr = String(practiceId)
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     let supabase
     try {
       const access = await requirePracticeAccess(practiceId)
@@ -51,10 +54,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let customRoleOrder: string[] | undefined
     try {
+      // practice_settings uses integer
       const { data: practiceSettings } = await supabase
         .from("practice_settings")
         .select("system_settings")
-        .eq("practice_id", practiceId)
+        .eq("practice_id", practiceIdInt)
         .single()
 
       customRoleOrder = practiceSettings?.system_settings?.team_member_role_order
@@ -79,15 +83,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             last_name,
             users(id, name, email, avatar, is_active, first_name, last_name, role, date_of_birth)
           `)
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdStr)
           .order("created_at", { ascending: false })
 
         if (res.error) {
           if (isRateLimitError(res.error)) {
             throw res.error
           }
+          console.error("[v0] team_members GET error:", res.error.message)
           return { data: [], error: res.error }
         }
+        console.log("[v0] team_members GET practiceId:", practiceIdStr, "result count:", res.data?.length || 0)
         return res
       })
 
@@ -99,10 +105,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           { status: 503, headers: { "Retry-After": "5" } },
         )
       }
-      return NextResponse.json([])
-    }
-
-    if (!members || !Array.isArray(members)) {
       return NextResponse.json([])
     }
 
@@ -187,6 +189,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
 
+    const practiceIdStr = String(practiceId)
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const body = await request.json()
@@ -212,6 +217,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (body.email && body.email.trim() !== "") {
       userId = uuidv4()
 
+      // users table uses integer for practice_id
       const { data: userData, error: userError } = await supabase
         .from("users")
         .insert({
@@ -222,7 +228,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           email: body.email.trim(),
           role: userRole,
           avatar: body.avatar || null,
-          practice_id: String(practiceId),
+          practice_id: practiceIdInt,
           is_active: true,
           date_of_birth: body.date_of_birth || null,
         })
@@ -240,7 +246,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .insert({
         id: teamMemberId,
         user_id: userId,
-        practice_id: String(practiceId),
+        practice_id: practiceIdStr,
         role: userRole,
         department: body.department || null,
         status: "active",

@@ -18,7 +18,6 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 50
       throw error
     }
   }
-  // Return null instead of throwing on rate limit exhaustion
   console.log("[v0] Rate limit retries exhausted, returning null")
   return null
 }
@@ -35,18 +34,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json([])
     }
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const result = await withRetry(() =>
       supabase
         .from("todos")
         .select("*")
-        .eq("practice_id", String(practiceId))
+        .eq("practice_id", practiceIdInt)
         .is("deleted_at", null)
         .order("created_at", { ascending: false }),
     )
 
-    // If withRetry returned null (rate limited), return empty array
     if (result === null) {
       console.log("[v0] Todos GET - Rate limited, returning empty array")
       return NextResponse.json([])
@@ -75,6 +75,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { practiceId } = await params
     const body = await request.json()
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const createdBy = body.created_by || body.createdBy
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       due_date: body.due_date || body.dueDate || null,
       created_by: createdBy || null,
       assigned_to: assignedTo || null,
-      practice_id: practiceId,
+      practice_id: practiceIdInt,
       completed: body.completed || false,
       responsibility_id: body.responsibility_id || null,
       created_at: new Date().toISOString(),
@@ -113,7 +115,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (body.recurrence_type && body.recurrence_type !== "none") {
       newTodo.recurrence_type = body.recurrence_type
-      // Also set recurring_pattern for compatibility
       newTodo.recurring_pattern = body.recurrence_type
       newTodo.is_recurring = true
     }

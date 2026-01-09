@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
 
     const status = searchParams.get("status")
     const priority = searchParams.get("priority")
+    const category = searchParams.get("category")
+    const isAiGenerated = searchParams.get("ai_generated")
     const sortBy = searchParams.get("sortBy") || "priority"
     const sortOrder = searchParams.get("sortOrder") || "asc"
 
@@ -22,9 +24,18 @@ export async function GET(request: NextRequest) {
       query = query.eq("priority", priority)
     }
 
-    // Sortierung nach Priorität mit custom order
+    if (category) {
+      query = query.eq("category", category)
+    }
+
+    if (isAiGenerated === "true") {
+      query = query.eq("is_ai_generated", true)
+    } else if (isAiGenerated === "false") {
+      query = query.eq("is_ai_generated", false)
+    }
+
+    // Sortierung
     if (sortBy === "priority") {
-      // Custom sort: high -> medium -> low
       query = query.order("display_order", { ascending: sortOrder === "asc" })
     } else if (sortBy === "target_date") {
       query = query.order("target_date", { ascending: sortOrder === "asc", nullsFirst: false })
@@ -77,9 +88,13 @@ export async function POST(request: NextRequest) {
       category,
       tags,
       target_date,
+      target_quarter,
       assigned_to,
       created_by,
       metadata,
+      is_ai_generated = false,
+      ai_reasoning,
+      ai_suggested_quarter,
     } = body
 
     if (!title) {
@@ -108,11 +123,15 @@ export async function POST(request: NextRequest) {
         category,
         tags: tags || [],
         target_date,
+        target_quarter: target_quarter || ai_suggested_quarter,
         assigned_to,
         created_by,
         metadata: metadata || {},
         display_order: nextOrder,
         votes: 0,
+        is_ai_generated,
+        ai_reasoning,
+        ai_suggested_quarter,
       })
       .select()
       .single()

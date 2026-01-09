@@ -1,4 +1,4 @@
-import { consumeStream, convertToModelMessages, streamText, type UIMessage } from "ai"
+import { streamText } from "ai"
 
 export const maxDuration = 30
 
@@ -98,36 +98,23 @@ export async function POST(req: Request) {
       )
     }
 
-    const uiMessages: UIMessage[] = messages.map((m: { role: string; content: string }, index: number) => ({
-      id: `msg-${index}`,
-      role: m.role as "user" | "assistant",
-      content: m.content,
-      parts: [{ type: "text" as const, text: m.content }],
-    }))
-
-    const messagesWithSystem: UIMessage[] = [
-      {
-        id: "system-0",
-        role: "system" as const,
-        content: systemPrompt,
-        parts: [{ type: "text" as const, text: systemPrompt }],
-      },
-      ...uiMessages,
+    const messagesWithSystem = [
+      { role: "system" as const, content: systemPrompt },
+      ...messages.map((m: { role: string; content: string }) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
     ]
-
-    const prompt = convertToModelMessages(messagesWithSystem)
 
     const result = streamText({
       model: "openai/gpt-4o",
-      prompt,
+      messages: messagesWithSystem,
       maxOutputTokens: 500,
       temperature: 0.7,
       abortSignal: req.signal,
     })
 
-    return result.toUIMessageStreamResponse({
-      consumeSseStream: consumeStream,
-    })
+    return result.toTextStreamResponse()
   } catch (error) {
     console.error("[v0] Landing chatbot error:", error)
 

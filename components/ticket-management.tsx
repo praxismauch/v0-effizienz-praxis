@@ -443,10 +443,6 @@ export default function TicketManagement() {
 
       <Tabs value={activeStatusTab} onValueChange={setActiveStatusTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="alle">
-            Alle
-            <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{tickets.length}</span>
-          </TabsTrigger>
           <TabsTrigger value="offen">
             Offen
             <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">
@@ -464,6 +460,10 @@ export default function TicketManagement() {
             <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">
               {tickets.filter((t) => ["closed", "resolved", "wont_fix"].includes(t.status)).length}
             </span>
+          </TabsTrigger>
+          <TabsTrigger value="alle">
+            Alle
+            <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{tickets.length}</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>

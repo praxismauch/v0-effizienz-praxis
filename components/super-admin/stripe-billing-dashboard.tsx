@@ -19,51 +19,24 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "@/components/ui/use-toast"
 import { formatCurrency } from "@/lib/format-currency"
 import { formatDateDE } from "@/lib/utils"
 import {
-  CreditCard,
-  TrendingUp,
-  Users,
-  Euro,
-  Tag,
   Receipt,
-  ArrowUpRight,
   Plus,
   Search,
-  Download,
   RefreshCw,
-  Settings,
-  Building2,
   Copy,
   Trash2,
   Edit,
   Eye,
-  BarChart3,
-  Activity,
   FileText,
-  Send,
   MoreHorizontal,
   Loader2,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-} from "recharts"
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts"
 
 // Types
 interface BillingStats {
@@ -163,8 +136,13 @@ interface RevenueData {
   churn: number
 }
 
-export function StripeBillingDashboard() {
-  const [activeTab, setActiveTab] = useState("overview")
+interface StripeBillingDashboardProps {
+  initialTab?: string
+  hideStats?: boolean
+}
+
+export function StripeBillingDashboard({ initialTab = "overview", hideStats = false }: StripeBillingDashboardProps) {
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<BillingStats | null>(null)
   const [revenueData, setRevenueData] = useState<RevenueData[]>([])
@@ -214,13 +192,10 @@ export function StripeBillingDashboard() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      console.log("[v0] Loading Zahlungsverwaltung data...")
-
       // Load coupons
       const couponsRes = await fetch("/api/super-admin/stripe/coupons")
       if (couponsRes.ok) {
         const data = await couponsRes.json()
-        console.log("[v0] Loaded coupons:", data.coupons?.length || 0)
         setCoupons(data.coupons || [])
       }
 
@@ -228,7 +203,6 @@ export function StripeBillingDashboard() {
       const pricingRes = await fetch("/api/super-admin/stripe/custom-pricing")
       if (pricingRes.ok) {
         const data = await pricingRes.json()
-        console.log("[v0] Loaded custom pricing:", data.pricing?.length || 0)
         setCustomPricing(data.pricing || [])
       }
 
@@ -236,7 +210,6 @@ export function StripeBillingDashboard() {
       const paymentsRes = await fetch("/api/super-admin/stripe/payments")
       if (paymentsRes.ok) {
         const data = await paymentsRes.json()
-        console.log("[v0] Loaded payments:", data.payments?.length || 0)
         setPayments(data.payments || [])
       }
 
@@ -244,17 +217,17 @@ export function StripeBillingDashboard() {
       const subsRes = await fetch("/api/super-admin/stripe/subscriptions")
       if (subsRes.ok) {
         const data = await subsRes.json()
-        console.log("[v0] Loaded subscriptions:", data.subscriptions?.length || 0)
         setSubscriptions(data.subscriptions || [])
       }
 
-      // Load stats
-      const statsRes = await fetch("/api/super-admin/stripe/stats")
-      if (statsRes.ok) {
-        const data = await statsRes.json()
-        console.log("[v0] Loaded stats:", data.stats)
-        setStats(data.stats)
-        setRevenueData(data.revenueData || [])
+      // Load stats only if not hidden
+      if (!hideStats) {
+        const statsRes = await fetch("/api/super-admin/stripe/stats")
+        if (statsRes.ok) {
+          const data = await statsRes.json()
+          setStats(data.stats)
+          setRevenueData(data.revenueData || [])
+        }
       }
     } catch (error) {
       console.error("[v0] Error loading billing data:", error)
@@ -266,7 +239,7 @@ export function StripeBillingDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [hideStats])
 
   useEffect(() => {
     loadData()
@@ -297,7 +270,7 @@ export function StripeBillingDashboard() {
         toast({ title: "Coupon erstellt", description: `Code: ${couponForm.code.toUpperCase()}` })
         setShowCouponDialog(false)
         resetCouponForm()
-        await loadData() // Refetch all data after creation
+        await loadData()
       } else {
         const error = await res.json()
         toast({ title: "Fehler", description: error.message, variant: "destructive" })
@@ -333,7 +306,7 @@ export function StripeBillingDashboard() {
         toast({ title: "Sonderpreis erstellt", description: "Die individuelle Preisgestaltung wurde gespeichert" })
         setShowCustomPricingDialog(false)
         resetPricingForm()
-        await loadData() // Refetch all data after creation
+        await loadData()
       } else {
         const error = await res.json()
         toast({ title: "Fehler", description: error.message, variant: "destructive" })
@@ -350,7 +323,7 @@ export function StripeBillingDashboard() {
       const res = await fetch("/api/super-admin/stripe/sync", { method: "POST" })
       if (res.ok) {
         toast({ title: "Stripe synchronisiert", description: "Alle Daten wurden aktualisiert" })
-        await loadData() // Refetch all data after sync
+        await loadData()
       } else {
         toast({ title: "Fehler", description: "Synchronisation fehlgeschlagen", variant: "destructive" })
       }
@@ -369,7 +342,7 @@ export function StripeBillingDashboard() {
       const res = await fetch(`/api/super-admin/stripe/coupons/${couponId}`, { method: "DELETE" })
       if (res.ok) {
         toast({ title: "Coupon gelöscht" })
-        await loadData() // Refetch all data after deletion
+        await loadData()
       }
     } catch (error) {
       toast({ title: "Fehler", description: "Coupon konnte nicht gelöscht werden", variant: "destructive" })
@@ -457,445 +430,231 @@ export function StripeBillingDashboard() {
     )
   }
 
-  if (!stats) {
+  if (hideStats) {
     return (
       <div className="space-y-6">
+        {/* Header with actions */}
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Stripe Zahlungsverwaltung</h2>
-            <p className="text-muted-foreground">
-              Vollständige Übersicht über Abonnements, Zahlungen, Coupons und individuelle Preise
-            </p>
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Suchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
-          <Button variant="outline" onClick={loadData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Neu laden
-          </Button>
-        </div>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <CreditCard className="h-12 w-12 mx-auto text-muted-foreground" />
-              <div>
-                <h3 className="text-lg font-semibold">Keine Zahlungsdaten verfügbar</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Synchronisieren Sie Stripe oder fügen Sie manuell Daten hinzu
-                </p>
-              </div>
-              <Button onClick={handleSyncStripe}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Mit Stripe synchronisieren
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleSyncStripe} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+              Synchronisieren
+            </Button>
+            {initialTab === "coupons" && (
+              <Button onClick={() => setShowCouponDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Neuer Coupon
               </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Stripe Zahlungsverwaltung</h2>
-          <p className="text-muted-foreground">
-            Vollständige Übersicht über Abonnements, Zahlungen, Coupons und individuelle Preise
-          </p>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleSyncStripe} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Mit Stripe synchronisieren
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
-      </div>
 
-      {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monatlicher Umsatz (MRR)</CardTitle>
-            <Euro className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats?.mrr || 0)}</div>
-            <div className="flex items-center text-xs text-green-600">
-              <ArrowUpRight className="h-3 w-3 mr-1" />+{stats?.growthRate || 0}% zum Vormonat
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aktive Abonnements</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.activeSubscriptions || 0}</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              <span className="text-blue-600">+{stats?.newSubscriptionsThisMonth || 0} neu</span>
-              <span className="mx-1">·</span>
-              <span className="text-amber-600">{stats?.trialSubscriptions || 0} in Testphase</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Durchschn. Umsatz/Kunde</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats?.averageRevenuePerUser || 0)}</div>
-            <div className="text-xs text-muted-foreground">LTV: {formatCurrency(stats?.lifetimeValue || 0)}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Abwanderungsrate</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.churnRate || 0}%</div>
-            <div className="text-xs text-muted-foreground">
-              {stats?.canceledSubscriptions || 0} Kündigungen diesen Monat
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Discount Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Tag className="h-4 w-4 text-amber-600" />
-              Coupon-Rabatte
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-amber-700">-{formatCurrency(stats?.couponDiscounts || 0)}</div>
-            <p className="text-xs text-amber-600">{coupons.filter((c) => c.is_active).length} aktive Coupons</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-200 bg-purple-50/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-purple-600" />
-              Individuelle Rabatte
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-purple-700">-{formatCurrency(stats?.customDiscounts || 0)}</div>
-            <p className="text-xs text-purple-600">
-              {customPricing.filter((p) => p.is_active).length} Sonderpreise aktiv
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-green-200 bg-green-50/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Receipt className="h-4 w-4 text-green-600" />
-              Netto-Umsatz
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-green-700">
-              {formatCurrency((stats?.totalRevenue || 0) - (stats?.totalRefunds || 0))}
-            </div>
-            <p className="text-xs text-green-600">Nach Rabatten & Erstattungen</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Übersicht
-          </TabsTrigger>
-          <TabsTrigger value="subscriptions" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Abonnements
-          </TabsTrigger>
-          <TabsTrigger value="coupons" className="flex items-center gap-2">
-            <Tag className="h-4 w-4" />
-            Coupons
-          </TabsTrigger>
-          <TabsTrigger value="custom-pricing" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Sonderpreise
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="flex items-center gap-2">
-            <Receipt className="h-4 w-4" />
-            Zahlungen
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+        {/* Content based on initialTab */}
+        {initialTab === "overview" && (
+          <div className="space-y-6">
             {/* Revenue Chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Umsatzentwicklung (letzte 6 Monate)</CardTitle>
-                <CardDescription>Monatlicher Umsatz, Abonnements und Kündigungen</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {revenueData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={revenueData}>
-                      <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorSubscriptions" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis yAxisId="left" />
-                      <YAxis yAxisId="right" orientation="right" />
-                      <Tooltip />
-                      <Legend />
-                      <Area
-                        yAxisId="left"
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="#3b82f6"
-                        fillOpacity={1}
-                        fill="url(#colorRevenue)"
-                        name="Umsatz (€)"
-                      />
-                      <Area
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="subscriptions"
-                        stroke="#10b981"
-                        fillOpacity={1}
-                        fill="url(#colorSubscriptions)"
-                        name="Abonnements"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                    <div className="text-center space-y-2">
-                      <BarChart3 className="h-12 w-12 mx-auto" />
-                      <p>Keine Umsatzdaten verfügbar</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Subscription Distribution */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Abonnement-Verteilung</CardTitle>
-                <CardDescription>Nach Status aufgeschlüsselt</CardDescription>
+                <CardTitle>Umsatzentwicklung</CardTitle>
+                <CardDescription>Monatlicher Umsatz der letzten 12 Monate</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={[
-                          { name: "Aktiv", value: stats?.activeSubscriptions || 0, color: "#10b981" },
-                          { name: "Testphase", value: stats?.trialSubscriptions || 0, color: "#3b82f6" },
-                          { name: "Gekündigt", value: stats?.canceledSubscriptions || 0, color: "#ef4444" },
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {[
-                          { name: "Aktiv", value: stats?.activeSubscriptions || 0, color: "#10b981" },
-                          { name: "Testphase", value: stats?.trialSubscriptions || 0, color: "#3b82f6" },
-                          { name: "Gekündigt", value: stats?.canceledSubscriptions || 0, color: "#ef4444" },
-                        ].map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => [value, "Abonnements"]} />
-                      <Legend />
-                    </RechartsPieChart>
+                    <AreaChart data={revenueData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                      <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Key Metrics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Wichtige Kennzahlen</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Jahresumsatz (ARR)</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats?.arr || 0)}</p>
-                  <Progress value={75} className="h-2" />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Gesamtumsatz</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats?.totalRevenue || 0)}</p>
-                  <Progress value={90} className="h-2" />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Erstattungen</p>
-                  <p className="text-2xl font-bold text-red-600">-{formatCurrency(stats?.totalRefunds || 0)}</p>
-                  <Progress value={5} className="h-2 bg-red-100" />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Gesamtrabatte</p>
-                  <p className="text-2xl font-bold text-amber-600">
+            {/* Quick stats grid */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card className="border-green-200 bg-green-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Gesamtumsatz</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-700">{formatCurrency(stats?.totalRevenue || 0)}</div>
+                </CardContent>
+              </Card>
+              <Card className="border-amber-200 bg-amber-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Rabatte gewährt</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-amber-700">
                     -{formatCurrency((stats?.couponDiscounts || 0) + (stats?.customDiscounts || 0))}
-                  </p>
-                  <Progress value={15} className="h-2 bg-amber-100" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-red-200 bg-red-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Erstattungen</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-700">-{formatCurrency(stats?.totalRefunds || 0)}</div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
 
-        {/* Subscriptions Tab */}
-        <TabsContent value="subscriptions" className="space-y-4">
+        {initialTab === "subscriptions" && (
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Abonnements</CardTitle>
-                  <CardDescription>Alle aktiven und inaktiven Abonnements</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Suchen..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 w-[250px]"
-                    />
-                  </div>
-                </div>
-              </div>
+              <CardTitle>Alle Abonnements</CardTitle>
+              <CardDescription>{filteredSubscriptions.length} Abonnements gefunden</CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[400px]">
-                <Table>
-                  <TableHeader>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Praxis</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Preis</TableHead>
+                    <TableHead>Periode</TableHead>
+                    <TableHead>Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSubscriptions.length === 0 ? (
                     <TableRow>
-                      <TableHead>Praxis</TableHead>
-                      <TableHead>Plan</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Preis/Monat</TableHead>
-                      <TableHead>Periode</TableHead>
-                      <TableHead>Aktionen</TableHead>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        Keine Abonnements gefunden
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredSubscriptions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                          Keine Abonnements gefunden
+                  ) : (
+                    filteredSubscriptions.map((sub) => (
+                      <TableRow key={sub.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{sub.practice_name || "Unbekannt"}</div>
+                            <div className="text-sm text-muted-foreground">{sub.practice_email}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{sub.plan_name || "-"}</TableCell>
+                        <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                        <TableCell>{sub.price_monthly ? formatCurrency(sub.price_monthly) + "/Mo" : "-"}</TableCell>
+                        <TableCell>
+                          {sub.current_period_end ? formatDateDE(sub.current_period_end) : "-"}
+                          {sub.cancel_at_period_end && (
+                            <Badge variant="outline" className="ml-2">
+                              Endet
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon">
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      filteredSubscriptions.map((sub) => (
-                        <TableRow key={sub.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{sub.practice_name || `Praxis #${sub.practice_id}`}</p>
-                              <p className="text-xs text-muted-foreground">{sub.practice_email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{sub.plan_name || "Standard"}</TableCell>
-                          <TableCell>{getStatusBadge(sub.status)}</TableCell>
-                          <TableCell>{formatCurrency(sub.price_monthly || 0)}</TableCell>
-                          <TableCell>
-                            {sub.current_period_end && (
-                              <span className="text-sm">bis {formatDateDE(sub.current_period_end)}</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setPricingForm({ ...pricingForm, practiceId: sub.practice_id.toString() })
-                                    setShowCustomPricingDialog(true)
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Sonderpreis
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Send className="h-4 w-4 mr-2" />
-                                  Rechnung senden
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
-        {/* Coupons Tab */}
-        <TabsContent value="coupons" className="space-y-4">
+        {initialTab === "payments" && (
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Rabatt-Coupons</CardTitle>
-                  <CardDescription>Erstellen und verwalten Sie Rabattcodes</CardDescription>
-                </div>
-                <Button onClick={() => setShowCouponDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Neuer Coupon
-                </Button>
-              </div>
+              <CardTitle>Alle Transaktionen</CardTitle>
+              <CardDescription>{filteredPayments.length} Zahlungen gefunden</CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[400px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Datum</TableHead>
+                    <TableHead>Praxis</TableHead>
+                    <TableHead>Betrag</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Methode</TableHead>
+                    <TableHead>Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPayments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        Keine Transaktionen gefunden
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredPayments.map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell>
+                          {payment.paid_at ? formatDateDE(payment.paid_at) : formatDateDE(payment.created_at)}
+                        </TableCell>
+                        <TableCell>{payment.practice_name || "Unbekannt"}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
+                        <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                        <TableCell>{payment.payment_method_type || "-"}</TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {payment.receipt_url && (
+                                <DropdownMenuItem onClick={() => window.open(payment.receipt_url, "_blank")}>
+                                  <Receipt className="h-4 w-4 mr-2" />
+                                  Beleg anzeigen
+                                </DropdownMenuItem>
+                              )}
+                              {payment.invoice_pdf_url && (
+                                <DropdownMenuItem onClick={() => window.open(payment.invoice_pdf_url, "_blank")}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Rechnung herunterladen
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {initialTab === "coupons" && (
+          <div className="space-y-6">
+            {/* Coupons Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Aktive Coupons</CardTitle>
+                <CardDescription>{coupons.filter((c) => c.is_active).length} aktive Coupons</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Code</TableHead>
                       <TableHead>Rabatt</TableHead>
-                      <TableHead>Dauer</TableHead>
                       <TableHead>Einlösungen</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Aktionen</TableHead>
@@ -904,8 +663,8 @@ export function StripeBillingDashboard() {
                   <TableBody>
                     {coupons.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                          Keine Coupons vorhanden. Erstellen Sie Ihren ersten Coupon!
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          Keine Coupons vorhanden
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -915,22 +674,13 @@ export function StripeBillingDashboard() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <code className="bg-muted px-2 py-1 rounded text-sm">{coupon.code}</code>
-                              <Button variant="ghost" size="sm" onClick={() => handleCopyCode(coupon.code)}>
+                              <Button variant="ghost" size="icon" onClick={() => handleCopyCode(coupon.code)}>
                                 <Copy className="h-3 w-3" />
                               </Button>
                             </div>
                           </TableCell>
                           <TableCell>
-                            {coupon.percent_off
-                              ? `${coupon.percent_off}%`
-                              : formatCurrency((coupon.amount_off || 0) / 100)}
-                          </TableCell>
-                          <TableCell>
-                            {coupon.duration === "once"
-                              ? "Einmalig"
-                              : coupon.duration === "forever"
-                                ? "Dauerhaft"
-                                : `${coupon.duration_in_months} Monate`}
+                            {coupon.percent_off ? `${coupon.percent_off}%` : formatCurrency(coupon.amount_off || 0)}
                           </TableCell>
                           <TableCell>
                             {coupon.times_redeemed}
@@ -943,11 +693,11 @@ export function StripeBillingDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="icon">
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDeleteCoupon(coupon.id)}>
-                                <Trash2 className="h-4 w-4 text-red-500" />
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteCoupon(coupon.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </div>
                           </TableCell>
@@ -956,44 +706,37 @@ export function StripeBillingDashboard() {
                     )}
                   </TableBody>
                 </Table>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
 
-        {/* Custom Pricing Tab */}
-        <TabsContent value="custom-pricing" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+            {/* Custom Pricing Table */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Individuelle Preisgestaltung</CardTitle>
-                  <CardDescription>Sonderkonditionen für einzelne Praxen (z.B. Großkunden, Partner)</CardDescription>
+                  <CardTitle>Individuelle Preise</CardTitle>
+                  <CardDescription>Sonderpreise für bestimmte Praxen</CardDescription>
                 </div>
-                <Button onClick={() => setShowCustomPricingDialog(true)}>
+                <Button variant="outline" onClick={() => setShowCustomPricingDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Neuer Sonderpreis
                 </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px]">
+              </CardHeader>
+              <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Praxis</TableHead>
-                      <TableHead>Sonderpreis/Monat</TableHead>
+                      <TableHead>Monatspreis</TableHead>
+                      <TableHead>Jahrespreis</TableHead>
                       <TableHead>Rabatt</TableHead>
-                      <TableHead>Grund</TableHead>
                       <TableHead>Gültig bis</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Aktionen</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {customPricing.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           Keine individuellen Preise vorhanden
                         </TableCell>
                       </TableRow>
@@ -1004,10 +747,12 @@ export function StripeBillingDashboard() {
                             {pricing.practice_name || `Praxis #${pricing.practice_id}`}
                           </TableCell>
                           <TableCell>
-                            {pricing.custom_price_monthly ? formatCurrency(pricing.custom_price_monthly / 100) : "-"}
+                            {pricing.custom_price_monthly ? formatCurrency(pricing.custom_price_monthly) : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {pricing.custom_price_yearly ? formatCurrency(pricing.custom_price_yearly) : "-"}
                           </TableCell>
                           <TableCell>{pricing.discount_percent ? `${pricing.discount_percent}%` : "-"}</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{pricing.discount_reason || "-"}</TableCell>
                           <TableCell>
                             {pricing.valid_until ? formatDateDE(pricing.valid_until) : "Unbegrenzt"}
                           </TableCell>
@@ -1016,450 +761,179 @@ export function StripeBillingDashboard() {
                               {pricing.is_active ? "Aktiv" : "Inaktiv"}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </TableCell>
                         </TableRow>
                       ))
                     )}
                   </TableBody>
                 </Table>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        {/* Payments Tab */}
-        <TabsContent value="payments" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Zahlungshistorie</CardTitle>
-                  <CardDescription>Alle eingegangenen Zahlungen</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Suchen..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 w-[250px]"
-                    />
-                  </div>
-                  <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Datum</TableHead>
-                      <TableHead>Praxis</TableHead>
-                      <TableHead>Betrag</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Zahlungsart</TableHead>
-                      <TableHead>Aktionen</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPayments.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                          Keine Zahlungen gefunden
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredPayments.map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell>
-                            {payment.paid_at ? formatDateDE(payment.paid_at) : formatDateDE(payment.created_at)}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {payment.practice_name || `Praxis #${payment.practice_id}`}
-                          </TableCell>
-                          <TableCell>
-                            <span className={payment.refunded_amount > 0 ? "line-through text-muted-foreground" : ""}>
-                              {formatCurrency(payment.amount / 100)}
-                            </span>
-                            {payment.refunded_amount > 0 && (
-                              <span className="ml-2 text-red-600">
-                                -{formatCurrency(payment.refunded_amount / 100)}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                          <TableCell>{payment.payment_method_type || "Karte"}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              {payment.receipt_url && (
-                                <Button variant="ghost" size="sm" asChild>
-                                  <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
-                                    <FileText className="h-4 w-4" />
-                                  </a>
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedPayment(payment)
-                                  setShowPaymentDetailDialog(true)
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Coupon Dialog */}
-      <Dialog open={showCouponDialog} onOpenChange={setShowCouponDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Neuen Coupon erstellen</DialogTitle>
-            <DialogDescription>Erstellen Sie einen Rabattcode für Ihre Kunden</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        {/* Coupon Dialog */}
+        <Dialog open={showCouponDialog} onOpenChange={setShowCouponDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Neuen Coupon erstellen</DialogTitle>
+              <DialogDescription>Erstellen Sie einen neuen Rabattcode</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="coupon-name">Name</Label>
+                <Label>Name</Label>
                 <Input
-                  id="coupon-name"
-                  placeholder="z.B. Sommersale"
                   value={couponForm.name}
                   onChange={(e) => setCouponForm({ ...couponForm, name: e.target.value })}
+                  placeholder="z.B. Sommer-Rabatt"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="coupon-code">Code</Label>
+                <Label>Code</Label>
                 <Input
-                  id="coupon-code"
-                  placeholder="z.B. SOMMER24"
                   value={couponForm.code}
                   onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                  placeholder="z.B. SOMMER2024"
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Rabatttyp</Label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={couponForm.discountType === "percent"}
-                    onChange={() => setCouponForm({ ...couponForm, discountType: "percent" })}
+              <div className="space-y-2">
+                <Label>Rabattart</Label>
+                <Select
+                  value={couponForm.discountType}
+                  onValueChange={(v) => setCouponForm({ ...couponForm, discountType: v as "percent" | "amount" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percent">Prozent</SelectItem>
+                    <SelectItem value="amount">Festbetrag</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {couponForm.discountType === "percent" ? (
+                <div className="space-y-2">
+                  <Label>Rabatt (%)</Label>
+                  <Input
+                    type="number"
+                    value={couponForm.percentOff}
+                    onChange={(e) => setCouponForm({ ...couponForm, percentOff: e.target.value })}
+                    placeholder="z.B. 20"
                   />
-                  Prozent
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={couponForm.discountType === "amount"}
-                    onChange={() => setCouponForm({ ...couponForm, discountType: "amount" })}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Rabatt (EUR)</Label>
+                  <Input
+                    type="number"
+                    value={couponForm.amountOff}
+                    onChange={(e) => setCouponForm({ ...couponForm, amountOff: e.target.value })}
+                    placeholder="z.B. 50"
                   />
-                  Fester Betrag
-                </label>
-              </div>
-            </div>
-
-            {couponForm.discountType === "percent" ? (
-              <div className="space-y-2">
-                <Label htmlFor="percent-off">Rabatt in %</Label>
-                <Input
-                  id="percent-off"
-                  type="number"
-                  min="1"
-                  max="100"
-                  placeholder="z.B. 20"
-                  value={couponForm.percentOff}
-                  onChange={(e) => setCouponForm({ ...couponForm, percentOff: e.target.value })}
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="amount-off">Rabatt in €</Label>
-                <Input
-                  id="amount-off"
-                  type="number"
-                  min="1"
-                  placeholder="z.B. 50"
-                  value={couponForm.amountOff}
-                  onChange={(e) => setCouponForm({ ...couponForm, amountOff: e.target.value })}
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Gültigkeit</Label>
-              <Select
-                value={couponForm.duration}
-                onValueChange={(value: "once" | "repeating" | "forever") =>
-                  setCouponForm({ ...couponForm, duration: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="once">Einmalig</SelectItem>
-                  <SelectItem value="repeating">Wiederkehrend</SelectItem>
-                  <SelectItem value="forever">Dauerhaft</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {couponForm.duration === "repeating" && (
-              <div className="space-y-2">
-                <Label htmlFor="duration-months">Anzahl Monate</Label>
-                <Input
-                  id="duration-months"
-                  type="number"
-                  min="1"
-                  placeholder="z.B. 3"
-                  value={couponForm.durationMonths}
-                  onChange={(e) => setCouponForm({ ...couponForm, durationMonths: e.target.value })}
-                />
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="max-redemptions">Max. Einlösungen</Label>
-                <Input
-                  id="max-redemptions"
-                  type="number"
-                  min="1"
-                  placeholder="Unbegrenzt"
-                  value={couponForm.maxRedemptions}
-                  onChange={(e) => setCouponForm({ ...couponForm, maxRedemptions: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="valid-until">Gültig bis</Label>
-                <Input
-                  id="valid-until"
-                  type="date"
-                  value={couponForm.validUntil}
-                  onChange={(e) => setCouponForm({ ...couponForm, validUntil: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="first-purchase">Nur für Erstkunden</Label>
-              <Switch
-                id="first-purchase"
-                checked={couponForm.firstPurchaseOnly}
-                onCheckedChange={(checked) => setCouponForm({ ...couponForm, firstPurchaseOnly: checked })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCouponDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleCreateCoupon}>Coupon erstellen</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Custom Pricing Dialog */}
-      <Dialog open={showCustomPricingDialog} onOpenChange={setShowCustomPricingDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Individuellen Preis festlegen</DialogTitle>
-            <DialogDescription>Legen Sie einen Sonderpreis für eine bestimmte Praxis fest</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="practice-id">Praxis ID</Label>
-              <Input
-                id="practice-id"
-                type="number"
-                placeholder="Praxis ID eingeben"
-                value={pricingForm.practiceId}
-                onChange={(e) => setPricingForm({ ...pricingForm, practiceId: e.target.value })}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="custom-monthly">Sonderpreis/Monat (€)</Label>
-                <Input
-                  id="custom-monthly"
-                  type="number"
-                  min="0"
-                  placeholder="z.B. 79"
-                  value={pricingForm.customPriceMonthly}
-                  onChange={(e) => setPricingForm({ ...pricingForm, customPriceMonthly: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custom-yearly">Sonderpreis/Jahr (€)</Label>
-                <Input
-                  id="custom-yearly"
-                  type="number"
-                  min="0"
-                  placeholder="z.B. 790"
-                  value={pricingForm.customPriceYearly}
-                  onChange={(e) => setPricingForm({ ...pricingForm, customPriceYearly: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="discount-percent">Oder: Rabatt in %</Label>
-              <Input
-                id="discount-percent"
-                type="number"
-                min="0"
-                max="100"
-                placeholder="z.B. 20"
-                value={pricingForm.discountPercent}
-                onChange={(e) => setPricingForm({ ...pricingForm, discountPercent: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="discount-reason">Grund für Sonderpreis</Label>
-              <Select
-                value={pricingForm.discountReason}
-                onValueChange={(value) => setPricingForm({ ...pricingForm, discountReason: value })}
-              >
-                <SelectTrigger id="discount-reason">
-                  <SelectValue placeholder="Grund auswählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="partner">Partner / Kooperation</SelectItem>
-                  <SelectItem value="volume">Mengenrabatt</SelectItem>
-                  <SelectItem value="early-adopter">Early Adopter</SelectItem>
-                  <SelectItem value="referral">Empfehlung</SelectItem>
-                  <SelectItem value="nonprofit">Non-Profit / Sozial</SelectItem>
-                  <SelectItem value="beta-tester">Beta-Tester</SelectItem>
-                  <SelectItem value="other">Sonstiges</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="valid-until-pricing">Gültig bis</Label>
-              <Input
-                id="valid-until-pricing"
-                type="date"
-                value={pricingForm.validUntil}
-                onChange={(e) => setPricingForm({ ...pricingForm, validUntil: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">Leer lassen für unbegrenzte Gültigkeit</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Interne Notizen</Label>
-              <Textarea
-                id="notes"
-                placeholder="Zusätzliche Informationen..."
-                value={pricingForm.notes}
-                onChange={(e) => setPricingForm({ ...pricingForm, notes: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCustomPricingDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleCreateCustomPricing}>Sonderpreis speichern</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Payment Detail Dialog */}
-      <Dialog open={showPaymentDetailDialog} onOpenChange={setShowPaymentDetailDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Zahlungsdetails</DialogTitle>
-          </DialogHeader>
-          {selectedPayment && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Praxis</p>
-                  <p className="font-medium">
-                    {selectedPayment.practice_name || `Praxis #${selectedPayment.practice_id}`}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  {getStatusBadge(selectedPayment.status)}
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Betrag</p>
-                  <p className="font-medium">{formatCurrency(selectedPayment.amount / 100)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Datum</p>
-                  <p className="font-medium">
-                    {selectedPayment.paid_at
-                      ? formatDateDE(selectedPayment.paid_at)
-                      : formatDateDE(selectedPayment.created_at)}
-                  </p>
-                </div>
-                {selectedPayment.stripe_payment_intent_id && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground">Stripe Payment ID</p>
-                    <code className="text-xs bg-muted px-2 py-1 rounded">
-                      {selectedPayment.stripe_payment_intent_id}
-                    </code>
-                  </div>
-                )}
-              </div>
-              {selectedPayment.failure_reason && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm font-medium text-red-800">Fehlergrund:</p>
-                  <p className="text-sm text-red-600">{selectedPayment.failure_reason}</p>
                 </div>
               )}
+              <div className="flex items-center justify-between">
+                <Label>Aktiv</Label>
+                <Switch
+                  checked={couponForm.isActive}
+                  onCheckedChange={(v) => setCouponForm({ ...couponForm, isActive: v })}
+                />
+              </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPaymentDetailDialog(false)}>
-              Schließen
-            </Button>
-            {selectedPayment?.receipt_url && (
-              <Button asChild>
-                <a href={selectedPayment.receipt_url} target="_blank" rel="noopener noreferrer">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Beleg anzeigen
-                </a>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCouponDialog(false)}>
+                Abbrechen
               </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <Button onClick={handleCreateCoupon}>Erstellen</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Custom Pricing Dialog */}
+        <Dialog open={showCustomPricingDialog} onOpenChange={setShowCustomPricingDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Individuellen Preis erstellen</DialogTitle>
+              <DialogDescription>Sonderpreis für eine bestimmte Praxis</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Praxis-ID</Label>
+                <Input
+                  type="number"
+                  value={pricingForm.practiceId}
+                  onChange={(e) => setPricingForm({ ...pricingForm, practiceId: e.target.value })}
+                  placeholder="z.B. 1"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Monatspreis (EUR)</Label>
+                <Input
+                  type="number"
+                  value={pricingForm.customPriceMonthly}
+                  onChange={(e) => setPricingForm({ ...pricingForm, customPriceMonthly: e.target.value })}
+                  placeholder="z.B. 49"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Jahrespreis (EUR)</Label>
+                <Input
+                  type="number"
+                  value={pricingForm.customPriceYearly}
+                  onChange={(e) => setPricingForm({ ...pricingForm, customPriceYearly: e.target.value })}
+                  placeholder="z.B. 490"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Grund</Label>
+                <Textarea
+                  value={pricingForm.discountReason}
+                  onChange={(e) => setPricingForm({ ...pricingForm, discountReason: e.target.value })}
+                  placeholder="Grund für den Sonderpreis"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCustomPricingDialog(false)}>
+                Abbrechen
+              </Button>
+              <Button onClick={handleCreateCustomPricing}>Erstellen</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
+  }
+
+  // Original full component with internal tabs (fallback)
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Stripe Zahlungsverwaltung</h2>
+          <p className="text-muted-foreground">Vollständige Übersicht über Abonnements, Zahlungen und Rabatte</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleSyncStripe} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Mit Stripe synchronisieren
+          </Button>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Übersicht</TabsTrigger>
+          <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
+          <TabsTrigger value="payments">Transaktionen</TabsTrigger>
+          <TabsTrigger value="coupons">Rabatte</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
+          <div className="text-center text-muted-foreground py-12">
+            Bitte nutzen Sie die Hauptnavigation für die Zahlungsverwaltung.
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

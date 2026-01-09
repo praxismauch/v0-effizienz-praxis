@@ -2,8 +2,10 @@ import { createAdminClient } from "@/lib/supabase/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
+    const { userId } = await params
+
     let supabase
     try {
       supabase = await createAdminClient()
@@ -20,16 +22,16 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
       const result = await supabase
         .from("users")
         .select(
-          "id, name, email, role, practice_id, avatar, phone, specialization, preferred_language, is_active, last_login, created_at, updated_at, default_practice_id",
+          "id, name, email, role, practice_id, avatar, phone, specialization, preferred_language, is_active, last_login, created_at, updated_at, default_practice_id, mfa_enabled",
         )
-        .eq("id", params.userId)
+        .eq("id", userId)
         .maybeSingle()
 
       data = result.data
       error = result.error
     } catch (queryError) {
       if (isRateLimitError(queryError)) {
-        console.warn("[v0] Rate limited when fetching user:", params.userId)
+        console.warn("[v0] Rate limited when fetching user:", userId)
         return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 })
       }
       throw queryError
@@ -41,7 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     }
 
     if (!data) {
-      console.log("[v0] No user found in database for userId:", params.userId)
+      console.log("[v0] No user found in database for userId:", userId)
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     return NextResponse.json({ user: data })
   } catch (error) {
     if (isRateLimitError(error)) {
-      console.warn("[v0] Rate limit error in GET user:", params.userId)
+      console.warn("[v0] Rate limit error in GET user")
       return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 })
     }
     console.error("[v0] Exception in GET user:", error)
@@ -63,12 +65,15 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
+    const { userId } = await params
     const supabase = await createAdminClient()
     const body = await request.json()
 
-    const updateData: any = {
+    console.log("[v0] PUT /api/users/[userId] - userId:", userId, "body:", body)
+
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
 
@@ -80,8 +85,10 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
     if (body.specialization !== undefined) updateData.specialization = body.specialization
     if (body.preferred_language !== undefined) updateData.preferred_language = body.preferred_language
 
+    console.log("[v0] Updating user with data:", updateData)
+
     // Update user in database
-    const { data, error } = await supabase.from("users").update(updateData).eq("id", params.userId).select().single()
+    const { data, error } = await supabase.from("users").update(updateData).eq("id", userId).select().single()
 
     if (error) {
       console.error("[v0] Error updating user:", error)
@@ -96,12 +103,13 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
+    const { userId } = await params
     const supabase = await createAdminClient()
 
     // Delete user from database
-    const { error } = await supabase.from("users").delete().eq("id", params.userId)
+    const { error } = await supabase.from("users").delete().eq("id", userId)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

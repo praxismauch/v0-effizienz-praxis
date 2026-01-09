@@ -115,7 +115,7 @@ export async function checkPracticeAccess(practiceId: string, auth: ApiAuthResul
  * This is the MAIN function to use in all practice-scoped API routes
  *
  * Usage:
- * ```ts
+ * \`\`\`ts
  * export async function GET(req: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
  *   try {
  *     const { practiceId } = await params
@@ -129,10 +129,21 @@ export async function checkPracticeAccess(practiceId: string, auth: ApiAuthResul
  *     return handleApiError(error)
  *   }
  * }
- * ```
+ * \`\`\`
  */
-export async function requirePracticeAccess(practiceId: string): Promise<PracticeAuthResult> {
-  if (!practiceId || practiceId === "undefined" || practiceId === "null") {
+export async function requirePracticeAccess(
+  practiceId: string | number | undefined | null,
+): Promise<PracticeAuthResult> {
+  const practiceIdStr = String(practiceId ?? "")
+
+  if (
+    !practiceIdStr ||
+    practiceIdStr === "undefined" ||
+    practiceIdStr === "null" ||
+    practiceIdStr === "0" ||
+    practiceIdStr === ""
+  ) {
+    console.warn(`[requirePracticeAccess] Invalid practiceId received: "${practiceId}" (type: ${typeof practiceId})`)
     throw new ApiError("Praxis-ID fehlt oder ist ungültig", 400)
   }
 
@@ -142,23 +153,26 @@ export async function requirePracticeAccess(practiceId: string): Promise<Practic
   if (auth.isSuperAdmin) {
     return {
       ...auth,
-      practiceId,
+      practiceId: practiceIdStr,
       accessType: "super_admin",
     }
   }
 
-  // Regular users must belong to the practice
-  if (auth.user.practiceId !== practiceId) {
+  // users.practice_id can be integer, but URL params are always strings
+  const userPracticeId = String(auth.user.practiceId ?? "")
+
+  if (userPracticeId !== practiceIdStr) {
     console.warn(
-      `[ACCESS DENIED] User ${auth.user.id} (practice: ${auth.user.practiceId}) ` +
-        `attempted to access practice ${practiceId}`,
+      `[ACCESS DENIED] User ${auth.user.id} (practice: ${auth.user.practiceId} [${typeof auth.user.practiceId}]) ` +
+        `attempted to access practice ${practiceId} [${typeof practiceId}]. ` +
+        `Comparison: "${userPracticeId}" !== "${practiceIdStr}"`,
     )
     throw new ApiError("Keine Berechtigung für diese Praxis", 403)
   }
 
   return {
     ...auth,
-    practiceId,
+    practiceId: practiceIdStr,
     accessType: "owner",
   }
 }

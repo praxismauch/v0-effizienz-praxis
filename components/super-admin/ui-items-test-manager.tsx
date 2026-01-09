@@ -247,6 +247,7 @@ export default function UIItemsTestManager() {
   const [testRunName, setTestRunName] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isStartingNewTest, setIsStartingNewTest] = useState(false)
   const [testRuns, setTestRuns] = useState<TestRun[]>([])
   const [selectedTestRun, setSelectedTestRun] = useState<TestRun | null>(null)
   const [activeTab, setActiveTab] = useState("current")
@@ -256,16 +257,24 @@ export default function UIItemsTestManager() {
   // Fetch fresh UI items from API
   const fetchUIItems = useCallback(async () => {
     try {
+      console.log("[v0] Fetching UI items from API...")
       const response = await fetch("/api/super-admin/ui-items")
+      console.log("[v0] UI items response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] UI items loaded:", data.categories?.length, "categories")
         setUiItemsData(data)
         // Expand all categories by default
         setExpandedCategories(data.categories.map((c: UICategory) => c.id))
         return data
+      } else {
+        const errorText = await response.text()
+        console.error("[v0] UI items fetch failed:", response.status, errorText)
+        toast.error(`Fehler beim Laden: ${response.status}`)
       }
     } catch (error) {
-      console.error("Error fetching UI items:", error)
+      console.error("[v0] Error fetching UI items:", error)
       toast.error("Fehler beim Laden der UI-Items")
     }
     return null
@@ -313,18 +322,31 @@ export default function UIItemsTestManager() {
 
   // Start a new test
   const startNewTest = async () => {
-    setIsLoading(true)
-    // Fetch fresh UI items to ensure we have the latest
-    const data = await fetchUIItems()
-    if (data) {
-      initializeTestItems(data)
-      setSelectedTestRun(null)
-      setCurrentTestName("")
-      setActiveTab("current")
-      toast.success("Neuer Test gestartet mit aktueller UI-Items Liste")
+    console.log("[v0] Starting new test...")
+    setIsStartingNewTest(true)
+
+    try {
+      // Fetch fresh UI items to ensure we have the latest
+      const data = await fetchUIItems()
+
+      if (data) {
+        console.log("[v0] Initializing test items from", data.categories?.length, "categories")
+        initializeTestItems(data)
+        setSelectedTestRun(null)
+        setCurrentTestName("")
+        setActiveTab("current")
+        toast.success("Neuer Test gestartet mit aktueller UI-Items Liste")
+      } else {
+        console.error("[v0] Failed to fetch UI items for new test")
+        toast.error("Konnte UI-Items nicht laden")
+      }
+    } catch (error) {
+      console.error("[v0] Error starting new test:", error)
+      toast.error("Fehler beim Starten des neuen Tests")
+    } finally {
+      setIsStartingNewTest(false)
+      setIsCreateDialogOpen(false)
     }
-    setIsLoading(false)
-    setIsCreateDialogOpen(false)
   }
 
   const toggleCategory = (categoryId: string) => {
@@ -790,23 +812,32 @@ export default function UIItemsTestManager() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="flex items-center gap-2 p-3 bg-blue-500/10 rounded-lg">
-              <RefreshCw className="h-5 w-5 text-blue-600" />
-              <div className="text-sm">
+            <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+              <RefreshCw className="h-5 w-5 text-primary" />
+              <div>
                 <div className="font-medium">Aktuelle Version laden</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   Holt die neueste Liste aller Menu-Items aus der Anwendung
                 </div>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={isStartingNewTest}>
               Abbrechen
             </Button>
-            <Button onClick={startNewTest}>
-              <Plus className="h-4 w-4 mr-1" />
-              Neuen Test starten
+            <Button onClick={startNewTest} disabled={isStartingNewTest}>
+              {isStartingNewTest ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Lädt...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Neuen Test starten
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

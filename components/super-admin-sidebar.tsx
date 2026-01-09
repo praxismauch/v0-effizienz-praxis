@@ -31,8 +31,6 @@ import {
   ArrowLeft,
   ToggleLeft,
   TestTube,
-  FolderCheck,
-  Tags,
   MessageSquare,
   Share2,
 } from "lucide-react"
@@ -655,22 +653,10 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       label: "Testing",
       items: [
         {
-          id: "testing-overview",
-          label: "Test-Übersicht",
+          id: "testing",
+          label: "Testing",
           icon: TestTube,
           href: "/super-admin/testing",
-        },
-        {
-          id: "test-checklists",
-          label: "Test-Checklisten",
-          icon: FolderCheck,
-          href: "/super-admin/testing?tab=checklists",
-        },
-        {
-          id: "test-categories",
-          label: "Kategorien",
-          icon: Tags,
-          href: "/super-admin/testing?tab=categories",
         },
       ],
     },

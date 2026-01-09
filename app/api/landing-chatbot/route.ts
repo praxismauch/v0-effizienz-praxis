@@ -80,11 +80,17 @@ Effizienz Praxis ist eine umfassende Praxismanagement Software mit folgenden Hau
 `
 
 export async function POST(req: Request) {
+  console.log("[v0] Landing chatbot: Request received")
+
   try {
     const body = await req.json()
+    console.log("[v0] Landing chatbot: Body parsed successfully")
+
     const { messages } = body
+    console.log("[v0] Landing chatbot: Messages count:", messages?.length || 0)
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      console.log("[v0] Landing chatbot: No messages - returning 400")
       return new Response(
         JSON.stringify({
           error: "Keine Nachricht erhalten",
@@ -106,6 +112,11 @@ export async function POST(req: Request) {
       })),
     ]
 
+    console.log("[v0] Landing chatbot: Messages with system prepared, total:", messagesWithSystem.length)
+    console.log("[v0] Landing chatbot: Last user message:", messages[messages.length - 1]?.content?.substring(0, 50))
+
+    console.log("[v0] Landing chatbot: Calling streamText with model openai/gpt-4o")
+
     const result = streamText({
       model: "openai/gpt-4o",
       messages: messagesWithSystem,
@@ -114,9 +125,18 @@ export async function POST(req: Request) {
       abortSignal: req.signal,
     })
 
-    return result.toTextStreamResponse()
+    console.log("[v0] Landing chatbot: streamText returned, result type:", typeof result)
+    console.log("[v0] Landing chatbot: result.toTextStreamResponse exists:", typeof result.toTextStreamResponse)
+
+    const response = result.toTextStreamResponse()
+    console.log("[v0] Landing chatbot: Response created successfully")
+
+    return response
   } catch (error) {
-    console.error("[v0] Landing chatbot error:", error)
+    console.error("[v0] Landing chatbot ERROR:", error)
+    console.error("[v0] Landing chatbot ERROR name:", error instanceof Error ? error.name : "unknown")
+    console.error("[v0] Landing chatbot ERROR message:", error instanceof Error ? error.message : String(error))
+    console.error("[v0] Landing chatbot ERROR stack:", error instanceof Error ? error.stack : "no stack")
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     let userMessage = "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut."

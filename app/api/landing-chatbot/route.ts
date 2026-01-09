@@ -1,166 +1,229 @@
-import { streamText } from "ai"
-
 export const maxDuration = 30
 
-const systemPrompt = `Du bist ein freundlicher und kompetenter KI-Assistent für Effizienz Praxis, eine KI-gestützte Praxismanagement Software für medizinische Einrichtungen.
+// Predefined FAQ responses based on the original system prompt
+const FAQ_RESPONSES: Record<string, { keywords: string[]; response: string }> = {
+  funktionen: {
+    keywords: ["funktion", "feature", "was kann", "was bietet", "möglichkeiten", "leistung"],
+    response: `**Effizienz Praxis bietet folgende Hauptfunktionen:**
 
-**SPRACHE: Du antwortest IMMER auf Deutsch. Alle deine Antworten müssen in deutscher Sprache verfasst sein.**
+1. **KI-Praxisanalyse** - Automatische Analyse mit Optimierungsvorschlägen
+2. **Analytics & KPIs** - Dashboards mit Echtzeit-Kennzahlen
+3. **Ziele & OKRs** - Team-Ziele setzen und tracken
+4. **Workflow Automation** - KI-gestützte automatisierte Prozesse
+5. **Team & Organigramm** - Visualisiertes Team-Management
+6. **Recruiting System** - Bewerbermanagement mit KI-Textgenerierung
+7. **Aufgabenmanagement** - Smart Todo-Listen
+8. **Kalender & Termine** - Mit KI-Terminvorschlägen
+9. **Dokumentenverwaltung** - Zentrale Ablage mit KI-Analyse
+10. **QM Dokumentation** - Wissensdatenbank für SOPs
 
-**WICHTIGE EINSCHRÄNKUNG - DATENSCHUTZ:**
-Du hast KEINEN Zugriff auf interne Praxisdaten, Patientendaten, Benutzerdaten oder andere vertrauliche Informationen aus der App.
-Du darfst NUR über öffentlich verfügbare Informationen zur Effizienz Praxis Software sprechen.
-Wenn jemand nach internen Daten fragt, erkläre höflich, dass du nur über die Software-Features und öffentliche Informationen Auskunft geben kannst.
+Haben Sie Interesse an einer Demo? Besuchen Sie uns auf effizienz-praxis.de!`,
+  },
+  preise: {
+    keywords: ["preis", "kosten", "kostet", "tarif", "paket", "abo", "zahlen", "euro", "€"],
+    response: `**Unsere Preise:**
 
-**Über Effizienz Praxis:**
+- **Starter:** 49€/Monat (bis 5 Mitarbeiter)
+- **Professional:** 99€/Monat (bis 15 Mitarbeiter)  
+- **Enterprise:** 199€/Monat (große Praxen/MVZ)
 
-Effizienz Praxis ist eine umfassende Praxismanagement Software mit folgenden Hauptfunktionen:
+Alle Pakete beinhalten:
+- Voller Funktionsumfang
+- Deutsche Server (DSGVO-konform)
+- Regelmäßige Updates
+- E-Mail Support
 
-1. **KI-Praxisanalyse**: Automatische Analyse der Praxisdaten mit Stärken-Schwächen-Profil, Trends und konkreten Optimierungsvorschlägen
-2. **Analytics & KPIs**: Customizable Dashboards mit Echtzeit-Kennzahlen, interaktiven Charts und Reports
-3. **Ziele & OKRs**: Team-Ziele setzen und tracken mit Fortschrittsüberwachung
-4. **Workflow Automation**: KI-gestützte Workflow-Erstellung und automatisierte Prozesse
-5. **Team & Organigramm**: Visualisiertes Team-Management mit interaktivem Organigramm
-6. **Recruiting System**: Komplette Hiring-Pipeline mit Bewerbermanagement und KI-Textgenerierung
-7. **Aufgabenmanagement**: Smart Todo-Listen mit KI-generierten Aufgabenvorschlägen
-8. **Kalender & Termine**: Integrierter Kalender mit KI-Terminvorschlägen
-9. **Dokumentenverwaltung**: Zentrale Ablage mit Versionierung und KI-Analyse
-10. **QM Dokumentation**: Wissensdatenbank für Qualitätsmanagement und SOPs
-11. **Rollen & Berechtigungen**: Granulare Zugriffsrechte und sichere Datenverwaltung
-12. **DSGVO-Konformität**: Höchste Sicherheitsstandards und konforme Datenhaltung
+Kontaktieren Sie uns für ein individuelles Angebot oder eine kostenlose Demo!`,
+  },
+  dsgvo: {
+    keywords: ["dsgvo", "datenschutz", "sicherheit", "sicher", "daten", "konform", "gdpr", "privacy"],
+    response: `**Ja, Effizienz Praxis ist vollständig DSGVO-konform!**
 
-**Warum Effizienz wichtig ist:**
-- Effiziente Praxis = wirtschaftlich starke Praxis
-- Effizienz bedeutet: weniger Stress, weniger Fehler, höhere Qualität, zufriedenere Mitarbeitende, höhere Gewinne
+Unsere Sicherheitsmaßnahmen:
+- 🔒 **Deutsche Server** - Alle Daten werden in Deutschland gehostet
+- 🛡️ **Verschlüsselung** - Ende-zu-Ende-Verschlüsselung aller Daten
+- ✅ **DSGVO-Compliance** - Volle Einhaltung der EU-Datenschutzrichtlinien
+- 📋 **AV-Vertrag** - Auftragsverarbeitungsvertrag auf Anfrage
+- 🔐 **Zugriffskontrolle** - Rollenbasierte Berechtigungen
 
-**KI-Features:**
-- KI-Praxisanalyse mit Optimierungsvorschlägen
-- Workflow-Generator (Prozesse in eigenen Worten beschreiben)
-- Smart Aufgaben-Vorschläge basierend auf Zielen und Workflows
-- Recruiting-Assistent für Stellenausschreibungen
-- Termin-Optimierung im Kalender
-- Analytics Insights mit Trend-Erkennung
-- Dokument-Analyse und Organisation
-- SMART-Ziele Generierung
+Ihre Praxis- und Patientendaten sind bei uns sicher!`,
+  },
+  ki: {
+    keywords: ["ki", "künstliche intelligenz", "ai", "automatisch", "intelligent", "analyse", "praxisanalyse"],
+    response: `**So hilft KI Ihrer Praxis:**
 
-**Vorteile:**
-- 24% Effizienzsteigerung
-- Zentrale Verwaltung aller Praxisprozesse
-- Datenbasierte Entscheidungen durch Analytics
-- DSGVO-konforme Datenhaltung
-- Intuitiv bedienbar
-- Für Arztpraxen, MVZ und medizinische Zentren
+🤖 **KI-Praxisanalyse**
+- Automatische Erkennung von Optimierungspotenzialen
+- Vergleich mit anonymisierten Benchmark-Daten
+- Konkrete Handlungsempfehlungen
 
-**Preise:**
-- Starter: 49€/Monat - Für kleine Praxen bis 5 Mitarbeiter
-- Professional: 99€/Monat - Für mittlere Praxen bis 15 Mitarbeiter
-- Enterprise: 199€/Monat - Für große Praxen und MVZ
+📊 **Intelligente Auswertungen**
+- Automatische Erstellung von Reports
+- Trend-Erkennung bei KPIs
+- Prognosen für Ihre Praxisentwicklung
 
-**Kontakt:**
-- Website: effizienz-praxis.de
-- Inhaber: Dr. Daniel Mauch
-- Adresse: Allgäuerstr. 106, 87600 Kaufbeuren, Deutschland
+⚡ **Workflow-Automation**
+- Automatisierte Routineaufgaben
+- KI-gestützte Terminvorschläge
+- Intelligente Dokumentenanalyse
 
-**Zielgruppe:**
-Ärzte, Praxisinhaber, MVZ, medizinische Zentren, Praxismanager
+Die KI unterstützt Sie - die Kontrolle behalten Sie!`,
+  },
+  kontakt: {
+    keywords: ["kontakt", "erreichen", "telefon", "email", "adresse", "ansprechpartner", "demo", "termin"],
+    response: `**So erreichen Sie uns:**
 
-**Deine Aufgabe:**
-- Beantworte Fragen zu Effizienz Praxis präzise und freundlich auf Deutsch
-- Erkläre Features verständlich und praxisnah
-- Hebe die Vorteile und den Nutzen für die Praxis hervor
-- Sei hilfreich und ermutigend
-- Wenn du etwas nicht weißt, empfehle dem Nutzer, sich über das Kontaktformular zu melden
-- NIEMALS interne Praxis- oder Patientendaten preisgeben oder darüber spekulieren
+👤 **Ansprechpartner:** Dr. Daniel Mauch
+🌐 **Website:** effizienz-praxis.de
+📍 **Adresse:** Allgäuerstr. 106, 87600 Kaufbeuren
 
-**Wichtig:**
-- **ANTWORTE IMMER AUF DEUTSCH** - auch wenn die Frage auf Englisch gestellt wird
-- Sei präzise aber nicht zu technisch
-- Fokussiere auf den praktischen Nutzen
-- Halte Antworten kurz und auf den Punkt (2-4 Sätze pro Antwort)
-- Verweise bei Interesse auf die Demo oder das Kontaktformular
-`
+**Vereinbaren Sie eine kostenlose Demo!**
+Wir zeigen Ihnen gerne, wie Effizienz Praxis Ihre Praxis optimieren kann.
+
+Besuchen Sie unsere Website für weitere Informationen und das Kontaktformular.`,
+  },
+  team: {
+    keywords: ["team", "mitarbeiter", "organigramm", "personal", "organisation"],
+    response: `**Team-Management mit Effizienz Praxis:**
+
+👥 **Organigramm**
+- Visualisierte Teamstruktur
+- Übersichtliche Hierarchien
+- Einfache Verwaltung
+
+📋 **Mitarbeiterverwaltung**
+- Vollständige Personalakte
+- Fortbildungsübersicht
+- Urlaubsverwaltung
+
+🎯 **Ziele & OKRs**
+- Team-Ziele definieren
+- Fortschritt tracken
+- Feedback-System
+
+Perfekt für Praxen jeder Größe!`,
+  },
+  recruiting: {
+    keywords: ["recruiting", "bewerb", "stellen", "job", "personal suchen", "mitarbeiter finden"],
+    response: `**Recruiting-System von Effizienz Praxis:**
+
+📝 **Stellenausschreibungen**
+- KI-generierte Stellentexte
+- Multi-Portal-Veröffentlichung
+- Bewerbungsformular
+
+👔 **Bewerbermanagement**
+- Übersichtliche Kandidatenprofile
+- Bewertungssystem
+- Kommunikationshistorie
+
+🤖 **KI-Unterstützung**
+- Automatische Textgenerierung
+- Matching-Vorschläge
+- Interview-Vorbereitung
+
+Finden Sie schneller die besten Mitarbeiter für Ihre Praxis!`,
+  },
+}
+
+// Default response if no keyword matches
+const DEFAULT_RESPONSE = `Vielen Dank für Ihre Frage!
+
+Ich bin der virtuelle Assistent von **Effizienz Praxis** und kann Ihnen bei folgenden Themen helfen:
+
+- **Funktionen** - Was kann die Software?
+- **Preise** - Was kostet Effizienz Praxis?
+- **DSGVO** - Wie sicher sind meine Daten?
+- **KI-Features** - Wie hilft KI meiner Praxis?
+- **Team-Management** - Mitarbeiter & Organigramm
+- **Recruiting** - Bewerbermanagement
+- **Kontakt** - Wie erreiche ich das Team?
+
+Stellen Sie mir gerne eine spezifische Frage zu einem dieser Themen!
+
+Oder besuchen Sie uns auf **effizienz-praxis.de** für mehr Informationen.`
+
+// Greeting response
+const GREETING_RESPONSE = `Hallo! 👋
+
+Willkommen bei **Effizienz Praxis** - der KI-gestützten Praxismanagement Software!
+
+Ich helfe Ihnen gerne bei Fragen zu:
+- Funktionen & Features
+- Preise & Pakete
+- Datenschutz & DSGVO
+- KI-Praxisanalyse
+- Team-Management
+- Recruiting
+
+Was möchten Sie wissen?`
+
+function findBestResponse(question: string): string {
+  const lowerQuestion = question.toLowerCase()
+
+  // Check for greetings first
+  const greetings = ["hallo", "hi", "hey", "guten tag", "moin", "servus", "grüß"]
+  if (greetings.some((g) => lowerQuestion.includes(g))) {
+    return GREETING_RESPONSE
+  }
+
+  // Find matching FAQ
+  let bestMatch: { key: string; score: number } | null = null
+
+  for (const [key, faq] of Object.entries(FAQ_RESPONSES)) {
+    const matchCount = faq.keywords.filter((keyword) => lowerQuestion.includes(keyword)).length
+
+    if (matchCount > 0 && (!bestMatch || matchCount > bestMatch.score)) {
+      bestMatch = { key, score: matchCount }
+    }
+  }
+
+  if (bestMatch) {
+    return FAQ_RESPONSES[bestMatch.key].response
+  }
+
+  return DEFAULT_RESPONSE
+}
 
 export async function POST(req: Request) {
-  console.log("[v0] Landing chatbot: Request received")
-
   try {
     const body = await req.json()
-    console.log("[v0] Landing chatbot: Body parsed successfully")
-
     const { messages } = body
-    console.log("[v0] Landing chatbot: Messages count:", messages?.length || 0)
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      console.log("[v0] Landing chatbot: No messages - returning 400")
       return new Response(
         JSON.stringify({
           error: "Keine Nachricht erhalten",
           errorCode: "NO_MESSAGES",
           userMessage: "Bitte geben Sie eine Frage ein.",
         }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
+        { status: 400, headers: { "Content-Type": "application/json" } },
       )
     }
 
-    const messagesWithSystem = [
-      { role: "system" as const, content: systemPrompt },
-      ...messages.map((m: { role: string; content: string }) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
-    ]
+    // Get the last user message
+    const lastUserMessage = messages.filter((m: { role: string }) => m.role === "user").pop()
+    const userQuestion = lastUserMessage?.content || ""
 
-    console.log("[v0] Landing chatbot: Messages with system prepared, total:", messagesWithSystem.length)
-    console.log("[v0] Landing chatbot: Last user message:", messages[messages.length - 1]?.content?.substring(0, 50))
+    // Find the best matching response
+    const response = findBestResponse(userQuestion)
 
-    console.log("[v0] Landing chatbot: Calling streamText with model openai/gpt-4o")
+    // Simulate slight delay for natural feel (50-150ms)
+    await new Promise((resolve) => setTimeout(resolve, 50 + Math.random() * 100))
 
-    const result = streamText({
-      model: "openai/gpt-4o",
-      messages: messagesWithSystem,
-      maxOutputTokens: 500,
-      temperature: 0.7,
-      abortSignal: req.signal,
+    // Return as plain text
+    return new Response(response, {
+      status: 200,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
     })
-
-    console.log("[v0] Landing chatbot: streamText returned, result type:", typeof result)
-    console.log("[v0] Landing chatbot: result.toTextStreamResponse exists:", typeof result.toTextStreamResponse)
-
-    const response = result.toTextStreamResponse()
-    console.log("[v0] Landing chatbot: Response created successfully")
-
-    return response
   } catch (error) {
     console.error("[v0] Landing chatbot ERROR:", error)
-    console.error("[v0] Landing chatbot ERROR name:", error instanceof Error ? error.name : "unknown")
-    console.error("[v0] Landing chatbot ERROR message:", error instanceof Error ? error.message : String(error))
-    console.error("[v0] Landing chatbot ERROR stack:", error instanceof Error ? error.stack : "no stack")
-
-    const errorMessage = error instanceof Error ? error.message : "Unknown error"
-    let userMessage = "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut."
-    let errorCode = "UNKNOWN_ERROR"
-
-    if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
-      userMessage = "Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut."
-      errorCode = "RATE_LIMIT"
-    } else if (errorMessage.includes("timeout") || errorMessage.includes("ETIMEDOUT")) {
-      userMessage = "Die Anfrage hat zu lange gedauert. Bitte versuchen Sie es erneut."
-      errorCode = "TIMEOUT"
-    } else if (errorMessage.includes("API") || errorMessage.includes("key") || errorMessage.includes("401")) {
-      userMessage = "Der KI-Service ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
-      errorCode = "API_ERROR"
-    } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
-      userMessage = "Netzwerkfehler. Bitte prüfen Sie Ihre Internetverbindung."
-      errorCode = "NETWORK_ERROR"
-    }
 
     return new Response(
       JSON.stringify({
-        error: errorMessage,
-        errorCode,
-        userMessage,
+        error: "Fehler bei der Verarbeitung",
+        errorCode: "PROCESSING_ERROR",
+        userMessage: "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
       }),
       {
         status: 500,

@@ -1,8 +1,6 @@
-import { streamText } from "ai"
+import { consumeStream, convertToModelMessages, streamText, type UIMessage } from "ai"
 
 export const maxDuration = 30
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 
 const systemPrompt = `Du bist ein freundlicher und kompetenter KI-Assistent für Effizienz Praxis, eine KI-gestützte Praxismanagement Software für medizinische Einrichtungen.
 
@@ -82,34 +80,11 @@ Effizienz Praxis ist eine umfassende Praxismanagement Software mit folgenden Hau
 `
 
 export async function POST(req: Request) {
-  console.log("[v0] Landing chatbot: Request received")
-
-  // Check environment variable
-  if (!OPENAI_API_KEY) {
-    console.error("[v0] Landing chatbot: OPENAI_API_KEY is not set")
-    return new Response(
-      JSON.stringify({
-        error: "API key not configured",
-        errorCode: "CONFIG_ERROR",
-        userMessage: "Der KI-Service ist nicht richtig konfiguriert. Bitte kontaktieren Sie den Support.",
-      }),
-      {
-        status: 503,
-        headers: { "Content-Type": "application/json" },
-      },
-    )
-  }
-
-  console.log("[v0] Landing chatbot: API key exists, length:", OPENAI_API_KEY.length)
-
   try {
     const body = await req.json()
-    console.log("[v0] Landing chatbot: Body parsed, messages count:", body.messages?.length)
-
     const { messages } = body
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      console.log("[v0] Landing chatbot: No messages provided")
       return new Response(
         JSON.stringify({
           error: "Keine Nachricht erhalten",
@@ -123,30 +98,38 @@ export async function POST(req: Request) {
       )
     }
 
-    const coreMessages = messages.map((m: { role: string; content: string }) => ({
+    const uiMessages: UIMessage[] = messages.map((m: { role: string; content: string }, index: number) => ({
+      id: `msg-${index}`,
       role: m.role as "user" | "assistant",
       content: m.content,
+      parts: [{ type: "text" as const, text: m.content }],
     }))
 
-    console.log("[v0] Landing chatbot: Calling streamText with", coreMessages.length, "messages")
-    console.log("[v0] Landing chatbot: Last message:", coreMessages[coreMessages.length - 1]?.content?.substring(0, 50))
+    const messagesWithSystem: UIMessage[] = [
+      {
+        id: "system-0",
+        role: "system" as const,
+        content: systemPrompt,
+        parts: [{ type: "text" as const, text: systemPrompt }],
+      },
+      ...uiMessages,
+    ]
 
-    const result = await streamText({
+    const prompt = convertToModelMessages(messagesWithSystem)
+
+    const result = streamText({
       model: "openai/gpt-4o",
-      system: systemPrompt,
-      messages: coreMessages,
-      maxTokens: 500,
+      prompt,
+      maxOutputTokens: 500,
       temperature: 0.7,
+      abortSignal: req.signal,
     })
 
-    console.log("[v0] Landing chatbot: streamText completed, returning stream")
-    console.log("[v0] Landing chatbot: result type:", typeof result)
-    console.log("[v0] Landing chatbot: has toTextStreamResponse:", typeof result.toTextStreamResponse)
-
-    return result.toTextStreamResponse()
+    return result.toUIMessageStreamResponse({
+      consumeSseStream: consumeStream,
+    })
   } catch (error) {
     console.error("[v0] Landing chatbot error:", error)
-    console.error("[v0] Landing chatbot error stack:", error instanceof Error ? error.stack : "no stack")
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     let userMessage = "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut."

@@ -52,8 +52,8 @@ export async function createServerClient() {
               path: "/",
             })
           })
-        } catch {
-          // Ignore errors from Server Components
+        } catch (error) {
+          // Ignore errors from Server Components - expected in read-only contexts
         }
       },
     },

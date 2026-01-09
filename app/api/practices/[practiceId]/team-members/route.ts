@@ -105,8 +105,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           { status: 503, headers: { "Retry-After": "5" } },
         )
       }
+      console.error("[v0] Query error in team-members GET:", queryError)
       return NextResponse.json([])
     }
+
+    console.log("[v0] team-members: fetched", members.length, "members before filtering")
 
     const activeMembers = members.filter((member: any) => {
       if (member.user_id && member.users) {
@@ -115,7 +118,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return true
     })
 
+    console.log("[v0] team-members: filtered to", activeMembers.length, "active members (removed superadmins)")
+
     const userIds = activeMembers.map((m: any) => m.user_id).filter(Boolean)
+
+    console.log("[v0] team-members: extracting team assignments for", userIds.length, "user IDs")
+
     let teamAssignments: any[] = []
 
     if (userIds.length > 0) {
@@ -124,7 +132,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           return await supabase.from("team_assignments").select("user_id, team_id").in("user_id", userIds)
         })
         teamAssignments = result.data || []
+        console.log("[v0] team-members: found", teamAssignments.length, "team assignments")
       } catch (assignError: any) {
+        console.error("[v0] team-members: error fetching team assignments:", assignError)
         // Continue with empty assignments rather than failing
       }
     }
@@ -172,6 +182,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     const sortedTeamMembers = sortTeamMembersByRole(teamMembers, customRoleOrder)
+
+    console.log("[v0] team-members GET: returning", sortedTeamMembers.length, "members")
 
     return NextResponse.json(sortedTeamMembers || [])
   } catch (error: any) {

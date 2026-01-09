@@ -1,5 +1,8 @@
 import nodemailer from "nodemailer"
 import { createAdminClient } from "@/lib/supabase/server"
+import { Resend } from "resend"
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 interface SmtpConfig {
   host: string
@@ -160,22 +163,26 @@ export async function sendEmail({
  * Check if email service is properly configured
  */
 export async function isEmailConfigured(): Promise<boolean> {
-  const config = await getSmtpConfig()
-  return config !== null
+  const smtpConfigured = await getSmtpConfig()
+  const resendConfigured = !!process.env.RESEND_API_KEY
+
+  return smtpConfigured !== null || resendConfigured
 }
 
 /**
  * Get email configuration status for debugging
  */
 export async function getEmailConfigStatus() {
-  const config = await getSmtpConfig()
+  const smtpConfig = await getSmtpConfig()
 
   return {
-    configured: config !== null,
-    host: config?.host || "",
-    port: config?.port || 587,
-    hasAuth: !!(config?.auth.user && config?.auth.pass),
-    source: config ? "configured" : "none",
+    configured: smtpConfig !== null || !!process.env.RESEND_API_KEY,
+    smtpHost: smtpConfig?.host || "",
+    smtpPort: smtpConfig?.port || 587,
+    smtpHasAuth: !!(smtpConfig?.auth.user && smtpConfig?.auth.pass),
+    smtpSource: smtpConfig ? "configured" : "none",
+    resendProvider: !!process.env.RESEND_API_KEY,
+    resendFromEmail: process.env.RESEND_FROM_EMAIL || "not configured",
   }
 }
 
@@ -210,4 +217,68 @@ export async function testSmtpConnection(): Promise<{ success: boolean; error?: 
 export function clearEmailCache(): void {
   cachedTransporter = null
   lastConfigFetch = 0
+}
+
+/**
+ * Send an email using Resend (edge-compatible)
+ */
+export async function sendEmailWithResend({
+  to,
+  subject,
+  html,
+  from,
+  replyTo,
+  attachments,
+}: SendEmailParams): Promise<SendEmailResult> {
+  try {
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("RESEND_API_KEY not configured - skipping email send")
+      return {
+        success: false,
+        error: "E-Mail-Service nicht konfiguriert. Bitte RESEND_API_KEY in den Umgebungsvariablen konfigurieren.",
+      }
+    }
+
+    const fromEmail = from || process.env.RESEND_FROM_EMAIL || "Effizienz Praxis <noreply@effizienz-praxis.de>"
+    const recipients = Array.isArray(to) ? to : [to]
+
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: recipients,
+      subject,
+      html,
+      ...(replyTo && { reply_to: replyTo }),
+      ...(attachments && {
+        attachments: attachments.map((a) => ({
+          filename: a.filename,
+          content: typeof a.content === "string" ? a.content : a.content.toString("base64"),
+        })),
+      }),
+    })
+
+    if (error) {
+      console.error("Resend error:", error)
+      return {
+        success: false,
+        error: error.message || "Fehler beim E-Mail-Versand",
+      }
+    }
+
+    console.log(`Email sent successfully to ${recipients.join(", ")} - MessageID: ${data?.id}`)
+
+    return {
+      success: true,
+      messageId: data?.id,
+    }
+  } catch (error) {
+    console.error("Error sending email:", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      to: Array.isArray(to) ? to : [to],
+      subject,
+    })
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unbekannter Fehler beim E-Mail-Versand",
+    }
+  }
 }

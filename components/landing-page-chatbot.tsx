@@ -7,28 +7,27 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { X, Send, Loader2, User, Upload, ImageIcon, Sparkles } from "lucide-react"
-import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
+import { X, Send, Loader2, User, ImageIcon, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { FormattedAIContent } from "@/components/formatted-ai-content"
+
+interface Message {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
 
 export function LandingPageChatbot() {
   const [isOpen, setIsOpen] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const [attachedImages, setAttachedImages] = useState<Array<{ url: string; file: File }>>([])
-  const [isDragging, setIsDragging] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
-  const [inputValue, setInputValue] = useState("")
-  const chatAreaRef = useRef<HTMLDivElement>(null)
-  const formRef = useRef<HTMLFormElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
-
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/landing-chatbot" }),
-  })
-
-  const isLoading = status === "streaming" || status === "submitted"
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -149,13 +148,83 @@ export function LandingPageChatbot() {
     }
   }
 
+  const sendMessage = async (content: string) => {
+    if (!content.trim() || isLoading) return
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: content.trim(),
+    }
+
+    const assistantMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: "",
+    }
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage])
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/landing-chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.userMessage || "Fehler bei der Anfrage")
+      }
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error("No response body")
+
+      const decoder = new TextDecoder()
+      let fullText = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        fullText += chunk
+
+        setMessages((prev) => prev.map((m) => (m.id === assistantMessage.id ? { ...m, content: fullText } : m)))
+      }
+
+      if (!fullText.trim()) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessage.id
+              ? { ...m, content: "Entschuldigung, ich konnte keine Antwort generieren." }
+              : m,
+          ),
+        )
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Ein unbekannter Fehler ist aufgetreten."
+      setMessages((prev) =>
+        prev.map((m) => (m.id === assistantMessage.id ? { ...m, content: `Entschuldigung, ${errorMessage}` } : m)),
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputValue.trim() && attachedImages.length === 0) return
-    if (status !== "ready") return
+    if (!input.trim() && attachedImages.length === 0) return
+    if (isLoading) return
 
-    sendMessage({ text: inputValue })
-    setInputValue("")
+    await sendMessage(input)
+    setInput("")
     setAttachedImages([])
   }
 
@@ -170,31 +239,8 @@ export function LandingPageChatbot() {
   }
 
   const handleQuickQuestion = async (question: string) => {
-    if (status !== "ready") return
-    try {
-      sendMessage({ text: question })
-    } catch (error) {
-      console.error("Error sending quick question:", error)
-      toast({
-        title: "Fehler",
-        description: "Frage konnte nicht gesendet werden",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const getMessageText = (message: (typeof messages)[0]) => {
-    if (typeof message.content === "string") {
-      return message.content
-    }
-    // For v5 UIMessage with parts
-    if (message.parts) {
-      return message.parts
-        .filter((part): part is { type: "text"; text: string } => part.type === "text")
-        .map((part) => part.text)
-        .join("")
-    }
-    return ""
+    if (isLoading) return
+    await sendMessage(question)
   }
 
   return (
@@ -266,7 +312,7 @@ export function LandingPageChatbot() {
               {isDragging && (
                 <div className="absolute inset-0 bg-purple-500/10 border-2 border-dashed border-purple-500 rounded-lg flex items-center justify-center z-10 pointer-events-none">
                   <div className="text-center">
-                    <Upload className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 text-purple-500" />
+                    <ImageIcon className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 text-purple-500" />
                     <p className="text-sm font-medium">Lassen Sie die Bilder los</p>
                   </div>
                 </div>
@@ -318,102 +364,66 @@ export function LandingPageChatbot() {
                 </div>
               )}
 
-              {messages.map((message) => {
-                const messageText = getMessageText(message)
-                return (
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex gap-2 sm:gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {message.role === "assistant" && (
+                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center shrink-0">
+                      <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                    </div>
+                  )}
                   <div
-                    key={message.id}
-                    className={`flex gap-2 sm:gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    {message.role === "assistant" && (
-                      <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center shrink-0">
-                        <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                      </div>
+                    className={cn(
+                      "rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-[85%] shadow-sm",
+                      message.role === "user"
+                        ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+                        : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
                     )}
-                    <div
-                      className={cn(
-                        "rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-[85%] shadow-sm",
-                        message.role === "user"
-                          ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
-                          : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
-                      )}
-                    >
-                      {message.role === "assistant" ? (
-                        <div className="text-xs sm:text-sm leading-relaxed space-y-2">
-                          {messageText.split("\n\n").map((paragraph, i) => {
-                            // Handle markdown-style headers
-                            if (paragraph.startsWith("# ")) {
-                              return (
-                                <h3 key={i} className="font-bold text-sm sm:text-base mt-2 first:mt-0">
-                                  {paragraph.slice(2)}
-                                </h3>
-                              )
-                            }
-                            if (paragraph.startsWith("## ")) {
-                              return (
-                                <h4 key={i} className="font-semibold text-xs sm:text-sm mt-2">
-                                  {paragraph.slice(3)}
-                                </h4>
-                              )
-                            }
-                            // Handle bullet points
-                            if (paragraph.includes("\n- ") || paragraph.startsWith("- ")) {
-                              const lines = paragraph.split("\n")
-                              return (
-                                <ul key={i} className="space-y-1 ml-1">
-                                  {lines.map((line, j) => (
-                                    <li key={j} className="flex items-start gap-2">
-                                      {line.startsWith("- ") && (
-                                        <>
-                                          <span className="text-purple-500 mt-0.5">•</span>
-                                          <span>{line.slice(2)}</span>
-                                        </>
-                                      )}
-                                      {!line.startsWith("- ") && line.trim() && <span>{line}</span>}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )
-                            }
-                            return (
-                              <p key={i} className="whitespace-pre-wrap">
-                                {paragraph}
-                              </p>
-                            )
-                          })}
+                  >
+                    {message.role === "assistant" ? (
+                      message.content ? (
+                        <div className="text-xs sm:text-sm">
+                          <FormattedAIContent
+                            content={message.content}
+                            showCard={false}
+                            className="[&_h1]:text-base [&_h1]:mb-3 [&_h2]:text-sm [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_p]:text-xs [&_p]:sm:text-sm [&_p]:mb-2 [&_li]:text-xs [&_li]:sm:text-sm [&_ul]:my-2 [&_ol]:my-2"
+                          />
                         </div>
                       ) : (
-                        <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">{messageText}</p>
-                      )}
-                    </div>
-                    {message.role === "user" && (
-                      <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center shrink-0">
-                        <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                      </div>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                          <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-purple-500" />
+                          <span>Die KI antwortet</span>
+                          <span className="inline-flex">
+                            <span className="animate-bounce" style={{ animationDelay: "0ms" }}>
+                              .
+                            </span>
+                            <span className="animate-bounce" style={{ animationDelay: "150ms" }}>
+                              .
+                            </span>
+                            <span className="animate-bounce" style={{ animationDelay: "300ms" }}>
+                              .
+                            </span>
+                          </span>
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
                     )}
                   </div>
-                )
-              })}
-
-              {isLoading && (
-                <div className="flex gap-2 sm:gap-3 justify-start">
-                  <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center shrink-0">
-                    <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white animate-pulse" />
-                  </div>
-                  <div className="rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 bg-muted">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-purple-500" />
-                      <span className="text-xs sm:text-sm text-muted-foreground">Die KI denkt nach...</span>
+                  {message.role === "user" && (
+                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center shrink-0">
+                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
           </ScrollArea>
 
           {/* Input - Made responsive with safe area for mobile */}
           <form
-            ref={formRef}
             onSubmit={handleSubmit}
             className="p-3 sm:p-4 border-t bg-background safe-area-inset-bottom"
             data-chatbot-form
@@ -447,40 +457,34 @@ export function LandingPageChatbot() {
                   size="icon"
                   variant="outline"
                   disabled={uploadingImage}
+                  className="h-10 w-10 shrink-0 bg-transparent"
                   asChild
-                  className="rounded-xl bg-transparent h-9 w-9 sm:h-10 sm:w-10"
                 >
-                  <div>
+                  <span>
                     {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
-                  </div>
+                  </span>
                 </Button>
               </label>
               <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ihre Frage hier eingeben..."
+                placeholder="Stellen Sie eine Frage..."
+                className="flex-1 text-sm"
                 disabled={isLoading}
-                className="flex-1 rounded-xl h-9 sm:h-10 text-sm"
               />
               <Button
                 type="submit"
                 size="icon"
-                disabled={isLoading || (!inputValue.trim() && attachedImages.length === 0)}
-                aria-label="Nachricht senden"
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 h-9 w-9 sm:h-10 sm:w-10"
+                disabled={(!input.trim() && attachedImages.length === 0) || isLoading}
+                className="h-10 w-10 shrink-0 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500"
               >
-                <Send className="h-4 w-4" />
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 text-center">
-              Powered by KI · DSGVO-konform · Bilder per Drag & Drop
-            </p>
           </form>
         </Card>
       )}
     </>
   )
 }
-
-export default LandingPageChatbot

@@ -10,12 +10,51 @@ import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useState, Suspense } from "react"
 import { useUser } from "@/contexts/user-context"
+import { Logo } from "@/components/logo"
+
+async function verifySessionWithRetry(maxRetries = 5, initialDelay = 200): Promise<boolean> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const delay = initialDelay * Math.pow(1.5, attempt) // 200ms, 300ms, 450ms, 675ms, 1012ms
+
+    // Wait before each attempt (including first) to let cookies propagate
+    await new Promise((resolve) => setTimeout(resolve, delay))
+
+    try {
+      const response = await fetch("/api/user/me", {
+        credentials: "include",
+        cache: "no-store",
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.user) {
+          console.log(`[v0] Session verified on attempt ${attempt + 1}`)
+          return true
+        }
+      }
+
+      // 401 means session not ready yet, keep trying
+      if (response.status === 401) {
+        console.log(`[v0] Session not ready (attempt ${attempt + 1}/${maxRetries}), retrying...`)
+        continue
+      }
+
+      // Other errors, log but continue trying
+      console.warn(`[v0] Session verification attempt ${attempt + 1} failed with status ${response.status}`)
+    } catch (error) {
+      console.warn(`[v0] Session verification attempt ${attempt + 1} error:`, error)
+    }
+  }
+
+  return false
+}
 
 function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [status, setStatus] = useState<string>("")
   const searchParams = useSearchParams()
   const router = useRouter()
   const redirectTo = searchParams.get("redirectTo") || "/dashboard"
@@ -25,6 +64,7 @@ function LoginForm() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setStatus("Anmeldung wird durchgeführt...")
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -46,8 +86,22 @@ function LoginForm() {
         throw new Error(data.error || "Keine Benutzerdaten erhalten")
       }
 
+      setStatus("Sitzung wird verifiziert...")
+
+      const sessionVerified = await verifySessionWithRetry(5, 200)
+
+      if (!sessionVerified) {
+        // Session verification failed, but we got a successful login response
+        // This might be a cookie issue - try to continue anyway with the user data
+        console.warn("[v0] Session verification failed, continuing with login response data")
+      }
+
+      setStatus("Weiterleitung...")
       setCurrentUser(data.user)
-      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // Small delay to ensure state is updated
+      await new Promise((resolve) => setTimeout(resolve, 50))
+
       router.push(redirectTo)
       router.refresh()
     } catch (error) {
@@ -65,6 +119,7 @@ function LoginForm() {
         }
       }
       setError(errorMessage)
+      setStatus("")
     } finally {
       setIsLoading(false)
     }
@@ -107,8 +162,13 @@ function LoginForm() {
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
+            {status && !error && (
+              <div className="rounded-md bg-blue-50 p-3 dark:bg-blue-950">
+                <p className="text-sm text-blue-600 dark:text-blue-400">{status}</p>
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Wird angemeldet..." : "Anmelden"}
+              {isLoading ? status || "Wird angemeldet..." : "Anmelden"}
             </Button>
           </div>
         </form>
@@ -145,6 +205,21 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-gradient-to-br from-background to-muted/20">
       <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <Link href="/" className="group flex flex-col items-center gap-3 transition-transform hover:scale-105">
+            <div className="relative">
+              <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-cyan-500/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Logo className="h-16 w-16 relative" />
+            </div>
+            <div className="text-center">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Effizienz Praxis
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5">Praxismanagement der Zukunft</p>
+            </div>
+          </Link>
+        </div>
+
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"

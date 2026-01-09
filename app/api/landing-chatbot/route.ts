@@ -1,4 +1,4 @@
-import { consumeStream, convertToModelMessages, streamText, type UIMessage } from "ai"
+import { streamText } from "ai"
 
 export const maxDuration = 30
 
@@ -79,72 +79,70 @@ Effizienz Praxis ist eine umfassende Praxismanagement Software mit folgenden Hau
 - Verweise bei Interesse auf die Demo oder das Kontaktformular
 `
 
-interface SimpleMessage {
-  role: "user" | "assistant" | "system"
-  content: string
-}
-
-function isUIMessage(msg: unknown): msg is UIMessage {
-  return typeof msg === "object" && msg !== null && "parts" in msg && Array.isArray((msg as UIMessage).parts)
-}
-
-function convertToUIMessages(messages: (SimpleMessage | UIMessage)[]): UIMessage[] {
-  return messages.map((msg, index) => {
-    if (isUIMessage(msg)) {
-      return msg
-    }
-    return {
-      id: `msg-${index}-${Date.now()}`,
-      role: msg.role as "user" | "assistant",
-      content: msg.content,
-      parts: [{ type: "text" as const, text: msg.content }],
-    }
-  })
-}
-
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const messages = body.messages
+    const { messages } = body
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ error: "Keine Nachricht erhalten" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      })
+      return new Response(
+        JSON.stringify({
+          error: "Keine Nachricht erhalten",
+          errorCode: "NO_MESSAGES",
+          userMessage: "Bitte geben Sie eine Frage ein.",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      )
     }
 
-    const uiMessages = convertToUIMessages(messages)
+    const coreMessages = messages.map((m: { role: string; content: string }) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }))
 
-    // Prepend system message
-    const messagesWithSystem: UIMessage[] = [
-      {
-        id: "system-0",
-        role: "assistant" as const,
-        content: systemPrompt,
-        parts: [{ type: "text" as const, text: systemPrompt }],
-      },
-      ...uiMessages,
-    ]
-
-    const prompt = convertToModelMessages(messagesWithSystem)
-
-    const result = streamText({
+    const result = await streamText({
       model: "openai/gpt-4o",
-      prompt,
-      maxOutputTokens: 500,
+      system: systemPrompt,
+      messages: coreMessages,
+      maxTokens: 500,
       temperature: 0.7,
-      abortSignal: req.signal,
     })
 
-    return result.toUIMessageStreamResponse({
-      consumeSseStream: consumeStream,
-    })
+    return result.toTextStreamResponse()
   } catch (error) {
     console.error("[v0] Landing chatbot error:", error)
-    return new Response(JSON.stringify({ error: "Chat fehlgeschlagen" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    })
+
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    let userMessage = "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut."
+    let errorCode = "UNKNOWN_ERROR"
+
+    if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+      userMessage = "Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut."
+      errorCode = "RATE_LIMIT"
+    } else if (errorMessage.includes("timeout") || errorMessage.includes("ETIMEDOUT")) {
+      userMessage = "Die Anfrage hat zu lange gedauert. Bitte versuchen Sie es erneut."
+      errorCode = "TIMEOUT"
+    } else if (errorMessage.includes("API") || errorMessage.includes("key") || errorMessage.includes("401")) {
+      userMessage = "Der KI-Service ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut."
+      errorCode = "API_ERROR"
+    } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+      userMessage = "Netzwerkfehler. Bitte prüfen Sie Ihre Internetverbindung."
+      errorCode = "NETWORK_ERROR"
+    }
+
+    return new Response(
+      JSON.stringify({
+        error: errorMessage,
+        errorCode,
+        userMessage,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    )
   }
 }

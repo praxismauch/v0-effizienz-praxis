@@ -2,12 +2,18 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { useChat, DefaultChatTransport } from "@ai-sdk/react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Sparkles, Send, Loader2, Bot, MessageSquare, ArrowRight, Mic, ImageIcon, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import { FormattedAIContent } from "@/components/formatted-ai-content"
+
+interface Message {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
 
 const suggestedQuestions = [
   "Welche Funktionen bietet Effizienz Praxis?",
@@ -17,19 +23,17 @@ const suggestedQuestions = [
 ]
 
 export function LandingAIQuestionBox() {
-  const [input, setInput] = useState("")
   const [isExpanded, setIsExpanded] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const { messages, sendMessage, status, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/landing-chatbot" }),
-  })
-
-  const isLoading = status === "streaming" || status === "submitted"
-
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
   }
 
   useEffect(() => {
@@ -42,14 +46,83 @@ export function LandingAIQuestionBox() {
     }
   }, [messages])
 
+  const sendMessage = async (content: string) => {
+    if (!content.trim() || isLoading) return
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: content.trim(),
+    }
+
+    const assistantMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: "",
+    }
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage])
+    setIsLoading(true)
+    setIsExpanded(true)
+
+    try {
+      const response = await fetch("/api/landing-chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.userMessage || "Fehler bei der Anfrage")
+      }
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error("No response body")
+
+      const decoder = new TextDecoder()
+      let fullText = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        fullText += chunk
+
+        setMessages((prev) => prev.map((m) => (m.id === assistantMessage.id ? { ...m, content: fullText } : m)))
+      }
+
+      if (!fullText.trim()) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessage.id
+              ? { ...m, content: "Entschuldigung, ich konnte keine Antwort generieren." }
+              : m,
+          ),
+        )
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Ein unbekannter Fehler ist aufgetreten."
+      setMessages((prev) =>
+        prev.map((m) => (m.id === assistantMessage.id ? { ...m, content: `Entschuldigung, ${errorMessage}` } : m)),
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = async (question?: string) => {
     const messageToSend = question || input.trim()
     if (!messageToSend || isLoading) return
 
     setInput("")
-    setIsExpanded(true)
-
-    await sendMessage({ text: messageToSend })
+    await sendMessage(messageToSend)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -65,23 +138,8 @@ export function LandingAIQuestionBox() {
     setInput("")
   }
 
-  const getMessageContent = (message: (typeof messages)[0]): string => {
-    if (typeof message.content === "string" && message.content) {
-      return message.content
-    }
-    if (message.parts) {
-      const textParts = message.parts
-        .filter((part): part is { type: "text"; text: string } => part.type === "text")
-        .map((part) => part.text)
-        .join("")
-      return textParts
-    }
-    return ""
-  }
-
   return (
     <section className="w-full py-12 md:py-16 relative overflow-hidden">
-      {/* Animated gradient background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-violet-500/20 via-primary/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
@@ -106,21 +164,20 @@ export function LandingAIQuestionBox() {
 
         <ScrollReveal variant="scaleUp" delay={200}>
           <div className="max-w-3xl mx-auto">
-            {/* Main AI input card */}
             <div
               className={cn(
                 "relative rounded-2xl border bg-background/80 backdrop-blur-xl shadow-2xl shadow-primary/5 transition-all duration-500",
                 isExpanded ? "border-primary/30" : "border-border/50 hover:border-primary/20",
               )}
             >
-              {/* Glowing border effect */}
               <div className="absolute -inset-[1px] bg-gradient-to-r from-violet-500/20 via-primary/20 to-cyan-500/20 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
 
-              {/* Card content */}
               <div className="relative">
-                {/* Messages area (shown when expanded) */}
                 {isExpanded && messages.length > 0 && (
-                  <div className="p-4 border-b border-border/50 max-h-[300px] overflow-y-auto">
+                  <div
+                    ref={messagesContainerRef}
+                    className="p-4 border-b border-border/50 max-h-[300px] overflow-y-auto"
+                  >
                     <div className="flex justify-end items-center mb-3">
                       <Button
                         variant="ghost"
@@ -133,55 +190,69 @@ export function LandingAIQuestionBox() {
                       </Button>
                     </div>
                     <div className="space-y-4">
-                      {messages.map((message) => {
-                        const content = getMessageContent(message)
-                        return (
-                          <div
-                            key={message.id}
-                            className={cn("flex gap-3", message.role === "user" ? "justify-end" : "justify-start")}
-                          >
-                            {message.role === "assistant" && (
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 via-primary to-cyan-500 flex items-center justify-center">
-                                <Bot className="h-4 w-4 text-white" />
-                              </div>
-                            )}
-                            <div
-                              className={cn(
-                                "rounded-2xl px-4 py-2.5 max-w-[80%] text-sm",
-                                message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
-                              )}
-                            >
-                              {content || (
-                                <span className="flex items-center gap-2">
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  Denke nach...
-                                </span>
-                              )}
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={cn("flex gap-3", message.role === "user" ? "justify-end" : "justify-start")}
+                        >
+                          {message.role === "assistant" && (
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 via-primary to-cyan-500 flex items-center justify-center">
+                              <Bot className="h-4 w-4 text-white" />
                             </div>
-                            {message.role === "user" && (
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
-                                <MessageSquare className="h-4 w-4 text-white" />
-                              </div>
+                          )}
+                          <div
+                            className={cn(
+                              "rounded-2xl px-4 py-2.5 max-w-[80%] text-sm",
+                              message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
+                            )}
+                          >
+                            {message.content ? (
+                              message.role === "assistant" ? (
+                                <FormattedAIContent
+                                  content={message.content}
+                                  showCard={false}
+                                  className="[&_h1]:text-base [&_h1]:mb-3 [&_h2]:text-sm [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_p]:text-sm [&_p]:mb-2 [&_li]:text-sm [&_ul]:my-2 [&_ol]:my-2"
+                                />
+                              ) : (
+                                <span className="whitespace-pre-wrap">{message.content}</span>
+                              )
+                            ) : (
+                              <span className="flex items-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                                <span>Die KI antwortet</span>
+                                <span className="inline-flex">
+                                  <span className="animate-bounce" style={{ animationDelay: "0ms" }}>
+                                    .
+                                  </span>
+                                  <span className="animate-bounce" style={{ animationDelay: "150ms" }}>
+                                    .
+                                  </span>
+                                  <span className="animate-bounce" style={{ animationDelay: "300ms" }}>
+                                    .
+                                  </span>
+                                </span>
+                              </span>
                             )}
                           </div>
-                        )
-                      })}
-                      <div ref={messagesEndRef} />
+                          {message.role === "user" && (
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+                              <MessageSquare className="h-4 w-4 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {/* Input area */}
                 <div className="p-4">
                   <div className="flex items-end gap-3">
-                    {/* AI Avatar */}
                     {!isExpanded && (
                       <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-primary to-cyan-500 flex items-center justify-center shadow-lg shadow-primary/20">
                         <Sparkles className="h-6 w-6 text-white" />
                       </div>
                     )}
 
-                    {/* Input field */}
                     <div className="flex-1 relative">
                       <Textarea
                         ref={textareaRef}
@@ -197,7 +268,6 @@ export function LandingAIQuestionBox() {
                         rows={1}
                       />
 
-                      {/* Action buttons inside input */}
                       <div className="absolute right-2 bottom-2 flex items-center gap-1">
                         <Button
                           type="button"
@@ -205,7 +275,7 @@ export function LandingAIQuestionBox() {
                           variant="ghost"
                           className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
                           disabled
-                          title="Sprachein­gabe (bald verfügbar)"
+                          title="Spracheingabe (bald verfügbar)"
                         >
                           <Mic className="h-4 w-4" />
                         </Button>
@@ -236,7 +306,6 @@ export function LandingAIQuestionBox() {
                     </div>
                   </div>
 
-                  {/* Suggested questions */}
                   {!isExpanded && (
                     <div className="mt-4 flex flex-wrap gap-2">
                       {suggestedQuestions.map((question, index) => (

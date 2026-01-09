@@ -19,12 +19,11 @@ import { Switch } from "@/components/ui/switch"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useTranslation } from "@/contexts/translation-context"
-import { Link, ChevronDown, ChevronUp, X, Upload, type File, FileText } from "lucide-react"
+import { Link, ChevronDown, ChevronUp, X, Upload, type File, FileText, Users, Loader2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTeam } from "@/contexts/team-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 
 interface CreateGoalDialogProps {
@@ -34,6 +33,14 @@ interface CreateGoalDialogProps {
   parentGoalId?: string
   initialData?: any
   linkedParameterId?: string
+}
+
+interface Team {
+  id: string
+  name: string
+  color?: string
+  memberCount?: number
+  isActive?: boolean
 }
 
 export function CreateGoalDialog({
@@ -54,6 +61,9 @@ export function CreateGoalDialog({
   const [createAsSubgoal, setCreateAsSubgoal] = useState(!!parentGoalId)
   const [showExtended, setShowExtended] = useState(false)
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([])
+  const [teams, setTeams] = useState<Team[]>([])
+  const [loadingTeams, setLoadingTeams] = useState(false)
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; fileName: string; fileSize: number }>>([])
   const [isUploading, setIsUploading] = useState(false)
   const [orgaCategories, setOrgaCategories] = useState<Array<{ id: string; name: string; color: string }>>([])
@@ -255,6 +265,7 @@ export function CreateGoalDialog({
         category: formData.category || null,
         practice_id: currentPractice.id,
         created_by: currentUser.id,
+        teams: selectedTeams,
       }
 
       console.log("[v0] Goal data being sent:", {
@@ -353,6 +364,7 @@ export function CreateGoalDialog({
       })
       setSelectedTeamMembers([])
       setUploadedImages([])
+      setSelectedTeams([])
     } catch (error) {
       console.error("[v0] Error creating goal:", error)
       alert("Fehler beim Erstellen des Ziels")
@@ -552,6 +564,35 @@ export function CreateGoalDialog({
       fetchOrgaCategories()
     }
   }, [open, currentPractice?.id])
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      if (!open || !currentPractice?.id) return
+
+      setLoadingTeams(true)
+      try {
+        const response = await fetch(`/api/practices/${currentPractice.id}/teams`)
+        if (response.ok) {
+          const data = await response.json()
+          setTeams(Array.isArray(data) ? data.filter((t: Team) => t.isActive !== false) : [])
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching teams:", error)
+      } finally {
+        setLoadingTeams(false)
+      }
+    }
+
+    fetchTeams()
+  }, [open, currentPractice?.id])
+
+  const toggleTeam = (teamId: string) => {
+    if (selectedTeams.includes(teamId)) {
+      setSelectedTeams(selectedTeams.filter((id) => id !== teamId))
+    } else {
+      setSelectedTeams([...selectedTeams, teamId])
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -786,6 +827,50 @@ export function CreateGoalDialog({
                 </div>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Teams zuweisen
+              </Label>
+              {loadingTeams ? (
+                <div className="flex items-center gap-2 h-16 px-3 border rounded-md bg-muted/50">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">Lade Teams...</span>
+                </div>
+              ) : teams.length > 0 ? (
+                <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-2">
+                  {teams.map((team) => (
+                    <div key={team.id} className="flex items-center space-x-3">
+                      <Checkbox
+                        id={`goal-team-${team.id}`}
+                        checked={selectedTeams.includes(team.id)}
+                        onCheckedChange={() => toggleTeam(team.id)}
+                      />
+                      <label
+                        htmlFor={`goal-team-${team.id}`}
+                        className="flex items-center space-x-2 cursor-pointer flex-1"
+                      >
+                        <div
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: team.color || "#64748b" }}
+                        />
+                        <span className="text-sm font-medium">{team.name}</span>
+                        {team.memberCount !== undefined && (
+                          <span className="text-xs text-muted-foreground">({team.memberCount} Mitglieder)</span>
+                        )}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground border rounded-md p-3">Keine Teams verfügbar</p>
+              )}
+              {selectedTeams.length > 0 && (
+                <p className="text-xs text-muted-foreground">{selectedTeams.length} Team(s) ausgewählt</p>
+              )}
+            </div>
+
             {/* Team member selection */}
             <div className="space-y-2">
               <Label>Zugewiesene Teammitglieder</Label>

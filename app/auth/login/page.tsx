@@ -12,30 +12,35 @@ import { useState, Suspense } from "react"
 import { useUser } from "@/contexts/user-context"
 import { Logo } from "@/components/logo"
 
-async function verifySessionWithRetry(maxRetries = 5, initialDelay = 200): Promise<boolean> {
+async function verifySessionWithRetry(maxRetries = 8, initialDelay = 300): Promise<{ success: boolean; user?: any }> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const delay = initialDelay * Math.pow(1.5, attempt) // 200ms, 300ms, 450ms, 675ms, 1012ms
+    // Exponential backoff: 300ms, 450ms, 675ms, 1012ms, 1518ms, 2277ms, 3416ms, 5124ms
+    const delay = initialDelay * Math.pow(1.5, attempt)
 
-    // Wait before each attempt (including first) to let cookies propagate
+    // Wait before each attempt to let cookies propagate
     await new Promise((resolve) => setTimeout(resolve, delay))
 
     try {
       const response = await fetch("/api/user/me", {
         credentials: "include",
         cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
       })
 
       if (response.ok) {
         const data = await response.json()
         if (data.user) {
           console.log(`[v0] Session verified on attempt ${attempt + 1}`)
-          return true
+          return { success: true, user: data.user }
         }
       }
 
       // 401 means session not ready yet, keep trying
       if (response.status === 401) {
-        console.log(`[v0] Session not ready (attempt ${attempt + 1}/${maxRetries}), retrying...`)
+        console.log(`[v0] Session not ready (attempt ${attempt + 1}/${maxRetries}), waiting ${Math.round(delay)}ms...`)
         continue
       }
 
@@ -46,7 +51,7 @@ async function verifySessionWithRetry(maxRetries = 5, initialDelay = 200): Promi
     }
   }
 
-  return false
+  return { success: false }
 }
 
 function LoginForm() {
@@ -88,22 +93,29 @@ function LoginForm() {
 
       setStatus("Sitzung wird verifiziert...")
 
-      const sessionVerified = await verifySessionWithRetry(5, 200)
+      const verifyResult = await verifySessionWithRetry(8, 300)
 
-      if (!sessionVerified) {
-        // Session verification failed, but we got a successful login response
-        // This might be a cookie issue - try to continue anyway with the user data
-        console.warn("[v0] Session verification failed, continuing with login response data")
+      if (verifyResult.success && verifyResult.user) {
+        // Use the verified user data from the session
+        setCurrentUser(verifyResult.user)
+        setStatus("Weiterleitung...")
+
+        // Small delay to ensure state is updated
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        router.push(redirectTo)
+        router.refresh()
+      } else {
+        // Session verification failed - still try with login response data
+        console.warn("[v0] Session verification failed, using login response data")
+        setCurrentUser(data.user)
+        setStatus("Weiterleitung...")
+
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        router.push(redirectTo)
+        router.refresh()
       }
-
-      setStatus("Weiterleitung...")
-      setCurrentUser(data.user)
-
-      // Small delay to ensure state is updated
-      await new Promise((resolve) => setTimeout(resolve, 50))
-
-      router.push(redirectTo)
-      router.refresh()
     } catch (error) {
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error instanceof Error) {

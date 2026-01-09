@@ -42,7 +42,7 @@ import { Logo } from "@/components/logo"
 import { LandingPageFooter } from "@/components/landing-page-footer"
 import { LandingPageChatbot } from "@/components/landing-page-chatbot"
 import { LandingAIQuestionBox } from "@/components/landing-ai-question-box"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { ScrollReveal, StaggeredReveal } from "@/components/scroll-reveal"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
@@ -488,34 +488,28 @@ export default function LandingPageClient() {
 
   const progressCheck = ((currentQuestionCheck + 1) / quizQuestions.length) * 100
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-  }, [])
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
+        <div className="container flex h-14 items-center justify-between mx-auto px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Logo className="h-5 w-5 text-primary" />
-            </div>
+            <Logo width={32} height={32} />
             <span className="text-xl font-bold">Effizienz Praxis</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
-            <Link
+            <a
               href="#features"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               Features
-            </Link>
-            <Link
+            </a>
+            <a
               href="#benefits"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               Vorteile
-            </Link>
+            </a>
             <Link
               href="/preise"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -545,7 +539,7 @@ export default function LandingPageClient() {
       </header>
 
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-20 bg-gradient-to-b from-background to-muted/20">
+      <section className="w-full py-12 md:py-20 bg-gradient-to-b from-background to-muted/20 flex-grow">
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <ScrollReveal variant="fadeDown" delay={100}>

@@ -1467,7 +1467,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0"
+                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => {
                                       setEditingTodo(todo)
                                       setFormData({
@@ -1492,7 +1492,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => handleDeleteTodo(todo.id)}
                                     title="Aufgabe löschen"
                                   >
@@ -1640,7 +1640,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0"
+                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => {
                                       setEditingTodo(todo)
                                       setFormData({
@@ -1665,7 +1665,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => handleDeleteTodo(todo.id)}
                                     title="Aufgabe löschen"
                                   >
@@ -1813,7 +1813,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0"
+                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => {
                                       setEditingTodo(todo)
                                       setFormData({
@@ -1838,7 +1838,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => handleDeleteTodo(todo.id)}
                                     title="Aufgabe löschen"
                                   >
@@ -1998,7 +1998,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0"
+                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => {
                                       setEditingTodo(todo)
                                       setFormData({
@@ -2023,7 +2023,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => handleDeleteTodo(todo.id)}
                                     title="Aufgabe löschen"
                                   >
@@ -2176,7 +2176,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0"
+                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => {
                                       setEditingTodo(todo)
                                       setFormData({
@@ -2201,7 +2201,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => handleDeleteTodo(todo.id)}
                                     title="Aufgabe löschen"
                                   >
@@ -2354,7 +2354,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0"
+                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => {
                                       setEditingTodo(todo)
                                       setFormData({
@@ -2379,7 +2379,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => handleDeleteTodo(todo.id)}
                                     title="Aufgabe löschen"
                                   >
@@ -2532,7 +2532,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0"
+                                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => {
                                       setEditingTodo(todo)
                                       setFormData({
@@ -2557,7 +2557,7 @@ export default function TodosPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => handleDeleteTodo(todo.id)}
                                     title="Aufgabe löschen"
                                   >

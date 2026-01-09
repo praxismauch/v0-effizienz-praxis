@@ -80,24 +80,46 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const createdBy = body.created_by || body.createdBy
     const assignedTo = body.assigned_to || body.assignedTo
 
-    // Also changed default status from "pending" to "offen" to match German frontend values
-    const newTodo = {
+    const newTodo: Record<string, any> = {
       title: body.title,
       description: body.description || null,
-      status: body.status || "offen", // Changed from "pending" to "offen"
+      status: body.status || "offen",
       priority: body.priority || "medium",
       due_date: body.due_date || body.dueDate || null,
       created_by: createdBy || null,
       assigned_to: assignedTo || null,
-      assigned_user_ids: body.assigned_user_ids || [], // Added
       practice_id: practiceId,
-      dringend: body.dringend || false, // Added
-      wichtig: body.wichtig || false, // Added
-      completed: body.completed || false, // Added
-      recurrence_type: body.recurrence_type || "none", // Added
-      recurrence_end_date: body.recurrence_end_date || null, // Added
+      completed: body.completed || false,
+      responsibility_id: body.responsibility_id || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+    }
+
+    if (body.assigned_user_ids && Array.isArray(body.assigned_user_ids) && body.assigned_user_ids.length > 0) {
+      newTodo.assigned_user_ids = body.assigned_user_ids
+    }
+
+    if (body.assigned_team_ids && Array.isArray(body.assigned_team_ids) && body.assigned_team_ids.length > 0) {
+      newTodo.assigned_team_ids = body.assigned_team_ids
+    }
+
+    if (body.dringend !== undefined) {
+      newTodo.dringend = body.dringend
+    }
+
+    if (body.wichtig !== undefined) {
+      newTodo.wichtig = body.wichtig
+    }
+
+    if (body.recurrence_type && body.recurrence_type !== "none") {
+      newTodo.recurrence_type = body.recurrence_type
+      // Also set recurring_pattern for compatibility
+      newTodo.recurring_pattern = body.recurrence_type
+      newTodo.is_recurring = true
+    }
+
+    if (body.recurrence_end_date) {
+      newTodo.recurrence_end_date = body.recurrence_end_date
     }
 
     console.log("[v0] Creating todo with data:", JSON.stringify(newTodo, null, 2))
@@ -106,7 +128,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (error) {
       console.error("[v0] Error creating todo:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        },
+        { status: 500 },
+      )
     }
 
     console.log("[v0] Todo created successfully:", data?.id)

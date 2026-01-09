@@ -22,6 +22,15 @@ import { useToast } from "@/hooks/use-toast"
 import { TodoAttachmentUpload } from "@/components/todo-attachment-upload"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
+import { Users, Loader2 } from "lucide-react"
+
+interface Team {
+  id: string
+  name: string
+  color?: string
+  memberCount?: number
+  isActive?: boolean
+}
 
 interface CreateTodoDialogProps {
   open: boolean
@@ -34,8 +43,11 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
   const { toast } = useToast()
   const router = useRouter()
   const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [teams, setTeams] = useState<Team[]>([])
+  const [loadingTeams, setLoadingTeams] = useState(false)
   const [attachments, setAttachments] = useState<any[]>([])
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([])
+  const [assignedTeamIds, setAssignedTeamIds] = useState<string[]>([])
 
   const [formData, setFormData] = useState({
     title: "",
@@ -60,13 +72,27 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
         })
         .then((data) => {
           console.log("[v0] Fetched team members:", data)
-          // Data is an array directly, not wrapped in an object
           setTeamMembers(Array.isArray(data) ? data : [])
         })
         .catch((err) => {
           console.error("[v0] Error fetching team members:", err)
           setTeamMembers([])
         })
+
+      setLoadingTeams(true)
+      fetch(`/api/practices/${currentPractice.id}/teams`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
+          return res.json()
+        })
+        .then((data) => {
+          setTeams(Array.isArray(data) ? data.filter((t: Team) => t.isActive !== false) : [])
+        })
+        .catch((err) => {
+          console.error("[v0] Error fetching teams:", err)
+          setTeams([])
+        })
+        .finally(() => setLoadingTeams(false))
     }
   }, [open, currentPractice?.id])
 
@@ -84,12 +110,14 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
       const todoData = {
         ...formData,
         assigned_user_ids: assignedUserIds.length > 0 ? assignedUserIds : [],
+        assigned_team_ids: assignedTeamIds.length > 0 ? assignedTeamIds : [],
         completed: false,
         due_date: formData.due_date || null,
         recurrence_end_date: formData.recurrence_end_date || null,
       }
 
       console.log("[v0] Creating todo with assigned_user_ids:", assignedUserIds)
+      console.log("[v0] Creating todo with assigned_team_ids:", assignedTeamIds)
 
       await addTodo(todoData)
 
@@ -117,6 +145,7 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
         wichtig: false,
       })
       setAssignedUserIds([])
+      setAssignedTeamIds([])
       setAttachments([])
       onOpenChange(false)
 
@@ -144,8 +173,17 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
       wichtig: false,
     })
     setAssignedUserIds([])
+    setAssignedTeamIds([])
     setAttachments([])
     onOpenChange(false)
+  }
+
+  const toggleTeam = (teamId: string) => {
+    if (assignedTeamIds.includes(teamId)) {
+      setAssignedTeamIds(assignedTeamIds.filter((id) => id !== teamId))
+    } else {
+      setAssignedTeamIds([...assignedTeamIds, teamId])
+    }
   }
 
   return (
@@ -208,7 +246,47 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Zugewiesen an</Label>
+            <Label className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Teams zuweisen
+            </Label>
+            {loadingTeams ? (
+              <div className="flex items-center gap-2 h-16 px-3 border rounded-md bg-muted/50">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Lade Teams...</span>
+              </div>
+            ) : teams.length > 0 ? (
+              <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-2">
+                {teams.map((team) => (
+                  <div key={team.id} className="flex items-center space-x-3">
+                    <Checkbox
+                      id={`team-${team.id}`}
+                      checked={assignedTeamIds.includes(team.id)}
+                      onCheckedChange={() => toggleTeam(team.id)}
+                    />
+                    <label htmlFor={`team-${team.id}`} className="flex items-center space-x-2 cursor-pointer flex-1">
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: team.color || "#64748b" }}
+                      />
+                      <span className="text-sm font-medium">{team.name}</span>
+                      {team.memberCount !== undefined && (
+                        <span className="text-xs text-muted-foreground">({team.memberCount} Mitglieder)</span>
+                      )}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground border rounded-md p-3">Keine Teams verfügbar</p>
+            )}
+            {assignedTeamIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">{assignedTeamIds.length} Team(s) ausgewählt</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Zugewiesen an (Einzelpersonen)</Label>
             <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
               {teamMembers && teamMembers.length > 0 ? (
                 teamMembers.filter(isActiveMember).map((member) => (
@@ -233,7 +311,7 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
                         <AvatarFallback className="text-xs">
                           {member.name
                             ?.split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")
                             .slice(0, 2)
                             .toUpperCase() || "TM"}
@@ -252,6 +330,7 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
             )}
           </div>
 
+          {/* ... existing code for recurrence, dringend, wichtig, attachments ... */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="recurrence_type">Wiederholung</Label>

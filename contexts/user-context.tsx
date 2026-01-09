@@ -247,7 +247,7 @@ export function UserProvider({
           if (text.includes("Too Many") || text.includes("rate")) {
             if (retryCount < 3) {
               isRateLimitedRef.current = true
-              const delay = Math.pow(2, retryCount) * 5000
+              const delay = Math.pow(2, retryCount) * 5000 // 5s, 10s, 20s
               rateLimitResetTimeRef.current = Date.now() + delay
               console.warn(`[user-context] Rate limited (text), retrying in ${delay}ms...`)
               setTimeout(() => {
@@ -297,7 +297,12 @@ export function UserProvider({
       }
 
       try {
-        const res = await fetch("/api/super-admin/users", { credentials: "include" })
+        const res = await fetch("/api/super-admin/users", {
+          credentials: "include",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        })
 
         // Handle rate limiting with retry
         if (res.status === 429 && retryCount < 3) {
@@ -370,12 +375,23 @@ export function UserProvider({
             }))
           setSuperAdmins(superAdminUsers)
         }
-      } catch (e) {
-        console.error("[user-context] Failed to load super admins", e)
+      } catch (e: any) {
+        const isNetworkError = e?.message === "Failed to fetch" || e?.name === "TypeError"
+        if (isNetworkError && retryCount < 3) {
+          const delay = Math.pow(2, retryCount) * 1000 // 1s, 2s, 4s
+          console.warn(`[user-context] Network error loading super admins, retrying in ${delay}ms...`)
+          setTimeout(() => loadSuperAdmins(retryCount + 1), delay)
+          return
+        }
+        // Only log if not a simple network error or after retries exhausted
+        if (retryCount >= 3 || !isNetworkError) {
+          console.error("[user-context] Failed to load super admins", e)
+        }
       }
     }
 
-    loadSuperAdmins()
+    const timeoutId = setTimeout(() => loadSuperAdmins(), 500)
+    return () => clearTimeout(timeoutId)
   }, [currentUser])
 
   useEffect(() => {

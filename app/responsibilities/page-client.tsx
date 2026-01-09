@@ -18,6 +18,7 @@ import {
   GripVertical,
   UserCheck,
   Printer,
+  ClipboardList,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import ResponsibilityFormDialog from "@/components/responsibility-form-dialog"
 import { AIResponsibilityGeneratorDialog } from "@/components/responsibilities/ai-responsibility-generator-dialog"
+import { CreateTodoFromResponsibilityDialog } from "@/components/create-todo-from-responsibility-dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useToast } from "@/hooks/use-toast"
@@ -72,6 +74,7 @@ interface SortableItemProps {
   responsibility: Responsibility
   onEdit: (responsibility: Responsibility) => void
   onDelete: (responsibility: Responsibility) => void
+  onCreateTodo: (responsibility: Responsibility) => void
   viewMode: "list" | "grid"
 }
 
@@ -79,10 +82,12 @@ function ResponsibilityCard({
   responsibility,
   onEdit,
   onDelete,
+  onCreateTodo,
 }: {
   responsibility: Responsibility
   onEdit: (r: Responsibility) => void
   onDelete: (r: Responsibility) => void
+  onCreateTodo: (r: Responsibility) => void
 }) {
   return (
     <Card
@@ -119,8 +124,20 @@ function ResponsibilityCard({
             </div>
           </div>
 
-          {/* Edit/Delete buttons - visible on hover */}
+          {/* Edit/Delete/Todo buttons - visible on hover */}
           <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title="Aufgabe erstellen"
+              onClick={(e) => {
+                e.stopPropagation()
+                onCreateTodo(responsibility)
+              }}
+            >
+              <ClipboardList className="h-4 w-4 text-primary" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -150,7 +167,7 @@ function ResponsibilityCard({
   )
 }
 
-function SortableResponsibilityItem({ responsibility, onEdit, onDelete, viewMode }: SortableItemProps) {
+function SortableResponsibilityItem({ responsibility, onEdit, onDelete, onCreateTodo, viewMode }: SortableItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: responsibility.id,
   })
@@ -202,6 +219,9 @@ function SortableResponsibilityItem({ responsibility, onEdit, onDelete, viewMode
           </Button>
           <Button variant="ghost" size="icon" onClick={() => onDelete(responsibility)}>
             <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onCreateTodo(responsibility)}>
+            <ClipboardList className="h-4 w-4 text-primary" />
           </Button>
         </div>
       </div>
@@ -573,6 +593,14 @@ export default function ResponsibilitiesPageClient() {
     totalHours: responsibilities.reduce((sum, r) => sum + (r.suggested_hours_per_week || 0), 0),
   }
 
+  const [createTodoDialogOpen, setCreateTodoDialogOpen] = useState(false)
+  const [responsibilityForTodo, setResponsibilityForTodo] = useState<Responsibility | null>(null)
+
+  const handleCreateTodo = (responsibility: Responsibility) => {
+    setResponsibilityForTodo(responsibility)
+    setCreateTodoDialogOpen(true)
+  }
+
   return (
     <AppLayout loading={loading} loadingMessage="Zuständigkeiten werden geladen...">
       <div className="space-y-6">
@@ -746,6 +774,7 @@ export default function ResponsibilitiesPageClient() {
                       responsibility={responsibility}
                       onEdit={handleEdit}
                       onDelete={handleDeleteClick}
+                      onCreateTodo={handleCreateTodo}
                     />
                   ))}
                 </div>
@@ -802,6 +831,18 @@ export default function ResponsibilitiesPageClient() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Create Todo Dialog */}
+        {responsibilityForTodo && (
+          <CreateTodoFromResponsibilityDialog
+            open={createTodoDialogOpen}
+            onOpenChange={setCreateTodoDialogOpen}
+            responsibility={responsibilityForTodo}
+            onSuccess={() => {
+              // Optionally refresh or show success
+            }}
+          />
+        )}
       </div>
     </AppLayout>
   )

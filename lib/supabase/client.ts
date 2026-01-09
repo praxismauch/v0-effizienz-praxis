@@ -66,22 +66,21 @@ if (typeof window !== "undefined" && !window.__btoaPatched) {
   }
 
   window.__btoaPatched = true
-  console.log("[v0] btoa/atob patched in client.ts")
 }
 
 import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ssr"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import "./suppress-warnings"
-
 declare global {
   interface Window {
     __supabaseClient?: SupabaseClient
+    __supabaseClientCreating?: boolean
     __btoaPatched?: boolean
   }
 }
 
 let cachedClient: SupabaseClient | null = null
+let isCreating = false
 
 function createClientSafe(): SupabaseClient | null {
   try {
@@ -100,9 +99,6 @@ function createClientSafe(): SupabaseClient | null {
       getItem: (key: string) => {
         try {
           const item = localStorage.getItem(key)
-          if ((item && item.includes("ä")) || item.includes("ö") || item.includes("ü")) {
-            console.warn("[v0] Storage item contains umlauts:", key)
-          }
           return item
         } catch (error) {
           console.error("[v0] Storage getItem error:", error)
@@ -111,10 +107,6 @@ function createClientSafe(): SupabaseClient | null {
       },
       setItem: (key: string, value: string) => {
         try {
-          // Check for non-ASCII characters that might cause issues
-          if (/[^\x00-\x7F]/.test(value)) {
-            console.warn("[v0] Storing non-ASCII data in:", key, "Length:", value.length)
-          }
           localStorage.setItem(key, value)
         } catch (error) {
           console.error("[v0] Storage setItem error:", error, "Key:", key)
@@ -158,29 +150,44 @@ export function createClient(): SupabaseClient | null {
     return null
   }
 
-  // Ensure btoa is patched
-  // ensureBtoaPatched() is now handled in the inline polyfill
-
-  // Return existing instance if already created
   if (window.__supabaseClient) {
     return window.__supabaseClient
   }
 
+  // Check module-level cache
   if (cachedClient) {
+    window.__supabaseClient = cachedClient
     return cachedClient
   }
 
-  const client = createClientSafe()
-
-  if (client) {
-    cachedClient = client
-    window.__supabaseClient = client
+  if (isCreating || window.__supabaseClientCreating) {
+    // Wait and retry
+    return null
   }
 
-  return client
+  isCreating = true
+  window.__supabaseClientCreating = true
+
+  try {
+    const client = createClientSafe()
+
+    if (client) {
+      cachedClient = client
+      window.__supabaseClient = client
+    }
+
+    return client
+  } finally {
+    isCreating = false
+    window.__supabaseClientCreating = false
+  }
 }
 
 export async function getClientAsync(): Promise<SupabaseClient | null> {
+  if (typeof window !== "undefined" && (isCreating || window.__supabaseClientCreating)) {
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    return createClient()
+  }
   return createClient()
 }
 

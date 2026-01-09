@@ -1,7 +1,94 @@
+import { createClient } from "@supabase/supabase-js"
+
 export const maxDuration = 30
+
+// Initialize Supabase client for logging
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
+
+async function logChatInteraction(data: {
+  question: string
+  response: string
+  matchedFaqKey: string | null
+  isDefaultResponse: boolean
+  isGreeting: boolean
+  responseTimeMs: number
+  sessionId?: string
+  userAgent?: string
+  referrer?: string
+  pageUrl?: string
+}) {
+  // Only log if Supabase is configured
+  if (!supabaseUrl || !supabaseKey) {
+    console.log("[v0] Landing chatbot: Supabase not configured, skipping log")
+    return
+  }
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    await supabase.from("landing_chat_logs").insert({
+      question: data.question,
+      response: data.response,
+      matched_faq_key: data.matchedFaqKey,
+      is_default_response: data.isDefaultResponse,
+      is_greeting: data.isGreeting,
+      response_time_ms: data.responseTimeMs,
+      session_id: data.sessionId,
+      user_agent: data.userAgent,
+      referrer: data.referrer,
+      page_url: data.pageUrl,
+    })
+  } catch (error) {
+    // Don't fail the request if logging fails
+    console.error("[v0] Landing chatbot: Failed to log interaction:", error)
+  }
+}
 
 // Predefined FAQ responses based on the original system prompt
 const FAQ_RESPONSES: Record<string, { keywords: string[]; response: string }> = {
+  kennzahlen: {
+    keywords: [
+      "kennzahl",
+      "kpi",
+      "steuern",
+      "steuer",
+      "parameter",
+      "messwert",
+      "auswert",
+      "dashboard",
+      "übersicht",
+      "analytics",
+      "metrik",
+      "tracking",
+      "monitor",
+    ],
+    response: `**Ja, Sie können Kennzahlen (KPIs) vollständig steuern!**
+
+📊 **Analytics Dashboard**
+- Echtzeit-Übersicht aller wichtigen Kennzahlen
+- Individuelle Dashboards pro Rolle
+- Historische Vergleiche und Trends
+
+⚙️ **Flexible Parameterverwaltung**
+- Eigene KPIs definieren und tracken
+- Zielwerte und Schwellenwerte festlegen
+- Automatische Benachrichtigungen bei Abweichungen
+
+📈 **Steuerungsmöglichkeiten**
+- Drill-Down in Detailauswertungen
+- Export für externe Analyse
+- Vergleich mit Benchmark-Daten
+
+🎯 **Beispiel-KPIs:**
+- Patientenzufriedenheit
+- Auslastung
+- Wirtschaftliche Kennzahlen
+- Team-Performance
+- Prozesseffizienz
+
+Sie behalten die volle Kontrolle über Ihre Praxiskennzahlen!`,
+  },
   funktionen: {
     keywords: ["funktion", "feature", "was kann", "was bietet", "möglichkeiten", "leistung"],
     response: `**Effizienz Praxis bietet folgende Hauptfunktionen:**
@@ -20,7 +107,7 @@ const FAQ_RESPONSES: Record<string, { keywords: string[]; response: string }> = 
 Haben Sie Interesse an einer Demo? Besuchen Sie uns auf effizienz-praxis.de!`,
   },
   preise: {
-    keywords: ["preis", "kosten", "kostet", "tarif", "paket", "abo", "zahlen", "euro", "€"],
+    keywords: ["preis", "kosten", "kostet", "tarif", "paket", "abo", "euro", "€", "monat", "jahr", "lizenz"],
     response: `**Unsere Preise:**
 
 - **Starter:** 49€/Monat (bis 5 Mitarbeiter)
@@ -158,13 +245,23 @@ Ich helfe Ihnen gerne bei Fragen zu:
 
 Was möchten Sie wissen?`
 
-function findBestResponse(question: string): string {
+function findBestResponse(question: string): {
+  response: string
+  matchedKey: string | null
+  isDefault: boolean
+  isGreeting: boolean
+} {
   const lowerQuestion = question.toLowerCase()
 
   // Check for greetings first
   const greetings = ["hallo", "hi", "hey", "guten tag", "moin", "servus", "grüß"]
   if (greetings.some((g) => lowerQuestion.includes(g))) {
-    return GREETING_RESPONSE
+    return {
+      response: GREETING_RESPONSE,
+      matchedKey: "greeting",
+      isDefault: false,
+      isGreeting: true,
+    }
   }
 
   // Find matching FAQ
@@ -179,16 +276,31 @@ function findBestResponse(question: string): string {
   }
 
   if (bestMatch) {
-    return FAQ_RESPONSES[bestMatch.key].response
+    return {
+      response: FAQ_RESPONSES[bestMatch.key].response,
+      matchedKey: bestMatch.key,
+      isDefault: false,
+      isGreeting: false,
+    }
   }
 
-  return DEFAULT_RESPONSE
+  return {
+    response: DEFAULT_RESPONSE,
+    matchedKey: null,
+    isDefault: true,
+    isGreeting: false,
+  }
 }
 
 export async function POST(req: Request) {
+  const startTime = Date.now()
+
   try {
     const body = await req.json()
-    const { messages } = body
+    const { messages, sessionId } = body
+
+    const userAgent = req.headers.get("user-agent") || undefined
+    const referrer = req.headers.get("referer") || undefined
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(
@@ -206,10 +318,25 @@ export async function POST(req: Request) {
     const userQuestion = lastUserMessage?.content || ""
 
     // Find the best matching response
-    const response = findBestResponse(userQuestion)
+    const { response, matchedKey, isDefault, isGreeting } = findBestResponse(userQuestion)
 
     // Simulate slight delay for natural feel (50-150ms)
     await new Promise((resolve) => setTimeout(resolve, 50 + Math.random() * 100))
+
+    const responseTimeMs = Date.now() - startTime
+
+    logChatInteraction({
+      question: userQuestion,
+      response: response,
+      matchedFaqKey: matchedKey,
+      isDefaultResponse: isDefault,
+      isGreeting: isGreeting,
+      responseTimeMs: responseTimeMs,
+      sessionId: sessionId,
+      userAgent: userAgent,
+      referrer: referrer,
+      pageUrl: referrer,
+    })
 
     // Return as plain text
     return new Response(response, {

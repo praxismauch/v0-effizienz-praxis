@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ClipboardList, Clock, ExternalLink, FolderOpen } from "lucide-react"
+import { ClipboardList, Clock, ExternalLink, FolderOpen, Users, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createBrowserSupabaseClient } from "@/lib/supabase/client"
 
@@ -14,12 +14,25 @@ interface Responsibility {
   name: string
   description?: string
   category?: string
+  group_name?: string
   responsible_user_id?: string
   responsible_user_name?: string
+  deputy_user_id?: string
+  deputy_user_name?: string
+  team_member_ids?: string[]
+  assigned_teams?: string[]
   suggested_hours_per_week?: number
   status?: string
   priority?: string
   created_at?: string
+  assignment_type?: "direct" | "team_member" | "team" | "deputy"
+  assignment_team_name?: string
+}
+
+interface Team {
+  id: string
+  name: string
+  color: string
 }
 
 interface TeamMemberResponsibilitiesTabProps {
@@ -66,17 +79,70 @@ export function TeamMemberResponsibilitiesTab({
       setError(null)
 
       const supabase = createBrowserSupabaseClient()
-      const { data, error: fetchError } = await supabase
+
+      const { data: teamAssignments } = await supabase
+        .from("team_assignments")
+        .select("team_id, teams(id, name, color)")
+        .eq("user_id", memberId)
+
+      const memberTeamIds = teamAssignments?.map((ta: any) => ta.team_id) || []
+      const teamsMap = new Map<string, Team>()
+      teamAssignments?.forEach((ta: any) => {
+        if (ta.teams) {
+          teamsMap.set(ta.teams.id, ta.teams)
+        }
+      })
+
+      const { data: allResponsibilities, error: fetchError } = await supabase
         .from("responsibilities")
         .select("*")
         .eq("practice_id", practiceId)
-        .eq("responsible_user_id", memberId)
         .is("deleted_at", null)
         .order("name")
 
       if (fetchError) throw fetchError
 
-      setResponsibilities(data || [])
+      const filteredResponsibilities: Responsibility[] = []
+      const addedIds = new Set<string>()
+
+      for (const resp of allResponsibilities || []) {
+        // Direct responsibility (Hauptverantwortlicher)
+        if (resp.responsible_user_id === memberId && !addedIds.has(resp.id)) {
+          filteredResponsibilities.push({ ...resp, assignment_type: "direct" })
+          addedIds.add(resp.id)
+          continue
+        }
+
+        // Deputy responsibility (Stellvertreter)
+        if (resp.deputy_user_id === memberId && !addedIds.has(resp.id)) {
+          filteredResponsibilities.push({ ...resp, assignment_type: "deputy" })
+          addedIds.add(resp.id)
+          continue
+        }
+
+        // In team_member_ids array
+        if (resp.team_member_ids?.includes(memberId) && !addedIds.has(resp.id)) {
+          filteredResponsibilities.push({ ...resp, assignment_type: "team_member" })
+          addedIds.add(resp.id)
+          continue
+        }
+
+        // Via team assignment (assigned_teams contains a team the member belongs to)
+        if (resp.assigned_teams && resp.assigned_teams.length > 0 && memberTeamIds.length > 0) {
+          const matchingTeamId = resp.assigned_teams.find((teamId: string) => memberTeamIds.includes(teamId))
+          if (matchingTeamId && !addedIds.has(resp.id)) {
+            const team = teamsMap.get(matchingTeamId)
+            filteredResponsibilities.push({
+              ...resp,
+              assignment_type: "team",
+              assignment_team_name: team?.name || "Team",
+            })
+            addedIds.add(resp.id)
+          }
+        }
+      }
+
+      setResponsibilities(filteredResponsibilities)
     } catch (err) {
       console.error("Error loading responsibilities:", err)
       setError("Fehler beim Laden der Zuständigkeiten")
@@ -94,7 +160,48 @@ export function TeamMemberResponsibilitiesTab({
     return CATEGORY_COLORS[category] || DEFAULT_COLOR
   }
 
+  const getAssignmentBadge = (responsibility: Responsibility) => {
+    switch (responsibility.assignment_type) {
+      case "direct":
+        return (
+          <Badge variant="default" className="text-xs bg-primary/90">
+            <User className="h-3 w-3 mr-1" />
+            Hauptverantwortlich
+          </Badge>
+        )
+      case "deputy":
+        return (
+          <Badge variant="secondary" className="text-xs">
+            <User className="h-3 w-3 mr-1" />
+            Stellvertreter
+          </Badge>
+        )
+      case "team_member":
+        return (
+          <Badge variant="outline" className="text-xs">
+            <Users className="h-3 w-3 mr-1" />
+            Teammitglied
+          </Badge>
+        )
+      case "team":
+        return (
+          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+            <Users className="h-3 w-3 mr-1" />
+            via {responsibility.assignment_team_name}
+          </Badge>
+        )
+      default:
+        return null
+    }
+  }
+
   const totalHours = responsibilities.reduce((sum, r) => sum + (r.suggested_hours_per_week || 0), 0)
+
+  const directCount = responsibilities.filter((r) => r.assignment_type === "direct").length
+  const deputyCount = responsibilities.filter((r) => r.assignment_type === "deputy").length
+  const teamCount = responsibilities.filter(
+    (r) => r.assignment_type === "team" || r.assignment_type === "team_member",
+  ).length
 
   if (loading) {
     return (
@@ -155,8 +262,11 @@ export function TeamMemberResponsibilitiesTab({
               Zuständigkeiten
             </CardTitle>
             <CardDescription>
-              {responsibilities.length} Verantwortungsbereich{responsibilities.length !== 1 ? "e" : ""} zugewiesen
-              {totalHours > 0 && ` • ${totalHours.toFixed(1)}h/Woche gesamt`}
+              {responsibilities.length} Verantwortungsbereich{responsibilities.length !== 1 ? "e" : ""}
+              {directCount > 0 && ` • ${directCount} direkt`}
+              {deputyCount > 0 && ` • ${deputyCount} Stv.`}
+              {teamCount > 0 && ` • ${teamCount} via Team`}
+              {totalHours > 0 && ` • ${totalHours.toFixed(1)}h/Woche`}
             </CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={() => router.push("/responsibilities")}>
@@ -178,7 +288,7 @@ export function TeamMemberResponsibilitiesTab({
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {responsibilities.map((responsibility) => {
-              const categoryColor = getCategoryColor(responsibility.category)
+              const categoryColor = getCategoryColor(responsibility.category || responsibility.group_name)
 
               return (
                 <div
@@ -190,14 +300,14 @@ export function TeamMemberResponsibilitiesTab({
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm line-clamp-2">{responsibility.name}</h4>
 
-                      {responsibility.category && (
-                        <Badge
-                          variant="outline"
-                          className={`mt-2 text-xs ${categoryColor.text} ${categoryColor.border}`}
-                        >
-                          {responsibility.category}
-                        </Badge>
-                      )}
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {getAssignmentBadge(responsibility)}
+                        {(responsibility.category || responsibility.group_name) && (
+                          <Badge variant="outline" className={`text-xs ${categoryColor.text} ${categoryColor.border}`}>
+                            {responsibility.category || responsibility.group_name}
+                          </Badge>
+                        )}
+                      </div>
 
                       {responsibility.description && (
                         <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{responsibility.description}</p>

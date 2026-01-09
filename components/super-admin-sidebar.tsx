@@ -29,6 +29,12 @@ import {
   MapIcon,
   ListTodo,
   ArrowLeft,
+  ToggleLeft,
+  TestTube,
+  FolderCheck,
+  Tags,
+  MessageSquare,
+  Share2,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -624,6 +630,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           icon: MapIcon,
           href: "/super-admin/marketing?tab=roadmap",
         },
+        {
+          id: "social-media",
+          label: "Social Media Posts",
+          icon: Share2,
+          href: "/super-admin/social-media",
+        },
       ],
     },
     {
@@ -639,6 +651,30 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       ],
     },
     {
+      id: "testing",
+      label: "Testing",
+      items: [
+        {
+          id: "testing-overview",
+          label: "Test-Übersicht",
+          icon: TestTube,
+          href: "/super-admin/testing",
+        },
+        {
+          id: "test-checklists",
+          label: "Test-Checklisten",
+          icon: FolderCheck,
+          href: "/super-admin/testing?tab=checklists",
+        },
+        {
+          id: "test-categories",
+          label: "Kategorien",
+          icon: Tags,
+          href: "/super-admin/testing?tab=categories",
+        },
+      ],
+    },
+    {
       id: "system",
       label: "System",
       items: [
@@ -649,6 +685,18 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           href: "/super-admin/system",
           badge: true,
           badgeType: "backup" as const,
+        },
+        {
+          id: "features",
+          label: "Feature-Verwaltung",
+          icon: ToggleLeft,
+          href: "/super-admin/features",
+        },
+        {
+          id: "chat-logs",
+          label: "Chat-Protokolle",
+          icon: MessageSquare,
+          href: "/super-admin/chat-logs",
         },
       ],
     },

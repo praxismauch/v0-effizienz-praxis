@@ -18,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEffect, useState } from "react"
 import { usePractice } from "@/contexts/practice-context"
-import { Loader2, Sparkles, ChevronDown, Upload, User, Building2, Clock } from "lucide-react"
+import { Loader2, Sparkles, ChevronDown, Upload, User, Building2, Clock, Users } from "lucide-react"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 
 interface OrgaCategory {
@@ -35,6 +35,14 @@ interface TeamMember {
   name?: string
   isActive?: boolean
   status?: string
+}
+
+interface Team {
+  id: string
+  name: string
+  color?: string
+  memberCount?: number
+  isActive?: boolean
 }
 
 interface Arbeitsplatz {
@@ -74,6 +82,7 @@ interface ResponsibilityFormDialogProps {
     link_title?: string
     assigned_arbeitsplaetze?: string[]
     assigned_shifts?: string[]
+    assigned_teams?: string[]
   }
   setFormData: (data: any) => void
   hoursDisplayValue: string
@@ -97,10 +106,12 @@ export function ResponsibilityFormDialog({
   const [orgaCategories, setOrgaCategories] = useState<OrgaCategory[]>([])
   const [arbeitsplaetze, setArbeitsplaetze] = useState<Arbeitsplatz[]>([])
   const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([])
+  const [teams, setTeams] = useState<Team[]>([])
   const [loadingTeamMembers, setLoadingTeamMembers] = useState(false)
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingArbeitsplaetze, setLoadingArbeitsplaetze] = useState(false)
   const [loadingShiftTypes, setLoadingShiftTypes] = useState(false)
+  const [loadingTeams, setLoadingTeams] = useState(false)
   const [isGeneratingOptimization, setIsGeneratingOptimization] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [timeAmountDisplay, setTimeAmountDisplay] = useState("")
@@ -123,6 +134,19 @@ export function ResponsibilityFormDialog({
         console.error("[v0] Error fetching team members:", error)
       } finally {
         setLoadingTeamMembers(false)
+      }
+
+      setLoadingTeams(true)
+      try {
+        const response = await fetch(`/api/practices/${currentPractice.id}/teams`)
+        if (response.ok) {
+          const data = await response.json()
+          setTeams(Array.isArray(data) ? data.filter((t: Team) => t.isActive !== false) : [])
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching teams:", error)
+      } finally {
+        setLoadingTeams(false)
       }
 
       // Fetch orga categories
@@ -283,6 +307,12 @@ export function ResponsibilityFormDialog({
     setFormData({ ...formData, assigned_shifts: updated })
   }
 
+  const toggleTeam = (id: string) => {
+    const current = formData.assigned_teams || []
+    const updated = current.includes(id) ? current.filter((t) => t !== id) : [...current, id]
+    setFormData({ ...formData, assigned_teams: updated })
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -396,24 +426,26 @@ export function ResponsibilityFormDialog({
           <div className="pt-2">
             <Label className="text-base font-semibold">Zuordnung</Label>
             <p className="text-sm text-muted-foreground mb-3">
-              Weisen Sie diese Zuständigkeit Personen, Arbeitsplätzen oder Schichten zu.
+              Weisen Sie diese Zuständigkeit Personen, Teams, Arbeitsplätzen oder Schichten zu.
             </p>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="person" className="gap-2">
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="person" className="gap-1">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Personenbezogen</span>
-                  <span className="sm:hidden">Person</span>
+                  <span className="hidden sm:inline">Person</span>
                 </TabsTrigger>
-                <TabsTrigger value="arbeitsplatz" className="gap-2">
+                <TabsTrigger value="team" className="gap-1">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Team</span>
+                </TabsTrigger>
+                <TabsTrigger value="arbeitsplatz" className="gap-1">
                   <Building2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Arbeitsplatzbezogen</span>
-                  <span className="sm:hidden">Arbeitsplatz</span>
+                  <span className="hidden sm:inline">Arbeitsplatz</span>
                 </TabsTrigger>
-                <TabsTrigger value="schicht" className="gap-2">
+                <TabsTrigger value="schicht" className="gap-1">
                   <Clock className="h-4 w-4" />
-                  <span>Schicht</span>
+                  <span className="hidden sm:inline">Schicht</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -506,193 +538,186 @@ export function ResponsibilityFormDialog({
                     value={hoursDisplayValue}
                     onChange={(e) => handleHoursChange(e.target.value)}
                     disabled={formData.calculate_time_automatically}
-                    className={formData.calculate_time_automatically ? "bg-muted" : ""}
                   />
                 </div>
 
-                {/* Zeitaufwand Berechnung - shown when calculate_time_automatically is checked */}
+                {/* Zeit berechnen - only show if checkbox is checked */}
                 {formData.calculate_time_automatically && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Zeitaufwand Berechnung</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="time_amount" className="text-xs text-muted-foreground">
-                          Anzahl Stunden pro
-                        </Label>
-                        <Input
-                          id="time_amount"
-                          type="text"
-                          placeholder="z.B. 2 oder 2,5"
-                          value={timeAmountDisplay}
-                          onChange={(e) => handleTimeAmountChange(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="time_period" className="text-xs text-muted-foreground">
-                          Zeitraum
-                        </Label>
-                        <Select
-                          value={formData.estimated_time_period || "none"}
-                          onValueChange={(value) =>
-                            setFormData({ ...formData, estimated_time_period: value === "none" ? null : value })
-                          }
-                        >
-                          <SelectTrigger id="time_period">
-                            <SelectValue placeholder="Nicht ausgewählt" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nicht ausgewählt</SelectItem>
-                            <SelectItem value="Monat">Monat</SelectItem>
-                            <SelectItem value="Quartal">Quartal</SelectItem>
-                            <SelectItem value="Jahr">Jahr</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="time_amount">Zeitaufwand (Stunden)</Label>
+                      <Input
+                        id="time_amount"
+                        type="text"
+                        placeholder="z.B. 8"
+                        value={timeAmountDisplay}
+                        onChange={(e) => handleTimeAmountChange(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="time_period">pro</Label>
+                      <Select
+                        value={formData.estimated_time_period || "Monat"}
+                        onValueChange={(value) => setFormData({ ...formData, estimated_time_period: value })}
+                      >
+                        <SelectTrigger id="time_period">
+                          <SelectValue placeholder="Zeitraum wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Monat">Monat</SelectItem>
+                          <SelectItem value="Quartal">Quartal</SelectItem>
+                          <SelectItem value="Jahr">Jahr</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 )}
 
-                {/* Kann nicht während Sprechstunde */}
+                {/* Cannot Complete During Consultation */}
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id="consultation"
-                    checked={formData.cannot_complete_during_consultation}
+                    id="cannot_complete"
+                    checked={formData.cannot_complete_during_consultation || false}
                     onCheckedChange={(checked) =>
                       setFormData({ ...formData, cannot_complete_during_consultation: checked as boolean })
                     }
                   />
-                  <Label htmlFor="consultation" className="text-sm font-normal cursor-pointer">
-                    Kann nicht während Sprechstunde erledigt werden
+                  <Label htmlFor="cannot_complete" className="text-sm font-normal cursor-pointer">
+                    Nicht während der Sprechstunde möglich
                   </Label>
                 </div>
-
-                {formData.cannot_complete_during_consultation && (
-                  <div className="ml-6 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
-                    <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
-                      <span className="font-medium">Außerhalb der Sprechstunde</span>
-                      <span className="text-amber-600 dark:text-amber-400">
-                        — Diese Aufgabe wird außerhalb der regulären Sprechzeiten erledigt
-                      </span>
-                    </p>
-                  </div>
-                )}
               </TabsContent>
 
-              {/* Tab 2: Arbeitsplatzbezogen */}
+              <TabsContent value="team" className="space-y-4 mt-4">
+                <div>
+                  <Label>Teams/Gruppen zuweisen</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Wählen Sie ein oder mehrere Teams aus, die für diese Zuständigkeit verantwortlich sind.
+                  </p>
+                  {loadingTeams ? (
+                    <div className="flex items-center gap-2 h-20 px-3 border rounded-md bg-muted/50">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-muted-foreground">Lade Teams...</span>
+                    </div>
+                  ) : teams.length === 0 ? (
+                    <div className="flex items-center gap-2 h-20 px-3 border rounded-md bg-muted/50">
+                      <span className="text-sm text-muted-foreground">Keine Teams verfügbar</span>
+                    </div>
+                  ) : (
+                    <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                      {teams.map((team) => (
+                        <div key={team.id} className="flex items-center space-x-3">
+                          <Checkbox
+                            id={`team-${team.id}`}
+                            checked={(formData.assigned_teams || []).includes(team.id)}
+                            onCheckedChange={() => toggleTeam(team.id)}
+                          />
+                          <label
+                            htmlFor={`team-${team.id}`}
+                            className="flex items-center space-x-2 cursor-pointer flex-1"
+                          >
+                            <div
+                              className="w-4 h-4 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: team.color || "#64748b" }}
+                            />
+                            <span className="text-sm font-medium">{team.name}</span>
+                            {team.memberCount !== undefined && (
+                              <span className="text-xs text-muted-foreground">({team.memberCount} Mitglieder)</span>
+                            )}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {(formData.assigned_teams || []).length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(formData.assigned_teams || []).length} Team(s) ausgewählt
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Tab 3: Arbeitsplatzbezogen */}
               <TabsContent value="arbeitsplatz" className="space-y-4 mt-4">
                 <div>
-                  <Label className="mb-2 block">Arbeitsplätze zuweisen</Label>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Wählen Sie die Arbeitsplätze aus, an denen diese Zuständigkeit ausgeführt wird.
-                  </p>
-
+                  <Label>Arbeitsplätze zuweisen</Label>
                   {loadingArbeitsplaetze ? (
-                    <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 h-20 px-3 border rounded-md bg-muted/50">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span className="text-sm text-muted-foreground">Lade Arbeitsplätze...</span>
                     </div>
                   ) : arbeitsplaetze.length === 0 ? (
-                    <div className="p-4 border rounded-lg bg-muted/30 text-center">
-                      <Building2 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Keine Arbeitsplätze verfügbar. Erstellen Sie zuerst Arbeitsplätze unter{" "}
-                        <span className="font-medium">Arbeitsplätze</span>.
-                      </p>
+                    <div className="flex items-center gap-2 h-20 px-3 border rounded-md bg-muted/50">
+                      <span className="text-sm text-muted-foreground">Keine Arbeitsplätze verfügbar</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
-                      {arbeitsplaetze.map((ap) => {
-                        const isSelected = (formData.assigned_arbeitsplaetze || []).includes(ap.id)
-                        return (
-                          <div
-                            key={ap.id}
-                            onClick={() => toggleArbeitsplatz(ap.id)}
-                            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
-                              isSelected
-                                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                : "border-border hover:border-primary/50 hover:bg-muted/50"
-                            }`}
-                          >
-                            <Checkbox checked={isSelected} onChange={() => {}} className="pointer-events-none" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{ap.name}</p>
-                              {ap.raum_name && (
-                                <p className="text-xs text-muted-foreground truncate">Raum: {ap.raum_name}</p>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
+                    <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                      {arbeitsplaetze.map((ap) => (
+                        <div key={ap.id} className="flex items-center space-x-3">
+                          <Checkbox
+                            id={`ap-${ap.id}`}
+                            checked={(formData.assigned_arbeitsplaetze || []).includes(ap.id)}
+                            onCheckedChange={() => toggleArbeitsplatz(ap.id)}
+                          />
+                          <label htmlFor={`ap-${ap.id}`} className="flex flex-col cursor-pointer flex-1">
+                            <span className="text-sm font-medium">{ap.name}</span>
+                            {ap.raum_name && <span className="text-xs text-muted-foreground">{ap.raum_name}</span>}
+                          </label>
+                        </div>
+                      ))}
                     </div>
                   )}
-
                   {(formData.assigned_arbeitsplaetze || []).length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      {(formData.assigned_arbeitsplaetze || []).length} Arbeitsplatz/Arbeitsplätze ausgewählt
+                      {(formData.assigned_arbeitsplaetze || []).length} Arbeitsplatz/plätze ausgewählt
                     </p>
                   )}
                 </div>
               </TabsContent>
 
-              {/* Tab 3: Schicht */}
+              {/* Tab 4: Schichtbezogen */}
               <TabsContent value="schicht" className="space-y-4 mt-4">
                 <div>
-                  <Label className="mb-2 block">Schichten zuweisen</Label>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Wählen Sie die Schichten aus, während denen diese Zuständigkeit ausgeführt wird.
-                  </p>
-
+                  <Label>Schichten zuweisen</Label>
                   {loadingShiftTypes ? (
-                    <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 h-20 px-3 border rounded-md bg-muted/50">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span className="text-sm text-muted-foreground">Lade Schichten...</span>
                     </div>
                   ) : shiftTypes.length === 0 ? (
-                    <div className="p-4 border rounded-lg bg-muted/30 text-center">
-                      <Clock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Keine Schichttypen verfügbar. Erstellen Sie zuerst Schichten im{" "}
-                        <span className="font-medium">Dienstplan</span>.
-                      </p>
+                    <div className="flex items-center gap-2 h-20 px-3 border rounded-md bg-muted/50">
+                      <span className="text-sm text-muted-foreground">Keine Schichten verfügbar</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
-                      {shiftTypes.map((shift) => {
-                        const isSelected = (formData.assigned_shifts || []).includes(shift.id)
-                        return (
-                          <div
-                            key={shift.id}
-                            onClick={() => toggleShift(shift.id)}
-                            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
-                              isSelected
-                                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                : "border-border hover:border-primary/50 hover:bg-muted/50"
-                            }`}
+                    <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                      {shiftTypes.map((shift) => (
+                        <div key={shift.id} className="flex items-center space-x-3">
+                          <Checkbox
+                            id={`shift-${shift.id}`}
+                            checked={(formData.assigned_shifts || []).includes(shift.id)}
+                            onCheckedChange={() => toggleShift(shift.id)}
+                          />
+                          <label
+                            htmlFor={`shift-${shift.id}`}
+                            className="flex items-center gap-2 cursor-pointer flex-1"
                           >
-                            <Checkbox checked={isSelected} onChange={() => {}} className="pointer-events-none" />
-                            <div
-                              className="w-3 h-3 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: shift.color || "#6366f1" }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">
-                                {shift.name}
-                                {shift.short_name && (
-                                  <span className="text-muted-foreground ml-1">({shift.short_name})</span>
-                                )}
-                              </p>
-                              {shift.start_time && shift.end_time && (
-                                <p className="text-xs text-muted-foreground">
-                                  {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
+                            {shift.color && (
+                              <div
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: shift.color }}
+                              />
+                            )}
+                            <span className="text-sm font-medium">{shift.name}</span>
+                            {shift.start_time && shift.end_time && (
+                              <span className="text-xs text-muted-foreground">
+                                ({shift.start_time} - {shift.end_time})
+                              </span>
+                            )}
+                          </label>
+                        </div>
+                      ))}
                     </div>
                   )}
-
                   {(formData.assigned_shifts || []).length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
                       {(formData.assigned_shifts || []).length} Schicht(en) ausgewählt
@@ -703,15 +728,16 @@ export function ResponsibilityFormDialog({
             </Tabs>
           </div>
 
-          {/* Erweiterte Einstellungen */}
+          {/* Advanced Options Collapsible */}
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
-                <span className="text-sm font-medium">Erweiterte Einstellungen</span>
+                <span className="text-sm font-medium">Erweiterte Optionen</span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${advancedOpen ? "rotate-180" : ""}`} />
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-4">
+              {/* Link URL */}
               <div>
                 <Label htmlFor="link_url">Link URL</Label>
                 <Input
@@ -722,11 +748,13 @@ export function ResponsibilityFormDialog({
                   onChange={(e) => setFormData({ ...formData, link_url: e.target.value })}
                 />
               </div>
+
+              {/* Link Title */}
               <div>
                 <Label htmlFor="link_title">Link Titel</Label>
                 <Input
                   id="link_title"
-                  placeholder="Titel für den Link"
+                  placeholder="Beschreibung des Links"
                   value={formData.link_title || ""}
                   onChange={(e) => setFormData({ ...formData, link_title: e.target.value })}
                 />
@@ -735,11 +763,11 @@ export function ResponsibilityFormDialog({
           </Collapsible>
         </div>
 
-        <DialogFooter className="mt-6">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
-          <Button onClick={onSave} disabled={!formData.name}>
+          <Button onClick={onSave} disabled={!formData.name.trim()}>
             {editing ? "Speichern" : "Erstellen"}
           </Button>
         </DialogFooter>

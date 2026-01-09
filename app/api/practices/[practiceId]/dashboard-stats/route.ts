@@ -37,10 +37,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
+    const practiceIdInt = Number.parseInt(practiceId, 10)
+    const practiceIdStr = String(practiceId)
+
+    console.log("[v0] Dashboard stats - practiceId:", practiceId, "asInt:", practiceIdInt, "asStr:", practiceIdStr)
+
     const cacheKey = `dashboard-stats:${practiceId}`
     try {
       const cached = await getCached<any>(cacheKey)
       if (cached) {
+        console.log("[v0] Dashboard stats - returning cached data")
         return new Response(JSON.stringify(cached), {
           status: 200,
           headers: {
@@ -77,122 +83,145 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let queryResults
     try {
       queryResults = await Promise.all([
+        // team_members uses integer practice_id
         supabase
           .from("team_members")
           .select("id, user_id, users(is_active, role)", { count: "exact" })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("status", "active"),
+        // goals uses integer practice_id
         supabase
           .from("goals")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("status", "active"),
+        // workflows uses integer practice_id
         supabase
           .from("workflows")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .in("status", ["active", "in_progress"]),
+        // documents uses integer practice_id
         supabase
           .from("documents")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("is_archived", false),
+        // job_postings - check type (likely text)
         supabase
           .from("job_postings")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdStr)
           .eq("status", "open"),
+        // applications - check type (likely text)
         supabase
           .from("applications")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdStr)
           .in("status", ["pending", "reviewing"]),
+        // todos uses integer practice_id
         supabase
           .from("todos")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("completed", false),
+        // calendar_events uses integer practice_id
         supabase
           .from("calendar_events")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("start_date", todayStr),
+        // documents uses integer practice_id
         supabase
           .from("documents")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("is_archived", false),
+        // candidates - check type
         supabase
           .from("candidates")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdStr)
           .neq("status", "archived"),
+        // team_members (prev week) uses integer
         supabase
           .from("team_members")
           .select("id, user_id, users(is_active, role)", { count: "exact" })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("status", "active")
           .lte("created_at", sevenDaysAgo.toISOString()),
+        // goals (prev week) uses integer
         supabase
           .from("goals")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .lte("created_at", sevenDaysAgo.toISOString()),
+        // workflows (prev week) uses integer
         supabase
           .from("workflows")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .lte("created_at", sevenDaysAgo.toISOString()),
+        // documents (prev week) uses integer
         supabase
           .from("documents")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .lte("created_at", sevenDaysAgo.toISOString()),
+        // job_postings (prev week) - text
         supabase
           .from("job_postings")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdStr)
           .eq("status", "open")
           .lte("created_at", sevenDaysAgo.toISOString()),
+        // candidates (prev week) - text
         supabase
           .from("candidates")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdStr)
           .neq("status", "archived")
           .lte("created_at", sevenDaysAgo.toISOString()),
+        // goals completed uses integer
         supabase
           .from("goals")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("status", "completed")
           .gte("completed_at", sevenDaysAgo.toISOString()),
+        // system_logs uses text practice_id
         supabase
           .from("system_logs")
           .select("id, created_at")
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdStr)
           .gte("created_at", sevenDaysAgo.toISOString()),
+        // todos uses integer
         supabase
           .from("todos")
           .select("id, completed, created_at, updated_at")
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .gte("created_at", sevenDaysAgo.toISOString()),
+        // calendar_events uses integer
         supabase
           .from("calendar_events")
           .select("id, start_time")
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("start_date", todayStr),
+        // todos recent uses integer
         supabase
           .from("todos")
           .select("id, title, description, priority, created_at")
-          .eq("practice_id", practiceId)
+          .eq("practice_id", practiceIdInt)
           .eq("completed", false)
           .order("created_at", { ascending: false })
           .limit(5),
+        // test_checklist_items - no practice_id filter
         supabase
           .from("test_checklist_items")
           .select("id", { count: "exact", head: true })
           .eq("is_completed", true)
           .gte("completed_at", sevenDaysAgo.toISOString()),
+        // test_checklist_items prev week - no practice_id filter
         supabase
           .from("test_checklist_items")
           .select("id", { count: "exact", head: true })
@@ -200,7 +229,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .gte("completed_at", fourteenDaysAgo.toISOString())
           .lt("completed_at", sevenDaysAgo.toISOString()),
       ])
+
+      console.log("[v0] Dashboard stats - query results:", {
+        teamMembers: queryResults[0]?.count,
+        goals: queryResults[1]?.count,
+        workflows: queryResults[2]?.count,
+        documents: queryResults[3]?.count,
+        openPositions: queryResults[4]?.count,
+        applications: queryResults[5]?.count,
+        openTasks: queryResults[6]?.count,
+        todayAppointments: queryResults[7]?.count,
+      })
     } catch (queryError) {
+      console.error("[v0] Dashboard stats - query error:", queryError)
       if (isRateLimitError(queryError)) {
         return new Response(JSON.stringify(defaultStats), {
           status: 200,

@@ -1,5 +1,5 @@
-import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
+import { requirePracticeAccess } from "@/lib/api-helpers"
 
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
@@ -9,7 +9,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })
     }
 
-    const supabase = await createAdminClient()
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     const { data: rooms, error } = await supabase
       .from("rooms")
@@ -32,6 +33,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     if (errorMsg.includes("Too Many") || errorMsg.includes("rate limit")) {
       return NextResponse.json([])
     }
+    if (errorMsg.includes("Not authenticated") || errorMsg.includes("Access denied")) {
+      return NextResponse.json({ error: errorMsg }, { status: 401 })
+    }
     console.error("Error in rooms GET:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
@@ -51,7 +55,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "Name ist erforderlich" }, { status: 400 })
     }
 
-    const supabase = await createAdminClient()
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     const { data, error } = await supabase
       .from("rooms")
@@ -77,6 +82,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     const errorMsg = error instanceof Error ? error.message : String(error)
     if (errorMsg.includes("Too Many") || errorMsg.includes("rate limit")) {
       return NextResponse.json({ error: "Zu viele Anfragen. Bitte versuchen Sie es später erneut." }, { status: 429 })
+    }
+    if (errorMsg.includes("Not authenticated") || errorMsg.includes("Access denied")) {
+      return NextResponse.json({ error: errorMsg }, { status: 401 })
     }
     console.error("Error in rooms POST:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

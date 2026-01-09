@@ -1,10 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { requirePracticeAccess } from "@/lib/api-helpers"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createAdminClient()
+
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get("user_id")
@@ -31,6 +33,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(badges || [])
   } catch (error: any) {
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
     console.error("Error fetching user badges:", error)
     return NextResponse.json([])
   }

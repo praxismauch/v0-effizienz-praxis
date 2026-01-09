@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { requirePracticeAccess } from "@/lib/api-helpers"
 
 export interface PracticeLocation {
   id: string
@@ -25,7 +24,7 @@ export interface PracticeLocation {
 }
 
 // GET - Fetch all locations for a practice
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
 
@@ -33,7 +32,8 @@ export async function GET(request: NextRequest, { params }: { params: { practice
       return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     const { data: locations, error } = await supabase
       .from("practice_locations")
@@ -48,14 +48,17 @@ export async function GET(request: NextRequest, { params }: { params: { practice
     }
 
     return NextResponse.json({ locations: locations || [] })
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
     console.error("[v0] Error in GET /api/practices/[practiceId]/locations:", error)
     return NextResponse.json({ error: "Failed to fetch locations" }, { status: 500 })
   }
 }
 
 // POST - Create a new location
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     const body = await request.json()
@@ -64,12 +67,8 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })
     }
 
-    const supabase = await createAdminClient()
-
-    // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     const locationData = {
       practice_id: Number.parseInt(practiceId),
@@ -88,7 +87,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       notes: body.notes || null,
       latitude: body.latitude || null,
       longitude: body.longitude || null,
-      created_by: user?.id || null,
+      created_by: access.user.id,
     }
 
     const { data: location, error } = await supabase.from("practice_locations").insert(locationData).select().single()
@@ -102,7 +101,10 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       location,
       message: "Location created successfully",
     })
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
     console.error("[v0] Error in POST /api/practices/[practiceId]/locations:", error)
     return NextResponse.json({ error: "Failed to create location" }, { status: 500 })
   }

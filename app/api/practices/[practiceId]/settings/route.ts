@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { requirePracticeAccess } from "@/lib/api-helpers"
 import { isRateLimitError } from "@/lib/supabase/rate-limit-handler"
 
 const DEFAULT_SETTINGS = {
@@ -11,23 +11,26 @@ const DEFAULT_SETTINGS = {
 }
 
 // GET - Fetch practice settings
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
 
     if (!practiceId || practiceId === "undefined" || practiceId === "null") {
       return NextResponse.json({ error: "Invalid practice ID", settings: DEFAULT_SETTINGS }, { status: 200 })
     }
 
-    let supabase
+    let access
     try {
-      supabase = await createAdminClient()
-    } catch (clientError: any) {
-      if (isRateLimitError(clientError)) {
+      access = await requirePracticeAccess(practiceId)
+    } catch (authError: any) {
+      // For GET settings, return defaults if not authenticated (graceful fallback)
+      if (authError.message?.includes("rate limit") || isRateLimitError(authError)) {
         return NextResponse.json({ settings: DEFAULT_SETTINGS })
       }
-      return NextResponse.json({ settings: DEFAULT_SETTINGS })
+      return NextResponse.json({ error: "Not authenticated", settings: DEFAULT_SETTINGS }, { status: 401 })
     }
+
+    const supabase = access.adminClient
 
     let practiceSettingsData: any[] | null = null
     try {
@@ -93,18 +96,21 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   return PUT(request, { params })
 }
 
 // PUT - Update practice settings
-export async function PUT(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
-    const supabase = await createAdminClient()
+    const { practiceId } = await params
+
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
+
     const body = await request.json()
 
-    console.log("[v0] Updating practice settings for practice:", practiceId)
+    console.log("[v0] Updating practice settings for practice:", practiceId, "by user:", access.user.id)
 
     const { data: existingSettings } = await supabase
       .from("practice_settings")
@@ -131,8 +137,6 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
         throw error
       }
 
-      console.log("[v0] Practice settings updated successfully in practice_settings table")
-
       return NextResponse.json({
         settings: {
           system_settings: data.system_settings,
@@ -158,8 +162,6 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
         // Fall back to practices table if practice_settings doesn't exist
         return updatePracticesTable()
       }
-
-      console.log("[v0] Practice settings created successfully in practice_settings table")
 
       return NextResponse.json({
         settings: {
@@ -206,6 +208,10 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
     }
   } catch (error: any) {
     console.error("[v0] Error updating practice settings:", error)
+
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
 
     return NextResponse.json(
       {

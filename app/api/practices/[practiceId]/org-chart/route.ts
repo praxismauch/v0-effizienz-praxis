@@ -1,10 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { requirePracticeAccess } from "@/lib/api-helpers"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createAdminClient()
+
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     const { data: positions, error } = await supabase
       .from("org_chart_positions")
@@ -46,7 +48,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }))
 
     return NextResponse.json(positionsWithManagement)
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
     console.error("[v0] Error fetching org chart:", error)
     return NextResponse.json(
       {
@@ -61,13 +66,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createAdminClient()
     const body = await request.json()
 
-    const createdBy = body.created_by || body.createdBy
-    if (!createdBy) {
-      return NextResponse.json({ error: "created_by is required" }, { status: 400 })
-    }
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     const reportsToPositionId = body.reports_to_position_id || body.reportsToPositionId
 
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       is_active: true,
       is_management: body.is_management || body.isManagement || false,
       color: body.color || null,
-      created_by: createdBy,
+      created_by: access.user.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -105,7 +107,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     return NextResponse.json(position, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
     console.error("[v0] Error creating org chart position:", error)
     return NextResponse.json(
       {

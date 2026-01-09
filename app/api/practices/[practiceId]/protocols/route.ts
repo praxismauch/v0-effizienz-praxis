@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { requirePracticeAccess } from "@/lib/api-helpers"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const supabase = await createServerClient()
-    const { practiceId } = params
+    const { practiceId } = await params
+
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     const { data: protocols, error } = await supabase
       .from("practice_journals")
@@ -20,50 +21,24 @@ export async function GET(request: NextRequest, { params }: { params: { practice
     }
 
     return NextResponse.json({ protocols: protocols || [] })
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
     console.error("[API] Error in protocols route:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const supabase = await createServerClient()
-    const { practiceId } = params
+    const { practiceId } = await params
     const body = await request.json()
 
-    console.log("[v0] Creating protocol for practice:", practiceId, body)
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
-    // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-    let authenticatedUserId = user?.id
-
-    if (userError || !user) {
-      console.log("[v0] Session auth failed, checking if user exists via practice membership")
-
-      // Try to verify user has access to this practice via admin client
-      const adminClient = await createAdminClient()
-
-      // Get all users associated with this practice
-      const { data: practiceUsers } = await adminClient
-        .from("users")
-        .select("id")
-        .eq("practice_id", practiceId)
-        .limit(1)
-
-      if (practiceUsers && practiceUsers.length > 0) {
-        // Use the first user's id as fallback (this is a temporary workaround)
-        authenticatedUserId = practiceUsers[0].id
-        console.log("[v0] Using practice user as fallback:", authenticatedUserId)
-      } else {
-        console.error("[v0] No authenticated user and no practice users found:", userError?.message)
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-    }
+    console.log("[v0] Creating protocol for practice:", practiceId, "by user:", access.user.id)
 
     const { title, description, content, category, status, protocol_date, action_items } = body
 
@@ -71,9 +46,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
     }
 
-    const adminClient = await createAdminClient()
-
-    const { data: protocol, error } = await adminClient
+    const { data: protocol, error } = await supabase
       .from("practice_journals")
       .insert({
         practice_id: practiceId,
@@ -84,7 +57,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
         status: status || "draft",
         protocol_date: protocol_date || new Date().toISOString(),
         action_items: action_items || [],
-        created_by: authenticatedUserId,
+        created_by: access.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -98,7 +71,10 @@ export async function POST(request: NextRequest, { params }: { params: { practic
 
     console.log("[v0] Protocol created successfully:", protocol?.id)
     return NextResponse.json(protocol)
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
     console.error("[v0] Error in protocols POST:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

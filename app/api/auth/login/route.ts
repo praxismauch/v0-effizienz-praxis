@@ -1,5 +1,4 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
@@ -15,40 +14,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
     }
 
-    const cookieStore = await cookies()
+    const supabase = await createServerClient()
 
-    const cookiesToSetOnResponse: Array<{ name: string; value: string; options?: any }> = []
-
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookiesToSetOnResponse.push({ name, value, options })
-            // Also set on cookieStore for server-side reads
-            try {
-              cookieStore.set(name, value, {
-                ...options,
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-              })
-            } catch {
-              // Ignore - happens in read-only contexts
-            }
-          })
-        },
-      },
-    })
+    console.log("[v0] [auth/login] Attempting login for:", email)
 
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError || !authData?.user) {
+      console.log("[v0] [auth/login] Auth failed:", authError?.message)
       return NextResponse.json({ error: authError?.message || "Authentifizierung fehlgeschlagen" }, { status: 401 })
     }
+
+    console.log("[v0] [auth/login] Auth successful, user ID:", authData.user.id)
 
     const { data: userData, error: userError } = await supabase
       .from("users")
@@ -75,7 +52,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to create user profile" }, { status: 500 })
       }
 
-      const response = NextResponse.json(
+      console.log("[v0] [auth/login] Created new user profile")
+
+      return NextResponse.json(
         {
           success: true,
           user: {
@@ -90,21 +69,6 @@ export async function POST(request: Request) {
         },
         { status: 200 },
       )
-
-      // Apply all cookies that Supabase set during auth
-      cookiesToSetOnResponse.forEach(({ name, value, options }) => {
-        response.cookies.set(name, value, {
-          ...options,
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-        })
-      })
-
-      console.log("[auth/login] Cookies set on response:", cookiesToSetOnResponse.map((c) => c.name).join(", "))
-
-      return response
     }
 
     if (userError) {
@@ -122,7 +86,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const successResponse = NextResponse.json(
+    console.log("[v0] [auth/login] Login successful for user:", userData.email, "role:", userData.role)
+
+    return NextResponse.json(
       {
         success: true,
         user: {
@@ -137,21 +103,6 @@ export async function POST(request: Request) {
       },
       { status: 200 },
     )
-
-    // Apply all cookies that Supabase set during auth
-    cookiesToSetOnResponse.forEach(({ name, value, options }) => {
-      successResponse.cookies.set(name, value, {
-        ...options,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-      })
-    })
-
-    console.log("[auth/login] Success - Cookies set:", cookiesToSetOnResponse.map((c) => c.name).join(", "))
-
-    return successResponse
   } catch (error) {
     console.error("[auth/login] Error:", error)
     const message = error instanceof Error ? error.message : "Unbekannter Fehler"

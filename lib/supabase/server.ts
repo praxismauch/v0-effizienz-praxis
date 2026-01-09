@@ -53,7 +53,7 @@ export async function createServerClient() {
             })
           })
         } catch (error) {
-          // Ignore errors from Server Components - expected in read-only contexts
+          console.error("[v0] [supabase/server] Error setting cookies:", error)
         }
       },
     },

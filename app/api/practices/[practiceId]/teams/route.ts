@@ -1,6 +1,6 @@
-import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 async function syncDefaultTeamsForPractice(supabase: any, practiceId: string) {
   try {
@@ -44,12 +44,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let supabase
     try {
-      supabase = await createAdminClient()
-    } catch (clientError) {
-      if (isRateLimitError(clientError)) {
-        return NextResponse.json([])
-      }
-      throw clientError
+      const access = await requirePracticeAccess(practiceId)
+      supabase = access.adminClient
+    } catch (error) {
+      return handleApiError(error)
     }
 
     const practiceIdText = String(practiceId)
@@ -77,19 +75,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       error = result.error
     } catch (queryError) {
       if (isRateLimitError(queryError)) {
-        return NextResponse.json([])
-      }
-      return NextResponse.json([])
-    }
-
-    if (error) {
-      const errorStr = JSON.stringify(error)
-      if (
-        errorStr.includes("Too Many") ||
-        errorStr.includes("SyntaxError") ||
-        (error as any)?.message?.includes("Too Many") ||
-        (error as any)?.name === "SyntaxError"
-      ) {
         return NextResponse.json([])
       }
       return NextResponse.json([])
@@ -136,14 +121,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (isRateLimitError(error)) {
       return NextResponse.json([])
     }
-    return NextResponse.json([])
+    return handleApiError(error)
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
     const body = await request.json()
 
     const practiceIdText = String(practiceId)
@@ -177,14 +162,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(data)
   } catch (error) {
-    return NextResponse.json({ error: "Failed to create team" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createAdminClient()
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
     const body = await request.json()
 
     const practiceIdText = String(practiceId)
@@ -206,6 +191,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Error reordering teams:", error)
-    return NextResponse.json({ error: "Failed to reorder teams" }, { status: 500 })
+    return handleApiError(error)
   }
 }

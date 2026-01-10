@@ -1,34 +1,28 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
-import { sendEmail } from "@/lib/email/send-email"
+import { Resend } from "resend"
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { email, name, practice_name, practice_type, phone, message } = body
 
-    // Validate required field
     if (!email) {
       return NextResponse.json({ error: "E-Mail-Adresse ist erforderlich" }, { status: 400 })
     }
 
     const supabase = await createAdminClient()
 
-    const { data: existingEntry, error: checkError } = await supabase
-      .from("waitlist")
-      .select("id, email")
-      .eq("email", email)
-      .maybeSingle()
-
-    if (checkError) {
-      console.error("[v0] Error checking existing email:", checkError)
-    }
+    // Check for existing email
+    const { data: existingEntry } = await supabase.from("waitlist").select("id").eq("email", email).maybeSingle()
 
     if (existingEntry) {
-      console.log("[v0] Email already exists:", existingEntry.id)
       return NextResponse.json({ error: "Diese E-Mail-Adresse ist bereits registriert." }, { status: 409 })
     }
 
+    // Insert new entry
     const { data: waitlistEntry, error: insertError } = await supabase
       .from("waitlist")
       .insert({
@@ -46,170 +40,57 @@ export async function POST(request: Request) {
 
     if (insertError) {
       if (insertError.code === "23505") {
-        // Unique constraint violation - email already exists
         return NextResponse.json({ error: "Diese E-Mail-Adresse ist bereits registriert." }, { status: 409 })
       }
-      console.error("[v0] Insert error:", insertError)
       throw insertError
     }
 
-    console.log("[v0] Waitlist entry created:", waitlistEntry.id)
+    if (process.env.RESEND_API_KEY) {
+      // Notify super admins
+      try {
+        const { data: superAdmins } = await supabase
+          .from("users")
+          .select("email")
+          .or("role.eq.super_admin,role.eq.superadmin")
 
-    try {
-      console.log("[v0] Fetching super admins...")
-      const { data: superAdmins, error: adminError } = await supabase
-        .from("users")
-        .select("email, name, role")
-        .or("role.eq.super_admin,role.eq.superadmin")
+        const adminEmails = superAdmins?.map((a) => a.email).filter(Boolean) as string[]
 
-      console.log("[v0] Super admin query result:", {
-        count: superAdmins?.length,
-        error: adminError,
-        roles: superAdmins?.map((a) => a.role),
-      })
-
-      if (adminError) {
-        console.error("[v0] Error fetching super admins:", adminError)
-        throw new Error(`Failed to fetch super admins: ${adminError.message}`)
-      }
-
-      if (!superAdmins || superAdmins.length === 0) {
-        console.warn("[v0] No super admins found in database")
-        return NextResponse.json({
-          success: true,
-          message: "Registrierung erfolgreich (keine Benachrichtigung gesendet)",
-          id: waitlistEntry.id,
-        })
-      }
-
-      const adminEmails = superAdmins.map((admin) => admin.email).filter(Boolean) as string[]
-
-      if (adminEmails.length > 0) {
-        console.log("[v0] Sending email to", adminEmails.join(", "))
-
-        const emailResult = await sendEmail({
-          to: adminEmails,
-          subject: "🎉 Neue Wartelisten-Registrierung",
-          html: `
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
-                  .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                  .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
-                  .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-                  .info-block { background: white; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #667eea; }
-                  .label { font-weight: 600; color: #4b5563; margin-bottom: 5px; }
-                  .value { color: #1f2937; margin-bottom: 15px; }
-                  .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
-                  .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <h1 style="margin: 0; font-size: 28px;">Neue Wartelisten-Registrierung</h1>
-                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Ein neuer Interessent hat sich für Effizienz Praxis registriert</p>
-                  </div>
-                  <div class="content">
-                    <div class="info-block">
-                      <div class="label">📧 E-Mail-Adresse</div>
-                      <div class="value">${email}</div>
-                      
-                      ${name ? `<div class="label">👤 Name</div><div class="value">${name}</div>` : ""}
-                      
-                      ${practice_name ? `<div class="label">🏥 Praxisname</div><div class="value">${practice_name}</div>` : ""}
-                      
-                      ${practice_type ? `<div class="label">🔬 Fachbereich</div><div class="value">${practice_type}</div>` : ""}
-                      
-                      ${phone ? `<div class="label">📞 Telefon</div><div class="value">${phone}</div>` : ""}
-                      
-                      ${message ? `<div class="label">💬 Nachricht</div><div class="value">${message}</div>` : ""}
-                      
-                      <div class="label">📅 Registriert am</div>
-                      <div class="value">${new Date().toLocaleString("de-DE", {
-                        dateStyle: "long",
-                        timeStyle: "short",
-                      })}</div>
-                    </div>
-                    
-                    <div style="text-align: center;">
-                      <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://effizienz-praxis.de"}/super-admin?tab=waitlist" class="button">
-                        Warteliste anzeigen
-                      </a>
-                    </div>
-                  </div>
-                  <div class="footer">
-                    <p>Diese E-Mail wurde automatisch von Effizienz Praxis gesendet.</p>
-                  </div>
-                </div>
-              </body>
-            </html>
-          `,
-          replyTo: email,
-        })
-
-        if (emailResult.success) {
-          console.log("[v0] Super admin notification sent successfully")
-        } else {
-          console.warn("[v0] Failed to send email notification (non-critical):", emailResult.error)
+        if (adminEmails.length > 0) {
+          await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || "Effizienz Praxis <noreply@resend.dev>",
+            to: adminEmails,
+            subject: "Neue Wartelisten-Registrierung",
+            html: `
+              <h2>Neue Wartelisten-Registrierung</h2>
+              <p><strong>E-Mail:</strong> ${email}</p>
+              ${name ? `<p><strong>Name:</strong> ${name}</p>` : ""}
+              ${practice_name ? `<p><strong>Praxis:</strong> ${practice_name}</p>` : ""}
+              ${practice_type ? `<p><strong>Fachbereich:</strong> ${practice_type}</p>` : ""}
+              ${phone ? `<p><strong>Telefon:</strong> ${phone}</p>` : ""}
+              ${message ? `<p><strong>Nachricht:</strong> ${message}</p>` : ""}
+            `,
+          })
         }
+      } catch (e) {
+        console.warn("Admin notification failed:", e)
       }
-    } catch (emailError) {
-      console.warn("[v0] Email notification error (non-critical):", emailError)
-    }
 
-    try {
-      const confirmation = await sendEmail({
-        to: email,
-        subject: "Bestätigung Ihrer Registrierung für Effizienz Praxis",
-        html: `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
-                .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-                .message-box { background: white; padding: 25px; border-radius: 6px; border-left: 4px solid #667eea; }
-                .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1 style="margin: 0; font-size: 28px;">Willkommen bei Effizienz Praxis</h1>
-                  <p style="margin: 10px 0 0 0; opacity: 0.9;">Ihre Registrierung wurde erfolgreich bestätigt</p>
-                </div>
-                <div class="content">
-                  <div class="message-box">
-                    <p>Guten Tag${name ? " " + name : ""},</p>
-                    <p>vielen Dank für Ihre Registrierung für die Warteliste von <strong>Effizienz Praxis</strong>.</p>
-                    <p>Wir melden uns bei Ihnen, sobald wir mit dem Early Access starten.</p>
-                    <p>Viele Grüße<br/>Ihr Effizienz-Praxis-Team</p>
-                  </div>
-                </div>
-                <div class="footer">
-                  <p>Diese E-Mail wurde automatisch von Effizienz Praxis gesendet.</p>
-                </div>
-              </div>
-            </body>
-          </html>
-        `,
-        replyTo: "info@effizient-praxis.de",
-      })
-
-      if (!confirmation.success) {
-        console.warn("[v0] Failed to send confirmation email:", confirmation.error)
-      } else {
-        console.log("[v0] Confirmation email sent successfully to", email)
+      // Send confirmation to user
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || "Effizienz Praxis <noreply@resend.dev>",
+          to: email,
+          subject: "Bestätigung Ihrer Registrierung",
+          html: `
+            <h2>Willkommen bei Effizienz Praxis</h2>
+            <p>Guten Tag${name ? " " + name : ""},</p>
+            <p>vielen Dank für Ihre Registrierung. Wir melden uns bei Ihnen, sobald wir mit dem Early Access starten.</p>
+            <p>Viele Grüße<br/>Ihr Effizienz-Praxis-Team</p>
+          `,
+        })
+      } catch (e) {
+        console.warn("Confirmation email failed:", e)
       }
-    } catch (err) {
-      console.warn("[v0] Confirmation email error (non-critical):", err)
     }
 
     return NextResponse.json({
@@ -218,7 +99,7 @@ export async function POST(request: Request) {
       id: waitlistEntry.id,
     })
   } catch (error) {
-    console.error("[v0] Error in waitlist submit route:", error)
+    console.error("Waitlist error:", error)
     return NextResponse.json(
       { error: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut." },
       { status: 500 },

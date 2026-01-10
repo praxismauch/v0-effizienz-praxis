@@ -72,8 +72,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             joined_date,
             created_at,
             first_name,
-            last_name,
-            users(id, name, email, avatar, is_active, first_name, last_name, role, date_of_birth)
+            last_name
           `)
           .eq("practice_id", practiceIdStr)
           .order("created_at", { ascending: false })
@@ -106,14 +105,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     console.log("[v0] team-members: fetched", members.length, "members before filtering")
 
-    const activeMembers = members.filter((member: any) => {
-      if (member.user_id && member.users) {
-        return member.users.role !== "superadmin"
-      }
-      return true
-    })
+    const activeMembers = members
 
-    console.log("[v0] team-members: filtered to", activeMembers.length, "active members (removed superadmins)")
+    console.log("[v0] team-members: active members count:", activeMembers.length)
 
     const userIds = activeMembers.map((m: any) => m.user_id).filter(Boolean)
 
@@ -137,34 +131,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const teamMembers = activeMembers.map((member: any) => {
       const memberId = member.user_id || member.id
 
-      let name = ""
-      const firstName = member.first_name?.trim() || member.users?.first_name?.trim() || ""
-      const lastName = member.last_name?.trim() || member.users?.last_name?.trim() || ""
-
-      if (firstName && lastName) {
-        name = `${firstName} ${lastName}`
-      } else if (firstName) {
-        name = firstName
-      } else if (lastName) {
-        name = lastName
-      } else if (member.users?.name?.trim()) {
-        name = member.users.name.trim()
-      }
+      const firstName = member.first_name?.trim() || ""
+      const lastName = member.last_name?.trim() || ""
+      const name = firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || "Unbekannt"
 
       return {
         id: memberId,
         user_id: member.user_id,
         firstName: firstName,
         lastName: lastName,
-        name: name || "Unbekannt",
-        email: member.users?.email || "",
-        role: member.role || member.users?.role || "user",
-        avatar: member.users?.avatar || null,
+        name: name,
+        email: "", // No email in team_members table
+        role: member.role || "user",
+        avatar: null, // No avatar in team_members table
         practiceId: practiceId,
-        isActive: (member.status === "active" || !member.status) && member.users?.is_active !== false,
-        is_active: (member.status === "active" || !member.status) && member.users?.is_active !== false,
+        isActive: member.status === "active" || !member.status,
+        is_active: member.status === "active" || !member.status,
         status: member.status || "active",
-        userIsActive: member.users?.is_active ?? true,
+        userIsActive: true,
         joinedAt: member.joined_date || member.created_at || new Date().toISOString(),
         created_at: member.created_at,
         permissions: [],
@@ -172,7 +156,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         teamIds: member.user_id
           ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
           : [],
-        date_of_birth: member.users?.date_of_birth || null,
+        date_of_birth: null, // No date_of_birth in team_members table
       }
     })
 

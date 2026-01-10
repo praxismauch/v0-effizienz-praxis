@@ -1,0 +1,98 @@
+import { createClient } from "@supabase/supabase-js"
+import { type NextRequest, NextResponse } from "next/server"
+
+const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const moduleId = searchParams.get("module_id")
+    const courseId = searchParams.get("course_id")
+
+    console.log("[v0] GET /api/practices/[practiceId]/academy/lessons", {
+      practiceId: params.practiceId,
+      moduleId,
+      courseId,
+    })
+
+    // Build query
+    let query = supabaseAdmin
+      .from("academy_lessons")
+      .select("*")
+      .is("deleted_at", null)
+      .order("display_order", { ascending: true })
+
+    // Filter by module_id if provided
+    if (moduleId) {
+      query = query.eq("module_id", moduleId)
+    }
+
+    // Filter by course_id if provided
+    if (courseId) {
+      query = query.eq("course_id", courseId)
+    }
+
+    const { data: lessons, error } = await query
+
+    if (error) {
+      console.error("[v0] Error fetching lessons:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    console.log("[v0] Lessons fetched successfully:", lessons?.length)
+
+    return NextResponse.json({
+      lessons: lessons || [],
+      total: lessons?.length || 0,
+    })
+  } catch (error) {
+    console.error("[v0] Error in GET lessons:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+  try {
+    const body = await request.json()
+
+    console.log("[v0] POST /api/practices/[practiceId]/academy/lessons", {
+      practiceId: params.practiceId,
+      body,
+    })
+
+    // Prepare lesson data
+    const lessonData = {
+      module_id: body.module_id,
+      course_id: body.course_id,
+      title: body.title,
+      description: body.description || null,
+      content: body.content || null,
+      lesson_type: body.lesson_type || "text",
+      content_type: body.content_type || body.lesson_type || "text",
+      video_url: body.video_url || null,
+      video_duration_seconds: body.video_duration_seconds || null,
+      display_order: body.display_order ?? 0,
+      order_index: body.order_index ?? body.display_order ?? 0,
+      is_published: body.is_published ?? false,
+      is_free_preview: body.is_free_preview ?? false,
+      estimated_minutes: body.estimated_minutes ?? 15,
+      duration_minutes: body.duration_minutes ?? body.estimated_minutes ?? 0,
+      resources: body.resources || [],
+      xp_reward: body.xp_reward ?? 10,
+    }
+
+    const { data: lesson, error } = await supabaseAdmin.from("academy_lessons").insert(lessonData).select().single()
+
+    if (error) {
+      console.error("[v0] Error creating lesson:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    console.log("[v0] Lesson created successfully:", lesson.id)
+
+    return NextResponse.json({ lesson }, { status: 201 })
+  } catch (error) {
+    console.error("[v0] Error in POST lesson:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

@@ -1,75 +1,103 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server-admin"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = await params
-    const supabase = await createAdminClient()
+    const { practiceId: rawPracticeId } = await params
+    const supabase = createClient()
 
-    // Get user_id from query params or use a default
-    const searchParams = request.nextUrl.searchParams
-    const userId = searchParams.get("user_id")
+    const practiceId =
+      rawPracticeId === "0" || rawPracticeId === "undefined" || !rawPracticeId ? 1 : Number.parseInt(rawPracticeId)
 
-    if (!userId) {
-      // Return default stats if no user specified
-      return NextResponse.json({
-        total_xp: 0,
-        current_level: 1,
-        xp_for_next_level: 1000,
-        courses_completed: 0,
-        lessons_completed: 0,
-        current_streak_days: 0,
-        longest_streak_days: 0,
-        quizzes_passed: 0,
-      })
-    }
+    console.log("[v0] Academy stats - Practice ID:", practiceId)
 
-    const { data: stats, error } = await supabase
-      .from("academy_user_stats")
-      .select("*")
-      .eq("user_id", userId)
+    // Get total courses
+    const { count: totalCourses } = await supabase
+      .from("academy_courses")
+      .select("*", { count: "exact", head: true })
       .eq("practice_id", practiceId)
-      .maybeSingle()
+      .is("deleted_at", null)
 
-    if (error) {
-      if (error.message?.includes("Too Many") || error.code === "429") {
-        return NextResponse.json({
-          total_xp: 0,
-          current_level: 1,
-          xp_for_next_level: 1000,
-          courses_completed: 0,
-          lessons_completed: 0,
-          current_streak_days: 0,
-          longest_streak_days: 0,
-          quizzes_passed: 0,
-        })
-      }
-      throw error
+    // Get published courses
+    const { count: publishedCourses } = await supabase
+      .from("academy_courses")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+      .eq("is_published", true)
+      .is("deleted_at", null)
+
+    // Get total enrollments
+    const { count: totalEnrollments } = await supabase
+      .from("academy_enrollments")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+
+    // Get completed enrollments
+    const { count: completedEnrollments } = await supabase
+      .from("academy_enrollments")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+      .not("completed_at", "is", null)
+
+    // Get total modules
+    const { count: totalModules } = await supabase
+      .from("academy_modules")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+
+    // Get total lessons
+    const { count: totalLessons } = await supabase
+      .from("academy_lessons")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+
+    // Get total quizzes
+    const { count: totalQuizzes } = await supabase
+      .from("academy_quizzes")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+
+    // Get total badges
+    const { count: totalBadges } = await supabase
+      .from("academy_badges")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+
+    // Get total badges awarded
+    const { count: totalBadgesAwarded } = await supabase
+      .from("academy_user_badges")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+
+    // Calculate completion rate
+    const completionRate = totalEnrollments > 0 ? Math.round((completedEnrollments / totalEnrollments) * 100) : 0
+
+    // Get average course rating (if ratings table exists)
+    // For now, return mock data
+    const avgRating = 4.5
+
+    const stats = {
+      totalCourses: totalCourses || 0,
+      publishedCourses: publishedCourses || 0,
+      totalEnrollments: totalEnrollments || 0,
+      completedEnrollments: completedEnrollments || 0,
+      completionRate,
+      totalModules: totalModules || 0,
+      totalLessons: totalLessons || 0,
+      totalQuizzes: totalQuizzes || 0,
+      totalBadges: totalBadges || 0,
+      totalBadgesAwarded: totalBadgesAwarded || 0,
+      averageRating: avgRating,
     }
 
-    return NextResponse.json(
-      stats || {
-        total_xp: 0,
-        current_level: 1,
-        xp_for_next_level: 1000,
-        courses_completed: 0,
-        lessons_completed: 0,
-        current_streak_days: 0,
-        longest_streak_days: 0,
-        quizzes_passed: 0,
-      },
-    )
+    console.log("[v0] Academy stats result:", stats)
+    return NextResponse.json(stats)
   } catch (error: any) {
-    console.error("Error fetching user stats:", error)
-    return NextResponse.json({
-      total_xp: 0,
-      current_level: 1,
-      xp_for_next_level: 1000,
-      courses_completed: 0,
-      lessons_completed: 0,
-      current_streak_days: 0,
-      longest_streak_days: 0,
-      quizzes_passed: 0,
-    })
+    console.error("[v0] Error fetching academy stats:", error)
+    return NextResponse.json({ error: "Failed to fetch academy stats", details: error.message }, { status: 500 })
   }
 }

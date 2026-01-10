@@ -3,7 +3,6 @@
 import { Separator } from "@/components/ui/separator"
 
 import { useState, useCallback, useEffect } from "react"
-import { createBrowserClient } from "@/lib/supabase"
 import { toast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -254,6 +253,10 @@ const TARGET_AUDIENCE_OPTIONS = [
 ]
 
 export function SuperAdminAcademyManager() {
+  const getEffectivePracticeId = () => {
+    return "1" // Hardcoded for super-admin academy management
+  }
+
   const [activeTab, setActiveTab] = useState("overview")
   const [courses, setCourses] = useState<Course[]>([])
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
@@ -309,7 +312,7 @@ export function SuperAdminAcademyManager() {
     visibility: "logged_in" as "public" | "logged_in" | "premium", // Added
     target_audience: ["all"] as string[], // Added
     tags: [] as string[],
-    learning_objectives: [] as string[],
+    learning_objectives: [],
   })
 
   const [moduleForm, setModuleForm] = useState({
@@ -362,72 +365,42 @@ export function SuperAdminAcademyManager() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const supabase = createBrowserClient() // Use browser client
+      const practiceId = getEffectivePracticeId()
 
-      if (!supabase) {
-        console.error("[v0] Supabase client not available")
-        toast({
-          title: "Fehler",
-          description: "Datenbankverbindung nicht verfügbar",
-          variant: "destructive",
-        })
-        return
+      // Fetch stats from the new stats API
+      const statsResponse = await fetch(`/api/practices/${practiceId}/academy/stats`)
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setStats(statsData)
       }
 
-      // Fetch courses
-      const { data: coursesData } = await supabase
-        .from("academy_courses")
-        .select("*")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
+      // Fetch courses from the new API
+      const coursesResponse = await fetch(`/api/practices/${practiceId}/academy/courses`)
+      if (coursesResponse.ok) {
+        const coursesData = await coursesResponse.json()
+        setCourses(coursesData.courses || [])
+      }
 
-      setCourses(coursesData || [])
+      // Fetch quizzes from the new API
+      const quizzesResponse = await fetch(`/api/practices/${practiceId}/academy/quizzes`)
+      if (quizzesResponse.ok) {
+        const quizzesData = await quizzesResponse.json()
+        setQuizzes(quizzesData.quizzes || [])
+      }
 
-      // Fetch quizzes
-      const { data: quizzesData } = await supabase
-        .from("academy_quizzes")
-        .select("*")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-
-      setQuizzes(quizzesData || [])
-
-      // Fetch badges
-      const { data: badgesData } = await supabase
-        .from("academy_badges")
-        .select("*")
-        .is("deleted_at", null)
-        .order("display_order", { ascending: true })
-
-      setBadges(badgesData || [])
-
-      // Calculate stats
-      const { data: enrollmentsData } = await supabase
-        .from("academy_enrollments")
-        .select("id, progress_percentage")
-        .is("deleted_at", null)
-
-      const { data: lessonsData } = await supabase.from("academy_lessons").select("id").is("deleted_at", null)
-
-      const totalEnrollments = enrollmentsData?.length || 0
-      const completedEnrollments = enrollmentsData?.filter((e) => e.progress_percentage === 100).length || 0
-      const completionRate = totalEnrollments > 0 ? (completedEnrollments / totalEnrollments) * 100 : 0
-
-      const publishedCourses = coursesData?.filter((c) => c.is_published).length || 0
-      const avgRating = coursesData?.reduce((sum, c) => sum + (c.average_rating || 0), 0) / (coursesData?.length || 1)
-
-      setStats({
-        totalCourses: coursesData?.length || 0,
-        publishedCourses,
-        totalEnrollments,
-        totalLessons: lessonsData?.length || 0,
-        totalQuizzes: quizzesData?.length || 0,
-        totalBadges: badgesData?.length || 0,
-        averageRating: avgRating || 0,
-        completionRate,
-      })
+      // Fetch badges from the new API
+      const badgesResponse = await fetch(`/api/practices/${practiceId}/academy/badges`)
+      if (badgesResponse.ok) {
+        const badgesData = await badgesResponse.json()
+        setBadges(badgesData.badges || [])
+      }
     } catch (error) {
       console.error("Error fetching academy data:", error)
+      toast({
+        title: "Fehler",
+        description: "Fehler beim Laden der Academy-Daten",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -438,66 +411,58 @@ export function SuperAdminAcademyManager() {
   }, [fetchData])
 
   const fetchCourseModules = useCallback(async (courseId: string) => {
-    const supabase = createBrowserClient() // Use browser client
-    if (!supabase) {
-      console.error("[v0] Supabase client not available in fetchCourseModules")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
-    const { data: modulesData } = await supabase
-      .from("academy_modules")
-      .select("*")
-      .eq("course_id", courseId)
-      .is("deleted_at", null)
-      .order("display_order", { ascending: true })
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/academy/modules?course_id=${courseId}`)
+      if (response.ok) {
+        const data = await response.json()
+        const modulesData = data.modules || []
 
-    if (modulesData) {
-      // Fetch lessons for each module
-      const modulesWithLessons = await Promise.all(
-        modulesData.map(async (module) => {
-          const { data: lessonsData } = await supabase
-            .from("academy_lessons")
-            .select("*")
-            .eq("module_id", module.id)
-            .is("deleted_at", null)
-            .order("display_order", { ascending: true })
+        // Fetch lessons for each module
+        const modulesWithLessons = await Promise.all(
+          modulesData.map(async (module: Module) => {
+            const lessonsResponse = await fetch(`/api/practices/${practiceId}/academy/lessons?module_id=${module.id}`)
+            if (lessonsResponse.ok) {
+              const lessonsData = await lessonsResponse.json()
+              return { ...module, lessons: lessonsData.lessons || [] }
+            }
+            return { ...module, lessons: [] }
+          }),
+        )
 
-          return { ...module, lessons: lessonsData || [] }
-        }),
-      )
-
-      setCourseModules(modulesWithLessons)
+        setCourseModules(modulesWithLessons)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching course modules:", error)
     }
   }, [])
 
   // Updated handleSaveCourse to include visibility
   const handleSaveCourse = async () => {
-    const supabase = createBrowserClient() // Use browser client
-    if (!supabase) {
-      toast({ title: "Fehler", description: "Datenbankverbindung nicht verfügbar", variant: "destructive" })
-      return
-    }
-
-    const courseData = {
-      ...courseForm,
-      updated_at: new Date().toISOString(),
-    }
+    const practiceId = getEffectivePracticeId()
 
     try {
-      if (editingCourse) {
-        await supabase.from("academy_courses").update(courseData).eq("id", editingCourse.id)
-        toast({ title: "Kurs aktualisiert", description: `"${courseForm.title}" wurde erfolgreich aktualisiert.` })
-      } else {
-        await supabase.from("academy_courses").insert({
-          ...courseData,
-          id: crypto.randomUUID(),
-          created_at: new Date().toISOString(),
-          total_enrollments: 0,
-          average_rating: 0,
-          total_reviews: 0,
-        })
-        toast({ title: "Kurs erstellt", description: `"${courseForm.title}" wurde erfolgreich erstellt.` })
+      const url = editingCourse
+        ? `/api/practices/${practiceId}/academy/courses/${editingCourse.id}`
+        : `/api/practices/${practiceId}/academy/courses`
+
+      const method = editingCourse ? "PUT" : "POST"
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(courseForm),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save course")
       }
+
+      toast({
+        title: editingCourse ? "Kurs aktualisiert" : "Kurs erstellt",
+        description: `"${courseForm.title}" wurde erfolgreich ${editingCourse ? "aktualisiert" : "erstellt"}.`,
+      })
 
       setShowCourseDialog(false)
       setEditingCourse(null)
@@ -519,11 +484,7 @@ export function SuperAdminAcademyManager() {
       return
     }
 
-    const supabase = createBrowserClient() // Use browser client
-    if (!supabase) {
-      toast({ title: "Fehler", description: "Datenbankverbindung nicht verfügbar", variant: "destructive" })
-      return
-    }
+    const practiceId = getEffectivePracticeId() // Get practiceId here
 
     const moduleData = {
       ...moduleForm,
@@ -532,19 +493,28 @@ export function SuperAdminAcademyManager() {
     }
 
     try {
-      if (editingModule) {
-        await supabase.from("academy_modules").update(moduleData).eq("id", editingModule.id)
-        toast({ title: "Modul aktualisiert", description: `"${moduleForm.title}" wurde erfolgreich aktualisiert.` })
-      } else {
-        const nextOrder = courseModules.length + 1
-        await supabase.from("academy_modules").insert({
-          ...moduleData,
-          id: crypto.randomUUID(),
-          display_order: nextOrder,
-          created_at: new Date().toISOString(),
-        })
-        toast({ title: "Modul erstellt", description: `"${moduleForm.title}" wurde erfolgreich erstellt.` })
+      // Assuming a new API route for saving modules
+      const url = editingModule
+        ? `/api/practices/${practiceId}/academy/modules/${editingModule.id}`
+        : `/api/practices/${practiceId}/academy/modules`
+      const method = editingModule ? "PUT" : "POST"
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(moduleData),
+      })
+
+      if (!response.ok) {
+        throw new Error(editingModule ? "Failed to update module" : "Failed to create module")
       }
+
+      const savedModule = await response.json() // Assuming API returns the saved module
+
+      toast({
+        title: editingModule ? "Modul aktualisiert" : "Modul erstellt",
+        description: `"${moduleForm.title}" wurde erfolgreich ${editingModule ? "aktualisiert" : "erstellt"}.`,
+      })
 
       setShowModuleDialog(false)
       setEditingModule(null)
@@ -566,11 +536,7 @@ export function SuperAdminAcademyManager() {
       return
     }
 
-    const supabase = createBrowserClient() // Use browser client
-    if (!supabase) {
-      toast({ title: "Fehler", description: "Datenbankverbindung nicht verfügbar", variant: "destructive" })
-      return
-    }
+    const practiceId = getEffectivePracticeId() // Get practiceId here
 
     const lessonData = {
       ...lessonForm,
@@ -580,21 +546,28 @@ export function SuperAdminAcademyManager() {
     }
 
     try {
-      if (editingLesson) {
-        await supabase.from("academy_lessons").update(lessonData).eq("id", editingLesson.id)
-        toast({ title: "Lektion aktualisiert", description: `"${lessonForm.title}" wurde erfolgreich aktualisiert.` })
-      } else {
-        const currentModule = courseModules.find((m) => m.id === editingModule.id)
-        const nextOrder = (currentModule?.lessons?.length || 0) + 1
-        await supabase.from("academy_lessons").insert({
-          ...lessonData,
-          id: crypto.randomUUID(),
-          display_order: nextOrder,
-          created_at: new Date().toISOString(),
-          resources: [],
-        })
-        toast({ title: "Lektion erstellt", description: `"${lessonForm.title}" wurde erfolgreich erstellt.` })
+      // Assuming a new API route for saving lessons
+      const url = editingLesson
+        ? `/api/practices/${practiceId}/academy/lessons/${editingLesson.id}`
+        : `/api/practices/${practiceId}/academy/lessons`
+      const method = editingLesson ? "PUT" : "POST"
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lessonData),
+      })
+
+      if (!response.ok) {
+        throw new Error(editingLesson ? "Failed to update lesson" : "Failed to create lesson")
       }
+
+      const savedLesson = await response.json() // Assuming API returns the saved lesson
+
+      toast({
+        title: editingLesson ? "Lektion aktualisiert" : "Lektion erstellt",
+        description: `"${lessonForm.title}" wurde erfolgreich ${editingLesson ? "aktualisiert" : "erstellt"}.`,
+      })
 
       setShowLessonDialog(false)
       setEditingLesson(null)
@@ -611,11 +584,7 @@ export function SuperAdminAcademyManager() {
   }
 
   const handleSaveBadge = async () => {
-    const supabase = createBrowserClient() // Use browser client
-    if (!supabase) {
-      toast({ title: "Fehler", description: "Datenbankverbindung nicht verfügbar", variant: "destructive" })
-      return
-    }
+    const practiceId = getEffectivePracticeId() // Get practiceId here
 
     const badgeData = {
       ...badgeForm,
@@ -623,19 +592,26 @@ export function SuperAdminAcademyManager() {
     }
 
     try {
-      if (editingBadge) {
-        await supabase.from("academy_badges").update(badgeData).eq("id", editingBadge.id)
-        toast({ title: "Badge aktualisiert", description: `"${badgeForm.name}" wurde erfolgreich aktualisiert.` })
-      } else {
-        const nextOrder = badges.length + 1
-        await supabase.from("academy_badges").insert({
-          ...badgeData,
-          id: crypto.randomUUID(),
-          display_order: nextOrder,
-          created_at: new Date().toISOString(),
-        })
-        toast({ title: "Badge erstellt", description: `"${badgeForm.name}" wurde erfolgreich erstellt.` })
+      // Assuming a new API route for saving badges
+      const url = editingBadge
+        ? `/api/practices/${practiceId}/academy/badges/${editingBadge.id}`
+        : `/api/practices/${practiceId}/academy/badges`
+      const method = editingBadge ? "PUT" : "POST"
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(badgeData),
+      })
+
+      if (!response.ok) {
+        throw new Error(editingBadge ? "Failed to update badge" : "Failed to create badge")
       }
+
+      toast({
+        title: editingBadge ? "Badge aktualisiert" : "Badge erstellt",
+        description: `"${badgeForm.name}" wurde erfolgreich ${editingBadge ? "aktualisiert" : "erstellt"}.`,
+      })
 
       setShowBadgeDialog(false)
       setEditingBadge(null)
@@ -700,86 +676,89 @@ export function SuperAdminAcademyManager() {
   const handleSaveGeneratedCourse = async () => {
     if (!generatedCourse) return
 
-    const supabase = createBrowserClient() // Use browser client
-    if (!supabase) {
-      toast({ title: "Fehler", description: "Datenbankverbindung nicht verfügbar", variant: "destructive" })
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     try {
       // Create the course
-      const courseId = crypto.randomUUID()
-      const { error: courseError } = await supabase.from("academy_courses").insert({
-        id: courseId,
-        title: generatedCourse.title,
-        description: generatedCourse.description,
-        category: aiCourseCategory, // Use the selected category
-        difficulty_level: aiCourseDifficulty, // Use the selected difficulty
-        learning_objectives: generatedCourse.learning_objectives,
-        target_audience: generatedCourse.target_audience || ["all"], // Default to 'all' if not provided by AI
-        estimated_hours: generatedCourse.estimated_hours,
-        xp_reward: generatedCourse.xp_reward,
-        instructor_name: generatedCourse.instructor_name,
-        instructor_bio: generatedCourse.instructor_bio,
-        is_published: false,
-        is_featured: false,
-        is_landing_page_featured: false, // Default to false
-        visibility: "logged_in", // Default visibility
-        total_enrollments: 0,
-        average_rating: 0,
-        total_reviews: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      const courseResponse = await fetch(`/api/practices/${practiceId}/academy/courses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: generatedCourse.title,
+          description: generatedCourse.description,
+          category: aiCourseCategory,
+          difficulty_level: aiCourseDifficulty,
+          learning_objectives: generatedCourse.learning_objectives,
+          target_audience: generatedCourse.target_audience || ["all"],
+          estimated_hours: generatedCourse.estimated_hours,
+          xp_reward: generatedCourse.xp_reward,
+          instructor_name: generatedCourse.instructor_name,
+          instructor_bio: generatedCourse.instructor_bio,
+          is_published: false,
+          is_featured: false,
+          is_landing_page_featured: false,
+          visibility: "logged_in",
+        }),
       })
 
-      if (courseError) throw courseError
+      if (!courseResponse.ok) {
+        throw new Error("Failed to create course")
+      }
+
+      const { course } = await courseResponse.json()
+      const courseId = course.id
 
       // Create modules and lessons
       for (let i = 0; i < generatedCourse.modules.length; i++) {
         const module = generatedCourse.modules[i]
-        const moduleId = crypto.randomUUID()
 
-        const { error: moduleError } = await supabase.from("academy_modules").insert({
-          id: moduleId,
-          course_id: courseId,
-          title: module.title,
-          description: module.description,
-          estimated_minutes: module.estimated_minutes,
-          display_order: i + 1,
-          is_published: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+        const moduleResponse = await fetch(`/api/practices/${practiceId}/academy/modules`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            course_id: courseId,
+            title: module.title,
+            description: module.description,
+            estimated_minutes: module.estimated_minutes,
+            display_order: i + 1,
+            is_published: false,
+          }),
         })
 
-        if (moduleError) throw moduleError
+        if (!moduleResponse.ok) {
+          throw new Error(`Failed to create module: ${module.title}`)
+        }
 
-        // Create lessons
+        const { module: createdModule } = await moduleResponse.json()
+        const moduleId = createdModule.id
+
+        // Create lessons for this module
         for (let j = 0; j < module.lessons.length; j++) {
           const lesson = module.lessons[j]
-          const { error: lessonError } = await supabase.from("academy_lessons").insert({
-            id: crypto.randomUUID(),
-            course_id: courseId,
-            module_id: moduleId,
-            title: lesson.title,
-            description: lesson.description,
-            content: lesson.content,
-            lesson_type: lesson.lesson_type || "text",
-            estimated_minutes: lesson.estimated_minutes,
-            xp_reward: lesson.xp_reward,
-            display_order: j + 1,
-            is_published: false,
-            is_free_preview: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
 
-          if (lessonError) throw lessonError
+          await fetch(`/api/practices/${practiceId}/academy/lessons`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              module_id: moduleId,
+              course_id: courseId,
+              title: lesson.title,
+              description: lesson.description,
+              content: lesson.content,
+              lesson_type: lesson.lesson_type || "text",
+              estimated_minutes: lesson.estimated_minutes,
+              xp_reward: lesson.xp_reward,
+              display_order: j + 1,
+              is_published: false,
+              is_free_preview: false,
+            }),
+          })
         }
       }
 
       toast({
-        title: "Kurs gespeichert",
-        description: "Der Kurs wurde erfolgreich mit allen Modulen und Lektionen gespeichert.",
+        title: "KI-Kurs gespeichert",
+        description: `Der generierte Kurs "${generatedCourse.title}" wurde erfolgreich gespeichert.`,
       })
 
       setShowAiCourseDialog(false)
@@ -787,10 +766,10 @@ export function SuperAdminAcademyManager() {
       setAiCourseDescription("")
       fetchData()
     } catch (error) {
-      console.error("Error saving course:", error)
+      console.error("[v0] Error saving generated course:", error)
       toast({
         title: "Fehler",
-        description: "Fehler beim Speichern des Kurses.",
+        description: "Fehler beim Speichern des generierten Kurses",
         variant: "destructive",
       })
     }
@@ -799,30 +778,36 @@ export function SuperAdminAcademyManager() {
   const handleDelete = async () => {
     if (!deleteItem) return
 
-    const supabase = createBrowserClient() // Use browser client
-    if (!supabase) {
-      toast({ title: "Fehler", description: "Datenbankverbindung nicht verfügbar", variant: "destructive" })
-      return
-    }
-    const now = new Date().toISOString()
+    const practiceId = getEffectivePracticeId() // Get practiceId here
 
     try {
+      let url
+      const method = "DELETE" // Assuming DELETE method for deletion
+
       switch (deleteItem.type) {
         case "course":
-          await supabase.from("academy_courses").update({ deleted_at: now }).eq("id", deleteItem.id)
+          url = `/api/practices/${practiceId}/academy/courses/${deleteItem.id}`
           break
         case "module":
-          await supabase.from("academy_modules").update({ deleted_at: now }).eq("id", deleteItem.id)
+          url = `/api/practices/${practiceId}/academy/modules/${deleteItem.id}`
           break
         case "lesson":
-          await supabase.from("academy_lessons").update({ deleted_at: now }).eq("id", deleteItem.id)
+          url = `/api/practices/${practiceId}/academy/lessons/${deleteItem.id}`
           break
         case "quiz":
-          await supabase.from("academy_quizzes").update({ deleted_at: now }).eq("id", deleteItem.id)
+          url = `/api/practices/${practiceId}/academy/quizzes/${deleteItem.id}`
           break
         case "badge":
-          await supabase.from("academy_badges").update({ deleted_at: now }).eq("id", deleteItem.id)
+          url = `/api/practices/${practiceId}/academy/badges/${deleteItem.id}`
           break
+        default:
+          throw new Error("Unknown item type to delete")
+      }
+
+      const response = await fetch(url, { method })
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete ${deleteItem.type}`)
       }
 
       toast({ title: "Erfolg", description: `"${deleteItem.name}" wurde erfolgreich gelöscht.` })

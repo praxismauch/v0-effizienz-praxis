@@ -63,12 +63,6 @@ const PUBLIC_ROUTES = [
   "/careers",
   "/karriere",
   "/ueber-uns",
-  "/team",
-  "/info",
-  "/wunschpatient",
-  "/whats-new",
-  "/updates",
-  "/blog",
   // Legal pages
   "/impressum",
   "/datenschutz",
@@ -694,7 +688,7 @@ export function UserProvider({
                 isRateLimitedRef.current = true
                 const delay = Math.pow(2, retryCount) * 5000
                 rateLimitResetTimeRef.current = Date.now() + delay
-                console.warn(`[user-context] Rate limited (text), retrying in ${delay}ms...`)
+                console.warn(`[v0] Rate limited (text), retrying in ${delay}ms...`)
                 setTimeout(() => {
                   isRateLimitedRef.current = false
                   fetchUserWithRetry(retryCount + 1)

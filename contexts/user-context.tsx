@@ -199,6 +199,13 @@ export function UserProvider({
   useEffect(() => {
     if (typeof window === "undefined") return
 
+    // Skip auth check entirely for public routes
+    if (isPublicRoute(pathname)) {
+      setIsLoading(false)
+      setIsAuthInitialized(true)
+      return
+    }
+
     if (currentUser) {
       setIsLoading(false)
       setIsAuthInitialized(true)
@@ -281,7 +288,7 @@ export function UserProvider({
     }
 
     loadUser()
-  }, [currentUser, persistUserToStorage])
+  }, [currentUser, persistUserToStorage, pathname])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -407,11 +414,13 @@ export function UserProvider({
 
     const isPublic = isPublicRoute(pathname)
 
+    // Only redirect to dashboard if logged in AND on landing page
     if (isPublic && currentUser && pathname === "/") {
       router.push("/dashboard")
       return
     }
 
+    // Only redirect to login if on protected route AND not logged in
     if (!isPublic && !currentUser) {
       router.push("/auth/login")
     }

@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
@@ -26,12 +26,64 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/register",
+  "/auth/login",
+  "/auth/register",
+  "/auth/sign-up",
+  "/auth/reset-password",
+  "/auth/callback",
+  "/auth/pending-approval",
+  "/auth/sign-up-success",
+  "/features",
+  "/effizienz",
+  "/about",
+  "/contact",
+  "/kontakt",
+  "/preise",
+  "/coming-soon",
+  "/demo",
+  "/help",
+  "/careers",
+  "/karriere",
+  "/ueber-uns",
+  "/team",
+  "/info",
+  "/wunschpatient",
+  "/whats-new",
+  "/updates",
+  "/blog",
+  "/impressum",
+  "/datenschutz",
+  "/agb",
+  "/sicherheit",
+  "/cookies",
+]
+
+const PUBLIC_PREFIXES = ["/features/", "/blog/", "/auth/"]
+
+function isPublicRoute(pathname: string): boolean {
+  if (PUBLIC_ROUTES.includes(pathname)) return true
+  for (const prefix of PUBLIC_PREFIXES) {
+    if (pathname.startsWith(prefix)) return true
+  }
+  return false
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const initialUser = await getCurrentUserProfile()
+  const headersList = await headers()
+  const pathname = headersList.get("x-pathname") || headersList.get("x-invoke-path") || "/"
+
+  let initialUser = null
+  if (!isPublicRoute(pathname)) {
+    initialUser = await getCurrentUserProfile()
+  }
 
   const cookieStore = await cookies()
   const sidebarStateCookie = cookieStore.get("sidebar_state")
@@ -147,8 +199,6 @@ export default async function RootLayout({
         return '';
       }
     };
-    
-    console.log('[v0] btoa/atob polyfill loaded successfully');
   } catch (patchError) {
     console.error('[v0] btoa/atob patching failed:', patchError);
   }

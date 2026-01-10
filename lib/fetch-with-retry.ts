@@ -9,7 +9,7 @@ export async function fetchWithRetry(
   options?: RequestInit,
   retryOptions?: FetchWithRetryOptions,
 ): Promise<Response> {
-  const { maxRetries = 3, baseDelay = 1000, maxDelay = 8000 } = retryOptions || {}
+  const { maxRetries = 3, baseDelay = 300, maxDelay = 2000 } = retryOptions || {}
 
   let lastError: Error | null = null
   let lastResponse: Response | null = null
@@ -22,9 +22,9 @@ export async function fetchWithRetry(
       if (response.status === 429 || response.status === 503) {
         if (attempt < maxRetries) {
           const retryAfter = response.headers.get("Retry-After")
-          const jitter = Math.random() * 500
+          const jitter = Math.random() * 200
           const delay = retryAfter
-            ? Number.parseInt(retryAfter, 10) * 1000 + jitter
+            ? Math.min(Number.parseInt(retryAfter, 10) * 1000, maxDelay) + jitter
             : Math.min(baseDelay * Math.pow(2, attempt), maxDelay) + jitter
           await new Promise((resolve) => setTimeout(resolve, delay))
           continue
@@ -36,7 +36,7 @@ export async function fetchWithRetry(
       lastError = error as Error
 
       if (attempt < maxRetries) {
-        const jitter = Math.random() * 500
+        const jitter = Math.random() * 200
         const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay) + jitter
         await new Promise((resolve) => setTimeout(resolve, delay))
       }

@@ -2,7 +2,8 @@
 
 import { Separator } from "@/components/ui/separator"
 
-import { useState, useCallback, useEffect } from "react"
+import { useCourses, useQuizzes, useBadges, useAcademyStats } from "@/hooks/use-academy"
+import { useState, useCallback } from "react"
 import { toast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -85,9 +86,9 @@ interface Course {
   xp_reward: number
   is_published: boolean
   is_featured: boolean
-  is_landing_page_featured: boolean // Added visibility setting
-  visibility: "public" | "logged_in" | "premium" // Added visibility setting
-  target_audience: string[] // Added target audience
+  is_landing_page_featured: boolean
+  visibility: "public" | "logged_in" | "premium"
+  target_audience: string[]
   total_enrollments: number
   average_rating: number
   total_reviews: number
@@ -252,17 +253,24 @@ const TARGET_AUDIENCE_OPTIONS = [
   { value: "external", label: "Externe Benutzer" },
 ]
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export function SuperAdminAcademyManager() {
-  const getEffectivePracticeId = () => {
-    return "1" // Hardcoded for super-admin academy management
-  }
+  const { data: coursesData, isLoading: coursesLoading, mutate: mutateCourses } = useCourses(HARDCODED_PRACTICE_ID)
+
+  const { data: quizzesData, isLoading: quizzesLoading, mutate: mutateQuizzes } = useQuizzes(HARDCODED_PRACTICE_ID)
+
+  const { data: badgesData, isLoading: badgesLoading, mutate: mutateBadges } = useBadges(HARDCODED_PRACTICE_ID)
+
+  const { data: statsData, isLoading: statsLoading } = useAcademyStats(HARDCODED_PRACTICE_ID)
+
+  const courses: Course[] = Array.isArray(coursesData) ? coursesData : coursesData?.courses || []
+  const quizzes: Quiz[] = Array.isArray(quizzesData) ? quizzesData : quizzesData?.quizzes || []
+  const badges: AcademyBadge[] = Array.isArray(badgesData) ? badgesData : badgesData?.badges || []
+  const stats: AcademyStats | null = statsData || null
+  const loading = coursesLoading || quizzesLoading || badgesLoading || statsLoading
 
   const [activeTab, setActiveTab] = useState("overview")
-  const [courses, setCourses] = useState<Course[]>([])
-  const [quizzes, setQuizzes] = useState<Quiz[]>([])
-  const [badges, setBadges] = useState<AcademyBadge[]>([])
-  const [stats, setStats] = useState<AcademyStats | null>(null)
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
 
@@ -275,7 +283,7 @@ export function SuperAdminAcademyManager() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showAiCourseDialog, setShowAiCourseDialog] = useState(false)
   const [aiCourseDescription, setAiCourseDescription] = useState("")
-  const [aiCourseCategory, setAiCourseCategory] = useState("praxismanagement") // Changed default to match constant
+  const [aiCourseCategory, setAiCourseCategory] = useState("praxismanagement")
   const [aiCourseDifficulty, setAiCourseDifficulty] = useState("beginner")
   const [aiCourseGenerating, setAiCourseGenerating] = useState(false)
   const [generatedCourse, setGeneratedCourse] = useState<any>(null)
@@ -308,9 +316,9 @@ export function SuperAdminAcademyManager() {
     xp_reward: 100,
     is_published: false,
     is_featured: false,
-    is_landing_page_featured: false, // Added
-    visibility: "logged_in" as "public" | "logged_in" | "premium", // Added
-    target_audience: ["all"] as string[], // Added
+    is_landing_page_featured: false,
+    visibility: "logged_in" as "public" | "logged_in" | "premium",
+    target_audience: ["all"] as string[],
     tags: [] as string[],
     learning_objectives: [],
   })
@@ -362,72 +370,9 @@ export function SuperAdminAcademyManager() {
     criteria: {} as any,
   })
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const practiceId = getEffectivePracticeId()
-
-      console.log("[v0] Academy: Fetching data for practice", practiceId)
-
-      // Fetch stats from the new stats API
-      const statsResponse = await fetch(`/api/practices/${practiceId}/academy/stats`)
-      console.log("[v0] Academy: Stats response status", statsResponse.status)
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json()
-        console.log("[v0] Academy: Stats data received", statsData)
-        setStats(statsData)
-      }
-
-      // Fetch courses from the new API
-      const coursesResponse = await fetch(`/api/practices/${practiceId}/academy/courses`)
-      console.log("[v0] Academy: Courses response status", coursesResponse.status)
-      if (coursesResponse.ok) {
-        const coursesData = await coursesResponse.json()
-        console.log("[v0] Academy: Courses data received", coursesData)
-        const coursesArray = Array.isArray(coursesData) ? coursesData : coursesData.courses || []
-        console.log("[v0] Academy: Courses array parsed", coursesArray.length)
-        setCourses(coursesArray)
-      } else {
-        const errorText = await coursesResponse.text()
-        console.error("[v0] Academy: Courses fetch error", coursesResponse.status, errorText)
-      }
-
-      // Fetch quizzes from the new API
-      const quizzesResponse = await fetch(`/api/practices/${practiceId}/academy/quizzes`)
-      console.log("[v0] Academy: Quizzes response status", quizzesResponse.status)
-      if (quizzesResponse.ok) {
-        const quizzesData = await quizzesResponse.json()
-        console.log("[v0] Academy: Quizzes data received", quizzesData)
-        const quizzesArray = Array.isArray(quizzesData) ? quizzesData : quizzesData.quizzes || []
-        setQuizzes(quizzesArray)
-      }
-
-      // Fetch badges from the new API
-      const badgesResponse = await fetch(`/api/practices/${practiceId}/academy/badges`)
-      console.log("[v0] Academy: Badges response status", badgesResponse.status)
-      if (badgesResponse.ok) {
-        const badgesData = await badgesResponse.json()
-        console.log("[v0] Academy: Badges data received", badgesData)
-        const badgesArray = Array.isArray(badgesData) ? badgesData : badgesData.badges || []
-        console.log("[v0] Academy: Badges array parsed", badgesArray.length)
-        setBadges(badgesArray)
-      }
-    } catch (error) {
-      console.error("[v0] Academy: Error fetching data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
   const fetchCourseModules = useCallback(async (courseId: string) => {
-    const practiceId = getEffectivePracticeId()
-
     try {
-      const response = await fetch(`/api/practices/${practiceId}/academy/modules?course_id=${courseId}`)
+      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules?course_id=${courseId}`)
       if (response.ok) {
         const data = await response.json()
         const modulesData = Array.isArray(data) ? data : data.modules || []
@@ -435,7 +380,9 @@ export function SuperAdminAcademyManager() {
         // Fetch lessons for each module
         const modulesWithLessons = await Promise.all(
           modulesData.map(async (module: Module) => {
-            const lessonsResponse = await fetch(`/api/practices/${practiceId}/academy/lessons?module_id=${module.id}`)
+            const lessonsResponse = await fetch(
+              `/api/practices/${HARDCODED_PRACTICE_ID}/academy/lessons?module_id=${module.id}`,
+            )
             if (lessonsResponse.ok) {
               const lessonsData = await lessonsResponse.json()
               const lessons = Array.isArray(lessonsData) ? lessonsData : lessonsData.lessons || []
@@ -452,16 +399,34 @@ export function SuperAdminAcademyManager() {
     }
   }, [])
 
-  // Updated handleSaveCourse to include visibility
   const handleSaveCourse = async () => {
-    const practiceId = getEffectivePracticeId()
+    const isEditing = !!editingCourse
+    const optimisticCourse: Course = {
+      ...courseForm,
+      id: editingCourse?.id || `temp-${Date.now()}`,
+      total_enrollments: editingCourse?.total_enrollments || 0,
+      average_rating: editingCourse?.average_rating || 0,
+      total_reviews: editingCourse?.total_reviews || 0,
+      created_at: editingCourse?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as Course
 
     try {
-      const url = editingCourse
-        ? `/api/practices/${practiceId}/academy/courses/${editingCourse.id}`
-        : `/api/practices/${practiceId}/academy/courses`
+      // Optimistic update
+      if (isEditing) {
+        mutateCourses(
+          courses.map((c) => (c.id === editingCourse.id ? optimisticCourse : c)),
+          false,
+        )
+      } else {
+        mutateCourses([...courses, optimisticCourse], false)
+      }
 
-      const method = editingCourse ? "PUT" : "POST"
+      const url = isEditing
+        ? `/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses/${editingCourse.id}`
+        : `/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses`
+
+      const method = isEditing ? "PUT" : "POST"
 
       const response = await fetch(url, {
         method,
@@ -474,16 +439,19 @@ export function SuperAdminAcademyManager() {
       }
 
       toast({
-        title: editingCourse ? "Kurs aktualisiert" : "Kurs erstellt",
-        description: `"${courseForm.title}" wurde erfolgreich ${editingCourse ? "aktualisiert" : "erstellt"}.`,
+        title: isEditing ? "Kurs aktualisiert" : "Kurs erstellt",
+        description: `"${courseForm.title}" wurde erfolgreich ${isEditing ? "aktualisiert" : "erstellt"}.`,
       })
 
       setShowCourseDialog(false)
       setEditingCourse(null)
       resetCourseForm()
-      fetchData()
+      // Revalidate to get real data
+      mutateCourses()
     } catch (error) {
       console.error("Error saving course:", error)
+      // Rollback on error
+      mutateCourses()
       toast({
         title: "Fehler beim Speichern",
         description: "Es gab ein Problem beim Speichern des Kurses.",
@@ -498,44 +466,56 @@ export function SuperAdminAcademyManager() {
       return
     }
 
-    const practiceId = getEffectivePracticeId() // Get practiceId here
-
-    const moduleData = {
+    const isEditing = !!editingModule
+    const optimisticModule: Module = {
       ...moduleForm,
+      id: editingModule?.id || `temp-${Date.now()}`,
       course_id: selectedCourse.id,
-      updated_at: new Date().toISOString(),
+      display_order: editingModule?.display_order || courseModules.length,
+      lessons: editingModule?.lessons || [],
     }
 
     try {
-      // Assuming a new API route for saving modules
-      const url = editingModule
-        ? `/api/practices/${practiceId}/academy/modules/${editingModule.id}`
-        : `/api/practices/${practiceId}/academy/modules`
-      const method = editingModule ? "PUT" : "POST"
+      // Optimistic update
+      if (isEditing) {
+        setCourseModules(courseModules.map((m) => (m.id === editingModule.id ? optimisticModule : m)))
+      } else {
+        setCourseModules([...courseModules, optimisticModule])
+      }
+
+      const url = isEditing
+        ? `/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules/${editingModule.id}`
+        : `/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules`
+
+      const method = isEditing ? "PUT" : "POST"
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(moduleData),
+        body: JSON.stringify({
+          ...moduleForm,
+          course_id: selectedCourse.id,
+        }),
       })
 
       if (!response.ok) {
-        throw new Error(editingModule ? "Failed to update module" : "Failed to create module")
+        throw new Error("Failed to save module")
       }
 
-      const savedModule = await response.json() // Assuming API returns the saved module
-
       toast({
-        title: editingModule ? "Modul aktualisiert" : "Modul erstellt",
-        description: `"${moduleForm.title}" wurde erfolgreich ${editingModule ? "aktualisiert" : "erstellt"}.`,
+        title: isEditing ? "Modul aktualisiert" : "Modul erstellt",
+        description: `"${moduleForm.title}" wurde erfolgreich ${isEditing ? "aktualisiert" : "erstellt"}.`,
       })
 
       setShowModuleDialog(false)
       setEditingModule(null)
       resetModuleForm()
+      // Revalidate
       fetchCourseModules(selectedCourse.id)
     } catch (error) {
       console.error("Error saving module:", error)
+      // Rollback
+      fetchCourseModules(selectedCourse.id)
       toast({
         title: "Fehler beim Speichern",
         description: "Es gab ein Problem beim Speichern des Moduls.",
@@ -544,95 +524,54 @@ export function SuperAdminAcademyManager() {
     }
   }
 
-  const handleSaveLesson = async () => {
-    if (!selectedCourse || !editingModule) {
-      toast({ title: "Fehler", description: "Kurs oder Modul nicht ausgewählt.", variant: "destructive" })
-      return
-    }
-
-    const practiceId = getEffectivePracticeId() // Get practiceId here
-
-    const lessonData = {
-      ...lessonForm,
-      course_id: selectedCourse.id,
-      module_id: editingModule.id,
-      updated_at: new Date().toISOString(),
-    }
-
-    try {
-      // Assuming a new API route for saving lessons
-      const url = editingLesson
-        ? `/api/practices/${practiceId}/academy/lessons/${editingLesson.id}`
-        : `/api/practices/${practiceId}/academy/lessons`
-      const method = editingLesson ? "PUT" : "POST"
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(lessonData),
-      })
-
-      if (!response.ok) {
-        throw new Error(editingLesson ? "Failed to update lesson" : "Failed to create lesson")
-      }
-
-      const savedLesson = await response.json() // Assuming API returns the saved lesson
-
-      toast({
-        title: editingLesson ? "Lektion aktualisiert" : "Lektion erstellt",
-        description: `"${lessonForm.title}" wurde erfolgreich ${editingLesson ? "aktualisiert" : "erstellt"}.`,
-      })
-
-      setShowLessonDialog(false)
-      setEditingLesson(null)
-      resetLessonForm()
-      fetchCourseModules(selectedCourse.id)
-    } catch (error) {
-      console.error("Error saving lesson:", error)
-      toast({
-        title: "Fehler beim Speichern",
-        description: "Es gab ein Problem beim Speichern der Lektion.",
-        variant: "destructive",
-      })
-    }
-  }
-
   const handleSaveBadge = async () => {
-    const practiceId = getEffectivePracticeId() // Get practiceId here
-
-    const badgeData = {
+    const isEditing = !!editingBadge
+    const optimisticBadge: AcademyBadge = {
       ...badgeForm,
-      updated_at: new Date().toISOString(),
+      id: editingBadge?.id || `temp-${Date.now()}`,
+      icon_url: "",
+      display_order: editingBadge?.display_order || badges.length,
     }
 
     try {
-      // Assuming a new API route for saving badges
-      const url = editingBadge
-        ? `/api/practices/${practiceId}/academy/badges/${editingBadge.id}`
-        : `/api/practices/${practiceId}/academy/badges`
-      const method = editingBadge ? "PUT" : "POST"
+      // Optimistic update
+      if (isEditing) {
+        mutateBadges(
+          badges.map((b) => (b.id === editingBadge.id ? optimisticBadge : b)),
+          false,
+        )
+      } else {
+        mutateBadges([...badges, optimisticBadge], false)
+      }
+
+      const url = isEditing
+        ? `/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges/${editingBadge.id}`
+        : `/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges`
+
+      const method = isEditing ? "PUT" : "POST"
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(badgeData),
+        body: JSON.stringify(badgeForm),
       })
 
       if (!response.ok) {
-        throw new Error(editingBadge ? "Failed to update badge" : "Failed to create badge")
+        throw new Error("Failed to save badge")
       }
 
       toast({
-        title: editingBadge ? "Badge aktualisiert" : "Badge erstellt",
-        description: `"${badgeForm.name}" wurde erfolgreich ${editingBadge ? "aktualisiert" : "erstellt"}.`,
+        title: isEditing ? "Badge aktualisiert" : "Badge erstellt",
+        description: `"${badgeForm.name}" wurde erfolgreich ${isEditing ? "aktualisiert" : "erstellt"}.`,
       })
 
       setShowBadgeDialog(false)
       setEditingBadge(null)
       resetBadgeForm()
-      fetchData()
+      mutateBadges()
     } catch (error) {
       console.error("Error saving badge:", error)
+      mutateBadges()
       toast({
         title: "Fehler beim Speichern",
         description: "Es gab ein Problem beim Speichern des Badges.",
@@ -641,199 +580,82 @@ export function SuperAdminAcademyManager() {
     }
   }
 
-  const handleGenerateAiCourse = async () => {
-    if (!aiCourseDescription.trim()) {
-      toast({
-        title: "Fehler",
-        description: "Bitte geben Sie eine Kursbeschreibung ein.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setAiCourseGenerating(true)
-    setGeneratedCourse(null)
-
-    try {
-      const response = await fetch("/api/super-admin/academy/generate-course", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: aiCourseDescription,
-          category: aiCourseCategory,
-          difficulty: aiCourseDifficulty,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to generate course")
-      }
-
-      const data = await response.json()
-      setGeneratedCourse(data.course)
-      toast({
-        title: "Kurs generiert",
-        description: "Der Kurs wurde erfolgreich generiert. Überprüfen Sie die Details und speichern Sie.",
-      })
-    } catch (error) {
-      console.error("Error generating course:", error)
-      toast({
-        title: "Fehler",
-        description: "Fehler beim Generieren des Kurses. Bitte versuchen Sie es erneut.",
-        variant: "destructive",
-      })
-    } finally {
-      setAiCourseGenerating(false)
-    }
-  }
-
-  const handleSaveGeneratedCourse = async () => {
-    if (!generatedCourse) return
-
-    const practiceId = getEffectivePracticeId()
-
-    try {
-      // Create the course
-      const courseResponse = await fetch(`/api/practices/${practiceId}/academy/courses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: generatedCourse.title,
-          description: generatedCourse.description,
-          category: aiCourseCategory,
-          difficulty_level: aiCourseDifficulty,
-          learning_objectives: generatedCourse.learning_objectives,
-          target_audience: generatedCourse.target_audience || ["all"],
-          estimated_hours: generatedCourse.estimated_hours,
-          xp_reward: generatedCourse.xp_reward,
-          instructor_name: generatedCourse.instructor_name,
-          instructor_bio: generatedCourse.instructor_bio,
-          is_published: false,
-          is_featured: false,
-          is_landing_page_featured: false,
-          visibility: "logged_in",
-        }),
-      })
-
-      if (!courseResponse.ok) {
-        throw new Error("Failed to create course")
-      }
-
-      const { course } = await courseResponse.json()
-      const courseId = course.id
-
-      // Create modules and lessons
-      for (let i = 0; i < generatedCourse.modules.length; i++) {
-        const module = generatedCourse.modules[i]
-
-        const moduleResponse = await fetch(`/api/practices/${practiceId}/academy/modules`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            course_id: courseId,
-            title: module.title,
-            description: module.description,
-            estimated_minutes: module.estimated_minutes,
-            display_order: i + 1,
-            is_published: false,
-          }),
-        })
-
-        if (!moduleResponse.ok) {
-          throw new Error(`Failed to create module: ${module.title}`)
-        }
-
-        const { module: createdModule } = await moduleResponse.json()
-        const moduleId = createdModule.id
-
-        // Create lessons for this module
-        for (let j = 0; j < module.lessons.length; j++) {
-          const lesson = module.lessons[j]
-
-          await fetch(`/api/practices/${practiceId}/academy/lessons`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              module_id: moduleId,
-              course_id: courseId,
-              title: lesson.title,
-              description: lesson.description,
-              content: lesson.content,
-              lesson_type: lesson.lesson_type || "text",
-              estimated_minutes: lesson.estimated_minutes,
-              xp_reward: lesson.xp_reward,
-              display_order: j + 1,
-              is_published: false,
-              is_free_preview: false,
-            }),
-          })
-        }
-      }
-
-      toast({
-        title: "KI-Kurs gespeichert",
-        description: `Der generierte Kurs "${generatedCourse.title}" wurde erfolgreich gespeichert.`,
-      })
-
-      setShowAiCourseDialog(false)
-      setGeneratedCourse(null)
-      setAiCourseDescription("")
-      fetchData()
-    } catch (error) {
-      console.error("[v0] Error saving generated course:", error)
-      toast({
-        title: "Fehler",
-        description: "Fehler beim Speichern des generierten Kurses",
-        variant: "destructive",
-      })
-    }
-  }
-
   const handleDelete = async () => {
     if (!deleteItem) return
 
-    const practiceId = getEffectivePracticeId() // Get practiceId here
-
     try {
-      let url
-      const method = "DELETE" // Assuming DELETE method for deletion
-
+      let endpoint = ""
       switch (deleteItem.type) {
         case "course":
-          url = `/api/practices/${practiceId}/academy/courses/${deleteItem.id}`
+          // Optimistic update
+          mutateCourses(
+            courses.filter((c) => c.id !== deleteItem.id),
+            false,
+          )
+          endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses/${deleteItem.id}`
           break
         case "module":
-          url = `/api/practices/${practiceId}/academy/modules/${deleteItem.id}`
+          setCourseModules(courseModules.filter((m) => m.id !== deleteItem.id))
+          endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules/${deleteItem.id}`
           break
         case "lesson":
-          url = `/api/practices/${practiceId}/academy/lessons/${deleteItem.id}`
+          setCourseModules(
+            courseModules.map((m) => ({
+              ...m,
+              lessons: m.lessons?.filter((l) => l.id !== deleteItem.id) || [],
+            })),
+          )
+          endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/lessons/${deleteItem.id}`
           break
         case "quiz":
-          url = `/api/practices/${practiceId}/academy/quizzes/${deleteItem.id}`
+          mutateQuizzes(
+            quizzes.filter((q) => q.id !== deleteItem.id),
+            false,
+          )
+          endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/quizzes/${deleteItem.id}`
           break
         case "badge":
-          url = `/api/practices/${practiceId}/academy/badges/${deleteItem.id}`
+          mutateBadges(
+            badges.filter((b) => b.id !== deleteItem.id),
+            false,
+          )
+          endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges/${deleteItem.id}`
           break
-        default:
-          throw new Error("Unknown item type to delete")
       }
 
-      const response = await fetch(url, { method })
+      const response = await fetch(endpoint, { method: "DELETE" })
 
       if (!response.ok) {
-        throw new Error(`Failed to delete ${deleteItem.type}`)
+        throw new Error("Failed to delete")
       }
 
-      toast({ title: "Erfolg", description: `"${deleteItem.name}" wurde erfolgreich gelöscht.` })
+      toast({
+        title: "Erfolgreich gelöscht",
+        description: `"${deleteItem.name}" wurde gelöscht.`,
+      })
+
       setShowDeleteDialog(false)
       setDeleteItem(null)
-      fetchData()
-      if (selectedCourse) {
+
+      // Revalidate
+      if (deleteItem.type === "course") mutateCourses()
+      if (deleteItem.type === "quiz") mutateQuizzes()
+      if (deleteItem.type === "badge") mutateBadges()
+      if (selectedCourse && (deleteItem.type === "module" || deleteItem.type === "lesson")) {
         fetchCourseModules(selectedCourse.id)
       }
     } catch (error) {
-      console.error("Error deleting item:", error)
-      toast({ title: "Fehler", description: `Fehler beim Löschen von "${deleteItem.name}".`, variant: "destructive" })
+      console.error("Error deleting:", error)
+      // Rollback
+      mutateCourses()
+      mutateQuizzes()
+      mutateBadges()
+      if (selectedCourse) fetchCourseModules(selectedCourse.id)
+      toast({
+        title: "Fehler beim Löschen",
+        description: "Es gab ein Problem beim Löschen.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -852,13 +674,12 @@ export function SuperAdminAcademyManager() {
       xp_reward: 100,
       is_published: false,
       is_featured: false,
-      is_landing_page_featured: false, // Added
-      visibility: "logged_in", // Added
-      target_audience: ["all"], // Added
+      is_landing_page_featured: false,
+      visibility: "logged_in",
+      target_audience: ["all"],
       tags: [],
       learning_objectives: [],
     })
-    setEditingCourse(null) // Reset editing state as well
   }
 
   const resetModuleForm = () => {
@@ -899,6 +720,161 @@ export function SuperAdminAcademyManager() {
     })
   }
 
+  // AI Course generation
+  const handleGenerateAiCourse = async () => {
+    if (!aiCourseDescription.trim()) {
+      toast({
+        title: "Beschreibung fehlt",
+        description: "Bitte geben Sie eine Kursbeschreibung ein.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setAiCourseGenerating(true)
+    try {
+      const response = await fetch("/api/super-admin/academy/generate-course", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: aiCourseDescription,
+          category: aiCourseCategory,
+          difficulty: aiCourseDifficulty,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to generate course")
+      }
+
+      const data = await response.json()
+      setGeneratedCourse(data.course)
+
+      toast({
+        title: "Kurs generiert",
+        description: "Der KI-generierte Kurs ist bereit zur Überprüfung.",
+      })
+    } catch (error) {
+      console.error("Error generating AI course:", error)
+      toast({
+        title: "Fehler bei der Generierung",
+        description: "Es gab ein Problem bei der KI-Generierung.",
+        variant: "destructive",
+      })
+    } finally {
+      setAiCourseGenerating(false)
+    }
+  }
+
+  const handleSaveAiCourse = async () => {
+    if (!generatedCourse) return
+
+    const optimisticCourse: Course = {
+      ...generatedCourse,
+      id: `temp-${Date.now()}`,
+      is_published: false,
+      total_enrollments: 0,
+      average_rating: 0,
+      total_reviews: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    try {
+      // Optimistic update
+      mutateCourses([...courses, optimisticCourse], false)
+
+      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...generatedCourse,
+          is_published: false,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save AI course")
+      }
+
+      const savedCourse = await response.json()
+
+      // Save modules and lessons if they exist
+      if (generatedCourse.modules && Array.isArray(generatedCourse.modules)) {
+        for (const module of generatedCourse.modules) {
+          const moduleResponse = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...module,
+              course_id: savedCourse.id,
+            }),
+          })
+
+          if (moduleResponse.ok && module.lessons && Array.isArray(module.lessons)) {
+            const savedModule = await moduleResponse.json()
+            for (const lesson of module.lessons) {
+              await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/lessons`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  ...lesson,
+                  module_id: savedModule.id,
+                  course_id: savedCourse.id,
+                }),
+              })
+            }
+          }
+        }
+      }
+
+      toast({
+        title: "Kurs gespeichert",
+        description: `"${generatedCourse.title}" wurde erfolgreich erstellt.`,
+      })
+
+      setShowAiCourseDialog(false)
+      setGeneratedCourse(null)
+      setAiCourseDescription("")
+      mutateCourses()
+    } catch (error) {
+      console.error("Error saving AI course:", error)
+      mutateCourses()
+      toast({
+        title: "Fehler beim Speichern",
+        description: "Es gab ein Problem beim Speichern des KI-Kurses.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Filter courses
+  const filteredCourses = courses.filter((course) => {
+    const matchesSearch =
+      course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = categoryFilter === "all" || course.category === categoryFilter
+    return matchesSearch && matchesCategory
+  })
+
+  const getDifficultyBadge = (level: string) => {
+    const difficulty = DIFFICULTY_LEVELS.find((d) => d.value === level)
+    return difficulty ? (
+      <Badge className={`${difficulty.color} text-white`}>{difficulty.label}</Badge>
+    ) : (
+      <Badge variant="secondary">{level}</Badge>
+    )
+  }
+
+  const getBadgeIcon = (iconName: string) => {
+    const iconConfig = BADGE_ICONS.find((i) => i.value === iconName)
+    if (iconConfig) {
+      const IconComponent = iconConfig.icon
+      return <IconComponent className="h-5 w-5" />
+    }
+    return <Trophy className="h-5 w-5" />
+  }
+
   const openEditCourse = (course: Course) => {
     setEditingCourse(course)
     setCourseForm({
@@ -915,9 +891,9 @@ export function SuperAdminAcademyManager() {
       xp_reward: course.xp_reward || 100,
       is_published: course.is_published || false,
       is_featured: course.is_featured || false,
-      is_landing_page_featured: course.is_landing_page_featured || false, // Added
-      visibility: course.visibility || "logged_in", // Added
-      target_audience: course.target_audience || ["all"], // Added
+      is_landing_page_featured: course.is_landing_page_featured || false,
+      visibility: course.visibility || "logged_in",
+      target_audience: course.target_audience || ["all"],
       tags: course.tags || [],
       learning_objectives: course.learning_objectives || [],
     })
@@ -934,267 +910,193 @@ export function SuperAdminAcademyManager() {
       color: badge.color || "#3b82f6",
       rarity: badge.rarity || "common",
       xp_reward: badge.xp_reward || 50,
-      is_active: badge.is_active ?? true,
+      is_active: badge.is_active !== false,
       criteria: badge.criteria || {},
     })
     setShowBadgeDialog(true)
   }
 
-  const openCourseDetails = async (course: Course) => {
+  const handleSelectCourse = (course: Course) => {
     setSelectedCourse(course)
-    await fetchCourseModules(course.id)
-    setActiveTab("course-detail")
+    fetchCourseModules(course.id)
+    setActiveTab("content")
   }
 
-  const toggleModuleExpand = (moduleId: string) => {
+  const toggleModuleExpanded = (moduleId: string) => {
     setExpandedModules((prev) => (prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId]))
   }
 
-  const filteredCourses = courses.filter((course) => {
-    const matchesSearch =
-      course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = categoryFilter === "all" || course.category === categoryFilter
-    return matchesSearch && matchesCategory
-  })
+  // Render overview tab
+  const renderOverview = () => (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Kurse gesamt</CardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalCourses || courses.length || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.publishedCourses || courses.filter((c) => c.is_published).length || 0} veröffentlicht
+            </p>
+          </CardContent>
+        </Card>
 
-  const getDifficultyBadge = (level: string) => {
-    const config = DIFFICULTY_LEVELS.find((d) => d.value === level)
-    return (
-      <Badge variant="outline" className={`${config?.color} text-white border-0`}>
-        {config?.label || level}
-      </Badge>
-    )
-  }
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Einschreibungen</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalEnrollments || 0}</div>
+            <p className="text-xs text-muted-foreground">{stats?.completionRate || 0}% Abschlussrate</p>
+          </CardContent>
+        </Card>
 
-  const getBadgeIcon = (iconName: string) => {
-    const iconConfig = BADGE_ICONS.find((i) => i.value === iconName)
-    const Icon = iconConfig?.icon || Trophy
-    return <Icon className="h-5 w-5" />
-  }
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Lektionen</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalLessons || 0}</div>
+            <p className="text-xs text-muted-foreground">{stats?.totalQuizzes || quizzes.length || 0} Quizze</p>
+          </CardContent>
+        </Card>
 
-  const getRarityColor = (rarity: string) => {
-    return BADGE_RARITIES.find((r) => r.value === rarity)?.color || "text-gray-500"
-  }
-
-  const getVisibilityBadge = (visibility: string) => {
-    const config = VISIBILITY_OPTIONS.find((v) => v.value === visibility)
-    const Icon = config?.icon || Users
-    const colors = {
-      public: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      logged_in: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      premium: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-    }
-    return (
-      <Badge
-        variant="outline"
-        className={`${colors[visibility as keyof typeof colors] || colors.logged_in} border-0 gap-1`}
-      >
-        <Icon className="h-3 w-3" />
-        {config?.label || visibility}
-      </Badge>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  return (
-    <div className="w-full space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Academy Verwaltung</h1>
-          <p className="text-muted-foreground mt-1">Verwalten Sie Kurse, Lektionen, Quizze und Gamification</p>
-        </div>
-        <Button onClick={() => setShowCourseDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neuer Kurs
-        </Button>
-        <Button
-          onClick={() => setShowAiCourseDialog(true)}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          Kurs mit KI erstellen
-        </Button>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Bewertung</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold flex items-center gap-1">
+              {stats?.averageRating?.toFixed(1) || "4.5"}
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            </div>
+            <p className="text-xs text-muted-foreground">Durchschnittliche Bewertung</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Übersicht</span>
-          </TabsTrigger>
-          <TabsTrigger value="courses" className="gap-2">
-            <GraduationCap className="h-4 w-4" />
-            <span className="hidden sm:inline">Kurse</span>
-          </TabsTrigger>
-          <TabsTrigger value="quizzes" className="gap-2">
-            <HelpCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Quizze</span>
-          </TabsTrigger>
-          <TabsTrigger value="badges" className="gap-2">
-            <Trophy className="h-4 w-4" />
-            <span className="hidden sm:inline">Badges</span>
-          </TabsTrigger>
-          <TabsTrigger value="course-detail" className="gap-2" disabled={!selectedCourse}>
-            <Layers className="h-4 w-4" />
-            <span className="hidden sm:inline">Kursinhalt</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Kurse gesamt</CardTitle>
-                <GraduationCap className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.totalCourses || 0}</div>
-                <p className="text-xs text-muted-foreground">{stats?.publishedCourses || 0} veröffentlicht</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Einschreibungen</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.totalEnrollments || 0}</div>
-                <p className="text-xs text-muted-foreground">{stats?.completionRate?.toFixed(1)}% Abschlussrate</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Lektionen</CardTitle>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.totalLessons || 0}</div>
-                <p className="text-xs text-muted-foreground">{stats?.totalQuizzes || 0} Quizze</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Bewertung</CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold flex items-center gap-1">
-                  {stats?.averageRating?.toFixed(1) || "0.0"}
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                </div>
-                <p className="text-xs text-muted-foreground">Durchschnittliche Bewertung</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Neueste Kurse</CardTitle>
-                <CardDescription>Zuletzt erstellte oder aktualisierte Kurse</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {courses.slice(0, 5).map((course) => (
-                    <div key={course.id} className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                        <GraduationCap className="h-6 w-6 text-muted-foreground" />
+      {/* Recent Courses & Badges */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Neueste Kurse</CardTitle>
+            <CardDescription>Zuletzt erstellte oder aktualisierte Kurse</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {courses.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">Noch keine Kurse vorhanden</p>
+            ) : (
+              <div className="space-y-3">
+                {courses.slice(0, 5).map((course) => (
+                  <div
+                    key={course.id}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
+                    onClick={() => handleSelectCourse(course)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
+                        <GraduationCap className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{course.title}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Badge variant={course.is_published ? "default" : "secondary"} className="text-xs">
-                            {course.is_published ? "Veröffentlicht" : "Entwurf"}
-                          </Badge>
-                          {getDifficultyBadge(course.difficulty_level)}
-                          {getVisibilityBadge(course.visibility)} {/* Display visibility badge */}
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => openCourseDetails(course)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  {courses.length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">Noch keine Kurse vorhanden</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Badges</CardTitle>
-                <CardDescription>Verfügbare Gamification-Badges</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {badges.slice(0, 6).map((badge) => (
-                    <div
-                      key={badge.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div
-                        className="h-10 w-10 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: badge.color + "20", color: badge.color }}
-                      >
-                        {getBadgeIcon(badge.icon_name)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{badge.name}</p>
-                        <p className={`text-xs ${getRarityColor(badge.rarity)}`}>
-                          {BADGE_RARITIES.find((r) => r.value === badge.rarity)?.label}
+                      <div>
+                        <p className="font-medium text-sm">{course.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {CATEGORIES.find((c) => c.value === course.category)?.label || course.category}
                         </p>
                       </div>
                     </div>
-                  ))}
-                  {badges.length === 0 && (
-                    <p className="col-span-2 text-center text-muted-foreground py-4">Noch keine Badges vorhanden</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Courses Tab */}
-        <TabsContent value="courses" className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <div className="flex gap-2 flex-1">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Kurse suchen..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+                    {getDifficultyBadge(course.difficulty_level)}
+                  </div>
+                ))}
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Kategorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Kategorien</SelectItem>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Badges</CardTitle>
+            <CardDescription>Verfügbare Gamification-Badges</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {badges.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">Noch keine Badges vorhanden</p>
+            ) : (
+              <div className="grid grid-cols-4 gap-3">
+                {badges.slice(0, 8).map((badge) => (
+                  <div
+                    key={badge.id}
+                    className="flex flex-col items-center p-2 rounded-lg hover:bg-muted cursor-pointer"
+                    onClick={() => openEditBadge(badge)}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: badge.color + "20", color: badge.color }}
+                    >
+                      {getBadgeIcon(badge.icon_name)}
+                    </div>
+                    <p className="text-xs font-medium mt-1 text-center truncate w-full">{badge.name}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+
+  // Render courses tab
+  const renderCourses = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Kurse suchen..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Alle Kategorien" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle Kategorien</SelectItem>
+            {CATEGORIES.map((category) => (
+              <SelectItem key={category.value} value={category.value}>
+                {category.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          onClick={() => {
+            resetCourseForm()
+            setEditingCourse(null)
+            setShowCourseDialog(true)
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Neuer Kurs
+        </Button>
+      </div>
+
+      {filteredCourses.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <GraduationCap className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium">Keine Kurse gefunden</h3>
+            <p className="text-muted-foreground">Erstellen Sie Ihren ersten Kurs</p>
             <Button
+              className="mt-4"
               onClick={() => {
                 resetCourseForm()
                 setEditingCourse(null)
@@ -1202,508 +1104,559 @@ export function SuperAdminAcademyManager() {
               }}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Neuer Kurs
+              Kurs erstellen
             </Button>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredCourses.map((course) => (
-              <Card key={course.id} className="overflow-hidden">
-                <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                  {course.thumbnail_url ? (
-                    <img
-                      src={course.thumbnail_url || "/placeholder.svg"}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredCourses.map((course) => (
+            <Card key={course.id} className="overflow-hidden">
+              <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                {course.thumbnail_url ? (
+                  <img
+                    src={course.thumbnail_url || "/placeholder.svg"}
+                    alt={course.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <GraduationCap className="h-12 w-12 text-primary/40" />
+                )}
+              </div>
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-base line-clamp-1">{course.title}</CardTitle>
+                    <CardDescription className="line-clamp-2 mt-1">{course.description}</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleSelectCourse(course)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Inhalt verwalten
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openEditCourse(course)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Bearbeiten
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => {
+                          setDeleteItem({ type: "course", id: course.id, name: course.title })
+                          setShowDeleteDialog(true)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Löschen
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {getDifficultyBadge(course.difficulty_level)}
+                  <Badge variant="outline">
+                    {CATEGORIES.find((c) => c.value === course.category)?.label || course.category}
+                  </Badge>
+                  {course.is_published ? (
+                    <Badge variant="default" className="bg-green-500">
+                      Veröffentlicht
+                    </Badge>
                   ) : (
-                    <GraduationCap className="h-12 w-12 text-muted-foreground" />
+                    <Badge variant="secondary">Entwurf</Badge>
                   )}
                 </div>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg line-clamp-1">{course.title}</CardTitle>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openCourseDetails(course)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditCourse(course)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Bearbeiten
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setDeleteItem({ type: "course", id: course.id, name: course.title })
-                            setShowDeleteDialog(true)
-                          }}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Löschen
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <CardDescription className="line-clamp-2">
-                    {course.description || "Keine Beschreibung"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {getVisibilityBadge(course.visibility || "logged_in")}
-                    {getDifficultyBadge(course.difficulty_level)}
-                    <Badge variant={course.is_published ? "default" : "secondary"}>
-                      {course.is_published ? "Veröffentlicht" : "Entwurf"}
-                    </Badge>
-                    {course.is_landing_page_featured && (
-                      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-0">
-                        <Star className="h-3 w-3 mr-1 fill-amber-500" />
-                        Landing Page
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {course.total_enrollments || 0}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {course.estimated_hours}h
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      {course.average_rating?.toFixed(1) || "0.0"}
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Button variant="outline" className="w-full bg-transparent" onClick={() => openCourseDetails(course)}>
-                    Kursinhalt verwalten
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-            {filteredCourses.length === 0 && (
-              <Card className="col-span-full">
-                <CardContent className="text-center py-12">
-                  <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Keine Kurse gefunden</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm || categoryFilter !== "all"
-                      ? "Keine Kurse entsprechen Ihren Filterkriterien"
-                      : "Erstellen Sie Ihren ersten Kurs"}
-                  </p>
-                  <Button
-                    onClick={() => {
-                      resetCourseForm()
-                      setShowCourseDialog(true)
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Kurs erstellen
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
+                <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {course.estimated_hours}h
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Zap className="h-3 w-3" />
+                    {course.xp_reward} XP
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {course.total_enrollments || 0}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 
-        {/* Course Detail Tab */}
-        <TabsContent value="course-detail" className="space-y-4">
-          {selectedCourse && (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Button variant="ghost" onClick={() => setActiveTab("courses")}>
-                    <ChevronRight className="h-4 w-4 rotate-180 mr-2" />
-                    Zurück
-                  </Button>
-                  <Separator orientation="vertical" className="h-6" />
-                  <div>
-                    <h2 className="text-xl font-semibold">{selectedCourse.title}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {courseModules.length} Module •{" "}
-                      {courseModules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0)} Lektionen
-                    </p>
+  // Render badges tab
+  const renderBadges = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Gamification Badges</h3>
+          <p className="text-sm text-muted-foreground">Verwalten Sie Auszeichnungen und Achievements</p>
+        </div>
+        <Button
+          onClick={() => {
+            resetBadgeForm()
+            setEditingBadge(null)
+            setShowBadgeDialog(true)
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Neues Badge
+        </Button>
+      </div>
+
+      {badges.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Award className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium">Keine Badges vorhanden</h3>
+            <p className="text-muted-foreground">Erstellen Sie Ihr erstes Badge</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {badges.map((badge) => (
+            <Card key={badge.id} className="overflow-hidden">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center">
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-3"
+                    style={{ backgroundColor: badge.color + "20", color: badge.color }}
+                  >
+                    {getBadgeIcon(badge.icon_name)}
+                  </div>
+                  <h4 className="font-medium">{badge.name}</h4>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{badge.description}</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="outline" className={BADGE_RARITIES.find((r) => r.value === badge.rarity)?.color}>
+                      {BADGE_RARITIES.find((r) => r.value === badge.rarity)?.label || badge.rarity}
+                    </Badge>
+                    <Badge variant="secondary">
+                      <Zap className="h-3 w-3 mr-1" />
+                      {badge.xp_reward} XP
+                    </Badge>
                   </div>
                 </div>
+              </CardContent>
+              <CardFooter className="justify-center gap-2 border-t pt-4">
+                <Button variant="outline" size="sm" onClick={() => openEditBadge(badge)}>
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Bearbeiten
+                </Button>
                 <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive bg-transparent"
                   onClick={() => {
-                    resetModuleForm()
-                    setEditingModule(null)
-                    setShowModuleDialog(true)
+                    setDeleteItem({ type: "badge", id: badge.id, name: badge.name })
+                    setShowDeleteDialog(true)
                   }}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Neues Modul
+                  <Trash2 className="h-3 w-3" />
                 </Button>
-              </div>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 
-              <div className="space-y-4">
-                {courseModules.map((module, moduleIndex) => (
-                  <Card key={module.id}>
-                    <CardHeader className="cursor-pointer" onClick={() => toggleModuleExpand(module.id)}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {expandedModules.includes(module.id) ? (
-                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                          )}
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                            {moduleIndex + 1}
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">{module.title}</CardTitle>
-                            <CardDescription>
-                              {module.lessons?.length || 0} Lektionen • {module.estimated_minutes} Min.
-                            </CardDescription>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Badge variant={module.is_published ? "default" : "secondary"}>
-                            {module.is_published ? "Veröffentlicht" : "Entwurf"}
-                          </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setEditingModule(module)
-                                  setShowLessonDialog(true)
-                                  resetLessonForm()
-                                }}
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Lektion hinzufügen
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setEditingModule(module)
-                                  setModuleForm({
-                                    title: module.title,
-                                    description: module.description || "",
-                                    estimated_minutes: module.estimated_minutes,
-                                    is_published: module.is_published,
-                                  })
-                                  setShowModuleDialog(true)
-                                }}
-                              >
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Bearbeiten
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setDeleteItem({ type: "module", id: module.id, name: module.title })
-                                  setShowDeleteDialog(true)
-                                }}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Löschen
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+  // Render content tab (modules/lessons for selected course)
+  const renderContent = () => {
+    if (!selectedCourse) {
+      return (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Layers className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium">Kein Kurs ausgewählt</h3>
+            <p className="text-muted-foreground">Wählen Sie einen Kurs aus der Liste aus</p>
+            <Button className="mt-4 bg-transparent" variant="outline" onClick={() => setActiveTab("courses")}>
+              Zur Kursliste
+            </Button>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Course Header */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle>{selectedCourse.title}</CardTitle>
+                <CardDescription>{selectedCourse.description}</CardDescription>
+              </div>
+              <Button variant="outline" onClick={() => setSelectedCourse(null)}>
+                Zurück zur Liste
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Add Module Button */}
+        <div className="flex justify-end">
+          <Button
+            onClick={() => {
+              resetModuleForm()
+              setEditingModule(null)
+              setShowModuleDialog(true)
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Neues Modul
+          </Button>
+        </div>
+
+        {/* Modules & Lessons */}
+        {courseModules.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">Keine Module vorhanden</h3>
+              <p className="text-muted-foreground">Erstellen Sie das erste Modul für diesen Kurs</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {courseModules.map((module, moduleIndex) => (
+              <Card key={module.id}>
+                <CardHeader className="cursor-pointer" onClick={() => toggleModuleExpanded(module.id)}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {expandedModules.includes(module.id) ? (
+                        <ChevronDown className="h-5 w-5" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5" />
+                      )}
+                      <div>
+                        <CardTitle className="text-base">
+                          Modul {moduleIndex + 1}: {module.title}
+                        </CardTitle>
+                        <CardDescription>
+                          {module.lessons?.length || 0} Lektionen • {module.estimated_minutes} Min
+                        </CardDescription>
                       </div>
-                    </CardHeader>
-                    {expandedModules.includes(module.id) && (
-                      <CardContent className="pt-0">
-                        <div className="space-y-2 ml-11">
-                          {module.lessons?.map((lesson, lessonIndex) => (
-                            <div
-                              key={lesson.id}
-                              className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full bg-background flex items-center justify-center">
-                                  {lesson.lesson_type === "video" ? (
-                                    <Play className="h-4 w-4 text-muted-foreground" />
-                                  ) : (
-                                    <FileText className="h-4 w-4 text-muted-foreground" />
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">{lesson.title}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {lesson.estimated_minutes} Min. • {lesson.xp_reward} XP
-                                    {lesson.is_free_preview && " • Vorschau"}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={lesson.is_published ? "outline" : "secondary"} className="text-xs">
-                                  {lesson.is_published ? "Live" : "Entwurf"}
-                                </Badge>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setEditingModule(module)
-                                        setEditingLesson(lesson)
-                                        setLessonForm({
-                                          title: lesson.title,
-                                          description: lesson.description || "",
-                                          content: lesson.content || "",
-                                          lesson_type: lesson.lesson_type,
-                                          video_url: lesson.video_url || "",
-                                          video_duration_seconds: lesson.video_duration_seconds || 0,
-                                          estimated_minutes: lesson.estimated_minutes,
-                                          xp_reward: lesson.xp_reward,
-                                          is_published: lesson.is_published,
-                                          is_free_preview: lesson.is_free_preview,
-                                        })
-                                        setShowLessonDialog(true)
-                                      }}
-                                    >
-                                      <Pencil className="h-4 w-4 mr-2" />
-                                      Bearbeiten
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setDeleteItem({ type: "lesson", id: lesson.id, name: lesson.title })
-                                        setShowDeleteDialog(true)
-                                      }}
-                                      className="text-destructive"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      Löschen
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {module.is_published ? (
+                        <Badge variant="default" className="bg-green-500">
+                          Veröffentlicht
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Entwurf</Badge>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingModule(module)
+                              setModuleForm({
+                                title: module.title,
+                                description: module.description,
+                                estimated_minutes: module.estimated_minutes,
+                                is_published: module.is_published,
+                              })
+                              setShowModuleDialog(true)
+                            }}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Bearbeiten
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDeleteItem({ type: "module", id: module.id, name: module.title })
+                              setShowDeleteDialog(true)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Löschen
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                {expandedModules.includes(module.id) && (
+                  <CardContent className="pt-0">
+                    <Separator className="mb-4" />
+                    <div className="space-y-2">
+                      {module.lessons?.map((lesson, lessonIndex) => (
+                        <div key={lesson.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            {lesson.lesson_type === "video" ? (
+                              <Play className="h-4 w-4 text-primary" />
+                            ) : lesson.lesson_type === "quiz" ? (
+                              <HelpCircle className="h-4 w-4 text-primary" />
+                            ) : (
+                              <FileText className="h-4 w-4 text-primary" />
+                            )}
+                            <div>
+                              <p className="font-medium text-sm">
+                                {lessonIndex + 1}. {lesson.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {lesson.estimated_minutes} Min • {lesson.xp_reward} XP
+                                {lesson.is_free_preview && " • Kostenlose Vorschau"}
+                              </p>
                             </div>
-                          ))}
-                          {(!module.lessons || module.lessons.length === 0) && (
-                            <div className="text-center py-4 text-muted-foreground text-sm">
-                              Noch keine Lektionen in diesem Modul
-                            </div>
-                          )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {lesson.is_published ? (
+                              <Badge variant="outline" className="text-green-600 border-green-600">
+                                Live
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Entwurf</Badge>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <MoreHorizontal className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setEditingLesson(lesson)
+                                    setLessonForm({
+                                      title: lesson.title,
+                                      description: lesson.description,
+                                      content: lesson.content,
+                                      lesson_type: lesson.lesson_type,
+                                      video_url: lesson.video_url,
+                                      video_duration_seconds: lesson.video_duration_seconds,
+                                      estimated_minutes: lesson.estimated_minutes,
+                                      xp_reward: lesson.xp_reward,
+                                      is_published: lesson.is_published,
+                                      is_free_preview: lesson.is_free_preview,
+                                    })
+                                    setShowLessonDialog(true)
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Bearbeiten
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => {
+                                    setDeleteItem({ type: "lesson", id: lesson.id, name: lesson.title })
+                                    setShowDeleteDialog(true)
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Löschen
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                ))}
-                {courseModules.length === 0 && (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <Layers className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="font-semibold mb-2">Keine Module vorhanden</h3>
-                      <p className="text-muted-foreground mb-4">Erstellen Sie das erste Modul für diesen Kurs</p>
+                      ))}
                       <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2 bg-transparent"
                         onClick={() => {
-                          resetModuleForm()
-                          setEditingModule(null)
-                          setShowModuleDialog(true)
+                          resetLessonForm()
+                          setEditingLesson(null)
+                          setEditingModule(module)
+                          setShowLessonDialog(true)
                         }}
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Modul erstellen
+                        Lektion hinzufügen
                       </Button>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </CardContent>
                 )}
-              </div>
-            </>
-          )}
-        </TabsContent>
-
-        {/* Quizzes Tab */}
-        <TabsContent value="quizzes" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <CardDescription>Verwalten Sie Quiz-Assessments für Ihre Kurse</CardDescription>
-          </div>
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Quiz</TableHead>
-                    <TableHead>Typ</TableHead>
-                    <TableHead className="text-center">Bestehensgrenze</TableHead>
-                    <TableHead className="text-center">Zeitlimit</TableHead>
-                    <TableHead className="text-center">XP</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {quizzes.map((quiz) => (
-                    <TableRow key={quiz.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{quiz.title}</p>
-                          <p className="text-sm text-muted-foreground truncate max-w-xs">
-                            {quiz.description || "Keine Beschreibung"}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{quiz.quiz_type}</Badge>
-                      </TableCell>
-                      <TableCell className="text-center">{quiz.passing_score}%</TableCell>
-                      <TableCell className="text-center">
-                        {quiz.time_limit_minutes ? `${quiz.time_limit_minutes} Min.` : "Unbegrenzt"}
-                      </TableCell>
-                      <TableCell className="text-center">{quiz.xp_reward}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Bearbeiten
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setDeleteItem({ type: "quiz", id: quiz.id, name: quiz.title })
-                                setShowDeleteDialog(true)
-                              }}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Löschen
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {quizzes.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        Keine Quizze vorhanden. Erstellen Sie Quizze innerhalb der Kursmodule.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Badges Tab */}
-        <TabsContent value="badges" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <CardDescription>Verwalten Sie Achievements und Gamification-Badges</CardDescription>
-            <Button
-              onClick={() => {
-                resetBadgeForm()
-                setEditingBadge(null)
-                setShowBadgeDialog(true)
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Neues Badge
-            </Button>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {badges.map((badge) => (
-              <Card key={badge.id} className="relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: badge.color }} />
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div
-                      className="h-14 w-14 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: badge.color + "20", color: badge.color }}
-                    >
-                      {getBadgeIcon(badge.icon_name)}
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditBadge(badge)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Bearbeiten
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setDeleteItem({ type: "badge", id: badge.id, name: badge.name })
-                            setShowDeleteDialog(true)
-                          }}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Löschen
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <h3 className="font-semibold">{badge.name}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {badge.description || "Keine Beschreibung"}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">
-                        {BADGE_TYPES.find((t) => t.value === badge.badge_type)?.label || badge.badge_type}
-                      </Badge>
-                      <span className={getRarityColor(badge.rarity)}>
-                        {BADGE_RARITIES.find((r) => r.value === badge.rarity)?.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Sparkles className="h-3 w-3" />
-                      {badge.xp_reward} XP
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Badge variant={badge.is_active ? "default" : "secondary"} className="w-full justify-center">
-                    {badge.is_active ? "Aktiv" : "Inaktiv"}
-                  </Badge>
-                </CardFooter>
               </Card>
             ))}
-            {badges.length === 0 && (
-              <Card className="col-span-full">
-                <CardContent className="text-center py-12">
-                  <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Keine Badges vorhanden</h3>
-                  <p className="text-muted-foreground mb-4">Erstellen Sie Badges, um Benutzer zu motivieren</p>
-                  <Button
-                    onClick={() => {
-                      resetBadgeForm()
-                      setEditingBadge(null)
-                      setShowBadgeDialog(true)
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Badge erstellen
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
           </div>
+        )}
+      </div>
+    )
+  }
+
+  // Render quizzes tab
+  const renderQuizzes = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Quizze</h3>
+          <p className="text-sm text-muted-foreground">Verwalten Sie Quizze und Tests</p>
+        </div>
+        <Button
+          onClick={() => {
+            setEditingQuiz(null)
+            setShowQuizDialog(true)
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Neues Quiz
+        </Button>
+      </div>
+
+      {quizzes.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <HelpCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium">Keine Quizze vorhanden</h3>
+            <p className="text-muted-foreground">Erstellen Sie Ihr erstes Quiz</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Titel</TableHead>
+              <TableHead>Typ</TableHead>
+              <TableHead>Bestehensgrenze</TableHead>
+              <TableHead>Zeitlimit</TableHead>
+              <TableHead>XP</TableHead>
+              <TableHead className="text-right">Aktionen</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {quizzes.map((quiz) => (
+              <TableRow key={quiz.id}>
+                <TableCell className="font-medium">{quiz.title}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{quiz.quiz_type}</Badge>
+                </TableCell>
+                <TableCell>{quiz.passing_score}%</TableCell>
+                <TableCell>{quiz.time_limit_minutes} Min</TableCell>
+                <TableCell>{quiz.xp_reward} XP</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setEditingQuiz(quiz)
+                          setShowQuizDialog(true)
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Bearbeiten
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => {
+                          setDeleteItem({ type: "quiz", id: quiz.id, name: quiz.title })
+                          setShowDeleteDialog(true)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Löschen
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
+  )
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Academy Verwaltung</h1>
+          <p className="text-muted-foreground">Verwalten Sie Kurse, Lektionen, Quizze und Gamification</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => {
+              resetCourseForm()
+              setEditingCourse(null)
+              setShowCourseDialog(true)
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Neuer Kurs
+          </Button>
+          <Button variant="outline" onClick={() => setShowAiCourseDialog(true)}>
+            <Sparkles className="h-4 w-4 mr-2" />
+            Kurs mit KI erstellen
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsTrigger value="overview">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Übersicht
+          </TabsTrigger>
+          <TabsTrigger value="courses">
+            <GraduationCap className="h-4 w-4 mr-2" />
+            Kurse
+          </TabsTrigger>
+          <TabsTrigger value="quizzes">
+            <HelpCircle className="h-4 w-4 mr-2" />
+            Quizze
+          </TabsTrigger>
+          <TabsTrigger value="badges">
+            <Award className="h-4 w-4 mr-2" />
+            Badges
+          </TabsTrigger>
+          <TabsTrigger value="content" disabled={!selectedCourse}>
+            <Layers className="h-4 w-4 mr-2" />
+            Kursinhalt
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
+          {renderOverview()}
+        </TabsContent>
+        <TabsContent value="courses" className="mt-6">
+          {renderCourses()}
+        </TabsContent>
+        <TabsContent value="quizzes" className="mt-6">
+          {renderQuizzes()}
+        </TabsContent>
+        <TabsContent value="badges" className="mt-6">
+          {renderBadges()}
+        </TabsContent>
+        <TabsContent value="content" className="mt-6">
+          {renderContent()}
         </TabsContent>
       </Tabs>
 
@@ -1712,137 +1665,444 @@ export function SuperAdminAcademyManager() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingCourse ? "Kurs bearbeiten" : "Neuer Kurs"}</DialogTitle>
-            <DialogDescription>Füllen Sie die Kursinformationen aus</DialogDescription>
+            <DialogDescription>
+              {editingCourse ? "Bearbeiten Sie die Kursdetails" : "Erstellen Sie einen neuen Kurs"}
+            </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[calc(90vh-10rem)] pr-2">
-            <div className="space-y-4 pr-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label>Titel *</Label>
-                  <Input
-                    value={courseForm.title}
-                    onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
-                    placeholder="z.B. Praxismanagement für Einsteiger"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Beschreibung</Label>
-                  <Textarea
-                    value={courseForm.description}
-                    onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-                    placeholder="Kurze Beschreibung des Kursinhalts..."
-                    rows={3}
-                  />
-                </div>
 
-                <div className="col-span-2 space-y-3 p-4 rounded-lg border bg-muted/50">
-                  <Label className="text-base font-semibold flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    Sichtbarkeit & Zielgruppe
-                  </Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {VISIBILITY_OPTIONS.map((option) => {
-                      const Icon = option.icon
-                      const isSelected = courseForm.visibility === option.value
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Titel</Label>
+              <Input
+                id="title"
+                value={courseForm.title}
+                onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+                placeholder="Kursname eingeben"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Beschreibung</Label>
+              <Textarea
+                id="description"
+                value={courseForm.description}
+                onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+                placeholder="Kursbeschreibung eingeben"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Kategorie</Label>
+                <Select
+                  value={courseForm.category}
+                  onValueChange={(value) => setCourseForm({ ...courseForm, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Schwierigkeitsgrad</Label>
+                <Select
+                  value={courseForm.difficulty_level}
+                  onValueChange={(value) => setCourseForm({ ...courseForm, difficulty_level: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIFFICULTY_LEVELS.map((level) => (
+                      <SelectItem key={level.value} value={level.value}>
+                        {level.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid gap-2">
+              <Label>Sichtbarkeit</Label>
+              <Select
+                value={courseForm.visibility}
+                onValueChange={(value: "public" | "logged_in" | "premium") =>
+                  setCourseForm({ ...courseForm, visibility: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VISIBILITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <option.icon className="h-4 w-4" />
+                        <div>
+                          <div>{option.label}</div>
+                          <div className="text-xs text-muted-foreground">{option.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="estimated_hours">Geschätzte Dauer (Stunden)</Label>
+                <Input
+                  id="estimated_hours"
+                  type="number"
+                  value={courseForm.estimated_hours}
+                  onChange={(e) => setCourseForm({ ...courseForm, estimated_hours: Number(e.target.value) })}
+                  min={1}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="xp_reward">XP Belohnung</Label>
+                <Input
+                  id="xp_reward"
+                  type="number"
+                  value={courseForm.xp_reward}
+                  onChange={(e) => setCourseForm({ ...courseForm, xp_reward: Number(e.target.value) })}
+                  min={0}
+                  step={25}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid gap-2">
+              <Label htmlFor="instructor_name">Dozent Name</Label>
+              <Input
+                id="instructor_name"
+                value={courseForm.instructor_name}
+                onChange={(e) => setCourseForm({ ...courseForm, instructor_name: e.target.value })}
+                placeholder="Name des Dozenten"
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Veröffentlicht</Label>
+                <p className="text-sm text-muted-foreground">Kurs für Benutzer sichtbar machen</p>
+              </div>
+              <Switch
+                checked={courseForm.is_published}
+                onCheckedChange={(checked) => setCourseForm({ ...courseForm, is_published: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Auf Landingpage anzeigen</Label>
+                <p className="text-sm text-muted-foreground">Kurs auf der öffentlichen Seite hervorheben</p>
+              </div>
+              <Switch
+                checked={courseForm.is_landing_page_featured}
+                onCheckedChange={(checked) => setCourseForm({ ...courseForm, is_landing_page_featured: checked })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCourseDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveCourse}>
+              <Save className="h-4 w-4 mr-2" />
+              {editingCourse ? "Speichern" : "Erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Module Dialog */}
+      <Dialog open={showModuleDialog} onOpenChange={setShowModuleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingModule ? "Modul bearbeiten" : "Neues Modul"}</DialogTitle>
+            <DialogDescription>
+              {editingModule ? "Bearbeiten Sie die Moduldetails" : "Erstellen Sie ein neues Modul"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="module_title">Titel</Label>
+              <Input
+                id="module_title"
+                value={moduleForm.title}
+                onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
+                placeholder="Modulname eingeben"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="module_description">Beschreibung</Label>
+              <Textarea
+                id="module_description"
+                value={moduleForm.description}
+                onChange={(e) => setModuleForm({ ...moduleForm, description: e.target.value })}
+                placeholder="Modulbeschreibung eingeben"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="module_minutes">Geschätzte Dauer (Minuten)</Label>
+              <Input
+                id="module_minutes"
+                type="number"
+                value={moduleForm.estimated_minutes}
+                onChange={(e) => setModuleForm({ ...moduleForm, estimated_minutes: Number(e.target.value) })}
+                min={1}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Veröffentlicht</Label>
+                <p className="text-sm text-muted-foreground">Modul für Benutzer sichtbar machen</p>
+              </div>
+              <Switch
+                checked={moduleForm.is_published}
+                onCheckedChange={(checked) => setModuleForm({ ...moduleForm, is_published: checked })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowModuleDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveModule}>
+              <Save className="h-4 w-4 mr-2" />
+              {editingModule ? "Speichern" : "Erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Badge Dialog */}
+      <Dialog open={showBadgeDialog} onOpenChange={setShowBadgeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingBadge ? "Badge bearbeiten" : "Neues Badge"}</DialogTitle>
+            <DialogDescription>
+              {editingBadge ? "Bearbeiten Sie die Badge-Details" : "Erstellen Sie ein neues Badge"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="badge_name">Name</Label>
+              <Input
+                id="badge_name"
+                value={badgeForm.name}
+                onChange={(e) => setBadgeForm({ ...badgeForm, name: e.target.value })}
+                placeholder="Badge-Name eingeben"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="badge_description">Beschreibung</Label>
+              <Textarea
+                id="badge_description"
+                value={badgeForm.description}
+                onChange={(e) => setBadgeForm({ ...badgeForm, description: e.target.value })}
+                placeholder="Badge-Beschreibung eingeben"
+                rows={2}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Typ</Label>
+                <Select
+                  value={badgeForm.badge_type}
+                  onValueChange={(value) => setBadgeForm({ ...badgeForm, badge_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BADGE_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Seltenheit</Label>
+                <Select
+                  value={badgeForm.rarity}
+                  onValueChange={(value) => setBadgeForm({ ...badgeForm, rarity: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BADGE_RARITIES.map((rarity) => (
+                      <SelectItem key={rarity.value} value={rarity.value}>
+                        {rarity.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Icon</Label>
+                <Select
+                  value={badgeForm.icon_name}
+                  onValueChange={(value) => setBadgeForm({ ...badgeForm, icon_name: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BADGE_ICONS.map((icon) => {
+                      const IconComponent = icon.icon
                       return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() =>
-                            setCourseForm({
-                              ...courseForm,
-                              visibility: option.value as "public" | "logged_in" | "premium",
-                            })
-                          }
-                          className={`p-3 rounded-lg border-2 text-left transition-all ${
-                            isSelected
-                              ? "border-primary bg-primary/10"
-                              : "border-transparent bg-background hover:border-muted-foreground/20"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <Icon className={`h-4 w-4 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
-                            <span className={`font-medium text-sm ${isSelected ? "text-primary" : ""}`}>
-                              {option.label}
-                            </span>
+                        <SelectItem key={icon.value} value={icon.value}>
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="h-4 w-4" />
+                            {icon.label || icon.value}
                           </div>
-                          <p className="text-xs text-muted-foreground">{option.description}</p>
-                        </button>
+                        </SelectItem>
                       )
                     })}
-                  </div>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  {courseForm.visibility === "public" && (
-                    <div className="flex items-center space-x-2 pt-2">
-                      <Switch
-                        id="landing-featured"
-                        checked={courseForm.is_landing_page_featured}
-                        onCheckedChange={(checked) =>
-                          setCourseForm({ ...courseForm, is_landing_page_featured: checked })
-                        }
-                      />
-                      <Label htmlFor="landing-featured" className="text-sm">
-                        Auf Landing Page anzeigen
-                      </Label>
-                    </div>
-                  )}
-
-                  <div className="pt-2">
-                    <Label className="text-sm">Zielgruppe</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {TARGET_AUDIENCE_OPTIONS.map((option) => {
-                        const isSelected = courseForm.target_audience.includes(option.value)
-                        return (
-                          <Badge
-                            key={option.value}
-                            variant={isSelected ? "default" : "outline"}
-                            className="cursor-pointer"
-                            onClick={() => {
-                              if (option.value === "all") {
-                                setCourseForm({ ...courseForm, target_audience: ["all"] })
-                              } else {
-                                const newAudience = isSelected
-                                  ? courseForm.target_audience.filter((a) => a !== option.value)
-                                  : [...courseForm.target_audience.filter((a) => a !== "all"), option.value]
-                                setCourseForm({
-                                  ...courseForm,
-                                  target_audience: newAudience.length === 0 ? ["all"] : newAudience,
-                                })
-                              }
-                            }}
-                          >
-                            {option.label}
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  </div>
+              <div className="grid gap-2">
+                <Label htmlFor="badge_color">Farbe</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="badge_color"
+                    type="color"
+                    value={badgeForm.color}
+                    onChange={(e) => setBadgeForm({ ...badgeForm, color: e.target.value })}
+                    className="w-12 h-10 p-1"
+                  />
+                  <Input
+                    value={badgeForm.color}
+                    onChange={(e) => setBadgeForm({ ...badgeForm, color: e.target.value })}
+                    placeholder="#3b82f6"
+                  />
                 </div>
+              </div>
+            </div>
 
-                <div>
+            <div className="grid gap-2">
+              <Label htmlFor="badge_xp">XP Belohnung</Label>
+              <Input
+                id="badge_xp"
+                type="number"
+                value={badgeForm.xp_reward}
+                onChange={(e) => setBadgeForm({ ...badgeForm, xp_reward: Number(e.target.value) })}
+                min={0}
+                step={25}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Aktiv</Label>
+                <p className="text-sm text-muted-foreground">Badge kann verdient werden</p>
+              </div>
+              <Switch
+                checked={badgeForm.is_active}
+                onCheckedChange={(checked) => setBadgeForm({ ...badgeForm, is_active: checked })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBadgeDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveBadge}>
+              <Save className="h-4 w-4 mr-2" />
+              {editingBadge ? "Speichern" : "Erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Course Dialog */}
+      <Dialog open={showAiCourseDialog} onOpenChange={setShowAiCourseDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Kurs mit KI erstellen
+            </DialogTitle>
+            <DialogDescription>
+              Beschreiben Sie den gewünschten Kurs und lassen Sie die KI ihn generieren
+            </DialogDescription>
+          </DialogHeader>
+
+          {!generatedCourse ? (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="ai_description">Kursbeschreibung</Label>
+                <Textarea
+                  id="ai_description"
+                  value={aiCourseDescription}
+                  onChange={(e) => setAiCourseDescription(e.target.value)}
+                  placeholder="Beschreiben Sie den Kurs, den Sie erstellen möchten. Z.B.: Ein Kurs über effiziente Terminplanung in der Zahnarztpraxis mit Fokus auf digitale Tools..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
                   <Label>Kategorie</Label>
-                  <Select
-                    value={courseForm.category}
-                    onValueChange={(v) => setCourseForm({ ...courseForm, category: v })}
-                  >
+                  <Select value={aiCourseCategory} onValueChange={setAiCourseCategory}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
+                      {CATEGORIES.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+
+                <div className="grid gap-2">
                   <Label>Schwierigkeitsgrad</Label>
-                  <Select
-                    value={courseForm.difficulty_level}
-                    onValueChange={(v) => setCourseForm({ ...courseForm, difficulty_level: v })}
-                  >
+                  <Select value={aiCourseDifficulty} onValueChange={setAiCourseDifficulty}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -1855,601 +2115,108 @@ export function SuperAdminAcademyManager() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div>
-                  <Label>Geschätzte Dauer (Stunden)</Label>
-                  <Input
-                    type="number"
-                    min={0.5}
-                    step={0.5}
-                    value={courseForm.estimated_hours}
-                    onChange={(e) =>
-                      setCourseForm({ ...courseForm, estimated_hours: Number.parseFloat(e.target.value) })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>XP-Belohnung</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={25}
-                    value={courseForm.xp_reward}
-                    onChange={(e) => setCourseForm({ ...courseForm, xp_reward: Number.parseInt(e.target.value) })}
-                  />
-                </div>
-                <Separator className="col-span-2" />
-                <div className="col-span-2">
-                  <Label>Instructor Name</Label>
-                  <Input
-                    value={courseForm.instructor_name}
-                    onChange={(e) => setCourseForm({ ...courseForm, instructor_name: e.target.value })}
-                    placeholder="Name des Dozenten"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Instructor Bio</Label>
-                  <Textarea
-                    value={courseForm.instructor_bio}
-                    onChange={(e) => setCourseForm({ ...courseForm, instructor_bio: e.target.value })}
-                    placeholder="Kurze Biografie des Dozenten..."
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <Label>Thumbnail URL</Label>
-                  <Input
-                    value={courseForm.thumbnail_url}
-                    onChange={(e) => setCourseForm({ ...courseForm, thumbnail_url: e.target.value })}
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <Label>Featured Image URL</Label>
-                  <Input
-                    value={courseForm.featured_image_url}
-                    onChange={(e) => setCourseForm({ ...courseForm, featured_image_url: e.target.value })}
-                    placeholder="https://..."
-                  />
-                </div>
-
-                <Separator className="col-span-2" />
-
-                <div className="col-span-2 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Veröffentlicht</Label>
-                    <p className="text-sm text-muted-foreground">Kurs für Benutzer sichtbar machen</p>
-                  </div>
-                  <Switch
-                    checked={courseForm.is_published}
-                    onCheckedChange={(v) => setCourseForm({ ...courseForm, is_published: v })}
-                  />
-                </div>
-                <div className="col-span-2 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Featured</Label>
-                    <p className="text-sm text-muted-foreground">Kurs auf der Startseite hervorheben</p>
-                  </div>
-                  <Switch
-                    checked={courseForm.is_featured}
-                    onCheckedChange={(v) => setCourseForm({ ...courseForm, is_featured: v })}
-                  />
-                </div>
               </div>
             </div>
-          </ScrollArea>
+          ) : (
+            <div className="py-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{generatedCourse.title}</CardTitle>
+                  <CardDescription>{generatedCourse.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      {getDifficultyBadge(generatedCourse.difficulty_level)}
+                      <Badge variant="outline">
+                        {CATEGORIES.find((c) => c.value === generatedCourse.category)?.label}
+                      </Badge>
+                      <Badge variant="secondary">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {generatedCourse.estimated_hours}h
+                      </Badge>
+                    </div>
+
+                    {generatedCourse.modules && (
+                      <div>
+                        <h4 className="font-medium mb-2">Module ({generatedCourse.modules.length})</h4>
+                        <ScrollArea className="h-[200px]">
+                          <div className="space-y-2">
+                            {generatedCourse.modules.map((module: any, index: number) => (
+                              <div key={index} className="p-2 rounded bg-muted">
+                                <p className="font-medium text-sm">
+                                  {index + 1}. {module.title}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{module.lessons?.length || 0} Lektionen</p>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCourseDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAiCourseDialog(false)
+                setGeneratedCourse(null)
+              }}
+            >
               Abbrechen
             </Button>
-            <Button onClick={handleSaveCourse} disabled={!courseForm.title}>
-              <Save className="h-4 w-4 mr-2" />
-              Speichern
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Module Dialog */}
-      <Dialog open={showModuleDialog} onOpenChange={setShowModuleDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingModule ? "Modul bearbeiten" : "Neues Modul"}</DialogTitle>
-            <DialogDescription>Erstellen Sie ein Modul für den Kurs</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Titel *</Label>
-              <Input
-                value={moduleForm.title}
-                onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
-                placeholder="z.B. Einführung in das Thema"
-              />
-            </div>
-            <div>
-              <Label>Beschreibung</Label>
-              <Textarea
-                value={moduleForm.description}
-                onChange={(e) => setModuleForm({ ...moduleForm, description: e.target.value })}
-                placeholder="Was wird in diesem Modul behandelt?"
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label>Geschätzte Dauer (Minuten)</Label>
-              <Input
-                type="number"
-                min={5}
-                step={5}
-                value={moduleForm.estimated_minutes}
-                onChange={(e) => setModuleForm({ ...moduleForm, estimated_minutes: Number.parseInt(e.target.value) })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Veröffentlicht</Label>
-                <p className="text-sm text-muted-foreground">Modul sichtbar machen</p>
-              </div>
-              <Switch
-                checked={moduleForm.is_published}
-                onCheckedChange={(v) => setModuleForm({ ...moduleForm, is_published: v })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowModuleDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleSaveModule} disabled={!moduleForm.title}>
-              <Save className="h-4 w-4 mr-2" />
-              Speichern
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Lesson Dialog */}
-      <Dialog open={showLessonDialog} onOpenChange={setShowLessonDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingLesson ? "Lektion bearbeiten" : "Neue Lektion"}</DialogTitle>
-            <DialogDescription>Erstellen Sie eine Lektion für das Modul</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-[calc(90vh-10rem)] pr-2">
-            <div className="space-y-4 pr-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label>Titel *</Label>
-                  <Input
-                    value={lessonForm.title}
-                    onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
-                    placeholder="z.B. Was ist Praxismanagement?"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Beschreibung</Label>
-                  <Textarea
-                    value={lessonForm.description}
-                    onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
-                    placeholder="Kurze Beschreibung der Lektion..."
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <Label>Typ</Label>
-                  <Select
-                    value={lessonForm.lesson_type}
-                    onValueChange={(v) => setLessonForm({ ...lessonForm, lesson_type: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="text">Text</SelectItem>
-                      <SelectItem value="interactive">Interaktiv</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Geschätzte Dauer (Min.)</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={lessonForm.estimated_minutes}
-                    onChange={(e) =>
-                      setLessonForm({ ...lessonForm, estimated_minutes: Number.parseInt(e.target.value) })
-                    }
-                  />
-                </div>
-                {lessonForm.lesson_type === "video" && (
+            {!generatedCourse ? (
+              <Button onClick={handleGenerateAiCourse} disabled={aiCourseGenerating}>
+                {aiCourseGenerating ? (
                   <>
-                    <div className="col-span-2">
-                      <Label>Video URL</Label>
-                      <Input
-                        value={lessonForm.video_url}
-                        onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })}
-                        placeholder="https://..."
-                      />
-                    </div>
-                    <div>
-                      <Label>Video Dauer (Sekunden)</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={lessonForm.video_duration_seconds}
-                        onChange={(e) =>
-                          setLessonForm({ ...lessonForm, video_duration_seconds: Number.parseInt(e.target.value) })
-                        }
-                      />
-                    </div>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generiere...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Generieren
                   </>
                 )}
-                <div>
-                  <Label>XP-Belohnung</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={5}
-                    value={lessonForm.xp_reward}
-                    onChange={(e) => setLessonForm({ ...lessonForm, xp_reward: Number.parseInt(e.target.value) })}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Inhalt</Label>
-                  <Textarea
-                    value={lessonForm.content}
-                    onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
-                    placeholder="Lektionsinhalt (Markdown unterstützt)..."
-                    rows={6}
-                  />
-                </div>
-                <div className="col-span-2 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Veröffentlicht</Label>
-                    <p className="text-sm text-muted-foreground">Lektion sichtbar machen</p>
-                  </div>
-                  <Switch
-                    checked={lessonForm.is_published}
-                    onCheckedChange={(v) => setLessonForm({ ...lessonForm, is_published: v })}
-                  />
-                </div>
-                <div className="col-span-2 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Kostenlose Vorschau</Label>
-                    <p className="text-sm text-muted-foreground">Lektion als Vorschau freigeben</p>
-                  </div>
-                  <Switch
-                    checked={lessonForm.is_free_preview}
-                    onCheckedChange={(v) => setLessonForm({ ...lessonForm, is_free_preview: v })}
-                  />
-                </div>
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setGeneratedCourse(null)}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Neu generieren
+                </Button>
+                <Button onClick={handleSaveAiCourse}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Kurs speichern
+                </Button>
               </div>
-            </div>
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowLessonDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleSaveLesson} disabled={!lessonForm.title}>
-              <Save className="h-4 w-4 mr-2" />
-              Speichern
-            </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Badge Dialog */}
-      <Dialog open={showBadgeDialog} onOpenChange={setShowBadgeDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingBadge ? "Badge bearbeiten" : "Neues Badge"}</DialogTitle>
-            <DialogDescription>Erstellen Sie ein Gamification-Badge</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-[calc(90vh-10rem)] pr-2">
-            <div className="space-y-4 pr-2">
-              <div className="flex items-center gap-4">
-                <div
-                  className="h-16 w-16 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: badgeForm.color + "20", color: badgeForm.color }}
-                >
-                  {getBadgeIcon(badgeForm.icon_name)}
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Label>Name *</Label>
-                  <Input
-                    value={badgeForm.name}
-                    onChange={(e) => setBadgeForm({ ...badgeForm, name: e.target.value })}
-                    placeholder="z.B. Schnelllerner"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Beschreibung</Label>
-                <Textarea
-                  value={badgeForm.description}
-                  onChange={(e) => setBadgeForm({ ...badgeForm, description: e.target.value })}
-                  placeholder="Wofür wird dieses Badge verliehen?"
-                  rows={2}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Typ</Label>
-                  <Select
-                    value={badgeForm.badge_type}
-                    onValueChange={(v) => setBadgeForm({ ...badgeForm, badge_type: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BADGE_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Seltenheit</Label>
-                  <Select value={badgeForm.rarity} onValueChange={(v) => setBadgeForm({ ...badgeForm, rarity: v })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BADGE_RARITIES.map((rarity) => (
-                        <SelectItem key={rarity.value} value={rarity.value}>
-                          <span className={rarity.color}>{rarity.label}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Icon</Label>
-                  <Select
-                    value={badgeForm.icon_name}
-                    onValueChange={(v) => setBadgeForm({ ...badgeForm, icon_name: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BADGE_ICONS.map((icon) => (
-                        <SelectItem key={icon.value} value={icon.value}>
-                          <div className="flex items-center gap-2">
-                            <icon.icon className="h-4 w-4" />
-                            {icon.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Farbe</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="color"
-                      value={badgeForm.color}
-                      onChange={(e) => setBadgeForm({ ...badgeForm, color: e.target.value })}
-                      className="w-12 h-9 p-1"
-                    />
-                    <Input
-                      value={badgeForm.color}
-                      onChange={(e) => setBadgeForm({ ...badgeForm, color: e.target.value })}
-                      placeholder="#3b82f6"
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>XP-Belohnung</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={10}
-                    value={badgeForm.xp_reward}
-                    onChange={(e) => setBadgeForm({ ...badgeForm, xp_reward: Number.parseInt(e.target.value) })}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={badgeForm.is_active}
-                    onCheckedChange={(v) => setBadgeForm({ ...badgeForm, is_active: v })}
-                  />
-                  <Label>Aktiv</Label>
-                </div>
-              </div>
-            </div>
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBadgeDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleSaveBadge} disabled={!badgeForm.name}>
-              <Save className="h-4 w-4 mr-2" />
-              Speichern
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Löschen bestätigen</AlertDialogTitle>
+            <AlertDialogTitle>Sind Sie sicher?</AlertDialogTitle>
             <AlertDialogDescription>
               Möchten Sie "{deleteItem?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/80">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={showAiCourseDialog} onOpenChange={setShowAiCourseDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-500" />
-              Kurs mit KI generieren
-            </DialogTitle>
-            <DialogDescription>
-              Beschreiben Sie den gewünschten Kurs und lassen Sie die KI einen vollständigen Kurs mit Modulen und
-              Lektionen erstellen.
-            </DialogDescription>
-          </DialogHeader>
-
-          <ScrollArea className="h-[calc(90vh-10rem)] pr-2">
-            <div className="space-y-6 py-4 pr-2">
-              {!generatedCourse ? (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="ai-course-description">Kursbeschreibung</Label>
-                    <Textarea
-                      id="ai-course-description"
-                      placeholder="Beschreiben Sie den Kurs, den Sie erstellen möchten. z.B. 'Ein Kurs über effektive Patientenkommunikation für MFA, der Themen wie aktives Zuhören, Umgang mit schwierigen Patienten und telefonische Kommunikation abdeckt.'"
-                      value={aiCourseDescription}
-                      onChange={(e) => setAiCourseDescription(e.target.value)}
-                      rows={4}
-                      className="resize-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="ai-course-category">Kategorie</Label>
-                      <Select value={aiCourseCategory} onValueChange={setAiCourseCategory}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
-                              {cat.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="ai-course-difficulty">Schwierigkeitsgrad</Label>
-                      <Select value={aiCourseDifficulty} onValueChange={setAiCourseDifficulty}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DIFFICULTY_LEVELS.map((level) => (
-                            <SelectItem key={level.value} value={level.value}>
-                              {level.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={handleGenerateAiCourse}
-                    disabled={aiCourseGenerating || !aiCourseDescription.trim()}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                  >
-                    {aiCourseGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generiere Kurs...
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="mr-2 h-4 w-4" />
-                        Kurs generieren
-                      </>
-                    )}
-                  </Button>
-                </>
-              ) : (
-                <div className="space-y-6">
-                  <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 p-4 dark:from-purple-950/20 dark:to-pink-950/20">
-                    <h3 className="font-semibold text-lg">{generatedCourse.title}</h3>
-                    <p className="text-muted-foreground mt-1">{generatedCourse.description}</p>
-                    <div className="flex gap-4 mt-3 text-sm">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {generatedCourse.estimated_hours} Stunden
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Award className="h-4 w-4" />
-                        {generatedCourse.xp_reward} XP
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="h-4 w-4" />
-                        {generatedCourse.modules?.length || 0} Module
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Lernziele:</h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      {generatedCourse.learning_objectives?.map((obj: string, i: number) => (
-                        <li key={i}>{obj}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Module & Lektionen:</h4>
-                    {generatedCourse.modules?.map((module: any, i: number) => (
-                      <div key={i} className="rounded-lg border p-3">
-                        <div className="font-medium">
-                          {i + 1}. {module.title}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{module.description}</p>
-                        <div className="mt-2 pl-4 space-y-1">
-                          {module.lessons?.map((lesson: any, j: number) => (
-                            <div key={j} className="text-sm flex items-center gap-2">
-                              <FileText className="h-3 w-3 text-muted-foreground" />
-                              {lesson.title}
-                              <span className="text-muted-foreground">({lesson.estimated_minutes} Min.)</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setGeneratedCourse(null)
-                      }}
-                      className="flex-1"
-                    >
-                      Neu generieren
-                    </Button>
-                    <Button onClick={handleSaveGeneratedCourse} className="flex-1">
-                      <Save className="mr-2 h-4 w-4" />
-                      Kurs speichern
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
-
-export default SuperAdminAcademyManager

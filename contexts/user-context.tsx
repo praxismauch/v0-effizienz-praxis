@@ -2,9 +2,11 @@
 
 import { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import useSWR from "swr"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { isSuperAdminRole, isPracticeAdminRole, normalizeRole } from "@/lib/auth-utils"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 const IS_DEBUG = process.env.NEXT_PUBLIC_VERCEL_ENV !== "production"
 
@@ -74,15 +76,20 @@ const PUBLIC_ROUTES = [
 const PUBLIC_ROUTE_PREFIXES = ["/features/", "/blog/", "/auth/"]
 
 const isPublicRoute = (path: string): boolean => {
-  // Check exact matches
   if (PUBLIC_ROUTES.some((route) => path === route)) return true
-
-  // Check prefix matches for dynamic routes
   for (const prefix of PUBLIC_ROUTE_PREFIXES) {
     if (path.startsWith(prefix)) return true
   }
-
   return false
+}
+
+const USER_SWR_CONFIG = {
+  revalidateOnFocus: false,
+  dedupingInterval: 300,
+  errorRetryCount: 2,
+  shouldRetryOnError: (error: { status?: number }) => {
+    return error?.status !== 401 && error?.status !== 403
+  },
 }
 
 export function UserProvider({
@@ -93,7 +100,6 @@ export function UserProvider({
   initialUser?: User | null
 }) {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    // If we have an initial user from the server, use it
     if (initialUser) {
       if (IS_DEBUG) {
         console.debug("[v0] UserProvider: Using initialUser from server")
@@ -101,7 +107,6 @@ export function UserProvider({
       return initialUser
     }
 
-    // Otherwise fall back to storage (for client-side navigation)
     if (typeof window === "undefined") return null
     try {
       const stored = localStorage.getItem("effizienz_current_user") || sessionStorage.getItem("effizienz_current_user")
@@ -119,43 +124,9 @@ export function UserProvider({
     return null
   })
 
-  const [superAdmins, setSuperAdmins] = useState<User[]>([])
-
-  const [isAuthInitialized, setIsAuthInitialized] = useState(() => {
-    // If we have initialUser from server, we're already initialized
-    if (initialUser) return true
-
-    // If we have a user in storage, we're initialized
-    if (typeof window !== "undefined") {
-      try {
-        const stored =
-          localStorage.getItem("effizienz_current_user") || sessionStorage.getItem("effizienz_current_user")
-        if (stored) return true
-      } catch {
-        // Ignore
-      }
-    }
-    return false
-  })
-
-  const [isLoading, setIsLoading] = useState(() => {
-    if (initialUser) return false
-
-    if (typeof window === "undefined") return true
-    try {
-      const stored = localStorage.getItem("effizienz_current_user") || sessionStorage.getItem("effizienz_current_user")
-      return !stored
-    } catch {
-      return true
-    }
-  })
-
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-
   const router = useRouter()
   const pathname = usePathname()
-
-  const hasAttemptedLoad = useRef(false)
 
   const supabaseRef = useRef<SupabaseClient | null>(null)
   const getSupabase = useCallback(() => {
@@ -165,6 +136,47 @@ export function UserProvider({
     }
     return supabaseRef.current
   }, [])
+
+  const shouldFetchUser = typeof window !== "undefined" && !isPublicRoute(pathname) && !currentUser && !initialUser
+
+  const {
+    data: userData,
+    isLoading: userLoading,
+    mutate: mutateUser,
+  } = useSWR<{ user: User }>(shouldFetchUser ? "/api/user/me" : null, swrFetcher, USER_SWR_CONFIG)
+
+  useEffect(() => {
+    if (userData?.user && !currentUser) {
+      console.log("[v0] UserContext: User loaded via SWR:", userData.user.id)
+      setCurrentUser(userData.user)
+      persistUserToStorage(userData.user)
+    }
+  }, [userData, currentUser])
+
+  const shouldFetchSuperAdmins = currentUser && isSuperAdminRole(currentUser.role)
+
+  const { data: superAdminsData, mutate: mutateSuperAdmins } = useSWR<{ users: any[] }>(
+    shouldFetchSuperAdmins ? "/api/super-admin/users" : null,
+    swrFetcher,
+    { ...USER_SWR_CONFIG, revalidateOnFocus: false },
+  )
+
+  const superAdmins = useMemo(() => {
+    if (!superAdminsData?.users) return []
+    return superAdminsData.users
+      .filter((u: any) => isSuperAdminRole(u.role))
+      .map((u: any) => ({
+        id: u.id,
+        name: u.name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || "Unknown",
+        email: u.email,
+        role: u.role,
+        isActive: u.is_active ?? true,
+        practiceId: u.practice_id?.toString() || null,
+        joinedAt: u.created_at || new Date().toISOString(),
+        avatar: u.avatar,
+        preferred_language: u.preferred_language,
+      }))
+  }, [superAdminsData])
 
   const persistUserToStorage = useCallback((user: User | null) => {
     if (typeof window === "undefined") return
@@ -187,226 +199,7 @@ export function UserProvider({
     }
   }, [])
 
-  const isRateLimitedRef = useRef(false)
-  const rateLimitResetTimeRef = useRef<number>(0)
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    // Skip auth check entirely for public routes
-    if (isPublicRoute(pathname)) {
-      setIsLoading(false)
-      setIsAuthInitialized(true)
-      return
-    }
-
-    if (currentUser) {
-      setIsLoading(false)
-      setIsAuthInitialized(true)
-      return
-    }
-
-    if (hasAttemptedLoad.current) {
-      setIsLoading(false)
-      setIsAuthInitialized(true)
-      return
-    }
-
-    const loadUser = async (retryCount = 0) => {
-      hasAttemptedLoad.current = true
-
-      console.log("[v0] UserContext: Loading user, attempt", retryCount + 1)
-
-      if (isRateLimitedRef.current && Date.now() < rateLimitResetTimeRef.current) {
-        const waitTime = rateLimitResetTimeRef.current - Date.now()
-        console.warn(`[v0] UserContext: Rate limited for ${waitTime}ms`)
-        setTimeout(() => loadUser(retryCount), waitTime)
-        return
-      }
-
-      try {
-        const res = await fetch("/api/user/me", {
-          credentials: "include",
-          cache: "no-store",
-        })
-
-        if (res.status === 429 && retryCount < 3) {
-          isRateLimitedRef.current = true
-          const delay = Math.pow(2, retryCount) * 5000
-          rateLimitResetTimeRef.current = Date.now() + delay
-          console.warn(`[v0] UserContext: Rate limited, retrying in ${delay}ms...`)
-          setTimeout(() => {
-            isRateLimitedRef.current = false
-            loadUser(retryCount + 1)
-          }, delay)
-          return
-        }
-
-        isRateLimitedRef.current = false
-
-        const text = await res.text()
-        let data: any
-
-        try {
-          data = JSON.parse(text)
-        } catch (parseError) {
-          if (text.includes("Too Many") || text.includes("rate")) {
-            if (retryCount < 3) {
-              isRateLimitedRef.current = true
-              const delay = Math.pow(2, retryCount) * 5000
-              rateLimitResetTimeRef.current = Date.now() + delay
-              console.warn(`[v0] UserContext: Rate limited (text), retrying in ${delay}ms...`)
-              setTimeout(() => {
-                isRateLimitedRef.current = false
-                loadUser(retryCount + 1)
-              }, delay)
-              return
-            }
-          }
-          console.error("[v0] UserContext: Failed to parse response:", text.substring(0, 100))
-          setIsLoading(false)
-          setIsAuthInitialized(true)
-          return
-        }
-
-        if (!res.ok) {
-          console.error("[v0] UserContext: API returned error:", res.status, data)
-          if (res.status >= 500 && retryCount < 2) {
-            console.warn(`[v0] UserContext: Server error, retrying in 2s...`)
-            setTimeout(() => loadUser(retryCount + 1), 2000)
-            return
-          }
-          setIsLoading(false)
-          setIsAuthInitialized(true)
-          return
-        }
-
-        if (data.user) {
-          console.log("[v0] UserContext: User loaded successfully:", data.user.id)
-          setCurrentUser(data.user)
-          persistUserToStorage(data.user)
-        } else {
-          console.warn("[v0] UserContext: No user in response")
-        }
-      } catch (e) {
-        console.error("[v0] UserContext: Failed to load current user", e)
-        if (retryCount < 2) {
-          console.warn(`[v0] UserContext: Network error, retrying in 2s...`)
-          setTimeout(() => loadUser(retryCount + 1), 2000)
-          return
-        }
-      } finally {
-        setIsLoading(false)
-        setIsAuthInitialized(true)
-      }
-    }
-
-    loadUser()
-  }, [currentUser, persistUserToStorage, pathname])
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    if (!currentUser) return
-    if (!isSuperAdminRole(currentUser.role)) return
-
-    const loadSuperAdmins = async (retryCount = 0) => {
-      if (isRateLimitedRef.current && Date.now() < rateLimitResetTimeRef.current) {
-        const waitTime = rateLimitResetTimeRef.current - Date.now()
-        console.warn(`[user-context] Skipping superadmin request - rate limited for ${waitTime}ms`)
-        setTimeout(() => loadSuperAdmins(retryCount), waitTime)
-        return
-      }
-
-      try {
-        const res = await fetch("/api/super-admin/users", {
-          credentials: "include",
-          headers: {
-            "Cache-Control": "no-cache",
-          },
-        })
-
-        if (res.status === 429 && retryCount < 3) {
-          isRateLimitedRef.current = true
-          const delay = Math.pow(2, retryCount) * 5000
-          rateLimitResetTimeRef.current = Date.now() + delay
-          console.warn(`[user-context] Rate limited fetching super admins, retrying in ${delay}ms...`)
-          setTimeout(() => {
-            isRateLimitedRef.current = false
-            loadSuperAdmins(retryCount + 1)
-          }, delay)
-          return
-        }
-
-        isRateLimitedRef.current = false
-
-        if (res.status === 401 || res.status === 403) {
-          return
-        }
-
-        if (!res.ok) {
-          console.error(`[user-context] Failed to load super admins: ${res.status}`)
-          return
-        }
-
-        const contentType = res.headers.get("content-type")
-        if (!contentType || !contentType.includes("application/json")) {
-          console.error("[user-context] Non-JSON response from super-admin/users")
-          return
-        }
-
-        const text = await res.text()
-        let data: any
-        try {
-          data = JSON.parse(text)
-        } catch (parseError) {
-          if (text.includes("Too Many") && retryCount < 3) {
-            isRateLimitedRef.current = true
-            const delay = Math.pow(2, retryCount) * 5000
-            rateLimitResetTimeRef.current = Date.now() + delay
-            console.warn(`[v0] Rate limited (text response), retrying in ${delay}ms...`)
-            setTimeout(() => {
-              isRateLimitedRef.current = false
-              loadSuperAdmins(retryCount + 1)
-            }, delay)
-            return
-          }
-          console.error("[v0] Error parsing super admins response:", parseError)
-          return
-        }
-
-        if (data.users && Array.isArray(data.users)) {
-          const superAdminUsers = data.users
-            .filter((u: any) => isSuperAdminRole(u.role))
-            .map((u: any) => ({
-              id: u.id,
-              name: u.name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || "Unknown",
-              email: u.email,
-              role: u.role,
-              isActive: u.is_active ?? true,
-              practiceId: u.practice_id?.toString() || null,
-              joinedAt: u.created_at || new Date().toISOString(),
-              avatar: u.avatar,
-              preferred_language: u.preferred_language,
-            }))
-          setSuperAdmins(superAdminUsers)
-        }
-      } catch (e: any) {
-        const isNetworkError = e?.message === "Failed to fetch" || e?.name === "TypeError"
-        if (isNetworkError && retryCount < 3) {
-          const delay = Math.pow(2, retryCount) * 1000
-          console.warn(`[user-context] Network error loading super admins, retrying in ${delay}ms...`)
-          setTimeout(() => loadSuperAdmins(retryCount + 1), delay)
-          return
-        }
-        if (retryCount >= 3 || !isNetworkError) {
-          console.error("[user-context] Failed to load super admins", e)
-        }
-      }
-    }
-
-    const timeoutId = setTimeout(() => loadSuperAdmins(), 500)
-    return () => clearTimeout(timeoutId)
-  }, [currentUser])
+  const isLoading = shouldFetchUser ? userLoading : false
 
   useEffect(() => {
     if (currentUser) {
@@ -414,10 +207,9 @@ export function UserProvider({
     }
   }, [currentUser, persistUserToStorage])
 
+  // Navigation effect - redirect logic
   useEffect(() => {
-    if (!isAuthInitialized || isLoading) {
-      return
-    }
+    if (isLoading || userLoading) return
 
     const isPublic = isPublicRoute(pathname)
 
@@ -426,75 +218,88 @@ export function UserProvider({
       return
     }
 
-    if (!isPublic && !currentUser) {
+    if (!isPublic && !currentUser && !shouldFetchUser) {
       router.push("/auth/login")
     }
-  }, [currentUser, isAuthInitialized, isLoading, pathname, router])
+  }, [currentUser, isLoading, userLoading, pathname, router, shouldFetchUser])
 
   const normalizedRole = useMemo(() => {
     const role = currentUser?.role
     return normalizeRole(role)
   }, [currentUser?.role])
 
-  const createSuperAdmin = useCallback(async (userData: Omit<User, "id" | "joinedAt">) => {
-    try {
-      const res = await fetch("/api/super-admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          email: userData.email,
-          password: "ChangeMe123!",
-          name: userData.name,
-          practiceId: userData.practiceId || null,
-          preferred_language: userData.preferred_language || "de",
-        }),
-      })
+  const createSuperAdmin = useCallback(
+    async (userData: Omit<User, "id" | "joinedAt">) => {
+      try {
+        const res = await fetch("/api/super-admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            email: userData.email,
+            password: "ChangeMe123!",
+            name: userData.name,
+            practiceId: userData.practiceId || null,
+            preferred_language: userData.preferred_language || "de",
+          }),
+        })
 
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || "Failed to create super admin")
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.error || "Failed to create super admin")
+        }
+
+        // Revalidate SWR cache
+        await mutateSuperAdmins()
+      } catch (error) {
+        console.error("Error creating super admin:", error)
+        throw error
       }
+    },
+    [mutateSuperAdmins],
+  )
 
-      const data = await res.json()
-      if (data.user) {
-        setSuperAdmins((prev) => [...prev, data.user])
+  const updateSuperAdmin = useCallback(
+    async (id: string, userData: Partial<User>) => {
+      // Optimistic update
+      const optimisticData = superAdminsData
+        ? {
+            users: superAdminsData.users.map((admin: any) => (admin.id === id ? { ...admin, ...userData } : admin)),
+          }
+        : undefined
+
+      try {
+        await mutateSuperAdmins(
+          async () => {
+            const res = await fetch(`/api/super-admin/users/${id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                name: userData.name,
+                email: userData.email,
+                isActive: userData.isActive,
+                practiceId: userData.practiceId,
+                preferred_language: userData.preferred_language,
+              }),
+            })
+
+            if (!res.ok) {
+              const error = await res.json()
+              throw new Error(error.error || "Failed to update super admin")
+            }
+
+            return superAdminsData
+          },
+          { optimisticData, rollbackOnError: true },
+        )
+      } catch (error) {
+        console.error("Error updating super admin:", error)
+        throw error
       }
-    } catch (error) {
-      console.error("Error creating super admin:", error)
-      throw error
-    }
-  }, [])
-
-  const updateSuperAdmin = useCallback(async (id: string, userData: Partial<User>) => {
-    try {
-      const res = await fetch(`/api/super-admin/users/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          name: userData.name,
-          email: userData.email,
-          isActive: userData.isActive,
-          practiceId: userData.practiceId,
-          preferred_language: userData.preferred_language,
-        }),
-      })
-
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || "Failed to update super admin")
-      }
-
-      const data = await res.json()
-      if (data.user) {
-        setSuperAdmins((prev) => prev.map((admin) => (admin.id === id ? { ...admin, ...data.user } : admin)))
-      }
-    } catch (error) {
-      console.error("Error updating super admin:", error)
-      throw error
-    }
-  }, [])
+    },
+    [mutateSuperAdmins, superAdminsData],
+  )
 
   const deleteSuperAdmin = useCallback(
     async (id: string) => {
@@ -506,52 +311,76 @@ export function UserProvider({
         return { success: false, error: "Cannot delete the last super admin. At least one super admin must remain." }
       }
 
+      // Optimistic update
+      const optimisticData = superAdminsData
+        ? {
+            users: superAdminsData.users.filter((admin: any) => admin.id !== id),
+          }
+        : undefined
+
       try {
-        const res = await fetch(`/api/super-admin/users/${id}`, {
-          method: "DELETE",
-          credentials: "include",
-        })
+        await mutateSuperAdmins(
+          async () => {
+            const res = await fetch(`/api/super-admin/users/${id}`, {
+              method: "DELETE",
+              credentials: "include",
+            })
 
-        if (!res.ok) {
-          const error = await res.json()
-          return { success: false, error: error.error || "Failed to delete super admin" }
-        }
+            if (!res.ok) {
+              const error = await res.json()
+              throw new Error(error.error || "Failed to delete super admin")
+            }
 
-        setSuperAdmins((prev) => prev.filter((admin) => admin.id !== id))
+            return optimisticData
+          },
+          { optimisticData, rollbackOnError: true },
+        )
         return { success: true }
       } catch (error) {
         console.error("Error deleting super admin:", error)
         return { success: false, error: "Failed to delete super admin. Please try again." }
       }
     },
-    [currentUser?.id, superAdmins.length],
+    [currentUser?.id, superAdmins.length, mutateSuperAdmins, superAdminsData],
   )
 
   const toggleSuperAdminStatus = useCallback(
     async (id: string) => {
+      const admin = superAdmins.find((a) => a.id === id)
+      if (!admin) return
+
+      // Optimistic update
+      const optimisticData = superAdminsData
+        ? {
+            users: superAdminsData.users.map((a: any) => (a.id === id ? { ...a, is_active: !a.is_active } : a)),
+          }
+        : undefined
+
       try {
-        const admin = superAdmins.find((a) => a.id === id)
-        if (!admin) return
+        await mutateSuperAdmins(
+          async () => {
+            const res = await fetch(`/api/super-admin/users/${id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                isActive: !admin.isActive,
+              }),
+            })
 
-        const res = await fetch(`/api/super-admin/users/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            isActive: !admin.isActive,
-          }),
-        })
+            if (!res.ok) {
+              throw new Error("Failed to toggle status")
+            }
 
-        if (!res.ok) {
-          throw new Error("Failed to toggle status")
-        }
-
-        setSuperAdmins((prev) => prev.map((a) => (a.id === id ? { ...a, isActive: !a.isActive } : a)))
+            return optimisticData
+          },
+          { optimisticData, rollbackOnError: true },
+        )
       } catch (error) {
         console.error("Error toggling super admin status:", error)
       }
     },
-    [superAdmins],
+    [superAdmins, mutateSuperAdmins, superAdminsData],
   )
 
   const signOut = useCallback(async () => {
@@ -562,9 +391,6 @@ export function UserProvider({
     try {
       persistUserToStorage(null)
       setCurrentUser(null)
-      setSuperAdmins([])
-
-      hasAttemptedLoad.current = false
 
       const supabase = getSupabase()
       if (supabase) {
@@ -581,11 +407,14 @@ export function UserProvider({
       if (!response.ok) {
         console.error("[user-context] Logout API returned error:", response.status)
       }
+
+      // Clear SWR caches
+      mutateUser(undefined, { revalidate: false })
+      mutateSuperAdmins(undefined, { revalidate: false })
     } catch (error) {
       console.error("[user-context] Logout error:", error)
     } finally {
       setIsLoggingOut(false)
-      setIsAuthInitialized(false)
 
       if (typeof window !== "undefined") {
         try {
@@ -603,7 +432,7 @@ export function UserProvider({
         window.location.replace("/auth/login")
       }
     }
-  }, [persistUserToStorage, isLoggingOut, getSupabase])
+  }, [persistUserToStorage, isLoggingOut, getSupabase, mutateUser, mutateSuperAdmins])
 
   const contextValue = useMemo(
     () => ({
@@ -634,6 +463,7 @@ export function UserProvider({
     ],
   )
 
+  // Auth state change listener
   useEffect(() => {
     const supabase = getSupabase()
     if (!supabase) return
@@ -644,78 +474,21 @@ export function UserProvider({
       if (event === "SIGNED_OUT") {
         persistUserToStorage(null)
         setCurrentUser(null)
-        setIsAuthInitialized(true)
+        mutateUser(undefined, { revalidate: false })
 
         if (!isPublicRoute(pathname)) {
           router.push("/auth/login")
         }
       } else if (event === "SIGNED_IN" && session?.user) {
-        const fetchUserWithRetry = async (retryCount = 0) => {
-          if (isRateLimitedRef.current && Date.now() < rateLimitResetTimeRef.current) {
-            const waitTime = rateLimitResetTimeRef.current - Date.now()
-            console.warn(`[user-context] Skipping sign-in fetch - rate limited for ${waitTime}ms`)
-            setTimeout(() => fetchUserWithRetry(retryCount), waitTime)
-            return
-          }
-
-          try {
-            const res = await fetch("/api/user/me", {
-              credentials: "include",
-              cache: "no-store",
-            })
-
-            if (res.status === 429 && retryCount < 3) {
-              isRateLimitedRef.current = true
-              const delay = Math.pow(2, retryCount) * 5000
-              rateLimitResetTimeRef.current = Date.now() + delay
-              console.warn(`[user-context] Rate limited on sign in, retrying in ${delay}ms...`)
-              setTimeout(() => {
-                isRateLimitedRef.current = false
-                fetchUserWithRetry(retryCount + 1)
-              }, delay)
-              return
-            }
-
-            isRateLimitedRef.current = false
-
-            const text = await res.text()
-
-            let data: any
-            try {
-              data = JSON.parse(text)
-            } catch (parseError) {
-              if (text.includes("Too Many") && retryCount < 3) {
-                isRateLimitedRef.current = true
-                const delay = Math.pow(2, retryCount) * 5000
-                rateLimitResetTimeRef.current = Date.now() + delay
-                console.warn(`[v0] Rate limited (text), retrying in ${delay}ms...`)
-                setTimeout(() => {
-                  isRateLimitedRef.current = false
-                  fetchUserWithRetry(retryCount + 1)
-                }, delay)
-                return
-              }
-              return
-            }
-
-            if (res.ok && data.user) {
-              setCurrentUser(data.user)
-              persistUserToStorage(data.user)
-              setIsAuthInitialized(true)
-            }
-          } catch (e) {
-            console.error("Failed to fetch user profile after sign in:", e)
-          }
-        }
-
-        fetchUserWithRetry()
+        // Revalidate user data via SWR
+        mutateUser()
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [pathname, router, getSupabase, persistUserToStorage])
+  }, [pathname, router, getSupabase, persistUserToStorage, mutateUser])
 
   return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
 }

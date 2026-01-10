@@ -1,9 +1,7 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from "react"
-import useSWR from "swr"
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from "react"
 import { useUser } from "./user-context"
-import { swrFetcher } from "@/lib/swr-fetcher"
 
 export interface Practice {
   id: string
@@ -43,55 +41,69 @@ interface PracticeContextType {
 
 const PracticeContext = createContext<PracticeContextType | undefined>(undefined)
 
-const PRACTICE_SWR_CONFIG = {
-  revalidateOnFocus: false,
-  dedupingInterval: 300,
-  errorRetryCount: 2,
-}
-
 export function PracticeProvider({ children }: { children: ReactNode }) {
+  const [practices, setPractices] = useState<Practice[]>([])
   const [currentPractice, setCurrentPracticeState] = useState<Practice | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [initialized, setInitialized] = useState(false)
+  const hasFetched = useRef(false)
 
   const { isSuperAdmin, currentUser, loading: userLoading } = useUser()
 
-  const shouldFetch = !!currentUser?.id
-
-  const {
-    data: practicesData,
-    isLoading: practicesLoading,
-    mutate: mutatePractices,
-  } = useSWR<{ practices: Practice[] }>(shouldFetch ? "/api/practices" : null, swrFetcher, PRACTICE_SWR_CONFIG)
-
-  const practices = useMemo(() => {
-    if (practicesData?.practices) {
-      return practicesData.practices
+  useEffect(() => {
+    if (userLoading) return
+    if (!currentUser?.id) {
+      setIsLoading(false)
+      return
     }
-    // Fallback if user has practice_id but no practices loaded
-    if (currentUser?.practice_id && !practicesData) {
-      return [
-        {
-          id: currentUser.practice_id,
-          name: "Ihre Praxis",
-          type: "General Practice",
-          street: "",
-          city: "",
-          zipCode: "",
-          phone: "",
-          email: currentUser.email || "",
-          createdAt: new Date().toISOString().split("T")[0],
-          isActive: true,
-          adminCount: 1,
-          memberCount: 0,
-          lastActivity: new Date().toISOString(),
-          color: "",
-        },
-      ]
-    }
-    return []
-  }, [practicesData, currentUser])
+    if (hasFetched.current) return
 
-  const isLoading = shouldFetch ? practicesLoading : userLoading
+    const fetchPractices = async () => {
+      hasFetched.current = true
+      setIsLoading(true)
+
+      try {
+        const response = await fetch("/api/practices", {
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.practices) {
+            setPractices(data.practices)
+          }
+        } else {
+          // Fallback practice if user has practice_id
+          if (currentUser?.practice_id) {
+            setPractices([
+              {
+                id: currentUser.practice_id,
+                name: "Ihre Praxis",
+                type: "General Practice",
+                street: "",
+                city: "",
+                zipCode: "",
+                phone: "",
+                email: currentUser.email || "",
+                createdAt: new Date().toISOString().split("T")[0],
+                isActive: true,
+                adminCount: 1,
+                memberCount: 0,
+                lastActivity: new Date().toISOString(),
+                color: "",
+              },
+            ])
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching practices:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPractices()
+  }, [currentUser, userLoading])
 
   const setCurrentPractice = useCallback((practice: Practice) => {
     setCurrentPracticeState(practice)
@@ -100,6 +112,7 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Initialize current practice selection
   useEffect(() => {
     if (isLoading || !practices.length || initialized) {
       return
@@ -158,127 +171,95 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
 
   const addPractice = useCallback(
     async (practiceData: Omit<Practice, "id" | "createdAt" | "adminCount" | "memberCount" | "lastActivity">) => {
-      const tempPractice: Practice = {
-        ...practiceData,
-        id: `temp-${Date.now()}`,
-        createdAt: new Date().toISOString().split("T")[0],
-        adminCount: 0,
-        memberCount: 0,
-        lastActivity: new Date().toISOString(),
-        color: "",
-      }
-
-      // Optimistic update
-      const optimisticData = { practices: [...practices, tempPractice] }
-
       try {
-        const result = await mutatePractices(
-          async () => {
-            const response = await fetch("/api/practices", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(practiceData),
-            })
+        const response = await fetch("/api/practices", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(practiceData),
+        })
 
-            if (!response.ok) {
-              throw new Error("Failed to create practice")
-            }
+        if (!response.ok) {
+          throw new Error("Failed to create practice")
+        }
 
-            const data = await response.json()
-            return { practices: [...practices, data.practice] }
-          },
-          { optimisticData, rollbackOnError: true },
-        )
+        const data = await response.json()
+        const newPractice = data.practice
 
-        return (
-          result?.practices?.find(
-            (p: Practice) => p.id !== tempPractice.id && !practices.find((ep) => ep.id === p.id),
-          ) || tempPractice
-        )
+        setPractices((prev) => [...prev, newPractice])
+        return newPractice
       } catch (error) {
         console.error("Error creating practice:", error)
         throw error
       }
     },
-    [practices, mutatePractices],
+    [],
   )
 
   const updatePractice = useCallback(
     async (id: string, updates: Partial<Practice>) => {
-      // Optimistic update
-      const optimisticData = {
-        practices: practices.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      // Update local state immediately
+      setPractices((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
+
+      if (currentPractice?.id === id) {
+        setCurrentPracticeState((prev) => (prev ? { ...prev, ...updates } : null))
       }
 
       try {
-        await mutatePractices(
-          async () => {
-            const apiUpdates: any = { ...updates }
-            const isActiveUpdate = apiUpdates.isActive
-            delete apiUpdates.isActive
+        const apiUpdates: any = { ...updates }
+        const isActiveUpdate = apiUpdates.isActive
+        delete apiUpdates.isActive
 
-            const validFields = [
-              "name",
-              "type",
-              "address",
-              "phone",
-              "email",
-              "website",
-              "logo_url",
-              "timezone",
-              "currency",
-              "settings",
-              "color",
-            ]
+        const validFields = [
+          "name",
+          "type",
+          "address",
+          "phone",
+          "email",
+          "website",
+          "logo_url",
+          "timezone",
+          "currency",
+          "settings",
+          "color",
+        ]
 
-            Object.keys(apiUpdates).forEach((key) => {
-              if (!validFields.includes(key) && key !== "street" && key !== "city" && key !== "zipCode") {
-                delete apiUpdates[key]
-              }
-            })
+        Object.keys(apiUpdates).forEach((key) => {
+          if (!validFields.includes(key) && key !== "street" && key !== "city" && key !== "zipCode") {
+            delete apiUpdates[key]
+          }
+        })
 
-            if (updates.street !== undefined || updates.city !== undefined || updates.zipCode !== undefined) {
-              const street = updates.street || ""
-              const city = updates.city || ""
-              const zipCode = updates.zipCode || ""
-              apiUpdates.address = [street, city, zipCode].filter(Boolean).join(", ")
-              delete apiUpdates.street
-              delete apiUpdates.city
-              delete apiUpdates.zipCode
-            }
+        if (updates.street !== undefined || updates.city !== undefined || updates.zipCode !== undefined) {
+          const street = updates.street || ""
+          const city = updates.city || ""
+          const zipCode = updates.zipCode || ""
+          apiUpdates.address = [street, city, zipCode].filter(Boolean).join(", ")
+          delete apiUpdates.street
+          delete apiUpdates.city
+          delete apiUpdates.zipCode
+        }
 
-            if (isActiveUpdate !== undefined) {
-              apiUpdates.isActive = isActiveUpdate
-            }
+        if (isActiveUpdate !== undefined) {
+          apiUpdates.isActive = isActiveUpdate
+        }
 
-            const response = await fetch(`/api/practices/${id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(apiUpdates),
-            })
+        const response = await fetch(`/api/practices/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(apiUpdates),
+        })
 
-            if (!response.ok) {
-              throw new Error("Failed to update practice")
-            }
-
-            const data = await response.json()
-            return {
-              practices: practices.map((p) => (p.id === id ? { ...p, ...data.practice } : p)),
-            }
-          },
-          { optimisticData, rollbackOnError: true },
-        )
-
-        // Update current practice if it was the one updated
-        if (currentPractice?.id === id) {
-          setCurrentPracticeState((prev) => (prev ? { ...prev, ...updates } : null))
+        if (!response.ok) {
+          throw new Error("Failed to update practice")
         }
       } catch (error) {
         console.error("Error updating practice:", error)
+        // Revert on error
+        hasFetched.current = false
         throw error
       }
     },
-    [practices, mutatePractices, currentPractice],
+    [currentPractice],
   )
 
   const deletePractice = useCallback(
@@ -287,39 +268,32 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
         throw new Error("Ungültige Praxis-ID. Diese Praxis kann nicht gelöscht werden.")
       }
 
-      // Optimistic update
       const filteredPractices = practices.filter((p) => p.id !== id)
-      const optimisticData = { practices: filteredPractices }
+      setPractices(filteredPractices)
+
+      if (typeof window !== "undefined" && currentPractice?.id === id) {
+        localStorage.removeItem("selectedPracticeId")
+        const newCurrent = filteredPractices.length > 0 ? filteredPractices[0] : null
+        setCurrentPracticeState(newCurrent)
+      }
 
       try {
-        await mutatePractices(
-          async () => {
-            const response = await fetch(`/api/practices/${id}`, {
-              method: "DELETE",
-            })
+        const response = await fetch(`/api/practices/${id}`, {
+          method: "DELETE",
+        })
 
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}))
-              throw new Error(errorData.message || "Failed to delete practice")
-            }
-
-            return optimisticData
-          },
-          { optimisticData, rollbackOnError: true },
-        )
-
-        // Clear localStorage if this was the selected practice
-        if (typeof window !== "undefined" && currentPractice?.id === id) {
-          localStorage.removeItem("selectedPracticeId")
-          const newCurrent = filteredPractices.length > 0 ? filteredPractices[0] : null
-          setCurrentPracticeState(newCurrent)
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.message || "Failed to delete practice")
         }
       } catch (error) {
         console.error("Error deleting practice:", error)
+        // Revert on error
+        hasFetched.current = false
         throw error
       }
     },
-    [practices, mutatePractices, currentPractice],
+    [practices, currentPractice],
   )
 
   const getAllPracticesForSuperAdmin = useCallback(() => {

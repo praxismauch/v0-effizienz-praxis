@@ -2,11 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import useSWR from "swr"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { isSuperAdminRole, isPracticeAdminRole, normalizeRole } from "@/lib/auth-utils"
-import { swrFetcher } from "@/lib/swr-fetcher"
 
 const IS_DEBUG = process.env.NEXT_PUBLIC_VERCEL_ENV !== "production"
 
@@ -44,7 +42,6 @@ export const UserContext = createContext<UserContextType | undefined>(undefined)
 
 const PUBLIC_ROUTES = [
   "/",
-  // Auth routes
   "/auth/login",
   "/auth/register",
   "/auth/sign-up",
@@ -52,7 +49,6 @@ const PUBLIC_ROUTES = [
   "/auth/callback",
   "/auth/pending-approval",
   "/auth/sign-up-success",
-  // Landing pages
   "/features",
   "/effizienz",
   "/about",
@@ -65,7 +61,6 @@ const PUBLIC_ROUTES = [
   "/careers",
   "/karriere",
   "/ueber-uns",
-  // Legal pages
   "/impressum",
   "/datenschutz",
   "/agb",
@@ -83,15 +78,6 @@ const isPublicRoute = (path: string): boolean => {
   return false
 }
 
-const USER_SWR_CONFIG = {
-  revalidateOnFocus: false,
-  dedupingInterval: 300,
-  errorRetryCount: 2,
-  shouldRetryOnError: (error: { status?: number }) => {
-    return error?.status !== 401 && error?.status !== 403
-  },
-}
-
 export function UserProvider({
   children,
   initialUser,
@@ -102,7 +88,7 @@ export function UserProvider({
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (initialUser) {
       if (IS_DEBUG) {
-        console.debug("[v0] UserProvider: Using initialUser from server")
+        console.debug("[UserProvider] Using initialUser from server")
       }
       return initialUser
     }
@@ -112,21 +98,26 @@ export function UserProvider({
       const stored = localStorage.getItem("effizienz_current_user") || sessionStorage.getItem("effizienz_current_user")
       if (stored) {
         if (IS_DEBUG) {
-          console.debug("[v0] UserProvider: Using stored user from localStorage/sessionStorage")
+          console.debug("[UserProvider] Using stored user from localStorage/sessionStorage")
         }
         return JSON.parse(stored) as User
       }
     } catch (e) {
       if (IS_DEBUG) {
-        console.debug("[v0] UserProvider: Error parsing stored user:", e)
+        console.debug("[UserProvider] Error parsing stored user:", e)
       }
     }
     return null
   })
 
+  const [loading, setLoading] = useState(!initialUser && !currentUser)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [superAdmins, setSuperAdmins] = useState<User[]>([])
+
   const router = useRouter()
   const pathname = usePathname()
+  const hasFetchedUser = useRef(false)
+  const hasFetchedSuperAdmins = useRef(false)
 
   const supabaseRef = useRef<SupabaseClient | null>(null)
   const getSupabase = useCallback(() => {
@@ -136,47 +127,6 @@ export function UserProvider({
     }
     return supabaseRef.current
   }, [])
-
-  const shouldFetchUser = typeof window !== "undefined" && !isPublicRoute(pathname) && !currentUser && !initialUser
-
-  const {
-    data: userData,
-    isLoading: userLoading,
-    mutate: mutateUser,
-  } = useSWR<{ user: User }>(shouldFetchUser ? "/api/user/me" : null, swrFetcher, USER_SWR_CONFIG)
-
-  useEffect(() => {
-    if (userData?.user && !currentUser) {
-      console.log("[v0] UserContext: User loaded via SWR:", userData.user.id)
-      setCurrentUser(userData.user)
-      persistUserToStorage(userData.user)
-    }
-  }, [userData, currentUser])
-
-  const shouldFetchSuperAdmins = currentUser && isSuperAdminRole(currentUser.role)
-
-  const { data: superAdminsData, mutate: mutateSuperAdmins } = useSWR<{ users: any[] }>(
-    shouldFetchSuperAdmins ? "/api/super-admin/users" : null,
-    swrFetcher,
-    { ...USER_SWR_CONFIG, revalidateOnFocus: false },
-  )
-
-  const superAdmins = useMemo(() => {
-    if (!superAdminsData?.users) return []
-    return superAdminsData.users
-      .filter((u: any) => isSuperAdminRole(u.role))
-      .map((u: any) => ({
-        id: u.id,
-        name: u.name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || "Unknown",
-        email: u.email,
-        role: u.role,
-        isActive: u.is_active ?? true,
-        practiceId: u.practice_id?.toString() || null,
-        joinedAt: u.created_at || new Date().toISOString(),
-        avatar: u.avatar,
-        preferred_language: u.preferred_language,
-      }))
-  }, [superAdminsData])
 
   const persistUserToStorage = useCallback((user: User | null) => {
     if (typeof window === "undefined") return
@@ -199,7 +149,90 @@ export function UserProvider({
     }
   }, [])
 
-  const isLoading = shouldFetchUser ? userLoading : false
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (hasFetchedUser.current) return
+    if (currentUser || initialUser) {
+      setLoading(false)
+      return
+    }
+    if (isPublicRoute(pathname)) {
+      setLoading(false)
+      return
+    }
+
+    const fetchUser = async () => {
+      hasFetchedUser.current = true
+      setLoading(true)
+
+      try {
+        const response = await fetch("/api/user/me", {
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.user) {
+            setCurrentUser(data.user)
+            persistUserToStorage(data.user)
+          }
+        } else if (response.status === 401) {
+          // Not authenticated - redirect to login
+          if (!isPublicRoute(pathname)) {
+            router.push("/auth/login")
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUser()
+  }, [pathname, currentUser, initialUser, router, persistUserToStorage])
+
+  useEffect(() => {
+    if (!currentUser) return
+    if (!isSuperAdminRole(currentUser.role)) return
+    if (hasFetchedSuperAdmins.current) return
+
+    const fetchSuperAdmins = async () => {
+      hasFetchedSuperAdmins.current = true
+
+      try {
+        const response = await fetch("/api/super-admin/users", {
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.users) {
+            const admins = data.users
+              .filter((u: any) => isSuperAdminRole(u.role))
+              .map((u: any) => ({
+                id: u.id,
+                name: u.name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || "Unknown",
+                email: u.email,
+                role: u.role,
+                isActive: u.is_active ?? true,
+                practiceId: u.practice_id?.toString() || null,
+                joinedAt: u.created_at || new Date().toISOString(),
+                avatar: u.avatar,
+                preferred_language: u.preferred_language,
+              }))
+            setSuperAdmins(admins)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching super admins:", error)
+      }
+    }
+
+    // Small delay to not block initial render
+    const timer = setTimeout(fetchSuperAdmins, 100)
+    return () => clearTimeout(timer)
+  }, [currentUser])
 
   useEffect(() => {
     if (currentUser) {
@@ -209,7 +242,7 @@ export function UserProvider({
 
   // Navigation effect - redirect logic
   useEffect(() => {
-    if (isLoading || userLoading) return
+    if (loading) return
 
     const isPublic = isPublicRoute(pathname)
 
@@ -218,229 +251,149 @@ export function UserProvider({
       return
     }
 
-    if (!isPublic && !currentUser && !shouldFetchUser) {
+    if (!isPublic && !currentUser && !loading) {
       router.push("/auth/login")
     }
-  }, [currentUser, isLoading, userLoading, pathname, router, shouldFetchUser])
+  }, [currentUser, loading, pathname, router])
 
   const normalizedRole = useMemo(() => {
     const role = currentUser?.role
     return normalizeRole(role)
   }, [currentUser?.role])
 
-  const createSuperAdmin = useCallback(
-    async (userData: Omit<User, "id" | "joinedAt">) => {
-      try {
-        const res = await fetch("/api/super-admin/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            email: userData.email,
-            password: "ChangeMe123!",
-            name: userData.name,
-            practiceId: userData.practiceId || null,
-            preferred_language: userData.preferred_language || "de",
-          }),
-        })
+  const createSuperAdmin = useCallback(async (userData: Omit<User, "id" | "joinedAt">) => {
+    try {
+      const res = await fetch("/api/super-admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: userData.email,
+          password: "ChangeMe123!",
+          name: userData.name,
+          practiceId: userData.practiceId || null,
+          preferred_language: userData.preferred_language || "de",
+        }),
+      })
 
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.error || "Failed to create super admin")
-        }
-
-        // Revalidate SWR cache
-        await mutateSuperAdmins()
-      } catch (error) {
-        console.error("Error creating super admin:", error)
-        throw error
-      }
-    },
-    [mutateSuperAdmins],
-  )
-
-  const updateSuperAdmin = useCallback(
-    async (id: string, userData: Partial<User>) => {
-      // Optimistic update
-      const optimisticData = superAdminsData
-        ? {
-            users: superAdminsData.users.map((admin: any) => (admin.id === id ? { ...admin, ...userData } : admin)),
-          }
-        : undefined
-
-      try {
-        await mutateSuperAdmins(
-          async () => {
-            const res = await fetch(`/api/super-admin/users/${id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                name: userData.name,
-                email: userData.email,
-                isActive: userData.isActive,
-                practiceId: userData.practiceId,
-                preferred_language: userData.preferred_language,
-              }),
-            })
-
-            if (!res.ok) {
-              const error = await res.json()
-              throw new Error(error.error || "Failed to update super admin")
-            }
-
-            return superAdminsData
-          },
-          { optimisticData, rollbackOnError: true },
-        )
-      } catch (error) {
-        console.error("Error updating super admin:", error)
-        throw error
-      }
-    },
-    [mutateSuperAdmins, superAdminsData],
-  )
-
-  const deleteSuperAdmin = useCallback(
-    async (id: string) => {
-      if (currentUser?.id === id) {
-        return { success: false, error: "Cannot delete the currently logged in super admin" }
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Failed to create super admin")
       }
 
-      if (superAdmins.length <= 1) {
-        return { success: false, error: "Cannot delete the last super admin. At least one super admin must remain." }
+      const data = await res.json()
+      const newAdmin: User = {
+        id: data.user?.id || `temp-${Date.now()}`,
+        name: userData.name,
+        email: userData.email,
+        role: "superadmin",
+        isActive: true,
+        practiceId: userData.practiceId || null,
+        joinedAt: new Date().toISOString(),
+        preferred_language: userData.preferred_language,
       }
+      setSuperAdmins((prev) => [...prev, newAdmin])
+    } catch (error) {
+      console.error("Error creating super admin:", error)
+      throw error
+    }
+  }, [])
 
-      // Optimistic update
-      const optimisticData = superAdminsData
-        ? {
-            users: superAdminsData.users.filter((admin: any) => admin.id !== id),
-          }
-        : undefined
+  const updateSuperAdmin = useCallback(async (id: string, userData: Partial<User>) => {
+    // Update local state immediately
+    setSuperAdmins((prev) => prev.map((admin) => (admin.id === id ? { ...admin, ...userData } : admin)))
 
-      try {
-        await mutateSuperAdmins(
-          async () => {
-            const res = await fetch(`/api/super-admin/users/${id}`, {
-              method: "DELETE",
-              credentials: "include",
-            })
+    try {
+      const res = await fetch(`/api/super-admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          isActive: userData.isActive,
+          practiceId: userData.practiceId,
+          preferred_language: userData.preferred_language,
+        }),
+      })
 
-            if (!res.ok) {
-              const error = await res.json()
-              throw new Error(error.error || "Failed to delete super admin")
-            }
-
-            return optimisticData
-          },
-          { optimisticData, rollbackOnError: true },
-        )
-        return { success: true }
-      } catch (error) {
-        console.error("Error deleting super admin:", error)
-        return { success: false, error: "Failed to delete super admin. Please try again." }
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Failed to update super admin")
       }
-    },
-    [currentUser?.id, superAdmins.length, mutateSuperAdmins, superAdminsData],
-  )
+    } catch (error) {
+      console.error("Error updating super admin:", error)
+      // Revert on error - refetch
+      hasFetchedSuperAdmins.current = false
+      throw error
+    }
+  }, [])
+
+  const deleteSuperAdmin = useCallback((id: string) => {
+    setSuperAdmins((prev) => prev.filter((admin) => admin.id !== id))
+
+    fetch(`/api/super-admin/users/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    }).catch((error) => {
+      console.error("Error deleting super admin:", error)
+    })
+
+    return { success: true }
+  }, [])
 
   const toggleSuperAdminStatus = useCallback(
-    async (id: string) => {
+    (id: string) => {
+      setSuperAdmins((prev) => prev.map((admin) => (admin.id === id ? { ...admin, isActive: !admin.isActive } : admin)))
+
       const admin = superAdmins.find((a) => a.id === id)
-      if (!admin) return
-
-      // Optimistic update
-      const optimisticData = superAdminsData
-        ? {
-            users: superAdminsData.users.map((a: any) => (a.id === id ? { ...a, is_active: !a.is_active } : a)),
-          }
-        : undefined
-
-      try {
-        await mutateSuperAdmins(
-          async () => {
-            const res = await fetch(`/api/super-admin/users/${id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                isActive: !admin.isActive,
-              }),
-            })
-
-            if (!res.ok) {
-              throw new Error("Failed to toggle status")
-            }
-
-            return optimisticData
-          },
-          { optimisticData, rollbackOnError: true },
-        )
-      } catch (error) {
-        console.error("Error toggling super admin status:", error)
+      if (admin) {
+        fetch(`/api/super-admin/users/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ isActive: !admin.isActive }),
+        }).catch((error) => {
+          console.error("Error toggling super admin status:", error)
+        })
       }
     },
-    [superAdmins, mutateSuperAdmins, superAdminsData],
+    [superAdmins],
   )
 
   const signOut = useCallback(async () => {
-    if (isLoggingOut) return
-
     setIsLoggingOut(true)
-
     try {
-      persistUserToStorage(null)
-      setCurrentUser(null)
-
       const supabase = getSupabase()
       if (supabase) {
-        await supabase.auth.signOut({ scope: "global" })
+        await supabase.auth.signOut()
       }
 
-      supabaseRef.current = null
-
-      const response = await fetch("/api/auth/logout", {
+      await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       })
 
-      if (!response.ok) {
-        console.error("[user-context] Logout API returned error:", response.status)
-      }
+      setCurrentUser(null)
+      persistUserToStorage(null)
+      hasFetchedUser.current = false
+      hasFetchedSuperAdmins.current = false
 
-      // Clear SWR caches
-      mutateUser(undefined, { revalidate: false })
-      mutateSuperAdmins(undefined, { revalidate: false })
+      router.push("/auth/login")
     } catch (error) {
-      console.error("[user-context] Logout error:", error)
+      console.error("Error signing out:", error)
     } finally {
       setIsLoggingOut(false)
-
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.removeItem("effizienz_current_user")
-          sessionStorage.removeItem("effizienz_current_user")
-          Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith("sb-") || key.includes("supabase")) {
-              localStorage.removeItem(key)
-            }
-          })
-        } catch (e) {
-          console.error("[user-context] Error clearing storage:", e)
-        }
-
-        window.location.replace("/auth/login")
-      }
     }
-  }, [persistUserToStorage, isLoggingOut, getSupabase, mutateUser, mutateSuperAdmins])
+  }, [getSupabase, router, persistUserToStorage])
 
   const contextValue = useMemo(
     () => ({
       currentUser,
       setCurrentUser,
-      isAdmin: isPracticeAdminRole(normalizedRole) || normalizedRole === "admin",
+      isAdmin: isPracticeAdminRole(normalizedRole) || isSuperAdminRole(normalizedRole),
       isSuperAdmin: isSuperAdminRole(normalizedRole),
-      loading: isLoading,
+      loading,
       isLoggingOut,
       superAdmins,
       createSuperAdmin,
@@ -452,7 +405,7 @@ export function UserProvider({
     [
       currentUser,
       normalizedRole,
-      isLoading,
+      loading,
       isLoggingOut,
       superAdmins,
       createSuperAdmin,
@@ -462,33 +415,6 @@ export function UserProvider({
       signOut,
     ],
   )
-
-  // Auth state change listener
-  useEffect(() => {
-    const supabase = getSupabase()
-    if (!supabase) return
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_OUT") {
-        persistUserToStorage(null)
-        setCurrentUser(null)
-        mutateUser(undefined, { revalidate: false })
-
-        if (!isPublicRoute(pathname)) {
-          router.push("/auth/login")
-        }
-      } else if (event === "SIGNED_IN" && session?.user) {
-        // Revalidate user data via SWR
-        mutateUser()
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [pathname, router, getSupabase, persistUserToStorage, mutateUser])
 
   return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
 }

@@ -71,18 +71,19 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }
 
   const fetchData = useCallback(async (practiceId: string, isMounted: { current: boolean }) => {
-    if (!practiceId) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
+    if (!practiceId || practiceId === "0" || practiceId === "null" || practiceId === "undefined") {
+      console.warn("[v0] TeamContext: Invalid practiceId, skipping fetch:", practiceId)
       setLoading(false)
       return
     }
 
     const now = Date.now()
     if (fetchInProgress.current) {
+      console.log("[v0] TeamContext: Fetch already in progress")
       return
     }
     if (now - lastFetchTime.current < 2000) {
-      // Minimum 2 seconds between fetches
+      console.log("[v0] TeamContext: Skipping fetch, too soon since last fetch")
       return
     }
 
@@ -91,28 +92,42 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true)
+      console.log("[v0] TeamContext: Fetching teams for practice:", practiceId)
 
       const teamsRes = await fetchWithRetry(`/api/practices/${practiceId}/teams`, undefined, { maxRetries: 3 })
       if (!isMounted.current) return
 
       const teamsData = teamsRes.ok ? await safeJsonParse(teamsRes, []) : []
       if (!isMounted.current) return
+
+      console.log("[v0] TeamContext: Teams loaded:", teamsData.length)
       setTeams(teamsData.map((t: any) => ({ ...t, sortOrder: t.sortOrder ?? 0 })))
 
       await new Promise((resolve) => setTimeout(resolve, 500))
 
+      console.log("[v0] TeamContext: Fetching team members for practice:", practiceId)
       const membersRes = await fetchWithRetry(`/api/practices/${practiceId}/team-members`, undefined, {
         maxRetries: 3,
       })
       if (!isMounted.current) return
 
       if (membersRes.status === 503) {
+        console.warn("[v0] TeamContext: Service unavailable")
+        setTeamMembers([])
+        return
+      }
+
+      if (!membersRes.ok) {
+        const errorText = await membersRes.text()
+        console.error("[v0] TeamContext: Failed to fetch members:", membersRes.status, errorText.substring(0, 200))
         setTeamMembers([])
         return
       }
 
       const membersData = membersRes.ok ? await safeJsonParse(membersRes, []) : []
       if (!isMounted.current) return
+
+      console.log("[v0] TeamContext: Raw members data:", membersData.length)
 
       const mappedMembers = membersData
         .filter((member: any) => member.id && member.id.trim() !== "")
@@ -133,10 +148,11 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       })
       const deduplicatedMembers = Array.from(uniqueMembersMap.values())
 
+      console.log("[v0] TeamContext: Final team members count:", deduplicatedMembers.length)
       setTeamMembers(deduplicatedMembers)
     } catch (error) {
       if (!isMounted.current) return
-      console.error("Team fetch error:", error)
+      console.error("[v0] TeamContext: Team fetch error:", error)
       setTeams([])
       setTeamMembers([])
     } finally {

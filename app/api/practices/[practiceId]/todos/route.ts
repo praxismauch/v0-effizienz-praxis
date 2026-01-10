@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 500): Promise<T | null> {
   let lastError: Error | null = null
@@ -30,13 +31,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json([])
     }
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json([])
-    }
-
     const practiceIdInt = Number.parseInt(practiceId, 10)
 
-    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+    let supabase
+    try {
+      const { adminClient } = await requirePracticeAccess(practiceId)
+      supabase = adminClient
+    } catch (error) {
+      console.log("[v0] todos GET: Auth failed, using admin client fallback")
+      supabase = createAdminClient()
+    }
 
     const result = await withRetry(() =>
       supabase

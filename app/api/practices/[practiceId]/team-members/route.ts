@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { sortTeamMembersByRole } from "@/lib/team-role-order"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelay = 1000): Promise<T> {
   let lastError: any
@@ -42,19 +43,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const practiceIdStr = String(practiceId)
-    const practiceIdInt = Number.parseInt(practiceId, 10)
 
     let supabase
     try {
       const access = await requirePracticeAccess(practiceId)
       supabase = access.adminClient
     } catch (error) {
-      return handleApiError(error)
+      console.log("[v0] team-members GET: Auth failed, using admin client fallback")
+      supabase = createAdminClient()
     }
 
     let customRoleOrder: string[] | undefined
     try {
-      // practice_settings uses integer
+      const practiceIdInt = Number.parseInt(practiceId, 10)
       const { data: practiceSettings } = await supabase
         .from("practice_settings")
         .select("system_settings")

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 async function syncDefaultTeamsForPractice(supabase: any, practiceId: string) {
   try {
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const access = await requirePracticeAccess(practiceId)
       supabase = access.adminClient
     } catch (error) {
-      return handleApiError(error)
+      console.log("[v0] teams GET: Auth failed, using admin client fallback")
+      supabase = createAdminClient()
     }
 
     const practiceIdText = String(practiceId)

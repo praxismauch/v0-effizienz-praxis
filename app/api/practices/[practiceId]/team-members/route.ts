@@ -37,12 +37,13 @@ function isValidName(name: string | null | undefined): boolean {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
+    const practiceIdStr = String(practiceId)
+
+    console.log("[v0] team-members GET: Starting request for practice:", practiceIdStr)
 
     if (!practiceId || practiceId === "undefined") {
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })
     }
-
-    const practiceIdStr = String(practiceId)
 
     let supabase
     try {
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let members: any[] = []
     try {
       const result = await withRetry(async () => {
+        console.log("[v0] team-members GET: Querying database with practice_id:", practiceIdStr, "(type: string)")
         const res = await supabase
           .from("team_members")
           .select(`
@@ -95,6 +97,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           return { data: [], error: res.error }
         }
         console.log("[v0] team_members GET practiceId:", practiceIdStr, "result count:", res.data?.length || 0)
+        if (res.data && res.data.length > 0) {
+          console.log("[v0] team_members GET sample record:", JSON.stringify(res.data[0]).substring(0, 200))
+        }
         return res
       })
 
@@ -185,6 +190,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const sortedTeamMembers = sortTeamMembersByRole(teamMembers, customRoleOrder)
 
     console.log("[v0] team-members GET: returning", sortedTeamMembers.length, "members")
+    console.log(
+      "[v0] team-members GET: Response sample:",
+      JSON.stringify(sortedTeamMembers.slice(0, 2)).substring(0, 300),
+    )
 
     return NextResponse.json(sortedTeamMembers || [])
   } catch (error: any) {

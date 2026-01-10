@@ -111,6 +111,9 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       })
       if (!isMounted.current) return
 
+      console.log("[v0] TeamContext: Members API response status:", membersRes.status)
+      console.log("[v0] TeamContext: Members API response headers:", Object.fromEntries(membersRes.headers.entries()))
+
       if (membersRes.status === 503) {
         console.warn("[v0] TeamContext: Service unavailable")
         setTeamMembers([])
@@ -128,6 +131,9 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       if (!isMounted.current) return
 
       console.log("[v0] TeamContext: Raw members data:", membersData.length)
+      if (membersData.length > 0) {
+        console.log("[v0] TeamContext: Sample member from API:", JSON.stringify(membersData[0]).substring(0, 300))
+      }
 
       const mappedMembers = membersData
         .filter((member: any) => member.id && member.id.trim() !== "")

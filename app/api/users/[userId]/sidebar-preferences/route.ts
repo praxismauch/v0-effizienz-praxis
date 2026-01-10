@@ -41,13 +41,29 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json({
-      preferences: data || {
-        expanded_groups: ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
-        expanded_items: {},
-        is_collapsed: false,
-        favorites: [],
-        collapsed_sections: [],
-      },
+      preferences: data
+        ? {
+            expanded_groups: data.expanded_groups || [
+              "overview",
+              "planning",
+              "data",
+              "strategy",
+              "team-personal",
+              "praxis-einstellungen",
+            ],
+            expanded_items: data.expanded_items || {},
+            is_collapsed: data.sidebar_collapsed || false,
+            // Note: favorites and collapsed_sections don't exist in DB, return empty arrays for client compatibility
+            favorites: [],
+            collapsed_sections: [],
+          }
+        : {
+            expanded_groups: ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
+            expanded_items: {},
+            is_collapsed: false,
+            favorites: [],
+            collapsed_sections: [],
+          },
     })
   } catch (error) {
     console.error("[v0] Error in sidebar preferences GET:", error)
@@ -75,7 +91,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const body = await request.json()
-    const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites, collapsed_sections } = body
+    const { practice_id, expanded_groups, expanded_items, is_collapsed } = body
+    // Note: favorites and collapsed_sections are ignored as they don't exist in DB
 
     const effectivePracticeId = String(practice_id || "1")
 
@@ -93,9 +110,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
       if (expanded_groups !== undefined) updateData.expanded_groups = expanded_groups
       if (expanded_items !== undefined) updateData.expanded_items = expanded_items
-      if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
-      if (favorites !== undefined) updateData.favorites = favorites
-      if (collapsed_sections !== undefined) updateData.collapsed_sections = collapsed_sections
+      // Map is_collapsed to sidebar_collapsed (the actual DB column name)
+      if (is_collapsed !== undefined) updateData.sidebar_collapsed = is_collapsed
 
       result = await adminClient
         .from("user_sidebar_preferences")
@@ -119,9 +135,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             "praxis-einstellungen",
           ],
           expanded_items: expanded_items || {},
-          is_collapsed: is_collapsed || false,
-          favorites: favorites || [],
-          collapsed_sections: collapsed_sections || [],
+          sidebar_collapsed: is_collapsed || false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -132,7 +148,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: result.error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ preferences: result.data })
+    const responseData = result.data
+      ? {
+          ...result.data,
+          is_collapsed: result.data.sidebar_collapsed,
+          favorites: [],
+          collapsed_sections: [],
+        }
+      : null
+
+    return NextResponse.json({ preferences: responseData })
   } catch (error) {
     console.error("[v0] Error in sidebar preferences POST:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

@@ -229,7 +229,7 @@ const BADGE_ICONS = [
   { value: "trophy", label: "Pokal", icon: Trophy },
   { value: "award", label: "Auszeichnung", icon: Award },
   { value: "medal", label: "Medaille", icon: Medal },
-  { value: "star", label: "Stern", icon: Star },
+  { value: "star", icon: Star },
   { value: "crown", icon: Crown },
   { value: "flame", icon: Flame },
   { value: "zap", icon: Zap },
@@ -367,40 +367,49 @@ export function SuperAdminAcademyManager() {
     try {
       const practiceId = getEffectivePracticeId()
 
+      console.log("[v0] Academy: Fetching data for practice", practiceId)
+
       // Fetch stats from the new stats API
       const statsResponse = await fetch(`/api/practices/${practiceId}/academy/stats`)
+      console.log("[v0] Academy: Stats response status", statsResponse.status)
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
+        console.log("[v0] Academy: Stats data received", statsData)
         setStats(statsData)
       }
 
       // Fetch courses from the new API
       const coursesResponse = await fetch(`/api/practices/${practiceId}/academy/courses`)
+      console.log("[v0] Academy: Courses response status", coursesResponse.status)
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json()
+        console.log("[v0] Academy: Courses data received", coursesData)
+        console.log("[v0] Academy: Courses array", coursesData.courses)
         setCourses(coursesData.courses || [])
+      } else {
+        const errorText = await coursesResponse.text()
+        console.error("[v0] Academy: Courses fetch error", coursesResponse.status, errorText)
       }
 
       // Fetch quizzes from the new API
       const quizzesResponse = await fetch(`/api/practices/${practiceId}/academy/quizzes`)
+      console.log("[v0] Academy: Quizzes response status", quizzesResponse.status)
       if (quizzesResponse.ok) {
         const quizzesData = await quizzesResponse.json()
+        console.log("[v0] Academy: Quizzes data received", quizzesData)
         setQuizzes(quizzesData.quizzes || [])
       }
 
       // Fetch badges from the new API
       const badgesResponse = await fetch(`/api/practices/${practiceId}/academy/badges`)
+      console.log("[v0] Academy: Badges response status", badgesResponse.status)
       if (badgesResponse.ok) {
         const badgesData = await badgesResponse.json()
+        console.log("[v0] Academy: Badges data received", badgesData)
         setBadges(badgesData.badges || [])
       }
     } catch (error) {
-      console.error("Error fetching academy data:", error)
-      toast({
-        title: "Fehler",
-        description: "Fehler beim Laden der Academy-Daten",
-        variant: "destructive",
-      })
+      console.error("[v0] Academy: Error fetching data:", error)
     } finally {
       setLoading(false)
     }
@@ -1611,7 +1620,7 @@ export function SuperAdminAcademyManager() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div
-                      className="h-14 w-14 rounded-xl flex items-center justify-center"
+                      className="h-14 w-14 rounded-xl flex items-center justify-center shrink-0"
                       style={{ backgroundColor: badge.color + "20", color: badge.color }}
                     >
                       {getBadgeIcon(badge.icon_name)}

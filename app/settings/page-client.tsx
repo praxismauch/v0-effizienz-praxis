@@ -141,6 +141,13 @@ function SortableChapterItem({
   )
 }
 
+function getEffectivePracticeId(practiceId: string | undefined): string {
+  if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
+    return "1"
+  }
+  return practiceId
+}
+
 export default function SettingsPageClient() {
   const { toast } = useToast()
   const { currentUser, loading: userLoading } = useUser()
@@ -263,7 +270,8 @@ export default function SettingsPageClient() {
   })
 
   const [practiceSettingsData, setPracticeSettingsData] = useState<any>(null) // To store practice settings fetched initially
-  const practiceId = currentPractice?.id // To avoid re-fetching practice ID
+
+  const effectivePracticeId = getEffectivePracticeId(currentPractice?.id)
 
   useEffect(() => {
     if (currentPractice) {
@@ -289,9 +297,10 @@ export default function SettingsPageClient() {
   }, [currentPractice])
 
   const loadGoogleApiKey = async () => {
-    if (!currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
+
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/settings`)
+      const response = await fetch(`/api/practices/${practiceId}/settings`)
       if (response.ok) {
         const data = await response.json()
         const apiKey = data.settings?.system_settings?.google_places_api_key || ""
@@ -319,10 +328,10 @@ export default function SettingsPageClient() {
 
   useEffect(() => {
     const loadSettings = async () => {
-      if (!currentPractice?.id) return
+      const practiceId = getEffectivePracticeId(currentPractice?.id)
 
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/settings`)
+        const response = await fetch(`/api/practices/${practiceId}/settings`)
         if (response.ok) {
           const data = await response.json()
           setPracticeSettingsData(data) // Store fetched data
@@ -366,15 +375,15 @@ export default function SettingsPageClient() {
     }
 
     loadSettings()
-  }, [currentPractice?.id])
+  }, [currentPractice?.id]) // Removed practiceId from dependency array as getEffectivePracticeId handles it
 
   useEffect(() => {
     const loadHomeofficePolicies = async () => {
-      if (!currentPractice?.id) return
+      const practiceId = getEffectivePracticeId(currentPractice?.id)
 
       setLoadingPolicies(true)
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/homeoffice-policies`)
+        const response = await fetch(`/api/practices/${practiceId}/homeoffice-policies`)
         if (response.ok) {
           const data = await response.json()
           setHomeofficePolicies(data.policies || [])
@@ -387,10 +396,10 @@ export default function SettingsPageClient() {
     }
 
     const loadTeamMembers = async () => {
-      if (!currentPractice?.id) return
+      const practiceId = getEffectivePracticeId(currentPractice?.id)
 
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/team-members`)
+        const response = await fetch(`/api/practices/${practiceId}/team-members`)
         if (response.ok) {
           const data = await response.json()
           setTeamMembers(data.teamMembers || [])
@@ -404,28 +413,26 @@ export default function SettingsPageClient() {
       loadHomeofficePolicies()
       loadTeamMembers()
     }
-  }, [currentPractice?.id, activeTab])
+  }, [currentPractice?.id, activeTab]) // Removed practiceId from dependency array as getEffectivePracticeId handles it
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file || !currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
+
+    if (!file) return
 
     setIsUploadingLogo(true)
     try {
-      const blob = await upload(
-        `practices/${currentPractice.id}/logo-${Date.now()}.${file.name.split(".").pop()}`,
-        file,
-        {
-          access: "public",
-          handleUploadUrl: "/api/blob/upload",
-        },
-      )
+      const blob = await upload(`practices/${practiceId}/logo-${Date.now()}.${file.name.split(".").pop()}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/blob/upload",
+      })
 
       setPracticeSettings((prev) => ({ ...prev, logo_url: blob.url }))
 
       // Save immediately to database
       const supabase = createBrowserClient()
-      await supabase.from("practices").update({ logo_url: blob.url }).eq("id", currentPractice.id)
+      await supabase.from("practices").update({ logo_url: blob.url }).eq("id", practiceId)
 
       toast({
         title: "Logo hochgeladen",
@@ -444,7 +451,7 @@ export default function SettingsPageClient() {
   }
 
   const handleSavePracticeSettings = async () => {
-    if (!currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
 
     setSaving(true)
     try {
@@ -465,12 +472,12 @@ export default function SettingsPageClient() {
           ai_enabled: practiceSettings.ai_enabled,
           logo_url: practiceSettings.logo_url,
         })
-        .eq("id", currentPractice.id)
+        .eq("id", practiceId)
 
       if (error) throw error
 
       if (practiceSettings.google_places_api_key !== undefined) {
-        await fetch(`/api/practices/${currentPractice.id}/settings`, {
+        await fetch(`/api/practices/${practiceId}/settings`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -515,11 +522,11 @@ export default function SettingsPageClient() {
   }
 
   const handleSaveHandbookSettings = async () => {
-    if (!currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
 
     setSavingHandbook(true)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
+      const response = await fetch(`/api/practices/${practiceId}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -548,11 +555,11 @@ export default function SettingsPageClient() {
   }
 
   const handleSaveSecuritySettings = async () => {
-    if (!currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
 
     setSavingSecurity(true)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
+      const response = await fetch(`/api/practices/${practiceId}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -580,11 +587,11 @@ export default function SettingsPageClient() {
   }
 
   const handleSaveNotificationSettings = async () => {
-    if (!currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
 
     setSaving(true)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
+      const response = await fetch(`/api/practices/${practiceId}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -647,11 +654,11 @@ export default function SettingsPageClient() {
   }
 
   const handleSavePractice = async () => {
-    if (!currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
 
     setSaving(true)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
+      const response = await fetch(`/api/practices/${practiceId}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -685,6 +692,8 @@ export default function SettingsPageClient() {
   }
 
   const handleSaveCalendarSettings = async () => {
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
+
     setSaving(true)
     try {
       const response = await fetch(`/api/practices/${practiceId}/settings`, {
@@ -745,13 +754,13 @@ export default function SettingsPageClient() {
   }
 
   const handleSavePolicy = async () => {
-    if (!currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
 
     setSaving(true)
     try {
       const url = editingPolicy
-        ? `/api/practices/${currentPractice.id}/homeoffice-policies/${editingPolicy.id}`
-        : `/api/practices/${currentPractice.id}/homeoffice-policies`
+        ? `/api/practices/${practiceId}/homeoffice-policies/${editingPolicy.id}`
+        : `/api/practices/${practiceId}/homeoffice-policies`
 
       const method = editingPolicy ? "PUT" : "POST"
 
@@ -768,7 +777,7 @@ export default function SettingsPageClient() {
         })
         setPolicyDialogOpen(false)
         // Reload policies
-        const reloadResponse = await fetch(`/api/practices/${currentPractice.id}/homeoffice-policies`)
+        const reloadResponse = await fetch(`/api/practices/${practiceId}/homeoffice-policies`)
         if (reloadResponse.ok) {
           const data = await reloadResponse.json()
           setHomeofficePolicies(data.policies || [])
@@ -794,11 +803,11 @@ export default function SettingsPageClient() {
   }
 
   const handleDeletePolicy = async (policyId: string) => {
-    if (!currentPractice?.id) return
+    const practiceId = getEffectivePracticeId(currentPractice?.id)
 
     setDeletingPolicyId(policyId)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/homeoffice-policies/${policyId}`, {
+      const response = await fetch(`/api/practices/${practiceId}/homeoffice-policies/${policyId}`, {
         method: "DELETE",
       })
 

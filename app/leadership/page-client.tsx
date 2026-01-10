@@ -147,6 +147,12 @@ export default function LeadershipPageClient() {
     status: "pending",
   })
 
+  const getEffectivePracticeId = () => {
+    return currentPractice?.id && currentPractice.id !== "0" && currentPractice.id !== "undefined"
+      ? currentPractice.id
+      : "1"
+  }
+
   useEffect(() => {
     if (userLoading || practiceLoading) return
     if (!currentUser) {
@@ -159,11 +165,12 @@ export default function LeadershipPageClient() {
   }, [currentUser, currentPractice, userLoading, practiceLoading, router])
 
   const loadPermaData = async () => {
-    if (!currentPractice?.id || !currentUser?.id) return
+    const effectivePracticeId = getEffectivePracticeId()
+    if (!effectivePracticeId || !currentUser?.id) return
 
     try {
       const response = await fetch(
-        `/api/practices/${currentPractice.id}/perma-assessments?userId=${currentUser.id}&limit=10`,
+        `/api/practices/${effectivePracticeId}/perma-assessments?userId=${currentUser.id}&limit=10`,
       )
 
       if (response.status === 429) {
@@ -216,7 +223,8 @@ export default function LeadershipPageClient() {
   }
 
   const savePermaAssessment = async () => {
-    if (!currentPractice?.id || !currentUser?.id || !editingScores) return
+    const effectivePracticeId = getEffectivePracticeId()
+    if (!effectivePracticeId || !currentUser?.id || !editingScores) return
 
     setIsSaving(true)
     try {
@@ -235,7 +243,7 @@ export default function LeadershipPageClient() {
         assessmentType: "self",
       }
 
-      const response = await fetch(`/api/practices/${currentPractice.id}/perma-assessments`, {
+      const response = await fetch(`/api/practices/${effectivePracticeId}/perma-assessments`, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -261,11 +269,12 @@ export default function LeadershipPageClient() {
   }
 
   const createNewAssessment = async () => {
-    if (!currentPractice?.id || !currentUser?.id) return
+    const effectivePracticeId = getEffectivePracticeId()
+    if (!effectivePracticeId || !currentUser?.id) return
 
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/perma-assessments`, {
+      const response = await fetch(`/api/practices/${effectivePracticeId}/perma-assessments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

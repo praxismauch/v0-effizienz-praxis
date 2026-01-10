@@ -40,14 +40,21 @@ export function CreateTeamMemberDialog({ open, onOpenChange, teams, onSuccess }:
     teamIds: [] as string[],
   })
 
+  const getEffectivePracticeId = () => {
+    if (!currentPractice?.id || currentPractice.id === "0" || currentPractice.id === "practice-demo-001") {
+      return "1"
+    }
+    return currentPractice.id
+  }
+
   useEffect(() => {
     const fetchDepartments = async () => {
-      if (!currentPractice?.id || !open) {
-        return
-      }
+      if (!open) return
+
+      const practiceId = getEffectivePracticeId()
 
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/departments`)
+        const response = await fetch(`/api/practices/${practiceId}/departments`)
         const data = await response.json()
         setDepartments(data.departments || [])
       } catch (error) {
@@ -56,14 +63,13 @@ export function CreateTeamMemberDialog({ open, onOpenChange, teams, onSuccess }:
     }
 
     fetchDepartments()
-  }, [currentPractice?.id, open])
+  }, [open])
 
   const handleSubmit = async () => {
-    const practiceId = currentPractice?.id
+    const practiceId = getEffectivePracticeId()
 
     console.log("[v0] CreateTeamMemberDialog - handleSubmit called")
     console.log("[v0] CreateTeamMemberDialog - formData:", formData)
-    console.log("[v0] CreateTeamMemberDialog - currentUser:", currentUser)
     console.log("[v0] CreateTeamMemberDialog - practiceId:", practiceId)
 
     if (!formData.firstName || !formData.lastName) {
@@ -71,17 +77,6 @@ export function CreateTeamMemberDialog({ open, onOpenChange, teams, onSuccess }:
       toast({
         title: "Pflichtfelder fehlen",
         description: "Bitte füllen Sie Vorname und Nachname aus.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!practiceId || practiceId === "" || practiceId === "practice-demo-001") {
-      console.log("[v0] CreateTeamMemberDialog - No valid practice ID:", practiceId)
-      toast({
-        title: "Keine Praxis zugeordnet",
-        description:
-          "Sie müssen einer Praxis zugeordnet sein, um Team-Mitglieder hinzuzufügen. Bitte wenden Sie sich an den Administrator.",
         variant: "destructive",
       })
       return

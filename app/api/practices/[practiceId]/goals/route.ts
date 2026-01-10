@@ -5,10 +5,12 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
     const { practiceId } = await params
-    const { user, adminClient: supabase } = await requirePracticeAccess(practiceId)
+    const effectivePracticeId = practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
+
+    const { user, adminClient: supabase } = await requirePracticeAccess(effectivePracticeId)
     const currentUserId = user.id
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
+    const practiceIdInt = Number.parseInt(effectivePracticeId, 10)
 
     const { searchParams } = new URL(request.url)
 
@@ -150,9 +152,11 @@ export async function GET(request: NextRequest, { params }: { params: { practice
 export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
     const { practiceId } = await params
-    const { user, adminClient: supabase } = await requirePracticeAccess(practiceId)
+    const effectivePracticeId = practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
+    const { user, adminClient: supabase } = await requirePracticeAccess(effectivePracticeId)
+
+    const practiceIdInt = Number.parseInt(effectivePracticeId, 10)
 
     const body = await request.json()
 

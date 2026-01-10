@@ -66,7 +66,11 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
   const { toast } = useToast()
 
   const effectiveUser = user || authUser
-  const effectivePracticeId = currentPractice?.id || goal?.practice_id || effectiveUser?.practice_id
+  const getEffectivePracticeId = () => {
+    const practiceId = currentPractice?.id || goal?.practice_id || effectiveUser?.practice_id
+    return practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
+  }
+  const effectivePracticeId = getEffectivePracticeId()
 
   const [loading, setLoading] = useState(false)
   const [hasSubgoals, setHasSubgoals] = useState(false)

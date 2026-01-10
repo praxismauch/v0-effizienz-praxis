@@ -52,6 +52,13 @@ interface PracticeStats {
   activeWorkflows: number
 }
 
+function getEffectivePracticeId(practiceId: string | null): string {
+  if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
+    return "1"
+  }
+  return practiceId
+}
+
 export default function PracticeDetailsPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
   const [practiceId, setPracticeId] = useState<string | null>(null)
   const router = useRouter()
@@ -68,9 +75,9 @@ export default function PracticeDetailsPage({ params }: { params: { id: string }
     const resolveParams = async () => {
       if (params instanceof Promise) {
         const resolved = await params
-        setPracticeId(resolved.id)
+        setPracticeId(getEffectivePracticeId(resolved.id))
       } else {
-        setPracticeId(params.id)
+        setPracticeId(getEffectivePracticeId(params.id))
       }
     }
     resolveParams()

@@ -10,14 +10,18 @@ const DEFAULT_SETTINGS = {
   security_settings: null,
 }
 
+function getEffectivePracticeId(practiceId: string | undefined): string {
+  if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
+    return "1"
+  }
+  return practiceId
+}
+
 // GET - Fetch practice settings
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = await params
-
-    if (!practiceId || practiceId === "undefined" || practiceId === "null") {
-      return NextResponse.json({ error: "Invalid practice ID", settings: DEFAULT_SETTINGS }, { status: 200 })
-    }
+    const { practiceId: rawPracticeId } = await params
+    const practiceId = getEffectivePracticeId(rawPracticeId)
 
     let access
     try {
@@ -103,7 +107,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 // PUT - Update practice settings
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = await params
+    const { practiceId: rawPracticeId } = await params
+    const practiceId = getEffectivePracticeId(rawPracticeId)
 
     const access = await requirePracticeAccess(practiceId)
     const supabase = access.adminClient

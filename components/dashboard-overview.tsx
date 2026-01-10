@@ -198,8 +198,17 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   }, [])
 
   const fetchDashboardData = useCallback(async () => {
-    if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
-      console.log("[v0] DashboardOverview: Invalid practiceId, skipping fetch:", practiceId)
+    const hardcodedPracticeId = "1"
+
+    console.log("[v0] DashboardOverview: Fetching data for hardcoded practiceId:", hardcodedPracticeId)
+
+    if (
+      !hardcodedPracticeId ||
+      hardcodedPracticeId === "undefined" ||
+      hardcodedPracticeId === "null" ||
+      hardcodedPracticeId === "0"
+    ) {
+      console.log("[v0] DashboardOverview: Invalid practiceId, skipping fetch:", hardcodedPracticeId)
       return
     }
 
@@ -208,16 +217,16 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
       return
     }
 
-    if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) {
-      console.log("[v0] DashboardOverview: Already loaded for practiceId:", practiceId)
+    if (loadingPracticeIdRef.current === hardcodedPracticeId && hasLoadedRef.current) {
+      console.log("[v0] DashboardOverview: Already loaded for practiceId:", hardcodedPracticeId)
       return
     }
 
-    loadingPracticeIdRef.current = practiceId
+    loadingPracticeIdRef.current = hardcodedPracticeId
     setLoading(true)
     setError(null)
 
-    console.log("[v0] DashboardOverview: Fetching data for practiceId:", practiceId)
+    console.log("[v0] DashboardOverview: Fetching data for practiceId:", hardcodedPracticeId)
 
     try {
       // Helper to safely fetch and parse JSON with rate limit handling
@@ -249,19 +258,22 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
       }
 
       // Fetch in batches with small delays to avoid rate limiting
-      const preferences = await safeFetch(`/api/practices/${practiceId}/dashboard-preferences?userId=${userId}`, null)
+      const preferences = await safeFetch(
+        `/api/practices/${hardcodedPracticeId}/dashboard-preferences?userId=${userId}`,
+        null,
+      )
 
       // Small delay between batches
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       const [statsData, activities] = await Promise.all([
-        safeFetch(`/api/practices/${practiceId}/dashboard-stats`, null),
-        safeFetch(`/api/dashboard/recent-activities?practiceId=${practiceId}&limit=5`, null),
+        safeFetch(`/api/practices/${hardcodedPracticeId}/dashboard-stats`, null),
+        safeFetch(`/api/dashboard/recent-activities?practiceId=${hardcodedPracticeId}&limit=5`, null),
       ])
 
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      const documents = await safeFetch(`/api/practices/${practiceId}/documents?limit=5`, null)
+      const documents = await safeFetch(`/api/practices/${hardcodedPracticeId}/documents?limit=5`, null)
 
       console.log("[v0] Dashboard API responses:", {
         preferences: preferences ? "ok" : "fallback",
@@ -316,7 +328,7 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
     } finally {
       setLoading(false)
     }
-  }, [practiceId, userId])
+  }, [userId])
 
   useEffect(() => {
     if (loadingPracticeIdRef.current !== practiceId) {

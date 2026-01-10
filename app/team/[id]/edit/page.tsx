@@ -371,11 +371,13 @@ export default function EditTeamMemberPage() {
   }
 
   const handleDeleteMember = async () => {
-    if (!member || !currentPractice?.id) return
+    if (!member) return
+
+    const practiceId = getEffectivePracticeId()
 
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/team-members/${memberId}`, {
+      const response = await fetch(`/api/practices/${practiceId}/team-members/${memberId}`, {
         method: "DELETE",
       })
 
@@ -392,6 +394,13 @@ export default function EditTeamMemberPage() {
     } finally {
       setIsDeleting(false)
     }
+  }
+
+  const getEffectivePracticeId = () => {
+    if (!currentPractice?.id || currentPractice.id === "0" || currentPractice.id === "practice-demo-001") {
+      return "1"
+    }
+    return currentPractice.id
   }
 
   return (

@@ -55,6 +55,13 @@ export function CreateGoalDialog({
   const { currentPractice } = usePractice()
   const { t } = useTranslation()
   const { teamMembers: contextTeamMembers, loading: teamLoading } = useTeam()
+
+  const getEffectivePracticeId = () => {
+    return currentPractice?.id && currentPractice.id !== "0" && currentPractice.id !== "undefined"
+      ? currentPractice.id
+      : "1"
+  }
+
   const [loading, setLoading] = useState(false)
   const [availableGoals, setAvailableGoals] = useState<any[]>([])
   const [availableParameters, setAvailableParameters] = useState<any[]>([])
@@ -110,10 +117,11 @@ export function CreateGoalDialog({
     calculatedProgress !== null ? calculatedProgress : Number.parseInt(formData.progressPercentage, 10)
 
   useEffect(() => {
-    if (open && currentPractice?.id && !parentGoalId) {
+    const effectivePracticeId = getEffectivePracticeId()
+    if (open && effectivePracticeId && !parentGoalId) {
       fetchAvailableGoals()
     }
-    if (open && currentPractice?.id) {
+    if (open && effectivePracticeId) {
       fetchAvailableParameters()
     }
   }, [open, currentPractice?.id, parentGoalId])
@@ -148,7 +156,8 @@ export function CreateGoalDialog({
 
   const fetchAvailableGoals = async () => {
     try {
-      const response = await fetch(`/api/practices/${currentPractice?.id}/goals?includeSubgoals=false`, {
+      const effectivePracticeId = getEffectivePracticeId()
+      const response = await fetch(`/api/practices/${effectivePracticeId}/goals?includeSubgoals=false`, {
         credentials: "include",
       })
       if (response.ok) {
@@ -162,7 +171,8 @@ export function CreateGoalDialog({
 
   const fetchAvailableParameters = async () => {
     try {
-      const response = await fetch(`/api/practices/${currentPractice?.id}/parameters`, {
+      const effectivePracticeId = getEffectivePracticeId()
+      const response = await fetch(`/api/practices/${effectivePracticeId}/parameters`, {
         credentials: "include",
       })
       if (response.ok) {
@@ -180,8 +190,9 @@ export function CreateGoalDialog({
     }
 
     try {
+      const effectivePracticeId = getEffectivePracticeId()
       const response = await fetch(
-        `/api/practices/${currentPractice?.id}/parameter-values?parameterId=${parameterId}&limit=1`,
+        `/api/practices/${effectivePracticeId}/parameter-values?parameterId=${parameterId}&limit=1`,
         {
           credentials: "include",
         },
@@ -217,8 +228,9 @@ export function CreateGoalDialog({
       return
     }
 
-    if (!currentUser || !currentPractice) {
-      console.error("[v0] Missing user or practice:", { user: !!currentUser, practice: !!currentPractice })
+    const effectivePracticeId = getEffectivePracticeId()
+    if (!currentUser || !effectivePracticeId) {
+      console.error("[v0] Missing user or practice:", { user: !!currentUser, practice: !!effectivePracticeId })
       toast({
         title: "Fehler",
         description: "Benutzer oder Praxis nicht gefunden. Bitte laden Sie die Seite neu.",
@@ -263,7 +275,7 @@ export function CreateGoalDialog({
         parent_goal_id: finalParentGoalId,
         linked_parameter_id: finalLinkedParameterId,
         category: formData.category || null,
-        practice_id: currentPractice.id,
+        practice_id: effectivePracticeId,
         created_by: currentUser.id,
         teams: selectedTeams,
       }
@@ -274,7 +286,7 @@ export function CreateGoalDialog({
         parentId: finalParentGoalId,
       })
 
-      const response = await fetch(`/api/practices/${currentPractice.id}/goals`, {
+      const response = await fetch(`/api/practices/${effectivePracticeId}/goals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -289,9 +301,10 @@ export function CreateGoalDialog({
       if (uploadedImages.length > 0) {
         await Promise.all(
           uploadedImages.map((image) =>
-            fetch(`/api/practices/${currentPractice.id}/goals/${newGoal.id}/attachments`, {
+            fetch(`/api/practices/${effectivePracticeId}/goals/${newGoal.id}/attachments`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
+              credentials: "include",
               body: JSON.stringify({
                 attachment_type: "image",
                 file_url: image.url,
@@ -307,7 +320,7 @@ export function CreateGoalDialog({
       if (selectedTeamMembers.length > 0 && newGoal?.id) {
         console.log("[v0] ========== ASSIGNING TEAM MEMBERS ==========")
         console.log("[v0] Goal ID:", newGoal.id)
-        console.log("[v0] Practice ID:", currentPractice.id)
+        console.log("[v0] Practice ID:", effectivePracticeId)
         console.log("[v0] Selected team member IDs:", selectedTeamMembers)
         console.log("[v0] Assigned by (current user user):", currentUser.id)
         console.log(
@@ -315,15 +328,18 @@ export function CreateGoalDialog({
           teamMembers.map((m) => ({ id: m.id, name: m.name })),
         )
 
-        const assignmentResponse = await fetch(`/api/practices/${currentPractice.id}/goals/${newGoal.id}/assignments`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            teamMemberIds: selectedTeamMembers,
-            assignedBy: currentUser.id,
-          }),
-        })
+        const assignmentResponse = await fetch(
+          `/api/practices/${effectivePracticeId}/goals/${newGoal.id}/assignments`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              teamMemberIds: selectedTeamMembers,
+              assignedBy: currentUser.id,
+            }),
+          },
+        )
 
         if (!assignmentResponse.ok) {
           const errorData = await assignmentResponse.json()
@@ -469,8 +485,9 @@ export function CreateGoalDialog({
 
   useEffect(() => {
     const fetchLocalTeamMembers = async () => {
-      if (!open || !currentPractice?.id) {
-        if (open && !currentPractice?.id) {
+      const effectivePracticeId = getEffectivePracticeId()
+      if (!open || !effectivePracticeId) {
+        if (open && !effectivePracticeId) {
           toast({
             title: "Fehler",
             description: "Keine Praxis-ID gefunden. Team-Mitglieder können nicht geladen werden.",
@@ -483,7 +500,7 @@ export function CreateGoalDialog({
 
       setLoadingLocalTeam(true)
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/team-members`, {
+        const response = await fetch(`/api/practices/${effectivePracticeId}/team-members`, {
           credentials: "include",
         })
         if (response.ok) {
@@ -514,7 +531,8 @@ export function CreateGoalDialog({
 
   useEffect(() => {
     const fetchOrgaCategories = async () => {
-      if (!currentPractice?.id) {
+      const effectivePracticeId = getEffectivePracticeId()
+      if (!effectivePracticeId) {
         if (open) {
           toast({
             title: "Fehler",
@@ -527,7 +545,7 @@ export function CreateGoalDialog({
 
       try {
         setLoadingCategories(true)
-        const response = await fetch(`/api/practices/${currentPractice.id}/orga-categories`)
+        const response = await fetch(`/api/practices/${effectivePracticeId}/orga-categories`)
         if (response.ok) {
           const data = await response.json()
           const categories = data.categories || []
@@ -567,11 +585,12 @@ export function CreateGoalDialog({
 
   useEffect(() => {
     const fetchTeams = async () => {
-      if (!open || !currentPractice?.id) return
+      const effectivePracticeId = getEffectivePracticeId()
+      if (!open || !effectivePracticeId) return
 
       setLoadingTeams(true)
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/teams`)
+        const response = await fetch(`/api/practices/${effectivePracticeId}/teams`)
         if (response.ok) {
           const data = await response.json()
           setTeams(Array.isArray(data) ? data.filter((t: Team) => t.isActive !== false) : [])

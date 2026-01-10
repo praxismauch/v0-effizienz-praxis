@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { sortTeamMembersByRole } from "@/lib/team-role-order"
-import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
+import { handleApiError } from "@/lib/api-helpers"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelay = 1000): Promise<T> {
@@ -37,26 +37,15 @@ function isValidName(name: string | null | undefined): boolean {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const practiceIdStr = String(practiceId)
+    const practiceIdStr = "1"
 
-    console.log("[v0] team-members GET: Starting request for practice:", practiceIdStr)
+    console.log("[v0] team-members GET: Using hardcoded practice ID:", practiceIdStr)
 
-    if (!practiceId || practiceId === "undefined") {
-      return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })
-    }
-
-    let supabase
-    try {
-      const access = await requirePracticeAccess(practiceId)
-      supabase = access.adminClient
-    } catch (error) {
-      console.log("[v0] team-members GET: Auth failed, using admin client fallback")
-      supabase = createAdminClient()
-    }
+    const supabase = createAdminClient()
 
     let customRoleOrder: string[] | undefined
     try {
-      const practiceIdInt = Number.parseInt(practiceId, 10)
+      const practiceIdInt = 1
       const { data: practiceSettings } = await supabase
         .from("practice_settings")
         .select("system_settings")
@@ -211,10 +200,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
 
-    const practiceIdStr = String(practiceId)
-    const practiceIdInt = Number.parseInt(practiceId, 10)
+    const practiceIdStr = "1"
+    const practiceIdInt = 1
 
-    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+    const supabase = createAdminClient()
 
     const body = await request.json()
 

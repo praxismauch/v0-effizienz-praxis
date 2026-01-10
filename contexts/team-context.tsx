@@ -66,16 +66,15 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const lastFetchTime = useRef(0)
   const { currentPractice, isLoading: practiceLoading } = usePractice()
 
+  const HARDCODED_PRACTICE_ID = "1"
+
   const filterNonSuperAdmins = (members: TeamMember[]) => {
     return members.filter((member) => member.role !== "superadmin")
   }
 
   const fetchData = useCallback(async (practiceId: string, isMounted: { current: boolean }) => {
-    if (!practiceId || practiceId === "0" || practiceId === "null" || practiceId === "undefined") {
-      console.warn("[v0] TeamContext: Invalid practiceId, skipping fetch:", practiceId)
-      setLoading(false)
-      return
-    }
+    const effectivePracticeId = HARDCODED_PRACTICE_ID
+    console.log("[v0] TeamContext: Using hardcoded practice ID:", effectivePracticeId)
 
     const now = Date.now()
     if (fetchInProgress.current) {
@@ -92,9 +91,9 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true)
-      console.log("[v0] TeamContext: Fetching teams for practice:", practiceId)
+      console.log("[v0] TeamContext: Fetching teams for practice:", effectivePracticeId)
 
-      const teamsRes = await fetchWithRetry(`/api/practices/${practiceId}/teams`, undefined, { maxRetries: 3 })
+      const teamsRes = await fetchWithRetry(`/api/practices/${effectivePracticeId}/teams`, undefined, { maxRetries: 3 })
       if (!isMounted.current) return
 
       const teamsData = teamsRes.ok ? await safeJsonParse(teamsRes, []) : []
@@ -105,14 +104,13 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
       await new Promise((resolve) => setTimeout(resolve, 500))
 
-      console.log("[v0] TeamContext: Fetching team members for practice:", practiceId)
-      const membersRes = await fetchWithRetry(`/api/practices/${practiceId}/team-members`, undefined, {
+      console.log("[v0] TeamContext: Fetching team members for practice:", effectivePracticeId)
+      const membersRes = await fetchWithRetry(`/api/practices/${effectivePracticeId}/team-members`, undefined, {
         maxRetries: 3,
       })
       if (!isMounted.current) return
 
       console.log("[v0] TeamContext: Members API response status:", membersRes.status)
-      console.log("[v0] TeamContext: Members API response headers:", Object.fromEntries(membersRes.headers.entries()))
 
       if (membersRes.status === 503) {
         console.warn("[v0] TeamContext: Service unavailable")
@@ -127,7 +125,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const membersData = membersRes.ok ? await safeJsonParse(membersRes, []) : []
+      const membersData = await safeJsonParse(membersRes, [])
       if (!isMounted.current) return
 
       console.log("[v0] TeamContext: Raw members data:", membersData.length)
@@ -172,37 +170,25 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const isMounted = { current: true }
 
-    if (practiceLoading) {
-      return
-    }
-
-    if (currentPractice?.id) {
-      fetchData(currentPractice.id, isMounted)
-    } else {
-      setTeamMembers([])
-      setTeams([])
-      setLoading(false)
-    }
+    console.log("[v0] TeamContext: Starting fetch with hardcoded practice ID")
+    fetchData(HARDCODED_PRACTICE_ID, isMounted)
 
     return () => {
       isMounted.current = false
     }
-  }, [currentPractice?.id, practiceLoading, fetchData])
+  }, [fetchData])
 
   const refetchTeamMembers = async () => {
-    if (currentPractice?.id) {
-      await fetchData(currentPractice.id, { current: true })
-    }
+    await fetchData(HARDCODED_PRACTICE_ID, { current: true })
   }
 
+  const getEffectivePracticeId = () => currentPractice?.id || HARDCODED_PRACTICE_ID
+
   const addTeam = async (teamData: Omit<Team, "id" | "createdAt" | "memberCount" | "sortOrder">) => {
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/teams`, {
+      const res = await fetch(`/api/practices/${practiceId}/teams`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(teamData),
@@ -231,10 +217,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }
 
   const reorderTeams = async (teamIds: string[]) => {
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     const reorderedTeams = teamIds
       .map((id, index) => {
@@ -246,33 +229,30 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     setTeams(reorderedTeams)
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/teams`, {
+      const res = await fetch(`/api/practices/${practiceId}/teams`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamIds }),
       })
 
       if (!res.ok) {
-        await fetchData(currentPractice.id, { current: true })
+        await fetchData(practiceId, { current: true })
         toast.error("Fehler beim Speichern der Reihenfolge")
       } else {
         toast.success("Reihenfolge gespeichert")
       }
     } catch (error) {
-      await fetchData(currentPractice.id, { current: true })
+      await fetchData(practiceId, { current: true })
       toast.error("Fehler beim Speichern der Reihenfolge")
       console.error("Reorder teams error:", error)
     }
   }
 
   const updateTeam = async (id: string, updates: Partial<Team>) => {
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/teams/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/teams/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -291,13 +271,10 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteTeam = async (id: string) => {
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/teams/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/teams/${id}`, {
         method: "DELETE",
       })
 
@@ -322,15 +299,12 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const assignMemberToTeam = async (memberId: string, teamId: string) => {
     const member = teamMembers.find((m) => m.id === memberId)
     if (member?.role === "superadmin") return
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     const updatedTeamIds = [...(member?.teamIds || []), teamId]
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/team-members/${memberId}`, {
+      const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamIds: updatedTeamIds }),
@@ -353,16 +327,13 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }
 
   const removeMemberFromTeam = async (memberId: string, teamId: string) => {
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     const member = teamMembers.find((m) => m.id === memberId)
     const updatedTeamIds = member?.teamIds.filter((id) => id !== teamId) || []
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/team-members/${memberId}`, {
+      const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamIds: updatedTeamIds }),
@@ -384,13 +355,10 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
   const addTeamMember = async (memberData: Omit<TeamMember, "id" | "joinedAt">) => {
     if (memberData.role === "superadmin") return
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/team-members`, {
+      const res = await fetch(`/api/practices/${practiceId}/team-members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(memberData),
@@ -411,13 +379,10 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
   const updateTeamMember = async (id: string, updates: Partial<TeamMember>) => {
     if (updates.role === "superadmin") return
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      return
-    }
+    const practiceId = getEffectivePracticeId()
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/team-members/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/team-members/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -436,13 +401,10 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }
 
   const removeTeamMember = async (id: string) => {
-    if (!currentPractice?.id) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      throw new Error("Keine Praxis-ID verfügbar")
-    }
+    const practiceId = getEffectivePracticeId()
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/team-members/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/team-members/${id}`, {
         method: "DELETE",
       })
 
@@ -453,7 +415,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500))
-      await fetchData(currentPractice.id, { current: true })
+      await fetchData(practiceId, { current: true })
       toast.success("Team-Mitglied erfolgreich entfernt")
     } catch (error) {
       console.error("Error removing team member:", error)

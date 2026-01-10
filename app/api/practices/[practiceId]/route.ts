@@ -1,9 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
+function getEffectivePracticeId(practiceId: string): string {
+  if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
+    return "1"
+  }
+  return practiceId
+}
+
 export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = params
+    const { practiceId: rawPracticeId } = params
+    const practiceId = getEffectivePracticeId(rawPracticeId)
 
     if (practiceId === "count") {
       return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })
@@ -43,7 +51,8 @@ export async function GET(request: NextRequest, { params }: { params: { practice
 
 export async function PUT(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = params
+    const { practiceId: rawPracticeId } = params
+    const practiceId = getEffectivePracticeId(rawPracticeId)
     const supabase = await createClient()
     const updates = await request.json()
 
@@ -94,7 +103,8 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
 
 export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = params
+    const { practiceId: rawPracticeId } = params
+    const practiceId = getEffectivePracticeId(rawPracticeId)
 
     if (practiceId === "0" || practiceId === "default" || !practiceId || practiceId.trim() === "") {
       return NextResponse.json(

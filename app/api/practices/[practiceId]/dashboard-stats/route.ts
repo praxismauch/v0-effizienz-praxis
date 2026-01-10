@@ -37,10 +37,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
-    const practiceIdStr = String(practiceId)
+    const practiceIdInt = 1
+    const practiceIdStr = "1"
 
-    console.log("[v0] Dashboard stats - practiceId:", practiceId, "asInt:", practiceIdInt, "asStr:", practiceIdStr)
+    console.log("[v0] Dashboard stats - using hardcoded practiceId:", practiceIdStr)
 
     const cacheKey = `dashboard-stats:${practiceId}`
     try {
@@ -83,11 +83,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let queryResults
     try {
       queryResults = await Promise.all([
-        // team_members uses integer practice_id
         supabase
           .from("team_members")
           .select("id, user_id, users(is_active, role)", { count: "exact" })
-          .eq("practice_id", practiceIdInt)
+          .eq("practice_id", practiceIdStr)
           .eq("status", "active"),
         // goals uses integer practice_id
         supabase

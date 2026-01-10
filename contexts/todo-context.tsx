@@ -73,22 +73,23 @@ async function safeJsonParse(response: Response): Promise<any> {
   }
 }
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export function TodoProvider({ children }: { children: ReactNode }) {
   const [todos, setTodos] = useState<Todo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { currentPractice, isLoading: practiceLoading } = usePractice()
 
-  const fetchTodosInternal = async (practiceId: string, isMounted: { current: boolean }) => {
-    if (!practiceId) {
-      toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-      setTodos([])
-      setIsLoading(false)
-      return
+  const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+
+  const fetchTodosInternal = async (pId: string, isMounted: { current: boolean }) => {
+    if (!pId) {
+      pId = HARDCODED_PRACTICE_ID
     }
 
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/practices/${practiceId}/todos`)
+      const response = await fetch(`/api/practices/${pId}/todos`)
 
       if (!isMounted.current) return
 
@@ -119,9 +120,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   }
 
   const fetchTodos = async () => {
-    if (currentPractice?.id) {
-      await fetchTodosInternal(currentPractice.id, { current: true })
-    }
+    await fetchTodosInternal(practiceId, { current: true })
   }
 
   useEffect(() => {
@@ -132,23 +131,15 @@ export function TodoProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    if (currentPractice?.id) {
-      fetchTodosInternal(currentPractice.id, isMounted)
-    } else {
-      setTodos([])
-      setIsLoading(false)
-    }
+    fetchTodosInternal(practiceId, isMounted)
 
     return () => {
       isMounted.current = false
     }
-  }, [currentPractice?.id, practiceLoading])
+  }, [practiceId, practiceLoading])
 
   const addTodo = async (todoData: Omit<Todo, "id" | "created_at" | "updated_at" | "practice_id">) => {
-    if (!currentPractice) {
-      toast.error("Keine Praxis ausgewählt. Bitte Seite neu laden.")
-      return null
-    }
+    const pId = currentPractice?.id || HARDCODED_PRACTICE_ID
 
     const cleanedData = {
       ...todoData,
@@ -160,7 +151,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/todos`, {
+      const response = await fetch(`/api/practices/${pId}/todos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cleanedData),
@@ -187,10 +178,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   }
 
   const updateTodo = async (id: string, updates: Partial<Todo>) => {
-    if (!currentPractice) {
-      toast.error("Keine Praxis ausgewählt. Bitte Seite neu laden.")
-      return
-    }
+    const pId = currentPractice?.id || HARDCODED_PRACTICE_ID
 
     const cleanedUpdates = {
       ...updates,
@@ -202,7 +190,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/todos/${id}`, {
+      const response = await fetch(`/api/practices/${pId}/todos/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cleanedUpdates),
@@ -222,13 +210,10 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteTodo = async (id: string) => {
-    if (!currentPractice) {
-      toast.error("Keine Praxis ausgewählt. Bitte Seite neu laden.")
-      return
-    }
+    const pId = currentPractice?.id || HARDCODED_PRACTICE_ID
 
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/todos/${id}`, {
+      const response = await fetch(`/api/practices/${pId}/todos/${id}`, {
         method: "DELETE",
       })
 

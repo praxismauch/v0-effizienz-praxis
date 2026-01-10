@@ -2,8 +2,7 @@
 
 import { Separator } from "@/components/ui/separator"
 
-import { useCourses, useQuizzes, useBadges, useAcademyStats } from "@/hooks/use-academy"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { toast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -256,19 +255,78 @@ const TARGET_AUDIENCE_OPTIONS = [
 const HARDCODED_PRACTICE_ID = "1"
 
 export function SuperAdminAcademyManager() {
-  const { data: coursesData, isLoading: coursesLoading, mutate: mutateCourses } = useCourses(HARDCODED_PRACTICE_ID)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [quizzes, setQuizzes] = useState<Quiz[]>([])
+  const [badges, setBadges] = useState<AcademyBadge[]>([])
+  const [stats, setStats] = useState<AcademyStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const fetchedRef = useRef(false)
 
-  const { data: quizzesData, isLoading: quizzesLoading, mutate: mutateQuizzes } = useQuizzes(HARDCODED_PRACTICE_ID)
+  const fetchCourses = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses`)
+      if (response.ok) {
+        const data = await response.json()
+        const coursesArray = Array.isArray(data) ? data : data.courses || []
+        setCourses(coursesArray)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching courses:", error)
+    }
+  }, [])
 
-  const { data: badgesData, isLoading: badgesLoading, mutate: mutateBadges } = useBadges(HARDCODED_PRACTICE_ID)
+  const fetchQuizzes = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/quizzes`)
+      if (response.ok) {
+        const data = await response.json()
+        const quizzesArray = Array.isArray(data) ? data : data.quizzes || []
+        setQuizzes(quizzesArray)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching quizzes:", error)
+    }
+  }, [])
 
-  const { data: statsData, isLoading: statsLoading } = useAcademyStats(HARDCODED_PRACTICE_ID)
+  const fetchBadges = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges`)
+      if (response.ok) {
+        const data = await response.json()
+        const badgesArray = Array.isArray(data) ? data : data.badges || []
+        setBadges(badgesArray)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching badges:", error)
+    }
+  }, [])
 
-  const courses: Course[] = Array.isArray(coursesData) ? coursesData : coursesData?.courses || []
-  const quizzes: Quiz[] = Array.isArray(quizzesData) ? quizzesData : quizzesData?.quizzes || []
-  const badges: AcademyBadge[] = Array.isArray(badgesData) ? badgesData : badgesData?.badges || []
-  const stats: AcademyStats | null = statsData || null
-  const loading = coursesLoading || quizzesLoading || badgesLoading || statsLoading
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/stats`)
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching stats:", error)
+    }
+  }, [])
+
+  const fetchAllData = useCallback(async () => {
+    setLoading(true)
+    try {
+      await Promise.all([fetchCourses(), fetchQuizzes(), fetchBadges(), fetchStats()])
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchCourses, fetchQuizzes, fetchBadges, fetchStats])
+
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    fetchAllData()
+  }, [fetchAllData])
 
   const [activeTab, setActiveTab] = useState("overview")
   const [searchTerm, setSearchTerm] = useState("")
@@ -411,15 +469,14 @@ export function SuperAdminAcademyManager() {
       updated_at: new Date().toISOString(),
     } as Course
 
+    const previousCourses = [...courses]
+
     try {
       // Optimistic update
       if (isEditing) {
-        mutateCourses(
-          courses.map((c) => (c.id === editingCourse.id ? optimisticCourse : c)),
-          false,
-        )
+        setCourses(courses.map((c) => (c.id === editingCourse.id ? optimisticCourse : c)))
       } else {
-        mutateCourses([...courses, optimisticCourse], false)
+        setCourses([...courses, optimisticCourse])
       }
 
       const url = isEditing
@@ -446,12 +503,10 @@ export function SuperAdminAcademyManager() {
       setShowCourseDialog(false)
       setEditingCourse(null)
       resetCourseForm()
-      // Revalidate to get real data
-      mutateCourses()
+      fetchCourses()
     } catch (error) {
       console.error("Error saving course:", error)
-      // Rollback on error
-      mutateCourses()
+      setCourses(previousCourses)
       toast({
         title: "Fehler beim Speichern",
         description: "Es gab ein Problem beim Speichern des Kurses.",
@@ -474,6 +529,8 @@ export function SuperAdminAcademyManager() {
       display_order: editingModule?.display_order || courseModules.length,
       lessons: editingModule?.lessons || [],
     }
+
+    const previousModules = [...courseModules]
 
     try {
       // Optimistic update
@@ -514,8 +571,7 @@ export function SuperAdminAcademyManager() {
       fetchCourseModules(selectedCourse.id)
     } catch (error) {
       console.error("Error saving module:", error)
-      // Rollback
-      fetchCourseModules(selectedCourse.id)
+      setCourseModules(previousModules)
       toast({
         title: "Fehler beim Speichern",
         description: "Es gab ein Problem beim Speichern des Moduls.",
@@ -533,15 +589,14 @@ export function SuperAdminAcademyManager() {
       display_order: editingBadge?.display_order || badges.length,
     }
 
+    const previousBadges = [...badges]
+
     try {
       // Optimistic update
       if (isEditing) {
-        mutateBadges(
-          badges.map((b) => (b.id === editingBadge.id ? optimisticBadge : b)),
-          false,
-        )
+        setBadges(badges.map((b) => (b.id === editingBadge.id ? optimisticBadge : b)))
       } else {
-        mutateBadges([...badges, optimisticBadge], false)
+        setBadges([...badges, optimisticBadge])
       }
 
       const url = isEditing
@@ -568,10 +623,10 @@ export function SuperAdminAcademyManager() {
       setShowBadgeDialog(false)
       setEditingBadge(null)
       resetBadgeForm()
-      mutateBadges()
+      fetchBadges()
     } catch (error) {
       console.error("Error saving badge:", error)
-      mutateBadges()
+      setBadges(previousBadges)
       toast({
         title: "Fehler beim Speichern",
         description: "Es gab ein Problem beim Speichern des Badges.",
@@ -583,15 +638,17 @@ export function SuperAdminAcademyManager() {
   const handleDelete = async () => {
     if (!deleteItem) return
 
+    const previousCourses = [...courses]
+    const previousQuizzes = [...quizzes]
+    const previousBadges = [...badges]
+    const previousModules = [...courseModules]
+
     try {
       let endpoint = ""
       switch (deleteItem.type) {
         case "course":
           // Optimistic update
-          mutateCourses(
-            courses.filter((c) => c.id !== deleteItem.id),
-            false,
-          )
+          setCourses(courses.filter((c) => c.id !== deleteItem.id))
           endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses/${deleteItem.id}`
           break
         case "module":
@@ -608,17 +665,11 @@ export function SuperAdminAcademyManager() {
           endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/lessons/${deleteItem.id}`
           break
         case "quiz":
-          mutateQuizzes(
-            quizzes.filter((q) => q.id !== deleteItem.id),
-            false,
-          )
+          setQuizzes(quizzes.filter((q) => q.id !== deleteItem.id))
           endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/quizzes/${deleteItem.id}`
           break
         case "badge":
-          mutateBadges(
-            badges.filter((b) => b.id !== deleteItem.id),
-            false,
-          )
+          setBadges(badges.filter((b) => b.id !== deleteItem.id))
           endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges/${deleteItem.id}`
           break
       }
@@ -637,20 +688,18 @@ export function SuperAdminAcademyManager() {
       setShowDeleteDialog(false)
       setDeleteItem(null)
 
-      // Revalidate
-      if (deleteItem.type === "course") mutateCourses()
-      if (deleteItem.type === "quiz") mutateQuizzes()
-      if (deleteItem.type === "badge") mutateBadges()
+      if (deleteItem.type === "course") fetchCourses()
+      if (deleteItem.type === "quiz") fetchQuizzes()
+      if (deleteItem.type === "badge") fetchBadges()
       if (selectedCourse && (deleteItem.type === "module" || deleteItem.type === "lesson")) {
         fetchCourseModules(selectedCourse.id)
       }
     } catch (error) {
       console.error("Error deleting:", error)
-      // Rollback
-      mutateCourses()
-      mutateQuizzes()
-      mutateBadges()
-      if (selectedCourse) fetchCourseModules(selectedCourse.id)
+      setCourses(previousCourses)
+      setQuizzes(previousQuizzes)
+      setBadges(previousBadges)
+      setCourseModules(previousModules)
       toast({
         title: "Fehler beim Löschen",
         description: "Es gab ein Problem beim Löschen.",
@@ -780,9 +829,11 @@ export function SuperAdminAcademyManager() {
       updated_at: new Date().toISOString(),
     }
 
+    const previousCourses = [...courses]
+
     try {
       // Optimistic update
-      mutateCourses([...courses, optimisticCourse], false)
+      setCourses([...courses, optimisticCourse])
 
       const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses`, {
         method: "POST",
@@ -836,10 +887,10 @@ export function SuperAdminAcademyManager() {
       setShowAiCourseDialog(false)
       setGeneratedCourse(null)
       setAiCourseDescription("")
-      mutateCourses()
+      fetchCourses()
     } catch (error) {
       console.error("Error saving AI course:", error)
-      mutateCourses()
+      setCourses(previousCourses)
       toast({
         title: "Fehler beim Speichern",
         description: "Es gab ein Problem beim Speichern des KI-Kurses.",

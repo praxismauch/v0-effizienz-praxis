@@ -1,9 +1,12 @@
 "use client"
 
-import { createContext, useContext, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react"
 import type { User } from "./user-context"
+import { usePractice } from "./practice-context"
+import { useUser } from "./user-context"
 import { toast } from "sonner"
-import { useTeams as useTeamsSWR, useTeamMembers as useTeamMembersSWR } from "@/hooks/use-teams"
+
+const HARDCODED_PRACTICE_ID = "1"
 
 interface TeamMember extends User {
   permissions: string[]
@@ -49,373 +52,382 @@ interface PendingInvite {
   id: string
   email: string
   role: User["role"]
-  invitedBy: string
-  invitedAt: string
-  status: "pending" | "accepted" | "declined"
+  sentAt: string
+  status: "pending" | "accepted" | "expired"
 }
 
 const TeamContext = createContext<TeamContextType | undefined>(undefined)
 
-const HARDCODED_PRACTICE_ID = "1"
-
-const filterNonSuperAdmins = (members: TeamMember[]) => {
-  return members.filter((member) => member.role !== "superadmin")
-}
-
-const mapMemberData = (member: any): TeamMember => ({
-  ...member,
-  dateOfBirth: member.date_of_birth,
-  status: member.status,
-  first_name: member.first_name,
-  last_name: member.last_name,
-  user_id: member.user_id,
-})
-
-const mapTeamData = (team: any): Team => ({
-  ...team,
-  memberCount: team.memberCount ?? team.member_count ?? 0,
-  createdAt: team.createdAt ?? team.created_at,
-  isActive: team.isActive ?? team.is_active ?? true,
-  sortOrder: team.sortOrder ?? team.sort_order ?? 0,
-})
-
 export function TeamProvider({ children }: { children: ReactNode }) {
-  const { data: teamsData, isLoading: teamsLoading, mutate: mutateTeams } = useTeamsSWR(HARDCODED_PRACTICE_ID)
+  const [teams, setTeams] = useState<Team[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
+  const [loading, setLoading] = useState(true)
+  const hasFetched = useRef(false)
 
-  const {
-    data: membersData,
-    isLoading: membersLoading,
-    mutate: mutateMembers,
-  } = useTeamMembersSWR(HARDCODED_PRACTICE_ID)
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const { currentUser, loading: userLoading } = useUser()
 
-  const teams: Team[] = (teamsData || []).map(mapTeamData)
-  const teamMembers: TeamMember[] = (membersData || [])
-    .filter((m: any) => m.id && m.id.trim() !== "")
-    .map(mapMemberData)
+  const practiceId = HARDCODED_PRACTICE_ID
 
-  const loading = teamsLoading || membersLoading
+  const fetchTeamsAndMembers = useCallback(async () => {
+    if (!practiceId) return
 
-  const refetchTeamMembers = async () => {
-    await Promise.all([mutateTeams(), mutateMembers()])
-  }
-
-  const addTeam = async (teamData: Omit<Team, "id" | "createdAt" | "memberCount" | "sortOrder">) => {
-    const optimisticTeam: Team = {
-      ...teamData,
-      id: `temp-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      memberCount: 0,
-      sortOrder: teams.length,
-    }
+    setLoading(true)
 
     try {
+      // Fetch teams and members in parallel
+      const [teamsResponse, membersResponse] = await Promise.all([
+        fetch(`/api/practices/${practiceId}/teams`, { credentials: "include" }),
+        fetch(`/api/practices/${practiceId}/team-members`, { credentials: "include" }),
+      ])
+
+      if (teamsResponse.ok) {
+        const teamsData = await teamsResponse.json()
+        const fetchedTeams = Array.isArray(teamsData) ? teamsData : teamsData.teams || []
+        setTeams(fetchedTeams)
+      }
+
+      if (membersResponse.ok) {
+        const membersData = await membersResponse.json()
+        const fetchedMembers = Array.isArray(membersData) ? membersData : membersData.members || []
+        setTeamMembers(
+          fetchedMembers.map((m: any) => ({
+            ...m,
+            id: m.id || m.user_id,
+            name: m.name || `${m.first_name || ""} ${m.last_name || ""}`.trim() || "Unknown",
+            practiceId: m.practice_id?.toString() || practiceId,
+            teamIds: m.team_ids || m.teamIds || [],
+            permissions: m.permissions || [],
+            lastActive: m.last_active || m.lastActive || new Date().toISOString(),
+            isActive: m.is_active ?? true,
+            joinedAt: m.created_at || m.joinedAt || new Date().toISOString(),
+          })),
+        )
+      }
+    } catch (error) {
+      console.error("Error fetching teams/members:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [practiceId])
+
+  useEffect(() => {
+    if (userLoading || practiceLoading) return
+    if (!currentUser?.id) {
+      setLoading(false)
+      return
+    }
+    if (hasFetched.current) return
+
+    hasFetched.current = true
+    fetchTeamsAndMembers()
+  }, [currentUser, userLoading, practiceLoading, fetchTeamsAndMembers])
+
+  const refetchTeamMembers = useCallback(async () => {
+    hasFetched.current = false
+    await fetchTeamsAndMembers()
+  }, [fetchTeamsAndMembers])
+
+  const addTeam = useCallback(
+    async (team: Omit<Team, "id" | "createdAt" | "memberCount" | "sortOrder">) => {
+      const newTeam: Team = {
+        ...team,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        memberCount: 0,
+        sortOrder: teams.length,
+      }
+
       // Optimistic update
-      mutateTeams([...teams, optimisticTeam], false)
+      setTeams((prev) => [...prev, newTeam])
 
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/teams`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(teamData),
-      })
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/teams`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(team),
+        })
 
-      if (res.ok) {
-        toast.success("Team erfolgreich erstellt")
-        // Revalidate to get real ID
-        mutateTeams()
-      } else {
+        if (response.ok) {
+          const data = await response.json()
+          // Update with server response
+          setTeams((prev) => prev.map((t) => (t.id === newTeam.id ? { ...newTeam, ...data } : t)))
+          toast.success("Team erstellt")
+        } else {
+          // Rollback
+          setTeams((prev) => prev.filter((t) => t.id !== newTeam.id))
+          toast.error("Fehler beim Erstellen des Teams")
+        }
+      } catch (error) {
+        setTeams((prev) => prev.filter((t) => t.id !== newTeam.id))
         toast.error("Fehler beim Erstellen des Teams")
-        // Rollback on error
-        mutateTeams()
       }
-    } catch (error) {
-      toast.error("Fehler beim Erstellen des Teams")
-      mutateTeams()
-      console.error("Add team error:", error)
-    }
-  }
-
-  const reorderTeams = async (teamIds: string[]) => {
-    const reorderedTeams = teamIds
-      .map((id, index) => {
-        const team = teams.find((t) => t.id === id)
-        return team ? { ...team, sortOrder: index } : null
-      })
-      .filter(Boolean) as Team[]
-
-    try {
-      // Optimistic update
-      mutateTeams(reorderedTeams, false)
-
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/teams`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamIds }),
-      })
-
-      if (!res.ok) {
-        mutateTeams()
-        toast.error("Fehler beim Speichern der Reihenfolge")
-      } else {
-        toast.success("Reihenfolge gespeichert")
-      }
-    } catch (error) {
-      mutateTeams()
-      toast.error("Fehler beim Speichern der Reihenfolge")
-      console.error("Reorder teams error:", error)
-    }
-  }
-
-  const updateTeam = async (id: string, updates: Partial<Team>) => {
-    const updatedTeams = teams.map((team) => (team.id === id ? { ...team, ...updates } : team))
-
-    try {
-      // Optimistic update
-      mutateTeams(updatedTeams, false)
-
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/teams/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      })
-
-      if (res.ok) {
-        toast.success("Team erfolgreich aktualisiert")
-      } else {
-        toast.error("Fehler beim Aktualisieren des Teams")
-        mutateTeams()
-      }
-    } catch (error) {
-      toast.error("Fehler beim Aktualisieren des Teams")
-      mutateTeams()
-      console.error("Update team error:", error)
-    }
-  }
-
-  const deleteTeam = async (id: string) => {
-    const filteredTeams = teams.filter((team) => team.id !== id)
-    const updatedMembers = teamMembers.map((member) => ({
-      ...member,
-      teamIds: member.teamIds.filter((teamId) => teamId !== id),
-    }))
-
-    try {
-      // Optimistic update
-      mutateTeams(filteredTeams, false)
-      mutateMembers(updatedMembers, false)
-
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/teams/${id}`, {
-        method: "DELETE",
-      })
-
-      if (res.ok) {
-        toast.success("Team erfolgreich gelöscht")
-      } else {
-        toast.error("Fehler beim Löschen des Teams")
-        mutateTeams()
-        mutateMembers()
-      }
-    } catch (error) {
-      toast.error("Fehler beim Löschen des Teams")
-      mutateTeams()
-      mutateMembers()
-      console.error("Delete team error:", error)
-    }
-  }
-
-  const assignMemberToTeam = async (memberId: string, teamId: string) => {
-    const member = teamMembers.find((m) => m.id === memberId)
-    if (member?.role === "superadmin") return
-
-    const updatedTeamIds = [...(member?.teamIds || []), teamId]
-    const updatedMembers = teamMembers.map((m) =>
-      m.id === memberId && !m.teamIds.includes(teamId) ? { ...m, teamIds: [...m.teamIds, teamId] } : m,
-    )
-
-    try {
-      // Optimistic update
-      mutateMembers(updatedMembers, false)
-
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/team-members/${memberId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamIds: updatedTeamIds }),
-      })
-
-      if (res.ok) {
-        toast.success("Mitglied erfolgreich zugewiesen")
-      } else {
-        toast.error("Fehler beim Zuweisen des Mitglieds")
-        mutateMembers()
-      }
-    } catch (error) {
-      toast.error("Fehler beim Zuweisen des Mitglieds")
-      mutateMembers()
-      console.error("Assign member error:", error)
-    }
-  }
-
-  const removeMemberFromTeam = async (memberId: string, teamId: string) => {
-    const member = teamMembers.find((m) => m.id === memberId)
-    const updatedTeamIds = member?.teamIds.filter((id) => id !== teamId) || []
-    const updatedMembers = teamMembers.map((m) =>
-      m.id === memberId ? { ...m, teamIds: m.teamIds.filter((id) => id !== teamId) } : m,
-    )
-
-    try {
-      // Optimistic update
-      mutateMembers(updatedMembers, false)
-
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/team-members/${memberId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamIds: updatedTeamIds }),
-      })
-
-      if (res.ok) {
-        toast.success("Mitglied erfolgreich entfernt")
-      } else {
-        toast.error("Fehler beim Entfernen des Mitglieds")
-        mutateMembers()
-      }
-    } catch (error) {
-      toast.error("Fehler beim Entfernen des Mitglieds")
-      mutateMembers()
-      console.error("Remove member error:", error)
-    }
-  }
-
-  const addTeamMember = async (memberData: Omit<TeamMember, "id" | "joinedAt">) => {
-    if (memberData.role === "superadmin") return
-
-    const optimisticMember: TeamMember = {
-      ...memberData,
-      id: `temp-${Date.now()}`,
-      permissions: memberData.permissions || [],
-      lastActive: new Date().toISOString(),
-      teamIds: memberData.teamIds || [],
-    }
-
-    try {
-      // Optimistic update
-      mutateMembers([...teamMembers, optimisticMember], false)
-
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/team-members`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(memberData),
-      })
-
-      if (res.ok) {
-        toast.success("Team-Mitglied erfolgreich hinzugefügt")
-        mutateMembers()
-      } else {
-        toast.error("Fehler beim Hinzufügen des Team-Mitglieds")
-        mutateMembers()
-      }
-    } catch (error) {
-      toast.error("Fehler beim Hinzufügen des Team-Mitglieds")
-      mutateMembers()
-      console.error("Add team member error:", error)
-    }
-  }
-
-  const updateTeamMember = async (id: string, updates: Partial<TeamMember>) => {
-    if (updates.role === "superadmin") return
-
-    const updatedMembers = teamMembers.map((member) => (member.id === id ? { ...member, ...updates } : member))
-
-    try {
-      // Optimistic update
-      mutateMembers(updatedMembers, false)
-
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/team-members/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      })
-
-      if (res.ok) {
-        toast.success("Team-Mitglied erfolgreich aktualisiert")
-      } else {
-        toast.error("Fehler beim Aktualisieren des Team-Mitglieds")
-        mutateMembers()
-      }
-    } catch (error) {
-      toast.error("Fehler beim Aktualisieren des Team-Mitglieds")
-      mutateMembers()
-      console.error("Update team member error:", error)
-    }
-  }
-
-  const removeTeamMember = async (id: string) => {
-    const filteredMembers = teamMembers.filter((member) => member.id !== id)
-
-    try {
-      // Optimistic update
-      mutateMembers(filteredMembers, false)
-
-      const res = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/team-members/${id}`, {
-        method: "DELETE",
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        toast.error(errorData.error || "Fehler beim Entfernen des Team-Mitglieds")
-        mutateMembers()
-        throw new Error(errorData.error || "Fehler beim Entfernen des Team-Mitglieds")
-      }
-
-      toast.success("Team-Mitglied erfolgreich entfernt")
-    } catch (error) {
-      mutateMembers()
-      console.error("Error removing team member:", error)
-      throw error
-    }
-  }
-
-  // Pending invites stay local for now
-  const [pendingInvites, setPendingInvites] = React.useState<PendingInvite[]>([])
-
-  const inviteTeamMember = (email: string, role: User["role"]) => {
-    if (role === "superadmin") return
-
-    const newInvite: PendingInvite = {
-      id: Date.now().toString(),
-      email,
-      role,
-      invitedBy: "Admin",
-      invitedAt: new Date().toISOString().split("T")[0],
-      status: "pending",
-    }
-    setPendingInvites((prev) => [...prev, newInvite])
-  }
-
-  return (
-    <TeamContext.Provider
-      value={{
-        teamMembers: filterNonSuperAdmins(teamMembers),
-        teams,
-        addTeam,
-        updateTeam,
-        deleteTeam,
-        reorderTeams,
-        assignMemberToTeam,
-        removeMemberFromTeam,
-        addTeamMember,
-        updateTeamMember,
-        removeTeamMember,
-        inviteTeamMember,
-        pendingInvites,
-        loading,
-        refetchTeamMembers,
-      }}
-    >
-      {children}
-    </TeamContext.Provider>
+    },
+    [practiceId, teams.length],
   )
-}
 
-import React from "react"
+  const updateTeam = useCallback(
+    async (id: string, updates: Partial<Team>) => {
+      const previousTeams = teams
+
+      // Optimistic update
+      setTeams((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)))
+
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/teams/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(updates),
+        })
+
+        if (!response.ok) {
+          setTeams(previousTeams)
+          toast.error("Fehler beim Aktualisieren des Teams")
+        }
+      } catch (error) {
+        setTeams(previousTeams)
+        toast.error("Fehler beim Aktualisieren des Teams")
+      }
+    },
+    [practiceId, teams],
+  )
+
+  const deleteTeam = useCallback(
+    async (id: string) => {
+      const previousTeams = teams
+
+      // Optimistic update
+      setTeams((prev) => prev.filter((t) => t.id !== id))
+
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/teams/${id}`, {
+          method: "DELETE",
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          toast.success("Team gelöscht")
+        } else {
+          setTeams(previousTeams)
+          toast.error("Fehler beim Löschen des Teams")
+        }
+      } catch (error) {
+        setTeams(previousTeams)
+        toast.error("Fehler beim Löschen des Teams")
+      }
+    },
+    [practiceId, teams],
+  )
+
+  const reorderTeams = useCallback(
+    async (teamIds: string[]) => {
+      const reorderedTeams = teamIds
+        .map((id, index) => {
+          const team = teams.find((t) => t.id === id)
+          return team ? { ...team, sortOrder: index } : null
+        })
+        .filter(Boolean) as Team[]
+
+      setTeams(reorderedTeams)
+
+      try {
+        await fetch(`/api/practices/${practiceId}/teams/reorder`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ teamIds }),
+        })
+      } catch (error) {
+        console.error("Error reordering teams:", error)
+      }
+    },
+    [practiceId, teams],
+  )
+
+  const assignMemberToTeam = useCallback(
+    async (memberId: string, teamId: string) => {
+      setTeamMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, teamIds: [...new Set([...m.teamIds, teamId])] } : m)),
+      )
+
+      try {
+        await fetch(`/api/practices/${practiceId}/team-members/${memberId}/assign`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ teamId }),
+        })
+      } catch (error) {
+        console.error("Error assigning member:", error)
+      }
+    },
+    [practiceId],
+  )
+
+  const removeMemberFromTeam = useCallback(
+    async (memberId: string, teamId: string) => {
+      setTeamMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, teamIds: m.teamIds.filter((t) => t !== teamId) } : m)),
+      )
+
+      try {
+        await fetch(`/api/practices/${practiceId}/team-members/${memberId}/unassign`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ teamId }),
+        })
+      } catch (error) {
+        console.error("Error removing member:", error)
+      }
+    },
+    [practiceId],
+  )
+
+  const addTeamMember = useCallback(
+    async (member: Omit<TeamMember, "id" | "joinedAt">) => {
+      const newMember: TeamMember = {
+        ...member,
+        id: crypto.randomUUID(),
+        joinedAt: new Date().toISOString(),
+        practiceId: practiceId,
+      }
+
+      setTeamMembers((prev) => [...prev, newMember])
+
+      try {
+        await fetch(`/api/practices/${practiceId}/team-members`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(member),
+        })
+        toast.success("Teammitglied hinzugefügt")
+      } catch (error) {
+        setTeamMembers((prev) => prev.filter((m) => m.id !== newMember.id))
+        toast.error("Fehler beim Hinzufügen")
+      }
+    },
+    [practiceId],
+  )
+
+  const updateTeamMember = useCallback(
+    async (id: string, updates: Partial<TeamMember>) => {
+      const previousMembers = teamMembers
+
+      setTeamMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)))
+
+      try {
+        await fetch(`/api/practices/${practiceId}/team-members/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(updates),
+        })
+      } catch (error) {
+        setTeamMembers(previousMembers)
+        toast.error("Fehler beim Aktualisieren")
+      }
+    },
+    [practiceId, teamMembers],
+  )
+
+  const removeTeamMember = useCallback(
+    async (id: string) => {
+      const previousMembers = teamMembers
+
+      setTeamMembers((prev) => prev.filter((m) => m.id !== id))
+
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/team-members/${id}`, {
+          method: "DELETE",
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          toast.success("Teammitglied entfernt")
+        } else {
+          setTeamMembers(previousMembers)
+          toast.error("Fehler beim Entfernen")
+        }
+      } catch (error) {
+        setTeamMembers(previousMembers)
+        toast.error("Fehler beim Entfernen")
+      }
+    },
+    [practiceId, teamMembers],
+  )
+
+  const inviteTeamMember = useCallback(
+    async (email: string, role: User["role"]) => {
+      const invite: PendingInvite = {
+        id: crypto.randomUUID(),
+        email,
+        role,
+        sentAt: new Date().toISOString(),
+        status: "pending",
+      }
+
+      setPendingInvites((prev) => [...prev, invite])
+
+      try {
+        await fetch(`/api/practices/${practiceId}/invites`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, role }),
+        })
+        toast.success("Einladung gesendet")
+      } catch (error) {
+        setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id))
+        toast.error("Fehler beim Senden der Einladung")
+      }
+    },
+    [practiceId],
+  )
+
+  const contextValue = useMemo(
+    () => ({
+      teams,
+      teamMembers,
+      addTeam,
+      updateTeam,
+      deleteTeam,
+      reorderTeams,
+      assignMemberToTeam,
+      removeMemberFromTeam,
+      addTeamMember,
+      updateTeamMember,
+      removeTeamMember,
+      inviteTeamMember,
+      pendingInvites,
+      loading,
+      refetchTeamMembers,
+    }),
+    [
+      teams,
+      teamMembers,
+      addTeam,
+      updateTeam,
+      deleteTeam,
+      reorderTeams,
+      assignMemberToTeam,
+      removeMemberFromTeam,
+      addTeamMember,
+      updateTeamMember,
+      removeTeamMember,
+      inviteTeamMember,
+      pendingInvites,
+      loading,
+      refetchTeamMembers,
+    ],
+  )
+
+  return <TeamContext.Provider value={contextValue}>{children}</TeamContext.Provider>
+}
 
 export function useTeam() {
   const context = useContext(TeamContext)

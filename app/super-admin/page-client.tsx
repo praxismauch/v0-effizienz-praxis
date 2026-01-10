@@ -2,10 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SystemOptimizationReport } from "@/components/system-optimization-report"
-import { Suspense } from "react"
+import { Suspense, useState, useEffect, useRef, useCallback } from "react"
 import { LayoutGrid, Activity, TrendingUp, Users, Building2, TicketCheck, RefreshCw, Map } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import useSWR from "swr"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import dynamic from "next/dynamic"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -14,8 +13,6 @@ const RoadmapManager = dynamic(() => import("@/components/roadmap-manager"), {
   loading: () => <div className="flex items-center justify-center h-96">Lädt Roadmap...</div>,
 })
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
-
 interface DashboardStats {
   users: { total: number; active: number; superAdmins: number }
   practices: { total: number; active: number }
@@ -23,34 +20,72 @@ interface DashboardStats {
   system: { status: "online" | "degraded" | "offline"; uptime: number }
 }
 
+interface MetricsData {
+  performance?: {
+    avgResponseTime?: number
+    slowQueries?: number
+    cacheHitRate?: number
+  }
+  database?: {
+    tablesWithRLS?: number
+    totalTables?: number
+  }
+}
+
 function DashboardContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const activeTab = searchParams.get("tab") || "overview"
 
-  const {
-    data: stats,
-    error: statsError,
-    isLoading: statsLoading,
-    mutate: refreshStats,
-  } = useSWR<DashboardStats>(
-    "/api/super-admin/dashboard-stats",
-    fetcher,
-    { refreshInterval: 60000 }, // Refresh every minute
-  )
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [metrics, setMetrics] = useState<MetricsData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+  const hasFetched = useRef(false)
 
-  const {
-    data: metrics,
-    error: metricsError,
-    isLoading: metricsLoading,
-  } = useSWR(
-    "/api/super-admin/optimization-metrics",
-    fetcher,
-    { refreshInterval: 300000 }, // Refresh every 5 minutes
-  )
+  const fetchData = useCallback(async () => {
+    setIsLoading(true)
+    setHasError(false)
 
-  const isLoading = statsLoading || metricsLoading
-  const hasError = statsError || metricsError
+    try {
+      const [statsRes, metricsRes] = await Promise.all([
+        fetch("/api/super-admin/dashboard-stats"),
+        fetch("/api/super-admin/optimization-metrics"),
+      ])
+
+      if (statsRes.ok) {
+        const statsData = await statsRes.json()
+        setStats(statsData)
+      }
+
+      if (metricsRes.ok) {
+        const metricsData = await metricsRes.json()
+        setMetrics(metricsData)
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error)
+      setHasError(true)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+    fetchData()
+  }, [fetchData])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData()
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [fetchData])
+
+  const refreshStats = () => {
+    fetchData()
+  }
 
   // Calculate performance score from metrics
   const performanceScore = metrics

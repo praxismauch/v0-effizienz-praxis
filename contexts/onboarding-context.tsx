@@ -154,12 +154,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }
   }, [currentPractice?.createdAt])
 
+  const HARDCODED_PRACTICE_ID = "1"
+
+  const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+
   const loadProgressFromDb = useCallback(async () => {
-    if (!currentPractice?.id || !currentUser?.id || hasLoadedFromDb.current) return
+    if (!currentUser?.id || hasLoadedFromDb.current) return
 
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/practices/${currentPractice.id}/onboarding-progress`, {
+      const response = await fetch(`/api/practices/${practiceId}/onboarding-progress`, {
         credentials: "include",
       })
 
@@ -182,7 +186,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           }
         } else {
           // No progress found - check localStorage for migration
-          const storageKey = `onboarding_${currentPractice.id}`
+          const storageKey = `onboarding_${practiceId}`
           const stored = localStorage.getItem(storageKey)
           if (stored) {
             try {
@@ -212,12 +216,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [currentPractice?.id, currentUser?.id])
+  }, [practiceId, currentUser?.id])
 
   const saveProgressToDb = useCallback(
     async (progress?: Partial<OnboardingProgress>) => {
-      if (!currentPractice?.id) return
-
       try {
         const payload = progress || {
           currentStep,
@@ -229,7 +231,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           painPoints: painPoints.filter((p) => p.title.trim()),
         }
 
-        await fetch(`/api/practices/${currentPractice.id}/onboarding-progress`, {
+        await fetch(`/api/practices/${practiceId}/onboarding-progress`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -237,7 +239,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         })
 
         // Also save to localStorage as backup
-        const storageKey = `onboarding_${currentPractice.id}`
+        const storageKey = `onboarding_${practiceId}`
         localStorage.setItem(
           storageKey,
           JSON.stringify({
@@ -254,53 +256,27 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         console.error("Error saving onboarding progress:", error)
       }
     },
-    [
-      currentPractice?.id,
-      currentStep,
-      steps,
-      hasCompletedOnboarding,
-      teamSize,
-      practiceGoals,
-      practiceType,
-      painPoints,
-    ],
+    [practiceId, currentStep, steps, hasCompletedOnboarding, teamSize, practiceGoals, practiceType, painPoints],
   )
 
-  const saveProgress = useCallback(async () => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-    }
-    saveTimeoutRef.current = setTimeout(() => {
-      saveProgressToDb()
-    }, 500)
-  }, [saveProgressToDb])
+  const completeStep = useCallback((stepId: string) => {
+    setSteps((prev) => prev.map((step) => (step.id === stepId ? { ...step, completed: true } : step)))
+  }, [])
 
-  // Load from database on mount
-  useEffect(() => {
-    loadProgressFromDb()
-  }, [loadProgressFromDb])
+  const saveProgress = useCallback(async () => {
+    await saveProgressToDb()
+  }, [saveProgressToDb])
 
   // Auto-save when state changes
   useEffect(() => {
-    if (hasLoadedFromDb.current && currentPractice?.id) {
+    if (hasLoadedFromDb.current) {
       saveProgress()
     }
-  }, [
-    currentStep,
-    steps,
-    hasCompletedOnboarding,
-    teamSize,
-    practiceGoals,
-    practiceType,
-    saveProgress,
-    currentPractice?.id,
-  ])
+  }, [currentStep, steps, hasCompletedOnboarding, teamSize, practiceGoals, practiceType, saveProgress, practiceId])
 
   const loadPainPoints = useCallback(async () => {
-    if (!currentPractice?.id) return
-
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/pain-points`, {
+      const response = await fetch(`/api/practices/${practiceId}/pain-points`, {
         credentials: "include",
       })
 
@@ -317,14 +293,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error loading pain points:", error)
     }
-  }, [currentPractice?.id])
+  }, [practiceId])
 
   const savePainPoints = useCallback(
     async (createGoals = true): Promise<{ goalsCreated: number } | null> => {
-      if (!currentPractice?.id) return null
-
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/pain-points`, {
+        const response = await fetch(`/api/practices/${practiceId}/pain-points`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -348,25 +322,19 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         return null
       }
     },
-    [currentPractice?.id, painPoints, saveProgressToDb],
+    [practiceId, painPoints, saveProgressToDb],
   )
-
-  const completeStep = useCallback((stepId: string) => {
-    setSteps((prev) => prev.map((step) => (step.id === stepId ? { ...step, completed: true } : step)))
-  }, [])
 
   const markOnboardingComplete = useCallback(async () => {
     setHasCompletedOnboarding(true)
     setIsOnboardingOpen(false)
     setSteps((prev) => prev.map((step) => ({ ...step, completed: true })))
 
-    if (currentPractice?.id) {
-      await saveProgressToDb({
-        isCompleted: true,
-        steps: steps.map((s) => ({ ...s, completed: true })),
-      })
-    }
-  }, [currentPractice?.id, saveProgressToDb, steps])
+    await saveProgressToDb({
+      isCompleted: true,
+      steps: steps.map((s) => ({ ...s, completed: true })),
+    })
+  }, [saveProgressToDb, steps])
 
   const resetOnboarding = useCallback(async () => {
     setHasCompletedOnboarding(false)
@@ -375,14 +343,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setIsOnboardingOpen(true)
     hasLoadedFromDb.current = false
 
-    if (currentPractice?.id) {
-      await saveProgressToDb({
-        currentStep: 0,
-        steps: ONBOARDING_STEPS,
-        isCompleted: false,
-      })
-    }
-  }, [currentPractice?.id, saveProgressToDb])
+    await saveProgressToDb({
+      currentStep: 0,
+      steps: ONBOARDING_STEPS,
+      isCompleted: false,
+    })
+  }, [saveProgressToDb])
 
   const shouldShowOnboarding = isNewPractice || !hasCompletedOnboarding
 

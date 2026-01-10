@@ -85,34 +85,11 @@ export function UserProvider({
   children: ReactNode
   initialUser?: User | null
 }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    if (initialUser) {
-      if (IS_DEBUG) {
-        console.debug("[UserProvider] Using initialUser from server")
-      }
-      return initialUser
-    }
-
-    if (typeof window === "undefined") return null
-    try {
-      const stored = localStorage.getItem("effizienz_current_user") || sessionStorage.getItem("effizienz_current_user")
-      if (stored) {
-        if (IS_DEBUG) {
-          console.debug("[UserProvider] Using stored user from localStorage/sessionStorage")
-        }
-        return JSON.parse(stored) as User
-      }
-    } catch (e) {
-      if (IS_DEBUG) {
-        console.debug("[UserProvider] Error parsing stored user:", e)
-      }
-    }
-    return null
-  })
-
-  const [loading, setLoading] = useState(!initialUser && !currentUser)
+  const [currentUser, setCurrentUser] = useState<User | null>(initialUser || null)
+  const [loading, setLoading] = useState(!initialUser)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [superAdmins, setSuperAdmins] = useState<User[]>([])
+  const [mounted, setMounted] = useState(false)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -150,7 +127,33 @@ export function UserProvider({
   }, [])
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    if (currentUser || initialUser) return
+
+    try {
+      const stored = localStorage.getItem("effizienz_current_user") || sessionStorage.getItem("effizienz_current_user")
+      if (stored) {
+        const parsedUser = JSON.parse(stored) as User
+        if (IS_DEBUG) {
+          console.debug("[UserProvider] Restored user from storage after hydration")
+        }
+        setCurrentUser(parsedUser)
+        setLoading(false)
+      }
+    } catch (e) {
+      if (IS_DEBUG) {
+        console.debug("[UserProvider] Error parsing stored user:", e)
+      }
+    }
+  }, [mounted, currentUser, initialUser])
+
+  useEffect(() => {
     if (typeof window === "undefined") return
+    if (!mounted) return
     if (hasFetchedUser.current) return
     if (currentUser || initialUser) {
       setLoading(false)
@@ -166,22 +169,59 @@ export function UserProvider({
       setLoading(true)
 
       try {
-        const response = await fetch("/api/user/me", {
-          credentials: "include",
-        })
+        const supabase = getSupabase()
+        if (!supabase) {
+          setLoading(false)
+          return
+        }
 
-        if (response.ok) {
-          const data = await response.json()
-          if (data.user) {
-            setCurrentUser(data.user)
-            persistUserToStorage(data.user)
+        const {
+          data: { user: authUser },
+          error: authError,
+        } = await supabase.auth.getUser()
+
+        if (authError || !authUser) {
+          if (IS_DEBUG) {
+            console.debug("[UserProvider] No auth user found, redirecting to login")
           }
-        } else if (response.status === 401) {
-          // Not authenticated - redirect to login
           if (!isPublicRoute(pathname)) {
             router.push("/auth/login")
           }
+          setLoading(false)
+          return
         }
+
+        // Fetch user profile from database
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", authUser.id)
+          .single()
+
+        if (profileError || !profile) {
+          if (IS_DEBUG) {
+            console.debug("[UserProvider] No profile found for user:", authUser.id)
+          }
+          setLoading(false)
+          return
+        }
+
+        const user: User = {
+          id: profile.id,
+          name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "User",
+          email: profile.email || authUser.email || "",
+          role: normalizeRole(profile.role) as User["role"],
+          avatar: profile.avatar,
+          practiceId: profile.practice_id?.toString() || "1",
+          practice_id: profile.practice_id?.toString() || "1",
+          isActive: profile.is_active ?? true,
+          joinedAt: profile.created_at || new Date().toISOString(),
+          preferred_language: profile.preferred_language,
+          firstName: profile.first_name,
+        }
+
+        setCurrentUser(user)
+        persistUserToStorage(user)
       } catch (error) {
         console.error("Error fetching user:", error)
       } finally {
@@ -190,7 +230,7 @@ export function UserProvider({
     }
 
     fetchUser()
-  }, [pathname, currentUser, initialUser, router, persistUserToStorage])
+  }, [pathname, currentUser, initialUser, router, persistUserToStorage, getSupabase, mounted])
 
   useEffect(() => {
     if (!currentUser) return
@@ -216,7 +256,7 @@ export function UserProvider({
                 email: u.email,
                 role: u.role,
                 isActive: u.is_active ?? true,
-                practiceId: u.practice_id?.toString() || null,
+                practiceId: u.practice_id?.toString() || "1",
                 joinedAt: u.created_at || new Date().toISOString(),
                 avatar: u.avatar,
                 preferred_language: u.preferred_language,
@@ -229,137 +269,18 @@ export function UserProvider({
       }
     }
 
-    // Small delay to not block initial render
-    const timer = setTimeout(fetchSuperAdmins, 100)
-    return () => clearTimeout(timer)
+    fetchSuperAdmins()
   }, [currentUser])
 
-  useEffect(() => {
-    if (currentUser) {
-      persistUserToStorage(currentUser)
-    }
-  }, [currentUser, persistUserToStorage])
+  const isAdmin = useMemo(() => {
+    if (!currentUser) return false
+    return isPracticeAdminRole(currentUser.role) || isSuperAdminRole(currentUser.role)
+  }, [currentUser])
 
-  // Navigation effect - redirect logic
-  useEffect(() => {
-    if (loading) return
-
-    const isPublic = isPublicRoute(pathname)
-
-    if (isPublic && currentUser && pathname === "/") {
-      router.push("/dashboard")
-      return
-    }
-
-    if (!isPublic && !currentUser && !loading) {
-      router.push("/auth/login")
-    }
-  }, [currentUser, loading, pathname, router])
-
-  const normalizedRole = useMemo(() => {
-    const role = currentUser?.role
-    return normalizeRole(role)
-  }, [currentUser?.role])
-
-  const createSuperAdmin = useCallback(async (userData: Omit<User, "id" | "joinedAt">) => {
-    try {
-      const res = await fetch("/api/super-admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          email: userData.email,
-          password: "ChangeMe123!",
-          name: userData.name,
-          practiceId: userData.practiceId || null,
-          preferred_language: userData.preferred_language || "de",
-        }),
-      })
-
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || "Failed to create super admin")
-      }
-
-      const data = await res.json()
-      const newAdmin: User = {
-        id: data.user?.id || `temp-${Date.now()}`,
-        name: userData.name,
-        email: userData.email,
-        role: "superadmin",
-        isActive: true,
-        practiceId: userData.practiceId || null,
-        joinedAt: new Date().toISOString(),
-        preferred_language: userData.preferred_language,
-      }
-      setSuperAdmins((prev) => [...prev, newAdmin])
-    } catch (error) {
-      console.error("Error creating super admin:", error)
-      throw error
-    }
-  }, [])
-
-  const updateSuperAdmin = useCallback(async (id: string, userData: Partial<User>) => {
-    // Update local state immediately
-    setSuperAdmins((prev) => prev.map((admin) => (admin.id === id ? { ...admin, ...userData } : admin)))
-
-    try {
-      const res = await fetch(`/api/super-admin/users/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          name: userData.name,
-          email: userData.email,
-          isActive: userData.isActive,
-          practiceId: userData.practiceId,
-          preferred_language: userData.preferred_language,
-        }),
-      })
-
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || "Failed to update super admin")
-      }
-    } catch (error) {
-      console.error("Error updating super admin:", error)
-      // Revert on error - refetch
-      hasFetchedSuperAdmins.current = false
-      throw error
-    }
-  }, [])
-
-  const deleteSuperAdmin = useCallback((id: string) => {
-    setSuperAdmins((prev) => prev.filter((admin) => admin.id !== id))
-
-    fetch(`/api/super-admin/users/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    }).catch((error) => {
-      console.error("Error deleting super admin:", error)
-    })
-
-    return { success: true }
-  }, [])
-
-  const toggleSuperAdminStatus = useCallback(
-    (id: string) => {
-      setSuperAdmins((prev) => prev.map((admin) => (admin.id === id ? { ...admin, isActive: !admin.isActive } : admin)))
-
-      const admin = superAdmins.find((a) => a.id === id)
-      if (admin) {
-        fetch(`/api/super-admin/users/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ isActive: !admin.isActive }),
-        }).catch((error) => {
-          console.error("Error toggling super admin status:", error)
-        })
-      }
-    },
-    [superAdmins],
-  )
+  const isSuperAdmin = useMemo(() => {
+    if (!currentUser) return false
+    return isSuperAdminRole(currentUser.role)
+  }, [currentUser])
 
   const signOut = useCallback(async () => {
     setIsLoggingOut(true)
@@ -368,31 +289,56 @@ export function UserProvider({
       if (supabase) {
         await supabase.auth.signOut()
       }
-
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      })
-
       setCurrentUser(null)
       persistUserToStorage(null)
       hasFetchedUser.current = false
       hasFetchedSuperAdmins.current = false
-
       router.push("/auth/login")
     } catch (error) {
       console.error("Error signing out:", error)
     } finally {
       setIsLoggingOut(false)
     }
-  }, [getSupabase, router, persistUserToStorage])
+  }, [getSupabase, persistUserToStorage, router])
+
+  const createSuperAdmin = useCallback((userData: Omit<User, "id" | "joinedAt">) => {
+    const newAdmin: User = {
+      ...userData,
+      id: crypto.randomUUID(),
+      joinedAt: new Date().toISOString(),
+      practiceId: userData.practiceId || "1",
+    }
+    setSuperAdmins((prev) => [...prev, newAdmin])
+  }, [])
+
+  const updateSuperAdmin = useCallback((id: string, userData: Partial<User>) => {
+    setSuperAdmins((prev) => prev.map((admin) => (admin.id === id ? { ...admin, ...userData } : admin)))
+  }, [])
+
+  const deleteSuperAdmin = useCallback(
+    (id: string) => {
+      if (currentUser?.id === id) {
+        return { success: false, error: "Cannot delete your own account" }
+      }
+      setSuperAdmins((prev) => prev.filter((admin) => admin.id !== id))
+      return { success: true }
+    },
+    [currentUser?.id],
+  )
+
+  const toggleSuperAdminStatus = useCallback((id: string) => {
+    setSuperAdmins((prev) => prev.map((admin) => (admin.id === id ? { ...admin, isActive: !admin.isActive } : admin)))
+  }, [])
 
   const contextValue = useMemo(
     () => ({
       currentUser,
-      setCurrentUser,
-      isAdmin: isPracticeAdminRole(normalizedRole) || isSuperAdminRole(normalizedRole),
-      isSuperAdmin: isSuperAdminRole(normalizedRole),
+      setCurrentUser: (user: User) => {
+        setCurrentUser(user)
+        persistUserToStorage(user)
+      },
+      isAdmin,
+      isSuperAdmin,
       loading,
       isLoggingOut,
       superAdmins,
@@ -404,7 +350,8 @@ export function UserProvider({
     }),
     [
       currentUser,
-      normalizedRole,
+      isAdmin,
+      isSuperAdmin,
       loading,
       isLoggingOut,
       superAdmins,
@@ -413,6 +360,7 @@ export function UserProvider({
       deleteSuperAdmin,
       toggleSuperAdminStatus,
       signOut,
+      persistUserToStorage,
     ],
   )
 

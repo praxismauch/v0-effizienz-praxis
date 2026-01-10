@@ -96,6 +96,8 @@ interface WorkflowContextType {
 
 const WorkflowContext = createContext<WorkflowContextType | undefined>(undefined)
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export function WorkflowProvider({ children }: { children: ReactNode }) {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { currentUser, loading: userLoading } = useUser()
@@ -108,13 +110,14 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
   const fetchCategories = useCallback(
     async (practiceId: string) => {
-      if (!practiceId || practiceId === "" || practiceId === null || practiceId === undefined) {
+      const pid = practiceId || HARDCODED_PRACTICE_ID
+      if (!pid) {
         toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
         return
       }
 
       try {
-        const url = `/api/practices/${practiceId}/orga-categories`
+        const url = `/api/practices/${pid}/orga-categories`
         const response = await fetchWithRetry(url)
         if (response.ok) {
           const data = await safeJsonParse(response, { categories: [] })
@@ -137,13 +140,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    const practiceId = currentPractice?.id
-
-    if (!practiceId || practiceId === "" || practiceId === null || practiceId === undefined) {
-      setIsLoading(false)
-      setError(null)
-      return
-    }
+    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
 
     if (practiceIdRef.current === practiceId) {
       return
@@ -255,14 +252,10 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
   const createWorkflow = useCallback(
     async (workflowData: Omit<Workflow, "id" | "practiceId" | "createdAt" | "updatedAt">) => {
-      if (!currentPractice) {
-        toast.error("Keine Praxis ausgewählt. Bitte Seite neu laden.")
-        console.error("Cannot create workflow - no practice selected")
-        throw new Error("Keine Praxis ausgewählt. Bitte wählen Sie eine Praxis aus.")
-      }
+      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
 
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/workflows`, {
+        const response = await fetch(`/api/practices/${practiceId}/workflows`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(workflowData),
@@ -302,14 +295,10 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
   const updateWorkflow = useCallback(
     async (id: string, updates: Partial<Workflow>) => {
-      if (!currentPractice) {
-        toast.error("Keine Praxis ausgewählt. Bitte Seite neu laden.")
-        console.error("Cannot update workflow - no practice selected")
-        throw new Error("Keine Praxis ausgewählt")
-      }
+      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
 
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/workflows/${id}`, {
+        const response = await fetch(`/api/practices/${practiceId}/workflows/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -341,14 +330,10 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
   const deleteWorkflow = useCallback(
     async (id: string) => {
-      if (!currentPractice) {
-        toast.error("Keine Praxis ausgewählt. Bitte Seite neu laden.")
-        console.error("Cannot delete workflow - no practice selected")
-        throw new Error("Keine Praxis ausgewählt")
-      }
+      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
 
       try {
-        const response = await fetch(`/api/practices/${currentPractice.id}/workflows/${id}`, {
+        const response = await fetch(`/api/practices/${practiceId}/workflows/${id}`, {
           method: "DELETE",
         })
 

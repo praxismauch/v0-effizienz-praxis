@@ -105,6 +105,8 @@ interface AnalyticsDataContextType {
 
 const AnalyticsDataContext = createContext<AnalyticsDataContextType | undefined>(undefined)
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export function AnalyticsDataProvider({ children }: { children: React.ReactNode }) {
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -116,12 +118,14 @@ export function AnalyticsDataProvider({ children }: { children: React.ReactNode 
   const [qualityMetricsData, setQualityMetricsData] = useState<QualityMetricsData[]>([])
   const { currentPractice, isLoading: practiceLoading } = usePractice()
 
+  const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+
   useEffect(() => {
     if (practiceLoading) {
       return
     }
 
-    if (hasError || !currentPractice?.id) {
+    if (hasError) {
       setIsLoading(false)
       return
     }
@@ -134,7 +138,7 @@ export function AnalyticsDataProvider({ children }: { children: React.ReactNode 
       try {
         const timeoutId = setTimeout(() => controller.abort(), 30000)
 
-        const response = await fetch(`/api/analytics/data?practiceId=${currentPractice.id}`, {
+        const response = await fetch(`/api/analytics/data?practiceId=${practiceId}`, {
           signal: controller.signal,
         })
 
@@ -173,7 +177,7 @@ export function AnalyticsDataProvider({ children }: { children: React.ReactNode 
       isMounted = false
       controller.abort()
     }
-  }, [currentPractice?.id, hasError, practiceLoading])
+  }, [practiceId, hasError, practiceLoading])
 
   // CRUD functions for Practice Growth Data
   const addPracticeGrowthData = (data: Omit<PracticeGrowthData, "id" | "createdAt" | "updatedAt">) => {

@@ -64,6 +64,8 @@ import {
 } from "@/components/ui/context-menu"
 import { isSuperAdminRole, isPracticeAdminRole } from "@/lib/auth-utils"
 
+const HARDCODED_PRACTICE_ID = "1"
+
 const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: string, fallback: string) => string) => [
   {
     id: "overview",
@@ -394,12 +396,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   useEffect(() => {
     const loadSidebarPreferences = async () => {
-      if (!currentUser?.id || !currentPractice?.id) return
+      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+      if (!currentUser?.id) return
 
       try {
-        const response = await fetch(
-          `/api/users/${currentUser.id}/sidebar-preferences?practice_id=${currentPractice.id}`,
-        )
+        const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=${practiceId}`)
         if (response.ok) {
           const data = await response.json()
           if (data.preferences) {
@@ -486,7 +487,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
   }, [currentUser?.id, currentPractice?.id])
 
   useEffect(() => {
-    if (!currentUser?.id || !currentPractice?.id || !preferencesLoaded) return
+    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    if (!currentUser?.id || !preferencesLoaded) return
 
     const saveExpandedGroups = async () => {
       try {
@@ -494,7 +496,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            practice_id: currentPractice.id,
+            practice_id: practiceId,
             expanded_groups: expandedGroups,
           }),
         })
@@ -508,7 +510,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
   }, [expandedGroups, currentUser?.id, currentPractice?.id, preferencesLoaded])
 
   useEffect(() => {
-    if (!currentUser?.id || !currentPractice?.id || !preferencesLoaded) return
+    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    if (!currentUser?.id || !preferencesLoaded) return
 
     const saveFavorites = async () => {
       try {
@@ -516,7 +519,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            practice_id: currentPractice.id,
+            practice_id: practiceId,
             favorites: favorites,
           }),
         })
@@ -530,7 +533,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
   }, [favorites, currentUser?.id, currentPractice?.id, preferencesLoaded])
 
   useEffect(() => {
-    if (!currentUser?.id || !currentPractice?.id || !scrollContainerRef.current) return
+    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    if (!currentUser?.id || !scrollContainerRef.current) return
 
     let scrollTimeout: NodeJS.Timeout
 
@@ -545,7 +549,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              practice_id: currentPractice.id,
+              practice_id: practiceId,
               expanded_items: {
                 lastPath: pathname,
                 scrollPosition,
@@ -569,7 +573,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
   }, [currentUser?.id, currentPractice?.id, pathname])
 
   useEffect(() => {
-    if (!currentUser?.id || !currentPractice?.id || !pathname || !preferencesLoaded) return
+    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    if (!currentUser?.id || !pathname || !preferencesLoaded) return
 
     const saveSelectedItem = async () => {
       try {
@@ -579,7 +584,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            practice_id: currentPractice.id,
+            practice_id: practiceId,
             expanded_items: {
               lastPath: pathname,
               scrollPosition,

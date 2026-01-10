@@ -384,8 +384,9 @@ export function SuperAdminAcademyManager() {
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json()
         console.log("[v0] Academy: Courses data received", coursesData)
-        console.log("[v0] Academy: Courses array", coursesData.courses)
-        setCourses(coursesData.courses || [])
+        const coursesArray = Array.isArray(coursesData) ? coursesData : coursesData.courses || []
+        console.log("[v0] Academy: Courses array parsed", coursesArray.length)
+        setCourses(coursesArray)
       } else {
         const errorText = await coursesResponse.text()
         console.error("[v0] Academy: Courses fetch error", coursesResponse.status, errorText)
@@ -397,7 +398,8 @@ export function SuperAdminAcademyManager() {
       if (quizzesResponse.ok) {
         const quizzesData = await quizzesResponse.json()
         console.log("[v0] Academy: Quizzes data received", quizzesData)
-        setQuizzes(quizzesData.quizzes || [])
+        const quizzesArray = Array.isArray(quizzesData) ? quizzesData : quizzesData.quizzes || []
+        setQuizzes(quizzesArray)
       }
 
       // Fetch badges from the new API
@@ -406,7 +408,9 @@ export function SuperAdminAcademyManager() {
       if (badgesResponse.ok) {
         const badgesData = await badgesResponse.json()
         console.log("[v0] Academy: Badges data received", badgesData)
-        setBadges(badgesData.badges || [])
+        const badgesArray = Array.isArray(badgesData) ? badgesData : badgesData.badges || []
+        console.log("[v0] Academy: Badges array parsed", badgesArray.length)
+        setBadges(badgesArray)
       }
     } catch (error) {
       console.error("[v0] Academy: Error fetching data:", error)
@@ -426,7 +430,7 @@ export function SuperAdminAcademyManager() {
       const response = await fetch(`/api/practices/${practiceId}/academy/modules?course_id=${courseId}`)
       if (response.ok) {
         const data = await response.json()
-        const modulesData = data.modules || []
+        const modulesData = Array.isArray(data) ? data : data.modules || []
 
         // Fetch lessons for each module
         const modulesWithLessons = await Promise.all(
@@ -434,7 +438,8 @@ export function SuperAdminAcademyManager() {
             const lessonsResponse = await fetch(`/api/practices/${practiceId}/academy/lessons?module_id=${module.id}`)
             if (lessonsResponse.ok) {
               const lessonsData = await lessonsResponse.json()
-              return { ...module, lessons: lessonsData.lessons || [] }
+              const lessons = Array.isArray(lessonsData) ? lessonsData : lessonsData.lessons || []
+              return { ...module, lessons }
             }
             return { ...module, lessons: [] }
           }),

@@ -1,13 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server-admin"
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     const supabase = await createClient()
 
     const effectivePracticeId =
-      !practiceId || practiceId === "0" || practiceId === "undefined" ? 1 : Number.parseInt(practiceId, 10)
+      !practiceId || practiceId === "0" || practiceId === "undefined"
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId, 10)
 
     console.log("[v0] Fetching academy enrollments for practice:", effectivePracticeId)
 
@@ -54,7 +58,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = await createClient()
 
     const effectivePracticeId =
-      !practiceId || practiceId === "0" || practiceId === "undefined" ? 1 : Number.parseInt(practiceId, 10)
+      !practiceId || practiceId === "0" || practiceId === "undefined"
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId, 10)
 
     const body = await request.json()
     const { userId, courseId } = body

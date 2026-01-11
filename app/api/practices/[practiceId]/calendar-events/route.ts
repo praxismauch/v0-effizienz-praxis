@@ -3,13 +3,18 @@ import { isRateLimitError } from "@/lib/supabase/safe-query"
 import Logger from "@/lib/logger"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
+    const practiceIdInt = Number.parseInt(
+      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID,
+      10,
+    )
 
     Logger.info("calendar-events-api", "Fetching calendar events", { practiceId })
 
@@ -208,7 +213,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
+    const practiceIdInt = Number.parseInt(
+      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID,
+      10,
+    )
 
     const body = await request.json()
 

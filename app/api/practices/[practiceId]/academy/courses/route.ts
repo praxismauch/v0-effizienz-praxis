@@ -1,10 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const effectivePracticeId = practiceId === "0" || practiceId === "undefined" || !practiceId ? "1" : practiceId
+    const effectivePracticeId =
+      practiceId === "0" || practiceId === "undefined" || !practiceId ? HARDCODED_PRACTICE_ID : practiceId
 
     const supabase = createAdminClient()
 
@@ -35,7 +38,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
     const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId ? 1 : Number.parseInt(practiceId)
+      practiceId === "0" || practiceId === "undefined" || !practiceId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId)
 
     const body = await request.json()
     const supabase = createAdminClient()

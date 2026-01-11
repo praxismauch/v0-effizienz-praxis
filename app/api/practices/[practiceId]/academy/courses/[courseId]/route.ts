@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string; courseId: string }> },
@@ -8,7 +10,9 @@ export async function GET(
   try {
     const { practiceId, courseId } = await params
     const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId ? 1 : Number.parseInt(practiceId)
+      practiceId === "0" || practiceId === "undefined" || !practiceId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId)
 
     const supabase = createAdminClient()
 
@@ -39,7 +43,9 @@ export async function PUT(
   try {
     const { practiceId, courseId } = await params
     const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId ? 1 : Number.parseInt(practiceId)
+      practiceId === "0" || practiceId === "undefined" || !practiceId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId)
 
     const body = await request.json()
     const supabase = createAdminClient()
@@ -85,7 +91,9 @@ export async function DELETE(
   try {
     const { practiceId, courseId } = await params
     const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId ? 1 : Number.parseInt(practiceId)
+      practiceId === "0" || practiceId === "undefined" || !practiceId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId)
 
     const supabase = createAdminClient()
 

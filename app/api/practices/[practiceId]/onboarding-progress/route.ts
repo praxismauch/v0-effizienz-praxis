@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
+const HARDCODED_PRACTICE_ID = "1"
+
 // GET - Fetch onboarding progress for current user
 export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
   try {
@@ -18,10 +20,13 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
 
     const supabaseAdmin = createAdminClient()
 
+    const effectivePracticeId =
+      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID
+
     const { data, error } = await supabaseAdmin
       .from("onboarding_progress")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", Number.parseInt(effectivePracticeId))
       .eq("user_id", user.id)
       .maybeSingle()
 
@@ -67,9 +72,12 @@ export async function POST(request: Request, { params }: { params: { practiceId:
 
     const supabaseAdmin = createAdminClient()
 
+    const effectivePracticeId =
+      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID
+
     // Prepare upsert data
     const upsertData: Record<string, unknown> = {
-      practice_id: Number.parseInt(practiceId),
+      practice_id: Number.parseInt(effectivePracticeId),
       user_id: user.id,
       last_step_at: new Date().toISOString(),
     }

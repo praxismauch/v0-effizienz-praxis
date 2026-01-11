@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
         steps: body.steps,
         is_active: true,
         usage_count: 0,
-        hide_items_from_other_users: body.hideItemsFromOtherUsers || false,
       })
       .select()
       .single()

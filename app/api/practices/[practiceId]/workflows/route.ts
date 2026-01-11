@@ -5,9 +5,12 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = await params
+    const { practiceId: rawPracticeId } = await params
+    const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
       return NextResponse.json({ workflows: [] }, { status: 200 })
@@ -110,7 +113,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = await params
+    const { practiceId: rawPracticeId } = await params
+    const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0") {
       console.error("[v0] Workflows POST - Invalid practice ID:", practiceId)
@@ -246,7 +250,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = await params
+    const { practiceId: rawPracticeId } = await params
+    const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0") {
       console.error("[v0] Workflows PATCH - Invalid practice ID:", practiceId)

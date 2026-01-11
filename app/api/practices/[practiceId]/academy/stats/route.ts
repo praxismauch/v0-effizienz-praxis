@@ -1,13 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server-admin"
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId: rawPracticeId } = await params
     const supabase = createClient()
 
     const practiceId =
-      rawPracticeId === "0" || rawPracticeId === "undefined" || !rawPracticeId ? 1 : Number.parseInt(rawPracticeId)
+      rawPracticeId === "0" || rawPracticeId === "undefined" || !rawPracticeId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(rawPracticeId)
 
     console.log("[v0] Academy stats - Practice ID:", practiceId)
 

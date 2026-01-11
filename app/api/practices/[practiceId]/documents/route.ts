@@ -2,11 +2,16 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { type NextRequest, NextResponse } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 
+const HARDCODED_PRACTICE_ID = "1"
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
+    const practiceIdInt = Number.parseInt(
+      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID,
+      10,
+    )
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
@@ -60,7 +65,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
+    const practiceIdInt = Number.parseInt(
+      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID,
+      10,
+    )
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 

@@ -39,22 +39,14 @@ const publicRoutesSet = new Set([
 
 const PUBLIC_ROUTE_PREFIXES = ["/features", "/blog"]
 
-const PUBLIC_API_ROUTES = new Set([
-  "/api/webhooks",
-  "/api/cron",
-  "/api/public", // This already covers /api/public/chat-upload
-  "/api/csrf",
-  "/api/landing-chatbot",
-])
+const PUBLIC_API_ROUTES = new Set(["/api/webhooks", "/api/cron", "/api/public", "/api/csrf", "/api/landing-chatbot"])
 
-const PUBLIC_AUTH_API_PREFIXES = [
-  "/api/auth/", // All auth endpoints (login, logout, register, callback, etc.)
-]
+const PUBLIC_AUTH_API_PREFIXES = ["/api/auth/"]
 
 let cachedSupabaseUrl: string | undefined
 let cachedSupabaseAnonKey: string | undefined
 
-function isPublicRoute(pathname: string): boolean {
+export function isPublicRoute(pathname: string): boolean {
   if (publicRoutesSet.has(pathname)) {
     return true
   }
@@ -138,7 +130,9 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
   const requestId = Math.random().toString(36).substring(7)
 
-  if (isPublicRoute(pathname)) {
+  const hasAuthCookies = request.cookies.getAll().some((c) => c.name.includes("sb-") && c.name.includes("auth"))
+
+  if (isPublicRoute(pathname) && !hasAuthCookies) {
     return NextResponse.next()
   }
 
@@ -201,16 +195,20 @@ export async function updateSession(request: NextRequest) {
 
     const { user, error } = await retryGetUser(supabase)
 
+    if (isPublicRoute(pathname)) {
+      // Return response with any refreshed cookies, but don't block access
+      return supabaseResponse
+    }
+
+    // Protected routes: require valid user
     if (!user || error) {
       if (error && error.message?.toLowerCase().includes("refresh token")) {
         await localSignOut(supabase, supabaseResponse)
       }
 
       if (pathname.startsWith("/api/")) {
-        // Return 401 for API routes
         return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
       } else {
-        // Redirect to login for page routes
         const loginUrl = new URL("/auth/login", request.url)
         loginUrl.searchParams.set("redirect", pathname)
         return NextResponse.redirect(loginUrl)
@@ -222,6 +220,10 @@ export async function updateSession(request: NextRequest) {
 
     return supabaseResponse
   } catch (error) {
+    if (isPublicRoute(pathname)) {
+      return supabaseResponse
+    }
+
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Authentifizierungsfehler" }, { status: 500 })
     } else {

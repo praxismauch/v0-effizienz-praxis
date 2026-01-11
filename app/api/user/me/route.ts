@@ -1,35 +1,11 @@
-import { createAdminClient } from "@/lib/supabase/server"
-import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
+import { createServerClient, createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const allCookies = cookieStore.getAll()
-
-    const sbAccessToken = allCookies.find((c) => c.name.includes("sb-") && c.name.includes("-auth-token"))
-
-    // Try to get user from Supabase auth
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return NextResponse.json({ error: "Supabase not configured" }, { status: 500 })
-    }
-
-    const supabase = supabaseCreateServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return allCookies
-        },
-        setAll() {
-          // No-op for GET request
-        },
-      },
-    })
+    const supabase = await createServerClient()
 
     const { data, error: authError } = await supabase.auth.getUser()
 

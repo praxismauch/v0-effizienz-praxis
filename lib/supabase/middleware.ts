@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { refreshTokenLock } from "./refreshTokenLock"
 
+const DEV_USER_EMAIL = "mauch.daniel@googlemail.com"
+
 const publicRoutesSet = new Set([
   "/",
   "/auth/login",
@@ -129,6 +131,15 @@ async function retryGetUser(
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
   const requestId = Math.random().toString(36).substring(7)
+
+  const isDevMode = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
+  if (isDevMode) {
+    const response = NextResponse.next({ request })
+    // Set dev user headers so downstream can identify
+    response.headers.set("x-dev-mode", "true")
+    response.headers.set("x-dev-user-email", DEV_USER_EMAIL)
+    return response
+  }
 
   const hasAuthCookies = request.cookies.getAll().some((c) => c.name.includes("sb-") && c.name.includes("auth"))
 

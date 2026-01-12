@@ -1,5 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { User } from "@/contexts/user-context"
+
+const DEV_USER_EMAIL = "mauch.daniel@googlemail.com"
 
 /**
  * Server-side helper to get the currently authenticated user profile.
@@ -13,6 +16,36 @@ import type { User } from "@/contexts/user-context"
  */
 export async function getCurrentUserProfile(): Promise<User | null> {
   try {
+    const isDevMode = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
+    if (isDevMode) {
+      const adminClient = createAdminClient()
+
+      const { data: userProfile, error: profileError } = await adminClient
+        .from("users")
+        .select("*")
+        .eq("email", DEV_USER_EMAIL)
+        .single()
+
+      if (profileError || !userProfile) {
+        console.warn("[get-current-user] Dev mode: User not found for email:", DEV_USER_EMAIL)
+        return null
+      }
+
+      return {
+        id: userProfile.id,
+        email: userProfile.email,
+        name: userProfile.name || userProfile.first_name || "Dev User",
+        role: userProfile.role,
+        practiceId: userProfile.practice_id,
+        practice_id: userProfile.practice_id,
+        isActive: userProfile.is_active ?? true,
+        joinedAt: userProfile.created_at,
+        preferred_language: userProfile.preferred_language || "de",
+        firstName: userProfile.first_name,
+      }
+    }
+
+    // Normal auth flow
     const supabase = await createServerClient()
 
     // Get the authenticated user from Supabase Auth

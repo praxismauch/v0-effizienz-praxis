@@ -75,35 +75,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: practicesError.message }, { status: 500 })
     }
 
-    // Fetch practice_users for multi-practice assignments
-    const { data: practiceUsers, error: puError } = await supabase
-      .from("practice_users")
-      .select("user_id, practice_id, role, status, is_primary, joined_at")
+    // Using team_members as alternative
+    const { data: teamMembers, error: tmError } = await supabase
+      .from("team_members")
+      .select("user_id, practice_id, role, status")
       .eq("status", "active")
+      .not("user_id", "is", null)
 
-    if (puError) {
-      console.error("Error fetching practice_users:", puError)
+    if (tmError) {
+      console.error("Error fetching team_members:", tmError)
     }
 
     // Build maps for efficient lookups
     const practiceMap = new Map(practices?.map((p) => [p.id, { name: p.name, color: p.color }]) || [])
     const userPracticesMap = new Map<
       string,
-      Array<{ practiceId: number; practiceName: string; role: string; isPrimary: boolean }>
+      Array<{ practiceId: string; practiceName: string; role: string; isPrimary: boolean }>
     >()
 
-    // Build user-practices mapping from practice_users table
-    practiceUsers?.forEach((pu) => {
-      const practice = practiceMap.get(pu.practice_id)
+    teamMembers?.forEach((tm) => {
+      const practice = practiceMap.get(Number.parseInt(tm.practice_id))
       if (practice) {
-        const existing = userPracticesMap.get(pu.user_id) || []
+        const existing = userPracticesMap.get(tm.user_id) || []
         existing.push({
-          practiceId: pu.practice_id,
+          practiceId: tm.practice_id,
           practiceName: practice.name,
-          role: pu.role,
-          isPrimary: pu.is_primary || false,
+          role: tm.role,
+          isPrimary: existing.length === 0, // First entry is primary
         })
-        userPracticesMap.set(pu.user_id, existing)
+        userPracticesMap.set(tm.user_id, existing)
       }
     })
 
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
         const legacyPractice = user.practice_id ? practiceMap.get(user.practice_id) : null
         const assignedPractices = userPracticesMap.get(user.id) || []
 
-        // If no practice_users entries but has legacy practice_id, use that
+        // If no team_members entries but has legacy practice_id, use that
         if (assignedPractices.length === 0 && legacyPractice && user.practice_id) {
           assignedPractices.push({
             practiceId: user.practice_id,
@@ -272,20 +272,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If practice assigned, create practice_users entry
+    // If practice assigned, create team_members entry
     if (validPracticeId) {
-      const { error: puError } = await supabase.from("practice_users").insert({
-        practice_id: validPracticeId,
+      const { error: tmError } = await supabase.from("team_members").insert({
+        practice_id: validPracticeId.toString(),
         user_id: authData.user.id,
-        role: role || "member",
+        role: role || "user",
         status: "active",
-        is_primary: true,
-        invited_by: authUser.id,
-        joined_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
       })
 
-      if (puError) {
-        console.error("Error creating practice_users entry:", puError)
+      if (tmError) {
+        console.error("Error creating team_members entry:", tmError)
       }
     }
 

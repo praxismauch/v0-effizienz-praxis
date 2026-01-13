@@ -5,9 +5,9 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 const HARDCODED_PRACTICE_ID = "1"
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = await params
+    const { practiceId } = params
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
@@ -23,51 +23,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     let calendarData, calendarError
-    let interviewsData, interviewsError
-    let trainingEventsData, trainingEventsError
 
     try {
-      const [calendarResult, interviewsResult, trainingResult] = await Promise.all([
-        // Regular calendar events
+      const [calendarResult] = await Promise.all([
+        // Regular calendar events - now includes all event types
         supabase
           .from("calendar_events")
           .select("*")
           .eq("practice_id", practiceIdInt)
           .is("deleted_at", null)
-          .order("start_date", { ascending: true }),
-
-        // Interviews with candidate info via applications
-        supabase
-          .from("interviews")
-          .select(`
-            *,
-            application:applications(
-              candidate:candidates(first_name, last_name, email)
-            )
-          `)
-          .eq("practice_id", practiceIdInt)
-          .is("deleted_at", null)
-          .not("scheduled_date", "is", null)
-          .order("scheduled_date", { ascending: true }),
-
-        // Training events (Fortbildungen)
-        supabase
-          .from("training_events")
-          .select(`
-            *,
-            training_course:training_courses(name, category)
-          `)
-          .eq("practice_id", practiceIdInt)
-          .is("deleted_at", null)
-          .order("start_date", { ascending: true }),
+          .order("start_time", { ascending: true }),
       ])
 
       calendarData = calendarResult.data
       calendarError = calendarResult.error
-      interviewsData = interviewsResult.data
-      interviewsError = interviewsResult.error
-      trainingEventsData = trainingResult.data
-      trainingEventsError = trainingResult.error
     } catch (supabaseError: any) {
       if (isRateLimitError(supabaseError)) {
         Logger.warn("calendar-events-api", "Rate limited during query")
@@ -113,82 +82,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       lastGeneratedDate: event.last_generated_date,
     }))
 
-    const interviewEvents = (interviewsData || []).map((interview) => {
-      const candidate = interview.application?.candidate
-      const candidateName = candidate
-        ? `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim()
-        : "Unbekannt"
-
-      let endTime = interview.scheduled_time
-      if (interview.scheduled_time && interview.duration_minutes) {
-        const [hours, minutes] = interview.scheduled_time.split(":").map(Number)
-        const totalMinutes = hours * 60 + minutes + interview.duration_minutes
-        const endHours = Math.floor(totalMinutes / 60) % 24
-        const endMins = totalMinutes % 60
-        endTime = `${endHours.toString().padStart(2, "0")}:${endMins.toString().padStart(2, "0")}`
-      }
-
-      return {
-        id: `interview-${interview.id}`,
-        title: `Vorstellungsgespräch: ${candidateName}`,
-        description: interview.notes || `${interview.interview_type || "Interview"} mit ${candidateName}`,
-        startDate: interview.scheduled_date,
-        endDate: interview.scheduled_date,
-        startTime: interview.scheduled_time || "09:00",
-        endTime: endTime || "10:00",
-        type: "interview",
-        priority: "high",
-        createdBy: interview.created_by,
-        createdAt: interview.created_at,
-        practiceId: interview.practice_id,
-        isAllDay: false,
-        attendees: interview.interviewer_ids || [],
-        location: interview.location || (interview.is_online ? "Online" : ""),
-        recurrenceType: "none",
-        recurrenceEndDate: null,
-        isRecurringInstance: false,
-        parentEventId: null,
-        lastGeneratedDate: null,
-        interviewType: interview.interview_type,
-        interviewStatus: interview.status,
-        candidateEmail: candidate?.email,
-        meetingLink: interview.meeting_link,
-        isOnline: !!interview.meeting_link,
-      }
-    })
-
-    const trainingCalendarEvents = (trainingEventsData || []).map((training) => {
-      const courseName = training.training_course?.name || training.title || "Fortbildung"
-
-      return {
-        id: `training-${training.id}`,
-        title: courseName,
-        description: training.description || `Fortbildung: ${courseName}`,
-        startDate: training.start_date,
-        endDate: training.end_date || training.start_date,
-        startTime: training.start_time || "09:00",
-        endTime: training.end_time || "17:00",
-        type: "training",
-        priority: "medium",
-        createdBy: training.created_by,
-        createdAt: training.created_at,
-        practiceId: training.practice_id,
-        isAllDay: !training.start_time,
-        attendees: [],
-        location: training.location || (training.is_online ? "Online" : ""),
-        recurrenceType: "none",
-        recurrenceEndDate: null,
-        isRecurringInstance: false,
-        parentEventId: null,
-        lastGeneratedDate: null,
-        trainingCourseId: training.training_course_id,
-        trainingStatus: training.status,
-        meetingLink: training.meeting_link,
-        isOnline: training.is_online,
-      }
-    })
-
-    const allEvents = [...calendarEvents, ...interviewEvents, ...trainingCalendarEvents].sort((a, b) => {
+    const allEvents = [...calendarEvents].sort((a, b) => {
       const dateA = new Date(a.startDate + "T" + (a.startTime || "00:00"))
       const dateB = new Date(b.startDate + "T" + (b.startTime || "00:00"))
       return dateA.getTime() - dateB.getTime()
@@ -197,8 +91,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     Logger.info("calendar-events-api", "Returning calendar events", {
       totalCount: allEvents.length,
       calendarCount: calendarEvents.length,
-      interviewCount: interviewEvents.length,
-      trainingCount: trainingCalendarEvents.length,
     })
 
     return NextResponse.json({ events: allEvents })
@@ -207,9 +99,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = await params
+    const { practiceId } = params
 
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
 

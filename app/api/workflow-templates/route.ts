@@ -20,10 +20,9 @@ export async function GET(request: NextRequest) {
 
     try {
       const result = await supabase
-        .from("workflow_templates")
+        .from("workflows")
         .select("*")
-        .eq("is_active", true)
-        .order("usage_count", { ascending: false })
+        .eq("is_template", true)
         .order("created_at", { ascending: false })
 
       templates = result.data
@@ -56,14 +55,16 @@ export async function POST(request: NextRequest) {
     const supabase = await createAdminClient()
 
     const { data: template, error } = await supabase
-      .from("workflow_templates")
+      .from("workflows")
       .insert({
-        name: body.name || body.title,
+        title: body.name || body.title,
         description: body.description,
         category: body.category,
         steps: body.steps,
-        is_active: true,
-        usage_count: 0,
+        is_template: true,
+        status: "draft",
+        priority: "medium",
+        created_by: body.created_by || null,
       })
       .select()
       .single()

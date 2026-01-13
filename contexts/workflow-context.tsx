@@ -211,16 +211,16 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
           const data = await safeJsonParse(templatesRes, { templates: [] })
           const mappedTemplates = (data.templates || []).map((t: any) => ({
             id: t.id,
-            title: t.name || t.title,
+            title: t.title, // workflows table uses 'title' not 'name'
             description: t.description,
             category: t.category,
             steps: t.steps || [],
-            estimatedDuration: t.estimated_duration || 0,
+            estimatedDuration: 0, // workflows table doesn't have estimated_duration
             createdBy: t.created_by || "System",
             createdAt: t.created_at,
-            isPublic: t.is_public || false,
-            practiceId: t.practice_id,
-            hideItemsFromOtherUsers: t.hide_items_from_other_users || false,
+            isPublic: false, // workflows table doesn't have is_public
+            practiceId: t.practice_id?.toString(),
+            hideItemsFromOtherUsers: false, // workflows table doesn't have this field
           }))
           if (isMounted) setTemplates(mappedTemplates)
         } else {

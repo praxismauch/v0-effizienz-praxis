@@ -78,13 +78,7 @@ export async function GET(request: NextRequest) {
           .order("start_date", { ascending: false }),
       ),
       fetchWithRetry(() =>
-        supabase
-          .from("team_members")
-          .select("*, users!inner(is_active, role)")
-          .eq("practice_id", practiceId)
-          .eq("status", "active")
-          .eq("users.is_active", true)
-          .neq("users.role", "superadmin"),
+        supabase.from("team_members").select("*").eq("practice_id", practiceId).eq("status", "active"),
       ),
       fetchWithRetry(() =>
         supabase

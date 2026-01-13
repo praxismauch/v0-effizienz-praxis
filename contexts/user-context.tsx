@@ -155,66 +155,6 @@ export function UserProvider({
   }, [mounted, currentUser, initialUser])
 
   useEffect(() => {
-    if (!IS_DEV_MODE) return
-    if (!mounted) return
-    if (currentUser) return
-    if (hasFetchedUser.current) return
-
-    const fetchDevUser = async () => {
-      hasFetchedUser.current = true
-      setLoading(true)
-
-      try {
-        const supabase = getSupabase()
-        if (!supabase) {
-          setLoading(false)
-          return
-        }
-
-        // Fetch user directly by email (bypass auth)
-        const { data: profile, error: profileError } = await supabase
-          .from("users")
-          .select("*")
-          .eq("email", DEV_USER_EMAIL)
-          .single()
-
-        if (profileError || !profile) {
-          console.warn("[UserProvider] Dev mode: User not found for email:", DEV_USER_EMAIL)
-          setLoading(false)
-          return
-        }
-
-        const user: User = {
-          id: profile.id,
-          name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Dev User",
-          email: profile.email || DEV_USER_EMAIL,
-          role: normalizeRole(profile.role) as User["role"],
-          avatar: profile.avatar,
-          practiceId: profile.practice_id?.toString() || "1",
-          practice_id: profile.practice_id?.toString() || "1",
-          isActive: profile.is_active ?? true,
-          joinedAt: profile.created_at || new Date().toISOString(),
-          preferred_language: profile.preferred_language,
-          firstName: profile.first_name,
-        }
-
-        if (IS_DEBUG) {
-          console.debug("[UserProvider] Dev mode: Loaded user directly:", user.email)
-        }
-
-        setCurrentUser(user)
-        persistUserToStorage(user)
-      } catch (error) {
-        console.error("[UserProvider] Dev mode error:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDevUser()
-  }, [mounted, currentUser, getSupabase, persistUserToStorage])
-
-  useEffect(() => {
     if (IS_DEV_MODE) return // Skip normal auth flow in dev mode
     if (typeof window === "undefined") return
     if (!mounted) return

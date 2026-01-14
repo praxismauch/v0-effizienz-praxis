@@ -1,9 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; goalId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; goalId: string }> },
+) {
   try {
-    const { practiceId, goalId } = params
+    const { practiceId, goalId } = await params
     const practiceIdText = String(practiceId)
     const goalIdText = String(goalId)
     const supabase = await createAdminClient()
@@ -87,9 +90,12 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { practiceId: string; goalId: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; goalId: string }> },
+) {
   try {
-    const { practiceId, goalId } = params
+    const { practiceId, goalId } = await params
     const practiceIdText = String(practiceId)
     const goalIdText = String(goalId)
     const body = await request.json()
@@ -172,9 +178,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { practi
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string; goalId: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; goalId: string }> },
+) {
   try {
-    const { practiceId, goalId } = params
+    const { practiceId, goalId } = await params
     const practiceIdText = String(practiceId)
     const goalIdText = String(goalId)
     const supabase = await createAdminClient()

@@ -1,7 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  await params
   const supabase = await createServerClient()
   const { searchParams } = new URL(request.url)
   const documentId = searchParams.get("documentId")
@@ -28,7 +29,8 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   return NextResponse.json(data)
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  await params
   const supabase = await createServerClient()
   const body = await request.json()
 
@@ -52,7 +54,8 @@ export async function POST(request: NextRequest, { params }: { params: { practic
   return NextResponse.json(data)
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  await params
   const supabase = await createServerClient()
   const { searchParams } = new URL(request.url)
   const permissionId = searchParams.get("permissionId")

@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const practiceId = params.practiceId
+    const { practiceId } = await params
 
     const supabase = await createAdminClient()
 
@@ -30,9 +30,9 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const practiceId = params.practiceId
+    const { practiceId } = await params
 
     const body = await request.json()
 

@@ -2,10 +2,10 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
 // PUT /api/practices/[practiceId]/parameter-groups/[id] - Update a practice-specific parameter group
-export async function PUT(request: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
     const supabase = await createClient()
-    const { practiceId, id } = params
+    const { practiceId, id } = await params
     const body = await request.json()
 
     const { name, description, color, parameters, isActive } = body
@@ -40,9 +40,12 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
 }
 
 // DELETE /api/practices/[practiceId]/parameter-groups/[id] - Delete a practice-specific parameter group
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; id: string }> },
+) {
   try {
-    const { practiceId, id } = params
+    const { practiceId, id } = await params
     const supabase = await createClient()
 
     // Delete the category - only deletes if it belongs to this practice

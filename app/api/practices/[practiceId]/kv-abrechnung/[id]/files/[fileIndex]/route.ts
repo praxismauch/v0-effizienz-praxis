@@ -3,11 +3,11 @@ import { createAdminClient } from "@/lib/supabase/server"
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { practiceId: string; id: string; fileIndex: string } },
+  { params }: { params: Promise<{ practiceId: string; id: string; fileIndex: string }> },
 ) {
   try {
     const supabase = await createAdminClient()
-    const { practiceId, id, fileIndex } = params
+    const { practiceId, id, fileIndex } = await params
     const index = Number.parseInt(fileIndex)
 
     console.log("[v0] Deleting file from KV Abrechnung:", { practiceId, id, fileIndex: index })

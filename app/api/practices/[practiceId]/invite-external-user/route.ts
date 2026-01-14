@@ -2,9 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const body = await request.json()
     const { firstName, lastName, email, role = "user", teamName = "Extern" } = body
 

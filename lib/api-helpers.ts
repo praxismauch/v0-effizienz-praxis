@@ -192,7 +192,9 @@ export async function checkPracticeAccess(practiceId: string, auth: ApiAuthResul
 export async function requirePracticeAccess(
   practiceId: string | number | undefined | null,
 ): Promise<PracticeAuthResult> {
+  console.log("[v0] requirePracticeAccess called with:", practiceId, typeof practiceId)
   const practiceIdStr = String(practiceId ?? "")
+  console.log("[v0] requirePracticeAccess practiceIdStr:", practiceIdStr)
 
   // Validate practice ID format
   if (
@@ -202,9 +204,11 @@ export async function requirePracticeAccess(
     practiceIdStr === "0" ||
     practiceIdStr === ""
   ) {
+    console.log("[v0] requirePracticeAccess VALIDATION FAILED")
     throw new ApiError("Praxis-ID fehlt oder ist ungültig", 400)
   }
 
+  console.log("[v0] requirePracticeAccess validation passed, proceeding with auth")
   const auth = await authenticateApiRequest()
 
   // Super admins can access any practice

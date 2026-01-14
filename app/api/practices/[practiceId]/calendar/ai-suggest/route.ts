@@ -127,11 +127,11 @@ function detectRecurrence(prompt: string): { recurrence: string; intervalWeeks?:
   return { recurrence: "none" }
 }
 
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { prompt } = await request.json()
     const supabase = await createClient()
-    const practiceId = params.practiceId
+    const { practiceId } = await params
 
     const today = new Date()
     const todayStr = formatDate(today, "EEEE, dd.MM.yyyy")

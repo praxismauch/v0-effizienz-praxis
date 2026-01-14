@@ -2,7 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { v4 as uuidv4 } from "uuid"
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export const runtime = "nodejs"
+
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createClient()
     const { practiceId } = await params

@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server"
 // GET - Einzelnes Roadmap Item abrufen
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
     const supabase = await createAdminClient()
 
     const { data, error } = await supabase
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 // PATCH - Roadmap Item aktualisieren
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
     const supabase = await createAdminClient()
     const body = await request.json()
 
@@ -81,7 +81,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 // DELETE - Roadmap Item löschen (soft delete)
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
     const supabase = await createAdminClient()
 
     const { error } = await supabase.from("roadmap_items").update({ deleted_at: new Date().toISOString() }).eq("id", id)

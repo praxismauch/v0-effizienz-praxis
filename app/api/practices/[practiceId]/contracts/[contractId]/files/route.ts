@@ -1,15 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; contractId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; contractId: string }> },
+) {
   try {
+    const { practiceId, contractId } = await params
     const supabase = await createServerClient()
 
     const { data: files, error } = await supabase
       .from("contract_files")
       .select("*")
-      .eq("practice_id", params.practiceId)
-      .eq("contract_id", params.contractId)
+      .eq("practice_id", practiceId)
+      .eq("contract_id", contractId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
@@ -22,8 +26,12 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string; contractId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; contractId: string }> },
+) {
   try {
+    const { practiceId, contractId } = await params
     const supabase = await createServerClient()
     const body = await request.json()
 
@@ -34,8 +42,8 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     const { data: file, error } = await supabase
       .from("contract_files")
       .insert({
-        contract_id: params.contractId,
-        practice_id: params.practiceId,
+        contract_id: contractId,
+        practice_id: practiceId,
         file_name: body.file_name,
         file_url: body.file_url,
         file_size: body.file_size,

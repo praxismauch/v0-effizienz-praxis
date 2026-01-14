@@ -3,10 +3,10 @@ import { createClient } from "@/lib/supabase/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
 
 // GET - Fetch single blog post
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
-    const { id } = params
+    const { id } = await params
 
     const { data: post, error } = await supabase.from("blog_posts").select("*").eq("id", id).maybeSingle()
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT - Update blog post (super admin only)
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
 
@@ -45,7 +45,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Forbidden - Super admin only" }, { status: 403 })
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const updateData: any = {
@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE - Delete blog post (super admin only)
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
 
@@ -101,7 +101,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Forbidden - Super admin only" }, { status: 403 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     const { error } = await supabase.from("blog_posts").delete().eq("id", id)
 

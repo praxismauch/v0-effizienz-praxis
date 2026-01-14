@@ -2,10 +2,11 @@ import { createAdminClient } from "@/lib/supabase/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     console.log("[v0] PREFERENCES PARAMS:", JSON.stringify({ params, url: request.nextUrl.pathname }))
-    let userId = params.userId
+    const { userId: paramUserId } = await params
+    let userId = paramUserId
 
     // FALLBACK: Extract from URL if params fail
     if (!userId) {
@@ -114,9 +115,11 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
-    if (!params.userId) {
+    const { userId } = await params
+
+    if (!userId) {
       console.error("Missing userId parameter")
       return NextResponse.json({ error: "Missing userId" }, { status: 400 })
     }
@@ -145,7 +148,7 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
       }
 
       try {
-        const { error: userError } = await supabase.from("users").update({ preferred_language }).eq("id", params.userId)
+        const { error: userError } = await supabase.from("users").update({ preferred_language }).eq("id", userId)
 
         if (userError) {
           console.error("Error updating user language:", userError)
@@ -160,7 +163,7 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
     if (default_landing_page || dashboard_layout) {
       const now = new Date().toISOString()
       const updateData: any = {
-        user_id: params.userId,
+        user_id: userId,
         updated_at: now,
       }
 
@@ -171,7 +174,7 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
         const { data: existingRecord, error: checkError } = await supabase
           .from("user_preferences")
           .select("id, user_id")
-          .eq("user_id", params.userId)
+          .eq("user_id", userId)
           .maybeSingle()
 
         if (checkError) {

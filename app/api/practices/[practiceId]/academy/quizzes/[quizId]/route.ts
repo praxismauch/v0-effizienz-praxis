@@ -5,9 +5,11 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
   auth: { persistSession: false },
 })
 
-export async function GET(request: Request, { params }: { params: { practiceId: string; quizId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string; quizId: string }> }) {
   try {
-    console.log("[v0] GET quiz by ID:", params.quizId)
+    const { practiceId, quizId } = await params
+
+    console.log("[v0] GET quiz by ID:", quizId)
 
     const { data: quiz, error } = await supabase
       .from("academy_quizzes")
@@ -18,7 +20,7 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
           academy_quiz_options (*)
         )
       `)
-      .eq("id", params.quizId)
+      .eq("id", quizId)
       .is("deleted_at", null)
       .single()
 
@@ -49,12 +51,13 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { practiceId: string; quizId: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ practiceId: string; quizId: string }> }) {
   try {
+    const { practiceId, quizId } = await params
     const body = await request.json()
     const { questions, ...quizData } = body
 
-    console.log("[v0] PUT quiz:", params.quizId)
+    console.log("[v0] PUT quiz:", quizId)
 
     // Update quiz
     const { data: quiz, error: quizError } = await supabase
@@ -63,7 +66,7 @@ export async function PUT(request: Request, { params }: { params: { practiceId: 
         ...quizData,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.quizId)
+      .eq("id", quizId)
       .select()
       .single()
 
@@ -80,7 +83,7 @@ export async function PUT(request: Request, { params }: { params: { practiceId: 
       const { data: existingQuestions } = await supabase
         .from("academy_quiz_questions")
         .select("id")
-        .eq("quiz_id", params.quizId)
+        .eq("quiz_id", quizId)
 
       const existingIds = existingQuestions?.map((q) => q.id) || []
       const providedIds = questions.filter((q: any) => q.id).map((q: any) => q.id)
@@ -155,7 +158,7 @@ export async function PUT(request: Request, { params }: { params: { practiceId: 
             .from("academy_quiz_questions")
             .insert({
               ...questionData,
-              quiz_id: params.quizId,
+              quiz_id: quizId,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
@@ -192,7 +195,7 @@ export async function PUT(request: Request, { params }: { params: { practiceId: 
           academy_quiz_options (*)
         )
       `)
-      .eq("id", params.quizId)
+      .eq("id", quizId)
       .single()
 
     console.log("[v0] Quiz updated with all nested data")
@@ -204,9 +207,14 @@ export async function PUT(request: Request, { params }: { params: { practiceId: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { practiceId: string; quizId: string } }) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ practiceId: string; quizId: string }> },
+) {
   try {
-    console.log("[v0] DELETE quiz:", params.quizId)
+    const { practiceId, quizId } = await params
+
+    console.log("[v0] DELETE quiz:", quizId)
 
     // Soft delete quiz (questions and options will cascade or be handled separately)
     const { error } = await supabase
@@ -214,7 +222,7 @@ export async function DELETE(request: Request, { params }: { params: { practiceI
       .update({
         deleted_at: new Date().toISOString(),
       })
-      .eq("id", params.quizId)
+      .eq("id", quizId)
 
     if (error) {
       console.error("[v0] Error deleting quiz:", error)

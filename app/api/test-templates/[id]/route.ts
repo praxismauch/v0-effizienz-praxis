@@ -1,8 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createAdminClient()
     const body = await request.json()
 
@@ -13,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         description: body.description,
         category_id: body.category_id || null,
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 
@@ -26,11 +27,12 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createAdminClient()
 
-    const { error } = await supabase.from("test_checklist_templates").delete().eq("id", params.id)
+    const { error } = await supabase.from("test_checklist_templates").delete().eq("id", id)
 
     if (error) throw error
 

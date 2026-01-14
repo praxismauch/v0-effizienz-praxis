@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createClient()
     const { practiceId } = await params
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createClient()
     const { practiceId } = await params

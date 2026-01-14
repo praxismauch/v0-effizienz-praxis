@@ -1,13 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  const { practiceId } = await params
   const supabase = await createAdminClient()
 
   const { data, error } = await supabase
     .from("users")
     .select("id, name, email, role")
-    .eq("practice_id", params.practiceId)
+    .eq("practice_id", practiceId)
     .eq("is_active", true)
     .order("name")
 

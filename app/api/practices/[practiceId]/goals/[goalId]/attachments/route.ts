@@ -1,15 +1,20 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; goalId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; goalId: string }> },
+) {
+  const { practiceId, goalId } = await params
+
   try {
     const supabase = await createServerClient()
 
     const { data: attachments, error } = await supabase
       .from("goal_attachments")
       .select("*")
-      .eq("practice_id", params.practiceId)
-      .eq("goal_id", params.goalId)
+      .eq("practice_id", practiceId)
+      .eq("goal_id", goalId)
       .is("deleted_at", null)
       .order("created_at", { ascending: true })
 
@@ -22,7 +27,12 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string; goalId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; goalId: string }> },
+) {
+  const { practiceId, goalId } = await params
+
   try {
     const supabase = await createServerClient()
     const body = await request.json()
@@ -37,8 +47,8 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     const { data: attachment, error } = await supabase
       .from("goal_attachments")
       .insert({
-        practice_id: params.practiceId,
-        goal_id: params.goalId,
+        practice_id: practiceId,
+        goal_id: goalId,
         attachment_type: body.attachment_type,
         file_url: body.file_url,
         file_name: body.file_name,

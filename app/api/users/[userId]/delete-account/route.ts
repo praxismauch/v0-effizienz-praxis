@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function DELETE(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
-    const userId = params.userId
+    const { userId } = await params
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 })

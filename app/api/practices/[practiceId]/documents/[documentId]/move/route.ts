@@ -1,9 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string; documentId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; documentId: string }> },
+) {
   try {
-    const { practiceId, documentId } = params
+    const { practiceId, documentId } = await params
 
     const body = await request.json()
     const { folder_id } = body

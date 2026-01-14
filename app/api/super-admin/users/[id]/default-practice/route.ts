@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   console.log("[v0] API route called - default-practice PATCH")
 
   try {
     const supabase = await createAdminClient()
-    const { id: userId } = params
+    const { id: userId } = await params
     const body = await request.json()
     const { practiceId } = body
 

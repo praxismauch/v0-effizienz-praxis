@@ -1,13 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { practiceId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const supabase = await createClient()
-    const practiceId = params.practiceId
 
     const { data: departments, error } = await supabase
       .from("departments")
@@ -28,16 +25,15 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { practiceId: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const supabase = await createClient()
-    const practiceId = params.practiceId
     const body = await request.json()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

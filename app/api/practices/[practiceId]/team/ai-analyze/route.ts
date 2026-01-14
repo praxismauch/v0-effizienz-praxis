@@ -2,9 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const supabase = await createClient()
 
     const { data: responsibilities, error: responsibilitiesError } = await supabase

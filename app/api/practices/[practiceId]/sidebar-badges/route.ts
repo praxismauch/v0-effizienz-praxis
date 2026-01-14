@@ -13,9 +13,9 @@ const defaultBadges = {
   surveys: 0,
 }
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
 
     if (!practiceId) {
       return NextResponse.json(defaultBadges)

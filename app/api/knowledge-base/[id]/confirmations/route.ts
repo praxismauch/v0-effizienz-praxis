@@ -2,10 +2,10 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 
 // GET - Fetch all confirmations for an article
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()
-    const articleId = params.id
+    const { id: articleId } = await params
 
     // Fetch confirmations with user details
     const { data: confirmations, error } = await supabase
@@ -44,10 +44,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // POST - Confirm reading an article
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()
-    const articleId = params.id
+    const { id: articleId } = await params
     const body = await request.json()
     const { practice_id } = body
 

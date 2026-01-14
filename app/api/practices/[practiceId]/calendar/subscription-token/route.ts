@@ -2,9 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 import { randomBytes } from "crypto"
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
 
     if (!practiceId || practiceId === "undefined" || practiceId === "null") {
       return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })

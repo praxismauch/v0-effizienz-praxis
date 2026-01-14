@@ -3,9 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 // GET - Fetch dashboard preferences for a user in a practice
-export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
 
@@ -54,9 +54,9 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
 }
 
 // POST - Update dashboard preferences
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const supabase = await createClient()
 
     const {

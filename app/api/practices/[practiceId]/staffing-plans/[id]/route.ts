@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function PUT(req: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
+    const { practiceId, id } = await params
     const body = await req.json()
     const supabase = await createAdminClient()
 
@@ -13,8 +14,8 @@ export async function PUT(req: NextRequest, { params }: { params: { practiceId: 
         description: body.description,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
-      .eq("practice_id", params.practiceId)
+      .eq("id", id)
+      .eq("practice_id", practiceId)
       .select()
       .single()
 
@@ -30,15 +31,16 @@ export async function PUT(req: NextRequest, { params }: { params: { practiceId: 
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
+    const { practiceId, id } = await params
     const supabase = await createAdminClient()
 
     const { error } = await supabase
       .from("staffing_plans")
       .update({ is_active: false })
-      .eq("id", params.id)
-      .eq("practice_id", params.practiceId)
+      .eq("id", id)
+      .eq("practice_id", practiceId)
 
     if (error) {
       console.error("[API] Error deleting staffing plan:", error)

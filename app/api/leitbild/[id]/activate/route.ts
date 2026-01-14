@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
     const { practiceId } = await request.json()
 
     if (!practiceId) {

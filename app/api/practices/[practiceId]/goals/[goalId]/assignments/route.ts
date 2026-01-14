@@ -1,14 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; goalId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; goalId: string }> },
+) {
+  const { practiceId, goalId } = await params
   const supabase = await createAdminClient()
 
   try {
     const { data: assignments, error: assignmentsError } = await supabase
       .from("goal_assignments")
       .select("*")
-      .eq("goal_id", params.goalId)
+      .eq("goal_id", goalId)
 
     if (assignmentsError) {
       return NextResponse.json(
@@ -89,7 +93,11 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string; goalId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; goalId: string }> },
+) {
+  const { practiceId, goalId } = await params
   const supabase = await createAdminClient()
 
   try {
@@ -102,7 +110,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       const { data: allMembers, error: allMembersError } = await supabase
         .from("team_members")
         .select("id, practice_id, user_id, first_name, last_name, status")
-        .eq("practice_id", params.practiceId)
+        .eq("practice_id", practiceId)
         .eq("status", "active")
 
       if (allMembersError) {
@@ -171,7 +179,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       }
     }
 
-    const { error: deleteError } = await supabase.from("goal_assignments").delete().eq("goal_id", params.goalId)
+    const { error: deleteError } = await supabase.from("goal_assignments").delete().eq("goal_id", goalId)
 
     if (deleteError) {
       throw deleteError
@@ -179,7 +187,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
 
     if (actualTeamMemberIds.length > 0) {
       const assignments = actualTeamMemberIds.map((teamMemberId: string) => ({
-        goal_id: params.goalId,
+        goal_id: goalId,
         team_member_id: teamMemberId,
         assigned_by: assignedBy,
       }))

@@ -1,10 +1,13 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; id: string }> },
+) {
   try {
     const supabase = await createServerClient()
-    const { practiceId, id } = params
+    const { practiceId, id } = await params
 
     const {
       data: { user },

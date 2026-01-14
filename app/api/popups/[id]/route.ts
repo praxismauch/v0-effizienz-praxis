@@ -3,10 +3,10 @@ import { createAdminClient, createServerClient } from "@/lib/supabase/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
 
 // GET - Fetch a single popup
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()
-    const { id } = params
+    const { id } = await params
 
     const { data, error } = await supabase.from("popups").select("*").eq("id", id).maybeSingle()
 
@@ -27,10 +27,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT - Update a popup (super admin only)
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const isDevMode =
@@ -90,10 +90,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE - Delete a popup (super admin only)
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = params
+    const { id } = await params
 
     const isDevMode =
       !process.env.SUPABASE_SERVICE_ROLE_KEY ||

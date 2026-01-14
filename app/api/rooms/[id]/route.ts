@@ -1,7 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()
     const {
@@ -14,6 +14,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     const body = await request.json()
     const { name, beschreibung } = body
+    const { id } = await params
 
     const { data, error } = await supabase
       .from("rooms")
@@ -22,7 +23,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         beschreibung,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 
@@ -35,7 +36,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()
     const {
@@ -46,7 +47,8 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { error } = await supabase.from("rooms").delete().eq("id", params.id)
+    const { id } = await params
+    const { error } = await supabase.from("rooms").delete().eq("id", id)
 
     if (error) throw error
 

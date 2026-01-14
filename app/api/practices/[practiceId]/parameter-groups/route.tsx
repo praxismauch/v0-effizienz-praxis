@@ -2,11 +2,11 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
 // GET /api/practices/[practiceId]/parameter-groups - Fetch practice-specific parameter groups
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   console.log("[v0] GET /api/practices/[practiceId]/parameter-groups called")
   try {
     const supabase = await createClient()
-    const { practiceId } = params
+    const { practiceId } = await params
     console.log("[v0] Fetching categories for practice:", practiceId)
 
     const { data: categories, error } = await supabase
@@ -33,10 +33,10 @@ export async function GET(request: NextRequest, { params }: { params: { practice
 }
 
 // POST /api/practices/[practiceId]/parameter-groups - Create a new practice-specific parameter group
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createClient()
-    const { practiceId } = params
+    const { practiceId } = await params
     const body = await request.json()
 
     const { name, description, color, parameters, isActive } = body
@@ -79,11 +79,11 @@ export async function POST(request: NextRequest, { params }: { params: { practic
 }
 
 // DELETE /api/practices/[practiceId]/parameter-groups?id=<categoryId>
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   console.log("[v0] DELETE /api/practices/[practiceId]/parameter-groups called")
   try {
     const supabase = await createClient()
-    const { practiceId } = params
+    const { practiceId } = await params
     const { searchParams } = new URL(request.url)
     const categoryId = searchParams.get("id")
 

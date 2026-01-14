@@ -5,9 +5,9 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const practiceIdInt = practiceId === "0" || !practiceId ? 1 : Number.parseInt(practiceId) || 1
 
     console.log("[v0] GET /api/practices/[practiceId]/academy/modules - practiceId:", practiceIdInt)
@@ -42,9 +42,9 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const practiceIdInt = practiceId === "0" || !practiceId ? 1 : Number.parseInt(practiceId) || 1
 
     console.log("[v0] POST /api/practices/[practiceId]/academy/modules - practiceId:", practiceIdInt)

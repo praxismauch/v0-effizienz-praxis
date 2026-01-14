@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server"
 // GET linked todos for a responsibility
 export async function GET(request: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
   try {
-    const { practiceId, id: responsibilityId } = await params
+    const { practiceId, id: responsibilityId } = params
 
     const supabase = await createAdminClient()
 

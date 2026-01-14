@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { generateText } from "ai"
 
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const supabase = await createClient()
-    const practiceId = params.practiceId
 
     // Fetch documents
     const { data: documents } = await supabase
@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: { practiceId:
       .eq("is_archived", false)
 
     const { text } = await generateText({
-      model: "openai/gpt-4o", // Upgraded from gpt-4o-mini to gpt-4o for better document analysis
+      model: "openai/gpt-4o",
       prompt: `Analysiere die Dokumentenstruktur einer Arztpraxis und gib Organisationsempfehlungen:
 
 Dokumente: ${JSON.stringify(documents?.map((d) => ({ name: d.name, folder: d.folder, tags: d.tags })))}

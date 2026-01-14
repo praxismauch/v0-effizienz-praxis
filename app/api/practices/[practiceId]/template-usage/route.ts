@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
-  const { practiceId } = params
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  const { practiceId } = await params
 
   try {
     const supabase = await createServerClient()
@@ -25,8 +25,8 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string } }) {
-  const { practiceId } = params
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  const { practiceId } = await params
 
   try {
     const { searchParams } = new URL(request.url)

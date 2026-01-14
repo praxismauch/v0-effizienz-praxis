@@ -3,17 +3,22 @@ import { type NextRequest, NextResponse } from "next/server"
 
 const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; lessonId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; lessonId: string }> },
+) {
   try {
+    const { practiceId, lessonId } = await params
+
     console.log("[v0] GET /api/practices/[practiceId]/academy/lessons/[lessonId]", {
-      practiceId: params.practiceId,
-      lessonId: params.lessonId,
+      practiceId,
+      lessonId,
     })
 
     const { data: lesson, error } = await supabaseAdmin
       .from("academy_lessons")
       .select("*")
-      .eq("id", params.lessonId)
+      .eq("id", lessonId)
       .is("deleted_at", null)
       .single()
 
@@ -35,13 +40,17 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { practiceId: string; lessonId: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; lessonId: string }> },
+) {
   try {
+    const { practiceId, lessonId } = await params
     const body = await request.json()
 
     console.log("[v0] PUT /api/practices/[practiceId]/academy/lessons/[lessonId]", {
-      practiceId: params.practiceId,
-      lessonId: params.lessonId,
+      practiceId,
+      lessonId,
       body,
     })
 
@@ -73,7 +82,7 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
     const { data: lesson, error } = await supabaseAdmin
       .from("academy_lessons")
       .update(updateData)
-      .eq("id", params.lessonId)
+      .eq("id", lessonId)
       .is("deleted_at", null)
       .select()
       .single()
@@ -96,18 +105,23 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string; lessonId: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; lessonId: string }> },
+) {
   try {
+    const { practiceId, lessonId } = await params
+
     console.log("[v0] DELETE /api/practices/[practiceId]/academy/lessons/[lessonId]", {
-      practiceId: params.practiceId,
-      lessonId: params.lessonId,
+      practiceId,
+      lessonId,
     })
 
     // Soft delete by setting deleted_at
     const { data: lesson, error } = await supabaseAdmin
       .from("academy_lessons")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", params.lessonId)
+      .eq("id", lessonId)
       .is("deleted_at", null)
       .select()
       .single()

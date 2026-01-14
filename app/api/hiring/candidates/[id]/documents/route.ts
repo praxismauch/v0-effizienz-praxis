@@ -3,8 +3,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
 // Upload document for a candidate
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const formData = await request.formData()
     const file = formData.get("file") as File
 
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     // Upload to Vercel Blob with candidate-specific path
-    const blob = await put(`candidates/${params.id}/${file.name}`, file, {
+    const blob = await put(`candidates/${id}/${file.name}`, file, {
       access: "public",
     })
 
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const { data: candidate, error: fetchError } = await supabase
       .from("candidates")
       .select("documents")
-      .eq("id", params.id)
+      .eq("id", id)
       .single()
 
     if (fetchError) {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     documents.push(newDocument)
 
     // Update candidate with new documents array
-    const { error: updateError } = await supabase.from("candidates").update({ documents }).eq("id", params.id)
+    const { error: updateError } = await supabase.from("candidates").update({ documents }).eq("id", id)
 
     if (updateError) {
       console.error("[v0] Error updating candidate documents:", updateError)
@@ -60,8 +61,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 // Delete document for a candidate
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const { url } = await request.json()
 
     if (!url) {
@@ -76,7 +78,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const { data: candidate, error: fetchError } = await supabase
       .from("candidates")
       .select("documents")
-      .eq("id", params.id)
+      .eq("id", id)
       .single()
 
     if (fetchError) {
@@ -88,7 +90,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const documents = (candidate?.documents || []).filter((doc: any) => doc.url !== url)
 
     // Update candidate with filtered documents array
-    const { error: updateError } = await supabase.from("candidates").update({ documents }).eq("id", params.id)
+    const { error: updateError } = await supabase.from("candidates").update({ documents }).eq("id", id)
 
     if (updateError) {
       console.error("[v0] Error updating candidate documents:", updateError)

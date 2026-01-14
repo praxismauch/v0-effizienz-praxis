@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { generateText } from "ai"
 
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createClient()
-    const practiceId = params.practiceId
+    const { practiceId } = await params
 
     const { data: analyticsData } = await supabase
       .from("parameter_values")

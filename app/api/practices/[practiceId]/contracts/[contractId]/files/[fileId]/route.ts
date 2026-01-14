@@ -3,18 +3,19 @@ import { createServerClient } from "@/lib/supabase/server"
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { practiceId: string; contractId: string; fileId: string } },
+  { params }: { params: Promise<{ practiceId: string; contractId: string; fileId: string }> },
 ) {
   try {
+    const { practiceId, contractId, fileId } = await params
     const supabase = await createServerClient()
 
     // Soft delete by setting deleted_at timestamp
     const { error } = await supabase
       .from("contract_files")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", params.fileId)
-      .eq("contract_id", params.contractId)
-      .eq("practice_id", params.practiceId)
+      .eq("id", fileId)
+      .eq("contract_id", contractId)
+      .eq("practice_id", practiceId)
 
     if (error) throw error
 

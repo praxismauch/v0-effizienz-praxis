@@ -1,8 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const supabase = await createAdminClient()
     const url = new URL(request.url)
     const userId = url.searchParams.get("userId")
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
         created_by,
         form_fields(id, parameter_id)
       `)
-      .eq("practice_id", params.practiceId)
+      .eq("practice_id", practiceId)
 
     // Filter by assigned user or created by user if userId is provided
     if (userId) {
@@ -41,8 +42,9 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const supabase = await createAdminClient()
     const body = await request.json()
 
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     const { data: form, error: formError } = await supabase
       .from("custom_forms")
       .insert({
-        practice_id: params.practiceId,
+        practice_id: practiceId,
         name: body.name,
         description: body.description,
         status: body.isActive ? "active" : "inactive",

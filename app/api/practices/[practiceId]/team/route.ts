@@ -2,9 +2,9 @@ import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 import { safeSupabaseQuery } from "@/lib/supabase/safe-query"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
 
     if (!practiceId) {
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })

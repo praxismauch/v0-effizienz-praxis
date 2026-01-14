@@ -8,9 +8,9 @@ function getEffectivePracticeId(practiceId: string): string {
   return practiceId
 }
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = params
+    const { practiceId: rawPracticeId } = await params
     const practiceId = getEffectivePracticeId(rawPracticeId)
 
     if (practiceId === "count") {
@@ -49,9 +49,9 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = params
+    const { practiceId: rawPracticeId } = await params
     const practiceId = getEffectivePracticeId(rawPracticeId)
     const supabase = await createClient()
     const updates = await request.json()
@@ -101,9 +101,9 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = params
+    const { practiceId: rawPracticeId } = await params
     const practiceId = getEffectivePracticeId(rawPracticeId)
 
     if (practiceId === "0" || practiceId === "default" || !practiceId || practiceId.trim() === "") {

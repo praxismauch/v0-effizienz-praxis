@@ -1,10 +1,11 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function PATCH(request: Request, { params }: { params: { id: string; itemId: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; itemId: string }> }) {
   try {
     const supabase = await createServerClient()
     const body = await request.json()
+    const { itemId } = await params
 
     const updateData: any = {}
 
@@ -31,7 +32,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const { data, error } = await supabase
       .from("test_checklist_items")
       .update(updateData)
-      .eq("id", params.itemId)
+      .eq("id", itemId)
       .select()
       .single()
 

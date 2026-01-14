@@ -1,8 +1,9 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createServerClient()
 
     const { data: items, error } = await supabase
@@ -15,7 +16,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
           color
         )
       `)
-      .eq("checklist_id", params.id)
+      .eq("checklist_id", id)
       .order("display_order", { ascending: true })
 
     if (error) throw error

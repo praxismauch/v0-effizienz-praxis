@@ -1,10 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function PATCH(request: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
-    const practiceId = params.practiceId
-    const id = params.id
+    const { practiceId, id } = await params
 
     const body = await request.json()
 
@@ -41,10 +40,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { practi
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; id: string }> },
+) {
   try {
-    const practiceId = params.practiceId
-    const id = params.id
+    const { practiceId, id } = await params
 
     const supabase = await createAdminClient()
 

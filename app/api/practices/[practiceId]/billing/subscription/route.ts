@@ -2,9 +2,10 @@ import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 
 // GET - Get practice subscription
-export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createServerClient()
+    const { practiceId } = await params
 
     const { data: subscription, error } = await supabase
       .from("practice_subscriptions")
@@ -20,7 +21,7 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
           max_team_members
         )
       `)
-      .eq("practice_id", params.practiceId)
+      .eq("practice_id", practiceId)
       .maybeSingle()
 
     if (error) throw error
@@ -33,17 +34,19 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
 }
 
 // POST - Create or update subscription
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createServerClient()
     const body = await request.json()
     const { planId } = body
 
+    const { practiceId } = await params
+
     // Check if subscription exists
     const { data: existing } = await supabase
       .from("practice_subscriptions")
       .select("id")
-      .eq("practice_id", params.practiceId)
+      .eq("practice_id", practiceId)
       .single()
 
     if (existing) {
@@ -69,7 +72,7 @@ export async function POST(request: Request, { params }: { params: { practiceId:
         .from("practice_subscriptions")
         .insert([
           {
-            practice_id: params.practiceId,
+            practice_id: practiceId,
             plan_id: planId,
             status: "trial",
             trial_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),

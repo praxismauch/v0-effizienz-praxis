@@ -5,9 +5,9 @@ import { generateText } from "ai"
 export const maxDuration = 60
 
 // POST - AI-powered holiday schedule optimization
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const supabase = await createClient()
     const body = await request.json()
     const { year } = body

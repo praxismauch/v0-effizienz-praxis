@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const body = await request.json()
 
@@ -16,7 +17,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         description: body.description,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 
@@ -29,11 +30,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createClient()
 
-    const { error } = await supabase.from("translations").delete().eq("id", params.id)
+    const { error } = await supabase.from("translations").delete().eq("id", id)
 
     if (error) throw error
 

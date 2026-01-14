@@ -5,9 +5,9 @@ import { NextResponse } from "next/server"
 const HARDCODED_PRACTICE_ID = "1"
 
 // GET - Fetch onboarding progress for current user
-export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const supabase = await createClient()
 
     const {
@@ -43,9 +43,9 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
 }
 
 // POST - Create or update onboarding progress
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const supabase = await createClient()
 
     const {

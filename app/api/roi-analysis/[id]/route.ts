@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = params
+    const { id } = await params
 
     const { data: analysis, error } = await supabase.from("roi_analyses").select("*").eq("id", id).maybeSingle()
 
@@ -24,10 +24,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = params
+    const { id } = await params
 
     const { error } = await supabase.from("roi_analyses").delete().eq("id", id)
 
@@ -43,10 +43,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const {

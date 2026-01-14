@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const supabase = await createAdminClient()
     const { token } = await params
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: { token: s
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const supabase = await createAdminClient()
     const { token } = await params

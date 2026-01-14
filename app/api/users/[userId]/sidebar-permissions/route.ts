@@ -1,9 +1,10 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
-    let userId = params.userId
+    const { userId: paramUserId } = await params
+    let userId = paramUserId
 
     if (!userId) {
       const urlParts = request.nextUrl.pathname.split("/")
@@ -41,8 +42,9 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
+    const { userId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -52,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    if (user.id !== params.userId) {
+    if (user.id !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -62,17 +64,17 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("practice_id")
-      .eq("id", params.userId)
+      .eq("id", userId)
       .single()
 
     if (userError || !userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    await supabase.from("sidebar_permissions").delete().eq("user_id", params.userId)
+    await supabase.from("sidebar_permissions").delete().eq("user_id", userId)
 
     const permissionsToInsert = Object.entries(permissions).map(([sidebar_item, is_visible]) => ({
-      user_id: params.userId,
+      user_id: userId,
       practice_id: userData.practice_id,
       sidebar_item,
       is_visible: is_visible as boolean,

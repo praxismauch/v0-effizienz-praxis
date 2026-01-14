@@ -3,9 +3,9 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export const runtime = "nodejs"
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
 
     if (!practiceId) {
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })

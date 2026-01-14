@@ -1,10 +1,10 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createServerClient()
-    const { practiceId } = params
+    const { practiceId } = await params
 
     const { data: subscriptions, error } = await supabase
       .from("external_calendar_subscriptions")
@@ -23,10 +23,10 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createServerClient()
-    const { practiceId } = params
+    const { practiceId } = await params
     const body = await request.json()
 
     const {

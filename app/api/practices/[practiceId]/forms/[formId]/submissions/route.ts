@@ -1,15 +1,19 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; formId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; formId: string }> },
+) {
   try {
+    const { practiceId, formId } = await params
     const supabase = await createAdminClient()
 
     const { data, error } = await supabase
       .from("form_submissions")
       .select("*")
-      .eq("practice_id", params.practiceId)
-      .eq("form_id", params.formId)
+      .eq("practice_id", practiceId)
+      .eq("form_id", formId)
       .order("submitted_at", { ascending: false })
 
     if (error) {
@@ -23,8 +27,12 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string; formId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; formId: string }> },
+) {
   try {
+    const { practiceId, formId } = await params
     const supabase = await createAdminClient()
     const body = await request.json()
 
@@ -37,8 +45,8 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     const { data, error } = await supabase
       .from("form_submissions")
       .insert({
-        practice_id: params.practiceId,
-        form_id: params.formId,
+        practice_id: practiceId,
+        form_id: formId,
         submitted_by: submittedBy,
         submission_data: body.data || body.submission_data,
         status: "submitted",

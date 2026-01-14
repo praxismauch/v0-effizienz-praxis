@@ -5,15 +5,16 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
   auth: { persistSession: false },
 })
 
-export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get("course_id")
     const moduleId = searchParams.get("module_id")
     const lessonId = searchParams.get("lesson_id")
 
     console.log("[v0] GET /api/practices/[practiceId]/academy/quizzes - Start", {
-      practiceId: params.practiceId,
+      practiceId,
       courseId,
       moduleId,
       lessonId,
@@ -71,13 +72,14 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
   }
 }
 
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const body = await request.json()
     const { questions, ...quizData } = body
 
     console.log("[v0] POST /api/practices/[practiceId]/academy/quizzes - Start", {
-      practiceId: params.practiceId,
+      practiceId,
       quizData,
       questionsCount: questions?.length,
     })

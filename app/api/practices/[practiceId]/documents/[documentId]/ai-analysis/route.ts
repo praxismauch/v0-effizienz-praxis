@@ -1,8 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string; documentId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; documentId: string }> },
+) {
   try {
+    const { practiceId, documentId } = await params
     const supabase = await createAdminClient()
 
     const body = await request.json()
@@ -13,8 +17,8 @@ export async function POST(request: NextRequest, { params }: { params: { practic
         ai_analysis: body.ai_analysis,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.documentId)
-      .eq("practice_id", params.practiceId)
+      .eq("id", documentId)
+      .eq("practice_id", practiceId)
       .select()
       .single()
 

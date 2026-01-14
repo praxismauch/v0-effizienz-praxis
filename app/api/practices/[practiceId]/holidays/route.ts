@@ -1,7 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createServerClient()
     const {
@@ -12,13 +12,14 @@ export async function GET(request: NextRequest, { params }: { params: { practice
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { practiceId } = await params
     const { searchParams } = new URL(request.url)
     const year = searchParams.get("year")
 
     let query = supabase
       .from("holidays")
       .select("*")
-      .eq("practice_id", params.practiceId)
+      .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .order("date", { ascending: true })
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const supabase = await createServerClient()
     const {
@@ -48,13 +49,14 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { practiceId } = await params
     const body = await request.json()
     const { name, date, year, isRecurring } = body
 
     const { data: holiday, error } = await supabase
       .from("holidays")
       .insert({
-        practice_id: params.practiceId,
+        practice_id: practiceId,
         name,
         date,
         year,

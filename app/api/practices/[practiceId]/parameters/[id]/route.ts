@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 // PUT - Update a practice-specific parameter
 export async function PUT(request: NextRequest, { params }: { params: { practiceId: string; id: string } }) {
   try {
-    const { practiceId, id } = await params
+    const { practiceId, id } = params
     const supabase = await createClient()
     const body = await request.json()
     const { name, description, category, dataType, unit, interval } = body
@@ -51,9 +51,9 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
 }
 
 // DELETE - Delete a practice-specific parameter
-export async function DELETE(request: NextRequest, context: { params: Promise<{ practiceId: string; id: string }> }) {
+export async function DELETE(request: NextRequest, context: { params: { practiceId: string; id: string } }) {
   try {
-    const { practiceId, id } = await context.params
+    const { practiceId, id } = context.params
     const { searchParams } = new URL(request.url)
     const force = searchParams.get("force") === "true"
     const supabase = await createClient()

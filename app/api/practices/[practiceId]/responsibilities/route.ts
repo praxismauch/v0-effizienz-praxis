@@ -15,7 +15,7 @@ function isRateLimitError(error: any): boolean {
 
 export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = await params
+    const { practiceId } = params
     console.log("[v0] Fetching responsibilities for practice:", practiceId)
 
     let supabase
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
 
 export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = await params
+    const { practiceId } = params
 
     let supabase
     try {

@@ -3,9 +3,9 @@ import { del } from "@vercel/blob"
 import type { NextRequest } from "next/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
     const supabase = await createClient()
 
     const {
@@ -53,9 +53,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
     const supabase = await createClient()
 
     const {

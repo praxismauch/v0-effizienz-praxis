@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-export async function PATCH(request: NextRequest, { params }: { params: { adminId: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ adminId: string }> }) {
   try {
     const supabase = await createClient()
-    const { adminId } = params
+    const { adminId } = await params
     const body = await request.json()
 
     console.log("[v0] Patching super admin:", adminId, body)
@@ -48,10 +48,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { adminI
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { adminId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ adminId: string }> }) {
   try {
     const supabase = await createClient()
-    const { adminId } = params
+    const { adminId } = await params
     const body = await request.json()
 
     console.log("[v0] Updating super admin:", adminId, body)
@@ -87,10 +87,10 @@ export async function PUT(request: NextRequest, { params }: { params: { adminId:
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { adminId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ adminId: string }> }) {
   try {
     const supabase = await createClient()
-    const { adminId } = params
+    const { adminId } = await params
 
     console.log("[v0] Deleting super admin:", adminId)
 

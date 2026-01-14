@@ -2,8 +2,9 @@ import { createServerClient } from "@/lib/supabase/server"
 import { put } from "@vercel/blob"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const supabase = await createServerClient()
     const {
       data: { user },
@@ -21,12 +22,12 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     }
 
     // Upload to Vercel Blob
-    const blob = await put(`practice-logos/${params.practiceId}/${file.name}`, file, {
+    const blob = await put(`practice-logos/${practiceId}/${file.name}`, file, {
       access: "public",
     })
 
     // Update practice with logo URL
-    const { error } = await supabase.from("practices").update({ logo_url: blob.url }).eq("id", params.practiceId)
+    const { error } = await supabase.from("practices").update({ logo_url: blob.url }).eq("id", practiceId)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

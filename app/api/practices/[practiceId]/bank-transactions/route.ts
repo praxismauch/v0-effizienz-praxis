@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
-export async function GET(request: Request, { params }: { params: { practiceId: string } }) {
-  const practiceId = String(params.practiceId)
+export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
+  const { practiceId } = await params
 
   try {
     const { adminClient } = await requirePracticeAccess(practiceId)
@@ -38,9 +38,9 @@ export async function GET(request: Request, { params }: { params: { practiceId: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { practiceId: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const practiceId = String(params.practiceId)
+    const { practiceId } = await params
 
     const { adminClient } = await requirePracticeAccess(practiceId)
 

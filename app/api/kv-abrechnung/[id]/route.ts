@@ -1,15 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
+    const { id } = await params
 
-    const { data: abrechnung, error } = await supabase
-      .from("kv_abrechnung")
-      .select("*")
-      .eq("id", params.id)
-      .maybeSingle()
+    const { data: abrechnung, error } = await supabase.from("kv_abrechnung").select("*").eq("id", id).maybeSingle()
 
     if (error) {
       console.error("[v0] Failed to fetch KV-Abrechnung:", error)

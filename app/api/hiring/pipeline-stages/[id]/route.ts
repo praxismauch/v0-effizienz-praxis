@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { name, color, description, stage_order, is_active, job_posting_id } = body
 
@@ -19,7 +20,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         job_posting_id,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 
@@ -35,11 +36,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createAdminClient()
 
-    const { error } = await supabase.from("hiring_pipeline_stages").delete().eq("id", params.id)
+    const { error } = await supabase.from("hiring_pipeline_stages").delete().eq("id", id)
 
     if (error) {
       console.error("[v0] Error deleting pipeline stage:", error)

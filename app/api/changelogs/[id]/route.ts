@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
-    const { id } = params
+    const { id } = await params
 
     const {
       data: { user },
@@ -50,9 +50,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
+    const { id } = await params
 
     const {
       data: { user },
@@ -61,7 +62,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { error } = await supabase.from("changelogs").delete().eq("id", params.id)
+    const { error } = await supabase.from("changelogs").delete().eq("id", id)
 
     if (error) throw error
 

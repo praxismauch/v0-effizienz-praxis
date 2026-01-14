@@ -3,8 +3,10 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { practiceId: string; goalId: string; id: string } },
+  { params }: { params: Promise<{ practiceId: string; goalId: string; id: string }> },
 ) {
+  const { practiceId, goalId, id } = await params
+
   try {
     const supabase = await createServerClient()
 
@@ -18,9 +20,9 @@ export async function DELETE(
     const { error } = await supabase
       .from("goal_attachments")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", params.id)
-      .eq("practice_id", params.practiceId)
-      .eq("goal_id", params.goalId)
+      .eq("id", id)
+      .eq("practice_id", practiceId)
+      .eq("goal_id", goalId)
 
     if (error) throw error
 

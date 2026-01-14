@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const supabase = await createServerClient()
     const searchParams = request.nextUrl.searchParams
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
           avatar_url
         )
       `)
-      .eq("practice_id", params.practiceId)
+      .eq("practice_id", practiceId)
       .order("year", { ascending: false })
       .order("month", { ascending: false })
 
@@ -58,8 +59,9 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const supabase = await createServerClient()
     const body = await request.json()
     const { user_id, year, month } = body
@@ -80,7 +82,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     const { data: existing } = await supabase
       .from("monthly_time_reports")
       .select("id")
-      .eq("practice_id", params.practiceId)
+      .eq("practice_id", practiceId)
       .eq("user_id", user_id)
       .eq("year", year)
       .eq("month", month)
@@ -96,7 +98,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     const { data: blocks } = await supabase
       .from("time_blocks")
       .select("*")
-      .eq("practice_id", params.practiceId)
+      .eq("practice_id", practiceId)
       .eq("user_id", user_id)
       .gte("date", startDate)
       .lte("date", endDate)
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest, { params }: { params: { practic
     const { data: report, error: insertError } = await supabase
       .from("monthly_time_reports")
       .insert({
-        practice_id: Number.parseInt(params.practiceId),
+        practice_id: Number.parseInt(practiceId),
         user_id,
         year,
         month,

@@ -5,9 +5,11 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
 const HARDCODED_PRACTICE_ID = "1"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    console.log("[v0] calendar-events GET: params object", params)
+    const { practiceId } = await params
+    console.log("[v0] calendar-events GET: practiceId after await", practiceId, typeof practiceId)
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
@@ -95,13 +97,14 @@ export async function GET(request: NextRequest, { params }: { params: { practice
 
     return NextResponse.json({ events: allEvents })
   } catch (error: any) {
+    console.log("[v0] calendar-events GET error:", error.message, error.status)
     return handleApiError(error)
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
 
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
 

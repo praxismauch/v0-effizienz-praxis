@@ -2,9 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { createAdminClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
-    const { userId } = params
+    const { userId } = await params
     const body = await request.json()
     const supabase = createAdminClient()
 

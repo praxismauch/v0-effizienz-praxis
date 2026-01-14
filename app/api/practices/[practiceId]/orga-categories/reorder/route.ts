@@ -1,8 +1,9 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function POST(request: Request, { params }: { params: { practiceId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
+    const { practiceId } = await params
     const body = await request.json()
     const categories = body.categories || body.categoryOrders || []
 

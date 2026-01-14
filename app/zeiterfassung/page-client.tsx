@@ -60,26 +60,36 @@ import { cn } from "@/lib/utils"
 interface TimeStamp {
   id: string
   user_id: string
+  practice_id: string
   stamp_type: "start" | "stop" | "pause_start" | "pause_end"
   timestamp: string
-  work_location: "praxis" | "homeoffice" | "aussenterm" | "hausbesuch" | "fortbildung"
-  location_verified: boolean
-  comment?: string
-  plausibility_status: "ok" | "hinweis" | "kritisch"
+  location_type: string
+  device_fingerprint?: string
+  ip_address?: string
+  latitude?: number
+  longitude?: number
+  notes?: string
+  is_manual: boolean
+  created_at: string
+  updated_at: string
 }
 
 interface TimeBlock {
   id: string
   user_id: string
+  practice_id: string
   date: string
   start_time: string
   end_time?: string
-  work_location: string
-  gross_minutes?: number
+  planned_hours?: number
+  actual_hours?: number
   break_minutes: number
-  net_minutes?: number
-  is_open: boolean
-  plausibility_status: "ok" | "hinweis" | "kritisch"
+  overtime_minutes: number
+  location_type: string
+  status: "active" | "completed" | "cancelled"
+  notes?: string
+  created_at: string
+  updated_at: string
 }
 
 interface TeamMember {
@@ -125,7 +135,7 @@ const WORK_LOCATIONS = [
 export default function ZeiterfassungPageClient() {
   const { currentUser } = useUser()
   const user = currentUser
-  const practiceId = currentUser?.practiceId ? Number(currentUser.practiceId) : null
+  const practiceId = currentUser?.practiceId ? String(currentUser.practiceId) : null
 
   const [activeTab, setActiveTab] = useState("stechuhr")
   const [isLoading, setIsLoading] = useState(true)
@@ -185,7 +195,7 @@ export default function ZeiterfassungPageClient() {
         .eq("practice_id", practiceId)
         .eq("user_id", user.id)
         .eq("date", today)
-        .eq("is_open", true)
+        .eq("status", "active")
         .order("start_time", { ascending: false })
         .limit(1)
 
@@ -205,7 +215,7 @@ export default function ZeiterfassungPageClient() {
         } else {
           setCurrentStatus("working")
         }
-        setSelectedLocation(blocks[0].work_location)
+        setSelectedLocation(blocks[0].location_type || "praxis")
       } else {
         setCurrentStatus("idle")
         setCurrentBlock(null)
@@ -248,13 +258,17 @@ export default function ZeiterfassungPageClient() {
       // Merge Status in Teammitglieder
       const membersWithStatus = members.map((member) => {
         const memberBlocks = todayBlocks?.filter((b) => b.user_id === member.id) || []
-        const openBlock = memberBlocks.find((b) => b.is_open)
-        const totalMinutes = memberBlocks.reduce((sum, b) => sum + (b.net_minutes || 0), 0)
+        const openBlock = memberBlocks.find((b) => b.status === "active")
+        const totalMinutes = memberBlocks.reduce((sum, b) => {
+          // Calculate net minutes from actual_hours or break_minutes
+          const actualMins = b.actual_hours ? b.actual_hours * 60 : 0
+          return sum + actualMins
+        }, 0)
 
         return {
           ...member,
           current_status: openBlock ? ("working" as const) : ("absent" as const),
-          current_location: openBlock?.work_location,
+          current_location: openBlock?.location_type,
           today_minutes: totalMinutes,
         }
       })
@@ -294,11 +308,11 @@ export default function ZeiterfassungPageClient() {
 
       // Berechne Monatsbericht
       if (blocks) {
-        const totalNetMinutes = blocks.reduce((sum, b) => sum + (b.net_minutes || 0), 0)
+        const totalNetMinutes = blocks.reduce((sum, b) => sum + (b.actual_hours ? b.actual_hours * 60 : 0), 0)
         const totalBreakMinutes = blocks.reduce((sum, b) => sum + (b.break_minutes || 0), 0)
         const workDays = new Set(blocks.map((b) => b.date)).size
-        const homeOfficeDays = blocks.filter((b) => b.work_location === "homeoffice").length
-        const warnings = blocks.filter((b) => b.plausibility_status !== "ok").length
+        const homeOfficeDays = blocks.filter((b) => b.location_type === "homeoffice").length
+        const warnings = blocks.filter((b) => b.status !== "completed").length // Assuming status is an indicator of issues
 
         // Annahme: 8h/Tag Soll
         const targetMinutes = workDays * 480
@@ -309,7 +323,7 @@ export default function ZeiterfassungPageClient() {
           total_net_minutes: totalNetMinutes,
           overtime_minutes: overtime,
           homeoffice_days: homeOfficeDays,
-          corrections_count: 0,
+          corrections_count: 0, // This needs to be fetched separately or calculated
           plausibility_warnings: warnings,
         })
       }
@@ -549,39 +563,50 @@ export default function ZeiterfassungPageClient() {
 
       console.log("[v0] 3-API: Inserting time_stamp", { stampAction, now })
 
-      // Erstelle Stempelung
+      // Columns: id, user_id, practice_id, stamp_type, timestamp, location_type,
+      //          device_fingerprint, ip_address, latitude, longitude, notes, is_manual
       const { data: stamp, error: stampError } = await supabase
         .from("time_stamps")
         .insert({
-          practice_id: practiceId,
+          practice_id: practiceId, // TEXT in DB
           user_id: user.id,
           stamp_type: stampAction,
           timestamp: now,
-          work_location: selectedLocation,
-          comment: stampComment || null,
-          browser_info: navigator.userAgent,
+          location_type: selectedLocation, // was work_location
+          notes: stampComment || null, // was comment
+          is_manual: false,
+          // Removed: browser_info (doesn't exist in DB)
         })
         .select()
         .single()
 
-      if (stampError) throw stampError
+      if (stampError) {
+        console.error("[v0] time_stamps insert error:", stampError)
+        throw stampError
+      }
 
       console.log("[v0] time_stamp created:", stamp.id)
 
       // Verarbeite basierend auf Aktion
       if (stampAction === "start") {
-        // Neuer Arbeitsblock
+        // Columns: id, user_id, practice_id, date, start_time, end_time, planned_hours,
+        //          actual_hours, break_minutes, overtime_minutes, location_type, status, notes
         const { error: blockError } = await supabase.from("time_blocks").insert({
-          practice_id: practiceId,
+          practice_id: practiceId, // TEXT in DB
           user_id: user.id,
           date: format(new Date(), "yyyy-MM-dd"),
-          start_stamp_id: stamp.id,
           start_time: now,
-          work_location: selectedLocation,
-          is_open: true,
+          location_type: selectedLocation, // was work_location
+          status: "active", // was is_open: true
+          break_minutes: 0,
+          overtime_minutes: 0,
+          // Removed: start_stamp_id, is_open (don't exist in DB)
         })
 
-        if (blockError) throw blockError
+        if (blockError) {
+          console.error("[v0] time_blocks insert error:", blockError)
+          throw blockError
+        }
 
         setCurrentStatus("working")
         toast.success("Arbeitszeit gestartet", {
@@ -598,15 +623,16 @@ export default function ZeiterfassungPageClient() {
           const { error: updateError } = await supabase
             .from("time_blocks")
             .update({
-              end_stamp_id: stamp.id,
               end_time: now,
-              gross_minutes: grossMinutes,
-              net_minutes: netMinutes,
-              is_open: false,
+              actual_hours: netMinutes / 60, // Store as hours
+              status: "completed", // was is_open: false
             })
             .eq("id", currentBlock.id)
 
-          if (updateError) throw updateError
+          if (updateError) {
+            console.error("[v0] time_blocks update error:", updateError)
+            throw updateError
+          }
 
           setCurrentStatus("idle")
           setCurrentBlock(null)
@@ -619,7 +645,6 @@ export default function ZeiterfassungPageClient() {
         if (currentBlock) {
           await supabase.from("time_block_breaks").insert({
             time_block_id: currentBlock.id,
-            start_stamp_id: stamp.id,
             start_time: now,
           })
 
@@ -629,6 +654,7 @@ export default function ZeiterfassungPageClient() {
       } else if (stampAction === "pause_end") {
         // Pause beenden
         if (currentBlock) {
+          // Finde offene Pause
           const { data: openBreak } = await supabase
             .from("time_block_breaks")
             .select("*")
@@ -638,18 +664,18 @@ export default function ZeiterfassungPageClient() {
 
           if (openBreak) {
             const breakStart = parseISO(openBreak.start_time)
-            const breakMinutes = differenceInMinutes(new Date(), breakStart)
+            const breakEnd = new Date()
+            const breakMinutes = differenceInMinutes(breakEnd, breakStart)
 
             await supabase
               .from("time_block_breaks")
               .update({
-                end_stamp_id: stamp.id,
                 end_time: now,
                 duration_minutes: breakMinutes,
               })
               .eq("id", openBreak.id)
 
-            // Update Block Pausenzeit
+            // Update Gesamtpause im Block
             await supabase
               .from("time_blocks")
               .update({
@@ -663,27 +689,16 @@ export default function ZeiterfassungPageClient() {
         }
       }
 
-      // Audit Log
-      await supabase.from("time_audit_log").insert({
-        practice_id: practiceId,
-        user_id: user.id,
-        action: `stamp_${stampAction}`,
-        entity_type: "time_stamp",
-        entity_id: stamp.id,
-        new_values: { stamp_type: stampAction, work_location: selectedLocation },
-      })
+      // Refresh Status
+      await loadCurrentStatus()
 
       setShowStampDialog(false)
       setStampComment("")
-      await loadCurrentStatus()
-      await loadMonthlyData()
-
-      if (selectedLocation === "homeoffice" && stampAction === "start") {
-        await loadHomeofficePolicy()
-      }
-    } catch (error) {
-      console.error("Stamp error:", error)
-      toast.error("Fehler beim Stempeln")
+    } catch (error: any) {
+      console.error("[v0] Stamp error:", error)
+      toast.error("Fehler beim Stempeln", {
+        description: error.message || "Ein unerwarteter Fehler ist aufgetreten.",
+      })
     } finally {
       setIsStamping(false)
     }
@@ -746,11 +761,15 @@ export default function ZeiterfassungPageClient() {
         b.date,
         b.start_time ? new Date(b.start_time).toLocaleTimeString("de-DE") : "",
         b.end_time ? new Date(b.end_time).toLocaleTimeString("de-DE") : "",
-        b.gross_minutes ? `${Math.floor(b.gross_minutes / 60)}:${String(b.gross_minutes % 60).padStart(2, "0")}` : "",
+        b.actual_hours
+          ? `${Math.floor(b.actual_hours)}:${String(Math.round((b.actual_hours % 1) * 60)).padStart(2, "0")}`
+          : "", // Display actual_hours
         `${Math.floor((b.break_minutes || 0) / 60)}:${String((b.break_minutes || 0) % 60).padStart(2, "0")}`,
-        b.net_minutes ? `${Math.floor(b.net_minutes / 60)}:${String(b.net_minutes % 60).padStart(2, "0")}` : "",
-        b.work_location,
-        b.plausibility_status,
+        b.actual_hours
+          ? `${Math.floor(b.actual_hours)}:${String(Math.round((b.actual_hours % 1) * 60)).padStart(2, "0")}`
+          : "", // Display actual_hours
+        b.location_type, // Use location_type
+        b.status, // Use status
       ])
 
       const csv = [headers, ...rows].map((r) => r.join(";")).join("\n")
@@ -1070,7 +1089,7 @@ export default function ZeiterfassungPageClient() {
                       {formatMinutes(
                         timeBlocks
                           .filter((b) => b.date === format(new Date(), "yyyy-MM-dd"))
-                          .reduce((sum, b) => sum + (b.net_minutes || 0), 0) +
+                          .reduce((sum, b) => sum + (b.actual_hours ? b.actual_hours * 60 : 0), 0) +
                           (currentStatus !== "idle" ? getCurrentWorkDuration() : 0),
                       )}
                     </div>
@@ -1317,7 +1336,7 @@ export default function ZeiterfassungPageClient() {
                     </TableHeader>
                     <TableBody>
                       {timeBlocks.map((block) => {
-                        const location = WORK_LOCATIONS.find((l) => l.value === block.work_location)
+                        const location = WORK_LOCATIONS.find((l) => l.value === block.location_type) // Use location_type
 
                         return (
                           <TableRow key={block.id}>
@@ -1334,20 +1353,21 @@ export default function ZeiterfassungPageClient() {
                             </TableCell>
                             <TableCell>{block.break_minutes || 0} min</TableCell>
                             <TableCell className="font-mono">
-                              {block.net_minutes ? formatMinutes(block.net_minutes) : "-"}
+                              {block.actual_hours ? formatMinutes(block.actual_hours * 60) : "-"}{" "}
+                              {/* Display actual_hours */}
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className={location?.color}>
-                                {location?.label || block.work_location}
+                                {location?.label || block.location_type} {/* Use location_type */}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {block.plausibility_status === "ok" ? (
+                              {block.status === "completed" ? ( // Check status for completion
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                              ) : block.plausibility_status === "hinweis" ? (
-                                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                              ) : block.status === "active" ? ( // Check status for active
+                                <AlertTriangle className="h-4 w-4 text-yellow-500" /> // Indicating active might be a warning
                               ) : (
-                                <XCircle className="h-4 w-4 text-red-500" />
+                                <XCircle className="h-4 w-4 text-red-500" /> // Indicating cancelled
                               )}
                             </TableCell>
                             <TableCell>

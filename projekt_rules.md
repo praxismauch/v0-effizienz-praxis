@@ -30,6 +30,61 @@
 3. Never assume practice_id type - always check the schema first
 4. Use parameterized queries to avoid type coercion issues
 
+## Zeiterfassung (Time Tracking) Database Schema
+
+### time_stamps table
+```
+column_name         | data_type                | is_nullable | column_default
+--------------------|--------------------------|-------------|----------------
+id                  | uuid                     | NO          | gen_random_uuid()
+user_id             | text                     | NO          | null
+practice_id         | text                     | NO          | null
+stamp_type          | text                     | NO          | null
+timestamp           | timestamp with time zone | NO          | now()
+location_type       | text                     | YES         | 'office'::text
+device_fingerprint  | text                     | YES         | null
+ip_address          | text                     | YES         | null
+latitude            | numeric                  | YES         | null
+longitude           | numeric                  | YES         | null
+notes               | text                     | YES         | null
+is_manual           | boolean                  | YES         | false
+created_at          | timestamp with time zone | YES         | now()
+updated_at          | timestamp with time zone | YES         | now()
+```
+
+**DOES NOT HAVE**: browser_info, work_location, comment, type
+
+### time_blocks table
+```
+column_name      | data_type                | is_nullable | column_default
+-----------------|--------------------------|-------------|----------------
+id               | uuid                     | NO          | gen_random_uuid()
+user_id          | text                     | NO          | null
+practice_id      | text                     | NO          | null
+date             | date                     | NO          | null
+start_time       | timestamp with time zone | NO          | null
+end_time         | timestamp with time zone | YES         | null
+planned_hours    | numeric                  | YES         | null
+actual_hours     | numeric                  | YES         | null
+break_minutes    | integer                  | YES         | 0
+overtime_minutes | integer                  | YES         | 0
+location_type    | text                     | YES         | 'office'::text
+status           | text                     | YES         | 'active'::text
+notes            | text                     | YES         | null
+created_at       | timestamp with time zone | YES         | now()
+updated_at       | timestamp with time zone | YES         | now()
+```
+
+**DOES NOT HAVE**: is_open, work_location, start_stamp_id, end_stamp_id, gross_minutes, net_minutes, plausibility_status
+
+### Important Mappings (Code → Database)
+- `work_location` → `location_type`
+- `comment` → `notes`
+- `is_open: true` → `status: 'active'`
+- `is_open: false` → `status: 'completed'`
+- `net_minutes` → calculate from `actual_hours * 60`
+- Remove `browser_info`, `start_stamp_id`, `end_stamp_id`
+
 ## Common Loading Issues (Dienstplan, Zeiterfassung) - FIXED
 
 ### Root Causes Identified

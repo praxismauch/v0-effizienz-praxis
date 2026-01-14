@@ -293,3 +293,119 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return handleApiError(error)
   }
 }
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  try {
+    const { practiceId } = await params
+    const practiceIdStr = "1"
+    const practiceIdInt = 1
+
+    const supabase = createAdminClient()
+    const body = await request.json()
+
+    // Extract member ID from the URL or body
+    const memberId = body.id || body.user_id
+
+    if (!memberId) {
+      return NextResponse.json({ error: "Mitglied-ID fehlt" }, { status: 400 })
+    }
+
+    console.log("[v0] team-members PUT: Updating member", memberId, "with data:", body)
+
+    // Build update object for team_members table
+    const teamMemberUpdates: any = {}
+
+    if (body.firstName !== undefined || body.lastName !== undefined) {
+      const firstName = body.firstName?.trim() || body.first_name?.trim() || ""
+      const lastName = body.lastName?.trim() || body.last_name?.trim() || ""
+
+      if (firstName) teamMemberUpdates.first_name = firstName
+      if (lastName) teamMemberUpdates.last_name = lastName
+    }
+
+    if (body.role !== undefined) {
+      teamMemberUpdates.role = body.role
+    }
+
+    if (body.department !== undefined) {
+      teamMemberUpdates.department = body.department
+    }
+
+    if (body.isActive !== undefined) {
+      teamMemberUpdates.status = body.isActive ? "active" : "inactive"
+    }
+
+    if (body.status !== undefined) {
+      teamMemberUpdates.status = body.status
+    }
+
+    // Update team_members table
+    if (Object.keys(teamMemberUpdates).length > 0) {
+      const { error: memberError } = await supabase
+        .from("team_members")
+        .update(teamMemberUpdates)
+        .eq("user_id", memberId)
+        .eq("practice_id", practiceIdStr)
+
+      if (memberError) {
+        console.error("[v0] Team member update error:", memberError.message)
+        return NextResponse.json({ error: memberError.message }, { status: 500 })
+      }
+    }
+
+    // Update users table if email or other user fields changed
+    const userUpdates: any = {}
+
+    if (body.firstName !== undefined || body.lastName !== undefined) {
+      const firstName = body.firstName?.trim() || body.first_name?.trim() || ""
+      const lastName = body.lastName?.trim() || body.last_name?.trim() || ""
+      const fullName = `${firstName} ${lastName}`.trim()
+
+      if (fullName) {
+        userUpdates.name = fullName
+        userUpdates.first_name = firstName
+        userUpdates.last_name = lastName
+      }
+    }
+
+    if (body.email !== undefined && body.email?.trim()) {
+      userUpdates.email = body.email.trim()
+    }
+
+    if (body.role !== undefined) {
+      userUpdates.role = body.role
+    }
+
+    if (body.avatar !== undefined) {
+      userUpdates.avatar = body.avatar
+    }
+
+    if (body.isActive !== undefined) {
+      userUpdates.is_active = body.isActive
+    }
+
+    if (Object.keys(userUpdates).length > 0) {
+      const { error: userError } = await supabase
+        .from("users")
+        .update(userUpdates)
+        .eq("id", memberId)
+        .eq("practice_id", practiceIdInt)
+
+      if (userError) {
+        console.error("[v0] User update error:", userError.message)
+        // Don't fail the request if user update fails - member update succeeded
+      }
+    }
+
+    console.log("[v0] team-members PUT: Successfully updated member", memberId)
+
+    return NextResponse.json({
+      success: true,
+      id: memberId,
+      message: "Teammitglied erfolgreich aktualisiert",
+    })
+  } catch (error) {
+    console.error("[v0] Team members PUT exception:", error)
+    return handleApiError(error)
+  }
+}

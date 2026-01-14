@@ -363,7 +363,10 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
   const handleOpenExistingJournal = () => {
     if (existingJournal) {
       onOpenChange(false)
-      router.push(`/practice-journals/${existingJournal.id}`)
+      toast({
+        title: "Journal bereits vorhanden",
+        description: "Ein Journal für diesen Zeitraum existiert bereits.",
+      })
     }
   }
 

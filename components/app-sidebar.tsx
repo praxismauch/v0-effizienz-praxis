@@ -152,12 +152,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "analytics",
       },
       {
-        name: "Praxis-Journal",
-        href: "/practice-journals",
-        icon: BookOpen,
-        key: "practice-journals",
-      },
-      {
         name: t("sidebar.documents", "Dokumente"),
         href: "/documents",
         icon: FileText,

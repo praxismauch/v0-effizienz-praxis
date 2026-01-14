@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function PUT(
@@ -7,56 +7,103 @@ export async function PUT(
 ) {
   try {
     const { practiceId, memberId } = await params
-    const practiceIdText = String(practiceId)
+    const practiceIdText = String(practiceId) || "1"
     const memberIdText = String(memberId)
-    const supabase = await createAdminClient()
+    const supabase = createAdminClient()
     const body = await request.json()
 
-    console.log("[v0] PUT team member API called:", { practiceId: practiceIdText, memberId: memberIdText })
+    console.log("[v0] PUT team member API called:", { practiceId: practiceIdText, memberId: memberIdText, body })
 
-    const { data: teamMember, error: lookupError } = await supabase
+    let teamMember = null
+
+    // First try to find by user_id
+    const { data: byUserId } = await supabase
       .from("team_members")
-      .select("id, user_id")
+      .select("id, user_id, first_name, last_name, email, role, status")
       .eq("practice_id", practiceIdText)
-      .or(`user_id.eq.${memberIdText},id.eq.${memberIdText}`)
+      .eq("user_id", memberIdText)
       .maybeSingle()
 
-    if (lookupError || !teamMember) {
-      console.error("[v0] Team member not found:", lookupError)
+    if (byUserId) {
+      teamMember = byUserId
+    } else {
+      // Then try to find by id
+      const { data: byId } = await supabase
+        .from("team_members")
+        .select("id, user_id, first_name, last_name, email, role, status")
+        .eq("practice_id", practiceIdText)
+        .eq("id", memberIdText)
+        .maybeSingle()
+
+      teamMember = byId
+    }
+
+    if (!teamMember) {
+      console.error("[v0] Team member not found for id:", memberIdText)
       return NextResponse.json({ error: "Team member not found" }, { status: 404 })
     }
 
     console.log("[v0] Found team member:", teamMember)
 
     const actualUserId = teamMember.user_id
-    const nameParts = body.name?.split(" ") || []
-    const firstName = nameParts[0] || ""
-    const lastName = nameParts.slice(1).join(" ") || ""
 
-    if (actualUserId) {
-      await supabase
-        .from("users")
-        .update({
-          name: body.name,
-          email: body.email,
-          role: body.role,
-          avatar: body.avatar,
-          is_active: body.isActive,
-        })
-        .eq("id", actualUserId)
+    let firstName = body.firstName || body.first_name || ""
+    let lastName = body.lastName || body.last_name || ""
+
+    if (body.name && (!firstName || !lastName)) {
+      const nameParts = body.name.split(" ")
+      firstName = firstName || nameParts[0] || ""
+      lastName = lastName || nameParts.slice(1).join(" ") || ""
     }
 
-    await supabase
+    const teamMemberUpdates: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    }
+
+    if (firstName) teamMemberUpdates.first_name = firstName
+    if (lastName) teamMemberUpdates.last_name = lastName
+    if (body.role !== undefined) teamMemberUpdates.role = body.role
+    if (body.department !== undefined) teamMemberUpdates.department = body.department
+    if (body.email !== undefined) teamMemberUpdates.email = body.email
+    if (body.isActive !== undefined) teamMemberUpdates.status = body.isActive ? "active" : "inactive"
+    if (body.status !== undefined) teamMemberUpdates.status = body.status
+
+    console.log("[v0] Updating team_members with:", teamMemberUpdates)
+
+    const { error: memberUpdateError } = await supabase
       .from("team_members")
-      .update({
-        first_name: firstName,
-        last_name: lastName,
-        role: body.role,
-        department: body.department,
-        status: body.isActive ? "active" : "inactive",
-      })
+      .update(teamMemberUpdates)
       .eq("id", teamMember.id)
       .eq("practice_id", practiceIdText)
+
+    if (memberUpdateError) {
+      console.error("[v0] Error updating team_members:", memberUpdateError)
+      return NextResponse.json({ error: memberUpdateError.message }, { status: 500 })
+    }
+
+    if (actualUserId) {
+      const userUpdates: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      }
+
+      const fullName = `${firstName} ${lastName}`.trim()
+      if (fullName) userUpdates.name = fullName
+      if (firstName) userUpdates.first_name = firstName
+      if (lastName) userUpdates.last_name = lastName
+      if (body.email !== undefined) userUpdates.email = body.email
+      if (body.role !== undefined) userUpdates.role = body.role
+      if (body.avatar !== undefined) userUpdates.avatar = body.avatar
+      if (body.isActive !== undefined) userUpdates.is_active = body.isActive
+
+      console.log("[v0] Updating users with:", userUpdates)
+
+      const { error: userUpdateError } = await supabase.from("users").update(userUpdates).eq("id", actualUserId)
+
+      if (userUpdateError) {
+        console.error("[v0] Error updating users (non-fatal):", userUpdateError)
+        // Don't fail - team_members update succeeded
+      }
+    }
 
     if (body.teamIds && actualUserId) {
       // Remove existing assignments
@@ -75,10 +122,19 @@ export async function PUT(
 
     console.log("[v0] Team member updated successfully")
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({
+      success: true,
+      message: "Teammitglied erfolgreich aktualisiert",
+    })
   } catch (error) {
     console.error("[v0] Error updating team member:", error)
-    return NextResponse.json({ error: "Failed to update team member" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Failed to update team member",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -88,22 +144,37 @@ export async function DELETE(
 ) {
   try {
     const { practiceId, memberId } = await params
-    const practiceIdText = String(practiceId)
+    const practiceIdText = String(practiceId) || "1"
     const memberIdText = String(memberId)
 
     console.log("[v0] DELETE team member API called:", { practiceId: practiceIdText, memberId: memberIdText })
 
-    const supabase = await createAdminClient()
+    const supabase = createAdminClient()
 
-    const { data: checkMember, error: checkError } = await supabase
+    let checkMember = null
+
+    const { data: byUserId } = await supabase
       .from("team_members")
       .select("id, user_id, first_name, last_name, status")
       .eq("practice_id", practiceIdText)
-      .or(`user_id.eq.${memberIdText},id.eq.${memberIdText}`)
+      .eq("user_id", memberIdText)
       .maybeSingle()
 
-    if (checkError || !checkMember) {
-      console.error("[v0] Member not found:", checkError)
+    if (byUserId) {
+      checkMember = byUserId
+    } else {
+      const { data: byId } = await supabase
+        .from("team_members")
+        .select("id, user_id, first_name, last_name, status")
+        .eq("practice_id", practiceIdText)
+        .eq("id", memberIdText)
+        .maybeSingle()
+
+      checkMember = byId
+    }
+
+    if (!checkMember) {
+      console.error("[v0] Member not found for id:", memberIdText)
       return NextResponse.json({ error: "Team member not found" }, { status: 404 })
     }
 
@@ -121,7 +192,7 @@ export async function DELETE(
       }
     }
 
-    // Update team_member status to inactive
+    // Update team_member status to inactive (soft delete)
     const { error: memberError } = await supabase
       .from("team_members")
       .update({
@@ -142,7 +213,10 @@ export async function DELETE(
     if (checkMember.user_id) {
       const { error: userError } = await supabase
         .from("users")
-        .update({ is_active: false })
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", checkMember.user_id)
 
       if (userError) {
@@ -154,7 +228,10 @@ export async function DELETE(
 
     console.log("[v0] Team member deactivated successfully")
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({
+      success: true,
+      message: "Teammitglied erfolgreich entfernt",
+    })
   } catch (error) {
     console.error("[v0] Error deleting team member:", error)
     return NextResponse.json(

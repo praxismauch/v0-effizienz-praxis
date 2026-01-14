@@ -2,14 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import Link from "next/link"
-import { format, parseISO } from "date-fns"
-import { de } from "date-fns/locale"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { BookOpen, Target, ChevronRight, Sparkles } from "lucide-react"
+import { BookOpen, Target, Sparkles } from "lucide-react"
 
 interface ActionItem {
   id: string
@@ -119,12 +115,6 @@ export function JournalActionItemsCard({ practiceId }: Props) {
           <div className="text-center py-6">
             <Target className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground mb-4">Noch keine Handlungsempfehlungen vorhanden.</p>
-            <Link href="/practice-journals">
-              <Button variant="outline" size="sm">
-                <Sparkles className="h-4 w-4 mr-2" />
-                Journal erstellen
-              </Button>
-            </Link>
           </div>
         </CardContent>
       </Card>
@@ -142,12 +132,6 @@ export function JournalActionItemsCard({ practiceId }: Props) {
             </CardTitle>
             <CardDescription>{journalTitle}</CardDescription>
           </div>
-          <Link href="/practice-journals">
-            <Button variant="ghost" size="sm">
-              Alle anzeigen
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </Link>
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -161,7 +145,7 @@ export function JournalActionItemsCard({ practiceId }: Props) {
                 </div>
                 {item.due_date && (
                   <p className="text-xs text-muted-foreground">
-                    Fällig: {format(parseISO(item.due_date), "dd.MM.yyyy", { locale: de })}
+                    Fällig: {new Date(item.due_date).toLocaleDateString("de-DE")}
                   </p>
                 )}
               </div>

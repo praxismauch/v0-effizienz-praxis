@@ -91,7 +91,6 @@ const pathTitles: Record<string, string> = {
   protocols: "Protokolle",
   training: "Schulungen",
   blog: "Blog",
-  "practice-journals": "Praxis-Journal",
   tickets: "Tickets",
   hiring: "Recruiting",
   candidates: "Kandidaten",

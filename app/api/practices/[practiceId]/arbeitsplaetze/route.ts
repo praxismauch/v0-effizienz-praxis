@@ -21,6 +21,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .from("arbeitsplaetze")
       .select("*")
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+      .eq("is_active", true)
       .order("name")
 
     if (error) {
@@ -60,6 +62,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         image_url: body.image_url || null,
         practice_id: practiceId,
         created_by: user.id,
+        is_active: true,
       })
       .select()
       .single()

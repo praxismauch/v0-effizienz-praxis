@@ -1,12 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; memberId: string }> },
-) {
+export async function GET(request: NextRequest, { params }: { params: { practiceId: string; memberId: string } }) {
   try {
-    const { practiceId, memberId } = await params
+    const { practiceId, memberId } = params
 
     if (!practiceId || !memberId) {
       return NextResponse.json({ error: "Missing practiceId or memberId" }, { status: 400 })
@@ -34,12 +31,9 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; memberId: string }> },
-) {
+export async function POST(request: NextRequest, { params }: { params: { practiceId: string; memberId: string } }) {
   try {
-    const { practiceId, memberId } = await params
+    const { practiceId, memberId } = params
     const body = await request.json()
 
     if (!practiceId || !memberId) {
@@ -54,7 +48,7 @@ export async function POST(
     }
 
     const appraisalData = {
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
       employee_id: memberId,
       appraiser_id: userData.user.id,
       appraisal_type: body.appraisal_type || "annual",
@@ -102,12 +96,9 @@ export async function POST(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; memberId: string }> },
-) {
+export async function PUT(request: NextRequest, { params }: { params: { practiceId: string; memberId: string } }) {
   try {
-    const { practiceId, memberId } = await params
+    const { practiceId, memberId } = params
     const body = await request.json()
 
     if (!practiceId || !memberId || !body.id) {
@@ -145,12 +136,9 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; memberId: string }> },
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string; memberId: string } }) {
   try {
-    const { practiceId, memberId } = await params
+    const { practiceId, memberId } = params
     const { searchParams } = new URL(request.url)
     const appraisalId = searchParams.get("id")
 

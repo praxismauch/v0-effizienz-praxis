@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 
+// and correct column names per PROJECT_RULES.md
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string; skillId: string }> },
@@ -20,7 +22,7 @@ export async function GET(
     }
 
     const { data, error } = await supabase
-      .from("practice_skills")
+      .from("skill_definitions")
       .select("*")
       .eq("id", skillId)
       .eq("practice_id", practiceId)
@@ -63,44 +65,31 @@ export async function PUT(
       throw err
     }
 
-    const { data: currentSkill } = await supabase.from("practice_skills").select("*").eq("id", skillId).maybeSingle()
-
-    if (currentSkill) {
-      await supabase.from("practice_skills_history").insert({
-        skill_id: skillId,
-        practice_id: practiceId,
-        data_snapshot: currentSkill,
-        changed_by: body.changed_by || null,
-      })
-    }
-
+    // skill_definitions has: name, category, description, level_X_description, is_active, display_order, team_id
+    // NOT: level_X_title, level_X_criteria, color (those don't exist)
     const { data, error } = await supabase
-      .from("practice_skills")
+      .from("skill_definitions")
       .update({
         name: body.name,
         category: body.category,
         description: body.description,
-        color: body.color,
-        level_0_title: body.level_0_title,
         level_0_description: body.level_0_description,
-        level_0_criteria: body.level_0_criteria,
-        level_1_title: body.level_1_title,
         level_1_description: body.level_1_description,
-        level_1_criteria: body.level_1_criteria,
-        level_2_title: body.level_2_title,
         level_2_description: body.level_2_description,
-        level_2_criteria: body.level_2_criteria,
-        level_3_title: body.level_3_title,
         level_3_description: body.level_3_description,
-        level_3_criteria: body.level_3_criteria,
+        is_active: body.is_active,
+        display_order: body.display_order,
+        team_id: body.team_id || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", skillId)
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
       .select()
       .maybeSingle()
 
     if (error) {
+      console.error("[v0] Skill PUT error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -135,13 +124,15 @@ export async function DELETE(
       throw err
     }
 
+    // Using soft delete with deleted_at per PROJECT_RULES.md
     const { error } = await supabase
-      .from("practice_skills")
+      .from("skill_definitions")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", skillId)
       .eq("practice_id", practiceId)
 
     if (error) {
+      console.error("[v0] Skill DELETE error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 

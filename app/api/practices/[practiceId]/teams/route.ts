@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const supabase = createAdminClient()
 
-    const practiceIdText = "1"
+    const practiceIdText = String(practiceId)
 
     let teams = null
     let error = null
@@ -63,6 +63,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           team_assignments!left(user_id)
         `)
         .eq("practice_id", practiceIdText)
+        .is("deleted_at", null)
         .order("sort_order", { ascending: true, nullsFirst: false })
         .order("name", { ascending: true })
 
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             team_assignments!left(user_id)
           `)
           .eq("practice_id", practiceIdText)
+          .is("deleted_at", null)
           .order("sort_order", { ascending: true, nullsFirst: false })
           .order("name", { ascending: true })
 
@@ -126,12 +128,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = createAdminClient()
     const body = await request.json()
 
-    const practiceIdText = "1"
+    const practiceIdText = String(practiceId)
 
     const { data: existingTeams } = await supabase
       .from("teams")
       .select("sort_order")
       .eq("practice_id", practiceIdText)
+      .is("deleted_at", null)
       .order("sort_order", { ascending: false })
       .limit(1)
 
@@ -167,7 +170,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = createAdminClient()
     const body = await request.json()
 
-    const practiceIdText = "1"
+    const practiceIdText = String(practiceId)
 
     // Expect body to be { teamIds: string[] } - array of team IDs in new order
     const { teamIds } = body

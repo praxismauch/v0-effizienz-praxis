@@ -2,8 +2,6 @@ import { type NextRequest, NextResponse } from "next/server"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-const HARDCODED_PRACTICE_ID = "1"
-
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 500): Promise<T | null> {
   let lastError: Error | null = null
   for (let i = 0; i < maxRetries; i++) {
@@ -25,14 +23,12 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 50
   return null
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = await params
+    const { practiceId } = params
 
     const effectivePracticeId =
-      practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : HARDCODED_PRACTICE_ID
-
-    const practiceIdInt = Number.parseInt(effectivePracticeId, 10)
+      practiceId && practiceId !== "0" && practiceId !== "undefined" ? String(practiceId) : "1"
 
     let supabase
     try {
@@ -47,7 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       supabase
         .from("todos")
         .select("*")
-        .eq("practice_id", practiceIdInt)
+        .eq("practice_id", effectivePracticeId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false }),
     )
@@ -75,13 +71,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId } = await params
+    const { practiceId } = params
     const body = await request.json()
 
-    const effectivePracticeId = practiceId || HARDCODED_PRACTICE_ID
-    const practiceIdInt = Number.parseInt(effectivePracticeId, 10)
+    const effectivePracticeId =
+      practiceId && practiceId !== "0" && practiceId !== "undefined" ? String(practiceId) : "1"
 
     const { adminClient: supabase } = await requirePracticeAccess(effectivePracticeId)
 
@@ -96,7 +92,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       due_date: body.due_date || body.dueDate || null,
       created_by: createdBy || null,
       assigned_to: assignedTo || null,
-      practice_id: practiceIdInt,
+      practice_id: effectivePracticeId,
       completed: body.completed || false,
       responsibility_id: body.responsibility_id || null,
       created_at: new Date().toISOString(),

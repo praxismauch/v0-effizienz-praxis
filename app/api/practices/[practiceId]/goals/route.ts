@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { safeSupabaseQuery } from "@/lib/supabase/safe-query"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     const effectivePracticeId = practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
     const { user, adminClient: supabase } = await requirePracticeAccess(effectivePracticeId)
     const currentUserId = user.id
 
-    const practiceIdInt = Number.parseInt(effectivePracticeId, 10)
+    const practiceIdText = String(effectivePracticeId)
 
     const { searchParams } = new URL(request.url)
 
@@ -21,7 +21,8 @@ export async function GET(request: NextRequest, { params }: { params: { practice
     let query = supabase
       .from("goals")
       .select("*")
-      .eq("practice_id", practiceIdInt)
+      .eq("practice_id", practiceIdText)
+      .is("deleted_at", null)
       .order("due_date", { ascending: true })
 
     if (!includeSubgoals) {
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
           supabase
             .from("user_goal_order")
             .select("goal_id, display_order")
-            .eq("practice_id", practiceIdInt)
+            .eq("practice_id", practiceIdText)
             .eq("user_id", currentUserId),
         { data: null, error: null },
       )
@@ -101,23 +102,23 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     const effectivePracticeId = practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
 
     const { user, adminClient: supabase } = await requirePracticeAccess(effectivePracticeId)
 
-    const practiceIdInt = Number.parseInt(effectivePracticeId, 10)
+    const practiceIdText = String(effectivePracticeId)
 
     const body = await request.json()
 
     const createdByValue = user.id
 
     const goalData = {
-      practice_id: practiceIdInt,
+      practice_id: practiceIdText,
       created_by: createdByValue,
-      user_id: createdByValue, // Added user_id which exists in DB
+      user_id: createdByValue,
       assigned_to: body.assignedTo || body.assigned_to || null,
       parent_id: body.parentGoalId || body.parent_goal_id || body.parentId || null,
       title: body.title,
@@ -138,7 +139,6 @@ export async function POST(request: NextRequest, { params }: { params: { practic
         (body.endDate || body.end_date || body.dueDate || body.due_date) !== ""
           ? body.endDate || body.end_date || body.dueDate || body.due_date
           : null,
-      // These columns don't exist in the database
     }
 
     const { data, error } = await supabase.from("goals").insert(goalData).select().maybeSingle()

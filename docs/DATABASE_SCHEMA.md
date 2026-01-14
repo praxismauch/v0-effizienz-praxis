@@ -154,7 +154,7 @@
 
 ## Foreign Keys
 
-```
+\`\`\`
 team_members.practice_id -> practices.id
 team_members.candidate_id -> candidates.id
 team_members.user_id -> users.id (NULLABLE!)
@@ -170,7 +170,7 @@ todos.created_by -> users.id
 workflows.practice_id -> practices.id
 
 calendar_events.practice_id -> practices.id
-```
+\`\`\`
 
 ---
 
@@ -209,7 +209,7 @@ Einige Tabellen haben `practice_id` UND `practiceid`:
 ## Sample Queries
 
 ### Team-Member mit User-Daten
-```sql
+\`\`\`sql
 SELECT 
   tm.id,
   tm.first_name,
@@ -221,10 +221,10 @@ FROM team_members tm
 LEFT JOIN users u ON tm.user_id = u.id
 WHERE tm.practice_id = '1'
   AND tm.deleted_at IS NULL;
-```
+\`\`\`
 
 ### Team-Zuweisungen
-```sql
+\`\`\`sql
 SELECT 
   ta.id,
   ta.team_id,
@@ -236,16 +236,16 @@ FROM team_assignments ta
 JOIN teams t ON ta.team_id = t.id
 LEFT JOIN team_members tm ON tm.user_id = ta.user_id
 WHERE ta.practice_id = '1';
-```
+\`\`\`
 
 ### Workflows (kein is_active!)
-```sql
+\`\`\`sql
 SELECT id, name, is_template, status
 FROM workflows
 WHERE practice_id = '1'
   AND deleted_at IS NULL
   AND status = 'active';  -- NICHT is_active = true!
-```
+\`\`\`
 
 ---
 

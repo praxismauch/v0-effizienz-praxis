@@ -18,6 +18,7 @@ export async function GET(
       .select("*")
       .eq("id", goalIdText)
       .eq("practice_id", practiceIdText)
+      .is("deleted_at", null)
       .maybeSingle()
 
     if (goalError) {
@@ -188,7 +189,11 @@ export async function DELETE(
     const goalIdText = String(goalId)
     const supabase = await createAdminClient()
 
-    const { error } = await supabase.from("goals").delete().eq("id", goalIdText).eq("practice_id", practiceIdText)
+    const { error } = await supabase
+      .from("goals")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", goalIdText)
+      .eq("practice_id", practiceIdText)
 
     if (error) {
       console.error("[v0] Error deleting goal:", error)

@@ -14,27 +14,46 @@ export async function POST(
       return NextResponse.json({ error: "practiceId, memberId und teamId sind erforderlich" }, { status: 400 })
     }
 
+    const practiceIdStr = String(practiceId) || "1"
+    const memberIdStr = String(memberId)
     const supabase = createAdminClient()
 
-    // Step 1: Get the team_member and their user_id
-    const { data: teamMember, error: memberError } = await supabase
+    let teamMember = null
+
+    // First try to find by user_id
+    const { data: byUserId } = await supabase
       .from("team_members")
       .select("id, user_id, first_name, last_name")
-      .eq("id", memberId)
-      .eq("practice_id", practiceId)
+      .eq("practice_id", practiceIdStr)
+      .eq("user_id", memberIdStr)
       .is("deleted_at", null)
-      .single()
+      .maybeSingle()
 
-    if (memberError || !teamMember) {
+    if (byUserId) {
+      teamMember = byUserId
+    } else {
+      // Then try to find by id
+      const { data: byId } = await supabase
+        .from("team_members")
+        .select("id, user_id, first_name, last_name")
+        .eq("practice_id", practiceIdStr)
+        .eq("id", memberIdStr)
+        .is("deleted_at", null)
+        .maybeSingle()
+
+      teamMember = byId
+    }
+
+    if (!teamMember) {
       return NextResponse.json({ error: "Team-Mitglied nicht gefunden" }, { status: 404 })
     }
 
-    // Step 2: Check if team_member has a user_id
+    // Check if team_member has a user_id
     if (!teamMember.user_id) {
       return NextResponse.json({ error: "Dieses Mitglied hat keinen verknüpften Benutzer" }, { status: 400 })
     }
 
-    // Step 3: Find and delete the assignment (user_id in team_assignments = users.id)
+    // Find and delete the assignment (user_id in team_assignments = users.id)
     const { data: deletedAssignment, error: deleteError } = await supabase
       .from("team_assignments")
       .delete()

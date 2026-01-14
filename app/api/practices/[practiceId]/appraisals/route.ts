@@ -12,15 +12,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const supabase = await createClient()
 
-    // Get all appraisals for the practice with employee info
     const { data: appraisals, error } = await supabase
       .from("employee_appraisals")
       .select(`
         *,
-        employee:practice_users!employee_id(id, name, email, role, avatar_url),
-        appraiser:practice_users!appraiser_id(id, name, email, role, avatar_url)
+        employee:team_members!employee_id(id, first_name, last_name, email, role, avatar_url),
+        appraiser:team_members!appraiser_id(id, first_name, last_name, email, role, avatar_url)
       `)
-      .eq("practice_id", practiceId)
+      .eq("practice_id", practiceId) // practice_id is TEXT, not Integer
       .is("deleted_at", null)
       .order("appraisal_date", { ascending: false })
 
@@ -54,38 +53,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const appraisalData = {
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
       employee_id: body.employee_id,
-      appraiser_id: userData.user.id,
+      appraiser_id: body.appraiser_id || userData.user.id,
       appraisal_type: body.appraisal_type || "annual",
       appraisal_date: body.appraisal_date || new Date().toISOString().split("T")[0],
-      period_start: body.period_start,
-      period_end: body.period_end,
-      status: body.status || "draft",
+      scheduled_date: body.scheduled_date,
+      status: body.status || "scheduled",
       overall_rating: body.overall_rating,
-      performance_areas: body.performance_areas || [],
-      competencies: body.competencies || [],
-      goals_review: body.goals_review || [],
-      new_goals: body.new_goals || [],
-      development_plan: body.development_plan || [],
+      performance_rating: body.performance_rating,
+      potential_rating: body.potential_rating,
       strengths: body.strengths,
       areas_for_improvement: body.areas_for_improvement,
-      achievements: body.achievements,
-      challenges: body.challenges,
-      employee_self_rating: body.employee_self_rating,
+      goals_set: body.goals_set,
+      development_plan: body.development_plan,
       employee_comments: body.employee_comments,
-      employee_goals: body.employee_goals,
-      employee_development_wishes: body.employee_development_wishes,
-      manager_summary: body.manager_summary,
-      manager_recommendations: body.manager_recommendations,
-      career_aspirations: body.career_aspirations,
-      promotion_readiness: body.promotion_readiness,
-      succession_potential: body.succession_potential,
-      salary_review_notes: body.salary_review_notes,
-      salary_recommendation: body.salary_recommendation,
-      bonus_recommendation: body.bonus_recommendation,
-      next_review_date: body.next_review_date,
-      follow_up_actions: body.follow_up_actions || [],
+      manager_comments: body.manager_comments,
+      notes: body.notes,
+      attachments: body.attachments,
     }
 
     const { data, error } = await supabase
@@ -93,8 +78,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .insert(appraisalData)
       .select(`
         *,
-        employee:practice_users!employee_id(id, name, email, role, avatar_url),
-        appraiser:practice_users!appraiser_id(id, name, email, role, avatar_url)
+        employee:team_members!employee_id(id, first_name, last_name, email, role, avatar_url),
+        appraiser:team_members!appraiser_id(id, first_name, last_name, email, role, avatar_url)
       `)
       .single()
 

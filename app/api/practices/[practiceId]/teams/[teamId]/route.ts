@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function PUT(
@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const { practiceId, teamId } = await params
-    const supabase = await createAdminClient()
+    const supabase = createAdminClient()
     const body = await request.json()
 
     const practiceIdText = String(practiceId)
@@ -23,6 +23,7 @@ export async function PUT(
       })
       .eq("id", teamIdText)
       .eq("practice_id", practiceIdText)
+      .is("deleted_at", null)
       .select()
       .single()
 
@@ -44,7 +45,7 @@ export async function DELETE(
 ) {
   try {
     const { practiceId, teamId } = await params
-    const supabase = await createAdminClient()
+    const supabase = createAdminClient()
 
     const practiceIdText = String(practiceId)
     const teamIdText = String(teamId)

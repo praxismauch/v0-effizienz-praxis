@@ -1,0 +1,27 @@
+column_name,data_type,is_nullable
+id,text,NO
+practice_id,text,NO
+created_by,text,NO
+assigned_to,text,YES
+parent_goal_id,text,YES
+title,text,NO
+description,text,YES
+goal_type,text,NO
+target_value,numeric,YES
+current_value,numeric,YES
+unit,text,YES
+progress_percentage,integer,YES
+status,text,YES
+priority,text,YES
+start_date,date,YES
+end_date,date,YES
+completed_at,timestamp without time zone,YES
+is_private,boolean,YES
+metadata,jsonb,YES
+created_at,timestamp without time zone,YES
+updated_at,timestamp without time zone,YES
+display_order,integer,YES
+linked_parameter_id,text,YES
+show_on_dashboard,boolean,YES
+deleted_at,timestamp with time zone,YES
+practiceid,text,YES

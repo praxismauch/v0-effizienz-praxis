@@ -1,0 +1,16 @@
+column_name,data_type,is_nullable
+id,text,NO
+user_id,text,YES
+practice_id,text,NO
+role,text,NO
+department,text,YES
+status,text,YES
+joined_date,date,YES
+created_at,timestamp without time zone,YES
+updated_at,timestamp without time zone,YES
+candidate_id,text,YES
+deleted_at,timestamp with time zone,YES
+first_name,text,YES
+last_name,text,YES
+email,character varying,YES
+is_active,boolean,YES

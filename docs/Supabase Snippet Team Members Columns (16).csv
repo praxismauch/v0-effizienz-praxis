@@ -1,0 +1,17 @@
+column_name,data_type,is_nullable
+id,text,NO
+practice_id,text,NO
+name,text,NO
+category,text,YES
+description,text,YES
+level_0_description,text,YES
+level_1_description,text,YES
+level_2_description,text,YES
+level_3_description,text,YES
+is_active,boolean,YES
+display_order,integer,YES
+created_by,text,YES
+created_at,timestamp without time zone,YES
+updated_at,timestamp without time zone,YES
+deleted_at,timestamp with time zone,YES
+team_id,text,YES

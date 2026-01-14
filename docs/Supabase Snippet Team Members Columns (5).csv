@@ -1,0 +1,13 @@
+column_name,data_type,is_nullable
+id,text,NO
+name,text,NO
+description,text,YES
+color,text,YES
+practice_id,text,NO
+is_active,boolean,YES
+created_at,timestamp without time zone,YES
+updated_at,timestamp without time zone,YES
+is_default,boolean,YES
+deleted_at,timestamp with time zone,YES
+sort_order,integer,YES
+practiceid,text,YES

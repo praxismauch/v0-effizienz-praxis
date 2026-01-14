@@ -1,0 +1,43 @@
+tablename,policyname,permissive,cmd
+arbeitsplaetze,arbeitsplaetze_delete,PERMISSIVE,DELETE
+arbeitsplaetze,arbeitsplaetze_insert,PERMISSIVE,INSERT
+arbeitsplaetze,arbeitsplaetze_select,PERMISSIVE,SELECT
+arbeitsplaetze,arbeitsplaetze_update,PERMISSIVE,UPDATE
+employee_appraisals,Managers can create appraisals,PERMISSIVE,INSERT
+employee_appraisals,Managers can update appraisals,PERMISSIVE,UPDATE
+employee_appraisals,Users can view appraisals of their practice,PERMISSIVE,SELECT
+goals,goals_delete,PERMISSIVE,DELETE
+goals,goals_insert,PERMISSIVE,INSERT
+goals,goals_select,PERMISSIVE,SELECT
+goals,goals_update,PERMISSIVE,UPDATE
+responsibilities,responsibilities_delete,PERMISSIVE,DELETE
+responsibilities,responsibilities_insert,PERMISSIVE,INSERT
+responsibilities,responsibilities_select,PERMISSIVE,SELECT
+responsibilities,responsibilities_update,PERMISSIVE,UPDATE
+skill_definitions,practice1_all,PERMISSIVE,ALL
+team_assignments,team_assignments_delete,PERMISSIVE,DELETE
+team_assignments,team_assignments_insert,PERMISSIVE,INSERT
+team_assignments,team_assignments_select,PERMISSIVE,SELECT
+team_assignments,team_assignments_update,PERMISSIVE,UPDATE
+team_members,team_members_delete,PERMISSIVE,DELETE
+team_members,team_members_insert,PERMISSIVE,INSERT
+team_members,team_members_select,PERMISSIVE,SELECT
+team_members,team_members_superadmin_delete,PERMISSIVE,DELETE
+team_members,team_members_superadmin_insert,PERMISSIVE,INSERT
+team_members,team_members_superadmin_select,PERMISSIVE,SELECT
+team_members,team_members_superadmin_update,PERMISSIVE,UPDATE
+team_members,team_members_update,PERMISSIVE,UPDATE
+team_members,temp_allow_all_team_members,PERMISSIVE,ALL
+teams,teams_delete,PERMISSIVE,DELETE
+teams,teams_insert,PERMISSIVE,INSERT
+teams,teams_select,PERMISSIVE,SELECT
+teams,teams_superadmin_delete,PERMISSIVE,DELETE
+teams,teams_superadmin_insert,PERMISSIVE,INSERT
+teams,teams_superadmin_select,PERMISSIVE,SELECT
+teams,teams_superadmin_update,PERMISSIVE,UPDATE
+teams,teams_update,PERMISSIVE,UPDATE
+teams,temp_allow_all_teams,PERMISSIVE,ALL
+todos,todos_delete,PERMISSIVE,DELETE
+todos,todos_insert,PERMISSIVE,INSERT
+todos,todos_select,PERMISSIVE,SELECT
+todos,todos_update,PERMISSIVE,UPDATE

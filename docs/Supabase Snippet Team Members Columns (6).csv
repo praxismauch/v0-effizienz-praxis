@@ -1,0 +1,6 @@
+id,practice_id,name,description,color,is_active,sort_order
+235efb7e-2b0e-4be3-923b-025426ee051a,1,Arzt,Ärztliches Personal,#3b82f6,true,1
+1f75be7c-719c-4b64-a12e-1112a242bac2,1,Auszubildende-MFA,Auszubildende Medizinische Fachangestellte,#a855f7,true,2
+ec949933-33a8-4e83-bdc8-eee154519663,1,Extern,Externe Mitarbeiter und Partner,#14b8a6,true,3
+0c1ab703-aebf-480b-95d3-5feb09021a05,1,MFA,Medizinische Fachangestellte,#10b981,true,4
+f18236b0-513b-4d16-bc29-bed623899509,1,Sonstiges,Sonstiges Personal,#f97316,true,5

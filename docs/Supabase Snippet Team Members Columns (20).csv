@@ -1,0 +1,4 @@
+id,practice_id,employee_id,appraiser_id,appraisal_type,appraisal_date,status,overall_rating
+fc10eef0-411d-451a-8ab1-9f73d2162cb1,1,9bbe49b9-9107-4e6a-bed2-da99fb192f03,null,annual,2025-10-13,completed,4
+a9777ebd-26a5-409d-8666-77801a441f33,1,681c039c-9fb2-4ea4-9a32-f2b64b3658dd,null,annual,2025-10-13,completed,4
+bab9b4f9-b872-4de2-9743-50a181d1254d,1,71ec3d61-c834-4472-b55a-edb8ee3cf174,null,annual,2025-10-13,completed,4

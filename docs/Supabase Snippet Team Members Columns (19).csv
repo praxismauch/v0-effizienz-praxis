@@ -1,0 +1,25 @@
+column_name,data_type,is_nullable
+id,uuid,NO
+practice_id,text,NO
+employee_id,text,NO
+appraiser_id,text,YES
+appraisal_type,text,NO
+appraisal_date,date,NO
+scheduled_date,date,YES
+status,text,NO
+overall_rating,integer,YES
+performance_rating,integer,YES
+potential_rating,integer,YES
+strengths,text,YES
+areas_for_improvement,text,YES
+goals_set,text,YES
+development_plan,text,YES
+employee_comments,text,YES
+manager_comments,text,YES
+notes,jsonb,YES
+attachments,jsonb,YES
+created_at,timestamp with time zone,YES
+updated_at,timestamp with time zone,YES
+deleted_at,timestamp with time zone,YES
+created_by,uuid,YES
+updated_by,uuid,YES

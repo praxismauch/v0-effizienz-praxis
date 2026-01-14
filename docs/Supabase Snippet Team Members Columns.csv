@@ -1,0 +1,22 @@
+column_name,data_type,is_nullable
+id,text,NO
+practice_id,text,NO
+name,text,NO
+description,text,YES
+group_name,text,YES
+responsible_user_id,text,YES
+team_member_ids,jsonb,YES
+created_by,text,YES
+created_at,timestamp without time zone,YES
+updated_at,timestamp without time zone,YES
+is_active,boolean,YES
+suggested_hours_per_week,numeric,YES
+cannot_complete_during_consultation,boolean,YES
+deputy_user_id,text,YES
+optimization_suggestions,text,YES
+estimated_time_amount,numeric,YES
+estimated_time_period,text,YES
+calculate_time_automatically,boolean,YES
+deleted_at,timestamp with time zone,YES
+assigned_to,uuid,YES
+status,character varying,YES

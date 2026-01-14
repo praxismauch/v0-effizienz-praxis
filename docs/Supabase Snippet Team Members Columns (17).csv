@@ -1,0 +1,6 @@
+id,practice_id,name,category,description,is_active,display_order
+9ecfeeb6-2a93-4899-b983-5fac90d9232b,1,Blutabnahe,administrative,null,true,0
+595b3e0c-b75b-4208-bb03-10d050d4333c,1,Patientensteuerung an der Anmeldung,other,null,true,0
+e4ab0309-d243-437f-8c8c-bda0b4b7f791,1,Strukturierter Umgang mit Anrufen von Patienten,communication,null,true,0
+8a2addc6-3dbc-4a2c-85bb-03e191999ef5,1,asdf,leadership,null,true,0
+04a1e2c2-6066-4f89-9a50-79ed35edcf1c,1,asdf,other,null,true,0

@@ -1,0 +1,6 @@
+id,practice_id,name,group_name,responsible_user_id,deputy_user_id,is_active
+0593fa5d-ef21-4161-ac17-261ffe9f263b,1,Dr. Test,null,null,null,false
+dbc6dfe4-e75e-4aa0-9b2a-d86d1dd95677,1,sadd,null,7bde5704-0aab-44ec-93ff-1129abe69dbd,null,false
+1915279b-cb96-4f6d-b1ee-21e77479e38a,1,zzz,Medizinische Behandlung,36dd474f-fea5-4f3c-8ac3-75c72d056ebd,null,false
+66205116-88f2-42d6-aa26-efa8088c3307,1,Labor geräte warten,Qualitätsmanagement,6f7c2b33-f88d-4f56-aa0b-b45a2038e0fe,36dd474f-fea5-4f3c-8ac3-75c72d056ebd,true
+d78dc829-6d5c-49fa-8241-f57089135eee,1,Privatpatienten abrechnung,Abrechnung,18771c6c-51eb-40a6-a6c8-97e527e14cfe,c837994d-6cef-4f29-83e3-94e8fc58ddf6,true

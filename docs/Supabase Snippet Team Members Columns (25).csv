@@ -1,0 +1,10 @@
+table_name,status
+arbeitsplaetze,EXISTS
+employee_appraisals,EXISTS
+goals,EXISTS
+responsibilities,EXISTS
+skill_definitions,EXISTS
+team_assignments,EXISTS
+team_members,EXISTS
+teams,EXISTS
+todos,EXISTS

@@ -1,0 +1,28 @@
+column_name,data_type,is_nullable
+id,text,NO
+title,text,NO
+description,text,YES
+completed,boolean,YES
+priority,text,YES
+due_date,date,YES
+assigned_to,text,YES
+practice_id,text,NO
+created_at,timestamp without time zone,YES
+updated_at,timestamp without time zone,YES
+dringend,boolean,YES
+wichtig,boolean,YES
+recurrence_type,text,NO
+recurrence_end_date,date,YES
+parent_todo_id,text,YES
+is_recurring_instance,boolean,YES
+last_generated_date,date,YES
+manual_order,integer,YES
+assigned_user_ids,jsonb,YES
+orga_category_id,uuid,YES
+deleted_at,timestamp with time zone,YES
+status,text,YES
+practiceid,text,YES
+created_by,text,YES
+responsibility_id,text,YES
+assigned_team_ids,jsonb,YES
+recurring,boolean,YES

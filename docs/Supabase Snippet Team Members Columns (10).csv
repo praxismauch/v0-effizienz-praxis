@@ -1,0 +1,6 @@
+id,practice_id,title,status,priority,due_date,assigned_to,completed,responsibility_id
+8c8a28fc-15c1-4453-9ca8-e9d908cac034,1,Sicherheitssystem-Check der Praxis,offen,high,2023-10-18,Unbekannt,false,null
+17321c0a-47ee-4332-85d4-dbd74bf0fd3a,1,Patientenakten-Archivierung optimieren,offen,low,2023-10-22,Unbekannt,false,null
+cc2325ea-8dcc-4ea7-b598-e94ca5b21c5f,1,Praxis-Internetpräsenz prüfen,in_bearbeitung,low,2023-10-20,Unbekannt,false,null
+1c879152-4d95-4d62-850f-6e5226307050,1,praxis tv aktualisieren,offen,medium,null,,false,null
+dfb01a51-eed8-4201-83b0-1909155713c7,1,"Privat check auch als online zusmmenstellbar ",offen,high,null,,false,null

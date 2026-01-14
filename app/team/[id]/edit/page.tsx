@@ -88,7 +88,7 @@ export default function EditTeamMemberPage() {
   const { t } = useTranslation()
   const { roleColors } = useRoleColors()
 
-  const { teamMembers, updateTeamMember, teams, assignMemberToTeam, removeMemberFromTeam, currentPractice } = useTeam()
+  const { teamMembers, updateTeamMember, teams, assignMemberToTeam, removeMemberFromTeam, practiceId } = useTeam()
   const { currentUser, isAdmin, isSuperAdmin } = useUser()
 
   const [formData, setFormData] = useState({
@@ -373,34 +373,31 @@ export default function EditTeamMemberPage() {
   const handleDeleteMember = async () => {
     if (!member) return
 
-    const practiceId = getEffectivePracticeId()
+    const effectivePracticeId = practiceId || "1"
 
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/practices/${practiceId}/team-members/${memberId}`, {
+      console.log("[v0] Deleting team member:", { practiceId: effectivePracticeId, memberId, member })
+
+      const response = await fetch(`/api/practices/${effectivePracticeId}/team-members/${memberId}`, {
         method: "DELETE",
       })
 
+      const responseData = await response.json()
+      console.log("[v0] Delete response:", { ok: response.ok, status: response.status, data: responseData })
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Fehler beim Löschen")
+        throw new Error(responseData.error || "Fehler beim Löschen")
       }
 
-      toast.success(`${member.first_name} ${member.last_name} wurde deaktiviert`)
+      toast.success(`${member.name || `${formData.firstName} ${formData.lastName}`} wurde deaktiviert`)
       router.push("/team")
     } catch (error) {
-      console.error("Error deleting team member:", error)
+      console.error("[v0] Error deleting team member:", error)
       toast.error(error instanceof Error ? error.message : "Fehler beim Löschen des Teammitglieds")
     } finally {
       setIsDeleting(false)
     }
-  }
-
-  const getEffectivePracticeId = () => {
-    if (!currentPractice?.id || currentPractice.id === "0" || currentPractice.id === "practice-demo-001") {
-      return "1"
-    }
-    return currentPractice.id
   }
 
   return (
@@ -431,7 +428,7 @@ export default function EditTeamMemberPage() {
                     <AlertDialogDescription>
                       Sind Sie sicher, dass Sie{" "}
                       <span className="font-semibold">
-                        {member?.first_name} {member?.last_name}
+                        {formData.firstName} {formData.lastName}
                       </span>{" "}
                       löschen möchten? Das Mitglied wird deaktiviert und kann sich nicht mehr anmelden. Diese Aktion
                       kann rückgängig gemacht werden, indem der Status wieder auf "Aktiv" gesetzt wird.
@@ -440,8 +437,12 @@ export default function EditTeamMemberPage() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Abbrechen</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={handleDeleteMember}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleDeleteMember()
+                      }}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      disabled={isDeleting}
                     >
                       {isDeleting ? "Wird gelöscht..." : "Löschen"}
                     </AlertDialogAction>

@@ -33,6 +33,7 @@ interface Team {
 interface TeamContextType {
   teamMembers: TeamMember[]
   teams: Team[]
+  practiceId: string
   addTeam: (team: Omit<Team, "id" | "createdAt" | "memberCount" | "sortOrder">) => void
   updateTeam: (id: string, updates: Partial<Team>) => void
   deleteTeam: (id: string) => void
@@ -393,6 +394,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     () => ({
       teams,
       teamMembers,
+      practiceId,
       addTeam,
       updateTeam,
       deleteTeam,
@@ -410,6 +412,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     [
       teams,
       teamMembers,
+      practiceId,
       addTeam,
       updateTeam,
       deleteTeam,

@@ -416,47 +416,120 @@ export default function ZeiterfassungPageClient() {
   const hasLoadedRef = useRef(false)
   const loadingPracticeIdRef = useRef<number | null>(null)
 
+  // Original useEffect replaced with new one below
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     if (!user?.id || !practiceId) {
+  //       console.log("[v0] Zeiterfassung: Waiting for user/practice", { userId: user?.id, practiceId })
+  //       return
+  //     }
+
+  //     // Prevent duplicate loads for same practice
+  //     if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) {
+  //       console.log("[v0] Zeiterfassung: Already loaded for practice", practiceId)
+  //       return
+  //     }
+
+  //     loadingPracticeIdRef.current = practiceId
+  //     console.log("[v0] Zeiterfassung: Starting data load", { userId: user.id, practiceId })
+
+  //     setIsLoading(true)
+  //     try {
+  //       await Promise.all([
+  //         loadCurrentStatus(),
+  //         loadTeamOverview(),
+  //         loadMonthlyData(),
+  //         loadCorrectionRequests(),
+  //         loadPlausibilityIssues(),
+  //         loadHomeofficePolicy(),
+  //       ])
+  //       hasLoadedRef.current = true
+  //       console.log("[v0] Zeiterfassung: Data loaded successfully")
+  //     } catch (error) {
+  //       console.error("[v0] Zeiterfassung: Error loading data", error)
+  //       toast.error("Fehler beim Laden der Zeiterfassung")
+  //     } finally {
+  //       setIsLoading(false)
+  //     }
+  //   }
+
+  //   loadData()
+
+  //   // Refresh alle 30 Sekunden
+  //   const interval = setInterval(() => {
+  //     if (user?.id && practiceId && hasLoadedRef.current) {
+  //       loadCurrentStatus()
+  //       loadTeamOverview()
+  //     }
+  //   }, 30000)
+
+  //   return () => clearInterval(interval)
+  // }, [
+  //   user?.id,
+  //   practiceId,
+  //   loadCurrentStatus,
+  //   loadTeamOverview,
+  //   loadMonthlyData,
+  //   loadCorrectionRequests,
+  //   loadPlausibilityIssues,
+  //   loadHomeofficePolicy,
+  // ])
+  // End of replaced code
+
   useEffect(() => {
-    const loadData = async () => {
-      if (!user?.id || !practiceId) {
-        console.log("[v0] Zeiterfassung: Waiting for user/practice", { userId: user?.id, practiceId })
-        return
-      }
-
-      // Prevent duplicate loads for same practice
-      if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) {
-        console.log("[v0] Zeiterfassung: Already loaded for practice", practiceId)
-        return
-      }
-
-      loadingPracticeIdRef.current = practiceId
-      console.log("[v0] Zeiterfassung: Starting data load", { userId: user.id, practiceId })
-
+    const loadAllData = async () => {
+      console.log("[v0] Zeiterfassung loadAllData started")
       setIsLoading(true)
+
+      if (!practiceId || !user?.id) {
+        console.log("[v0] Zeiterfassung - missing practiceId or userId")
+        setIsLoading(false)
+        return
+      }
+
+      const timeout = (ms: number) =>
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms))
+
       try {
-        await Promise.all([
-          loadCurrentStatus(),
-          loadTeamOverview(),
-          loadMonthlyData(),
-          loadCorrectionRequests(),
-          loadPlausibilityIssues(),
-          loadHomeofficePolicy(),
+        const results = await Promise.allSettled([
+          Promise.race([loadCurrentStatus(), timeout(5000)]),
+          Promise.race([loadTeamOverview(), timeout(5000)]),
+          Promise.race([loadMonthlyData(), timeout(5000)]),
+          Promise.race([loadCorrectionRequests(), timeout(5000)]),
+          Promise.race([loadPlausibilityIssues(), timeout(5000)]),
+          // loadHomeofficePolicy() is intentionally not included here as it's less critical and can run independently if others fail or timeout
         ])
-        hasLoadedRef.current = true
-        console.log("[v0] Zeiterfassung: Data loaded successfully")
+
+        const failures = results.filter((r) => r.status === "rejected")
+        console.log("[v0] Zeiterfassung loaded with", failures.length, "failures")
+
+        if (failures.length > 0) {
+          console.warn("[v0] Some data failed to load:", failures)
+          toast.error("Teilweise Ladefehler", {
+            description: `${failures.length} Datenbereiche konnten nicht geladen werden.`,
+          })
+        }
       } catch (error) {
-        console.error("[v0] Zeiterfassung: Error loading data", error)
-        toast.error("Fehler beim Laden der Zeiterfassung")
+        console.error("[v0] Zeiterfassung loadAllData ERROR:", error)
+        toast.error("Ladefehler", {
+          description: "Daten konnten nicht vollständig geladen werden.",
+        })
       } finally {
+        console.log("[v0] Zeiterfassung setting isLoading to false")
         setIsLoading(false)
       }
     }
 
-    loadData()
+    loadAllData()
+    // Load homeoffice policy independently if the main load is done or practiceId is available
+    if (practiceId && user?.id) {
+      loadHomeofficePolicy()
+    }
 
-    // Refresh alle 30 Sekunden
+    // Refresh alle 30 Sekunden (similar to original, but less critical if some data failed to load)
     const interval = setInterval(() => {
-      if (user?.id && practiceId && hasLoadedRef.current) {
+      if (user?.id && practiceId) {
+        // Conditionally load only what might change frequently
         loadCurrentStatus()
         loadTeamOverview()
       }
@@ -471,8 +544,9 @@ export default function ZeiterfassungPageClient() {
     loadMonthlyData,
     loadCorrectionRequests,
     loadPlausibilityIssues,
-    loadHomeofficePolicy,
+    loadHomeofficePolicy, // Include here to ensure the interval re-runs if dependencies change
   ])
+  // End of added code
 
   useEffect(() => {
     if (practiceId && loadingPracticeIdRef.current !== practiceId) {

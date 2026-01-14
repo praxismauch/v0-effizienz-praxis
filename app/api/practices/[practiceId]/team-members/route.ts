@@ -75,6 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             last_name
           `)
           .eq("practice_id", practiceIdStr)
+          .is("deleted_at", null)
           .order("created_at", { ascending: false })
 
         if (res.error) {

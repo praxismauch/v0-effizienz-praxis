@@ -93,6 +93,7 @@ export function UserProvider({
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [superAdmins, setSuperAdmins] = useState<User[]>([])
   const [mounted, setMounted] = useState(false)
+  const [sessionVerified, setSessionVerified] = useState(false)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -145,7 +146,6 @@ export function UserProvider({
           console.debug("[UserProvider] Restored user from storage after hydration")
         }
         setCurrentUser(parsedUser)
-        setLoading(false)
       }
     } catch (e) {
       if (IS_DEBUG) {
@@ -155,22 +155,16 @@ export function UserProvider({
   }, [mounted, currentUser, initialUser])
 
   useEffect(() => {
-    if (IS_DEV_MODE) return // Skip normal auth flow in dev mode
     if (typeof window === "undefined") return
     if (!mounted) return
-    if (hasFetchedUser.current) return
-    if (currentUser || initialUser) {
-      setLoading(false)
-      return
-    }
+    if (sessionVerified) return // Already verified this session
     if (isPublicRoute(pathname)) {
       setLoading(false)
       return
     }
 
-    const fetchUser = async () => {
-      hasFetchedUser.current = true
-      setLoading(true)
+    const verifyAndFetchUser = async () => {
+      setSessionVerified(true) // Mark as verified to prevent re-running
 
       try {
         const supabase = getSupabase()
@@ -179,6 +173,7 @@ export function UserProvider({
           return
         }
 
+        // Always check the real Supabase session
         const {
           data: { user: authUser },
           error: authError,
@@ -186,8 +181,13 @@ export function UserProvider({
 
         if (authError || !authUser) {
           if (IS_DEBUG) {
-            console.debug("[UserProvider] No auth user found, redirecting to login")
+            console.debug("[UserProvider] No valid Supabase session, clearing stored user")
           }
+          // Clear invalid stored user
+          setCurrentUser(null)
+          persistUserToStorage(null)
+          hasFetchedUser.current = false
+
           if (!isPublicRoute(pathname)) {
             router.push("/auth/login")
           }
@@ -195,7 +195,16 @@ export function UserProvider({
           return
         }
 
-        // Fetch user profile from database
+        // Session is valid - if we already have a user from localStorage, just verify it matches
+        if (currentUser && currentUser.id === authUser.id) {
+          if (IS_DEBUG) {
+            console.debug("[UserProvider] Session verified, stored user matches auth user")
+          }
+          setLoading(false)
+          return
+        }
+
+        // Fetch fresh user profile from database
         const { data: profile, error: profileError } = await supabase
           .from("users")
           .select("*")
@@ -227,14 +236,49 @@ export function UserProvider({
         setCurrentUser(user)
         persistUserToStorage(user)
       } catch (error) {
-        console.error("Error fetching user:", error)
+        console.error("Error verifying/fetching user:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchUser()
-  }, [pathname, currentUser, initialUser, router, persistUserToStorage, getSupabase, mounted])
+    verifyAndFetchUser()
+  }, [pathname, currentUser, router, persistUserToStorage, getSupabase, mounted, sessionVerified])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (!mounted) return
+
+    const supabase = getSupabase()
+    if (!supabase) return
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (IS_DEBUG) {
+        console.debug("[UserProvider] Auth state changed:", event)
+      }
+
+      if (event === "SIGNED_OUT" || !session) {
+        // User signed out or session expired
+        setCurrentUser(null)
+        persistUserToStorage(null)
+        hasFetchedUser.current = false
+        setSessionVerified(false)
+
+        if (!isPublicRoute(pathname)) {
+          router.push("/auth/login")
+        }
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        // Session refreshed or user signed in - reset verification flag to trigger re-fetch
+        setSessionVerified(false)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [mounted, getSupabase, persistUserToStorage, pathname, router])
 
   useEffect(() => {
     if (!currentUser) return
@@ -296,7 +340,7 @@ export function UserProvider({
       setCurrentUser(null)
       persistUserToStorage(null)
       hasFetchedUser.current = false
-      hasFetchedSuperAdmins.current = false
+      setSessionVerified(false)
       router.push("/auth/login")
     } catch (error) {
       console.error("Error signing out:", error)

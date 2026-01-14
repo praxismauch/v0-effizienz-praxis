@@ -28,10 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
     try {
       const { data: result, error } = await supabase
         .from("workflows")
-        .select(`
-          *,
-          steps:workflow_steps(*)
-        `)
+        .select("*")
         .eq("practice_id", practiceId)
         .order("created_at", { ascending: false })
 
@@ -56,48 +53,27 @@ export async function GET(request: NextRequest, { params }: { params: { practice
 
     const workflows = data || []
 
-    const transformedWorkflows = workflows.map((workflow: any) => {
-      const steps = (workflow.steps || [])
-        .sort((a: any, b: any) => a.step_number - b.step_number)
-        .map((step: any) => ({
-          id: step.id,
-          title: step.title,
-          description: step.description,
-          assignedTo: step.assigned_to || step.assigned_role,
-          assignedUserId: step.assigned_user_id,
-          estimatedDuration: step.duration_days ? step.duration_days * 1440 : step.estimated_duration,
-          dependencies: step.conditions?.dependencies || [],
-          status: step.status,
-          completedAt: step.completed_at,
-          completedBy: step.completed_by,
-          notes: step.notes,
-          dueDate: step.due_date,
-          parentStepId: step.parent_step_id,
-          isSubitem: step.is_subitem || false,
-        }))
-
-      return {
-        id: workflow.id,
-        title: workflow.name,
-        description: workflow.description,
-        category: workflow.category,
-        priority: workflow.priority,
-        status: workflow.status,
-        createdBy: workflow.created_by,
-        createdAt: workflow.created_at,
-        updatedAt: workflow.updated_at,
-        practiceId: workflow.practice_id,
-        teamIds: workflow.team_ids || [],
-        steps,
-        isTemplate: workflow.is_template,
-        templateId: workflow.template_id,
-        estimatedTotalDuration: workflow.estimated_total_duration,
-        actualDuration: workflow.actual_duration,
-        startedAt: workflow.started_at,
-        completedAt: workflow.completed_at,
-        hideItemsFromOtherUsers: workflow.hide_items_from_other_users || false,
-      }
-    })
+    const transformedWorkflows = workflows.map((workflow: any) => ({
+      id: workflow.id,
+      title: workflow.name,
+      description: workflow.description,
+      category: workflow.category_id,
+      priority: workflow.priority,
+      status: workflow.status,
+      createdBy: workflow.created_by,
+      createdAt: workflow.created_at,
+      updatedAt: workflow.updated_at,
+      practiceId: workflow.practice_id,
+      teamIds: workflow.team_ids || [],
+      steps: [], // No steps - table does not exist
+      isTemplate: workflow.is_template,
+      templateId: workflow.template_id,
+      estimatedTotalDuration: workflow.estimated_total_duration,
+      actualDuration: workflow.actual_duration,
+      startedAt: workflow.started_at,
+      completedAt: workflow.completed_at,
+      hideItemsFromOtherUsers: workflow.hide_items_from_other_users || false,
+    }))
 
     return NextResponse.json({ workflows: transformedWorkflows }, { status: 200 })
   } catch (error) {
@@ -171,75 +147,23 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       )
     }
 
-    if (body.steps && body.steps.length > 0) {
-      const stepsToInsert = body.steps.map((step: any, index: number) => ({
-        id: step.id || globalThis.crypto.randomUUID(),
-        workflow_id: workflow.id,
-        title: step.title,
-        description: step.description,
-        assigned_to: step.assignedTo,
-        assigned_user_id: step.assignedUserId || null,
-        assigned_role: step.assignedTo,
-        step_type: "task",
-        status: step.status || "pending",
-        step_number: index + 1,
-        duration_days: step.estimatedDuration ? Math.ceil(step.estimatedDuration / 1440) : null,
-        is_required: true,
-        parent_step_id: step.parentStepId || null,
-        is_subitem: step.isSubitem || false,
-      }))
-
-      const { error: stepsError } = await supabase.from("workflow_steps").insert(stepsToInsert)
-
-      if (stepsError) {
-        console.error("[v0] Workflows POST - Workflow steps insert error:", stepsError)
-      }
-    }
-
-    const { data: completeWorkflow, error: fetchError } = await supabase
-      .from("workflows")
-      .select(`
-        *,
-        steps:workflow_steps(*)
-      `)
-      .eq("id", workflow.id)
-      .single()
-
-    if (fetchError) {
-      console.error("[v0] Workflows POST - Failed to fetch complete workflow:", fetchError)
-      return NextResponse.json({ error: "Failed to fetch created workflow" }, { status: 500 })
-    }
-
     const response = {
-      id: completeWorkflow.id,
-      title: completeWorkflow.name,
-      description: completeWorkflow.description,
-      category: completeWorkflow.category,
-      priority: body.priority || "medium",
-      status: completeWorkflow.status,
-      createdBy: completeWorkflow.created_by,
-      createdAt: completeWorkflow.created_at,
-      updatedAt: completeWorkflow.updated_at,
-      practiceId: completeWorkflow.practice_id,
+      id: workflow.id,
+      title: workflow.name,
+      description: workflow.description,
+      category: workflow.category_id,
+      priority: workflow.priority || "medium",
+      status: workflow.status,
+      createdBy: workflow.created_by,
+      createdAt: workflow.created_at,
+      updatedAt: workflow.updated_at,
+      practiceId: workflow.practice_id,
       teamIds: body.teamIds || [],
-      isTemplate: completeWorkflow.is_template,
-      templateId: completeWorkflow.template_id,
+      isTemplate: workflow.is_template,
+      templateId: workflow.template_id,
       estimatedTotalDuration: body.estimatedTotalDuration,
-      hideItemsFromOtherUsers: completeWorkflow.hide_items_from_other_users,
-      steps: (completeWorkflow.steps || [])
-        .sort((a: any, b: any) => a.step_number - b.step_number)
-        .map((step: any) => ({
-          id: step.id,
-          title: step.title,
-          description: step.description,
-          assignedTo: step.assigned_to || step.assigned_role,
-          assignedUserId: step.assigned_user_id,
-          estimatedDuration: step.duration_days ? step.duration_days * 1440 : undefined,
-          dependencies: [],
-          status: step.status,
-          parentStepId: step.parent_step_id,
-          isSubitem: step.is_subitem,
-        })),
+      hideItemsFromOtherUsers: workflow.hide_items_from_other_users,
+      steps: [], // No steps - table does not exist
     }
 
     return NextResponse.json(response)
@@ -294,10 +218,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { practi
       .update(dbUpdates)
       .eq("id", id)
       .eq("practice_id", practiceId)
-      .select(`
-        *,
-        steps:workflow_steps(*)
-      `)
+      .select("*")
       .maybeSingle()
 
     if (updateError) {
@@ -317,7 +238,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { practi
       id: workflow.id,
       title: workflow.name,
       description: workflow.description,
-      category: workflow.category,
+      category: workflow.category_id,
       priority: workflow.priority,
       status: workflow.status,
       createdBy: workflow.created_by,
@@ -328,24 +249,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { practi
       isTemplate: workflow.is_template,
       templateId: workflow.template_id,
       hideItemsFromOtherUsers: workflow.hide_items_from_other_users,
-      steps: (workflow.steps || [])
-        .sort((a: any, b: any) => a.step_number - b.step_number)
-        .map((step: any) => ({
-          id: step.id,
-          title: step.title,
-          description: step.description,
-          assignedTo: step.assigned_to || step.assigned_role,
-          assignedUserId: step.assigned_user_id,
-          estimatedDuration: step.duration_days ? step.duration_days * 1440 : step.estimated_duration,
-          dependencies: step.conditions?.dependencies || [],
-          status: step.status,
-          completedAt: step.completed_at,
-          completedBy: step.completed_by,
-          notes: step.notes,
-          dueDate: step.due_date,
-          parentStepId: step.parent_step_id,
-          isSubitem: step.is_subitem,
-        })),
+      steps: [], // No steps - table does not exist
     }
 
     return NextResponse.json(response)

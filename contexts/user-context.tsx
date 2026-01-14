@@ -146,6 +146,7 @@ export function UserProvider({
           console.debug("[UserProvider] Restored user from storage after hydration")
         }
         setCurrentUser(parsedUser)
+        setLoading(false)
       }
     } catch (e) {
       if (IS_DEBUG) {
@@ -157,23 +158,68 @@ export function UserProvider({
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!mounted) return
-    if (sessionVerified) return // Already verified this session
+    if (hasFetchedUser.current) return
+    if (currentUser || initialUser) {
+      setLoading(false)
+      return
+    }
     if (isPublicRoute(pathname)) {
       setLoading(false)
       return
     }
 
-    const verifyAndFetchUser = async () => {
-      setSessionVerified(true) // Mark as verified to prevent re-running
+    const fetchUser = async () => {
+      hasFetchedUser.current = true
 
       try {
+        // In dev mode, fetch dev user from API
+        if (IS_DEV_MODE) {
+          if (IS_DEBUG) {
+            console.debug("[UserProvider] Dev mode - fetching dev user from API")
+          }
+
+          const response = await fetch("/api/auth/dev-user", {
+            credentials: "include",
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.user) {
+              const user: User = {
+                id: data.user.id,
+                name:
+                  data.user.name || `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim() || "Dev User",
+                email: data.user.email || DEV_USER_EMAIL,
+                role: normalizeRole(data.user.role) as User["role"],
+                avatar: data.user.avatar,
+                practiceId: data.user.practice_id?.toString() || "1",
+                practice_id: data.user.practice_id?.toString() || "1",
+                isActive: data.user.is_active ?? true,
+                joinedAt: data.user.created_at || new Date().toISOString(),
+                preferred_language: data.user.preferred_language,
+                firstName: data.user.first_name,
+              }
+              setCurrentUser(user)
+              persistUserToStorage(user)
+              setLoading(false)
+              return
+            }
+          }
+
+          if (IS_DEBUG) {
+            console.debug("[UserProvider] Dev mode - dev user fetch failed")
+          }
+          setLoading(false)
+          return
+        }
+
+        // Production mode - verify Supabase session
         const supabase = getSupabase()
         if (!supabase) {
           setLoading(false)
           return
         }
 
-        // Always check the real Supabase session
         const {
           data: { user: authUser },
           error: authError,
@@ -181,25 +227,11 @@ export function UserProvider({
 
         if (authError || !authUser) {
           if (IS_DEBUG) {
-            console.debug("[UserProvider] No valid Supabase session, clearing stored user")
+            console.debug("[UserProvider] No valid Supabase session")
           }
-          // Clear invalid stored user
           setCurrentUser(null)
           persistUserToStorage(null)
-          hasFetchedUser.current = false
 
-          if (!isPublicRoute(pathname)) {
-            router.push("/auth/login")
-          }
-          setLoading(false)
-          return
-        }
-
-        // Session is valid - if we already have a user from localStorage, just verify it matches
-        if (currentUser && currentUser.id === authUser.id) {
-          if (IS_DEBUG) {
-            console.debug("[UserProvider] Session verified, stored user matches auth user")
-          }
           setLoading(false)
           return
         }
@@ -236,18 +268,19 @@ export function UserProvider({
         setCurrentUser(user)
         persistUserToStorage(user)
       } catch (error) {
-        console.error("Error verifying/fetching user:", error)
+        console.error("Error fetching user:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    verifyAndFetchUser()
-  }, [pathname, currentUser, router, persistUserToStorage, getSupabase, mounted, sessionVerified])
+    fetchUser()
+  }, [pathname, currentUser, initialUser, router, persistUserToStorage, getSupabase, mounted])
 
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!mounted) return
+    if (IS_DEV_MODE) return // Skip auth listener in dev mode
 
     const supabase = getSupabase()
     if (!supabase) return
@@ -259,26 +292,46 @@ export function UserProvider({
         console.debug("[UserProvider] Auth state changed:", event)
       }
 
-      if (event === "SIGNED_OUT" || !session) {
-        // User signed out or session expired
+      if (event === "SIGNED_OUT") {
+        console.log("[UserProvider] User signed out, clearing session")
         setCurrentUser(null)
         persistUserToStorage(null)
         hasFetchedUser.current = false
-        setSessionVerified(false)
-
-        if (!isPublicRoute(pathname)) {
-          router.push("/auth/login")
-        }
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        // Session refreshed or user signed in - reset verification flag to trigger re-fetch
-        setSessionVerified(false)
+        console.log("[UserProvider] User signed in or token refreshed, fetching fresh profile")
+        if (session?.user) {
+          try {
+            const { data: profile } = await supabase.from("users").select("*").eq("id", session.user.id).single()
+
+            if (profile) {
+              const user: User = {
+                id: profile.id,
+                name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "User",
+                email: profile.email || session.user.email || "",
+                role: normalizeRole(profile.role) as User["role"],
+                avatar: profile.avatar,
+                practiceId: profile.practice_id?.toString() || "1",
+                practice_id: profile.practice_id?.toString() || "1",
+                isActive: profile.is_active ?? true,
+                joinedAt: profile.created_at || new Date().toISOString(),
+                preferred_language: profile.preferred_language,
+                firstName: profile.first_name,
+              }
+              setCurrentUser(user)
+              persistUserToStorage(user)
+            }
+          } catch (error) {
+            console.error("[UserProvider] Error fetching user profile after sign in:", error)
+          }
+        }
+        hasFetchedUser.current = false
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [mounted, getSupabase, persistUserToStorage, pathname, router])
+  }, [mounted, getSupabase, persistUserToStorage])
 
   useEffect(() => {
     if (!currentUser) return

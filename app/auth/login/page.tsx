@@ -91,31 +91,13 @@ function LoginForm() {
         throw new Error(data.error || "Keine Benutzerdaten erhalten")
       }
 
-      setStatus("Sitzung wird verifiziert...")
+      setStatus("Weiterleitung...")
 
-      const verifyResult = await verifySessionWithRetry(8, 300)
+      // Small delay to ensure auth state change has propagated
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
-      if (verifyResult.success && verifyResult.user) {
-        // Use the verified user data from the session
-        setCurrentUser(verifyResult.user)
-        setStatus("Weiterleitung...")
-
-        // Small delay to ensure state is updated
-        await new Promise((resolve) => setTimeout(resolve, 100))
-
-        router.push(redirectTo)
-        router.refresh()
-      } else {
-        // Session verification failed - still try with login response data
-        console.warn("[v0] Session verification failed, using login response data")
-        setCurrentUser(data.user)
-        setStatus("Weiterleitung...")
-
-        await new Promise((resolve) => setTimeout(resolve, 100))
-
-        router.push(redirectTo)
-        router.refresh()
-      }
+      router.push(redirectTo)
+      router.refresh()
     } catch (error) {
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error instanceof Error) {

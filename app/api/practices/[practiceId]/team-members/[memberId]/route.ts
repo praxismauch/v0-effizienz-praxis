@@ -197,6 +197,7 @@ export async function DELETE(
       .from("team_members")
       .update({
         status: "inactive",
+        deleted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq("id", checkMember.id)

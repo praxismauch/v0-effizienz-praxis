@@ -88,7 +88,15 @@ export default function EditTeamMemberPage() {
   const { t } = useTranslation()
   const { roleColors } = useRoleColors()
 
-  const { teamMembers, updateTeamMember, teams, assignMemberToTeam, removeMemberFromTeam, practiceId } = useTeam()
+  const {
+    teamMembers,
+    updateTeamMember,
+    teams,
+    assignMemberToTeam,
+    removeMemberFromTeam,
+    practiceId,
+    removeTeamMember,
+  } = useTeam()
   const { currentUser, isAdmin, isSuperAdmin } = useUser()
 
   const [formData, setFormData] = useState({
@@ -389,6 +397,8 @@ export default function EditTeamMemberPage() {
       if (!response.ok) {
         throw new Error(responseData.error || "Fehler beim Löschen")
       }
+
+      removeTeamMember(memberId)
 
       toast.success(`${member.name || `${formData.firstName} ${formData.lastName}`} wurde deaktiviert`)
       router.push("/team")

@@ -37,17 +37,11 @@ export function normalizeRole(role: string | null | undefined): UserRole | null 
  */
 export function isSuperAdminRole(role: string | null | undefined): boolean {
   if (!role) {
-    console.log("[v0] isSuperAdminRole - role is null/undefined")
     return false
   }
 
   const normalized = normalizeRoleKey(role)
-  const result = normalized === "superadmin"
-
-  // Debug log for troubleshooting
-  console.log("[v0] isSuperAdminRole - input:", role, "normalized:", normalized, "result:", result)
-
-  return result
+  return normalized === "superadmin"
 }
 
 /**

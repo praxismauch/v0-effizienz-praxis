@@ -37,15 +37,15 @@ function isValidName(name: string | null | undefined): boolean {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const practiceIdStr = "1"
+    const practiceIdStr = String(practiceId)
 
-    console.log("[v0] team-members GET: Using hardcoded practice ID:", practiceIdStr)
+    console.log("[v0] team-members GET: Using practice ID:", practiceIdStr)
 
     const supabase = createAdminClient()
 
     let customRoleOrder: string[] | undefined
     try {
-      const practiceIdInt = 1
+      const practiceIdInt = Number.parseInt(practiceIdStr, 10)
       const { data: practiceSettings } = await supabase
         .from("practice_settings")
         .select("system_settings")
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     console.log("[v0] team-members: fetched", members.length, "members before filtering")
 
-    const activeMembers = members
+    const activeMembers = members.filter((member) => member.status === "active" || !member.status)
 
     console.log("[v0] team-members: active members count:", activeMembers.length)
 
@@ -185,8 +185,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
 
-    const practiceIdStr = "1"
-    const practiceIdInt = 1
+    const practiceIdStr = String(practiceId)
+    const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
     const supabase = createAdminClient()
 
@@ -298,8 +298,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const practiceIdStr = "1"
-    const practiceIdInt = 1
+    const practiceIdStr = String(practiceId)
+    const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
     const supabase = createAdminClient()
     const body = await request.json()

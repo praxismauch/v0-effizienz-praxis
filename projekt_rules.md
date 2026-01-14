@@ -54,6 +54,10 @@ updated_at          | timestamp with time zone | YES         | now()
 
 **DOES NOT HAVE**: browser_info, work_location, comment, type
 
+**CHECK CONSTRAINTS**:
+- `time_stamps_location_type_check`: location_type IN ('office', 'homeoffice', 'mobile')
+- `time_stamps_stamp_type_check`: stamp_type IN ('start', 'stop', 'pause_start', 'pause_end')
+
 ### time_blocks table
 ```
 column_name      | data_type                | is_nullable | column_default
@@ -77,6 +81,10 @@ updated_at       | timestamp with time zone | YES         | now()
 
 **DOES NOT HAVE**: is_open, work_location, start_stamp_id, end_stamp_id, gross_minutes, net_minutes, plausibility_status
 
+**CHECK CONSTRAINTS**:
+- `time_blocks_location_type_check`: location_type IN ('office', 'homeoffice', 'mobile')
+- `time_blocks_status_check`: status IN ('active', 'completed', 'corrected', 'deleted')
+
 ### Important Mappings (Code → Database)
 - `work_location` → `location_type`
 - `comment` → `notes`
@@ -84,6 +92,13 @@ updated_at       | timestamp with time zone | YES         | now()
 - `is_open: false` → `status: 'completed'`
 - `net_minutes` → calculate from `actual_hours * 60`
 - Remove `browser_info`, `start_stamp_id`, `end_stamp_id`
+
+### Allowed Values (Quick Reference)
+| Column | Table | Allowed Values |
+|--------|-------|----------------|
+| location_type | time_stamps, time_blocks | 'office', 'homeoffice', 'mobile' |
+| stamp_type | time_stamps | 'start', 'stop', 'pause_start', 'pause_end' |
+| status | time_blocks | 'active', 'completed', 'corrected', 'deleted' |
 
 ## Common Loading Issues (Dienstplan, Zeiterfassung) - FIXED
 

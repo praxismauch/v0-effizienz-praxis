@@ -29,11 +29,9 @@ import {
   Play,
   Square,
   Coffee,
-  MapPin,
   Home,
   Building2,
   Car,
-  GraduationCap,
   AlertTriangle,
   CheckCircle2,
   XCircle,
@@ -124,12 +122,11 @@ interface MonthlyReport {
   plausibility_warnings: number
 }
 
+// Database constraint: location_type IN ('office', 'homeoffice', 'mobile')
 const WORK_LOCATIONS = [
-  { value: "praxis", label: "Praxis vor Ort", icon: Building2, color: "bg-blue-100 text-blue-700" },
+  { value: "office", label: "Praxis vor Ort", icon: Building2, color: "bg-blue-100 text-blue-700" },
   { value: "homeoffice", label: "Homeoffice", icon: Home, color: "bg-purple-100 text-purple-700" },
-  { value: "aussenterm", label: "Außentermin", icon: Car, color: "bg-orange-100 text-orange-700" },
-  { value: "hausbesuch", label: "Hausbesuch", icon: MapPin, color: "bg-green-100 text-green-700" },
-  { value: "fortbildung", label: "Fortbildung", icon: GraduationCap, color: "bg-yellow-100 text-yellow-700" },
+  { value: "mobile", label: "Mobil / Außentermin", icon: Car, color: "bg-orange-100 text-orange-700" },
 ]
 
 export default function ZeiterfassungPageClient() {
@@ -144,7 +141,7 @@ export default function ZeiterfassungPageClient() {
   // Stechuhr State
   const [currentStatus, setCurrentStatus] = useState<"idle" | "working" | "break">("idle")
   const [currentBlock, setCurrentBlock] = useState<TimeBlock | null>(null)
-  const [selectedLocation, setSelectedLocation] = useState<string>("praxis")
+  const [selectedLocation, setSelectedLocation] = useState<string>("office")
   const [stampComment, setStampComment] = useState("")
   const [showStampDialog, setShowStampDialog] = useState(false)
   const [stampAction, setStampAction] = useState<"start" | "stop" | "pause_start" | "pause_end">("start")
@@ -215,7 +212,8 @@ export default function ZeiterfassungPageClient() {
         } else {
           setCurrentStatus("working")
         }
-        setSelectedLocation(blocks[0].location_type || "praxis")
+        // Updated default value to 'office' to match the new default
+        setSelectedLocation(blocks[0].location_type || "office")
       } else {
         setCurrentStatus("idle")
         setCurrentBlock(null)
@@ -527,6 +525,7 @@ export default function ZeiterfassungPageClient() {
       return
     }
 
+    // Check for 'homeoffice' specifically and validate against the check result
     if (selectedLocation === "homeoffice" && stampAction === "start") {
       try {
         const checkResponse = await fetch(
@@ -572,6 +571,7 @@ export default function ZeiterfassungPageClient() {
           user_id: user.id,
           stamp_type: stampAction,
           timestamp: now,
+          // Use selectedLocation directly for location_type
           location_type: selectedLocation, // was work_location
           notes: stampComment || null, // was comment
           is_manual: false,
@@ -596,6 +596,7 @@ export default function ZeiterfassungPageClient() {
           user_id: user.id,
           date: format(new Date(), "yyyy-MM-dd"),
           start_time: now,
+          // Use selectedLocation for location_type
           location_type: selectedLocation, // was work_location
           status: "active", // was is_open: true
           break_minutes: 0,
@@ -609,6 +610,7 @@ export default function ZeiterfassungPageClient() {
         }
 
         setCurrentStatus("working")
+        // Use WORK_LOCATIONS to find the label for the toast message
         toast.success("Arbeitszeit gestartet", {
           description: `${WORK_LOCATIONS.find((l) => l.value === selectedLocation)?.label}`,
         })
@@ -768,6 +770,7 @@ export default function ZeiterfassungPageClient() {
         b.actual_hours
           ? `${Math.floor(b.actual_hours)}:${String(Math.round((b.actual_hours % 1) * 60)).padStart(2, "0")}`
           : "", // Display actual_hours
+        // Use block.location_type for the 'Ort' column
         b.location_type, // Use location_type
         b.status, // Use status
       ])
@@ -967,6 +970,7 @@ export default function ZeiterfassungPageClient() {
                 {/* Arbeitsort Auswahl */}
                 <div className="space-y-2">
                   <Label>Arbeitsort</Label>
+                  {/* Updated WORK_LOCATIONS to iterate through the new array and show only the first 3 */}
                   <div className="grid grid-cols-3 gap-2">
                     {WORK_LOCATIONS.slice(0, 3).map((loc) => {
                       const Icon = loc.icon
@@ -994,6 +998,7 @@ export default function ZeiterfassungPageClient() {
                       )
                     })}
                   </div>
+                  {/* Updated to show remaining WORK_LOCATIONS */}
                   <div className="grid grid-cols-2 gap-2">
                     {WORK_LOCATIONS.slice(3).map((loc) => {
                       const Icon = loc.icon
@@ -1176,6 +1181,7 @@ export default function ZeiterfassungPageClient() {
                 {teamMembers
                   .filter((m) => teamFilter === "all" || m.current_status === teamFilter)
                   .map((member) => {
+                    // Updated to check against the new WORK_LOCATIONS array
                     const location = WORK_LOCATIONS.find((l) => l.value === member.current_location)
                     const LocationIcon = location?.icon || Building2
 
@@ -1336,7 +1342,8 @@ export default function ZeiterfassungPageClient() {
                     </TableHeader>
                     <TableBody>
                       {timeBlocks.map((block) => {
-                        const location = WORK_LOCATIONS.find((l) => l.value === block.location_type) // Use location_type
+                        // Use block.location_type to find the corresponding location details
+                        const location = WORK_LOCATIONS.find((l) => l.value === block.location_type)
 
                         return (
                           <TableRow key={block.id}>
@@ -1358,6 +1365,7 @@ export default function ZeiterfassungPageClient() {
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className={location?.color}>
+                                {/* Display location?.label or block.location_type for the location */}
                                 {location?.label || block.location_type} {/* Use location_type */}
                               </Badge>
                             </TableCell>

@@ -122,7 +122,7 @@ const DEFAULT_PERFORMANCE_AREAS = [
 export default function NeuesMitarbeitergespraechPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { currentPractice } = usePractice()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
   const practiceId = currentPractice?.id
 
@@ -183,9 +183,10 @@ export default function NeuesMitarbeitergespraechPage() {
 
   // Load team members
   useEffect(() => {
-    if (!practiceId) return
+    if (!practiceId || practiceLoading) return
     const loadTeamMembers = async () => {
       try {
+        console.log("[v0] Fetching team members for practice:", practiceId)
         const res = await fetch(`/api/practices/${practiceId}/team-members`)
         if (!res.ok) {
           const text = await res.text()
@@ -194,6 +195,7 @@ export default function NeuesMitarbeitergespraechPage() {
         }
         const data = await res.json()
         const members = Array.isArray(data) ? data : data.teamMembers || data || []
+        console.log("[v0] Loaded team members:", members.length)
         setTeamMembers(members)
       } catch (error) {
         console.error("[v0] Team members load error:", error)
@@ -203,20 +205,27 @@ export default function NeuesMitarbeitergespraechPage() {
       }
     }
     loadTeamMembers()
-  }, [practiceId, toast])
+  }, [practiceId, practiceLoading, toast])
 
   // Load skills when member selected
   useEffect(() => {
     if (!practiceId || !selectedMember) return
     const loadSkills = async () => {
       try {
-        const res = await fetch(`/api/practices/${practiceId}/team-members/${selectedMember.id}/skills`)
-        if (!res.ok) throw new Error()
+        console.log("[v0] Fetching skills for practice:", practiceId)
+        const res = await fetch(`/api/practices/${practiceId}/skills`)
+        if (!res.ok) {
+          console.error("[v0] Skills fetch failed:", await res.text())
+          throw new Error()
+        }
         const data = await res.json()
-        setSkills(data.skills || [])
+        // API returns array directly, not { skills: [] }
+        const skillsArray = Array.isArray(data) ? data : []
+        console.log("[v0] Loaded skills:", skillsArray.length)
+        setSkills(skillsArray)
 
         // Convert skills to competencies
-        const competencies = (data.skills || []).map((skill: SkillDefinition) => ({
+        const competencies = skillsArray.map((skill: SkillDefinition) => ({
           skill_id: skill.id,
           name: skill.name,
           currentLevel: skill.current_level || 0,
@@ -232,10 +241,11 @@ export default function NeuesMitarbeitergespraechPage() {
         }))
       } catch {
         console.error("Failed to load skills")
+        toast({ title: "Fehler", description: "Kompetenzen konnten nicht geladen werden", variant: "destructive" })
       }
     }
     loadSkills()
-  }, [practiceId, selectedMember])
+  }, [practiceId, selectedMember, toast])
 
   const filteredMembers = teamMembers.filter(
     (member) =>
@@ -250,7 +260,25 @@ export default function NeuesMitarbeitergespraechPage() {
   }
 
   const handleSave = async () => {
-    if (!practiceId || !selectedMember) return
+    console.log("[v0] Save clicked - practiceId:", practiceId, "selectedMember:", selectedMember?.id)
+
+    if (!practiceId) {
+      toast({
+        title: "Fehler",
+        description: "Praxis nicht geladen. Bitte warten Sie einen Moment.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!selectedMember) {
+      toast({
+        title: "Fehler",
+        description: "Kein Mitarbeiter ausgewählt",
+        variant: "destructive",
+      })
+      return
+    }
 
     setSaving(true)
     try {
@@ -258,6 +286,11 @@ export default function NeuesMitarbeitergespraechPage() {
         ...formData,
         employee_id: selectedMember.id, // API expects employee_id, not team_member_id
       }
+
+      console.log("[v0] Sending appraisal save request:", {
+        url: `/api/practices/${practiceId}/team-members/${selectedMember.id}/appraisals`,
+        payloadKeys: Object.keys(payload),
+      })
 
       const res = await fetch(`/api/practices/${practiceId}/team-members/${selectedMember.id}/appraisals`, {
         method: "POST",
@@ -333,6 +366,16 @@ export default function NeuesMitarbeitergespraechPage() {
     if (rating >= 2.5) return { label: "Gut", color: "text-amber-600" }
     if (rating >= 1.5) return { label: "Entwicklungsbedarf", color: "text-orange-600" }
     return { label: "Kritisch", color: "text-red-600" }
+  }
+
+  if (practiceLoading) {
+    return (
+      <div className="container mx-auto py-6 max-w-5xl">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    )
   }
 
   // Render step 1: Member selection

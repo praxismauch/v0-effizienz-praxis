@@ -100,6 +100,145 @@ updated_at       | timestamp with time zone | YES         | now()
 | stamp_type | time_stamps | 'start', 'stop', 'pause_start', 'pause_end' |
 | status | time_blocks | 'active', 'completed', 'corrected', 'deleted' |
 
+## Workflows Database Schema
+
+### workflows table
+```
+column_name                   | data_type                | is_nullable | column_default
+------------------------------|--------------------------|-------------|----------------
+id                            | text                     | NO          | null
+name                          | text                     | NO          | null
+description                   | text                     | YES         | null
+practice_id                   | text                     | NO          | null
+created_by                    | text                     | YES         | null
+status                        | text                     | YES         | 'active'::text
+trigger_type                  | text                     | YES         | null
+is_template                   | boolean                  | YES         | false
+total_steps                   | integer                  | YES         | 0
+completed_steps               | integer                  | YES         | 0
+progress_percentage           | integer                  | YES         | 0
+started_at                    | timestamp with time zone | YES         | null
+completed_at                  | timestamp with time zone | YES         | null
+created_at                    | timestamp with time zone | YES         | now()
+updated_at                    | timestamp with time zone | YES         | now()
+deleted_at                    | timestamp with time zone | YES         | null
+hide_items_from_other_users   | boolean                  | YES         | false
+template_id                   | text                     | YES         | null
+practiceid                    | text                     | YES         | null
+priority                      | text                     | YES         | 'medium'::text
+category_id                   | text                     | YES         | null
+```
+
+**DOES NOT HAVE**: story, category (uses category_id instead)
+
+**CHECK CONSTRAINTS**:
+- `workflows_status_check`: status IN ('draft', 'active', 'paused', 'completed', 'cancelled', 'archived')
+
+### Important Field Mappings (Code → Database)
+- Frontend sends `category` → Database stores in `category_id`
+- Frontend sends `title` → Database stores in `name`
+- `practice_id` is TEXT type (not integer)
+
+### Allowed Values
+| Column | Allowed Values |
+|--------|----------------|
+| status | 'draft', 'active', 'paused', 'completed', 'cancelled', 'archived' |
+| priority | Any text (commonly: 'low', 'medium', 'high', 'urgent') |
+
+### Notes
+- The table has both `practice_id` (NOT NULL) and `practiceid` (nullable) columns - use `practice_id`
+- Always use TEXT for practice_id queries: `.eq("practice_id", practiceId)` where practiceId is a string
+
+## Employee Appraisals (Mitarbeitergespräche) Database Schema
+
+### employee_appraisals table
+```
+column_name                | data_type                | is_nullable | column_default
+---------------------------|--------------------------|-------------|----------------
+id                         | uuid                     | NO          | gen_random_uuid()
+practice_id                | text                     | NO          | null
+employee_id                | text                     | NO          | null
+appraiser_id               | text                     | YES         | null
+appraisal_date             | date                     | YES         | null
+appraisal_type             | text                     | YES         | null
+status                     | text                     | YES         | 'draft'::text
+overall_rating             | numeric                  | YES         | null
+skill_rating_1             | numeric                  | YES         | null
+skill_rating_2             | numeric                  | YES         | null
+skill_rating_3             | numeric                  | YES         | null
+skill_rating_4             | numeric                  | YES         | null
+skill_rating_5             | numeric                  | YES         | null
+skill_rating_6             | numeric                  | YES         | null
+skill_rating_7             | numeric                  | YES         | null
+skill_rating_8             | numeric                  | YES         | null
+skill_rating_9             | numeric                  | YES         | null
+skill_rating_10            | numeric                  | YES         | null
+performance_areas          | jsonb                    | YES         | null
+competencies               | jsonb                    | YES         | null
+goals_review               | jsonb                    | YES         | null
+new_goals                  | jsonb                    | YES         | null
+development_plan           | jsonb                    | YES         | null
+follow_up_actions          | jsonb                    | YES         | null
+strengths                  | text                     | YES         | null
+areas_for_improvement      | text                     | YES         | null
+key_achievements           | text                     | YES         | null
+challenges                 | text                     | YES         | null
+employee_self_assessment   | text                     | YES         | null
+manager_comments           | text                     | YES         | null
+career_aspirations         | text                     | YES         | null
+scheduled_at               | timestamp with time zone | YES         | null
+created_at                 | timestamp with time zone | YES         | now()
+updated_at                 | timestamp with time zone | YES         | now()
+deleted_at                 | timestamp with time zone | YES         | null
+```
+
+**CRITICAL**: Column is `employee_id` NOT `memberId` or `member_id`
+
+### skill_definitions table
+```
+column_name          | data_type                | is_nullable | column_default
+---------------------|--------------------------|-------------|----------------
+id                   | uuid                     | NO          | gen_random_uuid()
+practice_id          | text                     | NO          | null
+name                 | text                     | NO          | null
+category             | text                     | YES         | null
+description          | text                     | YES         | null
+level_0_description  | text                     | YES         | null
+level_1_description  | text                     | YES         | null
+level_2_description  | text                     | YES         | null
+level_3_description  | text                     | YES         | null
+is_active            | boolean                  | YES         | true
+display_order        | integer                  | YES         | 0
+created_at           | timestamp with time zone | YES         | now()
+updated_at           | timestamp with time zone | YES         | now()
+team_id              | text                     | YES         | null
+```
+
+### Common Issues & Fixes
+
+**Issue**: "Missing practiceId or memberId" error when saving
+**Cause**: `currentPractice` from practice context is null/undefined when API is called
+**Fix**: Always check `currentPractice?.id` exists before making API calls, add loading state until context is ready
+
+**Issue**: Skills API returns 400 Bad Request
+**Cause**: Missing or incorrect `/api/practices/[practiceId]/skills` route
+**Fix**: Implement skills route or use correct endpoint `/api/practices/[practiceId]/skill-definitions`
+
+### Important Field Mappings
+- Frontend: `memberId` → Database: `employee_id`
+- Frontend: `practiceId` → Database: `practice_id` (TEXT type)
+- Frontend: `selectedMember.id` → Database: `employee_id`
+
+### API Routes
+- GET/POST: `/api/practices/[practiceId]/team-members/[memberId]/appraisals`
+- GET/PATCH: `/api/practices/[practiceId]/appraisals/[appraisalId]`
+- Skills: `/api/practices/[practiceId]/skill-definitions` (NOT `/skills`)
+
+### Validation Requirements
+- Both `practiceId` AND `employee_id` must be present before API calls
+- `practiceId` must be TEXT type (e.g., "1" not 1)
+- URL must include employee/member ID for new appraisals: `/mitarbeitergespraeche/neu?memberId=xxx`
+
 ## Common Loading Issues (Dienstplan, Zeiterfassung) - FIXED
 
 ### Root Causes Identified

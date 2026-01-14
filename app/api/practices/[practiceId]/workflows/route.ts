@@ -7,16 +7,14 @@ export const revalidate = 0
 
 const HARDCODED_PRACTICE_ID = "1"
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId: rawPracticeId } = await params
+    const { practiceId: rawPracticeId } = params
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
       return NextResponse.json({ workflows: [] }, { status: 200 })
     }
-
-    const practiceIdInt = Number.parseInt(practiceId, 10)
 
     let supabase
     try {
@@ -34,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           *,
           steps:workflow_steps(*)
         `)
-        .eq("practice_id", practiceIdInt)
+        .eq("practice_id", practiceId)
         .order("created_at", { ascending: false })
 
       if (error) {
@@ -111,17 +109,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId: rawPracticeId } = await params
+    const { practiceId: rawPracticeId } = params
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0") {
       console.error("[v0] Workflows POST - Invalid practice ID:", practiceId)
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
     }
-
-    const practiceIdInt = Number.parseInt(practiceId, 10)
 
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
     const userId = user.id
@@ -134,8 +130,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Ungültige Anfrage" }, { status: 400 })
     }
 
-    if (!body.title) {
-      console.error("[v0] Workflows POST - Missing title")
+    if (!body.title && !body.name) {
+      console.error("[v0] Workflows POST - Missing title/name")
       return NextResponse.json({ error: "Titel ist erforderlich" }, { status: 400 })
     }
 
@@ -143,12 +139,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const workflowData = {
       id: workflowId,
-      name: body.title,
+      name: body.title || body.name,
       description: body.description || "",
-      category: body.category || "general",
+      category_id: body.category || null,
       status: body.status || "draft",
       created_by: userId,
-      practice_id: practiceIdInt,
+      practice_id: practiceId,
       is_template: body.isTemplate || false,
       template_id: body.templateId || null,
       trigger_type: "manual",
@@ -156,7 +152,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       completed_steps: 0,
       progress_percentage: 0,
       hide_items_from_other_users: body.hideItemsFromOtherUsers || false,
+      priority: body.priority || "medium",
     }
+
+    console.log("[v0] Workflows POST - Inserting workflow:", workflowData)
 
     const { data: workflow, error: workflowError } = await supabase
       .from("workflows")
@@ -227,18 +226,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       templateId: completeWorkflow.template_id,
       estimatedTotalDuration: body.estimatedTotalDuration,
       hideItemsFromOtherUsers: completeWorkflow.hide_items_from_other_users,
-      steps: (completeWorkflow.steps || []).map((step: any) => ({
-        id: step.id,
-        title: step.title,
-        description: step.description,
-        assignedTo: step.assigned_to || step.assigned_role,
-        assignedUserId: step.assigned_user_id,
-        estimatedDuration: step.duration_days ? step.duration_days * 1440 : undefined,
-        dependencies: [],
-        status: step.status,
-        parentStepId: step.parent_step_id,
-        isSubitem: step.is_subitem,
-      })),
+      steps: (completeWorkflow.steps || [])
+        .sort((a: any, b: any) => a.step_number - b.step_number)
+        .map((step: any) => ({
+          id: step.id,
+          title: step.title,
+          description: step.description,
+          assignedTo: step.assigned_to || step.assigned_role,
+          assignedUserId: step.assigned_user_id,
+          estimatedDuration: step.duration_days ? step.duration_days * 1440 : undefined,
+          dependencies: [],
+          status: step.status,
+          parentStepId: step.parent_step_id,
+          isSubitem: step.is_subitem,
+        })),
     }
 
     return NextResponse.json(response)
@@ -248,17 +249,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+export async function PATCH(request: NextRequest, { params }: { params: { practiceId: string } }) {
   try {
-    const { practiceId: rawPracticeId } = await params
+    const { practiceId: rawPracticeId } = params
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0") {
       console.error("[v0] Workflows PATCH - Invalid practice ID:", practiceId)
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
     }
-
-    const practiceIdInt = Number.parseInt(practiceId, 10)
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
@@ -283,7 +282,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (updates.title !== undefined) dbUpdates.name = updates.title
     if (updates.description !== undefined) dbUpdates.description = updates.description
-    if (updates.category !== undefined) dbUpdates.category = updates.category
+    if (updates.category !== undefined) dbUpdates.category_id = updates.category
     if (updates.status !== undefined) dbUpdates.status = updates.status
     if (updates.priority !== undefined) dbUpdates.priority = updates.priority
     if (updates.isTemplate !== undefined) dbUpdates.is_template = updates.isTemplate
@@ -294,7 +293,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .from("workflows")
       .update(dbUpdates)
       .eq("id", id)
-      .eq("practice_id", practiceIdInt)
+      .eq("practice_id", practiceId)
       .select(`
         *,
         steps:workflow_steps(*)

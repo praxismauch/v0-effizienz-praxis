@@ -123,7 +123,10 @@ const WORK_LOCATIONS = [
 ]
 
 export default function ZeiterfassungPageClient() {
-  const { user, practiceId } = useUser()
+  const { currentUser } = useUser()
+  const user = currentUser
+  const practiceId = currentUser?.practiceId ? Number(currentUser.practiceId) : null
+
   const [activeTab, setActiveTab] = useState("stechuhr")
   const [isLoading, setIsLoading] = useState(true)
   const [isStamping, setIsStamping] = useState(false)
@@ -416,66 +419,6 @@ export default function ZeiterfassungPageClient() {
   const hasLoadedRef = useRef(false)
   const loadingPracticeIdRef = useRef<number | null>(null)
 
-  // Original useEffect replaced with new one below
-  // useEffect(() => {
-  //   const loadData = async () => {
-  //     if (!user?.id || !practiceId) {
-  //       console.log("[v0] Zeiterfassung: Waiting for user/practice", { userId: user?.id, practiceId })
-  //       return
-  //     }
-
-  //     // Prevent duplicate loads for same practice
-  //     if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) {
-  //       console.log("[v0] Zeiterfassung: Already loaded for practice", practiceId)
-  //       return
-  //     }
-
-  //     loadingPracticeIdRef.current = practiceId
-  //     console.log("[v0] Zeiterfassung: Starting data load", { userId: user.id, practiceId })
-
-  //     setIsLoading(true)
-  //     try {
-  //       await Promise.all([
-  //         loadCurrentStatus(),
-  //         loadTeamOverview(),
-  //         loadMonthlyData(),
-  //         loadCorrectionRequests(),
-  //         loadPlausibilityIssues(),
-  //         loadHomeofficePolicy(),
-  //       ])
-  //       hasLoadedRef.current = true
-  //       console.log("[v0] Zeiterfassung: Data loaded successfully")
-  //     } catch (error) {
-  //       console.error("[v0] Zeiterfassung: Error loading data", error)
-  //       toast.error("Fehler beim Laden der Zeiterfassung")
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
-
-  //   loadData()
-
-  //   // Refresh alle 30 Sekunden
-  //   const interval = setInterval(() => {
-  //     if (user?.id && practiceId && hasLoadedRef.current) {
-  //       loadCurrentStatus()
-  //       loadTeamOverview()
-  //     }
-  //   }, 30000)
-
-  //   return () => clearInterval(interval)
-  // }, [
-  //   user?.id,
-  //   practiceId,
-  //   loadCurrentStatus,
-  //   loadTeamOverview,
-  //   loadMonthlyData,
-  //   loadCorrectionRequests,
-  //   loadPlausibilityIssues,
-  //   loadHomeofficePolicy,
-  // ])
-  // End of replaced code
-
   useEffect(() => {
     const loadAllData = async () => {
       console.log("[v0] Zeiterfassung loadAllData started")
@@ -546,7 +489,6 @@ export default function ZeiterfassungPageClient() {
     loadPlausibilityIssues,
     loadHomeofficePolicy, // Include here to ensure the interval re-runs if dependencies change
   ])
-  // End of added code
 
   useEffect(() => {
     if (practiceId && loadingPracticeIdRef.current !== practiceId) {

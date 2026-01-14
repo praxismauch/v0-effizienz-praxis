@@ -268,7 +268,7 @@ export function CreateGoalDialog({
         unit: formData.unit || null,
         progress_percentage: finalProgress,
         priority: formData.priority as "low" | "medium" | "high",
-        status: formData.status as "not-started" | "in-progress" | "completed" | "on-hold",
+        status: formData.status as "not-started" | "in-progress" | "completed" | "cancelled",
         start_date: formData.startDate || null,
         end_date: formData.endDate || null,
         is_private: formData.isPrivate,

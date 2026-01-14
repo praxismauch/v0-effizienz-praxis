@@ -23,10 +23,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .select("*")
       .eq("practice_id", practiceIdText)
       .is("deleted_at", null)
-      .order("due_date", { ascending: true })
+      .order("end_date", { ascending: true })
 
     if (!includeSubgoals) {
-      query = query.is("parent_id", null)
+      query = query.is("parent_goal_id", null)
     }
     if (status) {
       query = query.eq("status", status)
@@ -63,17 +63,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const goals = (data || []).map((goal) => {
       const currentValue = goal.current_value
-      const progressPercentage = goal.progress ?? 0
+      const progressPercentage = goal.progress_percentage ?? 0
 
       return {
         id: goal.id,
         practiceId: goal.practice_id,
         createdBy: goal.created_by,
         assignedTo: goal.assigned_to,
-        parentGoalId: goal.parent_id,
+        parentGoalId: goal.parent_goal_id,
         title: goal.title,
         description: goal.description,
-        goalType: goal.category || "personal",
+        goalType: goal.goal_type || "personal",
         targetValue: goal.target_value,
         currentValue,
         unit: goal.unit,
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         status: goal.status,
         priority: goal.priority,
         startDate: goal.start_date,
-        endDate: goal.due_date,
+        endDate: goal.end_date,
         completedAt: goal.completed_at,
         createdAt: goal.created_at,
         updatedAt: goal.updated_at,
@@ -118,23 +118,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const goalData = {
       practice_id: practiceIdText,
       created_by: createdByValue,
-      user_id: createdByValue,
+      // removed user_id - column doesn't exist in schema
       assigned_to: body.assignedTo || body.assigned_to || null,
-      parent_id: body.parentGoalId || body.parent_goal_id || body.parentId || null,
+      parent_goal_id: body.parentGoalId || body.parent_goal_id || body.parentId || null,
       title: body.title,
       description: body.description || null,
-      category: body.goalType || body.goal_type || body.category || "personal",
+      goal_type: body.goalType || body.goal_type || body.category || "personal",
       target_value: body.targetValue || body.target_value || null,
       current_value: body.currentValue || body.current_value || 0,
       unit: body.unit || null,
-      progress: body.progressPercentage || body.progress_percentage || body.progress || 0,
-      status: body.status || "not-started",
+      progress_percentage: body.progressPercentage || body.progress_percentage || body.progress || 0,
+      status: ["not-started", "in-progress", "completed", "cancelled"].includes(body.status)
+        ? body.status
+        : "not-started",
       priority: body.priority || "medium",
       start_date:
         (body.startDate || body.start_date) && (body.startDate || body.start_date) !== ""
           ? body.startDate || body.start_date
           : null,
-      due_date:
+      end_date:
         (body.endDate || body.end_date || body.dueDate || body.due_date) &&
         (body.endDate || body.end_date || body.dueDate || body.due_date) !== ""
           ? body.endDate || body.end_date || body.dueDate || body.due_date
@@ -163,18 +165,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       practiceId: data.practice_id,
       createdBy: data.created_by,
       assignedTo: data.assigned_to,
-      parentGoalId: data.parent_id,
+      parentGoalId: data.parent_goal_id,
       title: data.title,
       description: data.description,
-      goalType: data.category || "personal",
+      goalType: data.goal_type || "personal",
       targetValue: data.target_value,
       currentValue: data.current_value,
       unit: data.unit,
-      progressPercentage: data.progress ?? 0,
+      progressPercentage: data.progress_percentage ?? 0,
       status: data.status,
       priority: data.priority,
       startDate: data.start_date,
-      endDate: data.due_date,
+      endDate: data.end_date,
       completedAt: data.completed_at,
       createdAt: data.created_at,
       updatedAt: data.updated_at,

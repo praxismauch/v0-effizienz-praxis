@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     console.log("[v0] Fetching candidate details for ID:", id)
 
     const { data: candidate, error: candidateError } = await withRetry(() =>
-      supabase.from("candidates").select("*").eq("id", id).maybeSingle(),
+      supabase.from("candidates").select("*").eq("id", id).is("deleted_at", null).maybeSingle(),
     )
 
     if (candidateError) {
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Candidate not found" }, { status: 404 })
     }
 
-    console.log("[v0] Found candidate:", candidate.name || candidate.id)
+    console.log("[v0] Found candidate:", candidate.first_name, candidate.last_name || candidate.id)
 
     // Fetch applications for this candidate
     const { data: applications, error: applicationsError } = await withRetry(() =>
@@ -58,6 +58,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           )
         `)
         .eq("candidate_id", id)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false }),
     )
 
@@ -67,39 +68,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     console.log("[v0] Found applications:", applications?.length || 0)
 
-    const applicationIds = (applications || []).map((app) => app.id)
-    let interviews: any[] = []
-
-    if (applicationIds.length > 0) {
-      const { data: interviewData, error: interviewsError } = await withRetry(() =>
-        supabase
-          .from("interviews")
-          .select(`
-            *,
-            applications:application_id (
-              id,
-              job_postings:job_posting_id (
-                title
-              )
-            )
-          `)
-          .in("application_id", applicationIds)
-          .order("scheduled_date", { ascending: false }),
-      )
-
-      if (interviewsError) {
-        console.error("[v0] Error fetching interviews:", interviewsError)
-      } else {
-        interviews = interviewData || []
-      }
-    }
-
-    console.log("[v0] Found interviews:", interviews.length)
+    // Interviews functionality can be added later when the interviews table is created
 
     return NextResponse.json({
       candidate,
       applications: applications || [],
-      interviews,
+      interviews: [], // Return empty array for now - interviews table doesn't exist
     })
   } catch (error: any) {
     console.error("[v0] Error in candidate details API:", error)

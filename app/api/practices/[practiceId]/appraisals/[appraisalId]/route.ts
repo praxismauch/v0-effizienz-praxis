@@ -119,6 +119,16 @@ export async function PUT(
       }
     }
 
+    if (body.overall_rating !== undefined) {
+      updateData.overall_rating = body.overall_rating != null ? Math.round(body.overall_rating) : null
+    }
+    if (body.performance_rating !== undefined) {
+      updateData.performance_rating = body.performance_rating != null ? Math.round(body.performance_rating) : null
+    }
+    if (body.potential_rating !== undefined) {
+      updateData.potential_rating = body.potential_rating != null ? Math.round(body.potential_rating) : null
+    }
+
     const notesFields = [
       "performance_areas",
       "competencies",

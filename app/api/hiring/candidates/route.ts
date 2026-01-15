@@ -79,6 +79,7 @@ export async function GET(request: Request) {
         )
       `,
       )
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
     if (practiceId) {

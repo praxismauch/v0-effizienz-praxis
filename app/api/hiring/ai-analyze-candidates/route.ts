@@ -12,7 +12,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    const query = supabase.from("candidates").select("*").eq("practice_id", practiceId).neq("status", "archived")
+    const query = supabase
+      .from("candidates")
+      .select("*")
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+      .neq("status", "archived")
 
     const { data: candidates, error } = await query
 
@@ -28,7 +33,12 @@ export async function POST(request: NextRequest) {
     // Fetch job posting details if provided
     let jobPostingDetails = ""
     if (jobPostingId) {
-      const { data: jobPosting } = await supabase.from("job_postings").select("*").eq("id", jobPostingId).maybeSingle()
+      const { data: jobPosting } = await supabase
+        .from("job_postings")
+        .select("*")
+        .eq("id", jobPostingId)
+        .is("deleted_at", null)
+        .maybeSingle()
 
       if (jobPosting) {
         jobPostingDetails = `

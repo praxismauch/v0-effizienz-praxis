@@ -15,17 +15,23 @@ export async function GET(request: Request) {
 
     const [jobPostingsResult, candidatesResult, archivedResult, questionnairesResult, interviewTemplatesResult] =
       await Promise.all([
-        supabase.from("job_postings").select("*", { count: "exact", head: true }).eq("practice_id", practiceId),
+        supabase
+          .from("job_postings")
+          .select("*", { count: "exact", head: true })
+          .eq("practice_id", practiceId)
+          .is("deleted_at", null),
         supabase
           .from("candidates")
           .select("*", { count: "exact", head: true })
           .eq("practice_id", practiceId)
-          .neq("status", "archived"),
+          .neq("status", "archived")
+          .is("deleted_at", null),
         supabase
           .from("candidates")
           .select("*", { count: "exact", head: true })
           .eq("practice_id", practiceId)
-          .eq("status", "archived"),
+          .eq("status", "archived")
+          .is("deleted_at", null),
         supabase.from("questionnaires").select("*", { count: "exact", head: true }).eq("practice_id", practiceId),
         supabase.from("interview_templates").select("*", { count: "exact", head: true }).eq("practice_id", practiceId),
       ])

@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     // Get candidate and questionnaire details
     const [candidateResult, questionnaireResult] = await Promise.all([
-      supabase.from("candidates").select("*").eq("id", candidateId).maybeSingle(),
+      supabase.from("candidates").select("*").eq("id", candidateId).is("deleted_at", null).maybeSingle(),
       supabase.from("questionnaires").select("*").eq("id", questionnaireId).maybeSingle(),
     ])
 
@@ -47,7 +47,17 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
-    if (responseError) throw responseError
+    if (responseError) {
+      // Check if table doesn't exist
+      if (responseError.message.includes("does not exist") || responseError.code === "42P01") {
+        console.error("[v0] questionnaire_responses table does not exist")
+        return NextResponse.json(
+          { error: "Questionnaire responses table not configured. Please contact administrator." },
+          { status: 503 },
+        )
+      }
+      throw responseError
+    }
 
     // Generate questionnaire URL
     const questionnaireUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/questionnaire/${token}`

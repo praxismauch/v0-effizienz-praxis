@@ -24,6 +24,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .from("candidates")
       .select("documents")
       .eq("id", id)
+      .is("deleted_at", null)
       .single()
 
     if (fetchError) {
@@ -79,6 +80,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       .from("candidates")
       .select("documents")
       .eq("id", id)
+      .is("deleted_at", null)
       .single()
 
     if (fetchError) {

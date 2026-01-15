@@ -5,7 +5,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const supabase = await createAdminClient()
     const { id } = await params
-    const { data, error } = await supabase.from("job_postings").select("*").eq("id", id).maybeSingle()
+    const { data, error } = await supabase
+      .from("job_postings")
+      .select("*")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle()
 
     if (error) {
       console.error("[v0] Error fetching job posting:", error)

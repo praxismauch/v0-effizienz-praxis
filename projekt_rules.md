@@ -1,11 +1,9 @@
-// ... existing code ...
-
 ### Notes
 - All `practice_id` and `user_id` columns are TEXT type
 - Use `.maybeSingle()` instead of `.single()` when data might not exist
 - Location types: 'office', 'homeoffice', 'mobile' (UI labels: Praxis vor Ort, Homeoffice, Mobil/Außentermin)
 
-// <CHANGE> Adding comprehensive database audit results
+// Adding comprehensive database audit results
 
 ## Responsibilities Database Schema
 
@@ -126,3 +124,103 @@ const supabase = createAdminClient()
 
 // CORRECT
 const supabase = await createAdminClient()
+```
+
+## Hiring / Personalsuche Database Schema
+
+### candidates table
+```
+column_name         | data_type                   | is_nullable
+--------------------|-----------------------------|-----------
+id                  | uuid                        | NO
+practice_id         | text                        | NO
+first_name          | text                        | YES
+last_name           | text                        | YES
+email               | text                        | YES
+phone               | text                        | YES
+mobile              | text                        | YES
+address             | text                        | YES
+city                | text                        | YES
+postal_code         | text                        | YES
+country             | text                        | YES
+linkedin_url        | text                        | YES
+portfolio_url       | text                        | YES
+resume_url          | text                        | YES
+cover_letter        | text                        | YES
+current_position    | text                        | YES
+current_company     | text                        | YES
+years_of_experience | integer                     | YES
+education           | text                        | YES
+skills              | jsonb                       | YES
+languages           | jsonb                       | YES
+certifications      | jsonb                       | YES
+availability_date   | date                        | YES
+salary_expectation  | text                        | YES
+notes               | text                        | YES
+source              | text                        | YES
+status              | text                        | YES
+rating              | integer                     | YES
+created_by          | text                        | YES
+created_at          | timestamp with time zone    | YES
+updated_at          | timestamp with time zone    | YES
+documents           | jsonb                       | YES
+image_url           | text                        | YES
+date_of_birth       | date                        | YES
+weekly_hours        | numeric                     | YES
+first_contact_date  | date                        | YES
+deleted_at          | timestamp with time zone    | YES
+```
+
+### applications table
+```
+column_name      | data_type                   | is_nullable
+-----------------|-----------------------------|-----------
+id               | uuid                        | NO
+job_posting_id   | uuid                        | YES
+candidate_id     | uuid                        | YES
+practice_id      | text                        | YES
+status           | text                        | YES
+stage            | text                        | YES
+applied_at       | timestamp with time zone    | YES
+reviewed_at      | timestamp with time zone    | YES
+reviewed_by      | uuid                        | YES
+notes            | text                        | YES
+rejection_reason | text                        | YES
+created_at       | timestamp with time zone    | YES
+updated_at       | timestamp with time zone    | YES
+deleted_at       | timestamp with time zone    | YES
+```
+
+### Existing Hiring Tables (Confirmed in DB)
+- `candidates` - Candidate profiles
+- `applications` - Job applications
+- `job_postings` - Job listings
+- `hiring_pipeline_stages` - Pipeline stage definitions
+- `questionnaires` - Candidate questionnaires
+- `interview_templates` - Interview template definitions
+
+### Tables NOT in Database (Do not query)
+- `interviews` - Does NOT exist, removed from details API
+- `questionnaire_responses` - May not exist, handle errors gracefully
+
+### Hiring API Patterns
+
+**Always include soft-delete filter:**
+```typescript
+.is("deleted_at", null)
+```
+
+**Candidate status values:**
+- `new` - New candidate
+- `screening` - Being screened
+- `interview` - In interview process
+- `offer` - Offer stage
+- `hired` - Hired
+- `rejected` - Rejected
+- `archived` - Archived
+
+**Field name mapping:**
+- API returns `name` combined from `first_name` + `last_name`
+- Database stores `first_name` and `last_name` separately
+
+// ... rest of code here ...

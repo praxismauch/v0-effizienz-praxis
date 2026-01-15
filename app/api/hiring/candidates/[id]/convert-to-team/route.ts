@@ -31,6 +31,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .select("*")
       .eq("id", candidateId)
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
       .single()
 
     if (candidateError || !candidate) {

@@ -8,7 +8,11 @@ export async function GET(request: Request) {
     const practiceId = searchParams.get("practiceId")
     const status = searchParams.get("status")
 
-    let query = supabase.from("job_postings").select("*").order("created_at", { ascending: false })
+    let query = supabase
+      .from("job_postings")
+      .select("*")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
 
     if (practiceId) {
       query = query.eq("practice_id", practiceId)

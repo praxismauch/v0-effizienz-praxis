@@ -57,8 +57,19 @@ export default function OrganigrammPageClient() {
   const { currentPractice, user } = useAuth()
   const supabase = createBrowserClient()
 
+  useEffect(() => {
+    console.log("[v0] Organigramm - useAuth values:", {
+      currentPractice,
+      currentPracticeId: currentPractice?.id,
+      user: user?.id,
+    })
+  }, [currentPractice, user])
+
   const loadData = async () => {
+    console.log("[v0] Organigramm - loadData called, currentPractice:", currentPractice)
+
     if (!currentPractice?.id) {
+      console.log("[v0] Organigramm - No practice ID, stopping load")
       setLoading(false)
       return
     }

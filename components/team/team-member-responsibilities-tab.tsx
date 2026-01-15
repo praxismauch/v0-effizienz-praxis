@@ -80,18 +80,27 @@ export function TeamMemberResponsibilitiesTab({
 
       const supabase = createBrowserSupabaseClient()
 
-      const { data: teamAssignments } = await supabase
-        .from("team_assignments")
-        .select("team_id, teams(id, name, color)")
-        .eq("user_id", memberId)
+      // team_assignments.user_id = auth.users.id, NOT team_members.id
+      const { data: teamMemberData } = await supabase.from("team_members").select("user_id").eq("id", memberId).single()
 
-      const memberTeamIds = teamAssignments?.map((ta: any) => ta.team_id) || []
+      const authUserId = teamMemberData?.user_id
+
+      let memberTeamIds: string[] = []
       const teamsMap = new Map<string, Team>()
-      teamAssignments?.forEach((ta: any) => {
-        if (ta.teams) {
-          teamsMap.set(ta.teams.id, ta.teams)
-        }
-      })
+
+      if (authUserId) {
+        const { data: teamAssignments } = await supabase
+          .from("team_assignments")
+          .select("team_id, teams(id, name, color)")
+          .eq("user_id", authUserId)
+
+        memberTeamIds = teamAssignments?.map((ta: any) => ta.team_id) || []
+        teamAssignments?.forEach((ta: any) => {
+          if (ta.teams) {
+            teamsMap.set(ta.teams.id, ta.teams)
+          }
+        })
+      }
 
       const { data: allResponsibilities, error: fetchError } = await supabase
         .from("responsibilities")

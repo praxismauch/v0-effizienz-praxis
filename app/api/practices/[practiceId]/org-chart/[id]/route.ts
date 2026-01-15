@@ -22,6 +22,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .update(updateData)
       .eq("id", id)
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
       .select()
       .single()
 
@@ -53,10 +54,12 @@ export async function DELETE(
       .from("org_chart_positions")
       .update({
         is_active: false,
+        deleted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
 
     if (error) {
       console.error("Error deleting org chart position:", error)

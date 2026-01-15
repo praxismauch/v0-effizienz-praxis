@@ -27,6 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         updated_at
       `)
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
       .or("is_active.eq.true,is_active.is.null")
       .order("level", { ascending: true })
       .order("display_order", { ascending: true })

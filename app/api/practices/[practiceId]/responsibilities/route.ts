@@ -165,6 +165,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const responsibleUserId = body.responsible_user_id || body.responsibleUserId
     const deputyUserId = body.deputy_user_id || body.deputyUserId
     const teamMemberIds = body.team_member_ids || body.teamMemberIds
+    const assignedTeams = body.assigned_teams || body.assignedTeams || []
+    const priority = body.priority || "medium"
     const createdBy = body.created_by || body.createdBy
     const suggestedHoursPerWeek = body.suggested_hours_per_week || body.suggestedHoursPerWeek
     const estimatedTimeAmount = body.estimated_time_amount || body.estimatedTimeAmount
@@ -194,6 +196,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       responsible_user_id: responsibleUserId || null,
       deputy_user_id: deputyUserId || null,
       team_member_ids: teamMemberIds || [],
+      assigned_teams: assignedTeams,
+      priority: priority,
       created_by: finalCreatedBy,
       is_active: true,
       suggested_hours_per_week: suggestedHoursPerWeek ?? null,

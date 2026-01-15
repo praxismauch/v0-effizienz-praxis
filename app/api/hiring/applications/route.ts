@@ -19,6 +19,7 @@ export async function GET(request: Request) {
         candidate:candidates(*)
       `,
       )
+      .is("deleted_at", null)
       .order("applied_at", { ascending: false })
 
     if (practiceId) {
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
       .select("id")
       .eq("candidate_id", validatedData.candidate_id)
       .eq("job_posting_id", validatedData.job_posting_id)
+      .is("deleted_at", null)
       .maybeSingle()
 
     if (existing) {

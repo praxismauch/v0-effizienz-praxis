@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
       .from("questionnaires")
       .select("*")
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
     if (error) throw error

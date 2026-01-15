@@ -28,21 +28,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Questionnaire not found" }, { status: 404 })
     }
 
-    // Generate unique token
-    const token = crypto.randomUUID()
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + expiresInDays)
 
-    // Create questionnaire response entry
     const { data: response, error: responseError } = await supabase
       .from("questionnaire_responses")
       .insert({
         questionnaire_id: questionnaireId,
         candidate_id: candidateId,
         practice_id: practiceId,
-        token,
-        expires_at: expiresAt.toISOString(),
         status: "pending",
+        sent_at: new Date().toISOString(),
+        responses: [],
+        notes: `Expires: ${expiresAt.toISOString()}`,
       })
       .select()
       .single()
@@ -59,8 +57,7 @@ export async function POST(request: NextRequest) {
       throw responseError
     }
 
-    // Generate questionnaire URL
-    const questionnaireUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/questionnaire/${token}`
+    const questionnaireUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/questionnaire/${response.id}`
 
     const emailResult = await sendEmail({
       to: candidate.email,

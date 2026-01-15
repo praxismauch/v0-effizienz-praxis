@@ -29,6 +29,15 @@ import {
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, parseISO, differenceInMinutes } from "date-fns"
 import { de } from "date-fns/locale"
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 interface ShiftType {
   id: string
@@ -895,6 +904,200 @@ export default function DienstplanPageClient() {
           {/* Analytics Content */}
         </TabsContent>
       </Tabs>
+
+      {/* Schichttypen Dialog */}
+      <Dialog open={showShiftTypeDialog} onOpenChange={setShowShiftTypeDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingShiftType ? "Schichttyp bearbeiten" : "Schichttypen verwalten"}</DialogTitle>
+            <DialogDescription>
+              {editingShiftType
+                ? "Bearbeiten Sie die Details des Schichttyps"
+                : "Verwalten Sie Ihre Schichttypen oder erstellen Sie einen neuen"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!editingShiftType ? (
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                {shiftTypes.map((type) => (
+                  <Card key={type.id}>
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: type.color }} />
+                        <div>
+                          <p className="font-medium">{type.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {type.start_time} - {type.end_time} ({type.break_minutes} Min. Pause)
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={type.is_active ? "default" : "secondary"}>
+                          {type.is_active ? "Aktiv" : "Inaktiv"}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingShiftType(type)
+                            setNewShiftType({
+                              name: type.name,
+                              short_name: type.short_name,
+                              start_time: type.start_time,
+                              end_time: type.end_time,
+                              break_minutes: type.break_minutes,
+                              color: type.color,
+                              min_staff: type.min_staff,
+                              is_active: type.is_active,
+                            })
+                          }}
+                        >
+                          Bearbeiten
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Button
+                onClick={() => {
+                  setEditingShiftType(null)
+                  setNewShiftType({
+                    name: "",
+                    short_name: "",
+                    start_time: "08:00",
+                    end_time: "17:00",
+                    break_minutes: 30,
+                    color: "#3b82f6",
+                    min_staff: 1,
+                    is_active: true,
+                  })
+                }}
+                className="w-full"
+              >
+                Neuer Schichttyp
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={newShiftType.name}
+                    onChange={(e) => setNewShiftType({ ...newShiftType, name: e.target.value })}
+                    placeholder="z.B. Frühschicht"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="short_name">Kurzname</Label>
+                  <Input
+                    id="short_name"
+                    value={newShiftType.short_name}
+                    onChange={(e) => setNewShiftType({ ...newShiftType, short_name: e.target.value })}
+                    placeholder="z.B. FS"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_time">Startzeit</Label>
+                  <Input
+                    id="start_time"
+                    type="time"
+                    value={newShiftType.start_time}
+                    onChange={(e) => setNewShiftType({ ...newShiftType, start_time: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_time">Endzeit</Label>
+                  <Input
+                    id="end_time"
+                    type="time"
+                    value={newShiftType.end_time}
+                    onChange={(e) => setNewShiftType({ ...newShiftType, end_time: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="break_minutes">Pause (Minuten)</Label>
+                  <Input
+                    id="break_minutes"
+                    type="number"
+                    value={newShiftType.break_minutes}
+                    onChange={(e) =>
+                      setNewShiftType({ ...newShiftType, break_minutes: Number.parseInt(e.target.value) })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="min_staff">Min. Mitarbeiter</Label>
+                  <Input
+                    id="min_staff"
+                    type="number"
+                    value={newShiftType.min_staff}
+                    onChange={(e) => setNewShiftType({ ...newShiftType, min_staff: Number.parseInt(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="color">Farbe</Label>
+                <Input
+                  id="color"
+                  type="color"
+                  value={newShiftType.color}
+                  onChange={(e) => setNewShiftType({ ...newShiftType, color: e.target.value })}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_active"
+                  checked={newShiftType.is_active}
+                  onChange={(e) => setNewShiftType({ ...newShiftType, is_active: e.target.checked })}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="is_active">Aktiv</Label>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {editingShiftType && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingShiftType(null)
+                  setNewShiftType({
+                    name: "",
+                    short_name: "",
+                    start_time: "08:00",
+                    end_time: "17:00",
+                    break_minutes: 30,
+                    color: "#3b82f6",
+                    min_staff: 1,
+                    is_active: true,
+                  })
+                }}
+              >
+                Zurück
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setShowShiftTypeDialog(false)}>
+              Abbrechen
+            </Button>
+            {editingShiftType && <Button onClick={handleSaveShiftType}>Speichern</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

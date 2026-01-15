@@ -66,7 +66,7 @@ const SKILL_LEVEL_CONFIG = [
 
 interface Appraisal {
   id: string
-  team_member_id: string
+  employee_id: string
   appraiser_id?: string
   appraisal_type: string
   appraisal_date: string
@@ -103,7 +103,7 @@ interface Appraisal {
   }>
   strengths?: string
   areas_for_improvement?: string
-  key_achievements?: string
+  achievements?: string
   challenges?: string
   employee_self_assessment?: string
   manager_comments?: string
@@ -337,14 +337,12 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
 
     setSaving(true)
     try {
-      const url = editingAppraisal
-        ? `/api/practices/${practiceId}/team-members/${memberId}/appraisals?appraisalId=${editingAppraisal.id}`
-        : `/api/practices/${practiceId}/team-members/${memberId}/appraisals`
+      const url = `/api/practices/${practiceId}/team-members/${memberId}/appraisals`
 
       const res = await fetch(url, {
         method: editingAppraisal ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(editingAppraisal ? { ...formData, id: editingAppraisal.id } : formData),
       })
 
       if (!res.ok) throw new Error("Save failed")
@@ -363,7 +361,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
     if (!confirm("Möchten Sie dieses Gespräch wirklich löschen?")) return
 
     try {
-      const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}/appraisals?appraisalId=${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}/appraisals?id=${id}`, {
         method: "DELETE",
       })
       if (!res.ok) throw new Error("Delete failed")
@@ -1064,7 +1062,6 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                   )}
                 </TabsContent>
 
-                {/* Goals Tab */}
                 <TabsContent value="goals" className="mt-0 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Ziele setzen & überprüfen</h4>
@@ -1229,7 +1226,6 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                   </div>
                 </TabsContent>
 
-                {/* Development Tab */}
                 <TabsContent value="development" className="mt-0 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Entwicklungsplan</h4>
@@ -1409,7 +1405,6 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                   </div>
                 </TabsContent>
 
-                {/* Feedback Tab */}
                 <TabsContent value="feedback" className="mt-0 space-y-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
@@ -1466,8 +1461,8 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                       <Label>Wichtigste Erfolge</Label>
                       <Textarea
                         placeholder="Welche besonderen Erfolge hat der Mitarbeiter erzielt?"
-                        value={formData.key_achievements || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, key_achievements: e.target.value }))}
+                        value={formData.achievements || ""}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, achievements: e.target.value }))}
                         rows={3}
                       />
                     </div>
@@ -1520,7 +1515,6 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                   </div>
                 </TabsContent>
 
-                {/* Career Tab */}
                 <TabsContent value="career" className="mt-0 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Karriereentwicklung</h4>

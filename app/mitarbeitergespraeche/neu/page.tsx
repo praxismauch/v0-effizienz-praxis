@@ -53,14 +53,14 @@ interface SkillDefinition {
 
 interface Appraisal {
   id?: string
-  team_member_id: string
+  employee_id: string // Renamed team_member_id to employee_id for consistency with API
   appraiser_id?: string
   appraisal_type: string
   appraisal_date: string
   period_start?: string
   period_end?: string
   status: string
-  overall_rating?: number
+  overall_rating?: number | null
   performance_areas?: Array<{ name: string; rating: number; weight: number }>
   competencies?: Array<{
     skill_id?: string
@@ -90,7 +90,7 @@ interface Appraisal {
   }>
   strengths?: string
   areas_for_improvement?: string
-  key_achievements?: string
+  achievements?: string // Renamed key_achievements to achievements to match API
   challenges?: string
   employee_self_assessment?: string
   manager_comments?: string
@@ -236,7 +236,7 @@ export default function NeuesMitarbeitergespraechPage() {
 
         setFormData((prev) => ({
           ...prev,
-          team_member_id: selectedMember.id,
+          employee_id: selectedMember.id, // Use employee_id
           competencies: competencies.length > 0 ? competencies : prev.competencies,
         }))
       } catch {
@@ -255,7 +255,7 @@ export default function NeuesMitarbeitergespraechPage() {
 
   const handleSelectMember = (member: TeamMember) => {
     setSelectedMember(member)
-    setFormData((prev) => ({ ...prev, team_member_id: member.id }))
+    setFormData((prev) => ({ ...prev, employee_id: member.id })) // Use employee_id
     setStep("form")
   }
 
@@ -282,14 +282,17 @@ export default function NeuesMitarbeitergespraechPage() {
 
     setSaving(true)
     try {
+      const calculatedRating = calculateOverallRating()
       const payload = {
         ...formData,
-        employee_id: selectedMember.id, // API expects employee_id, not team_member_id
+        employee_id: selectedMember.id,
+        overall_rating: calculatedRating ? Number.parseFloat(String(calculatedRating)) : null,
       }
 
       console.log("[v0] Sending appraisal save request:", {
         url: `/api/practices/${practiceId}/team-members/${selectedMember.id}/appraisals`,
         payloadKeys: Object.keys(payload),
+        overall_rating: payload.overall_rating,
       })
 
       const res = await fetch(`/api/practices/${practiceId}/team-members/${selectedMember.id}/appraisals`, {
@@ -323,19 +326,40 @@ export default function NeuesMitarbeitergespraechPage() {
 
     setAiLoading(type)
     try {
+      const actionMap: Record<string, string> = {
+        skills: "analyze_strengths",
+        goals: "suggest_goals",
+        developmentActions: "generate_development_plan",
+        summary: "generate_summary",
+        feedback: "generate_feedback",
+        career: "generate_career_advice",
+      }
+
+      const action = actionMap[type] || type
+
       const res = await fetch(`/api/practices/${practiceId}/team-members/${selectedMember.id}/appraisals/ai-generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type,
+          action,
           context: {
             memberName: selectedMember.name,
+            position: selectedMember.role,
             role: selectedMember.role,
+            appraisalType: formData.appraisal_type,
+            periodStart: formData.period_start,
+            periodEnd: formData.period_end,
             performanceAreas: formData.performance_areas,
             competencies: formData.competencies,
             strengths: formData.strengths,
+            existingStrengths: formData.strengths,
             improvements: formData.areas_for_improvement,
+            existingImprovements: formData.areas_for_improvement,
             goals: formData.new_goals,
+            overallRating: calculateOverallRating(),
+            achievements: formData.key_achievements, // This seems to be a typo in the original update, should be formData.achievements
+            careerAspiration: formData.career_aspiration, // This seems to be a typo in the original update, should be formData.career_aspirations
+            promotionReadiness: formData.promotion_readiness,
           },
         }),
       })
@@ -343,7 +367,14 @@ export default function NeuesMitarbeitergespraechPage() {
       if (!res.ok) throw new Error()
       const data = await res.json()
 
-      setAiSuggestions((prev) => ({ ...prev, [type]: data.suggestions }))
+      const result = data.result
+
+      // Store suggestions based on original UI type
+      if (type === "developmentActions") {
+        setAiSuggestions((prev) => ({ ...prev, developmentActions: result }))
+      } else {
+        setAiSuggestions((prev) => ({ ...prev, [type]: result }))
+      }
       toast({ title: "KI-Vorschläge generiert", description: "Übernehmen Sie passende Vorschläge" })
     } catch {
       toast({ title: "Fehler", description: "KI-Generierung fehlgeschlagen", variant: "destructive" })
@@ -734,7 +765,7 @@ export default function NeuesMitarbeitergespraechPage() {
                 </div>
               </div>
 
-              {/* AI Suggestions */}
+              {/* AI Suggestions for Goals */}
               {aiSuggestions.goals && aiSuggestions.goals.length > 0 && (
                 <Card className="bg-purple-50 border-purple-200">
                   <CardHeader className="pb-2">
@@ -1044,8 +1075,8 @@ export default function NeuesMitarbeitergespraechPage() {
                 <div>
                   <Label>Wichtige Erfolge</Label>
                   <Textarea
-                    value={formData.key_achievements || ""}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, key_achievements: e.target.value }))}
+                    value={formData.achievements || ""} // Use achievements
+                    onChange={(e) => setFormData((prev) => ({ ...prev, achievements: e.target.value }))} // Use achievements
                     placeholder="Besondere Leistungen im Betrachtungszeitraum"
                     rows={4}
                   />

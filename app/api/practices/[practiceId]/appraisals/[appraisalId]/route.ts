@@ -1,6 +1,38 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
 
+function transformAppraisalResponse(appraisal: any) {
+  // Spread notes JSONB fields to top level for UI compatibility
+  const notes = appraisal.notes || {}
+  return {
+    ...appraisal,
+    // Spread notes fields to top level
+    performance_areas: notes.performance_areas || [],
+    competencies: notes.competencies || [],
+    goals_review: notes.goals_review || [],
+    new_goals: notes.new_goals || [],
+    follow_up_actions: notes.follow_up_actions || [],
+    achievements: notes.achievements || null,
+    challenges: notes.challenges || null,
+    career_aspirations: notes.career_aspirations || null,
+    promotion_readiness: notes.promotion_readiness || null,
+    salary_recommendation: notes.salary_recommendation || null,
+    // Transform employee/appraiser to include computed name
+    employee: appraisal.employee
+      ? {
+          ...appraisal.employee,
+          name: `${appraisal.employee.first_name || ""} ${appraisal.employee.last_name || ""}`.trim() || "Unbekannt",
+        }
+      : null,
+    appraiser: appraisal.appraiser
+      ? {
+          ...appraisal.appraiser,
+          name: `${appraisal.appraiser.first_name || ""} ${appraisal.appraiser.last_name || ""}`.trim() || "Unbekannt",
+        }
+      : null,
+  }
+}
+
 // GET a single appraisal
 export async function GET(
   request: NextRequest,
@@ -19,8 +51,8 @@ export async function GET(
       .from("employee_appraisals")
       .select(`
         *,
-        employee:team_members!employee_id(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!appraiser_id(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
       `)
       .eq("id", appraisalId)
       .eq("practice_id", practiceId)
@@ -36,7 +68,7 @@ export async function GET(
       return NextResponse.json({ error: "Gespräch nicht gefunden" }, { status: 404 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(transformAppraisalResponse(data))
   } catch (error) {
     console.error("Error in GET appraisal:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -63,7 +95,7 @@ export async function PUT(
       updated_at: new Date().toISOString(),
     }
 
-    const allowedFields = [
+    const allowedDbFields = [
       "appraisal_type",
       "appraisal_date",
       "scheduled_date",
@@ -77,38 +109,54 @@ export async function PUT(
       "development_plan",
       "employee_comments",
       "manager_comments",
-      "notes",
       "attachments",
       "appraiser_id",
-      // Additional fields from POST route
-      "period_start",
-      "period_end",
+    ]
+
+    for (const field of allowedDbFields) {
+      if (body[field] !== undefined) {
+        updateData[field] = body[field]
+      }
+    }
+
+    const notesFields = [
       "performance_areas",
       "competencies",
       "goals_review",
       "new_goals",
+      "follow_up_actions",
       "achievements",
       "challenges",
+      "career_aspirations",
+      "promotion_readiness",
+      "salary_recommendation",
+      "period_start",
+      "period_end",
       "employee_self_rating",
       "employee_goals",
       "employee_development_wishes",
       "manager_summary",
       "manager_recommendations",
-      "career_aspirations",
-      "promotion_readiness",
       "succession_potential",
       "salary_review_notes",
-      "salary_recommendation",
       "bonus_recommendation",
       "next_review_date",
-      "follow_up_actions",
       "summary",
     ]
 
-    for (const field of allowedFields) {
+    // Build notes object from body
+    const existingNotes = body.notes || {}
+    const newNotes: Record<string, unknown> = { ...existingNotes }
+
+    for (const field of notesFields) {
       if (body[field] !== undefined) {
-        updateData[field] = body[field]
+        newNotes[field] = body[field]
       }
+    }
+
+    // Only update notes if we have content
+    if (Object.keys(newNotes).length > 0) {
+      updateData.notes = newNotes
     }
 
     const { data, error } = await supabase
@@ -119,8 +167,8 @@ export async function PUT(
       .is("deleted_at", null)
       .select(`
         *,
-        employee:team_members!employee_id(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!appraiser_id(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
       `)
       .single()
 
@@ -133,7 +181,7 @@ export async function PUT(
       return NextResponse.json({ error: "Gespräch nicht gefunden" }, { status: 404 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(transformAppraisalResponse(data))
   } catch (error) {
     console.error("Error in PUT appraisal:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

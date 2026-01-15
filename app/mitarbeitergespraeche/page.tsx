@@ -187,10 +187,7 @@ export default function MitarbeitergespraechePage() {
     if (!appraisalToDelete || !practiceId) return
 
     try {
-      const res = await fetch(
-        `/api/practices/${practiceId}/team-members/${appraisalToDelete.employee_id}/appraisals?id=${appraisalToDelete.id}`,
-        { method: "DELETE" },
-      )
+      const res = await fetch(`/api/practices/${practiceId}/appraisals/${appraisalToDelete.id}`, { method: "DELETE" })
 
       if (res.ok) {
         toast.success("Mitarbeitergespräch gelöscht")

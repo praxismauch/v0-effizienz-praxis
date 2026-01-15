@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const effectivePracticeId =
       practiceId === "0" || practiceId === "undefined" || !practiceId ? HARDCODED_PRACTICE_ID : practiceId
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     console.log("[v0] Fetching courses for practice:", effectivePracticeId)
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         : Number.parseInt(practiceId)
 
     const body = await request.json()
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     console.log("[v0] Creating course for practice:", effectivePracticeId)
 

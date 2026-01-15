@@ -241,7 +241,7 @@ export default function ZeiterfassungPageClient() {
         .from("team_members")
         .select("id, first_name, last_name, email, avatar_url")
         .eq("practice_id", practiceId)
-        .eq("status", "active")
+        .eq("is_active", true)
 
       if (!members) return
 
@@ -310,9 +310,8 @@ export default function ZeiterfassungPageClient() {
         const totalBreakMinutes = blocks.reduce((sum, b) => sum + (b.break_minutes || 0), 0)
         const workDays = new Set(blocks.map((b) => b.date)).size
         const homeOfficeDays = blocks.filter((b) => b.location_type === "homeoffice").length
-        const warnings = blocks.filter((b) => b.status !== "completed").length // Assuming status is an indicator of issues
+        const warnings = blocks.filter((b) => b.status !== "completed").length
 
-        // Annahme: 8h/Tag Soll
         const targetMinutes = workDays * 480
         const overtime = totalNetMinutes - targetMinutes
 
@@ -321,7 +320,7 @@ export default function ZeiterfassungPageClient() {
           total_net_minutes: totalNetMinutes,
           overtime_minutes: overtime,
           homeoffice_days: homeOfficeDays,
-          corrections_count: 0, // This needs to be fetched separately or calculated
+          corrections_count: 0,
           plausibility_warnings: warnings,
         })
       }
@@ -332,10 +331,12 @@ export default function ZeiterfassungPageClient() {
         .select("balance_minutes")
         .eq("practice_id", practiceId)
         .eq("user_id", user.id)
-        .single()
+        .maybeSingle()
 
       if (overtimeAccount) {
         setOvertimeBalance(overtimeAccount.balance_minutes)
+      } else {
+        setOvertimeBalance(0)
       }
     } catch (error) {
       console.error("Error loading monthly data:", error)

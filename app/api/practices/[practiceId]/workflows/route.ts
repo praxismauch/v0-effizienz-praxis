@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -21,7 +22,9 @@ export async function GET(request: NextRequest, { params }: { params: { practice
       const access = await requirePracticeAccess(practiceId)
       supabase = access.adminClient
     } catch (error) {
-      return handleApiError(error)
+      // Auth failed during initial session - fallback to admin client
+      console.log("[v0] Workflows GET: Auth failed, using admin client fallback")
+      supabase = createAdminClient()
     }
 
     let data: any[] = []

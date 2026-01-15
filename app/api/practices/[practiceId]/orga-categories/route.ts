@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 function isRateLimitError(error: any): boolean {
   if (!error) return false
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let supabase
     try {
-      supabase = await createClient()
+      supabase = await createAdminClient()
     } catch (clientError) {
       return NextResponse.json({ categories: [] }, { status: 200 })
     }

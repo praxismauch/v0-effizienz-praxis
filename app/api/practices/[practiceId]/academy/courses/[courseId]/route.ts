@@ -14,7 +14,7 @@ export async function GET(
         ? Number.parseInt(HARDCODED_PRACTICE_ID)
         : Number.parseInt(practiceId)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { data: course, error } = await supabase
       .from("academy_courses")
@@ -48,7 +48,7 @@ export async function PUT(
         : Number.parseInt(practiceId)
 
     const body = await request.json()
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     console.log("[v0] Updating course:", courseId)
 
@@ -95,7 +95,7 @@ export async function DELETE(
         ? Number.parseInt(HARDCODED_PRACTICE_ID)
         : Number.parseInt(practiceId)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     console.log("[v0] Soft deleting course:", courseId)
 

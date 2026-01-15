@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const { userId } = await params
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { searchParams } = new URL(request.url)
     const limit = Number.parseInt(searchParams.get("limit") || "52")
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { userId } = await params
     const body = await request.json()
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     console.log("[v0] POST self-check for userId:", userId)
     console.log("[v0] Request body:", JSON.stringify(body, null, 2))
@@ -65,9 +65,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     console.log("[v0] Existing record:", existing)
 
+    const practiceIdInt = body.practice_id ? Number.parseInt(String(body.practice_id), 10) : null
+
     const recordData = {
       user_id: userId,
-      practice_id: body.practice_id,
+      practice_id: practiceIdInt,
       assessment_date: assessmentDate,
       energy_level: body.energy_level,
       stress_level: body.stress_level,

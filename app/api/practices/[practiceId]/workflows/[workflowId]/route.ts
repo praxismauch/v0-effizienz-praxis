@@ -18,13 +18,15 @@ export async function PATCH(
     const { data: workflow, error } = await supabase
       .from("workflows")
       .update({
-        name: body.title,
+        name: body.title || body.name,
         description: body.description,
         status: body.status,
-        category: body.category,
+        category_id: body.category_id || body.category || null,
+        priority: body.priority,
         progress_percentage: body.progress_percentage,
         completed_steps: body.completed_steps,
-        completed_at: body.completedAt,
+        completed_at: body.completedAt || body.completed_at,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", String(workflowId))
       .eq("practice_id", String(practiceId))
@@ -40,7 +42,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Workflow nicht gefunden" }, { status: 404 })
     }
 
-    return NextResponse.json(workflow)
+    return NextResponse.json({ ...workflow, steps: [] })
   } catch (error) {
     console.error("[v0] Workflow PATCH - Unexpected error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -57,14 +59,13 @@ export async function DELETE(
     const { practiceId: rawPracticeId, workflowId } = await params
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
-    await supabase
-      .from("workflow_steps")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("workflow_id", String(workflowId))
-
+    // Soft delete the workflow
     const { error } = await supabase
       .from("workflows")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({
+        deleted_at: new Date().toISOString(),
+        status: "archived",
+      })
       .eq("id", String(workflowId))
       .eq("practice_id", String(practiceId))
 

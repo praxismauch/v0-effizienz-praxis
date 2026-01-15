@@ -109,6 +109,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const enrichedData = {
       ...data,
+      category: data.group_name, // Map group_name to category for frontend
       responsible_user_name: null as string | null,
       deputy_user_name: null as string | null,
     }

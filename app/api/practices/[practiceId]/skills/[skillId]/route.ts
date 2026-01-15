@@ -13,7 +13,7 @@ export async function GET(
 
     let supabase
     try {
-      supabase = createAdminClient()
+      supabase = await createAdminClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ error: "Rate limited" }, { status: 429 })
@@ -57,7 +57,7 @@ export async function PUT(
 
     let supabase
     try {
-      supabase = createAdminClient()
+      supabase = await createAdminClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ error: "Zu viele Anfragen" }, { status: 429 })
@@ -116,7 +116,7 @@ export async function DELETE(
 
     let supabase
     try {
-      supabase = createAdminClient()
+      supabase = await createAdminClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ error: "Zu viele Anfragen" }, { status: 429 })

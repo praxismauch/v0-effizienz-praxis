@@ -116,6 +116,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
             return {
               ...resp,
+              category: resp.group_name,
               responsible_user_name: responsibleName,
               deputy_user_name: deputyName,
             }
@@ -128,6 +129,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const transformedResponsibilities = (responsibilities || []).map((resp: any) => ({
       ...resp,
+      category: resp.group_name,
       responsible_user_name: null,
       deputy_user_name: null,
     }))
@@ -241,6 +243,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         const enrichedData = {
           ...data,
+          category: data.group_name,
           responsible_user_name: userMap.get(data.responsible_user_id) || null,
           deputy_user_name: userMap.get(data.deputy_user_id) || null,
         }
@@ -252,6 +255,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json(
       {
         ...data,
+        category: data.group_name,
         responsible_user_name: null,
         deputy_user_name: null,
       },

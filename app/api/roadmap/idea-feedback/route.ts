@@ -11,7 +11,7 @@ function getDb() {
 
 export async function POST(request: NextRequest) {
   try {
-    const sql = getDb() // Get connection inside handler
+    const sql = getDb()
     const body = await request.json()
     const {
       ideaTitle,
@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     } = body
 
     console.log("[v0] Saving roadmap idea feedback:", feedbackType, "for:", ideaTitle)
+
+    const practiceIdInt = practiceId ? Number.parseInt(String(practiceId), 10) : null
 
     const result = await sql`
       INSERT INTO roadmap_idea_feedback (
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
         ${feedbackType},
         ${feedbackReason || null},
         ${userId || null},
-        ${practiceId || null},
+        ${practiceIdInt},
         ${aiReasoning || null}
       )
       RETURNING id
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const sql = getDb() // Get connection inside handler
+    const sql = getDb()
     const { searchParams } = new URL(request.url)
     const feedbackType = searchParams.get("type")
 

@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
           .order("start_date", { ascending: false }),
       ),
       fetchWithRetry(() =>
-        supabase.from("team_members").select("*").eq("practice_id", practiceId).eq("status", "active"),
+        supabase.from("team_members").select("*").eq("practice_id", practiceId).eq("is_active", true),
       ),
       fetchWithRetry(() =>
         supabase
@@ -270,7 +270,7 @@ function calculateKPIs(todos: any[], team: any[], articles: any[], applications:
   const totalTodos = todos.length
   const completionRate = totalTodos > 0 ? Math.round((completedTodos / totalTodos) * 100) : 0
 
-  const activeTeam = team.filter((t) => t.status === "active").length
+  const activeTeam = team.filter((t) => t.is_active).length
   const totalTeam = team.length
   const retentionRate = totalTeam > 0 ? Math.round((activeTeam / totalTeam) * 100) : 0
 

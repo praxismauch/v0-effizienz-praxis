@@ -35,18 +35,18 @@ export async function GET(
       practiceId: goalData.practice_id,
       createdBy: goalData.created_by,
       assignedTo: goalData.assigned_to,
-      parentGoalId: goalData.parent_id,
+      parentGoalId: goalData.parent_goal_id,
       title: goalData.title,
       description: goalData.description,
-      goalType: goalData.category || "personal",
+      goalType: goalData.goal_type || "personal",
       targetValue: goalData.target_value,
       currentValue: goalData.current_value,
       unit: goalData.unit,
-      progressPercentage: goalData.progress ?? 0,
+      progressPercentage: goalData.progress_percentage ?? 0,
       status: goalData.status,
       priority: goalData.priority,
       startDate: goalData.start_date,
-      endDate: goalData.due_date,
+      endDate: goalData.end_date,
       completedAt: goalData.completed_at,
       createdAt: goalData.created_at,
       updatedAt: goalData.updated_at,
@@ -57,7 +57,7 @@ export async function GET(
       const { data: subgoalsData } = await supabase
         .from("goals")
         .select("*")
-        .eq("parent_id", goalIdText)
+        .eq("parent_goal_id", goalIdText)
         .eq("practice_id", practiceIdText)
         .order("created_at", { ascending: true })
 
@@ -66,18 +66,18 @@ export async function GET(
         practiceId: sub.practice_id,
         createdBy: sub.created_by,
         assignedTo: sub.assigned_to,
-        parentGoalId: sub.parent_id,
+        parentGoalId: sub.parent_goal_id,
         title: sub.title,
         description: sub.description,
-        goalType: sub.category || "personal",
+        goalType: sub.goal_type || "personal",
         targetValue: sub.target_value,
         currentValue: sub.current_value,
         unit: sub.unit,
-        progressPercentage: sub.progress ?? 0,
+        progressPercentage: sub.progress_percentage ?? 0,
         status: sub.status,
         priority: sub.priority,
         startDate: sub.start_date,
-        endDate: sub.due_date,
+        endDate: sub.end_date,
         completedAt: sub.completed_at,
         createdAt: sub.created_at,
         updatedAt: sub.updated_at,
@@ -105,7 +105,7 @@ export async function PATCH(
     const { data: subgoalsCheck } = await supabase
       .from("goals")
       .select("id")
-      .eq("parent_id", goalIdText)
+      .eq("parent_goal_id", goalIdText)
       .eq("practice_id", practiceIdText)
 
     const hasSubgoals = subgoalsCheck && subgoalsCheck.length > 0
@@ -114,18 +114,18 @@ export async function PATCH(
 
     if (body.title !== undefined) updateData.title = body.title
     if (body.description !== undefined) updateData.description = body.description
-    if (body.goalType !== undefined) updateData.category = body.goalType
+    if (body.goalType !== undefined) updateData.goal_type = body.goalType
     if (body.assignedTo !== undefined) updateData.assigned_to = body.assignedTo
     if (body.targetValue !== undefined) updateData.target_value = body.targetValue
     if (body.currentValue !== undefined) updateData.current_value = body.currentValue
     if (body.unit !== undefined) updateData.unit = body.unit
     if (body.progressPercentage !== undefined && !hasSubgoals) {
-      updateData.progress = body.progressPercentage
+      updateData.progress_percentage = body.progressPercentage
     }
     if (body.status !== undefined) updateData.status = body.status
     if (body.priority !== undefined) updateData.priority = body.priority
     if (body.startDate !== undefined) updateData.start_date = body.startDate === "" ? null : body.startDate
-    if (body.endDate !== undefined) updateData.due_date = body.endDate === "" ? null : body.endDate
+    if (body.endDate !== undefined) updateData.end_date = body.endDate === "" ? null : body.endDate
 
     const { data, error } = await supabase
       .from("goals")
@@ -144,8 +144,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Goal not found" }, { status: 404 })
     }
 
-    if (data.parent_id && body.status !== undefined) {
-      await updateParentGoalProgress(supabase, data.parent_id, practiceIdText)
+    if (data.parent_goal_id && body.status !== undefined) {
+      await updateParentGoalProgress(supabase, data.parent_goal_id, practiceIdText)
     } else if (hasSubgoals) {
       await updateParentGoalProgress(supabase, goalIdText, practiceIdText)
     }
@@ -155,18 +155,18 @@ export async function PATCH(
       practiceId: data.practice_id,
       createdBy: data.created_by,
       assignedTo: data.assigned_to,
-      parentGoalId: data.parent_id,
+      parentGoalId: data.parent_goal_id,
       title: data.title,
       description: data.description,
-      goalType: data.category || "personal",
+      goalType: data.goal_type || "personal",
       targetValue: data.target_value,
       currentValue: data.current_value,
       unit: data.unit,
-      progressPercentage: data.progress ?? 0,
+      progressPercentage: data.progress_percentage ?? 0,
       status: data.status,
       priority: data.priority,
       startDate: data.start_date,
-      endDate: data.due_date,
+      endDate: data.end_date,
       completedAt: data.completed_at,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -214,7 +214,7 @@ async function updateParentGoalProgress(supabase: any, parentGoalId: string, pra
     const { data: subgoals, error: subgoalsError } = await supabase
       .from("goals")
       .select("id, status")
-      .eq("parent_id", parentGoalIdText)
+      .eq("parent_goal_id", parentGoalIdText)
       .eq("practice_id", practiceIdText)
 
     if (subgoalsError || !subgoals || subgoals.length === 0) {
@@ -235,7 +235,7 @@ async function updateParentGoalProgress(supabase: any, parentGoalId: string, pra
     await supabase
       .from("goals")
       .update({
-        progress: progressValue,
+        progress_percentage: progressValue,
         status: parentStatus,
       })
       .eq("id", parentGoalIdText)

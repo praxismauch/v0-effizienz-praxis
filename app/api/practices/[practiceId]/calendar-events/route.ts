@@ -13,12 +13,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
-    const practiceIdInt = Number.parseInt(
-      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID,
-      10,
-    )
+    const effectivePracticeId =
+      practiceId && practiceId !== "undefined" && practiceId !== "0" ? String(practiceId) : HARDCODED_PRACTICE_ID
 
-    Logger.info("calendar-events-api", "Fetching calendar events", { practiceId })
+    Logger.info("calendar-events-api", "Fetching calendar events", { practiceId: effectivePracticeId })
 
     if (!practiceId || practiceId === "undefined") {
       return NextResponse.json({ events: [] }, { status: 200 })
@@ -32,7 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         supabase
           .from("calendar_events")
           .select("*")
-          .eq("practice_id", practiceIdInt)
+          .eq("practice_id", effectivePracticeId)
           .is("deleted_at", null)
           .order("start_time", { ascending: true }),
       ])
@@ -47,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       Logger.error("calendar-events-api", "Supabase query error", {
         error: supabaseError.message,
         code: supabaseError.code,
-        practiceId,
+        practiceId: effectivePracticeId,
       })
       return NextResponse.json({ events: [] }, { status: 200 })
     }
@@ -56,7 +54,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       Logger.warn("calendar-events-api", "Error fetching calendar events", {
         error: calendarError.message,
         code: calendarError.code,
-        practiceId,
+        practiceId: effectivePracticeId,
       })
     }
 

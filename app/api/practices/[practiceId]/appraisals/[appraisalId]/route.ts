@@ -2,18 +2,15 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
 
 // GET a single appraisal
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; appraisalId: string }> },
-) {
+export async function GET(request: NextRequest, { params }: { params: { practiceId: string; appraisalId: string } }) {
   try {
-    const { practiceId, appraisalId } = await params
+    const { practiceId, appraisalId } = params
 
     if (!practiceId || !appraisalId) {
       return NextResponse.json({ error: "Missing practiceId or appraisalId" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { data, error } = await supabase
       .from("employee_appraisals")
@@ -44,19 +41,16 @@ export async function GET(
 }
 
 // PUT update an appraisal
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; appraisalId: string }> },
-) {
+export async function PUT(request: NextRequest, { params }: { params: { practiceId: string; appraisalId: string } }) {
   try {
-    const { practiceId, appraisalId } = await params
+    const { practiceId, appraisalId } = params
     const body = await request.json()
 
     if (!practiceId || !appraisalId) {
       return NextResponse.json({ error: "Missing practiceId or appraisalId" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     // Build update object with only provided fields
     const updateData: Record<string, unknown> = {
@@ -120,16 +114,16 @@ export async function PUT(
 // DELETE an appraisal (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; appraisalId: string }> },
+  { params }: { params: { practiceId: string; appraisalId: string } },
 ) {
   try {
-    const { practiceId, appraisalId } = await params
+    const { practiceId, appraisalId } = params
 
     if (!practiceId || !appraisalId) {
       return NextResponse.json({ error: "Missing practiceId or appraisalId" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     // Soft delete per PROJECT_RULES
     const { error } = await supabase

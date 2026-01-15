@@ -203,11 +203,37 @@ These tables have DUPLICATE columns - **ALWAYS use `practice_id`**:
 
 ### employee_appraisals
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid | UUID type, not text! |
-| employee_id | text | NOT 'member_id' or 'team_member_id' |
-| practice_id | text | |
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | UUID | NO | gen_random_uuid() | UUID type, not text! |
+| practice_id | TEXT | NO | - | |
+| employee_id | TEXT | NO | - | NOT 'member_id' or 'team_member_id' |
+| appraiser_id | TEXT | YES | - | |
+| appraisal_type | TEXT | NO | 'annual' | |
+| appraisal_date | DATE | NO | - | |
+| scheduled_date | DATE | YES | - | |
+| status | TEXT | NO | 'scheduled' | |
+| overall_rating | INTEGER | YES | - | |
+| performance_rating | INTEGER | YES | - | |
+| potential_rating | INTEGER | YES | - | |
+| strengths | TEXT | YES | - | |
+| areas_for_improvement | TEXT | YES | - | |
+| goals_set | TEXT | YES | - | |
+| development_plan | TEXT | YES | - | |
+| employee_comments | TEXT | YES | - | |
+| manager_comments | TEXT | YES | - | |
+| notes | JSONB | YES | '{}' | |
+| attachments | JSONB | YES | '[]' | |
+| created_at | TIMESTAMP | YES | now() | |
+| updated_at | TIMESTAMP | YES | now() | |
+| deleted_at | TIMESTAMP | YES | - | Soft delete |
+| created_by | UUID | YES | - | UUID type! |
+| updated_by | UUID | YES | - | UUID type! |
+
+**Important Notes:**
+- `id`, `created_by`, `updated_by` are UUID type (not text)
+- Use `employee_id` (not `member_id` or `team_member_id`)
+- Default status is 'scheduled', default appraisal_type is 'annual'
 
 ---
 
@@ -295,6 +321,88 @@ export default function PageClient() {
 }
 ```
 
+### Optimistic Updates Pattern (For Instant UI)
+
+**Problem:** Users wait for server response before seeing UI changes (slow/laggy feel)
+
+**Solution:** Update local state immediately, then sync with server
+
+```typescript
+// BEFORE (Pessimistic - Slow)
+const handleSave = async (data) => {
+  await fetch('/api/save', { method: 'POST', body: JSON.stringify(data) })
+  await fetchAllData()  // Wait for server before UI updates
+}
+
+// AFTER (Optimistic - Instant)
+const handleSave = async (data) => {
+  // 1. Save current state for rollback
+  const previousState = items
+  
+  // 2. Update UI immediately with optimistic item
+  const optimisticItem = { id: crypto.randomUUID(), ...data, isOptimistic: true }
+  setItems([...items, optimisticItem])
+  
+  // 3. Close dialog/UI immediately
+  setIsOpen(false)
+  
+  // 4. Sync with server in background
+  try {
+    const response = await fetch('/api/save', { 
+      method: 'POST', 
+      body: JSON.stringify(data) 
+    })
+    const serverItem = await response.json()
+    
+    // 5. Replace optimistic item with real server data
+    setItems(prev => prev.map(item => 
+      item.id === optimisticItem.id ? serverItem : item
+    ))
+  } catch (error) {
+    // 6. Rollback on error
+    setItems(previousState)
+    toast.error("Speichern fehlgeschlagen")
+  }
+}
+```
+
+**When to Use:**
+- High-frequency actions: todos check/uncheck, drag & drop
+- User-facing CRUD: create, update, delete with immediate feedback
+- Reordering operations: visual changes need instant response
+
+**When NOT to Use:**
+- Critical operations requiring server validation first
+- Actions with complex side effects
+- Operations where rollback would be confusing to user
+
+**Pages Implemented:**
+- ✅ Responsibilities: Optimistic save and delete
+- ⏳ Todos: Pending implementation
+- ⏳ Goals: Pending implementation
+- ⏳ Hiring Pipeline: Pending implementation
+
+### Responsibilities-Specific Patterns
+
+**Database → API → Frontend Mapping:**
+```
+Database: group_name (text)
+    ↓
+API: Maps to → category: resp.group_name
+    ↓
+Frontend: Uses → responsibility.category
+```
+
+**Why this mapping exists:**
+- Database column is `group_name` (historical naming)
+- Frontend/UI always referred to it as "category"
+- API bridges the gap by transforming the response
+
+**Component Checklist:**
+- ✅ Use `responsibility.category || responsibility.group_name` (for safety)
+- ✅ API routes map `group_name` → `category` in responses
+- ✅ Send `group_name: data.category` in POST/PUT bodies
+
 ---
 
 ## Common Issues & Fixes
@@ -348,7 +456,3 @@ SELECT COUNT(*) FROM shift_types WHERE practice_id = 'YOUR_PRACTICE_ID';
 - All German status/type values in CHECK constraints must be used exactly as specified
 - Always validate practice_id before database operations
 - Use soft deletes with `deleted_at` timestamp, never hard delete
-```
-
-```md file="projekt_rules.md" isDeleted="true"
-...deleted...

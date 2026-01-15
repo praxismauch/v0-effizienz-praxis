@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; memberId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; memberId: string }> },
+) {
   try {
-    const { practiceId, memberId } = params
+    const { practiceId, memberId } = await params
 
     if (!practiceId || !memberId) {
       return NextResponse.json({ error: "Missing practiceId or memberId" }, { status: 400 })
@@ -31,9 +34,12 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string; memberId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; memberId: string }> },
+) {
   try {
-    const { practiceId, memberId } = params
+    const { practiceId, memberId } = await params
     const body = await request.json()
 
     if (!practiceId || !memberId) {
@@ -53,33 +59,31 @@ export async function POST(request: NextRequest, { params }: { params: { practic
       appraiser_id: userData.user.id,
       appraisal_type: body.appraisal_type || "annual",
       appraisal_date: body.appraisal_date || new Date().toISOString().split("T")[0],
-      period_start: body.period_start,
-      period_end: body.period_end,
-      status: body.status || "draft",
-      overall_rating: body.overall_rating,
-      performance_areas: body.performance_areas || [],
-      competencies: body.competencies || [],
-      goals_review: body.goals_review || [],
-      new_goals: body.new_goals || [],
-      development_plan: body.development_plan || [],
-      strengths: body.strengths,
-      areas_for_improvement: body.areas_for_improvement,
-      achievements: body.achievements,
-      challenges: body.challenges,
-      employee_self_rating: body.employee_self_rating,
-      employee_comments: body.employee_comments,
-      employee_goals: body.employee_goals,
-      employee_development_wishes: body.employee_development_wishes,
-      manager_summary: body.manager_summary,
-      manager_recommendations: body.manager_recommendations,
-      career_aspirations: body.career_aspirations,
-      promotion_readiness: body.promotion_readiness,
-      succession_potential: body.succession_potential,
-      salary_review_notes: body.salary_review_notes,
-      salary_recommendation: body.salary_recommendation,
-      bonus_recommendation: body.bonus_recommendation,
-      next_review_date: body.next_review_date,
-      follow_up_actions: body.follow_up_actions || [],
+      scheduled_date: body.scheduled_date || null,
+      status: body.status || "scheduled",
+      overall_rating: body.overall_rating || null,
+      performance_rating: body.performance_rating || null,
+      potential_rating: body.potential_rating || null,
+      strengths: body.strengths || null,
+      areas_for_improvement: body.areas_for_improvement || null,
+      goals_set: body.goals_set || body.new_goals?.map((g: any) => g.title || g).join(", ") || null,
+      development_plan: body.development_plan || null,
+      employee_comments: body.employee_comments || null,
+      manager_comments: body.manager_comments || body.manager_summary || null,
+      notes: {
+        performance_areas: body.performance_areas || [],
+        competencies: body.competencies || [],
+        goals_review: body.goals_review || [],
+        new_goals: body.new_goals || [],
+        follow_up_actions: body.follow_up_actions || [],
+        achievements: body.achievements || null,
+        challenges: body.challenges || null,
+        career_aspirations: body.career_aspirations || null,
+        promotion_readiness: body.promotion_readiness || null,
+        salary_recommendation: body.salary_recommendation || null,
+      },
+      attachments: body.attachments || [],
+      created_by: userData.user.id,
     }
 
     const { data, error } = await supabase.from("employee_appraisals").insert(appraisalData).select().single()
@@ -96,9 +100,12 @@ export async function POST(request: NextRequest, { params }: { params: { practic
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { practiceId: string; memberId: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; memberId: string }> },
+) {
   try {
-    const { practiceId, memberId } = params
+    const { practiceId, memberId } = await params
     const body = await request.json()
 
     if (!practiceId || !memberId || !body.id) {
@@ -112,7 +119,6 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Remove id from body for update
     const { id, ...updateData } = body
 
     const { data, error } = await supabase
@@ -136,9 +142,12 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string; memberId: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; memberId: string }> },
+) {
   try {
-    const { practiceId, memberId } = params
+    const { practiceId, memberId } = await params
     const { searchParams } = new URL(request.url)
     const appraisalId = searchParams.get("id")
 
@@ -148,7 +157,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { pract
 
     const supabase = await createClient()
 
-    // Soft delete
     const { error } = await supabase
       .from("employee_appraisals")
       .update({ deleted_at: new Date().toISOString() })

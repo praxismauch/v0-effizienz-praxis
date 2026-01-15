@@ -23,7 +23,8 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
   const deputyPerson = responsibility.deputy_user_name
 
   const getCategoryStyles = () => {
-    if (!responsibility.group_name) {
+    const categoryName = responsibility.category || responsibility.group_name
+    if (!categoryName) {
       return {
         color: "#6366f1",
         bg: "bg-indigo-500",
@@ -34,8 +35,8 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
     }
 
     let hash = 0
-    for (let i = 0; i < responsibility.group_name.length; i++) {
-      hash = responsibility.group_name.charCodeAt(i) + ((hash << 5) - hash)
+    for (let i = 0; i < categoryName.length; i++) {
+      hash = categoryName.charCodeAt(i) + ((hash << 5) - hash)
     }
 
     const styles = [
@@ -133,11 +134,11 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
               </h3>
 
               {/* Category/Group badge */}
-              {responsibility.group_name && (
+              {(responsibility.category || responsibility.group_name) && (
                 <span
                   className={`inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${categoryStyles.bg} bg-opacity-15 ${categoryStyles.text}`}
                 >
-                  {responsibility.group_name}
+                  {responsibility.category || responsibility.group_name}
                 </span>
               )}
             </div>

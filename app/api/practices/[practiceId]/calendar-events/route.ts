@@ -106,10 +106,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
 
-    const practiceIdInt = Number.parseInt(
-      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID,
-      10,
-    )
+    const effectivePracticeId =
+      practiceId && practiceId !== "undefined" && practiceId !== "0" ? String(practiceId) : HARDCODED_PRACTICE_ID
 
     const body = await request.json()
 
@@ -131,7 +129,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       type: eventType,
       priority: body.priority || "medium",
       created_by: userId,
-      practice_id: practiceIdInt,
+      practice_id: effectivePracticeId,
       is_all_day: body.isAllDay || false,
       attendees: body.attendees || [],
       location: body.location || null,

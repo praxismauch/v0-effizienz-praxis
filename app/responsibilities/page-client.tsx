@@ -59,7 +59,6 @@ interface Responsibility {
   suggested_hours_per_week?: number
   cannot_complete_during_consultation?: boolean
   optimization_suggestions?: string
-  group_name?: string
   deputy_user_id?: string
   team_member_ids?: string[]
   estimated_time_amount?: number
@@ -68,6 +67,11 @@ interface Responsibility {
   attachments?: File[]
   link_url?: string
   link_title?: string
+  practice_id?: string
+  estimated_time_minutes?: number
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 interface SortableItemProps {
@@ -249,7 +253,6 @@ export default function ResponsibilitiesPageClient() {
     name: "",
     description: "",
     optimization_suggestions: "",
-    group_name: "",
     responsible_user_id: null as string | null,
     deputy_user_id: null as string | null,
     team_member_ids: [] as string[],
@@ -261,6 +264,8 @@ export default function ResponsibilitiesPageClient() {
     attachments: [] as File[],
     link_url: "",
     link_title: "",
+    category: null as string | null,
+    estimated_time_minutes: null as number | null,
   })
   const [hoursDisplayValue, setHoursDisplayValue] = useState("") // For the input field
 
@@ -318,7 +323,6 @@ export default function ResponsibilitiesPageClient() {
       name: "",
       description: "",
       optimization_suggestions: "",
-      group_name: "",
       responsible_user_id: null,
       deputy_user_id: null,
       team_member_ids: [],
@@ -330,6 +334,8 @@ export default function ResponsibilitiesPageClient() {
       attachments: [],
       link_url: "",
       link_title: "",
+      category: null,
+      estimated_time_minutes: null,
     })
     setHoursDisplayValue("")
     setFormDialogOpen(true)
@@ -349,7 +355,6 @@ export default function ResponsibilitiesPageClient() {
       name: responsibility.name || "",
       description: responsibility.description || "",
       optimization_suggestions: responsibility.optimization_suggestions || "",
-      group_name: responsibility.group_name || "",
       responsible_user_id: responsibility.responsible_user_id || null,
       deputy_user_id: responsibility.deputy_user_id || null,
       team_member_ids: responsibility.team_member_ids || [],
@@ -361,6 +366,8 @@ export default function ResponsibilitiesPageClient() {
       attachments: responsibility.attachments || [],
       link_url: responsibility.link_url || "",
       link_title: responsibility.link_title || "",
+      category: responsibility.category || null,
+      estimated_time_minutes: responsibility.estimated_time_minutes || null,
     })
     setFormDialogOpen(true)
   }
@@ -373,23 +380,27 @@ export default function ResponsibilitiesPageClient() {
   const handleDelete = async () => {
     if (!selectedResponsibility?.id || !currentPractice?.id) return
 
+    const previousResponsibilities = [...responsibilities]
+    const itemToDelete = selectedResponsibility
+
+    setResponsibilities((prev) => prev.filter((r) => r.id !== selectedResponsibility.id))
+    setDeleteDialogOpen(false)
+    setSelectedResponsibility(null)
+
     setDeleting(true)
     try {
-      const response = await fetch(
-        `/api/practices/${currentPractice.id}/responsibilities/${selectedResponsibility.id}`,
-        { method: "DELETE" },
-      )
+      const response = await fetch(`/api/practices/${currentPractice.id}/responsibilities/${itemToDelete.id}`, {
+        method: "DELETE",
+      })
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(errorText || "Fehler beim Löschen")
       }
 
       toast({ title: "Erfolg", description: "Zuständigkeit wurde gelöscht" })
-      await fetchResponsibilities() // Re-fetch to update the list
-      setDeleteDialogOpen(false)
-      setSelectedResponsibility(null) // Clear selection
     } catch (err) {
       console.error("[v0] Error deleting responsibility:", err)
+      setResponsibilities(previousResponsibilities)
       toast({
         title: "Fehler",
         description: err instanceof Error ? err.message : "Zuständigkeit konnte nicht gelöscht werden",
@@ -438,6 +449,34 @@ export default function ResponsibilitiesPageClient() {
       }
     }
 
+    const previousResponsibilities = [...responsibilities]
+
+    const optimisticItem: Responsibility = {
+      id: selectedResponsibility?.id || `temp-${Date.now()}`,
+      practice_id: currentPractice.id,
+      name: formData.name,
+      description: formData.description || null,
+      category: formData.category || null,
+      responsible_user_id: formData.responsible_user_id || null,
+      suggested_hours_per_week: parsedHours,
+      estimated_time_minutes: formData.estimated_time_minutes || null,
+      estimated_time_period: formData.estimated_time_period || null,
+      is_active: true,
+      created_at: selectedResponsibility?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    if (selectedResponsibility) {
+      // Update existing
+      setResponsibilities((prev) => prev.map((r) => (r.id === selectedResponsibility.id ? optimisticItem : r)))
+    } else {
+      // Add new
+      setResponsibilities((prev) => [...prev, optimisticItem])
+    }
+
+    setFormDialogOpen(false)
+    setSelectedResponsibility(null)
+
     try {
       console.log("[v0] Saving responsibility:", { url, method, name: formData.name })
 
@@ -469,15 +508,20 @@ export default function ResponsibilitiesPageClient() {
       const result = await response.json()
       console.log("[v0] Save successful:", result.id)
 
+      if (selectedResponsibility) {
+        setResponsibilities((prev) => prev.map((r) => (r.id === selectedResponsibility.id ? result : r)))
+      } else {
+        // Replace temp ID with real ID from server
+        setResponsibilities((prev) => prev.map((r) => (r.id === optimisticItem.id ? result : r)))
+      }
+
       toast({
         title: "Erfolg",
         description: selectedResponsibility ? "Zuständigkeit aktualisiert" : "Zuständigkeit erstellt",
       })
-      await fetchResponsibilities()
-      setFormDialogOpen(false)
-      setSelectedResponsibility(null)
     } catch (err) {
       console.error("[v0] Error saving responsibility:", err)
+      setResponsibilities(previousResponsibilities)
       toast({
         title: "Fehler",
         description: err instanceof Error ? err.message : "Fehler beim Speichern",

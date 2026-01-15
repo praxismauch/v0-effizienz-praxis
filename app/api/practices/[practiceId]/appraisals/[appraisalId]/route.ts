@@ -2,9 +2,12 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
 
 // GET a single appraisal
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; appraisalId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; appraisalId: string }> },
+) {
   try {
-    const { practiceId, appraisalId } = params
+    const { practiceId, appraisalId } = await params
 
     if (!practiceId || !appraisalId) {
       return NextResponse.json({ error: "Missing practiceId or appraisalId" }, { status: 400 })
@@ -41,9 +44,12 @@ export async function GET(request: NextRequest, { params }: { params: { practice
 }
 
 // PUT update an appraisal
-export async function PUT(request: NextRequest, { params }: { params: { practiceId: string; appraisalId: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string; appraisalId: string }> },
+) {
   try {
-    const { practiceId, appraisalId } = params
+    const { practiceId, appraisalId } = await params
     const body = await request.json()
 
     if (!practiceId || !appraisalId) {
@@ -74,6 +80,29 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
       "notes",
       "attachments",
       "appraiser_id",
+      // Additional fields from POST route
+      "period_start",
+      "period_end",
+      "performance_areas",
+      "competencies",
+      "goals_review",
+      "new_goals",
+      "achievements",
+      "challenges",
+      "employee_self_rating",
+      "employee_goals",
+      "employee_development_wishes",
+      "manager_summary",
+      "manager_recommendations",
+      "career_aspirations",
+      "promotion_readiness",
+      "succession_potential",
+      "salary_review_notes",
+      "salary_recommendation",
+      "bonus_recommendation",
+      "next_review_date",
+      "follow_up_actions",
+      "summary",
     ]
 
     for (const field of allowedFields) {
@@ -114,10 +143,10 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
 // DELETE an appraisal (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { practiceId: string; appraisalId: string } },
+  { params }: { params: Promise<{ practiceId: string; appraisalId: string }> },
 ) {
   try {
-    const { practiceId, appraisalId } = params
+    const { practiceId, appraisalId } = await params
 
     if (!practiceId || !appraisalId) {
       return NextResponse.json({ error: "Missing practiceId or appraisalId" }, { status: 400 })

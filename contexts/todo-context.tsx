@@ -25,6 +25,12 @@ export interface Todo {
   last_generated_date?: string
   attachments?: TodoAttachment[]
   manual_order?: number
+  status?: "offen" | "in_bearbeitung" | "erledigt" | "abgebrochen"
+  orga_category_id?: string
+  created_by?: string
+  responsibility_id?: string
+  assigned_team_ids?: string[]
+  recurring?: boolean
 }
 
 export interface TodoAttachment {

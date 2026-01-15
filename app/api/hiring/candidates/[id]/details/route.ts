@@ -18,10 +18,10 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
   throw new Error("Max retries exceeded")
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createAdminClient()
-    const { id } = await params
+    const supabase = await createAdminClient()
+    const { id } = params
 
     console.log("[v0] Fetching candidate details for ID:", id)
 

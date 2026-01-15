@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { generateText } from "ai"
 import { checkAIEnabled } from "@/lib/check-ai-enabled"
 import { getAIContextFromDonatedData } from "@/lib/anonymize-practice-data"
@@ -7,7 +7,7 @@ import { getAIContextFromDonatedData } from "@/lib/anonymize-practice-data"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const supabase = await createAdminClient()
+    const supabase = await createServerClient()
 
     const isV0Preview = process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV === "development"
 

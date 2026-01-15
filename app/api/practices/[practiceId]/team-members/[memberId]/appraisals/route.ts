@@ -53,8 +53,8 @@ export async function GET(
       .from("employee_appraisals")
       .select(`
         *,
-        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role)
       `)
       .eq("practice_id", practiceId)
       .eq("employee_id", memberId)
@@ -136,8 +136,8 @@ export async function POST(
       .insert(appraisalData)
       .select(`
         *,
-        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role)
       `)
       .single()
 
@@ -220,8 +220,8 @@ export async function PUT(
       .eq("employee_id", memberId)
       .select(`
         *,
-        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role)
       `)
       .single()
 

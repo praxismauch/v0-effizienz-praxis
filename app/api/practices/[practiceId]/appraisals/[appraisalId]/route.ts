@@ -51,8 +51,8 @@ export async function GET(
       .from("employee_appraisals")
       .select(`
         *,
-        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role)
       `)
       .eq("id", appraisalId)
       .eq("practice_id", practiceId)
@@ -167,8 +167,8 @@ export async function PUT(
       .is("deleted_at", null)
       .select(`
         *,
-        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role)
       `)
       .single()
 

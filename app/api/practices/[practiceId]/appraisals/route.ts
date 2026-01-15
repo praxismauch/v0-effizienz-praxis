@@ -51,8 +51,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("employee_appraisals")
       .select(`
         *,
-        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role)
       `)
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
@@ -133,8 +133,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .insert(appraisalData)
       .select(`
         *,
-        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role, avatar_url),
-        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role, avatar_url)
+        employee:team_members!fk_employee_appraisals_employee(id, first_name, last_name, email, role),
+        appraiser:team_members!fk_employee_appraisals_appraiser(id, first_name, last_name, email, role)
       `)
       .single()
 

@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
+import { usePractice } from "@/contexts/practice-context"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
@@ -54,7 +55,8 @@ export default function OrganigrammPageClient() {
   const chartRef = useRef<HTMLDivElement>(null)
 
   const { toast } = useToast()
-  const { currentPractice, user } = useAuth()
+  const { user } = useAuth()
+  const { currentPractice } = usePractice()
   const supabase = createBrowserClient()
 
   useEffect(() => {

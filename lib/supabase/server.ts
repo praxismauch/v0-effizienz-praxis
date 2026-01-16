@@ -1,6 +1,5 @@
 import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
 
 function getSupabaseUrl(): string | undefined {
   return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
@@ -19,6 +18,7 @@ export function isUsingMockAdminClient(): boolean {
 }
 
 export async function createServerClient() {
+  const { cookies } = await import("next/headers")
   const cookieStore = await cookies()
 
   const supabaseUrl = getSupabaseUrl()

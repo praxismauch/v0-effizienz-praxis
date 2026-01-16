@@ -1,7 +1,8 @@
 "use client"
 
 import { AppLayout } from "@/components/app-layout"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useMemo } from "react"
+import useSWR from "swr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +21,6 @@ import {
   ShirtIcon,
   Package,
   AlertCircle,
-  RefreshCw,
 } from "lucide-react"
 import { createBrowserClient } from "@/lib/supabase/client"
 import CreateArbeitsmittelDialog from "@/components/arbeitsmittel/create-arbeitsmittel-dialog"
@@ -41,6 +41,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { SWR_KEYS } from "@/lib/swr-keys"
 
 const typeIcons: Record<string, any> = {
   Schlüssel: Key,
@@ -65,14 +66,10 @@ const statusLabels: Record<string, string> = {
 }
 
 export default function ArbeitsmittelPage() {
-  const [arbeitsmittel, setArbeitsmittel] = useState<any[]>([])
-  const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const router = useRouter()
@@ -81,167 +78,59 @@ export default function ArbeitsmittelPage() {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
 
-  const loadedPracticeIdRef = useRef<string | null>(null)
-  const isLoadingRef = useRef(false)
+  const {
+    data: arbeitsmittel,
+    error: arbeitsmittelError,
+    isLoading: arbeitsmittelLoading,
+    mutate: mutateArbeitsmittel,
+  } = useSWR(currentPractice?.id ? SWR_KEYS.arbeitsmittel(currentPractice.id) : null, async (url) => {
+    const { data, error } = await supabase
+      .from("arbeitsmittel")
+      .select("*")
+      .eq("practice_id", currentPractice!.id)
+      .order("created_at", { ascending: false })
 
-  const loadData = useCallback(
-    async (practiceId: string) => {
-      // Prevent concurrent loads
-      if (isLoadingRef.current) {
-        return
-      }
+    if (error) throw error
+    return data || []
+  })
 
-      isLoadingRef.current = true
-      setError(null)
-      setLoading(true)
+  const {
+    data: teamMembers,
+    error: teamMembersError,
+    isLoading: teamMembersLoading,
+  } = useSWR(currentPractice?.id ? SWR_KEYS.teamMembers(currentPractice.id) : null, async (url) => {
+    const { data, error } = await supabase
+      .from("team_members")
+      .select("id, first_name, last_name, role")
+      .eq("practice_id", currentPractice!.id)
+      .order("first_name")
 
-      try {
-        const { data: items, error: itemsError } = await supabase
-          .from("arbeitsmittel")
-          .select("*")
-          .eq("practice_id", practiceId)
-          .order("created_at", { ascending: false })
+    if (error) throw error
+    return data || []
+  })
 
-        if (itemsError) {
-          const errorMessage = itemsError.message || String(itemsError)
-          if (
-            errorMessage.includes("Too Many Requests") ||
-            errorMessage.includes("rate limit") ||
-            errorMessage.includes("429")
-          ) {
-            setError("Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.")
-            setArbeitsmittel([])
-            setLoading(false)
-            isLoadingRef.current = false
-            return
-          } else {
-            setError("Fehler beim Laden der Arbeitsmittel: " + errorMessage)
-          }
-        } else {
-          setArbeitsmittel(items || [])
-        }
+  const filteredItems = useMemo(() => {
+    if (!arbeitsmittel) return []
+    return arbeitsmittel.filter(
+      (item: any) =>
+        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.serial_number?.toLowerCase().includes(searchQuery.toLowerCase()),
+    )
+  }, [arbeitsmittel, searchQuery])
 
-        await new Promise((resolve) => setTimeout(resolve, 100))
-
-        try {
-          const { data: members, error: membersError } = await supabase
-            .from("team_members")
-            .select("id, first_name, last_name, role")
-            .eq("practice_id", practiceId)
-            .order("first_name")
-
-          if (membersError) {
-            const errorMessage = membersError.message || String(membersError)
-            if (
-              !errorMessage.includes("Too Many Requests") &&
-              !errorMessage.includes("rate limit") &&
-              !errorMessage.includes("429")
-            ) {
-              console.error("Error loading team members:", membersError.message)
-            }
-            setTeamMembers([])
-          } else {
-            setTeamMembers(members || [])
-          }
-        } catch (memberError: any) {
-          const errorStr = String(memberError)
-          if (errorStr.includes("Too Many") || errorStr.includes("Unexpected token")) {
-            console.warn("Rate limited when fetching team members, using empty list")
-          } else {
-            console.error("Error loading team members:", memberError)
-          }
-          setTeamMembers([])
-        }
-      } catch (error: any) {
-        const errorMessage = error?.message || String(error)
-        if (
-          errorMessage.includes("Too Many Requests") ||
-          errorMessage.includes("rate limit") ||
-          errorMessage.includes("429") ||
-          errorMessage.includes("Unexpected token")
-        ) {
-          setError("Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.")
-        } else {
-          console.error("Error loading data:", error)
-          setError("Ein unerwarteter Fehler ist aufgetreten.")
-        }
-      } finally {
-        setLoading(false)
-        isLoadingRef.current = false
-      }
-    },
-    [supabase],
-  )
-
-  useEffect(() => {
-    if (!user && !authLoading) {
-      router.push("/auth/login")
-      return
+  const stats = useMemo(() => {
+    if (!arbeitsmittel) return { total: 0, available: 0, assigned: 0, maintenance: 0 }
+    return {
+      total: arbeitsmittel.length,
+      available: arbeitsmittel.filter((i: any) => i.status === "available").length,
+      assigned: arbeitsmittel.filter((i: any) => i.status === "assigned").length,
+      maintenance: arbeitsmittel.filter((i: any) => i.status === "maintenance").length,
     }
+  }, [arbeitsmittel])
 
-    // Only load if we have a practice ID and haven't loaded this practice yet
-    const practiceId = currentPractice?.id
-    if (practiceId && loadedPracticeIdRef.current !== practiceId && !isLoadingRef.current) {
-      loadedPracticeIdRef.current = practiceId
-      loadData(practiceId)
-    } else if (!practiceLoading && !practiceId) {
-      setLoading(false)
-    }
-  }, [user, authLoading, currentPractice?.id, practiceLoading, loadData, router])
-
-  const handleReload = useCallback(() => {
-    if (currentPractice?.id) {
-      loadedPracticeIdRef.current = null // Reset to allow reload
-      loadData(currentPractice.id)
-    }
-  }, [currentPractice?.id, loadData])
-
-  function handleDeleteClick(id: string) {
-    setItemToDelete(id)
-    setDeleteDialogOpen(true)
-  }
-
-  async function handleDeleteConfirm() {
-    if (!itemToDelete) return
-
-    try {
-      const { error } = await supabase.from("arbeitsmittel").delete().eq("id", itemToDelete)
-
-      if (error) throw error
-
-      toast({
-        title: "Gelöscht",
-        description: "Arbeitsmittel wurde erfolgreich gelöscht.",
-      })
-
-      handleReload()
-    } catch (error: any) {
-      console.error("Error deleting arbeitsmittel:", error)
-      toast({
-        title: "Fehler",
-        description: "Fehler beim Löschen des Arbeitsmittels",
-        variant: "destructive",
-      })
-    } finally {
-      setDeleteDialogOpen(false)
-      setItemToDelete(null)
-    }
-  }
-
-  const filteredItems = arbeitsmittel.filter(
-    (item) =>
-      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.serial_number?.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
-
-  const stats = {
-    total: arbeitsmittel.length,
-    available: arbeitsmittel.filter((i) => i.status === "available").length,
-    assigned: arbeitsmittel.filter((i) => i.status === "assigned").length,
-    maintenance: arbeitsmittel.filter((i) => i.status === "maintenance").length,
-  }
-
+  const loading = arbeitsmittelLoading || teamMembersLoading
+  const error = arbeitsmittelError || teamMembersError
   const isInitializing = (authLoading || practiceLoading) && !currentPractice?.id
 
   if (!user && !authLoading) {
@@ -270,6 +159,43 @@ export default function ArbeitsmittelPage() {
     )
   }
 
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return
+
+    try {
+      const previousItems = arbeitsmittel
+      await mutateArbeitsmittel((current) => current?.filter((item: any) => item.id !== itemToDelete), {
+        revalidate: false,
+      })
+
+      const { error } = await supabase.from("arbeitsmittel").delete().eq("id", itemToDelete)
+
+      if (error) throw error
+
+      toast({
+        title: "Gelöscht",
+        description: "Arbeitsmittel wurde erfolgreich gelöscht.",
+      })
+
+      await mutateArbeitsmittel()
+    } catch (error: any) {
+      await mutateArbeitsmittel()
+      toast({
+        title: "Fehler",
+        description: error?.message || "Fehler beim Löschen des Arbeitsmittels",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteDialogOpen(false)
+      setItemToDelete(null)
+    }
+  }
+
+  const handleDeleteClick = (id: string) => {
+    setItemToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
   return (
     <AppLayout>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -287,13 +213,7 @@ export default function ArbeitsmittelPage() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Fehler</AlertTitle>
-            <AlertDescription className="flex items-center justify-between">
-              <span>{error}</span>
-              <Button variant="outline" size="sm" onClick={handleReload} className="ml-4 bg-transparent">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Erneut versuchen
-              </Button>
-            </AlertDescription>
+            <AlertDescription>{error?.message || "Fehler beim Laden der Daten"}</AlertDescription>
           </Alert>
         )}
 
@@ -479,17 +399,17 @@ export default function ArbeitsmittelPage() {
         <CreateArbeitsmittelDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
-          onSuccess={handleReload}
-          teamMembers={teamMembers}
+          onSuccess={() => mutateArbeitsmittel()}
+          teamMembers={teamMembers || []}
         />
 
         {selectedItem && (
           <EditArbeitsmittelDialog
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
-            onSuccess={handleReload}
+            onSuccess={() => mutateArbeitsmittel()}
             item={selectedItem}
-            teamMembers={teamMembers}
+            teamMembers={teamMembers || []}
           />
         )}
 

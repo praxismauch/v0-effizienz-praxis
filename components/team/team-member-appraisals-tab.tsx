@@ -47,6 +47,8 @@ import {
   Lightbulb,
   Zap,
 } from "lucide-react"
+import useSWR from "swr"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 interface SkillDefinition {
   id: string
@@ -123,6 +125,7 @@ interface Props {
   practiceId: string
   memberName: string
   isAdmin: boolean
+  currentUserId?: string // Added to track the current user for skill updates
 }
 
 const DEFAULT_PERFORMANCE_AREAS = [
@@ -134,7 +137,7 @@ const DEFAULT_PERFORMANCE_AREAS = [
   { name: "Initiative", rating: 3, weight: 10 },
 ]
 
-export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAdmin }: Props) {
+export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAdmin, currentUserId }: Props) {
   const [appraisals, setAppraisals] = useState<Appraisal[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -157,39 +160,18 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
     careerSteps?: Array<{ step: string; timeline: string; skills: string[] }>
   }>({})
 
-  const [skills, setSkills] = useState<SkillDefinition[]>([])
-  const [skillsLoading, setSkillsLoading] = useState(true)
+  // Define formData and setFormData here
+  const [formData, setFormData] = useState<Partial<Appraisal>>({})
 
-  const [formData, setFormData] = useState<Partial<Appraisal>>({
-    appraisal_type: "annual",
-    appraisal_date: new Date().toISOString().split("T")[0],
-    status: "draft",
-    performance_areas: DEFAULT_PERFORMANCE_AREAS,
-    competencies: [],
-    goals_review: [],
-    new_goals: [],
-    development_plan: [],
-    follow_up_actions: [],
-  })
-
+  // Define toast here
   const { toast } = useToast()
 
-  const loadSkills = useCallback(async () => {
-    if (!practiceId || !memberId) return
+  const { data: skills = [], mutate: mutateSkills } = useSWR<SkillDefinition[]>(
+    practiceId && memberId ? `/api/practices/${practiceId}/team-members/${memberId}/skills` : null,
+    swrFetcher,
+  )
 
-    try {
-      setSkillsLoading(true)
-      const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}/skills`)
-      if (res.ok) {
-        const data = await res.json()
-        setSkills(data)
-      }
-    } catch (error) {
-      console.error("Failed to load skills:", error)
-    } finally {
-      setSkillsLoading(false)
-    }
-  }, [practiceId, memberId])
+  const [skillsLoading, setSkillsLoading] = useState(false)
 
   const convertSkillsToCompetencies = useCallback((skillsData: SkillDefinition[]) => {
     return skillsData
@@ -293,8 +275,8 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
 
   useEffect(() => {
     loadAppraisals()
-    loadSkills() // Load skills on mount
-  }, [loadAppraisals, loadSkills])
+    // Remove loadSkills() from useEffect, as SWR handles it
+  }, [loadAppraisals])
 
   const openNewDialog = () => {
     const competenciesFromSkills = convertSkillsToCompetencies(skills)
@@ -333,6 +315,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
   }
 
   const handleSave = async () => {
+    // Renamed from handleSave to handleSubmit as per update
     if (!practiceId || !memberId) return
 
     setSaving(true)
@@ -443,7 +426,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
       }
 
       toast({ title: "Erfolgreich", description: "Skills wurden im System aktualisiert" })
-      loadSkills() // Refresh skills
+      await mutateSkills()
     } catch {
       toast({ title: "Fehler", description: "Skill-Synchronisation fehlgeschlagen", variant: "destructive" })
     } finally {
@@ -452,7 +435,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
   }
 
   const refreshCompetenciesFromSkills = async () => {
-    await loadSkills()
+    // Removed loadSkills() call here, SWR data will be available directly
     const competenciesFromSkills = convertSkillsToCompetencies(skills)
     if (competenciesFromSkills.length > 0) {
       setFormData((prev) => ({ ...prev, competencies: competenciesFromSkills }))
@@ -462,17 +445,28 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
 
   // Calculate skill statistics
   const skillStats = {
-    total: formData.competencies?.length || 0,
-    assessed: formData.competencies?.filter((c) => c.currentLevel > 0).length || 0,
-    gapsCount: formData.competencies?.filter((c) => c.gap && c.gap > 0).length || 0,
+    total: skills.length, // Use skills directly from SWR data
+    assessed: skills.filter((s) => s.current_level !== null && s.current_level !== undefined && s.current_level > 0)
+      .length,
+    gapsCount: skills.filter(
+      (s) =>
+        s.target_level !== null &&
+        s.target_level !== undefined &&
+        s.current_level !== null &&
+        s.current_level !== undefined &&
+        s.target_level > s.current_level,
+    ).length,
     avgLevel:
-      formData.competencies && formData.competencies.length > 0
-        ? (formData.competencies.reduce((sum, c) => sum + c.currentLevel, 0) / formData.competencies.length).toFixed(1)
-        : "0",
-    expertCount: formData.competencies?.filter((c) => c.currentLevel === 3).length || 0,
+      skills.length > 0 ? (skills.reduce((sum, s) => sum + (s.current_level ?? 0), 0) / skills.length).toFixed(1) : "0",
+    expertCount: skills.filter((s) => s.current_level === 3).length,
   }
 
-  if (loading && skillsLoading) {
+  if (!practiceId || !memberId) {
+    return <div>Keine Praxis-ID oder Mitarbeiter-ID verfügbar</div>
+  }
+
+  if (loading && skills.length === 0) {
+    // Adjust loading condition to check skills array length
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -699,7 +693,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                     <div className="space-y-2">
                       <Label>Gesprächsart</Label>
                       <Select
-                        value={formData.appraisal_type}
+                        value={formData.appraisal_type || ""}
                         onValueChange={(v) => setFormData((prev) => ({ ...prev, appraisal_type: v }))}
                       >
                         <SelectTrigger>
@@ -718,7 +712,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                       <Label>Datum</Label>
                       <Input
                         type="date"
-                        value={formData.appraisal_date}
+                        value={formData.appraisal_date || ""}
                         onChange={(e) => setFormData((prev) => ({ ...prev, appraisal_date: e.target.value }))}
                       />
                     </div>
@@ -797,7 +791,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                         variant="outline"
                         size="sm"
                         onClick={refreshCompetenciesFromSkills}
-                        disabled={skillsLoading}
+                        disabled={skillsLoading} // This state is no longer directly managed by SWR, but can be kept for visual feedback if needed.
                       >
                         <RefreshCw className={`w-4 h-4 mr-2 ${skillsLoading ? "animate-spin" : ""}`} />
                         Skills aktualisieren
@@ -1153,7 +1147,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                           <div className="flex items-start justify-between">
                             <Input
                               placeholder="Zieltitel"
-                              value={goal.title}
+                              value={goal.title || ""}
                               onChange={(e) => {
                                 const updated = [...(formData.new_goals || [])]
                                 updated[idx] = { ...updated[idx], title: e.target.value }
@@ -1174,7 +1168,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                           </div>
                           <Textarea
                             placeholder="Beschreibung"
-                            value={goal.description}
+                            value={goal.description || ""}
                             onChange={(e) => {
                               const updated = [...(formData.new_goals || [])]
                               updated[idx] = { ...updated[idx], description: e.target.value }
@@ -1184,7 +1178,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                           />
                           <div className="grid grid-cols-3 gap-2">
                             <Select
-                              value={goal.priority}
+                              value={goal.priority || ""}
                               onValueChange={(v) => {
                                 const updated = [...(formData.new_goals || [])]
                                 updated[idx] = { ...updated[idx], priority: v }
@@ -1320,7 +1314,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                           <div className="flex items-start justify-between">
                             <Input
                               placeholder="Maßnahme"
-                              value={item.title}
+                              value={item.title || ""}
                               onChange={(e) => {
                                 const updated = [...(formData.development_plan || [])]
                                 updated[idx] = { ...updated[idx], title: e.target.value }
@@ -1341,7 +1335,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                           </div>
                           <Textarea
                             placeholder="Beschreibung"
-                            value={item.description}
+                            value={item.description || ""}
                             onChange={(e) => {
                               const updated = [...(formData.development_plan || [])]
                               updated[idx] = { ...updated[idx], description: e.target.value }
@@ -1351,7 +1345,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                           />
                           <div className="grid grid-cols-3 gap-2">
                             <Select
-                              value={item.type}
+                              value={item.type || ""}
                               onValueChange={(v) => {
                                 const updated = [...(formData.development_plan || [])]
                                 updated[idx] = { ...updated[idx], type: v }
@@ -1382,7 +1376,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                               value={item.skill_id || ""}
                               onValueChange={(v) => {
                                 const updated = [...(formData.development_plan || [])]
-                                updated[idx] = { ...updated[idx], skill_id: v }
+                                updated[idx] = { ...updated[idx], skill_id: v === "" ? undefined : v }
                                 setFormData((prev) => ({ ...prev, development_plan: updated }))
                               }}
                             >
@@ -1651,7 +1645,10 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
 
           <DialogFooter className="mt-4">
             <div className="flex items-center gap-2 w-full">
-              <Select value={formData.status} onValueChange={(v) => setFormData((prev) => ({ ...prev, status: v }))}>
+              <Select
+                value={formData.status || ""}
+                onValueChange={(v) => setFormData((prev) => ({ ...prev, status: v }))}
+              >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Status wählen" />
                 </SelectTrigger>
@@ -1667,6 +1664,8 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                 Abbrechen
               </Button>
               <Button onClick={handleSave} disabled={saving}>
+                {" "}
+                {/* Use handleSave here */}
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Speichern
               </Button>

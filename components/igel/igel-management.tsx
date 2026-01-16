@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import useSWR from "swr"
 import {
   Plus,
   TrendingUp,
@@ -19,6 +20,7 @@ import { ViewIgelDialog } from "./view-igel-dialog"
 import { EditIgelDialog } from "./edit-igel-dialog"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { useUser } from "@/contexts/user-context"
+import { SWR_KEYS } from "@/lib/swr-keys"
 
 interface IgelAnalysis {
   id: string
@@ -34,59 +36,46 @@ interface IgelAnalysis {
 }
 
 export function IgelManagement() {
-  const [analyses, setAnalyses] = useState<IgelAnalysis[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [viewAnalysis, setViewAnalysis] = useState<IgelAnalysis | null>(null)
   const [editAnalysis, setEditAnalysis] = useState<IgelAnalysis | null>(null)
   const supabase = createBrowserClient()
   const { currentUser: user } = useUser()
 
-  const loadAnalyses = async () => {
-    try {
-      console.log("[v0] IGEL: Loading analyses, user:", user)
-
-      if (!user?.practice_id) {
-        console.log("[v0] IGEL: No practice_id, setting empty array")
-        setAnalyses([])
-        setLoading(false)
-        return
-      }
-
-      console.log("[v0] IGEL: Fetching from igel_analyses for practice:", user.practice_id)
+  const practiceId = user?.practice_id
+  const {
+    data: analyses = [],
+    error,
+    isLoading: loading,
+    mutate: mutateAnalyses,
+  } = useSWR<IgelAnalysis[]>(
+    practiceId ? SWR_KEYS.igelAnalyses(practiceId) : null,
+    async () => {
+      console.log("[v0] IGEL: Fetching analyses via SWR for practice:", practiceId)
 
       const { data, error: fetchError } = await supabase
         .from("igel_analyses")
         .select("*")
-        .eq("practice_id", user.practice_id)
+        .eq("practice_id", practiceId)
         .order("created_at", { ascending: false })
 
       if (fetchError) {
         console.error("[v0] IGEL: Error loading analyses:", fetchError)
-        if (fetchError.code === "42P01") {
-          setError("Die IGEL-Analyse Tabelle existiert noch nicht in der Datenbank.")
-        } else {
-          setError(`Fehler beim Laden: ${fetchError.message}`)
-        }
-        setAnalyses([])
-      } else {
-        console.log("[v0] IGEL: Loaded analyses:", data?.length || 0)
-        setAnalyses(data || [])
-        setError(null)
+        throw new Error(
+          fetchError.code === "42P01"
+            ? "Die IGEL-Analyse Tabelle existiert noch nicht in der Datenbank."
+            : `Fehler beim Laden: ${fetchError.message}`,
+        )
       }
-    } catch (error) {
-      console.error("[v0] IGEL: Unexpected error:", error)
-      setError("Ein unerwarteter Fehler ist aufgetreten")
-      setAnalyses([])
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  useEffect(() => {
-    loadAnalyses()
-  }, [user])
+      console.log("[v0] IGEL: Loaded analyses:", data?.length || 0)
+      return data || []
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    },
+  )
 
   const getRecommendationColor = (recommendation: string) => {
     if (recommendation?.includes("Sehr empfehlenswert")) return "default"
@@ -110,8 +99,10 @@ export function IgelManagement() {
         <CardContent className="flex flex-col items-center justify-center py-12">
           <AlertCircle className="h-16 w-16 text-destructive mb-4" />
           <h3 className="text-lg font-medium mb-2">Fehler beim Laden</h3>
-          <p className="text-sm text-muted-foreground text-center max-w-md mb-4">{error}</p>
-          <Button onClick={loadAnalyses}>Erneut versuchen</Button>
+          <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+            {error.message || "Ein Fehler ist aufgetreten"}
+          </p>
+          <Button onClick={() => mutateAnalyses()}>Erneut versuchen</Button>
         </CardContent>
       </Card>
     )
@@ -232,7 +223,7 @@ export function IgelManagement() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSuccess={() => {
-          loadAnalyses()
+          mutateAnalyses()
           setCreateOpen(false)
         }}
       />
@@ -242,7 +233,7 @@ export function IgelManagement() {
           analysis={viewAnalysis}
           open={!!viewAnalysis}
           onOpenChange={(open) => !open && setViewAnalysis(null)}
-          onSuccess={loadAnalyses}
+          onSuccess={() => mutateAnalyses()}
           onEdit={(analysis) => {
             setViewAnalysis(null)
             setEditAnalysis(analysis)
@@ -258,7 +249,7 @@ export function IgelManagement() {
             if (!open) setEditAnalysis(null)
           }}
           onSuccess={() => {
-            loadAnalyses()
+            mutateAnalyses()
             setEditAnalysis(null)
           }}
         />

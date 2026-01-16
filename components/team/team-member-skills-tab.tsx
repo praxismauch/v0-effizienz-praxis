@@ -1,6 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import useSWR from "swr"
+import { swrFetcher } from "@/lib/swr-fetcher"
+import { SWR_KEYS } from "@/lib/swr-keys"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -134,9 +137,18 @@ export function TeamMemberSkillsTab({
   isAdmin,
   currentUserId,
 }: TeamMemberSkillsTabProps) {
-  const [skills, setSkills] = useState<SkillDefinition[]>([])
-  const [teams, setTeams] = useState<Team[]>([])
-  const [loading, setLoading] = useState(true)
+  const {
+    data: skills = [],
+    error: skillsError,
+    mutate: mutateSkills,
+  } = useSWR<SkillDefinition[]>(
+    practiceId && memberId ? `/api/practices/${practiceId}/team-members/${memberId}/skills` : null,
+    swrFetcher,
+  )
+
+  const { data: teams = [] } = useSWR<Team[]>(practiceId ? SWR_KEYS.teams(practiceId) : null, swrFetcher)
+
+  const [loading, setLoading] = useState(false)
   const [editingSkill, setEditingSkill] = useState<SkillDefinition | null>(null)
   const [editLevel, setEditLevel] = useState<number>(0)
   const [editTargetLevel, setEditTargetLevel] = useState<number | null>(null)
@@ -150,39 +162,9 @@ export function TeamMemberSkillsTab({
   const [selectedHistorySkill, setSelectedHistorySkill] = useState<string | null>(null)
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchSkills()
-    fetchTeams()
-  }, [memberId, practiceId])
-
-  const fetchSkills = async () => {
-    try {
-      setLoading(true)
-      const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}/skills`)
-      if (res.ok) {
-        const data = await res.json()
-        setSkills(data)
-      }
-    } catch (error) {
-      console.error("Error fetching skills:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchTeams = async () => {
-    try {
-      const res = await fetch(`/api/practices/${practiceId}/teams`)
-      if (res.ok) {
-        const data = await res.json()
-        setTeams(data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching teams:", error)
-    }
-  }
-
   const fetchHistory = async (skillId?: string) => {
+    if (!practiceId || !memberId) return
+
     try {
       setLoadingHistory(true)
       const url = skillId
@@ -215,7 +197,7 @@ export function TeamMemberSkillsTab({
   }
 
   const handleSaveSkill = async () => {
-    if (!editingSkill) return
+    if (!editingSkill || !practiceId || !memberId) return
 
     try {
       setSaving(true)
@@ -233,16 +215,17 @@ export function TeamMemberSkillsTab({
       })
 
       if (res.ok) {
+        await mutateSkills()
+        setEditingSkill(null)
         toast({
           title: "Skill aktualisiert",
           description: `${editingSkill.name} wurde erfolgreich aktualisiert.`,
         })
-        setEditingSkill(null)
-        fetchSkills()
       } else {
         throw new Error("Failed to save")
       }
     } catch (error) {
+      console.error("Error saving skill:", error)
       toast({
         title: "Fehler",
         description: "Skill konnte nicht gespeichert werden.",
@@ -295,15 +278,16 @@ export function TeamMemberSkillsTab({
     return team?.color || "#6b7280"
   }
 
-  if (loading) {
+  if (skillsError) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-lg font-medium text-destructive">Fehler beim Laden der Skills</p>
       </div>
     )
   }
 
-  if (skills.length === 0) {
+  if (!skills || skills.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">

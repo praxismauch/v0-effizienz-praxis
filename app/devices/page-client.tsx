@@ -1,9 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { useTeam } from "@/contexts/team-context"
+import useSWR from "swr"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -119,8 +122,19 @@ export default function DevicesPageClient() {
   const { currentUser } = useUser()
   const { teamMembers } = useTeam()
 
-  const [devices, setDevices] = useState<MedicalDevice[]>([])
-  const [loading, setLoading] = useState(true)
+  const {
+    data: devicesData,
+    error,
+    isLoading,
+    mutate: mutateDevices,
+  } = useSWR<{ devices: MedicalDevice[] }>(
+    currentPractice?.id ? SWR_KEYS.devices(currentPractice.id) : null,
+    swrFetcher,
+  )
+
+  const devices = devicesData?.devices || []
+  const loading = isLoading
+
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
@@ -134,42 +148,33 @@ export default function DevicesPageClient() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedDevice, setSelectedDevice] = useState<MedicalDevice | null>(null)
 
-  const loadDevices = useCallback(async () => {
-    if (!currentPractice?.id) return
-
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/devices`)
-      if (response.ok) {
-        const data = await response.json()
-        setDevices(data.devices || [])
-      }
-    } catch (error) {
-      console.error("[v0] Error loading devices:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [currentPractice?.id])
-
-  useEffect(() => {
-    loadDevices()
-  }, [loadDevices])
-
   const handleDelete = async () => {
     if (!selectedDevice || !currentPractice?.id) return
 
+    const previousDevices = devices
+
     try {
+      // Optimistic update
+      await mutateDevices(
+        (current) => ({
+          devices: current?.devices.filter((d) => d.id !== selectedDevice.id) || [],
+        }),
+        { revalidate: false },
+      )
+
       const response = await fetch(`/api/practices/${currentPractice.id}/devices/${selectedDevice.id}`, {
         method: "DELETE",
       })
 
-      if (response.ok) {
-        toast({ title: "Gerät gelöscht", description: "Das Gerät wurde erfolgreich gelöscht." })
-        loadDevices()
-      } else {
+      if (!response.ok) {
         throw new Error("Failed to delete device")
       }
+
+      toast({ title: "Gerät gelöscht", description: "Das Gerät wurde erfolgreich gelöscht." })
+      await mutateDevices()
     } catch (error) {
+      // Rollback on error
+      await mutateDevices(() => ({ devices: previousDevices }), { revalidate: false })
       toast({ title: "Fehler", description: "Das Gerät konnte nicht gelöscht werden.", variant: "destructive" })
     } finally {
       setDeleteDialogOpen(false)
@@ -629,11 +634,10 @@ export default function DevicesPageClient() {
       <CreateDeviceDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        onSuccess={() => {
-          loadDevices()
+        onDeviceCreated={() => {
+          mutateDevices()
           setCreateDialogOpen(false)
         }}
-        editDevice={selectedDevice}
       />
 
       {selectedDevice && (
@@ -642,11 +646,9 @@ export default function DevicesPageClient() {
             open={viewDialogOpen}
             onOpenChange={setViewDialogOpen}
             device={selectedDevice}
-            onEdit={() => {
-              setViewDialogOpen(false)
-              setCreateDialogOpen(true)
+            onDeviceUpdated={() => {
+              mutateDevices()
             }}
-            onRefresh={loadDevices}
           />
 
           <DeviceTrainingsDialog
@@ -659,7 +661,9 @@ export default function DevicesPageClient() {
             open={maintenanceDialogOpen}
             onOpenChange={setMaintenanceDialogOpen}
             device={selectedDevice}
-            onSuccess={loadDevices}
+            onMaintenanceAdded={() => {
+              mutateDevices()
+            }}
           />
         </>
       )}

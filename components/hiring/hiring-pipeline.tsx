@@ -198,19 +198,23 @@ export function HiringPipeline() {
   const handleMoveApplication = useCallback(
     async (applicationId: string, newStageId: string) => {
       const isCandidateId = applicationId.startsWith("candidate-")
-      const previousApplications = [...applications]
+
+      const previousApplications = applications ? [...applications] : []
 
       await mutateApplications(
-        applications.map((app) => {
-          if (app.id === applicationId) {
-            return {
-              ...app,
-              stage: newStageId,
-              status: STAGE_TO_STATUS_MAP[newStageId] || app.status,
+        (currentData) => {
+          if (!currentData) return currentData
+          return currentData.map((app) => {
+            if (app.id === applicationId) {
+              return {
+                ...app,
+                stage: newStageId,
+                status: STAGE_TO_STATUS_MAP[newStageId] || app.status,
+              }
             }
-          }
-          return app
-        }),
+            return app
+          })
+        },
         { revalidate: false },
       )
 
@@ -228,8 +232,7 @@ export function HiringPipeline() {
           })
 
           if (!response.ok) {
-            // Rollback
-            await mutateApplications(previousApplications, { revalidate: false })
+            await mutateApplications(() => previousApplications, { revalidate: false })
             const errorData = await response.json().catch(() => ({ error: "Unbekannter Fehler" }))
             toast({
               title: "Fehler beim Verschieben",
@@ -241,7 +244,7 @@ export function HiringPipeline() {
               title: "Kandidat verschoben",
               description: `Kandidat wurde nach "${newStageId}" verschoben.`,
             })
-            // Revalidate after success
+            // Revalidate after success to sync with server
             await mutateApplications()
           }
           return
@@ -255,8 +258,7 @@ export function HiringPipeline() {
         })
 
         if (!response.ok) {
-          // Rollback
-          await mutateApplications(previousApplications, { revalidate: false })
+          await mutateApplications(() => previousApplications, { revalidate: false })
 
           if (response.status === 401) {
             toast({
@@ -278,11 +280,11 @@ export function HiringPipeline() {
             title: "Bewerbung verschoben",
             description: `Bewerbung wurde nach "${newStageId}" verschoben.`,
           })
+          // Revalidate after success
           await mutateApplications()
         }
       } catch (error) {
-        // Rollback
-        await mutateApplications(previousApplications, { revalidate: false })
+        await mutateApplications(() => previousApplications, { revalidate: false })
         toast({
           title: "Netzwerkfehler",
           description: "Verbindung zum Server fehlgeschlagen.",
@@ -307,9 +309,13 @@ export function HiringPipeline() {
   const handleArchiveCandidate = async () => {
     if (!candidateToArchive) return
 
-    const previousApplications = [...applications]
+    const previousApplications = applications ? [...applications] : []
+
     await mutateApplications(
-      applications.filter((app) => !app.id.includes(candidateToArchive.id)),
+      (currentData) => {
+        if (!currentData) return currentData
+        return currentData.filter((app) => !app.id.includes(candidateToArchive.id))
+      },
       { revalidate: false },
     )
 
@@ -327,8 +333,7 @@ export function HiringPipeline() {
         })
         await mutateApplications()
       } else {
-        // Rollback
-        await mutateApplications(previousApplications, { revalidate: false })
+        await mutateApplications(() => previousApplications, { revalidate: false })
         toast({
           title: "Fehler",
           description: "Kandidat konnte nicht archiviert werden.",
@@ -336,8 +341,7 @@ export function HiringPipeline() {
         })
       }
     } catch (error) {
-      // Rollback
-      await mutateApplications(previousApplications, { revalidate: false })
+      await mutateApplications(() => previousApplications, { revalidate: false })
       toast({
         title: "Fehler",
         description: "Ein Fehler ist beim Archivieren aufgetreten.",

@@ -20,9 +20,19 @@ export const SWR_KEYS = {
 
   // Teams - hardcoded to practice 1
   teams: (practiceId = DEFAULT_PRACTICE_ID) => `/api/practices/${practiceId}/teams`,
-  teamMembers: (practiceId = DEFAULT_PRACTICE_ID) => `/api/practices/${practiceId}/team-members`,
+  team: (practiceId = DEFAULT_PRACTICE_ID, teamId: string) => `/api/practices/${practiceId}/teams/${teamId}`,
+  teamMembers: (practiceId = DEFAULT_PRACTICE_ID, teamId?: string) =>
+    teamId ? `/api/practices/${practiceId}/teams/${teamId}/members` : `/api/practices/${practiceId}/team-members`,
   teamMember: (practiceId = DEFAULT_PRACTICE_ID, memberId: string) =>
     `/api/practices/${practiceId}/team-members/${memberId}`,
+
+  // Skills keys for team member skills
+  teamMemberSkills: (practiceId: string, memberId: string) =>
+    `/api/practices/${practiceId}/team-members/${memberId}/skills`,
+  teamMemberSkillsHistory: (practiceId: string, memberId: string, skillId?: string) =>
+    skillId
+      ? `/api/practices/${practiceId}/team-members/${memberId}/skills/history?skillId=${skillId}`
+      : `/api/practices/${practiceId}/team-members/${memberId}/skills/history`,
 
   workflows: (practiceId = DEFAULT_PRACTICE_ID) => `/api/practices/${practiceId}/workflows`,
   workflow: (practiceId = DEFAULT_PRACTICE_ID, workflowId: string) =>
@@ -113,13 +123,33 @@ export const SWR_KEYS = {
   questionnaire: (questionnaireId: string) => `/api/hiring/questionnaires/${questionnaireId}`,
 
   // Analytics
-  analyticsData: (practiceId = DEFAULT_PRACTICE_ID) => `/api/analytics/data?practiceId=${practiceId}`,
+  analyticsData: (practiceId = DEFAULT_PRACTICE_ID) =>
+    `/api/practices/${practiceId}/analytics/data?practiceId=${practiceId}`,
   systemMetrics: (days: string) => `/api/super-admin/analytics/system-metrics?days=${days}`,
   featureUsage: (days: string) => `/api/super-admin/analytics/feature-usage?days=${days}`,
   practiceGrowth: (days: string) => `/api/super-admin/analytics/practice-growth?days=${days}`,
   subscriptionStats: () => `/api/super-admin/analytics/subscriptions`,
   chartData: (practiceId: string, parameterIds: string[]) =>
     `/api/practices/${practiceId}/parameters?parameterIds=${parameterIds.join(",")}`,
+
+  // Devices
+  devices: (practiceId = DEFAULT_PRACTICE_ID) => `/api/practices/${practiceId}/devices`,
+  device: (practiceId = DEFAULT_PRACTICE_ID, deviceId: string) => `/api/practices/${practiceId}/devices/${deviceId}`,
+  devicesMaintenanceDue: (practiceId = DEFAULT_PRACTICE_ID) => `/api/practices/${practiceId}/devices/maintenance-due`,
+  deviceMaintenances: (practiceId = DEFAULT_PRACTICE_ID, deviceId: string) =>
+    `/api/practices/${practiceId}/devices/${deviceId}/maintenance`,
+  deviceTrainings: (practiceId = DEFAULT_PRACTICE_ID, deviceId: string) =>
+    `/api/practices/${practiceId}/devices/${deviceId}/trainings`,
+
+  // arbeitsmittel SWR keys
+  arbeitsmittel: (practiceId = DEFAULT_PRACTICE_ID) => `/api/supabase/arbeitsmittel?practiceId=${practiceId}`,
+  arbeitsmittelItem: (practiceId = DEFAULT_PRACTICE_ID, itemId: string) =>
+    `/api/supabase/arbeitsmittel/${itemId}?practiceId=${practiceId}`,
+
+  // IGEL analyses SWR keys
+  igelAnalyses: (practiceId = DEFAULT_PRACTICE_ID) => `/api/supabase/igel-analyses?practiceId=${practiceId}`,
+  igelAnalysis: (practiceId = DEFAULT_PRACTICE_ID, analysisId: string) =>
+    `/api/supabase/igel-analyses/${analysisId}?practiceId=${practiceId}`,
 } as const
 
 // Helper to invalidate all keys for a practice
@@ -147,5 +177,14 @@ export function getPracticeKeys(practiceId = DEFAULT_PRACTICE_ID) {
     SWR_KEYS.pipelineStages(practiceId),
     SWR_KEYS.questionnaires(practiceId),
     SWR_KEYS.analyticsData(practiceId),
+    SWR_KEYS.devices(practiceId),
+    SWR_KEYS.device(practiceId),
+    SWR_KEYS.devicesMaintenanceDue(practiceId),
+    SWR_KEYS.deviceMaintenances(practiceId),
+    SWR_KEYS.deviceTrainings(practiceId),
+    SWR_KEYS.arbeitsmittel(practiceId),
+    SWR_KEYS.arbeitsmittelItem(practiceId),
+    SWR_KEYS.igelAnalyses(practiceId),
+    SWR_KEYS.igelAnalysis(practiceId),
   ]
 }

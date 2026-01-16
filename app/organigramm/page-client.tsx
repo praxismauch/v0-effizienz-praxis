@@ -56,23 +56,11 @@ export default function OrganigrammPageClient() {
 
   const { toast } = useToast()
   const { user } = useAuth()
-  const { currentPractice } = usePractice()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
   const supabase = createBrowserClient()
 
-  useEffect(() => {
-    console.log("[v0] Organigramm - useAuth values:", {
-      currentPractice,
-      currentPracticeId: currentPractice?.id,
-      user: user?.id,
-    })
-  }, [currentPractice, user])
-
   const loadData = async () => {
-    console.log("[v0] Organigramm - loadData called, currentPractice:", currentPractice)
-
     if (!currentPractice?.id) {
-      console.log("[v0] Organigramm - No practice ID, stopping load")
-      setLoading(false)
       return
     }
 
@@ -104,20 +92,19 @@ export default function OrganigrammPageClient() {
   }
 
   useEffect(() => {
-    loadData()
+    if (currentPractice?.id) {
+      loadData()
+    }
   }, [currentPractice?.id])
 
-  // Build tree structure from flat positions array
   const buildTree = (): TreeNode[] => {
     const positionMap = new Map<string, TreeNode>()
     const rootNodes: TreeNode[] = []
 
-    // First pass: create all nodes
     positions.forEach((pos) => {
       positionMap.set(pos.id, { position: pos, children: [] })
     })
 
-    // Second pass: build parent-child relationships
     positions.forEach((pos) => {
       const node = positionMap.get(pos.id)!
       if (pos.reports_to_position_id) {
@@ -132,7 +119,6 @@ export default function OrganigrammPageClient() {
       }
     })
 
-    // Sort children by display_order
     const sortChildren = (node: TreeNode) => {
       node.children.sort((a, b) => a.position.display_order - b.position.display_order)
       node.children.forEach(sortChildren)
@@ -233,7 +219,6 @@ export default function OrganigrammPageClient() {
 
   const tree = buildTree()
 
-  // Render a single position card
   const PositionCard = ({
     node,
     isRoot = false,
@@ -247,7 +232,6 @@ export default function OrganigrammPageClient() {
 
     return (
       <div className="flex flex-col items-center">
-        {/* Position Card */}
         <div
           className={cn(
             "relative group bg-[#4F7CBA] text-white rounded-md px-4 py-3 min-w-[140px] max-w-[200px] text-center shadow-md transition-all hover:shadow-lg cursor-pointer",
@@ -257,8 +241,6 @@ export default function OrganigrammPageClient() {
         >
           <p className="font-semibold text-sm leading-tight break-words">{displayName}</p>
           {displayRole && <p className="text-xs text-white/80 mt-0.5 leading-tight">({displayRole})</p>}
-
-          {/* Action buttons on hover */}
           <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
             <button
               className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-100"
@@ -280,14 +262,9 @@ export default function OrganigrammPageClient() {
             </button>
           </div>
         </div>
-
-        {/* Children */}
         {children.length > 0 && (
           <>
-            {/* Vertical line down from parent */}
             <div className="w-px h-6 bg-[#4F7CBA]" />
-
-            {/* Horizontal connector line */}
             {children.length > 1 && (
               <div
                 className="h-px bg-[#4F7CBA]"
@@ -296,12 +273,9 @@ export default function OrganigrammPageClient() {
                 }}
               />
             )}
-
-            {/* Children container */}
             <div className="flex gap-8 items-start">
               {children.map((child, index) => (
                 <div key={child.position.id} className="flex flex-col items-center">
-                  {/* Vertical line to child */}
                   <div className="w-px h-6 bg-[#4F7CBA]" />
                   <PositionCard node={child} />
                 </div>
@@ -310,6 +284,16 @@ export default function OrganigrammPageClient() {
           </>
         )}
       </div>
+    )
+  }
+
+  if (practiceLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
     )
   }
 
@@ -340,7 +324,6 @@ export default function OrganigrammPageClient() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
           <div>
             <h1 className="text-2xl font-bold">Organigramm</h1>
@@ -372,8 +355,6 @@ export default function OrganigrammPageClient() {
             </Button>
           </div>
         </div>
-
-        {/* Print Header - only visible when printing */}
         <div className="hidden print:block text-center mb-8">
           <h1 className="text-3xl font-bold">Organigramm</h1>
           <p className="text-lg text-gray-600 mt-2">{currentPractice?.name || "Praxis"}</p>
@@ -381,8 +362,6 @@ export default function OrganigrammPageClient() {
             Stand: {new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
           </p>
         </div>
-
-        {/* Org Chart Container */}
         <Card className="overflow-hidden">
           <CardContent className="p-0">
             <div ref={chartRef} className="min-h-[500px] overflow-auto bg-white print:bg-white print:overflow-visible">
@@ -416,8 +395,6 @@ export default function OrganigrammPageClient() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Stats */}
         {positions.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
             <Card>
@@ -447,8 +424,6 @@ export default function OrganigrammPageClient() {
           </div>
         )}
       </div>
-
-      {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
@@ -462,8 +437,6 @@ export default function OrganigrammPageClient() {
           />
         </DialogContent>
       </Dialog>
-
-      {/* Edit Dialog */}
       {editingPosition && (
         <Dialog open={!!editingPosition} onOpenChange={(open) => !open && setEditingPosition(null)}>
           <DialogContent>
@@ -480,8 +453,6 @@ export default function OrganigrammPageClient() {
           </DialogContent>
         </Dialog>
       )}
-
-      {/* Delete Confirmation */}
       <Dialog open={!!deletingPositionId} onOpenChange={(open) => !open && setDeletingPositionId(null)}>
         <DialogContent>
           <DialogHeader>
@@ -500,8 +471,6 @@ export default function OrganigrammPageClient() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Print Styles */}
       <style jsx global>{`
         @media print {
           @page {
@@ -568,7 +537,6 @@ function CreatePositionForm({
           required
         />
       </div>
-
       <div className="space-y-2">
         <Label htmlFor="department">Abteilung (optional)</Label>
         <Input
@@ -578,7 +546,6 @@ function CreatePositionForm({
           placeholder="z.B. Personal, IT, Büro"
         />
       </div>
-
       <div className="space-y-2">
         <Label htmlFor="parent">Berichtet an</Label>
         <Select value={parentId} onValueChange={setParentId}>
@@ -596,7 +563,6 @@ function CreatePositionForm({
           </SelectContent>
         </Select>
       </div>
-
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>
           Abbrechen
@@ -626,7 +592,6 @@ function EditPositionForm({
   const [parentId, setParentId] = useState(position.reports_to_position_id || "")
   const [saving, setSaving] = useState(false)
 
-  // Filter out the current position and its descendants as potential parents
   const getDescendantIds = (id: string): string[] => {
     const children = positions.filter((p) => p.reports_to_position_id === id)
     return [id, ...children.flatMap((c) => getDescendantIds(c.id))]
@@ -657,7 +622,6 @@ function EditPositionForm({
         <Label htmlFor="edit-title">Positionsbezeichnung *</Label>
         <Input id="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </div>
-
       <div className="space-y-2">
         <Label htmlFor="edit-department">Abteilung (optional)</Label>
         <Input
@@ -667,7 +631,6 @@ function EditPositionForm({
           placeholder="z.B. Personal, IT, Büro"
         />
       </div>
-
       <div className="space-y-2">
         <Label htmlFor="edit-parent">Berichtet an</Label>
         <Select value={parentId} onValueChange={setParentId}>
@@ -685,7 +648,6 @@ function EditPositionForm({
           </SelectContent>
         </Select>
       </div>
-
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>
           Abbrechen

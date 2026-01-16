@@ -977,7 +977,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                       <SelectValue placeholder="Abteilung wählen" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Keine Auswahl</SelectItem>
+                      <SelectItem value="none">Keine Auswahl</SelectItem>
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.name}>
                           <div className="flex items-center gap-2">

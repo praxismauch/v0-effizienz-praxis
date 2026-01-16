@@ -1,10 +1,17 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { applyRateLimitRedis } from "@/lib/api/rate-limit-redis"
+import Logger from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: Request) {
   try {
+    const rateLimitResult = await applyRateLimitRedis(request, "auth")
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response
+    }
+
     const { email, password } = await request.json()
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -16,16 +23,21 @@ export async function POST(request: Request) {
 
     const supabase = await createServerClient()
 
-    console.log("[v0] [auth/login] Attempting login for:", email)
+    Logger.info("auth", "Login attempt initiated")
 
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError || !authData?.user) {
-      console.log("[v0] [auth/login] Auth failed:", authError?.message)
-      return NextResponse.json({ error: authError?.message || "Authentifizierung fehlgeschlagen" }, { status: 401 })
+      Logger.warn("auth", "Login failed - invalid credentials")
+      return NextResponse.json(
+        {
+          error: "E-Mail oder Passwort ungültig",
+        },
+        { status: 401 },
+      )
     }
 
-    console.log("[v0] [auth/login] Auth successful, user ID:", authData.user.id)
+    Logger.info("auth", "Login successful")
 
     const { data: userData, error: userError } = await supabase
       .from("users")
@@ -48,11 +60,11 @@ export async function POST(request: Request) {
         .maybeSingle()
 
       if (createError || !newUser) {
-        console.error("[auth/login] Failed to create user profile:", createError)
-        return NextResponse.json({ error: "Failed to create user profile" }, { status: 500 })
+        Logger.error("auth", "Failed to create user profile", createError)
+        return NextResponse.json({ error: "Fehler beim Erstellen des Benutzerprofils" }, { status: 500 })
       }
 
-      console.log("[v0] [auth/login] Created new user profile")
+      Logger.info("auth", "Created new user profile")
 
       return NextResponse.json(
         {
@@ -72,8 +84,8 @@ export async function POST(request: Request) {
     }
 
     if (userError) {
-      console.error("[auth/login] Error loading user:", userError)
-      return NextResponse.json({ error: "User profile not found" }, { status: 404 })
+      Logger.error("auth", "Error loading user profile", userError)
+      return NextResponse.json({ error: "Fehler beim Laden des Benutzerprofils" }, { status: 500 })
     }
 
     if (!userData.is_active) {
@@ -86,7 +98,7 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log("[v0] [auth/login] Login successful for user:", userData.email, "role:", userData.role)
+    Logger.info("auth", "Login completed successfully")
 
     return NextResponse.json(
       {
@@ -104,8 +116,12 @@ export async function POST(request: Request) {
       { status: 200 },
     )
   } catch (error) {
-    console.error("[auth/login] Error:", error)
-    const message = error instanceof Error ? error.message : "Unbekannter Fehler"
-    return NextResponse.json({ error: `Ein unerwarteter Fehler ist aufgetreten: ${message}` }, { status: 500 })
+    Logger.error("auth", "Login error", error)
+    return NextResponse.json(
+      {
+        error: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.",
+      },
+      { status: 500 },
+    )
   }
 }

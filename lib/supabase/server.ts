@@ -70,10 +70,6 @@ export async function createClient() {
 }
 
 export async function createAdminClient() {
-  if (globalThis.__supabaseAdminClient) {
-    return globalThis.__supabaseAdminClient
-  }
-
   const supabaseUrl = getSupabaseUrl()
   const serviceRoleKey = getServiceRoleKey()
 
@@ -85,7 +81,8 @@ export async function createAdminClient() {
     throw new Error("Supabase admin client not configured")
   }
 
-  globalThis.__supabaseAdminClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+  // Create fresh admin client per request (no caching)
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -96,37 +93,9 @@ export async function createAdminClient() {
       },
     },
   })
-
-  return globalThis.__supabaseAdminClient
 }
 
-export function getServiceRoleClient() {
-  const supabaseUrl = getSupabaseUrl()
-  const serviceRoleKey = getServiceRoleKey()
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    console.error("[supabase] Missing service role env vars", {
-      url: !!supabaseUrl,
-      serviceRole: !!serviceRoleKey,
-    })
-    throw new Error("Supabase admin client not configured")
-  }
-
-  if (globalThis.__supabaseAdminClient) {
-    return globalThis.__supabaseAdminClient
-  }
-
-  globalThis.__supabaseAdminClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-    global: {
-      headers: {
-        "x-client-info": "effizienz-praxis-admin",
-      },
-    },
-  })
-
-  return globalThis.__supabaseAdminClient
+export async function getServiceRoleClient() {
+  // Delegate to createAdminClient for consistency
+  return createAdminClient()
 }

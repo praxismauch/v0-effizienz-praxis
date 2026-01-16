@@ -3,8 +3,6 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from "react"
 import { useUser } from "./user-context"
 
-const HARDCODED_PRACTICE_ID = "1"
-
 export interface Practice {
   id: string
   name: string
@@ -72,72 +70,26 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
           const data = await response.json()
           if (data.practices && data.practices.length > 0) {
             setPractices(data.practices)
-            const practice1 = data.practices.find((p: Practice) => p.id === HARDCODED_PRACTICE_ID || p.id === "1")
-            if (practice1) {
-              setCurrentPracticeState(practice1)
+            const userPractice = data.practices.find((p: Practice) => p.id === currentUser.practiceId)
+            if (userPractice) {
+              setCurrentPracticeState(userPractice)
             } else {
               setCurrentPracticeState(data.practices[0])
             }
           } else {
-            const fallbackPractice: Practice = {
-              id: HARDCODED_PRACTICE_ID,
-              name: "Ihre Praxis",
-              type: "General Practice",
-              street: "",
-              city: "",
-              zipCode: "",
-              phone: "",
-              email: currentUser.email || "",
-              createdAt: new Date().toISOString().split("T")[0],
-              isActive: true,
-              adminCount: 1,
-              memberCount: 0,
-              lastActivity: new Date().toISOString(),
-              color: "",
-            }
-            setPractices([fallbackPractice])
-            setCurrentPracticeState(fallbackPractice)
+            console.warn("No practices found for user")
+            setPractices([])
+            setCurrentPracticeState(null)
           }
         } else {
-          const fallbackPractice: Practice = {
-            id: HARDCODED_PRACTICE_ID,
-            name: "Ihre Praxis",
-            type: "General Practice",
-            street: "",
-            city: "",
-            zipCode: "",
-            phone: "",
-            email: currentUser.email || "",
-            createdAt: new Date().toISOString().split("T")[0],
-            isActive: true,
-            adminCount: 1,
-            memberCount: 0,
-            lastActivity: new Date().toISOString(),
-            color: "",
-          }
-          setPractices([fallbackPractice])
-          setCurrentPracticeState(fallbackPractice)
+          console.error("Failed to fetch practices:", response.status)
+          setPractices([])
+          setCurrentPracticeState(null)
         }
       } catch (error) {
         console.error("Error fetching practices:", error)
-        const fallbackPractice: Practice = {
-          id: HARDCODED_PRACTICE_ID,
-          name: "Ihre Praxis",
-          type: "General Practice",
-          street: "",
-          city: "",
-          zipCode: "",
-          phone: "",
-          email: currentUser?.email || "",
-          createdAt: new Date().toISOString().split("T")[0],
-          isActive: true,
-          adminCount: 1,
-          memberCount: 0,
-          lastActivity: new Date().toISOString(),
-          color: "",
-        }
-        setPractices([fallbackPractice])
-        setCurrentPracticeState(fallbackPractice)
+        setPractices([])
+        setCurrentPracticeState(null)
       } finally {
         setIsLoading(false)
       }

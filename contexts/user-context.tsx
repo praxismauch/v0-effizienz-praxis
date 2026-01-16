@@ -5,11 +5,11 @@ import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { isSuperAdminRole, isPracticeAdminRole, normalizeRole } from "@/lib/auth-utils"
+import Logger from "@/lib/logger"
+import { encryptStorage, decryptStorage, isStorageExpired } from "@/lib/storage-utils"
 
-const IS_DEBUG = process.env.NEXT_PUBLIC_VERCEL_ENV !== "production"
-
-const DEV_USER_EMAIL = "mauch.daniel@googlemail.com"
-const IS_DEV_MODE = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
+const DEV_USER_EMAIL = process.env.NEXT_PUBLIC_DEV_USER_EMAIL
+const IS_DEV_MODE = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
 
 export interface User {
   id: string
@@ -109,23 +109,21 @@ export function UserProvider({
     return supabaseRef.current
   }, [])
 
-  const persistUserToStorage = useCallback((user: User | null) => {
+  const persistUserToStorage = useCallback(async (user: User | null) => {
     if (typeof window === "undefined") return
 
     if (user) {
       try {
-        const userToStore = JSON.stringify(user)
-        localStorage.setItem("effizienz_current_user", userToStore)
-        sessionStorage.setItem("effizienz_current_user", userToStore)
+        const encrypted = await encryptStorage(user, 3600) // 1 hour TTL
+        sessionStorage.setItem("effizienz_current_user", encrypted)
       } catch (error) {
-        console.error("Error persisting user:", error)
+        Logger.error("context", "Error persisting user", error)
       }
     } else {
       try {
-        localStorage.removeItem("effizienz_current_user")
         sessionStorage.removeItem("effizienz_current_user")
       } catch (error) {
-        console.error("Error clearing storage:", error)
+        Logger.error("context", "Error clearing storage", error)
       }
     }
   }, [])
@@ -138,21 +136,34 @@ export function UserProvider({
     if (!mounted) return
     if (currentUser || initialUser) return
 
-    try {
-      const stored = localStorage.getItem("effizienz_current_user") || sessionStorage.getItem("effizienz_current_user")
-      if (stored) {
-        const parsedUser = JSON.parse(stored) as User
-        if (IS_DEBUG) {
-          console.debug("[UserProvider] Restored user from storage after hydration")
+    const restoreUser = async () => {
+      try {
+        const stored = sessionStorage.getItem("effizienz_current_user")
+        if (stored) {
+          // Check expiry before decryption
+          if (isStorageExpired(stored)) {
+            Logger.debug("context", "Stored user expired, clearing")
+            sessionStorage.removeItem("effizienz_current_user")
+            return
+          }
+
+          const parsedUser = await decryptStorage(stored)
+          if (parsedUser) {
+            Logger.debug("context", "Restored user from encrypted storage after hydration")
+            setCurrentUser(parsedUser as User)
+            setLoading(false)
+          } else {
+            Logger.warn("context", "Failed to decrypt stored user")
+            sessionStorage.removeItem("effizienz_current_user")
+          }
         }
-        setCurrentUser(parsedUser)
-        setLoading(false)
-      }
-    } catch (e) {
-      if (IS_DEBUG) {
-        console.debug("[UserProvider] Error parsing stored user:", e)
+      } catch (e) {
+        Logger.warn("context", "Error parsing stored user", { error: e })
+        sessionStorage.removeItem("effizienz_current_user")
       }
     }
+
+    restoreUser()
   }, [mounted, currentUser, initialUser])
 
   useEffect(() => {
@@ -172,11 +183,14 @@ export function UserProvider({
       hasFetchedUser.current = true
 
       try {
-        // In dev mode, fetch dev user from API
         if (IS_DEV_MODE) {
-          if (IS_DEBUG) {
-            console.debug("[UserProvider] Dev mode - fetching dev user from API")
+          if (!DEV_USER_EMAIL) {
+            Logger.error("context", "Dev mode enabled but NEXT_PUBLIC_DEV_USER_EMAIL not set")
+            setLoading(false)
+            return
           }
+
+          Logger.debug("context", "Dev mode - fetching dev user from API")
 
           const response = await fetch("/api/auth/dev-user", {
             credentials: "include",
@@ -200,20 +214,17 @@ export function UserProvider({
                 firstName: data.user.first_name,
               }
               setCurrentUser(user)
-              persistUserToStorage(user)
+              await persistUserToStorage(user)
               setLoading(false)
               return
             }
           }
 
-          if (IS_DEBUG) {
-            console.debug("[UserProvider] Dev mode - dev user fetch failed")
-          }
+          Logger.debug("context", "Dev mode - dev user fetch failed")
           setLoading(false)
           return
         }
 
-        // Production mode - verify Supabase session
         const supabase = getSupabase()
         if (!supabase) {
           setLoading(false)
@@ -226,17 +237,14 @@ export function UserProvider({
         } = await supabase.auth.getUser()
 
         if (authError || !authUser) {
-          if (IS_DEBUG) {
-            console.debug("[UserProvider] No valid Supabase session")
-          }
+          Logger.debug("context", "No valid Supabase session")
           setCurrentUser(null)
-          persistUserToStorage(null)
+          await persistUserToStorage(null)
 
           setLoading(false)
           return
         }
 
-        // Fetch fresh user profile from database
         const { data: profile, error: profileError } = await supabase
           .from("users")
           .select(
@@ -246,9 +254,7 @@ export function UserProvider({
           .single()
 
         if (profileError || !profile) {
-          if (IS_DEBUG) {
-            console.debug("[UserProvider] No profile found for user:", authUser.id)
-          }
+          Logger.warn("context", "No profile found for user")
           setLoading(false)
           return
         }
@@ -268,9 +274,9 @@ export function UserProvider({
         }
 
         setCurrentUser(user)
-        persistUserToStorage(user)
+        await persistUserToStorage(user)
       } catch (error) {
-        console.error("Error fetching user:", error)
+        Logger.error("context", "Error fetching user", error)
       } finally {
         setLoading(false)
       }
@@ -282,7 +288,7 @@ export function UserProvider({
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!mounted) return
-    if (IS_DEV_MODE) return // Skip auth listener in dev mode
+    if (IS_DEV_MODE) return
 
     const supabase = getSupabase()
     if (!supabase) return
@@ -290,17 +296,15 @@ export function UserProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (IS_DEBUG) {
-        console.debug("[UserProvider] Auth state changed:", event)
-      }
+      Logger.debug("context", "Auth state changed", { event })
 
       if (event === "SIGNED_OUT") {
-        console.log("[UserProvider] User signed out, clearing session")
+        Logger.info("context", "User signed out, clearing session")
         setCurrentUser(null)
-        persistUserToStorage(null)
+        await persistUserToStorage(null)
         hasFetchedUser.current = false
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        console.log("[UserProvider] User signed in or token refreshed, fetching fresh profile")
+        Logger.info("context", "User signed in or token refreshed")
         if (session?.user) {
           try {
             const { data: profile } = await supabase
@@ -326,10 +330,10 @@ export function UserProvider({
                 firstName: profile.first_name,
               }
               setCurrentUser(user)
-              persistUserToStorage(user)
+              await persistUserToStorage(user)
             }
           } catch (error) {
-            console.error("[UserProvider] Error fetching user profile after sign in:", error)
+            Logger.error("context", "Error fetching user profile after sign in", error)
           }
         }
         hasFetchedUser.current = false
@@ -374,7 +378,7 @@ export function UserProvider({
           }
         }
       } catch (error) {
-        console.error("Error fetching super admins:", error)
+        Logger.error("context", "Error fetching super admins", error)
       }
     }
 
@@ -399,12 +403,12 @@ export function UserProvider({
         await supabase.auth.signOut()
       }
       setCurrentUser(null)
-      persistUserToStorage(null)
+      await persistUserToStorage(null)
       hasFetchedUser.current = false
       setSessionVerified(false)
       router.push("/auth/login")
     } catch (error) {
-      console.error("Error signing out:", error)
+      Logger.error("context", "Error signing out", error)
     } finally {
       setIsLoggingOut(false)
     }
@@ -444,7 +448,9 @@ export function UserProvider({
       currentUser,
       setCurrentUser: (user: User) => {
         setCurrentUser(user)
-        persistUserToStorage(user)
+        persistUserToStorage(user).catch((error) => {
+          Logger.error("context", "Error persisting user in setCurrentUser", error)
+        })
       },
       isAdmin,
       isSuperAdmin,

@@ -1,8 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
-import { refreshTokenLock } from "./refreshTokenLock"
-
-const DEV_USER_EMAIL = "mauch.daniel@googlemail.com"
+import { waitForLock } from "./refreshTokenLock"
+import Logger from "@/lib/logger"
 
 const publicRoutesSet = new Set([
   "/",
@@ -128,16 +127,52 @@ async function retryGetUser(
   return { user: null, error: lastError }
 }
 
+function isTokenExpired(user: any): boolean {
+  try {
+    if (!user?.aud || !user?.exp) {
+      return true
+    }
+
+    const now = Math.floor(Date.now() / 1000)
+    return user.exp < now
+  } catch {
+    return true
+  }
+}
+
+function generateSessionFingerprint(request: NextRequest): string {
+  const userAgent = request.headers.get("user-agent") || ""
+  const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || ""
+
+  // Simple hash function (in production, use crypto.subtle.digest)
+  let hash = 0
+  const str = `${userAgent}${ip}`
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash
+  }
+  return hash.toString(36)
+}
+
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
   const requestId = Math.random().toString(36).substring(7)
 
-  const isDevMode = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
+  Logger.setRequestId(requestId)
+
+  const isDevMode = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
+
   if (isDevMode) {
+    const devUserEmail = process.env.NEXT_PUBLIC_DEV_USER_EMAIL
+
+    if (!devUserEmail) {
+      Logger.error("auth", "Dev mode enabled but NEXT_PUBLIC_DEV_USER_EMAIL not set")
+      return NextResponse.json({ error: "Dev mode configuration error" }, { status: 500 })
+    }
+
     const response = NextResponse.next({ request })
-    // Set dev user headers so downstream can identify
     response.headers.set("x-dev-mode", "true")
-    response.headers.set("x-dev-user-email", DEV_USER_EMAIL)
     return response
   }
 
@@ -148,14 +183,18 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (!cachedSupabaseUrl) {
-    cachedSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sytvmjmvwkqdzcfvjqkr.supabase.co"
-    cachedSupabaseAnonKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5dHZtam12d2txZHpjZnZqcWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MjkzNjUsImV4cCI6MjA3NDMwNTM2NX0.Y9r0hRzlsQPhGAGPjhw7hS1IttT6wWu7WslhxEZzVtg"
+    cachedSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    cachedSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   }
 
   if (!cachedSupabaseUrl || !cachedSupabaseAnonKey) {
-    return NextResponse.next()
+    Logger.error("auth", "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY")
+
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Service configuration error" }, { status: 500 })
+    }
+
+    return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
   let supabaseResponse = NextResponse.next({ request })
@@ -163,15 +202,10 @@ export async function updateSession(request: NextRequest) {
   const refreshToken = request.cookies.get("sb-refresh-token")?.value
   const lockKey = refreshToken || `request-${requestId}`
 
-  const isLocked = refreshTokenLock.has(lockKey)
-  if (isLocked) {
-    const startTime = Date.now()
-    while (refreshTokenLock.has(lockKey) && Date.now() - startTime < 500) {
-      await new Promise((resolve) => setTimeout(resolve, 50))
-    }
+  const lockAcquired = await waitForLock(lockKey, 2000)
+  if (!lockAcquired) {
+    Logger.warn("auth", "Lock timeout for key", { lockKey: lockKey.substring(0, 10) })
   }
-
-  refreshTokenLock.set(lockKey, Date.now())
 
   try {
     const supabase = createServerClient(cachedSupabaseUrl, cachedSupabaseAnonKey, {
@@ -190,7 +224,7 @@ export async function updateSession(request: NextRequest) {
             supabaseResponse.cookies.set(name, value, {
               ...options,
               httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
+              secure: true,
               sameSite: "lax",
               path: "/",
             })
@@ -206,12 +240,23 @@ export async function updateSession(request: NextRequest) {
 
     const { user, error } = await retryGetUser(supabase)
 
+    if (user && isTokenExpired(user)) {
+      Logger.warn("auth", "Token expired", { userId: user.id })
+      await localSignOut(supabase, supabaseResponse)
+
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Session expired" }, { status: 401 })
+      } else {
+        const loginUrl = new URL("/auth/login", request.url)
+        loginUrl.searchParams.set("redirect", pathname)
+        return NextResponse.redirect(loginUrl)
+      }
+    }
+
     if (isPublicRoute(pathname)) {
-      // Return response with any refreshed cookies, but don't block access
       return supabaseResponse
     }
 
-    // Protected routes: require valid user
     if (!user || error) {
       if (error && error.message?.toLowerCase().includes("refresh token")) {
         await localSignOut(supabase, supabaseResponse)
@@ -226,11 +271,14 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    supabaseResponse.headers.set("x-user-id", user.id)
-    supabaseResponse.headers.set("x-user-email", user.email || "")
+    const fingerprint = generateSessionFingerprint(request)
+    supabaseResponse.headers.set("x-session-fingerprint", fingerprint)
+    // Removed: x-user-id and x-user-email headers
 
     return supabaseResponse
   } catch (error) {
+    Logger.error("auth", "Authentication error", error)
+
     if (isPublicRoute(pathname)) {
       return supabaseResponse
     }
@@ -242,8 +290,6 @@ export async function updateSession(request: NextRequest) {
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
     }
-  } finally {
-    refreshTokenLock.delete(lockKey)
   }
 }
 

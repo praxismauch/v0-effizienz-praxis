@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr"
+import { createAdminClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
@@ -27,7 +28,7 @@ export async function POST() {
             response.cookies.set(name, value, {
               ...options,
               httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
+              secure: true,
               sameSite: "lax",
               path: "/",
             })
@@ -36,8 +37,22 @@ export async function POST() {
       },
     })
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     // Sign out from Supabase (this will clear the session)
     await supabase.auth.signOut({ scope: "global" })
+
+    if (user?.id) {
+      try {
+        const adminClient = await createAdminClient()
+        await adminClient.auth.admin.signOut(user.id)
+      } catch (adminError) {
+        console.error("[auth/logout] Failed to revoke tokens:", adminError)
+        // Continue with logout even if revocation fails
+      }
+    }
 
     const allCookies = cookieStore.getAll()
     allCookies.forEach((cookie) => {
@@ -48,7 +63,7 @@ export async function POST() {
           maxAge: 0,
           path: "/",
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: true,
           sameSite: "lax",
         })
       }
@@ -69,7 +84,7 @@ export async function POST() {
         maxAge: 0,
         path: "/",
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "lax",
       })
     })

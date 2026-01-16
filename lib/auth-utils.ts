@@ -220,6 +220,18 @@ export async function hasAccessToPractice(practiceId: string): Promise<boolean> 
   return user.practiceId === practiceId
 }
 
+// Verify user has access to practice and return user
+// Throws error if no access
+export async function requirePracticeAccess(practiceId: string): Promise<AuthUser> {
+  const user = await requireAuth()
+
+  if (!isSuperAdminRole(user.role) && user.practiceId !== practiceId) {
+    throw new Error("Keine Berechtigung für diese Praxis")
+  }
+
+  return user
+}
+
 // Legacy export for backwards compatibility
 export function isPowerUserRole(role: string | null | undefined): boolean {
   return isManagerRole(role)

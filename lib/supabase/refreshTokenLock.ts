@@ -1,7 +1,12 @@
-// Stores lock keys (refresh tokens or request IDs) with their acquisition timestamp
+/**
+ * Stores pending refresh operations
+ * Key: refresh token or request ID
+ * Value: Promise that resolves when refresh is complete
+ */
+const pendingRefreshes = new Map<string, Promise<void>>()
 
 /**
- * Shared lock Map to prevent concurrent refresh token operations
+ * Stores lock keys with their acquisition timestamp
  * Key: refresh token or request ID
  * Value: timestamp when lock was acquired
  */
@@ -20,9 +25,37 @@ if (typeof setInterval !== "undefined") {
       if (now - timestamp > staleThreshold) {
         console.log("[refreshTokenLock] Cleaning up stale lock:", key.substring(0, 10))
         refreshTokenLock.delete(key)
+        pendingRefreshes.delete(key) // Also clean up pending promises
       }
     }
   }, 5000) // Check every 5 seconds
+}
+
+/**
+ * Acquire a lock for a given key with proper queue handling
+ * If lock is already held, returns the existing promise to wait on
+ */
+export async function acquireLockWithQueue(key: string, operation: () => Promise<void>): Promise<void> {
+  // If there's already a pending refresh, wait for it
+  const existingPromise = pendingRefreshes.get(key)
+  if (existingPromise) {
+    await existingPromise
+    return
+  }
+
+  // Create new promise for this refresh operation
+  const refreshPromise = (async () => {
+    try {
+      refreshTokenLock.set(key, Date.now())
+      await operation()
+    } finally {
+      refreshTokenLock.delete(key)
+      pendingRefreshes.delete(key)
+    }
+  })()
+
+  pendingRefreshes.set(key, refreshPromise)
+  await refreshPromise
 }
 
 /**
@@ -43,6 +76,7 @@ export function acquireLock(key: string): boolean {
  */
 export function releaseLock(key: string): void {
   refreshTokenLock.delete(key)
+  pendingRefreshes.delete(key)
 }
 
 /**
@@ -57,10 +91,15 @@ export function isLocked(key: string): boolean {
  * Returns true if lock was released, false if timeout was reached
  */
 export async function waitForLock(key: string, timeoutMs = 5000): Promise<boolean> {
-  const startTime = Date.now()
+  const existingPromise = pendingRefreshes.get(key)
 
-  while (refreshTokenLock.has(key) && Date.now() - startTime < timeoutMs) {
-    await new Promise((resolve) => setTimeout(resolve, 100))
+  if (existingPromise) {
+    // Wait for existing operation with timeout
+    const timeoutPromise = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeoutMs))
+
+    const resultPromise = existingPromise.then(() => true)
+
+    return Promise.race([resultPromise, timeoutPromise])
   }
 
   return !refreshTokenLock.has(key)

@@ -133,64 +133,82 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
         }),
       })
 
-      if (response.ok) {
-        const newCandidate = await response.json()
-        setCandidateId(newCandidate.id)
-
-        if (selectedJobPostingId !== "none") {
-          await fetch("/api/hiring/applications", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              candidate_id: newCandidate.id,
-              job_posting_id: selectedJobPostingId,
-              practice_id: currentPractice?.id,
-              status: "applied",
-              stage: firstStage,
-              applied_at: new Date().toISOString(),
-            }),
-          })
-        }
-
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unbekannter Fehler" }))
         toast({
-          title: "Kandidat erstellt",
-          description: "Der neue Kandidat wurde erfolgreich hinzugefügt.",
+          title: "Fehler beim Erstellen",
+          description: errorData.error || "Kandidat konnte nicht erstellt werden.",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      const newCandidate = await response.json()
+      setCandidateId(newCandidate.id)
+
+      if (selectedJobPostingId !== "none") {
+        const appResponse = await fetch("/api/hiring/applications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            candidate_id: newCandidate.id,
+            job_posting_id: selectedJobPostingId,
+            practice_id: currentPractice?.id,
+            status: "applied",
+            stage: firstStage,
+            applied_at: new Date().toISOString(),
+          }),
         })
 
-        onSuccess()
-        if (onNavigateToTab) {
-          onNavigateToTab()
+        if (!appResponse.ok) {
+          console.error("Error creating application for candidate")
         }
-        onOpenChange(false)
-        setFormData({
-          first_name: "",
-          last_name: "",
-          email: "",
-          phone: "",
-          mobile: "",
-          address: "",
-          city: "",
-          postal_code: "",
-          date_of_birth: "",
-          first_contact_date: "",
-          current_position: "",
-          current_company: "",
-          years_of_experience: "",
-          education: "",
-          portfolio_url: "",
-          salary_expectation: "",
-          weekly_hours: "",
-          source: "",
-          notes: "",
-          status: "new",
-        })
-        setDocuments({})
-        setCandidateId(null)
-        setSelectedJobPostingId("none")
-        setImageUrl(null)
       }
+
+      toast({
+        title: "Kandidat erstellt",
+        description: "Der neue Kandidat wurde erfolgreich hinzugefügt.",
+      })
+
+      onSuccess()
+      if (onNavigateToTab) {
+        onNavigateToTab()
+      }
+      onOpenChange(false)
+      setFormData({
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+        mobile: "",
+        address: "",
+        city: "",
+        postal_code: "",
+        date_of_birth: "",
+        first_contact_date: "",
+        current_position: "",
+        current_company: "",
+        years_of_experience: "",
+        education: "",
+        portfolio_url: "",
+        salary_expectation: "",
+        weekly_hours: "",
+        source: "",
+        notes: "",
+        status: "new",
+      })
+      setDocuments({})
+      setCandidateId(null)
+      setSelectedJobPostingId("none")
+      setImageUrl(null)
     } catch (error) {
       console.error("Error creating candidate:", error)
+      toast({
+        title: "Netzwerkfehler",
+        description: "Verbindung zum Server fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }

@@ -1,18 +1,21 @@
-import { createAdminClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { generateText } from "ai"
 import { checkAIEnabled } from "@/lib/check-ai-enabled"
 import { getAIContextFromDonatedData } from "@/lib/anonymize-practice-data"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { getTicketStatuses, getTicketPriorities } from "@/lib/tickets/config"
 
+const isV0Preview =
+  process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
+
 export async function POST(request: Request) {
   try {
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await createServerClient()
     } catch (clientError) {
       if (isRateLimitError(clientError)) {
-        console.warn("[v0] AI Analysis - Rate limited creating admin client")
+        console.warn("[v0] AI Analysis - Rate limited creating server client")
         return new Response(
           JSON.stringify({
             error: "Service vorübergehend nicht verfügbar. Bitte versuchen Sie es in einigen Sekunden erneut.",
@@ -26,12 +29,20 @@ export async function POST(request: Request) {
       throw clientError
     }
 
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     const body = await request.json()
 
-    const userId = body.userId
+    let userId = authUser?.id
+    if (!userId && isV0Preview && body.userId) {
+      userId = body.userId
+    }
 
     if (!userId) {
-      console.error("[v0] AI Analysis - No user ID provided")
+      console.error("[v0] AI Analysis - No authenticated user")
       return new Response(
         JSON.stringify({
           error: "Nicht authentifiziert. Bitte melden Sie sich an.",
@@ -45,7 +56,11 @@ export async function POST(request: Request) {
 
     let userData, userError
     try {
-      const result = await supabase.from("users").select("id, email, role, is_active").eq("id", userId).maybeSingle()
+      const result = await supabase
+        .from("users")
+        .select("id, email, role, is_active, practice_id, default_practice_id")
+        .eq("id", userId)
+        .maybeSingle()
 
       userData = result.data
       userError = result.error
@@ -107,12 +122,12 @@ export async function POST(request: Request) {
       )
     }
 
-    const isSuperAdmin = userData.role === "superadmin"
-    const userPracticeId = userData.practice_id || userData.default_practice_id
+    const isSuperAdmin = userData?.role === "superadmin"
+    const userPracticeId = userData?.practice_id || userData?.default_practice_id
 
     if (!isSuperAdmin && userPracticeId !== practiceId) {
       console.error("[v0] AI Analysis - SECURITY VIOLATION: User attempting to access different practice", {
-        userId: userData.id,
+        userId: userData?.id,
         userPracticeId,
         requestedPracticeId: practiceId,
       })

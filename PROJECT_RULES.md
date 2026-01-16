@@ -8,10 +8,12 @@
 ## Table of Contents
 1. [Core Principles](#core-principles)
 2. [Database Schema Reference](#database-schema-reference)
-3. [API Patterns](#api-patterns)
-4. [Component Patterns](#component-patterns)
-5. [Common Issues & Fixes](#common-issues--fixes)
-6. [Diagnostic Info](#diagnostic-info)
+3. [RLS Policies & Security](#rls-policies--security)
+4. [API Patterns](#api-patterns)
+5. [Component Patterns](#component-patterns)
+6. [Common Issues & Fixes](#common-issues--fixes)
+7. [Critical Bug Tracking](#critical-bug-tracking)
+8. [Diagnostic Info](#diagnostic-info)
 
 ---
 
@@ -34,6 +36,12 @@
 #### Async/Await
 - Use async/await exclusively - no mixing callbacks and `.then()`
 - Handle all errors explicitly - no unhandled promise rejections
+
+#### Authentication Pattern (CRITICAL)
+- **NEVER** use `createAdminClient()` for user authentication
+- **ALWAYS** use `createServerClient()` from `@supabase/ssr` for routes that need user context
+- `createAdminClient()` is ONLY for backend operations that bypass RLS (e.g., cron jobs, admin tasks)
+- Flow: Browser → calls API route → Route uses `createServerClient()` with cookies → `supabase.auth.getUser()`
 
 ---
 
@@ -79,6 +87,146 @@ These tables have DUPLICATE columns - **ALWAYS use `practice_id`**:
 | team_assignments | practiceid | practice_id |
 | todos | practiceid | practice_id |
 | goals | practiceid | practice_id |
+| org_chart_positions | practiceid | practice_id |
+
+---
+
+### org_chart_positions (Organigramm)
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| id | text | NO | Primary key |
+| practice_id | text | NO | Required for RLS |
+| practiceid | text | YES | **DEPRECATED - DO NOT USE** |
+| position_title | text | NO | Required |
+| parent_id | text | YES | References self |
+| level | integer | YES | Hierarchy level |
+| team_member_id | text | YES | Links to team member |
+| description | text | YES | |
+| is_active | boolean | YES | Default true |
+| created_at | timestamp | YES | |
+| updated_at | timestamp | YES | |
+
+**RLS Status:** Enabled with SELECT/INSERT/UPDATE/DELETE policies
+
+---
+
+### goals (Ziele)
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| id | text | NO | Primary key |
+| practice_id | text | NO | Required for RLS |
+| practiceid | text | YES | **DEPRECATED - DO NOT USE** |
+| title | text | NO | Goal title |
+| description | text | YES | |
+| goal_type | text | YES | NOT 'category'! |
+| parent_goal_id | text | YES | NOT 'parent_id'! |
+| target_value | numeric | YES | **Frontend often missing!** |
+| current_value | numeric | YES | |
+| unit | text | YES | **Frontend often missing!** |
+| progress_percentage | integer | YES | NOT 'progress'! |
+| start_date | date | YES | |
+| end_date | date | YES | NOT 'due_date'! |
+| status | text | YES | CHECK: 'not-started', 'in-progress', 'completed', 'cancelled' |
+| priority | text | YES | CHECK: 'low', 'medium', 'high' |
+| assigned_to | text | YES | |
+| created_by | text | YES | |
+| created_at | timestamp | YES | |
+| updated_at | timestamp | YES | |
+| deleted_at | timestamp | YES | Soft delete |
+
+**RLS Status:** Enabled with SELECT/INSERT/UPDATE/DELETE policies
+
+**Data Quality Issue (from audit):**
+- 80% of goals have NULL `target_value`
+- 100% of goals have NULL `unit`
+- Frontend form not sending these fields properly
+
+---
+
+### calendar_events
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| id | text | NO | Primary key |
+| practice_id | text | NO | Required for RLS |
+| title | text | NO | |
+| description | text | YES | |
+| start_date | date | NO | Stored as DATE type (not timestamp) |
+| end_date | date | YES | Stored as DATE type |
+| start_time | time | YES | |
+| end_time | time | YES | |
+| type | text | YES | CHECK: 'meeting', 'training', 'maintenance', 'holiday', 'announcement', 'other' |
+| priority | text | YES | CHECK: 'low', 'medium', 'high' |
+| recurrence_type | text | YES | CHECK: 'none', 'daily', 'weekly', 'monthly', 'yearly' |
+| is_all_day | boolean | YES | |
+| created_by | text | YES | |
+| created_at | timestamp | YES | |
+| updated_at | timestamp | YES | |
+
+**RLS Status:** Enabled with SELECT/INSERT/UPDATE/DELETE policies
+
+**Date Format (from audit):**
+- All dates stored as DATE type (not timestamp)
+- Format: YYYY-MM-DD (no time component)
+- 28 events exist, all consistent format
+- No NULL practice_id values
+
+---
+
+### practices
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| id | text | NO | Primary key (values: 0, 1, 3, 4, 5) |
+| name | text | NO | |
+| address | text | YES | |
+| phone | text | YES | |
+| email | text | YES | |
+| website | text | YES | |
+| created_at | timestamp | YES | |
+| updated_at | timestamp | YES | |
+
+**Current Practices:** 5 practices exist (IDs: 0, 1, 3, 4, 5)
+
+---
+
+### users
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| id | text | NO | Primary key (matches auth.uid()) |
+| email | text | NO | |
+| name | text | YES | |
+| practice_id | text | YES | **Used by RLS function** |
+| current_practice_id | text | YES | **Alternative column - may cause issues** |
+| role | text | YES | |
+| created_at | timestamp | YES | |
+| updated_at | timestamp | YES | |
+
+**User Statistics (from audit):**
+| Metric | Value |
+|--------|-------|
+| auth.users count | 7 |
+| users table count | 11 |
+| practice_members count | 1 |
+
+**Issue:** 4 orphaned records in users table (not in auth.users)
+
+---
+
+### practice_members
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| id | text | NO | Primary key |
+| user_id | text | NO | References users.id |
+| practice_id | text | NO | References practices.id |
+| role | text | YES | |
+| created_at | timestamp | YES | |
+
+**Critical Finding:** Only 1 record exists! Most users not linked to practices.
 
 ---
 
@@ -112,21 +260,6 @@ These tables have DUPLICATE columns - **ALWAYS use `practice_id`**:
 
 ---
 
-### goals (Ziele)
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | text | Primary key |
-| practice_id | text | NOT NULL |
-| goal_type | text | NOT 'category'! |
-| parent_goal_id | text | NOT 'parent_id'! |
-| progress_percentage | integer | NOT 'progress'! |
-| end_date | date | NOT 'due_date'! |
-| status | text | CHECK: 'not-started', 'in-progress', 'completed', 'cancelled' |
-| priority | text | CHECK: 'low', 'medium', 'high' |
-
----
-
 ### workflows
 
 | Column | Type | Notes |
@@ -152,40 +285,6 @@ These tables have DUPLICATE columns - **ALWAYS use `practice_id`**:
 | is_active | boolean | Use this for filtering! |
 
 **Filtering:** Use `.eq("is_active", true)` NOT `.eq("status", "active")`
-
----
-
-### time_stamps
-
-| Column | Type | Notes |
-|--------|------|-------|
-| user_id | text | NOT NULL, NOT 'team_member_id' |
-| practice_id | text | NOT NULL |
-| stamp_type | text | CHECK: 'start', 'stop', 'pause_start', 'pause_end' |
-| location_type | text | CHECK: 'office', 'homeoffice', 'mobile' |
-| timestamp | timestamp | NOT 'created_at' |
-| notes | text | NOT 'comment' |
-
----
-
-### time_blocks
-
-| Column | Type | Notes |
-|--------|------|-------|
-| user_id | text | NOT NULL |
-| practice_id | text | NOT NULL |
-| location_type | text | CHECK: 'office', 'homeoffice', 'mobile' |
-| status | text | CHECK: 'active', 'completed', 'corrected', 'deleted' |
-
----
-
-### calendar_events
-
-| Column | Type | Notes |
-|--------|------|-------|
-| type | text | CHECK: 'meeting', 'training', 'maintenance', 'holiday', 'announcement', 'other' |
-| priority | text | CHECK: 'low', 'medium', 'high' |
-| recurrence_type | text | CHECK: 'none', 'daily', 'weekly', 'monthly', 'yearly' |
 
 ---
 
@@ -237,6 +336,78 @@ These tables have DUPLICATE columns - **ALWAYS use `practice_id`**:
 
 ---
 
+## RLS Policies & Security
+
+### RLS Status Overview
+
+| Table | RLS Enabled | Policy Count | Status |
+|-------|-------------|--------------|--------|
+| org_chart_positions | YES | 4 (CRUD) | OK |
+| goals | YES | 4 (CRUD) | OK |
+| calendar_events | YES | 4 (CRUD) | OK |
+| practices | YES | 2 | OK |
+
+### RLS Policy Pattern
+
+All main tables use this pattern:
+```sql
+(auth.role() = 'authenticated') AND (practice_id = get_user_practice_id())
+```
+
+### CRITICAL: `get_user_practice_id()` Function
+
+```sql
+DECLARE
+  user_practice_id TEXT;
+BEGIN
+  -- First check if user is authenticated
+  IF auth.uid() IS NULL THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Get practice_id from users table
+  SELECT practice_id INTO user_practice_id
+  FROM users
+  WHERE id = auth.uid()::text;
+  
+  -- If not found in users, check practice_members
+  IF user_practice_id IS NULL THEN
+    SELECT practice_id INTO user_practice_id
+    FROM practice_members
+    WHERE user_id = auth.uid()::text
+    LIMIT 1;
+  END IF;
+  
+  RETURN user_practice_id;
+END;
+```
+
+### RLS Function Issue
+
+**POTENTIAL BUG:** The function queries `users.practice_id` but some code references `users.current_practice_id`. If the column name is wrong, the function returns NULL for all users, blocking ALL access via RLS.
+
+**Verification needed:** Check if `users` table has `practice_id` or `current_practice_id` column.
+
+### User-Practice Linkage Statistics
+
+| Metric | Value | Issue |
+|--------|-------|-------|
+| Total auth.users | 7 | - |
+| Total users table | 11 | 4 orphaned records |
+| Total practice_members | 1 | **Only 1 user linked!** |
+
+**Impact:** If users don't have `practice_id` set in `users` table AND aren't in `practice_members`, RLS blocks ALL their access to practice-scoped tables.
+
+### Orphan Records Check (from audit)
+
+| Table | Orphan Count | Status |
+|-------|--------------|--------|
+| org_chart_positions | 0 | OK |
+| goals | 0 | OK |
+| calendar_events | 0 | OK |
+
+---
+
 ## API Patterns
 
 ### createAdminClient() is ASYNC
@@ -249,6 +420,37 @@ const supabase = createAdminClient()
 
 // CORRECT
 const supabase = await createAdminClient()
+```
+
+### Authentication in API Routes
+
+```typescript
+// CORRECT - For user-authenticated routes
+import { createServerClient } from "@/lib/supabase/server"
+
+export async function POST(request: Request) {
+  const supabase = await createServerClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  // ... rest of route
+}
+
+// CORRECT - For admin/backend operations only
+import { createAdminClient } from "@/lib/supabase/server"
+
+export async function POST(request: Request) {
+  // First authenticate user
+  const serverClient = await createServerClient()
+  const { data: { user } } = await serverClient.auth.getUser()
+  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  
+  // Then use admin client for operations that bypass RLS
+  const adminClient = await createAdminClient()
+  // ... admin operations
+}
 ```
 
 ### Supabase Client Usage
@@ -321,6 +523,18 @@ export default function PageClient() {
 }
 ```
 
+### Next.js Router Import
+
+**CRITICAL:** Always use App Router imports, not Pages Router:
+
+```typescript
+// WRONG - Pages Router (causes hydration errors)
+import { useRouter } from "next/router"
+
+// CORRECT - App Router
+import { useRouter } from "next/navigation"
+```
+
 ### Optimistic Updates Pattern (For Instant UI)
 
 **Problem:** Users wait for server response before seeing UI changes (slow/laggy feel)
@@ -366,43 +580,6 @@ const handleSave = async (data) => {
 }
 ```
 
-**When to Use:**
-- High-frequency actions: todos check/uncheck, drag & drop
-- User-facing CRUD: create, update, delete with immediate feedback
-- Reordering operations: visual changes need instant response
-
-**When NOT to Use:**
-- Critical operations requiring server validation first
-- Actions with complex side effects
-- Operations where rollback would be confusing to user
-
-**Pages Implemented:**
-- ✅ Responsibilities: Optimistic save and delete
-- ⏳ Todos: Pending implementation
-- ⏳ Goals: Pending implementation
-- ⏳ Hiring Pipeline: Pending implementation
-
-### Responsibilities-Specific Patterns
-
-**Database → API → Frontend Mapping:**
-```
-Database: group_name (text)
-    ↓
-API: Maps to → category: resp.group_name
-    ↓
-Frontend: Uses → responsibility.category
-```
-
-**Why this mapping exists:**
-- Database column is `group_name` (historical naming)
-- Frontend/UI always referred to it as "category"
-- API bridges the gap by transforming the response
-
-**Component Checklist:**
-- ✅ Use `responsibility.category || responsibility.group_name` (for safety)
-- ✅ API routes map `group_name` → `category` in responses
-- ✅ Send `group_name: data.category` in POST/PUT bodies
-
 ---
 
 ## Common Issues & Fixes
@@ -415,6 +592,11 @@ Frontend: Uses → responsibility.category
 ### "TypeError: i.from is not a function"
 - Missing `await` on `createAdminClient()`
 
+### 401 Unauthorized on AI Routes
+- Route is using `createAdminClient()` instead of `createServerClient()`
+- Admin client cannot read session cookies
+- **Fixed routes:** `/api/ai-analysis/chat`, `/api/ai-analysis/practice`, `/api/hiring/ai-analyze-candidates`, `/api/ai/analyze-kv-abrechnung`
+
 ### 401 Unauthorized during initial load
 - Add fallback to adminClient when auth fails
 - Session may not be established on first API call
@@ -426,6 +608,61 @@ Frontend: Uses → responsibility.category
 ### Data not appearing after save
 - Check if API response maps database columns to frontend expected names
 - Example: `group_name` → `category`
+
+### Hydration Errors / Page Crashes
+- Check for wrong router import: `next/router` vs `next/navigation`
+- **Fixed components:** `competitor-analysis-management.tsx`
+
+### RLS Blocking Access
+- User may not have `practice_id` set in `users` table
+- User may not be in `practice_members` table
+- Check `get_user_practice_id()` function returns correct value
+
+---
+
+## Critical Bug Tracking
+
+### Batch 1: Authentication & Infrastructure (COMPLETED)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 1.1 | Auth Pattern - AI Practice Analysis | `app/api/ai-analysis/practice/route.ts` | FIXED |
+| 1.2 | Auth Pattern - Hiring AI Analyze | `app/api/hiring/ai-analyze-candidates/route.ts` | FIXED |
+| 1.3 | Auth Pattern - KV Abrechnung | `app/api/ai/analyze-kv-abrechnung/route.ts` | FIXED |
+| 1.4 | Wrong Router Import | `components/competitor-analysis/competitor-analysis-management.tsx` | FIXED |
+
+### Batch 2: Context Race Conditions (SKIPPED - No issues found)
+
+| # | Issue | Status | Notes |
+|---|-------|--------|-------|
+| 2.1 | Organigramm Race Condition | NO ISSUE | Already has proper guards |
+| 2.2 | Goals Race Condition | NO ISSUE | Uses fetchedRef pattern |
+| 2.3 | Calendar Race Condition | NO ISSUE | Combined loading state |
+
+### Batch 3: Hiring Pipeline (PENDING)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 3.1 | Pipeline Drag-Drop | `components/hiring/hiring-pipeline.tsx` | PENDING |
+| 3.2 | Neuer Kandidat UI Update | `components/hiring/create-candidate-dialog.tsx` | PENDING |
+| 3.3 | Neue Stelle Feedback | `components/hiring/create-job-posting-dialog.tsx` | PENDING |
+
+### Batch 4: Data Persistence (PENDING)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 4.1 | Calendar Day View | `app/calendar/page-client.tsx` | PENDING |
+| 4.2 | Goal Parameters | `components/goals/create-goal-dialog.tsx` | PENDING |
+| 4.3 | Workflow Edit | `components/workflows/edit-workflow-dialog.tsx` | PENDING |
+
+### Data Quality Issues (from audit)
+
+| Table | Issue | Impact |
+|-------|-------|--------|
+| goals | 80% missing target_value | Goals incomplete |
+| goals | 100% missing unit | Goals incomplete |
+| practice_members | Only 1 record | RLS may block users |
+| users | 4 orphaned records | Data inconsistency |
 
 ---
 
@@ -449,6 +686,23 @@ SELECT COUNT(*) FROM shift_types WHERE practice_id = 'YOUR_PRACTICE_ID';
 - Practice 1: "Praxis Dr. Mauch - ID 1" (main test practice)
 - Practice 0, 5: May have missing data
 
+### RLS Diagnostic Script
+
+```sql
+-- Check if user has practice access
+SELECT 
+  u.id,
+  u.email,
+  u.practice_id,
+  pm.practice_id as member_practice
+FROM users u
+LEFT JOIN practice_members pm ON pm.user_id = u.id
+WHERE u.id = 'USER_ID_HERE';
+
+-- Test get_user_practice_id() function
+SELECT get_user_practice_id();
+```
+
 ---
 
 ## Notes
@@ -456,3 +710,4 @@ SELECT COUNT(*) FROM shift_types WHERE practice_id = 'YOUR_PRACTICE_ID';
 - All German status/type values in CHECK constraints must be used exactly as specified
 - Always validate practice_id before database operations
 - Use soft deletes with `deleted_at` timestamp, never hard delete
+- When using `createAdminClient()`, always authenticate user first with `createServerClient()`

@@ -1,8 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateObject } from "ai"
 import { z } from "zod"
-import { createAdminClient } from "@/lib/supabase/server"
+import { createServerClient, createAdminClient } from "@/lib/supabase/server"
 import { applyRateLimit, RATE_LIMITS } from "@/lib/api/rate-limit"
+
+const isV0Preview =
+  process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting for AI operations
@@ -12,7 +15,32 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const authSupabase = await createServerClient()
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await authSupabase.auth.getUser()
+
+    if (!isV0Preview && (authError || !authUser)) {
+      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 })
+    }
+
     const { fileUrls, practiceId, abrechnungId } = await request.json()
+
+    if (practiceId && authUser) {
+      const { data: userData } = await authSupabase
+        .from("users")
+        .select("role, practice_id, default_practice_id")
+        .eq("id", authUser.id)
+        .maybeSingle()
+
+      const isSuperAdmin = userData?.role === "superadmin"
+      const userPracticeId = userData?.practice_id || userData?.default_practice_id
+
+      if (!isSuperAdmin && userPracticeId !== practiceId) {
+        return NextResponse.json({ error: "Forbidden - No access to this practice" }, { status: 403 })
+      }
+    }
 
     const urls = Array.isArray(fileUrls) ? fileUrls : fileUrls ? [fileUrls] : []
 

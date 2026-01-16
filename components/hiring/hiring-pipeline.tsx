@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,18 +28,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import {
-  LayoutDashboard,
-  Briefcase,
-  Mail,
-  Phone,
-  FileText,
-  Archive,
-  StickyNote,
-  Sparkles,
-  MoreVertical,
-  Eye,
-} from "lucide-react"
+import { LayoutDashboard, Mail, Phone, FileText, Archive, StickyNote, Sparkles, MoreVertical, Eye } from "lucide-react"
 import { defaultPipelineStages } from "@/lib/recruiting-defaults"
 import { useToast } from "@/hooks/use-toast"
 import { AICandidateAnalysisDialog } from "./ai-candidate-analysis-dialog"
@@ -55,14 +44,14 @@ interface Application {
     last_name: string
     email: string
     phone: string
-    date_of_birth?: string // Added date_of_birth field
+    date_of_birth?: string
     current_position: string
     rating: number
     image_url?: string
     documents?: Array<{ name: string; url: string; size?: number; uploadedAt?: string }>
     notes?: string
-    salary_expectation?: number // Added salary_expectation field
-    weekly_hours?: number // Added weekly_hours field
+    salary_expectation?: number
+    weekly_hours?: number
   }
   job_posting: {
     id: string
@@ -85,6 +74,27 @@ interface PipelineStage {
   applications: Application[]
 }
 
+const STATUS_TO_STAGE_MAP: Record<string, string> = {
+  new: "Bewerbung eingegangen",
+  contacted: "Bewerbung eingegangen",
+  first_interview: "Erstgespräch",
+  trial_work: "Probearbeiten",
+  second_interview: "Zweitgespräch",
+  interviewed: "Erstgespräch",
+  offer_extended: "Angebot",
+  rejected: "Abgelehnt",
+  archived: "Abgelehnt",
+}
+
+const STAGE_TO_STATUS_MAP: Record<string, string> = {
+  "Bewerbung eingegangen": "new",
+  Erstgespräch: "first_interview",
+  Probearbeiten: "trial_work",
+  Zweitgespräch: "second_interview",
+  Angebot: "offer_extended",
+  Abgelehnt: "rejected",
+}
+
 export function HiringPipeline() {
   const router = useRouter()
   const { currentPractice } = usePractice()
@@ -101,6 +111,7 @@ export function HiringPipeline() {
   const [candidateToArchive, setCandidateToArchive] = useState<{ id: string; name: string } | null>(null)
   const [pendingMove, setPendingMove] = useState<{ candidateId: string; newStage: string } | null>(null)
   const [showAIAnalysis, setShowAIAnalysis] = useState(false)
+  const [isMoving, setIsMoving] = useState<string | null>(null)
 
   useEffect(() => {
     if (currentPractice?.id) {
@@ -124,6 +135,8 @@ export function HiringPipeline() {
     if (!selectedJobPostingId && selectedJobPostingId !== "alle") return
 
     const interval = setInterval(() => {
+      if (isMoving) return
+
       if (selectedJobPostingId === "alle") {
         loadAllCandidates()
       } else {
@@ -132,7 +145,7 @@ export function HiringPipeline() {
     }, 10000)
 
     return () => clearInterval(interval)
-  }, [selectedJobPostingId, currentPractice?.id])
+  }, [selectedJobPostingId, currentPractice?.id, isMoving])
 
   const loadJobPostings = async () => {
     try {
@@ -203,22 +216,10 @@ export function HiringPipeline() {
       if (response.ok) {
         const data = await response.json()
 
-        const statusToStageMap: Record<string, string> = {
-          new: "Bewerbung eingegangen",
-          contacted: "Bewerbung eingegangen",
-          first_interview: "Erstgespräch",
-          trial_work: "Probearbeiten",
-          second_interview: "Zweitgespräch",
-          interviewed: "Erstgespräch", // fallback for old data
-          offer_extended: "Angebot",
-          rejected: "Abgelehnt",
-          archived: "Abgelehnt",
-        }
-
         const candidatesAsApplications = data.map((candidate: any) => ({
           id: `candidate-${candidate.id}`,
           status: candidate.status,
-          stage: statusToStageMap[candidate.status] || "Bewerbung eingegangen",
+          stage: STATUS_TO_STAGE_MAP[candidate.status] || "Bewerbung eingegangen",
           applied_at: candidate.created_at,
           candidate: {
             id: candidate.id,
@@ -226,14 +227,14 @@ export function HiringPipeline() {
             last_name: candidate.last_name,
             email: candidate.email,
             phone: candidate.phone,
-            date_of_birth: candidate.date_of_birth, // Added date_of_birth to mapping
+            date_of_birth: candidate.date_of_birth,
             current_position: candidate.current_position,
             rating: candidate.rating,
             image_url: candidate.image_url,
             documents: candidate.documents || [],
             notes: candidate.notes,
-            salary_expectation: candidate.salary_expectation, // Added salary_expectation to mapping
-            weekly_hours: candidate.weekly_hours, // Added weekly_hours to mapping
+            salary_expectation: candidate.salary_expectation,
+            weekly_hours: candidate.weekly_hours,
           },
           job_posting: {
             id: candidate.job_posting_id || "",
@@ -268,76 +269,101 @@ export function HiringPipeline() {
     applications: applications.filter((app) => app.stage === stage.id),
   }))
 
-  const handleMoveApplication = async (applicationId: string, newStageId: string) => {
-    try {
+  const handleMoveApplication = useCallback(
+    async (applicationId: string, newStageId: string) => {
       const isCandidateId = applicationId.startsWith("candidate-")
 
-      if (isCandidateId) {
-        const candidateId = applicationId.replace("candidate-", "")
+      // Store previous state for rollback
+      const previousApplications = [...applications]
 
-        const stageToStatusMap: Record<string, string> = {
-          "Bewerbung eingegangen": "new",
-          Erstgespräch: "first_interview",
-          Probearbeiten: "trial_work",
-          Zweitgespräch: "second_interview",
-          Angebot: "offer_extended",
-          Abgelehnt: "rejected",
+      setApplications((prev) =>
+        prev.map((app) => {
+          if (app.id === applicationId) {
+            return {
+              ...app,
+              stage: newStageId,
+              status: STAGE_TO_STATUS_MAP[newStageId] || app.status,
+            }
+          }
+          return app
+        }),
+      )
+
+      setIsMoving(applicationId)
+
+      try {
+        if (isCandidateId) {
+          const candidateId = applicationId.replace("candidate-", "")
+          const newStatus = STAGE_TO_STATUS_MAP[newStageId] || "new"
+
+          const response = await fetch(`/api/hiring/candidates/${candidateId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatus }),
+          })
+
+          if (!response.ok) {
+            setApplications(previousApplications)
+            const errorData = await response.json().catch(() => ({ error: "Unbekannter Fehler" }))
+            toast({
+              title: "Fehler beim Verschieben",
+              description: errorData.error || "Kandidat konnte nicht verschoben werden.",
+              variant: "destructive",
+            })
+          } else {
+            toast({
+              title: "Kandidat verschoben",
+              description: `Kandidat wurde nach "${newStageId}" verschoben.`,
+            })
+          }
+          return
         }
 
-        const newStatus = stageToStatusMap[newStageId] || "new"
-
-        console.log("[v0] Moving candidate:", { candidateId, newStageId, newStatus })
-
-        const response = await fetch(`/api/hiring/candidates/${candidateId}`, {
-          method: "PATCH",
+        // For regular applications
+        const response = await fetch(`/api/hiring/applications/${applicationId}`, {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ stage: newStageId }),
         })
 
-        if (response.ok) {
-          loadAllCandidates()
+        if (!response.ok) {
+          setApplications(previousApplications)
+
+          if (response.status === 401) {
+            toast({
+              title: "Authentifizierung erforderlich",
+              description: "Bitte melden Sie sich erneut an.",
+              variant: "destructive",
+            })
+            setTimeout(() => router.push("/login"), 2000)
+          } else {
+            const errorData = await response.json().catch(() => ({ error: "Unbekannter Fehler" }))
+            toast({
+              title: "Fehler beim Verschieben",
+              description: errorData.error || "Bewerbung konnte nicht verschoben werden.",
+              variant: "destructive",
+            })
+          }
         } else {
           toast({
-            title: "Fehler",
-            description: "Kandidat konnte nicht verschoben werden.",
-            variant: "destructive",
+            title: "Bewerbung verschoben",
+            description: `Bewerbung wurde nach "${newStageId}" verschoben.`,
           })
         }
-        return
-      }
-
-      const response = await fetch(`/api/hiring/applications/${applicationId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stage: newStageId }),
-      })
-
-      if (response.ok) {
-        loadApplications()
-      } else if (response.status === 401) {
-        const errorData = await response.json().catch(() => ({ error: "Unauthorized" }))
-        console.error("[v0] Authentication error:", errorData)
-
+      } catch (error) {
+        setApplications(previousApplications)
+        console.error("Error moving application:", error)
         toast({
-          title: "Authentifizierung erforderlich",
-          description: "Bitte melden Sie sich erneut an.",
+          title: "Netzwerkfehler",
+          description: "Verbindung zum Server fehlgeschlagen.",
           variant: "destructive",
         })
-        setTimeout(() => router.push("/login"), 2000)
-      } else {
-        const errorData = await response.json()
-        console.error("[v0] Error moving application:", errorData)
-
-        toast({
-          title: "Fehler",
-          description: errorData.error || "Kandidat konnte nicht verschoben werden.",
-          variant: "destructive",
-        })
+      } finally {
+        setIsMoving(null)
       }
-    } catch (error) {
-      console.error("[v0] Error moving application:", error)
-    }
-  }
+    },
+    [applications, router, toast],
+  )
 
   const handleJobPostingSelected = async (jobPostingId: string) => {
     console.log("[v0] Job posting selected:", jobPostingId)
@@ -426,7 +452,10 @@ export function HiringPipeline() {
     e.preventDefault()
     console.log("[v0] Drop:", { draggedApplicationId, stageId })
     if (draggedApplicationId) {
-      handleMoveApplication(draggedApplicationId, stageId)
+      const currentApp = applications.find((app) => app.id === draggedApplicationId)
+      if (currentApp && currentApp.stage !== stageId) {
+        handleMoveApplication(draggedApplicationId, stageId)
+      }
     }
     setDraggedApplicationId(null)
     setDragOverStageId(null)
@@ -469,7 +498,8 @@ export function HiringPipeline() {
     )
   }
 
-  if (loading) {
+  // Adjusted loading state to show content once applications are loaded
+  if (loading && applications.length === 0) {
     return <div>Laden...</div>
   }
 
@@ -583,8 +613,10 @@ export function HiringPipeline() {
                     stage.applications.map((application) => (
                       <Card
                         key={application.id}
-                        className={`p-3 hover:shadow-lg transition-all duration-200 cursor-move border border-border/50 bg-card ${draggedApplicationId === application.id ? "opacity-50 scale-95" : "hover:scale-[1.02]"}`}
-                        draggable
+                        className={`p-3 hover:shadow-lg transition-all duration-200 cursor-move border border-border/50 bg-card ${
+                          draggedApplicationId === application.id ? "opacity-50 scale-95" : "hover:scale-[1.02]"
+                        } ${isMoving === application.id ? "opacity-70 pointer-events-none" : ""}`}
+                        draggable={!isMoving}
                         onDragStart={(e) => handleDragStart(e, application.id)}
                         onDragEnd={handleDragEnd}
                       >
@@ -593,163 +625,126 @@ export function HiringPipeline() {
                             className="text-xs font-medium px-2 py-0.5 w-fit"
                             style={{ backgroundColor: stage.color, color: "white" }}
                           >
-                            {stage.name}
+                            {application.job_posting?.title || "Keine Stelle"}
                           </Badge>
-                          <div className="flex items-start gap-2">
-                            <Avatar className="h-9 w-9 border-2 border-muted">
-                              <AvatarImage
-                                src={application.candidate.image_url || "/placeholder.svg"}
-                                alt={`${application.candidate.first_name} ${application.candidate.last_name}`}
-                              />
-                              <AvatarFallback className="text-xs font-semibold">
-                                {application.candidate.first_name?.[0]}
-                                {application.candidate.last_name?.[0]}
+
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-10 w-10">
+                              {application.candidate?.image_url ? (
+                                <AvatarImage
+                                  src={application.candidate.image_url || "/placeholder.svg"}
+                                  alt={`${application.candidate.first_name} ${application.candidate.last_name}`}
+                                />
+                              ) : null}
+                              <AvatarFallback className="text-xs font-semibold bg-primary/10">
+                                {application.candidate?.first_name?.[0]}
+                                {application.candidate?.last_name?.[0]}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div
-                                className="font-semibold text-sm cursor-pointer hover:text-primary hover:underline truncate"
-                                onClick={() => handleViewCandidate(application.candidate.id)}
-                              >
-                                {application.candidate.first_name} {application.candidate.last_name}
-                              </div>
-                              {application.candidate.date_of_birth && (
-                                <div className="text-xs text-muted-foreground">
-                                  {calculateAge(application.candidate.date_of_birth)} Jahre
-                                </div>
-                              )}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-sm truncate">
+                                {application.candidate?.first_name} {application.candidate?.last_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {application.candidate?.current_position || "Keine Position"}
+                              </p>
                             </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              {application.candidate.documents && application.candidate.documents.length > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  <FileText className="h-3 w-3 mr-1" />
-                                  {application.candidate.documents.length}
-                                </Badge>
-                              )}
-                              {application.candidate.rating && (
-                                <Badge variant="outline" className="text-xs bg-yellow-50">
-                                  ⭐ {application.candidate.rating}
-                                </Badge>
-                              )}
-                            </div>
+
                             <DropdownMenu>
-                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="outline" className="h-6 w-6 p-0 bg-transparent">
-                                  <MoreVertical className="h-3 w-3" />
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewCandidate(application.candidate?.id)}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Details anzeigen
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation()
+                                  onClick={() =>
                                     handleSendEmail(
-                                      application.candidate.email,
-                                      `${application.candidate.first_name} ${application.candidate.last_name}`,
+                                      application.candidate?.email,
+                                      `${application.candidate?.first_name} ${application.candidate?.last_name}`,
                                     )
-                                  }}
+                                  }
                                 >
                                   <Mail className="h-4 w-4 mr-2" />
                                   E-Mail senden
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    openArchiveDialog(
-                                      application.candidate.id,
-                                      `${application.candidate.first_name} ${application.candidate.last_name}`,
-                                    )
-                                  }}
-                                >
-                                  <Archive className="h-4 w-4 mr-2" />
-                                  Ins Archiv verschieben
-                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleViewCandidate(application.candidate.id)
-                                  }}
+                                  className="text-destructive"
+                                  onClick={() =>
+                                    openArchiveDialog(
+                                      application.candidate?.id,
+                                      `${application.candidate?.first_name} ${application.candidate?.last_name}`,
+                                    )
+                                  }
                                 >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Kandidat anzeigen
+                                  <Archive className="h-4 w-4 mr-2" />
+                                  Archivieren
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
 
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded">
-                              <Briefcase className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate font-medium">{application.job_posting.title}</span>
-                            </div>
-
-                            {application.candidate.current_position && (
-                              <div className="text-xs text-muted-foreground px-1.5 truncate">
-                                {application.candidate.current_position}
-                              </div>
+                          <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+                            {application.candidate?.date_of_birth && (
+                              <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded">
+                                {calculateAge(application.candidate.date_of_birth)} Jahre
+                              </span>
                             )}
-                            {application.candidate.salary_expectation && application.candidate.weekly_hours && (
-                              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium px-1.5">
-                                {new Intl.NumberFormat("de-DE", {
-                                  style: "currency",
-                                  currency: "EUR",
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                }).format(
-                                  calculateHourlyRate(
-                                    application.candidate.salary_expectation,
-                                    Number(application.candidate.weekly_hours),
-                                  ) || 0,
-                                )}
-                                /Std
-                              </div>
+                            {application.candidate?.salary_expectation && (
+                              <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded">
+                                {application.candidate.salary_expectation.toLocaleString("de-DE")} €
+                              </span>
+                            )}
+                            {application.candidate?.weekly_hours && (
+                              <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded">
+                                {application.candidate.weekly_hours}h/Wo
+                              </span>
                             )}
                           </div>
 
-                          {application.candidate.notes && (
-                            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/20 p-2 rounded border border-amber-200 dark:border-amber-800">
-                              <StickyNote className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-600" />
-                              <span className="line-clamp-2 leading-relaxed">{application.candidate.notes}</span>
-                            </div>
-                          )}
-
-                          <div className="space-y-1.5">
-                            {application.candidate.phone && (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1.5">
-                                <Phone className="h-3 w-3 flex-shrink-0" />
-                                <span>{application.candidate.phone}</span>
-                              </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            {application.candidate?.email && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() =>
+                                  handleSendEmail(
+                                    application.candidate?.email,
+                                    `${application.candidate?.first_name} ${application.candidate?.last_name}`,
+                                  )
+                                }
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {application.candidate?.phone && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => (window.location.href = `tel:${application.candidate?.phone}`)}
+                              >
+                                <Phone className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {application.candidate?.documents && application.candidate.documents.length > 0 && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <FileText className="h-3 w-3" />
+                                {application.candidate.documents.length}
+                              </Badge>
+                            )}
+                            {application.candidate?.notes && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <StickyNote className="h-3 w-3" />
+                              </Badge>
                             )}
                           </div>
-
-                          {selectedJobPostingId !== "alle" && (
-                            <div className="pt-1.5 flex gap-2 border-t border-border/50">
-                              {index > 0 && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-xs h-7 flex-1 font-medium hover:bg-primary/10 hover:text-primary hover:border-primary bg-transparent"
-                                  onClick={() =>
-                                    handleMoveApplication(application.id, stagesWithApplications[index - 1].id)
-                                  }
-                                >
-                                  ← Zurück
-                                </Button>
-                              )}
-                              {index < stagesWithApplications.length - 1 && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-xs h-7 flex-1 font-medium hover:bg-primary/10 hover:text-primary hover:border-primary bg-transparent"
-                                  onClick={() =>
-                                    handleMoveApplication(application.id, stagesWithApplications[index + 1].id)
-                                  }
-                                >
-                                  Weiter →
-                                </Button>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </Card>
                     ))
@@ -766,8 +761,8 @@ export function HiringPipeline() {
           <AlertDialogHeader>
             <AlertDialogTitle>Kandidat archivieren?</AlertDialogTitle>
             <AlertDialogDescription>
-              Möchten Sie {candidateToArchive?.name} wirklich ins Archiv verschieben? Der Kandidat kann später aus dem
-              Archiv wiederhergestellt werden.
+              Möchten Sie {candidateToArchive?.name} wirklich archivieren? Der Kandidat wird aus der Pipeline entfernt,
+              kann aber später wiederhergestellt werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -777,7 +772,12 @@ export function HiringPipeline() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AICandidateAnalysisDialog open={showAIAnalysis} onOpenChange={setShowAIAnalysis} />
+      <AICandidateAnalysisDialog
+        open={showAIAnalysis}
+        onOpenChange={setShowAIAnalysis}
+        candidates={applications.map((app) => app.candidate)}
+        jobPostings={jobPostings}
+      />
     </div>
   )
 }

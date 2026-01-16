@@ -239,7 +239,9 @@ export function UserProvider({
         // Fetch fresh user profile from database
         const { data: profile, error: profileError } = await supabase
           .from("users")
-          .select("*")
+          .select(
+            "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
+          )
           .eq("id", authUser.id)
           .single()
 
@@ -301,7 +303,13 @@ export function UserProvider({
         console.log("[UserProvider] User signed in or token refreshed, fetching fresh profile")
         if (session?.user) {
           try {
-            const { data: profile } = await supabase.from("users").select("*").eq("id", session.user.id).single()
+            const { data: profile } = await supabase
+              .from("users")
+              .select(
+                "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
+              )
+              .eq("id", session.user.id)
+              .single()
 
             if (profile) {
               const user: User = {

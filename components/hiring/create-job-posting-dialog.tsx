@@ -9,6 +9,7 @@ import { useState, useEffect } from "react"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { useTranslation } from "@/contexts/translation-context"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { defaultRecruitingFields, type FormField } from "@/lib/recruiting-defaults"
+import { Loader2 } from "lucide-react"
 
 interface CreateJobPostingDialogProps {
   open: boolean
@@ -33,6 +35,7 @@ function CreateJobPostingDialog({ open, onOpenChange, onSuccess }: CreateJobPost
   const { currentPractice } = usePractice()
   const { currentUser } = useUser()
   const { t } = useTranslation()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [fieldSettings, setFieldSettings] = useState<FormField[]>(defaultRecruitingFields)
   const [formData, setFormData] = useState({
@@ -97,30 +100,49 @@ function CreateJobPostingDialog({ open, onOpenChange, onSuccess }: CreateJobPost
         }),
       })
 
-      if (response.ok) {
-        onSuccess()
-        onOpenChange(false)
-        setFormData({
-          title: "",
-          department: "",
-          employment_type: "full-time",
-          location: "",
-          salary_min: "",
-          salary_max: "",
-          start_month: "",
-          start_year: "",
-          hours_per_week_min: "",
-          hours_per_week_max: "",
-          description: "",
-          requirements: "",
-          responsibilities: "",
-          benefits: "",
-          status: "draft",
-          required_skills: [],
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unbekannter Fehler" }))
+        toast({
+          title: "Fehler beim Erstellen",
+          description: errorData.error || "Stellenausschreibung konnte nicht erstellt werden.",
+          variant: "destructive",
         })
+        setLoading(false)
+        return
       }
+
+      toast({
+        title: "Stelle erstellt",
+        description: `Die Stellenausschreibung "${formData.title}" wurde erfolgreich erstellt.`,
+      })
+
+      onSuccess()
+      onOpenChange(false)
+      setFormData({
+        title: "",
+        department: "",
+        employment_type: "full-time",
+        location: "",
+        salary_min: "",
+        salary_max: "",
+        start_month: "",
+        start_year: "",
+        hours_per_week_min: "",
+        hours_per_week_max: "",
+        description: "",
+        requirements: "",
+        responsibilities: "",
+        benefits: "",
+        status: "draft",
+        required_skills: [],
+      })
     } catch (error) {
-      console.error("[v0] Error creating job posting:", error)
+      console.error("Error creating job posting:", error)
+      toast({
+        title: "Netzwerkfehler",
+        description: "Verbindung zum Server fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -442,11 +464,18 @@ function CreateJobPostingDialog({ open, onOpenChange, onSuccess }: CreateJobPost
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common.cancel", "Cancel")}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+              {t("common.cancel", "Abbrechen")}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? t("common.creating", "Creating...") : t("common.create", "Create")}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t("common.creating", "Erstelle...")}
+                </>
+              ) : (
+                t("common.create", "Erstellen")
+              )}
             </Button>
           </DialogFooter>
         </form>

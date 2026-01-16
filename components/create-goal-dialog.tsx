@@ -793,6 +793,19 @@ export function CreateGoalDialog({
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="unit">{t("goals.form.unit", "Einheit")}</Label>
+                <Input
+                  id="unit"
+                  value={formData.unit || ""}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                  placeholder={t("goals.form.unitPlaceholder", "z.B. km, kg, Stunden, Patienten...")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("goals.form.unitHelp", "Optional: Einheit für Ziel- und Ist-Wert (z.B. Patienten, Stunden, km)")}
+                </p>
+              </div>
+
               {calculatedProgress === null && (
                 <div className="space-y-2">
                   <Label htmlFor="progressPercentage">{t("goals.form.progress", "Fortschritt (%)")}</Label>
@@ -1009,30 +1022,6 @@ export function CreateGoalDialog({
                       </div>
                     </div>
                   )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="unit">{t("goals.form.unit", "Einheit")}</Label>
-                    <Input
-                      id="unit"
-                      value={formData.unit || ""} // Add fallback for unit
-                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                      placeholder={t("goals.form.unitPlaceholder", "z.B. Patienten, €")}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between space-x-2">
-                    <Label htmlFor="isPrivate" className="flex-1">
-                      {t("goals.form.private", "Privates Ziel")}
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t("goals.form.privateDescription", "Nur Sie und Praxisadministratoren können dieses Ziel sehen")}
-                    </p>
-                    <Switch
-                      id="isPrivate"
-                      checked={formData.isPrivate}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isPrivate: checked })}
-                    />
-                  </div>
 
                   {availableParameters.length > 0 && (
                     <div className="space-y-2 border-t border-b py-3">

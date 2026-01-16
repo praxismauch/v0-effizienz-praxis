@@ -1,7 +1,6 @@
 "use client"
-
-import { useRef } from "react"
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useMemo } from "react"
+import useSWR from "swr"
 import { AppLayout } from "@/components/app-layout"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +24,9 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import CreateGoalDialog from "@/components/create-goal-dialog"
 import AIGoalGeneratorDialog from "@/components/ai-goal-generator-dialog"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
+import { toast } from "sonner"
 
 interface Goal {
   id: string
@@ -48,7 +50,7 @@ interface Goal {
   metadata: any
   createdAt: string
   updatedAt: string
-  displayOrder?: number // Add display order field
+  displayOrder?: number
 }
 
 export const dynamic = "force-dynamic"
@@ -57,27 +59,47 @@ export default function GoalsPage() {
   const { currentUser, isAdmin } = useUser()
   const { currentPractice } = usePractice()
   const { t } = useTranslation()
-  const [goals, setGoals] = useState<Goal[]>([])
-  const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false)
   const [aiGeneratedGoalData, setAiGeneratedGoalData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("all")
   const [completionFilter, setCompletionFilter] = useState<"all" | "active" | "completed">("all")
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
-  const fetchedRef = useRef(false)
 
-  useEffect(() => {
+  const practiceId = currentPractice?.id?.toString()
+
+  const {
+    data: goalsData,
+    error,
+    isLoading: loading,
+    mutate,
+  } = useSWR(practiceId ? SWR_KEYS.goals(practiceId) : null, swrFetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5000,
+  })
+
+  // Process goals data
+  const goals = useMemo(() => {
+    if (!goalsData?.goals) return []
+    const parentGoals = goalsData.goals.filter((g: Goal) => !g.parentGoalId)
+    return parentGoals.sort((a: Goal, b: Goal) => {
+      const orderA = a.displayOrder ?? 999999
+      const orderB = b.displayOrder ?? 999999
+      return orderA - orderB
+    })
+  }, [goalsData])
+
+  // ... existing code for URL params handling ...
+  useState(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
       const tabParam = params.get("tab")
       if (tabParam && ["all", "practice", "personal", "team", "draft"].includes(tabParam)) {
         setActiveTab(tabParam)
-        // Clean up URL
         window.history.replaceState({}, "", "/goals")
       }
     }
-  }, [])
+  })
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -90,69 +112,17 @@ export default function GoalsPage() {
     }),
   )
 
-  useEffect(() => {
-    if (!currentPractice?.id) {
-      setLoading(false)
-    }
-  }, [currentPractice])
-
-  useEffect(() => {
-    if (currentPractice?.id && !fetchedRef.current) {
-      fetchedRef.current = true
-      fetchGoals()
-    }
-
-    return () => {
-      fetchedRef.current = false
-    }
-  }, [currentPractice?.id])
-
-  const fetchGoals = useCallback(async () => {
-    if (!currentPractice?.id) {
-      setLoading(false)
-      return
-    }
-
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/practices/${currentPractice.id}/goals`, {
-        credentials: "include",
-        cache: "no-store",
-      })
-
-      if (!response.ok) {
-        console.error("[v0] Goals API returned error status:", response.status)
-        setGoals([])
-        return
-      }
-
-      const data = await response.json()
-      const parentGoals = (data.goals || []).filter((g: Goal) => !g.parentGoalId)
-      const sortedGoals = parentGoals.sort((a: Goal, b: Goal) => {
-        const orderA = a.displayOrder ?? 999999
-        const orderB = b.displayOrder ?? 999999
-        return orderA - orderB
-      })
-      setGoals(sortedGoals)
-    } catch (error) {
-      console.error("[v0] Error fetching goals:", error)
-      setGoals([])
-    } finally {
-      setLoading(false)
-    }
-  }, [currentPractice?.id])
-
   const handleGoalCreated = () => {
     setCreateDialogOpen(false)
-    fetchGoals()
+    mutate() // Revalidate goals after creation
   }
 
   const handleGoalUpdated = () => {
-    fetchGoals()
+    mutate() // Revalidate goals after update
   }
 
   const handleGoalDeleted = () => {
-    fetchGoals()
+    mutate() // Revalidate goals after deletion
   }
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -169,9 +139,10 @@ export default function GoalsPage() {
       return
     }
 
-    // Optimistically update UI
     const newGoals = arrayMove(visibleGoals, oldIndex, newIndex)
-    setGoals(newGoals)
+
+    // Optimistically update the cache
+    mutate({ goals: newGoals }, { revalidate: false })
 
     // Update display order on server
     try {
@@ -180,7 +151,7 @@ export default function GoalsPage() {
         displayOrder: index,
       }))
 
-      const response = await fetch(`/api/practices/${currentPractice?.id}/goals/reorder`, {
+      const response = await fetch(`/api/practices/${practiceId}/goals/reorder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -188,13 +159,13 @@ export default function GoalsPage() {
       })
 
       if (!response.ok) {
-        // Revert on error
-        console.error("[v0] Failed to update goal order")
-        fetchGoals()
+        // Revert on error by revalidating
+        toast.error("Fehler beim Aktualisieren der Reihenfolge")
+        mutate()
       }
     } catch (error) {
-      console.error("[v0] Error updating goal order:", error)
-      fetchGoals()
+      console.error("Error updating goal order:", error)
+      mutate() // Revalidate on error
     }
   }
 
@@ -211,7 +182,7 @@ export default function GoalsPage() {
   }
 
   const handleGoalsGenerated = () => {
-    fetchGoals()
+    mutate() // Revalidate after AI generation
   }
 
   const filteredGoals = useMemo(() => {
@@ -219,18 +190,18 @@ export default function GoalsPage() {
 
     // Filter by tab
     if (activeTab === "draft") {
-      filtered = filtered.filter((g) => g.status === "draft")
+      filtered = filtered.filter((g: Goal) => g.status === "draft")
     } else if (activeTab !== "all") {
-      filtered = filtered.filter((g) => g.goalType === activeTab && g.status !== "draft")
+      filtered = filtered.filter((g: Goal) => g.goalType === activeTab && g.status !== "draft")
     } else {
-      filtered = filtered.filter((g) => g.status !== "draft")
+      filtered = filtered.filter((g: Goal) => g.status !== "draft")
     }
 
     // Filter by completion status
     if (completionFilter === "active") {
-      filtered = filtered.filter((g) => g.status === "active")
+      filtered = filtered.filter((g: Goal) => g.status === "active")
     } else if (completionFilter === "completed") {
-      filtered = filtered.filter((g) => g.status === "completed")
+      filtered = filtered.filter((g: Goal) => g.status === "completed")
     }
 
     return filtered
@@ -238,21 +209,19 @@ export default function GoalsPage() {
 
   const goalCounts = useMemo(
     () => ({
-      all: goals.filter((g) => g.status !== "draft").length,
-      draft: goals.filter((g) => g.status === "draft").length,
-      practice: goals.filter((g) => g.goalType === "practice" && g.status !== "draft").length,
-      personal: goals.filter((g) => g.goalType === "personal" && g.status !== "draft").length,
-      team: goals.filter((g) => g.goalType === "team" && g.status !== "draft").length,
+      all: goals.filter((g: Goal) => g.status !== "draft").length,
+      draft: goals.filter((g: Goal) => g.status === "draft").length,
+      practice: goals.filter((g: Goal) => g.goalType === "practice" && g.status !== "draft").length,
+      personal: goals.filter((g: Goal) => g.goalType === "personal" && g.status !== "draft").length,
+      team: goals.filter((g: Goal) => g.goalType === "team" && g.status !== "draft").length,
     }),
     [goals],
   )
 
-  const visibleGoals = filteredGoals.filter((goal) => {
-    // First check user access
+  const visibleGoals = filteredGoals.filter((goal: Goal) => {
     if (!isAdmin && goal.createdBy !== currentUser?.id && goal.assignedTo !== currentUser?.id && goal.isPrivate) {
       return false
     }
-
     return true
   })
 
@@ -413,10 +382,10 @@ export default function GoalsPage() {
                   </div>
                 ) : (
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                    <SortableContext items={visibleGoals.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+                    <SortableContext items={visibleGoals.map((g: Goal) => g.id)} strategy={verticalListSortingStrategy}>
                       {viewMode === "list" ? (
                         <div className="space-y-4">
-                          {visibleGoals.map((goal) => (
+                          {visibleGoals.map((goal: Goal) => (
                             <GoalCard
                               key={goal.id}
                               goal={goal}
@@ -427,7 +396,7 @@ export default function GoalsPage() {
                         </div>
                       ) : (
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                          {visibleGoals.map((goal) => (
+                          {visibleGoals.map((goal: Goal) => (
                             <GoalCard
                               key={goal.id}
                               goal={goal}

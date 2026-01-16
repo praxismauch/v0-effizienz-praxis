@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useMemo } from "react"
+import useSWR from "swr"
 import { usePractice } from "@/contexts/practice-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +32,8 @@ import { GenerateInterviewDialog } from "@/components/hiring/generate-interview-
 import { useToast } from "@/hooks/use-toast"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { defaultPipelineStages } from "@/lib/recruiting-defaults"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 interface Candidate {
   id: string
@@ -69,6 +72,7 @@ interface JobPosting {
 interface CandidatesManagerProps {
   showArchived?: boolean
   onTabChange?: (mainTab: string, subTab?: string) => void
+  onShowArchivedChange?: (show: boolean) => void
   onUpdate?: () => void
   onNavigateToTab?: () => void
 }
@@ -76,16 +80,14 @@ interface CandidatesManagerProps {
 const CandidatesManager = ({
   showArchived = false,
   onTabChange,
+  onShowArchivedChange,
   onUpdate,
   onNavigateToTab,
 }: CandidatesManagerProps) => {
   const { currentPractice } = usePractice()
-  const [candidates, setCandidates] = useState<Candidate[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [jobPostingFilter, setJobPostingFilter] = useState<string>("all")
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null)
   const [sendQuestionnaireCandidate, setSendQuestionnaireCandidate] = useState<{
@@ -98,70 +100,38 @@ const CandidatesManager = ({
   const { toast } = useToast()
   const { isAiEnabled } = useAiEnabled()
 
-  const loadData = useCallback(async () => {
-    if (!currentPractice?.id) return
+  const practiceId = currentPractice?.id
 
-    try {
-      setLoading(true)
+  const candidatesKey = useMemo(() => {
+    if (!practiceId) return null
+    return SWR_KEYS.candidates(practiceId, {
+      search: searchQuery || undefined,
+      jobPostingId: jobPostingFilter !== "all" ? jobPostingFilter : undefined,
+      status: showArchived ? "archived" : statusFilter !== "all" ? statusFilter : undefined,
+      excludeArchived: !showArchived && statusFilter === "all",
+    })
+  }, [practiceId, searchQuery, jobPostingFilter, statusFilter, showArchived])
 
-      // Build candidates URL
-      const candidatesUrl = new URL("/api/hiring/candidates", window.location.origin)
-      candidatesUrl.searchParams.set("practiceId", currentPractice.id)
-      if (searchQuery) {
-        candidatesUrl.searchParams.set("search", searchQuery)
-      }
-      if (jobPostingFilter && jobPostingFilter !== "all") {
-        candidatesUrl.searchParams.set("jobPostingId", jobPostingFilter)
-      }
-      if (showArchived) {
-        candidatesUrl.searchParams.set("status", "archived")
-      } else {
-        if (statusFilter && statusFilter !== "all") {
-          candidatesUrl.searchParams.set("status", statusFilter)
-        } else {
-          candidatesUrl.searchParams.set("excludeArchived", "true")
-        }
-      }
+  const {
+    data: candidates = [],
+    isLoading: loading,
+    mutate: mutateCandidates,
+  } = useSWR<Candidate[]>(candidatesKey, swrFetcher, { revalidateOnFocus: false })
 
-      // Build job postings URL
-      const jobPostingsUrl = new URL("/api/hiring/job-postings", window.location.origin)
-      jobPostingsUrl.searchParams.set("practiceId", currentPractice.id)
-
-      const [candidatesResponse, jobPostingsResponse] = await Promise.all([
-        fetch(candidatesUrl.toString()),
-        fetch(jobPostingsUrl.toString()),
-      ])
-
-      if (candidatesResponse.ok) {
-        const data = await candidatesResponse.json()
-        setCandidates(data)
-      }
-
-      if (jobPostingsResponse.ok) {
-        const data = await jobPostingsResponse.json()
-        setJobPostings(data)
-      }
-    } catch (error) {
-      console.error("Error loading data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [currentPractice?.id, searchQuery, statusFilter, jobPostingFilter, showArchived])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const { data: jobPostings = [] } = useSWR<JobPosting[]>(
+    practiceId ? SWR_KEYS.jobPostings(practiceId) : null,
+    swrFetcher,
+    { revalidateOnFocus: false },
+  )
 
   const handleArchive = async (id: string, isArchived: boolean) => {
+    const previousCandidates = [...candidates]
+    await mutateCandidates(
+      candidates.filter((c) => c.id !== id),
+      { revalidate: false },
+    )
+
     try {
-      console.log("[v0] Archiving/Unarchiving candidate:", { id, isArchived, currentCount: candidates.length })
-
-      setCandidates((prev) => {
-        const filtered = prev.filter((c) => c.id !== id)
-        console.log("[v0] Removed candidate from state, new count:", filtered.length)
-        return filtered
-      })
-
       const response = await fetch(`/api/hiring/candidates/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -169,7 +139,6 @@ const CandidatesManager = ({
       })
 
       if (response.ok) {
-        console.log("[v0] Archive/Unarchive successful")
         toast({
           title: isArchived ? "Kandidat wiederhergestellt" : "Kandidat archiviert",
           description: isArchived
@@ -177,18 +146,15 @@ const CandidatesManager = ({
             : "Der Kandidat wurde ins Archiv verschoben.",
         })
 
-        await loadData()
-
-        if (onUpdate) {
-          onUpdate()
-        }
+        await mutateCandidates()
+        onUpdate?.()
 
         if (isArchived && onTabChange) {
           onTabChange("candidates")
         }
       } else {
-        console.error("[v0] Archive/Unarchive failed, reloading...")
-        await loadData()
+        // Rollback
+        await mutateCandidates(previousCandidates, { revalidate: false })
         toast({
           title: "Fehler",
           description: "Der Kandidat konnte nicht archiviert werden.",
@@ -196,8 +162,8 @@ const CandidatesManager = ({
         })
       }
     } catch (error) {
-      console.error("[v0] Error in handleArchive:", error)
-      await loadData()
+      // Rollback
+      await mutateCandidates(previousCandidates, { revalidate: false })
       toast({
         title: "Fehler",
         description: "Der Kandidat konnte nicht archiviert werden.",
@@ -211,33 +177,42 @@ const CandidatesManager = ({
       return
     }
 
-    console.log("[v0] Deleting candidate:", id)
+    const previousCandidates = [...candidates]
+    await mutateCandidates(
+      candidates.filter((c) => c.id !== id),
+      { revalidate: false },
+    )
 
     try {
       const response = await fetch(`/api/hiring/candidates/${id}`, {
         method: "DELETE",
       })
 
-      console.log("[v0] Delete response status:", response.status)
-
       if (!response.ok) {
+        // Rollback
+        await mutateCandidates(previousCandidates, { revalidate: false })
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
-        console.error("[v0] Delete failed:", errorData)
-        alert(`Fehler beim Löschen des Kandidaten: ${errorData.error || "Unbekannter Fehler"}`)
+        toast({
+          title: "Fehler",
+          description: `Kandidat konnte nicht gelöscht werden: ${errorData.error}`,
+          variant: "destructive",
+        })
         return
       }
 
-      const result = await response.json()
-      console.log("[v0] Delete result:", result)
-
-      setCandidates((prev) => prev.filter((c) => c.id !== id))
-
-      await loadData()
-
-      console.log("[v0] Candidate deleted successfully, list refreshed")
+      toast({
+        title: "Kandidat gelöscht",
+        description: "Der Kandidat wurde erfolgreich gelöscht.",
+      })
+      await mutateCandidates()
     } catch (error) {
-      console.error("[v0] Error deleting candidate:", error)
-      alert("Ein Fehler ist beim Löschen aufgetreten. Bitte versuchen Sie es erneut.")
+      // Rollback
+      await mutateCandidates(previousCandidates, { revalidate: false })
+      toast({
+        title: "Fehler",
+        description: "Ein Fehler ist beim Löschen aufgetreten.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -305,6 +280,7 @@ const CandidatesManager = ({
     return annualSalary / annualHours
   }
 
+  // Client-side filtering for search (SWR handles status/jobPosting filtering on server)
   const displayedCandidates = candidates.filter((candidate) => {
     if (
       searchQuery &&
@@ -313,15 +289,6 @@ const CandidatesManager = ({
         candidate.last_name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     ) {
-      return false
-    }
-    if (
-      jobPostingFilter !== "all" &&
-      (!candidate.applications || !candidate.applications.some((app) => app.job_posting_id === jobPostingFilter))
-    ) {
-      return false
-    }
-    if (statusFilter !== "all" && candidate.status !== statusFilter) {
       return false
     }
     return true
@@ -427,10 +394,6 @@ const CandidatesManager = ({
                           <AvatarImage
                             src={candidate.image_url || undefined}
                             alt={`${candidate.first_name} ${candidate.last_name}`}
-                            onError={(e) => {
-                              console.log("[v0] Failed to load candidate image, falling back to avatar")
-                              e.currentTarget.style.display = "none"
-                            }}
                           />
                           <AvatarFallback className="text-lg">
                             {getInitials(candidate.first_name, candidate.last_name)}
@@ -507,22 +470,30 @@ const CandidatesManager = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setEditingCandidate(candidate)}
-                            title="Kandidat bearbeiten"
-                          >
-                            <Edit className="h-6 w-6" />
-                          </Button>
-                        )}
-                        {!showArchived && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
                             onClick={() => setInterviewCandidate(candidate)}
-                            title="Bewerbungsgespräch generieren"
+                            title="Interview generieren"
                           >
                             <FileText className="h-6 w-6" />
                           </Button>
                         )}
+                        {!showArchived && !candidate.converted_to_team_member && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setConvertingCandidate(candidate)}
+                            title="Als Team-Mitglied hinzufügen"
+                          >
+                            <UserPlus className="h-6 w-6" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingCandidate(candidate)}
+                          title="Bearbeiten"
+                        >
+                          <Edit className="h-6 w-6" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -531,22 +502,12 @@ const CandidatesManager = ({
                         >
                           {showArchived ? <ArchiveRestore className="h-6 w-6" /> : <Archive className="h-6 w-6" />}
                         </Button>
-                        {!showArchived && !candidate.converted_to_team_member && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setConvertingCandidate(candidate)}
-                            title="Zu Team-Mitglied konvertieren"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          >
-                            <UserPlus className="h-6 w-6" />
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(candidate.id)}
-                          title="Kandidat löschen"
+                          title="Löschen"
+                          className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-6 w-6" />
                         </Button>
@@ -563,7 +524,10 @@ const CandidatesManager = ({
       <CreateCandidateDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        onSuccess={loadData}
+        onSuccess={async () => {
+          await mutateCandidates()
+          onUpdate?.()
+        }}
         onNavigateToTab={onNavigateToTab}
       />
 
@@ -572,8 +536,10 @@ const CandidatesManager = ({
           open={!!editingCandidate}
           onOpenChange={(open) => !open && setEditingCandidate(null)}
           candidate={editingCandidate}
-          onSuccess={loadData}
-          onNavigateToTab={onNavigateToTab}
+          onSuccess={async () => {
+            await mutateCandidates()
+            onUpdate?.()
+          }}
         />
       )}
 
@@ -586,16 +552,27 @@ const CandidatesManager = ({
         />
       )}
 
-      <AICandidateAnalysisDialog open={showAIAnalysis} onOpenChange={setShowAIAnalysis} />
+      <AICandidateAnalysisDialog
+        open={showAIAnalysis}
+        onOpenChange={setShowAIAnalysis}
+        candidates={candidates.map((c) => ({
+          id: c.id,
+          first_name: c.first_name,
+          last_name: c.last_name,
+          email: c.email,
+          current_position: c.current_position,
+          rating: c.rating,
+        }))}
+      />
 
       {convertingCandidate && (
         <ConvertToTeamMemberDialog
           open={!!convertingCandidate}
           onOpenChange={(open) => !open && setConvertingCandidate(null)}
           candidate={convertingCandidate}
-          onSuccess={() => {
-            loadData()
-            if (onUpdate) onUpdate()
+          onSuccess={async () => {
+            await mutateCandidates()
+            onUpdate?.()
           }}
         />
       )}
@@ -611,5 +588,4 @@ const CandidatesManager = ({
   )
 }
 
-export { CandidatesManager }
 export default CandidatesManager

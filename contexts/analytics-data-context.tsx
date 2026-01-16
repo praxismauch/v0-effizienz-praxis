@@ -1,8 +1,11 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext } from "react"
+import useSWR, { useSWRConfig } from "swr"
 import { usePractice } from "./practice-context"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 // Data type interfaces
 export interface PracticeGrowthData {
@@ -105,202 +108,227 @@ interface AnalyticsDataContextType {
 
 const AnalyticsDataContext = createContext<AnalyticsDataContextType | undefined>(undefined)
 
-const HARDCODED_PRACTICE_ID = "1"
+const DEFAULT_PRACTICE_ID = "1"
 
 export function AnalyticsDataProvider({ children }: { children: React.ReactNode }) {
-  const [hasError, setHasError] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [practiceGrowthData, setPracticeGrowthData] = useState<PracticeGrowthData[]>([])
-  const [taskCategoryData, setTaskCategoryData] = useState<TaskCategoryData[]>([])
-  const [teamSatisfactionData, setTeamSatisfactionData] = useState<TeamSatisfactionData[]>([])
-  const [kpiData, setKpiData] = useState<KPIData[]>([])
-  const [efficiencyData, setEfficiencyData] = useState<EfficiencyData[]>([])
-  const [qualityMetricsData, setQualityMetricsData] = useState<QualityMetricsData[]>([])
   const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const { mutate: globalMutate } = useSWRConfig()
 
-  const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+  const practiceId = currentPractice?.id || DEFAULT_PRACTICE_ID
 
-  useEffect(() => {
-    if (practiceLoading) {
-      return
-    }
+  const { data: analyticsData } = useSWR(!practiceLoading ? SWR_KEYS.analyticsData(practiceId) : null, swrFetcher, {
+    revalidateOnFocus: false,
+  })
 
-    if (hasError) {
-      setIsLoading(false)
-      return
-    }
+  const practiceGrowthData = analyticsData?.practiceGrowthData || []
+  const taskCategoryData = analyticsData?.taskCategoryData || []
+  const teamSatisfactionData = analyticsData?.teamSatisfactionData || []
+  const kpiData = analyticsData?.kpiData || []
+  const efficiencyData = analyticsData?.efficiencyData || []
+  const qualityMetricsData = analyticsData?.qualityMetricsData || []
 
-    const controller = new AbortController()
-    let isMounted = true
-
-    const fetchAnalyticsData = async () => {
-      setIsLoading(true)
-      try {
-        const timeoutId = setTimeout(() => controller.abort(), 30000)
-
-        const response = await fetch(`/api/analytics/data?practiceId=${practiceId}`, {
-          signal: controller.signal,
-        })
-
-        clearTimeout(timeoutId)
-
-        if (!isMounted) return
-
-        if (!response.ok) {
-          setIsLoading(false)
-          return
-        }
-
-        const data = await response.json()
-
-        if (!isMounted) return
-
-        setPracticeGrowthData(data.practiceGrowthData || [])
-        setTaskCategoryData(data.taskCategoryData || [])
-        setTeamSatisfactionData(data.teamSatisfactionData || [])
-        setKpiData(data.kpiData || [])
-        setEfficiencyData(data.efficiencyData || [])
-        setQualityMetricsData(data.qualityMetricsData || [])
-      } catch (error: any) {
-        if (error?.name === "AbortError" || !isMounted) return
-        setHasError(true)
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    fetchAnalyticsData()
-
-    return () => {
-      isMounted = false
-      controller.abort()
-    }
-  }, [practiceId, hasError, practiceLoading])
-
-  // CRUD functions for Practice Growth Data
-  const addPracticeGrowthData = (data: Omit<PracticeGrowthData, "id" | "createdAt" | "updatedAt">) => {
+  const addPracticeGrowthData = async (data: Omit<PracticeGrowthData, "id" | "createdAt" | "updatedAt">) => {
     const newData: PracticeGrowthData = {
       ...data,
       id: Date.now().toString(),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    setPracticeGrowthData((prev) => [...prev, newData])
-  }
-
-  const updatePracticeGrowthData = (id: string, data: Partial<PracticeGrowthData>) => {
-    setPracticeGrowthData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...data, updatedAt: new Date() } : item)),
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, practiceGrowthData: [...practiceGrowthData, newData] },
+      { revalidate: false },
     )
   }
 
-  const deletePracticeGrowthData = (id: string) => {
-    setPracticeGrowthData((prev) => prev.filter((item) => item.id !== id))
+  const updatePracticeGrowthData = async (id: string, data: Partial<PracticeGrowthData>) => {
+    const updated = practiceGrowthData.map((item: PracticeGrowthData) =>
+      item.id === id ? { ...item, ...data, updatedAt: new Date() } : item,
+    )
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, practiceGrowthData: updated },
+      { revalidate: false },
+    )
   }
 
-  // CRUD functions for Task Category Data
-  const addTaskCategoryData = (data: Omit<TaskCategoryData, "id" | "createdAt" | "updatedAt">) => {
+  const deletePracticeGrowthData = async (id: string) => {
+    const filtered = practiceGrowthData.filter((item: PracticeGrowthData) => item.id !== id)
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, practiceGrowthData: filtered },
+      { revalidate: false },
+    )
+  }
+
+  const addTaskCategoryData = async (data: Omit<TaskCategoryData, "id" | "createdAt" | "updatedAt">) => {
     const newData: TaskCategoryData = {
       ...data,
       id: Date.now().toString(),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    setTaskCategoryData((prev) => [...prev, newData])
-  }
-
-  const updateTaskCategoryData = (id: string, data: Partial<TaskCategoryData>) => {
-    setTaskCategoryData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...data, updatedAt: new Date() } : item)),
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, taskCategoryData: [...taskCategoryData, newData] },
+      { revalidate: false },
     )
   }
 
-  const deleteTaskCategoryData = (id: string) => {
-    setTaskCategoryData((prev) => prev.filter((item) => item.id !== id))
+  const updateTaskCategoryData = async (id: string, data: Partial<TaskCategoryData>) => {
+    const updated = taskCategoryData.map((item: TaskCategoryData) =>
+      item.id === id ? { ...item, ...data, updatedAt: new Date() } : item,
+    )
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, taskCategoryData: updated },
+      { revalidate: false },
+    )
   }
 
-  // CRUD functions for Team Satisfaction Data
-  const addTeamSatisfactionData = (data: Omit<TeamSatisfactionData, "id" | "createdAt" | "updatedAt">) => {
+  const deleteTaskCategoryData = async (id: string) => {
+    const filtered = taskCategoryData.filter((item: TaskCategoryData) => item.id !== id)
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, taskCategoryData: filtered },
+      { revalidate: false },
+    )
+  }
+
+  const addTeamSatisfactionData = async (data: Omit<TeamSatisfactionData, "id" | "createdAt" | "updatedAt">) => {
     const newData: TeamSatisfactionData = {
       ...data,
       id: Date.now().toString(),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    setTeamSatisfactionData((prev) => [...prev, newData])
-  }
-
-  const updateTeamSatisfactionData = (id: string, data: Partial<TeamSatisfactionData>) => {
-    setTeamSatisfactionData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...data, updatedAt: new Date() } : item)),
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, teamSatisfactionData: [...teamSatisfactionData, newData] },
+      { revalidate: false },
     )
   }
 
-  const deleteTeamSatisfactionData = (id: string) => {
-    setTeamSatisfactionData((prev) => prev.filter((item) => item.id !== id))
+  const updateTeamSatisfactionData = async (id: string, data: Partial<TeamSatisfactionData>) => {
+    const updated = teamSatisfactionData.map((item: TeamSatisfactionData) =>
+      item.id === id ? { ...item, ...data, updatedAt: new Date() } : item,
+    )
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, teamSatisfactionData: updated },
+      { revalidate: false },
+    )
   }
 
-  // CRUD functions for KPI Data
-  const addKPIData = (data: Omit<KPIData, "id" | "createdAt" | "updatedAt">) => {
+  const deleteTeamSatisfactionData = async (id: string) => {
+    const filtered = teamSatisfactionData.filter((item: TeamSatisfactionData) => item.id !== id)
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, teamSatisfactionData: filtered },
+      { revalidate: false },
+    )
+  }
+
+  const addKPIData = async (data: Omit<KPIData, "id" | "createdAt" | "updatedAt">) => {
     const newData: KPIData = {
       ...data,
       id: Date.now().toString(),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    setKpiData((prev) => [...prev, newData])
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, kpiData: [...kpiData, newData] },
+      { revalidate: false },
+    )
   }
 
-  const updateKPIData = (id: string, data: Partial<KPIData>) => {
-    setKpiData((prev) => prev.map((item) => (item.id === id ? { ...item, ...data, updatedAt: new Date() } : item)))
+  const updateKPIData = async (id: string, data: Partial<KPIData>) => {
+    const updated = kpiData.map((item: KPIData) =>
+      item.id === id ? { ...item, ...data, updatedAt: new Date() } : item,
+    )
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, kpiData: updated },
+      { revalidate: false },
+    )
   }
 
-  const deleteKPIData = (id: string) => {
-    setKpiData((prev) => prev.filter((item) => item.id !== id))
+  const deleteKPIData = async (id: string) => {
+    const filtered = kpiData.filter((item: KPIData) => item.id !== id)
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, kpiData: filtered },
+      { revalidate: false },
+    )
   }
 
-  // CRUD functions for Efficiency Data
-  const addEfficiencyData = (data: Omit<EfficiencyData, "id" | "createdAt" | "updatedAt">) => {
+  const addEfficiencyData = async (data: Omit<EfficiencyData, "id" | "createdAt" | "updatedAt">) => {
     const newData: EfficiencyData = {
       ...data,
       id: Date.now().toString(),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    setEfficiencyData((prev) => [...prev, newData])
-  }
-
-  const updateEfficiencyData = (id: string, data: Partial<EfficiencyData>) => {
-    setEfficiencyData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...data, updatedAt: new Date() } : item)),
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, efficiencyData: [...efficiencyData, newData] },
+      { revalidate: false },
     )
   }
 
-  const deleteEfficiencyData = (id: string) => {
-    setEfficiencyData((prev) => prev.filter((item) => item.id !== id))
+  const updateEfficiencyData = async (id: string, data: Partial<EfficiencyData>) => {
+    const updated = efficiencyData.map((item: EfficiencyData) =>
+      item.id === id ? { ...item, ...data, updatedAt: new Date() } : item,
+    )
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, efficiencyData: updated },
+      { revalidate: false },
+    )
   }
 
-  // CRUD functions for Quality Metrics Data
-  const addQualityMetricsData = (data: Omit<QualityMetricsData, "id" | "createdAt" | "updatedAt">) => {
+  const deleteEfficiencyData = async (id: string) => {
+    const filtered = efficiencyData.filter((item: EfficiencyData) => item.id !== id)
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, efficiencyData: filtered },
+      { revalidate: false },
+    )
+  }
+
+  const addQualityMetricsData = async (data: Omit<QualityMetricsData, "id" | "createdAt" | "updatedAt">) => {
     const newData: QualityMetricsData = {
       ...data,
       id: Date.now().toString(),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    setQualityMetricsData((prev) => [...prev, newData])
-  }
-
-  const updateQualityMetricsData = (id: string, data: Partial<QualityMetricsData>) => {
-    setQualityMetricsData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...data, updatedAt: new Date() } : item)),
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, qualityMetricsData: [...qualityMetricsData, newData] },
+      { revalidate: false },
     )
   }
 
-  const deleteQualityMetricsData = (id: string) => {
-    setQualityMetricsData((prev) => prev.filter((item) => item.id !== id))
+  const updateQualityMetricsData = async (id: string, data: Partial<QualityMetricsData>) => {
+    const updated = qualityMetricsData.map((item: QualityMetricsData) =>
+      item.id === id ? { ...item, ...data, updatedAt: new Date() } : item,
+    )
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, qualityMetricsData: updated },
+      { revalidate: false },
+    )
+  }
+
+  const deleteQualityMetricsData = async (id: string) => {
+    const filtered = qualityMetricsData.filter((item: QualityMetricsData) => item.id !== id)
+    await globalMutate(
+      SWR_KEYS.analyticsData(practiceId),
+      { ...analyticsData, qualityMetricsData: filtered },
+      { revalidate: false },
+    )
   }
 
   const value = {

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import useSWR from "swr"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -20,11 +21,13 @@ import {
   AreaChart,
   Area,
 } from "recharts"
-import { Eye, Users, Globe, RefreshCw, Building2, UserPlus, Zap, DollarSign, Clock, Target } from "lucide-react"
+import { Eye, Users, RefreshCw, Building2, UserPlus, Zap, DollarSign, Clock, Target } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 interface AnalyticsData {
   summary: {
@@ -65,63 +68,41 @@ const EMPTY_ANALYTICS: AnalyticsData = {
 }
 
 export function AnalyticsDashboard() {
-  const [analytics, setAnalytics] = useState<AnalyticsData>(EMPTY_ANALYTICS)
-  const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState("30")
   const [selectedPage, setSelectedPage] = useState("all")
 
-  // New states for enhanced analytics
-  const [systemMetrics, setSystemMetrics] = useState<any>(null)
-  const [featureUsage, setFeatureUsage] = useState<any[]>([])
-  const [practiceGrowth, setPracticeGrowth] = useState<any[]>([])
-  const [subscriptionStats, setSubscriptionStats] = useState<any>(null)
+  const { data: systemMetrics, mutate: mutateSystemMetrics } = useSWR(SWR_KEYS.systemMetrics(dateRange), swrFetcher, {
+    revalidateOnFocus: false,
+  })
 
-  useEffect(() => {
-    fetchAnalyticsData()
-  }, [dateRange])
+  const { data: featureUsageData, mutate: mutateFeatureUsage } = useSWR(SWR_KEYS.featureUsage(dateRange), swrFetcher, {
+    revalidateOnFocus: false,
+  })
 
-  const fetchAnalyticsData = async () => {
-    try {
-      setLoading(true)
+  const { data: practiceGrowthData, mutate: mutatePracticeGrowth } = useSWR(
+    SWR_KEYS.practiceGrowth(dateRange),
+    swrFetcher,
+    { revalidateOnFocus: false },
+  )
 
-      // Fetch system metrics
-      const metricsRes = await fetch(`/api/super-admin/analytics/system-metrics?days=${dateRange}`)
-      if (metricsRes.ok) {
-        const data = await metricsRes.json()
-        setSystemMetrics(data)
-      }
+  const {
+    data: subscriptionStats,
+    mutate: mutateSubscriptionStats,
+    isLoading: loading,
+  } = useSWR(SWR_KEYS.subscriptionStats(), swrFetcher, { revalidateOnFocus: false })
 
-      // Fetch feature usage
-      const featureRes = await fetch(`/api/super-admin/analytics/feature-usage?days=${dateRange}`)
-      if (featureRes.ok) {
-        const data = await featureRes.json()
-        setFeatureUsage(data.topFeatures || [])
-      }
-
-      // Fetch practice growth
-      const growthRes = await fetch(`/api/super-admin/analytics/practice-growth?days=${dateRange}`)
-      if (growthRes.ok) {
-        const data = await growthRes.json()
-        setPracticeGrowth(data.dailyGrowth || [])
-      }
-
-      // Fetch subscription stats
-      const subsRes = await fetch(`/api/super-admin/analytics/subscriptions`)
-      if (subsRes.ok) {
-        const data = await subsRes.json()
-        setSubscriptionStats(data)
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching analytics:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const featureUsage = featureUsageData?.topFeatures || []
+  const practiceGrowth = practiceGrowthData?.dailyGrowth || []
+  const analytics = EMPTY_ANALYTICS
 
   const handleManualRefresh = async () => {
-    setLoading(true)
     try {
-      await fetchAnalyticsData()
+      await Promise.all([
+        mutateSystemMetrics(),
+        mutateFeatureUsage(),
+        mutatePracticeGrowth(),
+        mutateSubscriptionStats(),
+      ])
       toast({
         title: "Aktualisiert",
         description: "Alle Analytics-Daten wurden neu geladen",
@@ -132,23 +113,8 @@ export function AnalyticsDashboard() {
         description: "Daten konnten nicht aktualisiert werden",
         variant: "destructive",
       })
-    } finally {
-      setLoading(false)
     }
   }
-
-  useEffect(() => {
-    // Set up interval for auto-refresh every 5 minutes (optional)
-    const interval = setInterval(
-      () => {
-        console.log("[v0] Auto-refreshing analytics data...")
-        fetchAnalyticsData()
-      },
-      5 * 60 * 1000,
-    ) // 5 minutes
-
-    return () => clearInterval(interval)
-  }, [dateRange])
 
   if (loading) {
     return (
@@ -338,7 +304,7 @@ export function AnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {featureUsage.slice(0, 10).map((feature, index) => (
+                  {featureUsage.slice(0, 10).map((feature: any, index: number) => (
                     <div key={feature.feature_name} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="w-6 h-6 flex items-center justify-center text-xs">
@@ -477,7 +443,7 @@ export function AnalyticsDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {featureUsage.slice(0, 10).map((feature) => {
+                {featureUsage.slice(0, 10).map((feature: any) => {
                   const adoptionRate = systemMetrics?.totalPractices
                     ? (((feature.unique_practices || 0) / systemMetrics.totalPractices) * 100).toFixed(1)
                     : 0
@@ -515,15 +481,16 @@ export function AnalyticsDashboard() {
                       cy="50%"
                       labelLine={false}
                       label={({ name, value }) => `${name}: ${value}`}
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
-                      dataKey="count"
+                      dataKey="value"
                     >
-                      {(subscriptionStats?.byStatus || []).map((entry: any, index: number) => (
+                      {(subscriptionStats?.byStatus || []).map((_: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
+                    <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -531,83 +498,64 @@ export function AnalyticsDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Abonnements nach Plan</CardTitle>
-                <CardDescription>Verteilung der Abonnement-Pläne</CardDescription>
+                <CardTitle>Umsatz nach Plan</CardTitle>
+                <CardDescription>Verteilung nach Abonnement-Typ</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={subscriptionStats?.byPlan || []}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="plan_name" />
+                    <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
+                    <Bar dataKey="revenue" fill="#3b82f6" name="Umsatz (€)" />
                     <Bar dataKey="count" fill="#10b981" name="Anzahl" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Umsatz-Metriken</CardTitle>
-              <CardDescription>Finanzielle Kennzahlen</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">MRR (Monatlich)</p>
-                  <p className="text-2xl font-bold">
-                    €{subscriptionStats?.mrr ? (subscriptionStats.mrr / 100).toLocaleString() : 0}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">ARR (Jährlich)</p>
-                  <p className="text-2xl font-bold">
-                    €{subscriptionStats?.arr ? (subscriptionStats.arr / 100).toLocaleString() : 0}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">ARPU</p>
-                  <p className="text-2xl font-bold">
-                    €{subscriptionStats?.arpu ? (subscriptionStats.arpu / 100).toFixed(2) : 0}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Aktive Abos</p>
-                  <p className="text-2xl font-bold">{subscriptionStats?.activeSubscriptions || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="landing" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Landing Page Performance</CardTitle>
-              <CardDescription>Seitenaufrufe nach Seite</CardDescription>
+              <CardDescription>Aufrufe und Besucher über Zeit</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={analytics.pageStats}>
+                <LineChart data={analytics.dailyData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="page" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleDateString("de-DE", { month: "short", day: "numeric" })
+                    }
+                  />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip labelFormatter={(value) => new Date(value).toLocaleDateString("de-DE")} />
                   <Legend />
-                  <Bar dataKey="views" fill="#3b82f6" name="Aufrufe" />
-                  <Bar dataKey="uniqueVisitors" fill="#10b981" name="Eindeutige Besucher" />
-                </BarChart>
+                  <Line type="monotone" dataKey="views" stroke="#3b82f6" name="Aufrufe" strokeWidth={2} />
+                  <Line
+                    type="monotone"
+                    dataKey="uniqueVisitors"
+                    stroke="#10b981"
+                    name="Eindeutige Besucher"
+                    strokeWidth={2}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
+        </TabsContent>
 
+        <TabsContent value="traffic" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Gerätetypen</CardTitle>
-                <CardDescription>Verteilung nach Geräten</CardDescription>
+                <CardTitle>Geräte</CardTitle>
+                <CardDescription>Verteilung nach Gerätetyp</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -617,16 +565,17 @@ export function AnalyticsDashboard() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, value }) => `${name}: ${value}`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {deviceData.map((entry, index) => (
+                      {deviceData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
+                    <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -634,57 +583,22 @@ export function AnalyticsDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Browser</CardTitle>
-                <CardDescription>Verteilung nach Browser</CardDescription>
+                <CardTitle>Top Referrer</CardTitle>
+                <CardDescription>Herkunft der Besucher</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={browserData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {browserData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
+                  <BarChart data={topReferrers} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="name" type="category" width={150} />
                     <Tooltip />
-                  </PieChart>
+                    <Bar dataKey="value" fill="#3b82f6" name="Besuche" />
+                  </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="traffic" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Traffic-Quellen</CardTitle>
-              <CardDescription>Woher kommen die Besucher</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {topReferrers.map(({ name, value }, index) => (
-                  <div key={name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="w-8 h-8 flex items-center justify-center">
-                        {index + 1}
-                      </Badge>
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{name}</span>
-                    </div>
-                    <span className="text-muted-foreground">{value} Aufrufe</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

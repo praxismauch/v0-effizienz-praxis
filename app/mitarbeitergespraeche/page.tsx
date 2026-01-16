@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useMemo } from "react"
+import useSWR from "swr"
 import { AppLayout } from "@/components/app-layout"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
@@ -51,6 +52,8 @@ import {
 import { TeamMemberAppraisalsTab } from "@/components/team/team-member-appraisals-tab"
 import { format, parseISO, isAfter, isBefore, addMonths } from "date-fns"
 import { de } from "date-fns/locale"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 interface Appraisal {
   id: string
@@ -134,9 +137,6 @@ export default function MitarbeitergespraechePage() {
   const router = useRouter()
   const { currentPractice } = usePractice()
   const { currentUser, isAdmin, isSuperAdmin } = useUser()
-  const [appraisals, setAppraisals] = useState<Appraisal[]>([])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -145,57 +145,57 @@ export default function MitarbeitergespraechePage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [appraisalToDelete, setAppraisalToDelete] = useState<Appraisal | null>(null)
-  const hasLoadedRef = useRef(false)
 
   const practiceId = currentPractice?.id?.toString() || currentUser?.practice_id?.toString()
 
-  const fetchData = useCallback(async () => {
-    if (!practiceId) return
+  const {
+    data: appraisals = [],
+    isLoading: appraisalsLoading,
+    mutate: mutateAppraisals,
+  } = useSWR<Appraisal[]>(practiceId ? SWR_KEYS.appraisals(practiceId) : null, swrFetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5000,
+  })
 
-    try {
-      setLoading(true)
-      const [appraisalsRes, teamRes] = await Promise.all([
-        fetch(`/api/practices/${practiceId}/appraisals`),
-        fetch(`/api/practices/${practiceId}/team-members`),
-      ])
+  const { data: teamMembers = [], isLoading: teamLoading } = useSWR<TeamMember[]>(
+    practiceId ? SWR_KEYS.teamMembers(practiceId) : null,
+    swrFetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+    },
+  )
 
-      if (appraisalsRes.ok) {
-        const data = await appraisalsRes.json()
-        setAppraisals(data)
-      }
+  const loading = appraisalsLoading || teamLoading
 
-      if (teamRes.ok) {
-        const data = await teamRes.json()
-        setTeamMembers(data.filter((m: TeamMember) => m.id !== currentUser?.id || isAdmin || isSuperAdmin))
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error)
-      toast.error("Fehler beim Laden der Daten")
-    } finally {
-      setLoading(false)
-    }
-  }, [practiceId, currentUser?.id, isAdmin, isSuperAdmin])
-
-  useEffect(() => {
-    if (practiceId && !hasLoadedRef.current) {
-      hasLoadedRef.current = true
-      fetchData()
-    }
-  }, [practiceId, fetchData])
+  // Filter team members based on user permissions
+  const filteredTeamMembers = useMemo(() => {
+    return teamMembers.filter((m: TeamMember) => m.id !== currentUser?.id || isAdmin || isSuperAdmin)
+  }, [teamMembers, currentUser?.id, isAdmin, isSuperAdmin])
 
   const handleDelete = async () => {
     if (!appraisalToDelete || !practiceId) return
+
+    // Optimistic update - remove from UI immediately
+    const previousAppraisals = appraisals
+    mutateAppraisals(
+      appraisals.filter((a) => a.id !== appraisalToDelete.id),
+      { revalidate: false },
+    )
 
     try {
       const res = await fetch(`/api/practices/${practiceId}/appraisals/${appraisalToDelete.id}`, { method: "DELETE" })
 
       if (res.ok) {
         toast.success("Mitarbeitergespräch gelöscht")
-        setAppraisals((prev) => prev.filter((a) => a.id !== appraisalToDelete.id))
       } else {
+        // Rollback on error
+        mutateAppraisals(previousAppraisals, { revalidate: false })
         toast.error("Fehler beim Löschen")
       }
     } catch (error) {
+      // Rollback on error
+      mutateAppraisals(previousAppraisals, { revalidate: false })
       console.error("Error deleting appraisal:", error)
       toast.error("Fehler beim Löschen")
     } finally {
@@ -204,32 +204,37 @@ export default function MitarbeitergespraechePage() {
     }
   }
 
-  const filteredAppraisals = appraisals.filter((appraisal) => {
-    const matchesSearch =
-      !searchQuery ||
-      appraisal.employee?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      appraisal.employee?.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredAppraisals = useMemo(() => {
+    return appraisals.filter((appraisal) => {
+      const matchesSearch =
+        !searchQuery ||
+        appraisal.employee?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        appraisal.employee?.email?.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesStatus = statusFilter === "all" || appraisal.status === statusFilter
-    const matchesType = typeFilter === "all" || appraisal.appraisal_type === typeFilter
+      const matchesStatus = statusFilter === "all" || appraisal.status === statusFilter
+      const matchesType = typeFilter === "all" || appraisal.appraisal_type === typeFilter
 
-    return matchesSearch && matchesStatus && matchesType
-  })
+      return matchesSearch && matchesStatus && matchesType
+    })
+  }, [appraisals, searchQuery, statusFilter, typeFilter])
 
   // Statistics
-  const stats = {
-    total: appraisals.length,
-    completed: appraisals.filter((a) => a.status === "completed").length,
-    pending: appraisals.filter((a) => ["draft", "scheduled", "in_progress"].includes(a.status)).length,
-    upcoming: appraisals.filter((a) => {
-      if (!a.next_review_date) return false
-      const nextDate = parseISO(a.next_review_date)
-      return isAfter(nextDate, new Date()) && isBefore(nextDate, addMonths(new Date(), 3))
-    }).length,
-    avgRating:
-      appraisals.filter((a) => a.overall_rating).reduce((sum, a) => sum + (a.overall_rating || 0), 0) /
-        (appraisals.filter((a) => a.overall_rating).length || 1) || 0,
-  }
+  const stats = useMemo(
+    () => ({
+      total: appraisals.length,
+      completed: appraisals.filter((a) => a.status === "completed").length,
+      pending: appraisals.filter((a) => ["draft", "scheduled", "in_progress"].includes(a.status)).length,
+      upcoming: appraisals.filter((a) => {
+        if (!a.next_review_date) return false
+        const nextDate = parseISO(a.next_review_date)
+        return isAfter(nextDate, new Date()) && isBefore(nextDate, addMonths(new Date(), 3))
+      }).length,
+      avgRating:
+        appraisals.filter((a) => a.overall_rating).reduce((sum, a) => sum + (a.overall_rating || 0), 0) /
+          (appraisals.filter((a) => a.overall_rating).length || 1) || 0,
+    }),
+    [appraisals],
+  )
 
   const renderRating = (rating?: number) => {
     if (!rating) return <span className="text-muted-foreground">-</span>
@@ -466,7 +471,7 @@ export default function MitarbeitergespraechePage() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem
                                   onClick={() => {
-                                    const member = teamMembers.find((m) => m.id === appraisal.employee_id)
+                                    const member = filteredTeamMembers.find((m) => m.id === appraisal.employee_id)
                                     if (member) {
                                       setSelectedMember(member)
                                       setSelectedAppraisal(appraisal)
@@ -492,13 +497,6 @@ export default function MitarbeitergespraechePage() {
                             </DropdownMenu>
                           </div>
                         </div>
-                        {(appraisal.manager_summary || appraisal.strengths) && (
-                          <div className="mt-3 pt-3 border-t">
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {appraisal.manager_summary || appraisal.strengths}
-                            </p>
-                          </div>
-                        )}
                       </CardContent>
                     </Card>
                   )
@@ -508,114 +506,87 @@ export default function MitarbeitergespraechePage() {
           </TabsContent>
 
           <TabsContent value="team" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {teamMembers.map((member) => {
-                const memberAppraisals = appraisals.filter((a) => a.employee_id === member.id)
-                const lastAppraisal = memberAppraisals[0]
-                const completedCount = memberAppraisals.filter((a) => a.status === "completed").length
+            {filteredTeamMembers.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold">Keine Teammitglieder gefunden</h3>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredTeamMembers.map((member) => {
+                  const memberAppraisals = appraisals.filter((a) => a.employee_id === member.id)
+                  const latestAppraisal = memberAppraisals[0]
 
-                return (
-                  <Card
-                    key={member.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => {
-                      setSelectedMember(member)
-                      setSelectedAppraisal(null)
-                      setIsViewDialogOpen(true)
-                    }}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
-                          <AvatarFallback>
-                            {member.name
-                              ?.split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold">{member.name}</h3>
-                          <p className="text-sm text-muted-foreground">{member.role}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <MessageSquare className="h-4 w-4" />
-                          <span>{memberAppraisals.length} Gespräche</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <CheckCircle className="h-4 w-4" />
-                          <span>{completedCount} abgeschlossen</span>
-                        </div>
-                      </div>
-                      {lastAppraisal && (
-                        <div className="mt-3 pt-3 border-t">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Letztes Gespräch:</span>
-                            <span>{format(parseISO(lastAppraisal.appraisal_date), "dd.MM.yyyy", { locale: de })}</span>
+                  return (
+                    <Card
+                      key={member.id}
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => {
+                        setSelectedMember(member)
+                        setIsViewDialogOpen(true)
+                      }}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
+                            <AvatarFallback>
+                              {member.name
+                                ?.split(" ")
+                                .map((n) => n[0])
+                                .join("") || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{member.name}</h3>
+                            <p className="text-sm text-muted-foreground">{member.role}</p>
                           </div>
-                          {lastAppraisal.overall_rating && (
-                            <div className="flex items-center justify-between text-sm mt-1">
-                              <span className="text-muted-foreground">Bewertung:</span>
-                              {renderRating(lastAppraisal.overall_rating)}
-                            </div>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{memberAppraisals.length} Gespräche</span>
+                          {latestAppraisal && (
+                            <Badge variant="outline" className={STATUS_CONFIG[latestAppraisal.status]?.color}>
+                              {STATUS_CONFIG[latestAppraisal.status]?.label}
+                            </Badge>
                           )}
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
-        {/* View/Edit Dialog - Full Appraisal Tab */}
+        {/* View Dialog */}
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-3">
-                {selectedMember && (
-                  <>
-                    <Avatar>
-                      <AvatarImage src={selectedMember.avatar_url || "/placeholder.svg"} />
-                      <AvatarFallback>
-                        {selectedMember.name
-                          ?.split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <span>Mitarbeitergespräche: {selectedMember.name}</span>
-                      <p className="text-sm font-normal text-muted-foreground">{selectedMember.role}</p>
-                    </div>
-                  </>
-                )}
+              <DialogTitle>
+                {selectedMember?.name ? `Gespräche für ${selectedMember.name}` : "Mitarbeitergespräche"}
               </DialogTitle>
             </DialogHeader>
-            {selectedMember && practiceId && (
+            {selectedMember && (
               <TeamMemberAppraisalsTab
-                memberId={selectedMember.id}
-                practiceId={practiceId}
-                memberName={selectedMember.name}
-                isAdmin={isAdmin || isSuperAdmin}
-                onUpdate={fetchData}
+                teamMemberId={selectedMember.id}
+                teamMemberName={selectedMember.name}
+                onAppraisalChange={() => mutateAppraisals()}
               />
             )}
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation */}
+        {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Mitarbeitergespräch löschen?</AlertDialogTitle>
               <AlertDialogDescription>
-                Sind Sie sicher, dass Sie dieses Gespräch mit {appraisalToDelete?.employee?.name} löschen möchten? Diese
-                Aktion kann nicht rückgängig gemacht werden.
+                Sind Sie sicher, dass Sie dieses Mitarbeitergespräch löschen möchten? Diese Aktion kann nicht rückgängig
+                gemacht werden.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

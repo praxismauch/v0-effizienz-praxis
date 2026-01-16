@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import useSWR from "swr"
 import {
   Dialog,
   DialogContent,
@@ -18,11 +19,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTodos } from "@/contexts/todo-context"
 import { usePractice } from "@/contexts/practice-context"
+import { useTeam } from "@/contexts/team-context"
 import { useToast } from "@/hooks/use-toast"
 import { TodoAttachmentUpload } from "@/components/todo-attachment-upload"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 import { Users, Loader2 } from "lucide-react"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 interface Team {
   id: string
@@ -40,11 +44,17 @@ interface CreateTodoDialogProps {
 function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
   const { addTodo } = useTodos()
   const { currentPractice } = usePractice()
+  const { teamMembers, loading: teamLoading } = useTeam()
   const { toast } = useToast()
   const router = useRouter()
-  const [teamMembers, setTeamMembers] = useState<any[]>([])
-  const [teams, setTeams] = useState<Team[]>([])
-  const [loadingTeams, setLoadingTeams] = useState(false)
+
+  const { data: teamsData, isLoading: loadingTeams } = useSWR(
+    open && currentPractice?.id ? SWR_KEYS.teams(currentPractice.id) : null,
+    swrFetcher,
+  )
+
+  const teams: Team[] = Array.isArray(teamsData) ? teamsData.filter((t: Team) => t.isActive !== false) : []
+
   const [attachments, setAttachments] = useState<any[]>([])
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([])
   const [assignedTeamIds, setAssignedTeamIds] = useState<string[]>([])
@@ -59,42 +69,6 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
     dringend: false,
     wichtig: false,
   })
-
-  // Fetch team members when dialog opens
-  useEffect(() => {
-    if (open && currentPractice?.id) {
-      fetch(`/api/practices/${currentPractice.id}/team-members`)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`)
-          }
-          return res.json()
-        })
-        .then((data) => {
-          console.log("[v0] Fetched team members:", data)
-          setTeamMembers(Array.isArray(data) ? data : [])
-        })
-        .catch((err) => {
-          console.error("[v0] Error fetching team members:", err)
-          setTeamMembers([])
-        })
-
-      setLoadingTeams(true)
-      fetch(`/api/practices/${currentPractice.id}/teams`)
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-          return res.json()
-        })
-        .then((data) => {
-          setTeams(Array.isArray(data) ? data.filter((t: Team) => t.isActive !== false) : [])
-        })
-        .catch((err) => {
-          console.error("[v0] Error fetching teams:", err)
-          setTeams([])
-        })
-        .finally(() => setLoadingTeams(false))
-    }
-  }, [open, currentPractice?.id])
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
@@ -115,9 +89,6 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
         due_date: formData.due_date || null,
         recurrence_end_date: formData.recurrence_end_date || null,
       }
-
-      console.log("[v0] Creating todo with assigned_user_ids:", assignedUserIds)
-      console.log("[v0] Creating todo with assigned_team_ids:", assignedTeamIds)
 
       await addTodo(todoData)
 
@@ -151,7 +122,7 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
 
       router.push("/todos")
     } catch (error) {
-      console.error("[v0] Error saving todo:", error)
+      console.error("Error saving todo:", error)
       toast({
         title: "Fehler",
         description: "Aufgabe konnte nicht gespeichert werden",
@@ -161,7 +132,6 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
   }
 
   const handleClose = () => {
-    // Reset form when closing
     setFormData({
       title: "",
       description: "",
@@ -288,7 +258,12 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
           <div className="space-y-2">
             <Label>Zugewiesen an (Einzelpersonen)</Label>
             <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-              {teamMembers && teamMembers.length > 0 ? (
+              {teamLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span className="text-sm text-muted-foreground">Lade Teammitglieder...</span>
+                </div>
+              ) : teamMembers && teamMembers.length > 0 ? (
                 teamMembers.filter(isActiveMember).map((member) => (
                   <div key={member.id} className="flex items-center space-x-3">
                     <Checkbox
@@ -330,7 +305,6 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
             )}
           </div>
 
-          {/* ... existing code for recurrence, dringend, wichtig, attachments ... */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="recurrence_type">Wiederholung</Label>

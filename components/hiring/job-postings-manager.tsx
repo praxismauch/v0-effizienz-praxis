@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import useSWR from "swr"
 import { usePractice } from "@/contexts/practice-context"
 import { useTranslation } from "@/contexts/translation-context"
 import { Button } from "@/components/ui/button"
@@ -35,6 +36,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
+import { useToast } from "@/hooks/use-toast"
 
 interface JobPosting {
   id: string
@@ -54,17 +58,20 @@ interface JobPosting {
 export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => void; initialTab?: string }) {
   const router = useRouter()
   const { t } = useTranslation()
+  const { toast } = useToast()
   const { currentPractice } = usePractice()
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
-  const [loading, setLoading] = useState(true)
   const [editingPosting, setEditingPosting] = useState<JobPosting | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>(initialTab || "active")
 
-  useEffect(() => {
-    if (currentPractice?.id) {
-      loadJobPostings()
-    }
-  }, [currentPractice?.id])
+  const practiceId = currentPractice?.id
+
+  const {
+    data: jobPostings = [],
+    isLoading: loading,
+    mutate: mutateJobPostings,
+  } = useSWR<JobPosting[]>(practiceId ? SWR_KEYS.jobPostings(practiceId) : null, swrFetcher, {
+    revalidateOnFocus: false,
+  })
 
   useEffect(() => {
     if (initialTab) {
@@ -72,25 +79,16 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
     }
   }, [initialTab])
 
-  const loadJobPostings = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/hiring/job-postings?practiceId=${currentPractice?.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setJobPostings(data)
-      }
-    } catch (error) {
-      console.error("[v0] Error loading job postings:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleDelete = async (id: string) => {
     if (!confirm("Möchten Sie diese Stellenausschreibung wirklich löschen?")) {
       return
     }
+
+    const previousPostings = [...jobPostings]
+    await mutateJobPostings(
+      jobPostings.filter((p) => p.id !== id),
+      { revalidate: false },
+    )
 
     try {
       const response = await fetch(`/api/hiring/job-postings/${id}`, {
@@ -98,16 +96,30 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
       })
 
       if (response.ok) {
-        loadJobPostings()
+        toast({ title: "Stelle gelöscht", description: "Die Stellenausschreibung wurde gelöscht." })
+        await mutateJobPostings()
         onUpdate?.()
+      } else {
+        // Rollback
+        await mutateJobPostings(previousPostings, { revalidate: false })
+        toast({ title: "Fehler", description: "Stelle konnte nicht gelöscht werden.", variant: "destructive" })
       }
     } catch (error) {
-      console.error("[v0] Error deleting job posting:", error)
+      // Rollback
+      await mutateJobPostings(previousPostings, { revalidate: false })
+      toast({ title: "Fehler", description: "Netzwerkfehler beim Löschen.", variant: "destructive" })
     }
   }
 
   const handleStatusToggle = async (posting: JobPosting) => {
     const newStatus = posting.status === "published" ? "draft" : "published"
+
+    const previousPostings = [...jobPostings]
+    await mutateJobPostings(
+      jobPostings.map((p) => (p.id === posting.id ? { ...p, status: newStatus } : p)),
+      { revalidate: false },
+    )
+
     try {
       const response = await fetch(`/api/hiring/job-postings/${posting.id}`, {
         method: "PUT",
@@ -119,11 +131,20 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
       })
 
       if (response.ok) {
-        loadJobPostings()
+        toast({
+          title: newStatus === "published" ? "Veröffentlicht" : "Als Entwurf gespeichert",
+          description: `Status wurde geändert.`,
+        })
+        await mutateJobPostings()
         onUpdate?.()
+      } else {
+        // Rollback
+        await mutateJobPostings(previousPostings, { revalidate: false })
+        toast({ title: "Fehler", description: "Status konnte nicht geändert werden.", variant: "destructive" })
       }
     } catch (error) {
-      console.error("[v0] Error updating job posting status:", error)
+      // Rollback
+      await mutateJobPostings(previousPostings, { revalidate: false })
     }
   }
 
@@ -143,13 +164,16 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
       })
 
       if (response.ok) {
-        loadJobPostings()
+        toast({ title: "Stelle dupliziert", description: "Die Kopie wurde als Entwurf erstellt." })
+        await mutateJobPostings()
         onUpdate?.()
       }
     } catch (error) {
-      console.error("[v0] Error duplicating job posting:", error)
+      toast({ title: "Fehler", description: "Stelle konnte nicht dupliziert werden.", variant: "destructive" })
     }
   }
+
+  // ... existing code for getStatusConfig, getEmploymentTypeConfig, formatDepartment, formatStartDate, formatPublishedDate ...
 
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { variant: any; label: string; color: string; bgColor: string; icon: any }> = {
@@ -210,9 +234,7 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
 
   const formatStartDate = (month: number | null | undefined, year: number | null | undefined) => {
     if (!month || !year) return null
-
     const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-
     return `${monthNames[month - 1]} ${year}`
   }
 
@@ -272,12 +294,10 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
 
     return (
       <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30">
-        {/* Status indicator bar */}
         <div className={cn("absolute top-0 left-0 right-0 h-1", statusConfig.bgColor)} />
 
         <CardContent className="p-5 pt-6">
           <div className="flex flex-col gap-4">
-            {/* Header with title and actions */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0 flex-1">
                 <div className={cn("rounded-lg p-2.5 shrink-0", statusConfig.bgColor)}>
@@ -300,7 +320,6 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
                 </div>
               </div>
 
-              {/* Actions dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -345,15 +364,12 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
               </DropdownMenu>
             </div>
 
-            {/* Info grid */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Department */}
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Building2 className="h-4 w-4 shrink-0" />
                 <span className="truncate">{formatDepartment(posting.department)}</span>
               </div>
 
-              {/* Location */}
               {posting.location && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4 shrink-0" />
@@ -361,7 +377,6 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
                 </div>
               )}
 
-              {/* Start date */}
               {startDate && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CalendarDays className="h-4 w-4 shrink-0" />
@@ -369,7 +384,6 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
                 </div>
               )}
 
-              {/* Published date or created date */}
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 shrink-0" />
                 <span>
@@ -380,7 +394,6 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
               </div>
             </div>
 
-            {/* Footer with quick actions */}
             <div className="flex items-center justify-between pt-3 border-t">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
@@ -506,8 +519,8 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
           open={!!editingPosting}
           onOpenChange={(open) => !open && setEditingPosting(null)}
           posting={editingPosting}
-          onSuccess={() => {
-            loadJobPostings()
+          onSuccess={async () => {
+            await mutateJobPostings()
             onUpdate?.()
           }}
         />

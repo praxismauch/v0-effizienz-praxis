@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useMemo } from "react"
+import useSWR from "swr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import {
@@ -21,6 +22,8 @@ import {
 import { useTranslation } from "@/contexts/translation-context"
 import { usePractice } from "@/contexts/practice-context"
 import { Loader2 } from "lucide-react"
+import { swrFetcher } from "@/lib/swr-fetcher"
+import { SWR_KEYS } from "@/lib/swr-keys"
 
 interface CustomAnalyticsChartProps {
   title: string
@@ -37,151 +40,110 @@ interface ChartDataPoint {
 export function CustomAnalyticsChart({ title, description, chartType, parameterIds }: CustomAnalyticsChartProps) {
   const { t } = useTranslation()
   const { currentPractice } = usePractice()
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([])
-  const [parameters, setParameters] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!currentPractice?.id || !parameterIds.length) {
-        setLoading(false)
-        return
+  const { data: paramsData } = useSWR(currentPractice?.id ? SWR_KEYS.parameters(currentPractice.id) : null, swrFetcher)
+
+  const parameterValuesKeys = parameterIds.map((paramId) =>
+    currentPractice?.id ? SWR_KEYS.parameterValues(currentPractice.id, paramId) : null,
+  )
+
+  // Fetch all parameter values in parallel using individual SWR hooks
+  const { data: valuesData0 } = useSWR(parameterValuesKeys[0], swrFetcher)
+  const { data: valuesData1 } = useSWR(parameterValuesKeys[1], swrFetcher)
+  const { data: valuesData2 } = useSWR(parameterValuesKeys[2], swrFetcher)
+  const { data: valuesData3 } = useSWR(parameterValuesKeys[3], swrFetcher)
+  const { data: valuesData4 } = useSWR(parameterValuesKeys[4], swrFetcher)
+
+  const valuesResults = [valuesData0, valuesData1, valuesData2, valuesData3, valuesData4].filter(Boolean)
+
+  const allParams = Array.isArray(paramsData) ? paramsData : paramsData?.parameters || []
+  const selectedParams = allParams.filter((p: any) => parameterIds.includes(p.id))
+
+  const loading = !paramsData || (parameterIds.length > 0 && valuesResults.length < parameterIds.length)
+
+  const chartData = useMemo(() => {
+    if (!selectedParams.length || !valuesResults.length) return []
+
+    const dataMap = new Map<string, ChartDataPoint>()
+
+    valuesResults.forEach((values, index) => {
+      const param = selectedParams[index]
+      if (!param) return
+
+      const valuesArray = Array.isArray(values) ? values : []
+
+      valuesArray.forEach((value: any) => {
+        const dateKey = new Date(value.recorded_date || value.date).toLocaleDateString("de-DE", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+
+        if (!dataMap.has(dateKey)) {
+          dataMap.set(dateKey, { date: dateKey })
+        }
+
+        const dataPoint = dataMap.get(dateKey)!
+        const currentValue = dataPoint[param.name] || 0
+        const newValue = Number.parseFloat(value.value) || 0
+        dataPoint[param.name] = (currentValue as number) + newValue
+      })
+    })
+
+    // Convert map to array and sort by date
+    const sortedData = Array.from(dataMap.values()).sort((a, b) => {
+      const parseDate = (dateStr: string) => {
+        const [day, month, year] = dateStr.split(/[.\s]+/)
+        const monthMap: Record<string, string> = {
+          Jan: "01",
+          Feb: "02",
+          Mär: "03",
+          Apr: "04",
+          Mai: "05",
+          Jun: "06",
+          Jul: "07",
+          Aug: "08",
+          Sep: "09",
+          Okt: "10",
+          Nov: "11",
+          Dez: "12",
+        }
+        return new Date(`${year}-${monthMap[month] || month}-${day.padStart(2, "0")}`)
       }
+      return parseDate(a.date).getTime() - parseDate(b.date).getTime()
+    })
 
-      try {
-        console.log("[v0] Fetching parameters for chart:", parameterIds)
+    // Fill missing dates with null
+    const filledData = sortedData.map((dataPoint) => {
+      const filled = { ...dataPoint }
+      selectedParams.forEach((param: any) => {
+        if (!(param.name in filled)) {
+          filled[param.name] = null
+        }
+      })
+      return filled
+    })
 
-        // Fetch parameter details
-        const paramsResponse = await fetch(`/api/practices/${currentPractice.id}/parameters`)
-        const paramsData = await paramsResponse.json()
-        const allParams = Array.isArray(paramsData) ? paramsData : paramsData.parameters || []
-
-        console.log("[v0] Fetched parameters:", allParams.length)
-
-        const selectedParams = allParams.filter((p: any) => parameterIds.includes(p.id))
-        console.log(
-          "[v0] Selected parameters for chart:",
-          selectedParams.length,
-          selectedParams.map((p: any) => p.name),
-        )
-        setParameters(selectedParams)
-
-        // Fetch parameter values for each selected parameter
-        const valuesPromises = parameterIds.map((paramId) =>
-          fetch(`/api/practices/${currentPractice.id}/parameter-values?parameterId=${paramId}`).then((r) => r.json()),
-        )
-        const valuesResults = await Promise.all(valuesPromises)
-
-        console.log(
-          "[v0] Fetched values for all parameters:",
-          valuesResults.map((v) => v.length),
-        )
-
-        // Combine data from all parameters
-        const dataMap = new Map<string, ChartDataPoint>()
-
-        valuesResults.forEach((values, index) => {
-          const param = selectedParams[index]
-          if (!param) {
-            console.log("[v0] No parameter found for index:", index)
-            return
-          }
-
-          const valuesArray = Array.isArray(values) ? values : []
-          console.log("[v0] Processing values for parameter:", param.name, "count:", valuesArray.length)
-
-          valuesArray.forEach((value: any) => {
-            console.log("[v0] Processing value:", {
-              parameter: param.name,
-              raw_date: value.recorded_date || value.date,
-              value: value.value,
-            })
-
-            const dateKey = new Date(value.recorded_date || value.date).toLocaleDateString("de-DE", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })
-
-            if (!dataMap.has(dateKey)) {
-              dataMap.set(dateKey, { date: dateKey })
-            }
-
-            const dataPoint = dataMap.get(dateKey)!
-            const currentValue = dataPoint[param.name] || 0
-            const newValue = Number.parseFloat(value.value) || 0
-            dataPoint[param.name] = (currentValue as number) + newValue
-
-            console.log("[v0] Updated data point for date:", dateKey, dataPoint)
-          })
-        })
-
-        // Convert map to array and sort by date
-        const sortedData = Array.from(dataMap.values()).sort((a, b) => {
-          const parseDate = (dateStr: string) => {
-            const [day, month, year] = dateStr.split(/[.\s]+/)
-            const monthMap: Record<string, string> = {
-              Jan: "01",
-              Feb: "02",
-              Mär: "03",
-              Apr: "04",
-              Mai: "05",
-              Jun: "06",
-              Jul: "07",
-              Aug: "08",
-              Sep: "09",
-              Okt: "10",
-              Nov: "11",
-              Dez: "12",
-            }
-            return new Date(`${year}-${monthMap[month] || month}-${day.padStart(2, "0")}`)
-          }
-          return parseDate(a.date).getTime() - parseDate(b.date).getTime()
-        })
-
-        // For each parameter, fill missing dates with null so lines stay connected
-        const allDates = sortedData.map((d) => d.date)
-        const filledData = sortedData.map((dataPoint) => {
-          const filled = { ...dataPoint }
-          selectedParams.forEach((param) => {
-            // If parameter doesn't have a value for this date, set it to null
-            // This allows connectNulls to draw continuous lines
-            if (!(param.name in filled)) {
-              filled[param.name] = null
-            }
-          })
-          return filled
-        })
-
-        setChartData(filledData)
-        console.log("[v0] Chart data prepared:", filledData.length, "data points with filled gaps")
-      } catch (error) {
-        console.error("[v0] Failed to fetch chart data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [currentPractice?.id, parameterIds])
+    return filledData
+  }, [selectedParams, valuesResults])
 
   const colors = [
-    "#3b82f6", // Vibrant Blue
-    "#10b981", // Emerald Green
-    "#f59e0b", // Amber Orange
-    "#ef4444", // Red
-    "#8b5cf6", // Purple
-    "#ec4899", // Pink
-    "#06b6d4", // Cyan
-    "#f97316", // Orange
-    "#14b8a6", // Teal
-    "#a855f7", // Violet
-    "#f43f5e", // Rose
-    "#22c55e", // Green
+    "#3b82f6",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#ec4899",
+    "#06b6d4",
+    "#f97316",
+    "#14b8a6",
+    "#a855f7",
+    "#f43f5e",
+    "#22c55e",
   ]
 
-  const chartConfig = parameters.reduce(
-    (acc, param, index) => {
+  const chartConfig = selectedParams.reduce(
+    (acc: Record<string, { label: string; color: string }>, param: any, index: number) => {
       acc[param.name] = {
         label: param.name,
         color: colors[index % colors.length],
@@ -230,7 +192,7 @@ export function CustomAnalyticsChart({ title, description, chartType, parameterI
               <YAxis />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Legend />
-              {parameters.map((param, index) => (
+              {selectedParams.map((param: any, index: number) => (
                 <Area
                   key={param.id}
                   type="monotone"
@@ -254,7 +216,7 @@ export function CustomAnalyticsChart({ title, description, chartType, parameterI
               <YAxis />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Legend />
-              {parameters.map((param, index) => (
+              {selectedParams.map((param: any, index: number) => (
                 <Line
                   key={param.id}
                   type="monotone"
@@ -277,7 +239,7 @@ export function CustomAnalyticsChart({ title, description, chartType, parameterI
               <YAxis />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Legend />
-              {parameters.map((param, index) => (
+              {selectedParams.map((param: any, index: number) => (
                 <Bar key={param.id} dataKey={param.name} fill={colors[index % colors.length]} />
               ))}
             </BarChart>
@@ -285,9 +247,8 @@ export function CustomAnalyticsChart({ title, description, chartType, parameterI
         )
 
       case "pie":
-        // For pie chart, use the latest data point
         const latestData = chartData[chartData.length - 1]
-        const pieData = parameters.map((param, index) => ({
+        const pieData = selectedParams.map((param: any, index: number) => ({
           name: param.name,
           value: latestData[param.name] || 0,
           fill: colors[index % colors.length],

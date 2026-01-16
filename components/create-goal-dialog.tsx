@@ -3,6 +3,7 @@
 import type React from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect, useCallback } from "react"
+import useSWR from "swr"
 import {
   Dialog,
   DialogContent,
@@ -19,12 +20,14 @@ import { Switch } from "@/components/ui/switch"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useTranslation } from "@/contexts/translation-context"
-import { Link, ChevronDown, ChevronUp, X, Upload, type File, FileText, Users, Loader2 } from "lucide-react"
+import { Link, ChevronDown, ChevronUp, X, Upload, type File, Users, Loader2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTeam } from "@/contexts/team-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 interface CreateGoalDialogProps {
   open: boolean
@@ -55,6 +58,7 @@ export function CreateGoalDialog({
   const { currentPractice } = usePractice()
   const { t } = useTranslation()
   const { teamMembers: contextTeamMembers, loading: teamLoading } = useTeam()
+  const { toast } = useToast()
 
   const getEffectivePracticeId = () => {
     return currentPractice?.id && currentPractice.id !== "0" && currentPractice.id !== "undefined"
@@ -62,26 +66,62 @@ export function CreateGoalDialog({
       : "1"
   }
 
+  const effectivePracticeId = getEffectivePracticeId()
+
+  const { data: goalsData } = useSWR(
+    open && effectivePracticeId && !parentGoalId
+      ? `${SWR_KEYS.goals(effectivePracticeId)}?includeSubgoals=false`
+      : null,
+    swrFetcher,
+  )
+
+  const { data: parametersData } = useSWR(
+    open && effectivePracticeId ? SWR_KEYS.parameters(effectivePracticeId) : null,
+    swrFetcher,
+  )
+
+  const { data: categoriesData, isLoading: loadingCategories } = useSWR(
+    open && effectivePracticeId ? SWR_KEYS.orgaCategories(effectivePracticeId) : null,
+    swrFetcher,
+  )
+
+  const { data: teamsData, isLoading: loadingTeams } = useSWR(
+    open && effectivePracticeId ? SWR_KEYS.teams(effectivePracticeId) : null,
+    swrFetcher,
+  )
+
+  // Derive state from SWR data
+  const availableGoals = goalsData?.goals || []
+  const availableParameters = parametersData?.parameters || []
+  const rawTeams = Array.isArray(teamsData) ? teamsData : []
+  const teams: Team[] = rawTeams.filter((t: Team) => t.isActive !== false)
+
+  // Process categories with deduplication
+  const orgaCategories = (() => {
+    const categories = categoriesData?.categories || []
+    const seen = new Set<string>()
+    return categories.filter((cat: any) => {
+      const key = cat.name?.toLowerCase()?.trim()
+      if (key && !seen.has(key)) {
+        seen.add(key)
+        return true
+      }
+      return false
+    })
+  })()
+
   const [loading, setLoading] = useState(false)
-  const [availableGoals, setAvailableGoals] = useState<any[]>([])
-  const [availableParameters, setAvailableParameters] = useState<any[]>([])
   const [createAsSubgoal, setCreateAsSubgoal] = useState(!!parentGoalId)
   const [showExtended, setShowExtended] = useState(false)
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([])
-  const [teams, setTeams] = useState<Team[]>([])
-  const [loadingTeams, setLoadingTeams] = useState(false)
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; fileName: string; fileSize: number }>>([])
   const [isUploading, setIsUploading] = useState(false)
-  const [orgaCategories, setOrgaCategories] = useState<Array<{ id: string; name: string; color: string }>>([])
-  const [loadingCategories, setLoadingCategories] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [localTeamMembers, setLocalTeamMembers] = useState<any[]>([])
-  const [loadingLocalTeam, setLoadingLocalTeam] = useState(false)
-  const { toast } = useToast()
 
-  const teamMembers = contextTeamMembers?.length > 0 ? contextTeamMembers : localTeamMembers
-  const isTeamLoading = teamLoading || loadingLocalTeam
+  // Use context team members directly (already SWR-enabled from Batch SWR-1)
+  const teamMembers = contextTeamMembers || []
+  const isTeamLoading = teamLoading
 
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
@@ -93,12 +133,12 @@ export function CreateGoalDialog({
     progressPercentage: "0",
     priority: "medium" as "low" | "medium" | "high",
     status: "not-started" as "not-started" | "in-progress" | "completed" | "cancelled",
-    startDate: "", // Added startDate field to form form
+    startDate: "",
     endDate: "",
     isPrivate: true,
     parentGoalId: parentGoalId || "",
     linkedParameterId: linkedParameterId || "",
-    category: "", // New category state
+    category: "",
   })
 
   const calculatedProgress = (() => {
@@ -117,22 +157,6 @@ export function CreateGoalDialog({
     calculatedProgress !== null ? calculatedProgress : Number.parseInt(formData.progressPercentage, 10)
 
   useEffect(() => {
-    const effectivePracticeId = getEffectivePracticeId()
-    if (open && effectivePracticeId && !parentGoalId) {
-      fetchAvailableGoals()
-    }
-    if (open && effectivePracticeId) {
-      fetchAvailableParameters()
-    }
-  }, [open, currentPractice?.id, parentGoalId])
-
-  useEffect(() => {
-    console.log("[v0] Dialog rendering, isOpen:", open)
-    console.log("[v0] Available parameters:", availableParameters.length)
-    console.log("[v0] Show extended", showExtended)
-  }, [open, availableParameters, showExtended])
-
-  useEffect(() => {
     if (initialData && open) {
       setFormData({
         title: initialData.title || "",
@@ -144,45 +168,15 @@ export function CreateGoalDialog({
         progressPercentage: "0",
         priority: initialData.priority || "medium",
         status: "not-started",
-        startDate: initialData.startDate || "", // Initialize startDate from initialData
+        startDate: initialData.startDate || "",
         endDate: initialData.suggestedEndDate || "",
         isPrivate: true,
         parentGoalId: parentGoalId || "",
         linkedParameterId: linkedParameterId || "",
-        category: initialData.category || "", // Initialize category from initialData
+        category: initialData.category || "",
       })
     }
   }, [initialData, open, parentGoalId, linkedParameterId])
-
-  const fetchAvailableGoals = async () => {
-    try {
-      const effectivePracticeId = getEffectivePracticeId()
-      const response = await fetch(`/api/practices/${effectivePracticeId}/goals?includeSubgoals=false`, {
-        credentials: "include",
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setAvailableGoals(data.goals || [])
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching available goals:", error)
-    }
-  }
-
-  const fetchAvailableParameters = async () => {
-    try {
-      const effectivePracticeId = getEffectivePracticeId()
-      const response = await fetch(`/api/practices/${effectivePracticeId}/parameters`, {
-        credentials: "include",
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setAvailableParameters(data.parameters || [])
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching available parameters:", error)
-    }
-  }
 
   const fetchLatestParameterValue = async (parameterId: string) => {
     if (!parameterId || parameterId === "none") {
@@ -190,12 +184,9 @@ export function CreateGoalDialog({
     }
 
     try {
-      const effectivePracticeId = getEffectivePracticeId()
       const response = await fetch(
         `/api/practices/${effectivePracticeId}/parameter-values?parameterId=${parameterId}&limit=1`,
-        {
-          credentials: "include",
-        },
+        { credentials: "include" },
       )
       if (response.ok) {
         const data = await response.json()
@@ -208,17 +199,12 @@ export function CreateGoalDialog({
         }
       }
     } catch (error) {
-      console.error("[v0] Error fetching latest parameter value:", error)
+      console.error("Error fetching latest parameter value:", error)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] handleSubmit called")
-    console.log("[v0] User:", currentUser)
-    console.log("[v0] User loading:", userLoading)
-    console.log("[v0] Current practice:", currentPractice)
-    console.log("[v0] Form data:", formData)
 
     if (userLoading) {
       toast({
@@ -228,9 +214,7 @@ export function CreateGoalDialog({
       return
     }
 
-    const effectivePracticeId = getEffectivePracticeId()
     if (!currentUser || !effectivePracticeId) {
-      console.error("[v0] Missing user or practice:", { user: !!currentUser, practice: !!effectivePracticeId })
       toast({
         title: "Fehler",
         description: "Benutzer oder Praxis nicht gefunden. Bitte laden Sie die Seite neu.",
@@ -240,7 +224,6 @@ export function CreateGoalDialog({
     }
 
     if (createAsSubgoal && !formData.parentGoalId && !parentGoalId) {
-      console.error("[v0] Cannot create subgoal without parent goal")
       toast({
         title: "Fehler",
         description: "Bitte wählen Sie ein übergeordnetes Ziel aus.",
@@ -250,13 +233,11 @@ export function CreateGoalDialog({
     }
 
     setIsSubmitting(true)
-    console.log("[v0] Starting goal creation...")
     try {
       const finalProgress =
         calculatedProgress !== null ? calculatedProgress : Number.parseInt(formData.progressPercentage, 10)
 
       const finalParentGoalId = formData.parentGoalId || parentGoalId || null
-
       const finalLinkedParameterId = formData.linkedParameterId || null
 
       const goalData: any = {
@@ -279,12 +260,6 @@ export function CreateGoalDialog({
         created_by: currentUser.id,
         teams: selectedTeams,
       }
-
-      console.log("[v0] Goal data being sent:", {
-        ...goalData,
-        isSubgoal: !!finalParentGoalId,
-        parentId: finalParentGoalId,
-      })
 
       const response = await fetch(`/api/practices/${effectivePracticeId}/goals`, {
         method: "POST",
@@ -318,16 +293,6 @@ export function CreateGoalDialog({
       }
 
       if (selectedTeamMembers.length > 0 && newGoal?.id) {
-        console.log("[v0] ========== ASSIGNING TEAM MEMBERS ==========")
-        console.log("[v0] Goal ID:", newGoal.id)
-        console.log("[v0] Practice ID:", effectivePracticeId)
-        console.log("[v0] Selected team member IDs:", selectedTeamMembers)
-        console.log("[v0] Assigned by (current user user):", currentUser.id)
-        console.log(
-          "[v0] Available team members from context:",
-          teamMembers.map((m) => ({ id: m.id, name: m.name })),
-        )
-
         const assignmentResponse = await fetch(
           `/api/practices/${effectivePracticeId}/goals/${newGoal.id}/assignments`,
           {
@@ -343,19 +308,12 @@ export function CreateGoalDialog({
 
         if (!assignmentResponse.ok) {
           const errorData = await assignmentResponse.json()
-          console.error("[v0] ========== ASSIGNMENT FAILED ==========")
-          console.error("[v0] Status:", assignmentResponse.status)
-          console.error("[v0] Error data:", errorData)
           toast({
             title: "Ziel erstellt",
             description:
               errorData.message || "Ziel wurde erstellt, aber einige Teammitglieder konnten nicht zugewiesen werden.",
             variant: "default",
           })
-        } else {
-          const successData = await assignmentResponse.json()
-          console.log("[v0] ========== ASSIGNMENT SUCCESS ==========")
-          console.log("[v0] Success data:", successData)
         }
       }
 
@@ -371,24 +329,29 @@ export function CreateGoalDialog({
         progressPercentage: "0",
         priority: "medium",
         status: "not-started",
-        startDate: "", // Reset startDate on form reset
+        startDate: "",
         endDate: "",
         isPrivate: true,
         parentGoalId: parentGoalId || "",
         linkedParameterId: "",
-        category: "", // Reset category
+        category: "",
       })
       setSelectedTeamMembers([])
       setUploadedImages([])
       setSelectedTeams([])
     } catch (error) {
-      console.error("[v0] Error creating goal:", error)
-      alert("Fehler beim Erstellen des Ziels")
+      console.error("Error creating goal:", error)
+      toast({
+        title: "Fehler",
+        description: "Fehler beim Erstellen des Ziels",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  // ... existing code for handlePaste, uploadImage, handleDrop, handleDragOver, removeImage ...
   const handlePaste = useCallback(
     async (e: React.ClipboardEvent) => {
       const items = e.clipboardData?.items
@@ -451,7 +414,7 @@ export function CreateGoalDialog({
         })
       }
     } catch (error) {
-      console.error("[v0] Error uploading image:", error)
+      console.error("Error uploading image:", error)
       toast({
         title: "Fehler",
         description: "Fehler beim Hochladen des Bildes.",
@@ -483,383 +446,156 @@ export function CreateGoalDialog({
     setUploadedImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  useEffect(() => {
-    const fetchLocalTeamMembers = async () => {
-      const effectivePracticeId = getEffectivePracticeId()
-      if (!open || !effectivePracticeId) {
-        if (open && !effectivePracticeId) {
-          toast({
-            title: "Fehler",
-            description: "Keine Praxis-ID gefunden. Team-Mitglieder können nicht geladen werden.",
-            variant: "destructive",
-          })
-        }
-        return
-      }
-      if (contextTeamMembers && contextTeamMembers.length > 0) return
-
-      setLoadingLocalTeam(true)
-      try {
-        const response = await fetch(`/api/practices/${effectivePracticeId}/team-members`, {
-          credentials: "include",
-        })
-        if (response.ok) {
-          const data = await response.json()
-          const members = Array.isArray(data) ? data : data.members || []
-          setLocalTeamMembers(members.filter((m: any) => m.id && m.id.trim() !== ""))
-        } else {
-          toast({
-            title: "Fehler",
-            description: "Team-Mitglieder konnten nicht geladen werden.",
-            variant: "destructive",
-          })
-        }
-      } catch (error) {
-        console.error("[v0] Error fetching local team members:", error)
-        toast({
-          title: "Fehler",
-          description: "Fehler beim Laden der Team-Mitglieder.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoadingLocalTeam(false)
-      }
-    }
-
-    fetchLocalTeamMembers()
-  }, [open, currentPractice?.id, contextTeamMembers])
-
-  useEffect(() => {
-    const fetchOrgaCategories = async () => {
-      const effectivePracticeId = getEffectivePracticeId()
-      if (!effectivePracticeId) {
-        if (open) {
-          toast({
-            title: "Fehler",
-            description: "Keine Praxis-ID gefunden. Kategorien können nicht geladen werden.",
-            variant: "destructive",
-          })
-        }
-        return
-      }
-
-      try {
-        setLoadingCategories(true)
-        const response = await fetch(`/api/practices/${effectivePracticeId}/orga-categories`)
-        if (response.ok) {
-          const data = await response.json()
-          const categories = data.categories || []
-          const seen = new Set<string>()
-          const uniqueCategories = categories.filter((cat: any) => {
-            const key = cat.name?.toLowerCase()?.trim()
-            if (key && !seen.has(key)) {
-              seen.add(key)
-              return true
-            }
-            return false
-          })
-          setOrgaCategories(uniqueCategories)
-        } else {
-          toast({
-            title: "Fehler",
-            description: "Kategorien konnten nicht geladen werden.",
-            variant: "destructive",
-          })
-        }
-      } catch (error) {
-        console.error("[v0] Error fetching orga categories:", error)
-        toast({
-          title: "Fehler",
-          description: "Fehler beim Laden der Kategorien.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoadingCategories(false)
-      }
-    }
-
-    if (open) {
-      fetchOrgaCategories()
-    }
-  }, [open, currentPractice?.id])
-
-  useEffect(() => {
-    const fetchTeams = async () => {
-      const effectivePracticeId = getEffectivePracticeId()
-      if (!open || !effectivePracticeId) return
-
-      setLoadingTeams(true)
-      try {
-        const response = await fetch(`/api/practices/${effectivePracticeId}/teams`)
-        if (response.ok) {
-          const data = await response.json()
-          setTeams(Array.isArray(data) ? data.filter((t: Team) => t.isActive !== false) : [])
-        }
-      } catch (error) {
-        console.error("[v0] Error fetching teams:", error)
-      } finally {
-        setLoadingTeams(false)
-      }
-    }
-
-    fetchTeams()
-  }, [open, currentPractice?.id])
-
-  const toggleTeam = (teamId: string) => {
-    if (selectedTeams.includes(teamId)) {
-      setSelectedTeams(selectedTeams.filter((id) => id !== teamId))
-    } else {
-      setSelectedTeams([...selectedTeams, teamId])
-    }
-  }
-
+  // Added onPaste to DialogContent
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl" onPaste={handlePaste}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
-            <DialogTitle>
-              {parentGoalId
-                ? t("goals.create.subgoalTitle", "Unterziel erstellen")
-                : t("goals.create.title", "Neues Ziel erstellen")}
-            </DialogTitle>
-            <DialogDescription>
-              {t("goals.create.description", "Setzen Sie ein neues Ziel, um Ihren Fortschritt zu verfolgen")}
-            </DialogDescription>
+            <DialogTitle>{t("goals.create.title", "Neues Ziel erstellen")}</DialogTitle>
+            <DialogDescription>{t("goals.create.description", "Erstellen Sie ein neues Ziel")}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">{t("goals.form.title", "Titel")} *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                  placeholder={t("goals.form.titlePlaceholder", "Mein Ziel...")}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="title">{t("goals.form.title", "Titel")} *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">{t("goals.form.description", "Beschreibung")}</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  onPaste={handlePaste}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  rows={3}
-                  placeholder={t("goals.form.descriptionPlaceholder", "Beschreiben Sie Ihr Ziel...")}
-                />
-                <p className="text-xs text-muted-foreground flex items-center gap-2">
-                  <Upload className="h-3 w-3" />
-                  {t("goals.form.uploadHint", "Bilder einfügen: Strg+V oder Drag & Drop")}
-                </p>
-                {uploadedImages.length > 0 && (
-                  <div className="space-y-2 mt-3 p-3 bg-muted/50 rounded-md border">
-                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
-                      Angehängte Dateien ({uploadedImages.length})
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {uploadedImages.map((image, index) => (
-                        <div
-                          key={index}
-                          className="relative group bg-background rounded border p-2 flex items-center gap-2 hover:border-primary transition-colors"
-                        >
-                          <div className="h-12 w-12 rounded overflow-hidden bg-muted flex items-center justify-center">
-                            <img
-                              src={image.url || "/placeholder.svg"}
-                              alt={image.fileName}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate max-w-[150px]">{image.fileName}</p>
-                            <p className="text-xs text-muted-foreground">{(image.fileSize / 1024).toFixed(1)} KB</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="p-1 rounded-full hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {isUploading && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-2">
-                    <span className="animate-spin">⏳</span> Hochladen...
-                  </p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">{t("goals.form.description", "Beschreibung")}</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+              />
+            </div>
 
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="category">{t("goals.form.category", "Kategorie")}</Label>
+                <Label htmlFor="goalType">{t("goals.form.goalType", "Zieltyp")}</Label>
                 <Select
-                  value={formData.category || ""}
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  disabled={loadingCategories}
+                  value={formData.goalType}
+                  onValueChange={(value: any) => setFormData({ ...formData, goalType: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        loadingCategories
-                          ? "Kategorien werden geladen..."
-                          : t("goals.form.categoryPlaceholder", "Kategorie wählen...")
-                      }
-                    />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {orgaCategories.length === 0 ? (
-                      <div className="px-2 py-1.5 text-sm text-muted-foreground">Keine Kategorien verfügbar</div>
-                    ) : (
-                      orgaCategories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name}>
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                            {cat.name}
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
+                    <SelectItem value="personal">{t("goals.type.personal", "Persönlich")}</SelectItem>
+                    <SelectItem value="team">{t("goals.type.team", "Team")}</SelectItem>
+                    <SelectItem value="practice">{t("goals.type.practice", "Praxis")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">{t("goals.form.status", "Status")}</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value: any) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="not-started">{t("goals.status.notStarted", "Nicht begonnen")}</SelectItem>
-                      <SelectItem value="in-progress">{t("goals.status.inProgress", "In Bearbeitung")}</SelectItem>
-                      <SelectItem value="completed">{t("goals.status.completed", "Abgeschlossen")}</SelectItem>
-                      <SelectItem value="cancelled">{t("goals.status.cancelled", "Abgebrochen")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="priority">{t("goals.form.priority", "Priorität")}</Label>
-                  <Select
-                    value={formData.priority}
-                    onValueChange={(value: any) => setFormData({ ...formData, priority: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">{t("goals.priority.low", "Niedrig")}</SelectItem>
-                      <SelectItem value="medium">{t("goals.priority.medium", "Mittel")}</SelectItem>
-                      <SelectItem value="high">{t("goals.priority.high", "Hoch")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentValue">{t("goals.form.currentValue", "Aktueller Wert")}</Label>
-                  <Input
-                    id="currentValue"
-                    type="number"
-                    value={formData.currentValue || ""}
-                    onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="targetValue">{t("goals.form.targetValue", "Zielwert")}</Label>
-                  <Input
-                    id="targetValue"
-                    type="number"
-                    value={formData.targetValue || ""}
-                    onChange={(e) => setFormData({ ...formData, targetValue: e.target.value })}
-                    placeholder="100"
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="unit">{t("goals.form.unit", "Einheit")}</Label>
-                <Input
-                  id="unit"
-                  value={formData.unit || ""}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  placeholder={t("goals.form.unitPlaceholder", "z.B. km, kg, Stunden, Patienten...")}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("goals.form.unitHelp", "Optional: Einheit für Ziel- und Ist-Wert (z.B. Patienten, Stunden, km)")}
-                </p>
-              </div>
-
-              {calculatedProgress === null && (
-                <div className="space-y-2">
-                  <Label htmlFor="progressPercentage">{t("goals.form.progress", "Fortschritt (%)")}</Label>
-                  <Input
-                    id="progressPercentage"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.progressPercentage || "0"} // Add fallback for progressPercentage
-                    onChange={(e) => setFormData({ ...formData, progressPercentage: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {t("goals.form.progressHelp", "Geben Sie den manuellen Fortschritt ein (0-100%)")}
-                  </p>
-                </div>
-              )}
-
-              {calculatedProgress !== null && (
-                <div className="space-y-2">
-                  <Label>{t("goals.form.progress", "Fortschritt")}</Label>
-                  <div className="p-3 bg-muted rounded-rounded">
-                    <p className="text-2xl font-bold text-primary">{displayProgress}%</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("goals.form.autoCalculated", "Automatisch berechnet")}: {formData.currentValue} /{" "}
-                      {formData.targetValue} {formData.unit || ""}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Added two-column grid layout for start and end dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Startdatum</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.startDate || ""}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">Enddatum</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={formData.endDate || ""}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  />
-                </div>
+                <Label htmlFor="priority">{t("goals.form.priority", "Priorität")}</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value: any) => setFormData({ ...formData, priority: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">{t("goals.priority.low", "Niedrig")}</SelectItem>
+                    <SelectItem value="medium">{t("goals.priority.medium", "Mittel")}</SelectItem>
+                    <SelectItem value="high">{t("goals.priority.high", "Hoch")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentValue">{t("goals.form.currentValue", "Aktueller Wert")}</Label>
+                <Input
+                  id="currentValue"
+                  type="number"
+                  value={formData.currentValue}
+                  onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="targetValue">{t("goals.form.targetValue", "Zielwert")}</Label>
+                <Input
+                  id="targetValue"
+                  type="number"
+                  value={formData.targetValue}
+                  onChange={(e) => setFormData({ ...formData, targetValue: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {calculatedProgress === null && (
+              <div className="space-y-2">
+                <Label htmlFor="progress">{t("goals.form.progress", "Fortschritt (%)")}</Label>
+                <Input
+                  id="progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.progressPercentage}
+                  onChange={(e) => setFormData({ ...formData, progressPercentage: e.target.value })}
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Startdatum</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Enddatum</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Category Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Kategorie</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Kategorie wählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keine Kategorie</SelectItem>
+                  {orgaCategories.map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.name}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color || "#64748b" }} />
+                        {cat.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Team Assignment */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -875,22 +611,22 @@ export function CreateGoalDialog({
                   {teams.map((team) => (
                     <div key={team.id} className="flex items-center space-x-3">
                       <Checkbox
-                        id={`goal-team-${team.id}`}
+                        id={`team-${team.id}`}
                         checked={selectedTeams.includes(team.id)}
-                        onCheckedChange={() => toggleTeam(team.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedTeams([...selectedTeams, team.id])
+                          } else {
+                            setSelectedTeams(selectedTeams.filter((id) => id !== team.id))
+                          }
+                        }}
                       />
-                      <label
-                        htmlFor={`goal-team-${team.id}`}
-                        className="flex items-center space-x-2 cursor-pointer flex-1"
-                      >
+                      <label htmlFor={`team-${team.id}`} className="flex items-center space-x-2 cursor-pointer flex-1">
                         <div
                           className="w-4 h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: team.color || "#64748b" }}
                         />
                         <span className="text-sm font-medium">{team.name}</span>
-                        {team.memberCount !== undefined && (
-                          <span className="text-xs text-muted-foreground">({team.memberCount} Mitglieder)</span>
-                        )}
                       </label>
                     </div>
                   ))}
@@ -898,12 +634,9 @@ export function CreateGoalDialog({
               ) : (
                 <p className="text-sm text-muted-foreground border rounded-md p-3">Keine Teams verfügbar</p>
               )}
-              {selectedTeams.length > 0 && (
-                <p className="text-xs text-muted-foreground">{selectedTeams.length} Team(s) ausgewählt</p>
-              )}
             </div>
 
-            {/* Team member selection */}
+            {/* Team Members Assignment */}
             <div className="space-y-2">
               <Label>Zugewiesene Teammitglieder</Label>
               <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
@@ -952,6 +685,7 @@ export function CreateGoalDialog({
               )}
             </div>
 
+            {/* Extended Settings */}
             <div className="border-t pt-4">
               <Button
                 type="button"
@@ -965,147 +699,153 @@ export function CreateGoalDialog({
 
               {showExtended && (
                 <div className="space-y-4 mt-4">
-                  {availableGoals.length > 0 && (
-                    <div className="flex items-center justify-between space-x-2 pb-2 border-b">
-                      <Label htmlFor="createAsSubgoal" className="flex-1">
-                        {t("goals.form.createAsSubgoal", "Als Unterziel erstellen")}
-                        <p className="text-sm text-muted-foreground font-normal">
-                          {parentGoalId
-                            ? t("goals.form.subgoalAutomatic", "Dieses Ziel wird als Unterziel erstellt")
-                            : t("goals.form.createAsSubgoalHelp", "Dieses Ziel einem übergeordneten Ziel zuordnen")}
-                        </p>
-                      </Label>
-                      <Switch
-                        id="createAsSubgoal"
-                        checked={createAsSubgoal}
-                        onCheckedChange={(checked) => {
-                          setCreateAsSubgoal(checked)
-                          if (!checked) {
-                            setFormData({ ...formData, parentGoalId: "" })
-                          }
-                        }}
-                        disabled={!!parentGoalId}
-                      />
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">{t("goals.form.unit", "Einheit")}</Label>
+                    <Input
+                      id="unit"
+                      value={formData.unit}
+                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                      placeholder={t("goals.form.unitPlaceholder", "z.B. Patienten, €")}
+                    />
+                  </div>
 
-                  {availableGoals.length > 0 && createAsSubgoal && !parentGoalId && (
+                  {/* Parent Goal Selection */}
+                  {!parentGoalId && (
                     <div className="space-y-2">
-                      <Label htmlFor="parentGoal">{t("goals.form.parentGoal", "Übergeordnetes Ziel")} *</Label>
-                      <Select
-                        value={formData.parentGoalId}
-                        onValueChange={(value) => setFormData({ ...formData, parentGoalId: value })}
-                        required={createAsSubgoal}
-                      >
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("goals.form.selectParentGoal", "Übergeordnetes Ziel auswählen")}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableGoals.map((goal) => (
-                            <SelectItem key={goal.id} value={goal.id}>
-                              {goal.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {parentGoalId && (
-                    <div className="space-y-2">
-                      <Label>{t("goals.form.parentGoal", "Übergeordnetes Ziel")}</Label>
-                      <div className="p-3 bg-muted rounded-md text-sm">
-                        {availableGoals.find((g) => g.id === parentGoalId)?.title ||
-                          t("goals.form.parentGoalSelected", "Übergeordnetes Ziel ausgewählt")}
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="createAsSubgoal"
+                          checked={createAsSubgoal}
+                          onCheckedChange={(checked) => setCreateAsSubgoal(!!checked)}
+                        />
+                        <Label htmlFor="createAsSubgoal">Als Unterziel erstellen</Label>
                       </div>
-                    </div>
-                  )}
 
-                  {availableParameters.length > 0 && (
-                    <div className="space-y-2 border-t border-b py-3">
-                      <Label htmlFor="linkedParameter" className="flex items-center gap-2">
-                        <Link className="h-4 w-4" />
-                        {t("goals.form.linkedParameter", "Mit KPI-Parameter verknüpfen (optional)")}
-                      </Label>
-                      <Select
-                        value={formData.linkedParameterId}
-                        onValueChange={(value) => {
-                          setFormData({ ...formData, linkedParameterId: value === "none" ? "" : value })
-                          const param = availableParameters.find((p) => p.id === value)
-                          if (param?.unit && !formData.unit) {
-                            setFormData((prev) => ({ ...prev, unit: param.unit }))
-                          }
-                          if (value && value !== "none") {
-                            fetchLatestParameterValue(value)
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("goals.form.selectParameter", "KPI-Parameter auswählen (optional)")}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">{t("goals.form.noParameter", "Kein Parameter")}</SelectItem>
-                          {availableParameters.map((param) => (
-                            <SelectItem key={param.id} value={param.id}>
-                              {param.name} {param.unit ? `(${param.unit})` : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {formData.linkedParameterId && (
-                        <p className="text-xs text-muted-foreground">
-                          {t(
-                            "goals.form.linkedParameterHelp",
-                            "Der aktuelle Wert wird automatisch aus den KPI-Daten aktualisiert",
-                          )}
-                        </p>
+                      {createAsSubgoal && (
+                        <Select
+                          value={formData.parentGoalId}
+                          onValueChange={(value) => setFormData({ ...formData, parentGoalId: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Übergeordnetes Ziel wählen..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableGoals.map((goal: any) => (
+                              <SelectItem key={goal.id} value={goal.id}>
+                                {goal.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
                   )}
 
-                  {availableParameters.length === 0 && (
-                    <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground">
-                      {t(
-                        "goals.form.noParametersAvailable",
-                        "Keine KPI-Parameter verfügbar. Erstellen Sie zuerst Parameter in den Einstellungen.",
+                  {/* Parameter Link */}
+                  <div className="space-y-2">
+                    <Label htmlFor="linkedParameter">
+                      <Link className="h-4 w-4 inline mr-2" />
+                      Mit Kennzahl verknüpfen
+                    </Label>
+                    <Select
+                      value={formData.linkedParameterId}
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, linkedParameterId: value })
+                        if (value && value !== "none") {
+                          fetchLatestParameterValue(value)
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kennzahl wählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Keine Verknüpfung</SelectItem>
+                        {availableParameters.map((param: any) => (
+                          <SelectItem key={param.id} value={param.id}>
+                            {param.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center justify-between space-x-2">
+                    <Label htmlFor="isPrivate" className="flex-1">
+                      {t("goals.form.private", "Privates Ziel")}
+                      <p className="text-sm text-muted-foreground font-normal">
+                        {t(
+                          "goals.form.privateDescription",
+                          "Nur Sie und Praxisadministratoren können dieses Ziel sehen",
+                        )}
+                      </p>
+                    </Label>
+                    <Switch
+                      id="isPrivate"
+                      checked={formData.isPrivate}
+                      onCheckedChange={(checked) => setFormData({ ...formData, isPrivate: checked })}
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div className="space-y-2">
+                    <Label>Bilder anhängen</Label>
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                    >
+                      {isUploading ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Wird hochgeladen...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">Bilder hier ablegen oder Strg+V zum Einfügen</p>
+                        </div>
                       )}
                     </div>
-                  )}
+
+                    {uploadedImages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {uploadedImages.map((img, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={img.url || "/placeholder.svg"}
+                              alt={img.fileName}
+                              className="w-16 h-16 object-cover rounded border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                console.log("[v0] Cancel button clicked")
-                onOpenChange(false)
-              }}
-              disabled={loading || isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel", "Abbrechen")}
             </Button>
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary/90"
-              disabled={
-                loading || isSubmitting || userLoading || (createAsSubgoal && !formData.parentGoalId && !parentGoalId)
-              }
-            >
-              {loading || isSubmitting ? (
+            <Button type="submit" disabled={isSubmitting || !formData.title.trim()}>
+              {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   {t("common.creating", "Wird erstellt...")}
                 </>
               ) : (
-                t("goals.create.submit", "Ziel erstellen")
+                t("common.create", "Erstellen")
               )}
             </Button>
           </DialogFooter>

@@ -1,27 +1,29 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react"
+import { createContext, useContext, useMemo, useCallback, type ReactNode } from "react"
+import useSWR from "swr"
 import { usePractice } from "./practice-context"
 import { useUser } from "./user-context"
-import { fetchWithRetry, safeJsonParse } from "@/lib/fetch-with-retry"
+import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
+import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
 import { toast } from "sonner"
 
 export interface WorkflowStep {
   id: string
   title: string
   description?: string
-  assignedTo?: string // Legacy: name-based assignment
-  assignedUserId?: string // New: user ID-based assignment
-  estimatedDuration?: number // in minutes
-  dependencies: string[] // step IDs that must be completed first
+  assignedTo?: string
+  assignedUserId?: string
+  estimatedDuration?: number
+  dependencies: string[]
   status: "pending" | "in-progress" | "completed" | "blocked"
   completedAt?: string
   completedBy?: string
   notes?: string
   dueDate?: string
-  parentStepId?: string // For sub-items
+  parentStepId?: string
   isSubitem?: boolean
-  subitems?: WorkflowStep[] // Nested sub-items
+  subitems?: WorkflowStep[]
 }
 
 export interface Workflow {
@@ -43,7 +45,7 @@ export interface Workflow {
   actualDuration?: number
   startedAt?: string
   completedAt?: string
-  hideItemsFromOtherUsers?: boolean // Added visibility control
+  hideItemsFromOtherUsers?: boolean
 }
 
 export interface WorkflowTemplate {
@@ -57,7 +59,7 @@ export interface WorkflowTemplate {
   createdAt: string
   isPublic: boolean
   practiceId?: string
-  hideItemsFromOtherUsers?: boolean // Visibility control option
+  hideItemsFromOtherUsers?: boolean
 }
 
 export interface OrgaCategory {
@@ -91,303 +93,189 @@ interface WorkflowContextType {
   createWorkflowFromTemplate: (templateId: string, customizations?: Partial<Workflow>) => Promise<Workflow | void>
   getWorkflowsByTeam: (teamId: string) => Workflow[]
   getWorkflowsByAssignee: (assignee: string) => Workflow[]
-  getVisibleStepsForUser: (workflow: Workflow, userId: string) => WorkflowStep[] // New method
+  getVisibleStepsForUser: (workflow: Workflow, userId: string) => WorkflowStep[]
+  refreshWorkflows: () => Promise<void>
 }
 
 const WorkflowContext = createContext<WorkflowContextType | undefined>(undefined)
 
-const HARDCODED_PRACTICE_ID = "1"
-
 export function WorkflowProvider({ children }: { children: ReactNode }) {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { currentUser, loading: userLoading } = useUser()
-  const [workflows, setWorkflows] = useState<Workflow[]>([])
-  const [templates, setTemplates] = useState<WorkflowTemplate[]>([])
-  const [categories, setCategories] = useState<OrgaCategory[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const practiceIdRef = useRef<string>()
 
-  const fetchCategories = useCallback(
-    async (practiceId: string) => {
-      const pid = practiceId || HARDCODED_PRACTICE_ID
-      if (!pid) {
-        toast.error("Keine Praxis-ID gefunden. Bitte Seite neu laden.")
-        return
-      }
+  const practiceId = currentPractice?.id || DEFAULT_PRACTICE_ID
 
-      try {
-        const url = `/api/practices/${pid}/orga-categories`
-        const response = await fetchWithRetry(url)
-        if (response.ok) {
-          const data = await safeJsonParse(response, { categories: [] })
-          setCategories(data.categories || [])
-        } else {
-          toast.error("Fehler beim Laden der Kategorien")
-        }
-      } catch (error) {
-        console.error("Categories fetch error", error)
-        toast.error("Fehler beim Laden der Kategorien")
-        setCategories([])
-      }
-    },
-    [currentPractice],
+  const {
+    data: workflowsData,
+    isLoading: workflowsLoading,
+    error: workflowsError,
+    mutate: mutateWorkflows,
+  } = useSWR<{ workflows: Workflow[] }>(
+    !userLoading && !practiceLoading ? SWR_KEYS.workflows(practiceId) : null,
+    swrFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5000 },
   )
 
-  useEffect(() => {
-    if (userLoading || practiceLoading) {
-      setIsLoading(true)
-      return
-    }
+  const {
+    data: templatesData,
+    isLoading: templatesLoading,
+    mutate: mutateTemplates,
+  } = useSWR<{ templates: any[] }>(!userLoading && !practiceLoading ? SWR_KEYS.workflowTemplates() : null, swrFetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5000,
+  })
 
-    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+  const {
+    data: categoriesData,
+    isLoading: categoriesLoading,
+    mutate: mutateCategories,
+  } = useSWR<{ categories: OrgaCategory[] }>(
+    !userLoading && !practiceLoading ? SWR_KEYS.orgaCategories(practiceId) : null,
+    swrFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5000 },
+  )
 
-    if (practiceIdRef.current === practiceId) {
-      return
-    }
+  const workflows = workflowsData?.workflows || []
+  const categories = useMemo(() => {
+    const cats = categoriesData?.categories || []
+    return [...cats].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+  }, [categoriesData])
 
-    practiceIdRef.current = practiceId
+  const templates = useMemo(() => {
+    return (templatesData?.templates || []).map((t: any) => ({
+      id: t.id,
+      title: t.title,
+      description: t.description,
+      category: t.category,
+      steps: t.steps || [],
+      estimatedDuration: 0,
+      createdBy: t.created_by || "System",
+      createdAt: t.created_at,
+      isPublic: false,
+      practiceId: t.practice_id?.toString(),
+      hideItemsFromOtherUsers: false,
+    }))
+  }, [templatesData])
 
-    let isMounted = true
-
-    setIsLoading(true)
-    setError(null)
-
-    const fetchData = async () => {
-      try {
-        const categoriesRes = await fetchWithRetry(`/api/practices/${practiceId}/orga-categories`).catch((err) => {
-          console.error("Categories fetch failed:", err)
-          return null
-        })
-
-        if (!isMounted) return
-
-        await new Promise((resolve) => setTimeout(resolve, 100))
-
-        const workflowsRes = await fetchWithRetry(`/api/practices/${practiceId}/workflows`).catch((err) => {
-          console.error("Workflows fetch failed:", err)
-          return null
-        })
-
-        if (!isMounted) return
-
-        await new Promise((resolve) => setTimeout(resolve, 100))
-
-        const templatesRes = await fetchWithRetry("/api/workflow-templates").catch((err) => {
-          console.error("Templates fetch failed:", err)
-          return null
-        })
-
-        if (!isMounted) return
-
-        if (categoriesRes && categoriesRes.ok) {
-          try {
-            const data = await safeJsonParse(categoriesRes, { categories: [] })
-            const categoriesArray = Array.isArray(data.categories) ? data.categories : Array.isArray(data) ? data : []
-            const sortedCategories = categoriesArray.sort(
-              (a: any, b: any) => (a.display_order || 0) - (b.display_order || 0),
-            )
-            if (isMounted) setCategories(sortedCategories)
-          } catch (jsonError) {
-            console.error("Failed to parse categories JSON:", jsonError)
-            if (isMounted) setCategories([])
-          }
-        } else {
-          if (isMounted) setCategories([])
-        }
-
-        if (!isMounted) return
-
-        if (workflowsRes?.ok) {
-          const data = await safeJsonParse(workflowsRes, { workflows: [] })
-          if (isMounted) setWorkflows(data.workflows || [])
-        } else {
-          if (isMounted) setWorkflows([])
-        }
-
-        if (!isMounted) return
-
-        if (templatesRes?.ok) {
-          const data = await safeJsonParse(templatesRes, { templates: [] })
-          const mappedTemplates = (data.templates || []).map((t: any) => ({
-            id: t.id,
-            title: t.title, // workflows table uses 'title' not 'name'
-            description: t.description,
-            category: t.category,
-            steps: t.steps || [],
-            estimatedDuration: 0, // workflows table doesn't have estimated_duration
-            createdBy: t.created_by || "System",
-            createdAt: t.created_at,
-            isPublic: false, // workflows table doesn't have is_public
-            practiceId: t.practice_id?.toString(),
-            hideItemsFromOtherUsers: false, // workflows table doesn't have this field
-          }))
-          if (isMounted) setTemplates(mappedTemplates)
-        } else {
-          if (isMounted) setTemplates([])
-        }
-
-        if (isMounted) {
-          setIsLoading(false)
-          setError(null)
-        }
-      } catch (error) {
-        if (!isMounted) return
-        console.error("Error in fetchData", error)
-        toast.error("Fehler beim Laden der Workflow-Daten")
-        setError(error instanceof Error ? error.message : "Fehler beim Laden der Workflow-Daten")
-        setCategories([])
-        setWorkflows([])
-        setTemplates([])
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-
-    return () => {
-      isMounted = false
-    }
-  }, [currentPractice, userLoading, practiceLoading])
+  const refreshWorkflows = useCallback(async () => {
+    await Promise.all([mutateWorkflows(), mutateTemplates(), mutateCategories()])
+  }, [mutateWorkflows, mutateTemplates, mutateCategories])
 
   const createWorkflow = useCallback(
     async (workflowData: Omit<Workflow, "id" | "practiceId" | "createdAt" | "updatedAt">) => {
-      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
-
       try {
-        const response = await fetch(`/api/practices/${practiceId}/workflows`, {
+        const newWorkflow = await mutationFetcher<Workflow>(SWR_KEYS.workflows(practiceId), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(workflowData),
+          body: workflowData,
         })
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error("WorkflowContext: Create failed", {
-            status: response.status,
-            errorText,
-          })
+        await mutateWorkflows(
+          (current) => ({
+            workflows: [newWorkflow, ...(current?.workflows || [])],
+          }),
+          { revalidate: false },
+        )
 
-          let errorData
-          try {
-            errorData = JSON.parse(errorText)
-          } catch {
-            toast.error(`Fehler beim Erstellen des Workflows: ${errorText}`)
-            throw new Error(`Failed to create workflow: ${errorText}`)
-          }
-
-          toast.error(errorData.error || "Fehler beim Erstellen des Workflows")
-          throw new Error(errorData.error || "Failed to create workflow")
-        }
-
-        const newWorkflow = await response.json()
-        setWorkflows((prev) => [newWorkflow, ...prev])
         toast.success("Workflow erfolgreich erstellt")
-
         return newWorkflow
       } catch (error) {
         console.error("WorkflowContext: Exception in createWorkflow:", error)
+        toast.error("Fehler beim Erstellen des Workflows")
         throw error
       }
     },
-    [currentPractice],
+    [practiceId, mutateWorkflows],
   )
 
   const updateWorkflow = useCallback(
     async (id: string, updates: Partial<Workflow>) => {
-      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
-
-      try {
-        const response = await fetch(`/api/practices/${practiceId}/workflows/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(updates),
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          console.error("Workflow update failed:", response.status, error)
-          toast.error(error.error || "Fehler beim Aktualisieren des Workflows")
-          throw new Error(error.error || "Failed to update workflow")
-        }
-
-        const updatedWorkflow = await response.json()
-
-        setWorkflows((prev) =>
-          prev.map((workflow) =>
+      await mutateWorkflows(
+        (current) => ({
+          workflows: (current?.workflows || []).map((workflow) =>
             workflow.id === id ? { ...workflow, ...updates, updatedAt: new Date().toISOString() } : workflow,
           ),
-        )
+        }),
+        { revalidate: false },
+      )
+
+      try {
+        await mutationFetcher(`${SWR_KEYS.workflows(practiceId)}/${id}`, {
+          method: "PATCH",
+          body: updates,
+        })
         toast.success("Workflow erfolgreich aktualisiert")
       } catch (error) {
+        await mutateWorkflows()
         console.error("Failed to update workflow:", error)
+        toast.error("Fehler beim Aktualisieren des Workflows")
         throw error
       }
     },
-    [currentPractice],
+    [practiceId, mutateWorkflows],
   )
 
   const deleteWorkflow = useCallback(
     async (id: string) => {
-      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+      await mutateWorkflows(
+        (current) => ({
+          workflows: (current?.workflows || []).filter((workflow) => workflow.id !== id),
+        }),
+        { revalidate: false },
+      )
 
       try {
-        const response = await fetch(`/api/practices/${practiceId}/workflows/${id}`, {
+        await mutationFetcher(`${SWR_KEYS.workflows(practiceId)}/${id}`, {
           method: "DELETE",
         })
-
-        if (!response.ok) {
-          const error = await response.json()
-          toast.error(error.error || "Fehler beim Löschen des Workflows")
-          throw new Error(error.error || "Failed to delete workflow")
-        }
-
-        setWorkflows((prev) => prev.filter((workflow) => workflow.id !== id))
         toast.success("Workflow erfolgreich gelöscht")
       } catch (error) {
+        await mutateWorkflows()
         console.error("Failed to delete workflow:", error)
+        toast.error("Fehler beim Löschen des Workflows")
         throw error
       }
     },
-    [currentPractice],
+    [practiceId, mutateWorkflows],
   )
 
   const updateWorkflowStep = useCallback(
     async (workflowId: string, stepId: string, updates: Partial<WorkflowStep>) => {
       if (!currentPractice) {
         toast.error("Keine Praxis ausgewählt. Bitte Seite neu laden.")
-        console.error("Cannot update workflow step - no practice selected")
         throw new Error("Keine Praxis ausgewählt")
       }
 
-      setWorkflows((prev) =>
-        prev.map((workflow) => {
-          if (workflow.id !== workflowId) return workflow
+      await mutateWorkflows(
+        (current) => ({
+          workflows: (current?.workflows || []).map((workflow) => {
+            if (workflow.id !== workflowId) return workflow
 
-          const updatedSteps = workflow.steps.map((step) => (step.id === stepId ? { ...step, ...updates } : step))
-          const allCompleted = updatedSteps.every((step) => step.status === "completed")
-          const anyInProgress = updatedSteps.some((step) => step.status === "in-progress")
+            const updatedSteps = workflow.steps.map((step) => (step.id === stepId ? { ...step, ...updates } : step))
+            const allCompleted = updatedSteps.every((step) => step.status === "completed")
+            const anyInProgress = updatedSteps.some((step) => step.status === "in-progress")
 
-          let workflowStatus = workflow.status
-          if (allCompleted && workflow.status === "active") {
-            workflowStatus = "completed"
-          } else if (anyInProgress && workflow.status === "draft") {
-            workflowStatus = "active"
-          }
+            let workflowStatus = workflow.status
+            if (allCompleted && workflow.status === "active") {
+              workflowStatus = "completed"
+            } else if (anyInProgress && workflow.status === "draft") {
+              workflowStatus = "active"
+            }
 
-          return {
-            ...workflow,
-            steps: updatedSteps,
-            status: workflowStatus,
-            updatedAt: new Date().toISOString(),
-            completedAt: allCompleted ? new Date().toISOString() : workflow.completedAt,
-          }
+            return {
+              ...workflow,
+              steps: updatedSteps,
+              status: workflowStatus,
+              updatedAt: new Date().toISOString(),
+              completedAt: allCompleted ? new Date().toISOString() : workflow.completedAt,
+            }
+          }),
         }),
+        { revalidate: false },
       )
+
       toast.success("Workflow-Schritt aktualisiert")
     },
-    [currentPractice],
+    [currentPractice, mutateWorkflows],
   )
 
   const createWorkflowFromTemplate = useCallback(
@@ -395,12 +283,10 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       const template = templates.find((t) => t.id === templateId)
       if (!template) {
         toast.error("Vorlage nicht gefunden")
-        console.error("Template not found", templateId)
         throw new Error("Vorlage nicht gefunden")
       }
       if (!currentPractice) {
         toast.error("Keine Praxis ausgewählt. Bitte Seite neu laden.")
-        console.error("Cannot create workflow from template - no practice selected")
         throw new Error("Keine Praxis ausgewählt")
       }
 
@@ -429,13 +315,13 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         description: customizations?.description || template.description,
         category: template.category,
         priority: customizations?.priority || "medium",
-        status: "draft", // Start as draft until activated
+        status: "draft",
         createdBy: customizations?.createdBy || currentUser?.name || "Current User",
         teamIds: customizations?.teamIds || [],
         isTemplate: false,
         templateId: template.id,
         estimatedTotalDuration: template.estimatedDuration,
-        hideItemsFromOtherUsers: template.hideItemsFromOtherUsers, // Inherit from template
+        hideItemsFromOtherUsers: template.hideItemsFromOtherUsers,
         steps: flattenSteps(template.steps).map((step) => ({
           ...step,
           id: step.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -486,30 +372,56 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     [currentUser],
   )
 
-  const createTemplateLocal = useCallback((templateData: Omit<WorkflowTemplate, "id" | "createdAt">) => {
-    const newTemplate: WorkflowTemplate = {
-      ...templateData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    }
-    setTemplates((prev) => [...prev, newTemplate])
-  }, [])
+  const createTemplateLocal = useCallback(
+    (templateData: Omit<WorkflowTemplate, "id" | "createdAt">) => {
+      const newTemplate: WorkflowTemplate = {
+        ...templateData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      }
+      mutateTemplates(
+        (current) => ({
+          templates: [...(current?.templates || []), newTemplate],
+        }),
+        { revalidate: false },
+      )
+    },
+    [mutateTemplates],
+  )
 
-  const updateTemplateLocal = useCallback((id: string, updates: Omit<WorkflowTemplate, "id" | "createdAt">) => {
-    setTemplates((prev) => prev.map((template) => (template.id === id ? { ...template, ...updates } : template)))
-  }, [])
+  const updateTemplateLocal = useCallback(
+    (id: string, updates: Omit<WorkflowTemplate, "id" | "createdAt">) => {
+      mutateTemplates(
+        (current) => ({
+          templates: (current?.templates || []).map((template: any) =>
+            template.id === id ? { ...template, ...updates } : template,
+          ),
+        }),
+        { revalidate: false },
+      )
+    },
+    [mutateTemplates],
+  )
 
-  const deleteTemplateLocal = useCallback((id: string) => {
-    setTemplates((prev) => prev.filter((template) => template.id !== id))
-  }, [])
+  const deleteTemplateLocal = useCallback(
+    (id: string) => {
+      mutateTemplates(
+        (current) => ({
+          templates: (current?.templates || []).filter((template: any) => template.id !== id),
+        }),
+        { revalidate: false },
+      )
+    },
+    [mutateTemplates],
+  )
 
   const contextValue = useMemo(
     () => ({
       workflows,
       templates,
       categories,
-      isLoading,
-      error,
+      isLoading: userLoading || practiceLoading || workflowsLoading || templatesLoading || categoriesLoading,
+      error: workflowsError?.message || null,
       createWorkflow,
       updateWorkflow,
       deleteWorkflow,
@@ -521,13 +433,18 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       getWorkflowsByTeam,
       getWorkflowsByAssignee,
       getVisibleStepsForUser,
+      refreshWorkflows,
     }),
     [
       workflows,
       templates,
       categories,
-      isLoading,
-      error,
+      userLoading,
+      practiceLoading,
+      workflowsLoading,
+      templatesLoading,
+      categoriesLoading,
+      workflowsError,
       createWorkflow,
       updateWorkflow,
       deleteWorkflow,
@@ -539,6 +456,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       getWorkflowsByTeam,
       getWorkflowsByAssignee,
       getVisibleStepsForUser,
+      refreshWorkflows,
     ],
   )
 

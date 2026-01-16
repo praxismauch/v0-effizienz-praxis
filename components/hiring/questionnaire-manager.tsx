@@ -1,13 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import useSWR from "swr"
 import { usePractice } from "@/contexts/practice-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Edit, Trash2, Sparkles } from 'lucide-react'
+import { Plus, Trash2, Sparkles } from "lucide-react"
 import { CreateQuestionnaireDialog } from "./create-questionnaire-dialog"
 import { AIQuestionnaireGeneratorDialog } from "./ai-questionnaire-generator-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 interface Questionnaire {
   id: string
@@ -19,34 +22,28 @@ interface Questionnaire {
 
 export function QuestionnaireManager() {
   const { currentPractice } = usePractice()
-  const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([])
-  const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showAIGeneratorDialog, setShowAIGeneratorDialog] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    if (currentPractice?.id) {
-      loadQuestionnaires()
-    }
-  }, [currentPractice?.id])
+  const practiceId = currentPractice?.id
 
-  const loadQuestionnaires = async () => {
-    try {
-      const response = await fetch(`/api/hiring/questionnaires?practiceId=${currentPractice?.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setQuestionnaires(data)
-      }
-    } catch (error) {
-      console.error("Error loading questionnaires:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    data: questionnaires = [],
+    isLoading: loading,
+    mutate: mutateQuestionnaires,
+  } = useSWR<Questionnaire[]>(practiceId ? SWR_KEYS.questionnaires(practiceId) : null, swrFetcher, {
+    revalidateOnFocus: false,
+  })
 
   const handleDelete = async (id: string) => {
     if (!confirm("Möchten Sie diesen Fragebogen wirklich löschen?")) return
+
+    const previousQuestionnaires = [...questionnaires]
+    await mutateQuestionnaires(
+      questionnaires.filter((q) => q.id !== id),
+      { revalidate: false },
+    )
 
     try {
       const response = await fetch(`/api/hiring/questionnaires/${id}`, {
@@ -58,9 +55,19 @@ export function QuestionnaireManager() {
           title: "Fragebogen gelöscht",
           description: "Der Fragebogen wurde erfolgreich gelöscht.",
         })
-        loadQuestionnaires()
+        await mutateQuestionnaires()
+      } else {
+        // Rollback
+        await mutateQuestionnaires(previousQuestionnaires, { revalidate: false })
+        toast({
+          title: "Fehler",
+          description: "Der Fragebogen konnte nicht gelöscht werden.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
+      // Rollback
+      await mutateQuestionnaires(previousQuestionnaires, { revalidate: false })
       toast({
         title: "Fehler",
         description: "Der Fragebogen konnte nicht gelöscht werden.",
@@ -83,7 +90,7 @@ export function QuestionnaireManager() {
               <CardDescription>Verwalten Sie Fragebögen für Kandidaten</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button 
+              <Button
                 className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300"
                 onClick={() => setShowAIGeneratorDialog(true)}
               >
@@ -110,9 +117,7 @@ export function QuestionnaireManager() {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-lg">{questionnaire.title}</CardTitle>
-                        {questionnaire.description && (
-                          <CardDescription>{questionnaire.description}</CardDescription>
-                        )}
+                        {questionnaire.description && <CardDescription>{questionnaire.description}</CardDescription>}
                         <p className="text-sm text-muted-foreground mt-2">
                           {questionnaire.questions?.length || 0} Fragen
                         </p>
@@ -134,13 +139,17 @@ export function QuestionnaireManager() {
       <CreateQuestionnaireDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        onSuccess={loadQuestionnaires}
+        onSuccess={async () => {
+          await mutateQuestionnaires()
+        }}
       />
 
       <AIQuestionnaireGeneratorDialog
         open={showAIGeneratorDialog}
         onOpenChange={setShowAIGeneratorDialog}
-        onSuccess={loadQuestionnaires}
+        onSuccess={async () => {
+          await mutateQuestionnaires()
+        }}
       />
     </>
   )

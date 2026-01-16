@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import useSWR from "swr"
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,8 @@ import { useTranslation } from "@/contexts/translation-context"
 import { Loader2, Link, ChevronDown, ChevronUp } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 interface Goal {
   id: string
@@ -59,7 +62,7 @@ interface EditGoalDialogProps {
 
 export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdated }: EditGoalDialogProps) {
   const { currentPractice } = usePractice()
-  const { teamMembers: contextTeamMembers, loading: teamLoading } = useTeam()
+  const { teamMembers, loading: teamLoading } = useTeam()
   const { currentUser: user } = useUser()
   const { user: authUser } = useAuth()
   const { t } = useTranslation()
@@ -72,16 +75,31 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
   }
   const effectivePracticeId = getEffectivePracticeId()
 
-  const [loading, setLoading] = useState(false)
-  const [hasSubgoals, setHasSubgoals] = useState(false)
-  const [availableParameters, setAvailableParameters] = useState<any[]>([])
-  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([])
-  const [localTeamMembers, setLocalTeamMembers] = useState<any[]>([])
-  const [loadingLocalTeam, setLoadingLocalTeam] = useState(false)
-  const [showExtended, setShowExtended] = useState(false)
+  const { data: parametersData } = useSWR(
+    open && effectivePracticeId ? SWR_KEYS.parameters(effectivePracticeId) : null,
+    swrFetcher,
+  )
 
-  const teamMembers = contextTeamMembers?.length > 0 ? contextTeamMembers : localTeamMembers
-  const isTeamLoading = teamLoading || loadingLocalTeam
+  const { data: assignmentsData, mutate: mutateAssignments } = useSWR(
+    open && effectivePracticeId && goal?.id ? SWR_KEYS.goalAssignments(effectivePracticeId, goal.id) : null,
+    swrFetcher,
+  )
+
+  const { data: subgoalsData } = useSWR(
+    open && effectivePracticeId && goal?.id
+      ? `${SWR_KEYS.goals(effectivePracticeId)}?includeSubgoals=true&parentGoalId=${goal.id}`
+      : null,
+    swrFetcher,
+  )
+
+  // Derive state from SWR data
+  const availableParameters = parametersData?.parameters || []
+  const hasSubgoals = (subgoalsData?.goals || []).filter((g: any) => g.parentGoalId === goal.id).length > 0
+  const initialAssignments = (assignmentsData?.assignments || []).map((a: any) => a.team_member_id)
+
+  const [loading, setLoading] = useState(false)
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([])
+  const [showExtended, setShowExtended] = useState(false)
 
   const [formData, setFormData] = useState({
     title: goal.title,
@@ -121,84 +139,13 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
       currentValue: goal.currentValue?.toString() || "",
       targetValue: goal.targetValue?.toString() || "",
     })
-    checkForSubgoals()
-    if (open && effectivePracticeId) {
-      fetchAvailableParameters()
-      fetchGoalAssignments()
-    }
-  }, [goal, open, effectivePracticeId])
+  }, [goal])
 
   useEffect(() => {
-    const fetchLocalTeamMembers = async () => {
-      if (!open || !effectivePracticeId) return
-      if (contextTeamMembers && contextTeamMembers.length > 0) return
-
-      setLoadingLocalTeam(true)
-      try {
-        const response = await fetch(`/api/practices/${effectivePracticeId}/team-members`, {
-          credentials: "include",
-        })
-        if (response.ok) {
-          const data = await response.json()
-          const members = Array.isArray(data) ? data : data.members || []
-          setLocalTeamMembers(members.filter((m: any) => m.id && m.id.trim() !== ""))
-        }
-      } catch (error) {
-        console.error("[v0] Error fetching local team members:", error)
-      } finally {
-        setLoadingLocalTeam(false)
-      }
+    if (initialAssignments.length > 0) {
+      setSelectedTeamMembers(initialAssignments)
     }
-
-    fetchLocalTeamMembers()
-  }, [open, effectivePracticeId, contextTeamMembers])
-
-  const checkForSubgoals = async () => {
-    if (!effectivePracticeId) return
-
-    try {
-      const response = await fetch(
-        `/api/practices/${effectivePracticeId}/goals?includeSubgoals=true&parentGoalId=${goal.id}`,
-        { credentials: "include" },
-      )
-      if (response.ok) {
-        const data = await response.json()
-        const subgoals = (data.goals || []).filter((g: any) => g.parentGoalId === goal.id)
-        setHasSubgoals(subgoals.length > 0)
-      }
-    } catch (error) {
-      console.error("[v0] Error checking for subgoals:", error)
-    }
-  }
-
-  const fetchAvailableParameters = async () => {
-    try {
-      const response = await fetch(`/api/practices/${effectivePracticeId}/parameters`, {
-        credentials: "include",
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setAvailableParameters(data.parameters || [])
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching available parameters:", error)
-    }
-  }
-
-  const fetchGoalAssignments = async () => {
-    try {
-      const response = await fetch(`/api/practices/${effectivePracticeId}/goals/${goal.id}/assignments`, {
-        credentials: "include",
-      })
-      if (response.ok) {
-        const data = await response.json()
-        const assignedIds = (data.assignments || []).map((a: any) => a.team_member_id)
-        setSelectedTeamMembers(assignedIds)
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching goal assignments:", error)
-    }
-  }
+  }, [assignmentsData])
 
   const fetchLatestParameterValue = async (parameterId: string) => {
     if (!parameterId || parameterId === "none") return
@@ -216,7 +163,7 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
         }
       }
     } catch (error) {
-      console.error("[v0] Error fetching latest parameter value:", error)
+      console.error("Error fetching latest parameter value:", error)
     }
   }
 
@@ -252,7 +199,6 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error("[v0] Goal update failed:", response.status, errorData)
         throw new Error(errorData.error || "Failed to update goal")
       }
 
@@ -267,6 +213,7 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
             assignedBy: effectiveUser?.id,
           }),
         })
+        mutateAssignments()
       }
 
       toast({
@@ -277,7 +224,7 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
       onGoalUpdated()
       onOpenChange(false)
     } catch (error) {
-      console.error("[v0] Error updating goal:", error)
+      console.error("Error updating goal:", error)
       toast({
         title: "Fehler",
         description: "Fehler beim Aktualisieren des Ziels",
@@ -397,9 +344,6 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
                   value={formData.progress}
                   onChange={(e) => setFormData({ ...formData, progress: Number(e.target.value) })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  {t("goals.form.progressHelp", "Geben Sie den manuellen Fortschritt ein (0-100%)")}
-                </p>
               </div>
             )}
 
@@ -429,7 +373,7 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
             <div className="space-y-2">
               <Label>Zugewiesene Teammitglieder</Label>
               <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-                {isTeamLoading ? (
+                {teamLoading ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     <span className="text-sm text-muted-foreground">Lade Teammitglieder...</span>
@@ -498,6 +442,35 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
                     />
                   </div>
 
+                  {/* Parameter Link */}
+                  <div className="space-y-2">
+                    <Label htmlFor="linkedParameter">
+                      <Link className="h-4 w-4 inline mr-2" />
+                      Mit Kennzahl verknüpfen
+                    </Label>
+                    <Select
+                      value={formData.linkedParameterId}
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, linkedParameterId: value })
+                        if (value && value !== "none") {
+                          fetchLatestParameterValue(value)
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kennzahl wählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Keine Verknüpfung</SelectItem>
+                        {availableParameters.map((param: any) => (
+                          <SelectItem key={param.id} value={param.id}>
+                            {param.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="flex items-center justify-between space-x-2">
                     <Label htmlFor="isPrivate" className="flex-1">
                       {t("goals.form.private", "Privates Ziel")}
@@ -515,39 +488,9 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
                     />
                   </div>
 
-                  {availableParameters.length > 0 && (
-                    <div className="space-y-2 border-t border-b py-3">
-                      <Label htmlFor="linkedParameter" className="flex items-center gap-2">
-                        <Link className="h-4 w-4" />
-                        {t("goals.form.linkedParameter", "Mit KPI-Parameter verknüpfen (optional)")}
-                      </Label>
-                      <Select
-                        value={formData.linkedParameterId || "none"}
-                        onValueChange={(value) => {
-                          setFormData({ ...formData, linkedParameterId: value === "none" ? "" : value })
-                          const param = availableParameters.find((p) => p.id === value)
-                          if (param?.unit && !formData.unit) {
-                            setFormData((prev) => ({ ...prev, unit: param.unit }))
-                          }
-                          if (value && value !== "none") {
-                            fetchLatestParameterValue(value)
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("goals.form.selectParameter", "KPI-Parameter auswählen (optional)")}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Kein Parameter</SelectItem>
-                          {availableParameters.map((param) => (
-                            <SelectItem key={param.id} value={param.id}>
-                              {param.name} {param.unit ? `(${param.unit})` : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {hasSubgoals && (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+                      Dieses Ziel hat Unterziele. Änderungen am Status können sich auf die Unterziele auswirken.
                     </div>
                   )}
                 </div>
@@ -556,17 +499,17 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel", "Abbrechen")}
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !formData.title.trim()}>
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   {t("common.saving", "Wird gespeichert...")}
                 </>
               ) : (
-                t("goals.edit.submit", "Speichern")
+                t("common.save", "Speichern")
               )}
             </Button>
           </DialogFooter>
@@ -576,5 +519,4 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
   )
 }
 
-// Default export for compatibility
 export default EditGoalDialogComponent

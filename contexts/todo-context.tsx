@@ -1,7 +1,10 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useMemo, useCallback, type ReactNode } from "react"
+import useSWR, { useSWRConfig } from "swr"
 import { usePractice } from "./practice-context"
+import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
+import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
 import { toast } from "sonner"
 
 export interface Todo {
@@ -16,8 +19,8 @@ export interface Todo {
   practice_id: string
   created_at: string
   updated_at: string
-  dringend?: boolean // urgent
-  wichtig?: boolean // important
+  dringend?: boolean
+  wichtig?: boolean
   recurrence_type?: "none" | "daily" | "weekly" | "monthly" | "yearly"
   recurrence_end_date?: string
   parent_todo_id?: string
@@ -62,206 +65,144 @@ interface TodoContextType {
 
 const TodoContext = createContext<TodoContextType | undefined>(undefined)
 
-async function safeJsonParse(response: Response): Promise<any> {
-  const text = await response.text()
-
-  // Check if it's a rate limit response
-  if (response.status === 429 || text.includes("Too Many") || text.includes("rate limit")) {
-    console.warn("Rate limited, returning empty array")
-    return []
-  }
-
-  try {
-    return JSON.parse(text)
-  } catch (e) {
-    console.error("Failed to parse JSON:", text.substring(0, 100))
-    return []
-  }
-}
-
-const HARDCODED_PRACTICE_ID = "1"
-
 export function TodoProvider({ children }: { children: ReactNode }) {
-  const [todos, setTodos] = useState<Todo[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const { mutate: globalMutate } = useSWRConfig()
 
-  const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+  const practiceId = currentPractice?.id || DEFAULT_PRACTICE_ID
 
-  const fetchTodosInternal = async (pId: string, isMounted: { current: boolean }) => {
-    if (!pId) {
-      pId = HARDCODED_PRACTICE_ID
-    }
+  const { data, error, isLoading, mutate } = useSWR<Todo[]>(
+    !practiceLoading ? SWR_KEYS.todos(practiceId) : null,
+    swrFetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+    },
+  )
 
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/practices/${pId}/todos`)
+  const todos = data || []
 
-      if (!isMounted.current) return
+  const fetchTodos = useCallback(async () => {
+    await mutate()
+  }, [mutate])
 
-      if (response.status === 429) {
-        console.warn("Todos fetch rate limited, will retry later")
-        toast.warning("Zu viele Anfragen. Bitte warten Sie einen Moment.")
-        setIsLoading(false)
-        return
+  const addTodo = useCallback(
+    async (todoData: Omit<Todo, "id" | "created_at" | "updated_at" | "practice_id">) => {
+      const cleanedData = {
+        ...todoData,
+        due_date: todoData.due_date && todoData.due_date.trim() !== "" ? todoData.due_date : null,
+        recurrence_end_date:
+          todoData.recurrence_end_date && todoData.recurrence_end_date.trim() !== ""
+            ? todoData.recurrence_end_date
+            : null,
       }
 
-      if (response.ok) {
-        const data = await safeJsonParse(response)
-        setTodos(Array.isArray(data) ? data : [])
-      } else {
-        toast.error("Fehler beim Laden der Todos")
-        setTodos([])
-      }
-    } catch (error: any) {
-      if (!isMounted.current) return
-      toast.error("Fehler beim Laden der Todos")
-      console.error("Todos fetch error:", error)
-      setTodos([])
-    } finally {
-      if (isMounted.current) {
-        setIsLoading(false)
-      }
-    }
-  }
-
-  const fetchTodos = async () => {
-    await fetchTodosInternal(practiceId, { current: true })
-  }
-
-  useEffect(() => {
-    const isMounted = { current: true }
-
-    // Don't fetch until practice loading is complete
-    if (practiceLoading) {
-      return
-    }
-
-    fetchTodosInternal(practiceId, isMounted)
-
-    return () => {
-      isMounted.current = false
-    }
-  }, [practiceId, practiceLoading])
-
-  const addTodo = async (todoData: Omit<Todo, "id" | "created_at" | "updated_at" | "practice_id">) => {
-    const pId = currentPractice?.id || HARDCODED_PRACTICE_ID
-
-    const cleanedData = {
-      ...todoData,
-      due_date: todoData.due_date && todoData.due_date.trim() !== "" ? todoData.due_date : null,
-      recurrence_end_date:
-        todoData.recurrence_end_date && todoData.recurrence_end_date.trim() !== ""
-          ? todoData.recurrence_end_date
-          : null,
-    }
-
-    try {
-      const response = await fetch(`/api/practices/${pId}/todos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedData),
-      })
-
-      if (response.ok) {
-        const newTodo = await response.json()
-        setTodos((prev) => {
-          const updated = [newTodo, ...prev]
-          return updated
+      try {
+        const newTodo = await mutationFetcher<Todo>(SWR_KEYS.todos(practiceId), {
+          method: "POST",
+          body: cleanedData,
         })
+
+        await mutate((current) => [newTodo, ...(current || [])], { revalidate: false })
+
         toast.success("Todo erfolgreich erstellt")
         return newTodo
-      } else {
+      } catch (error) {
         toast.error("Fehler beim Erstellen des Todos")
-        console.error("TodoContext - Failed to add todo, status:", response.status)
+        console.error("Error adding todo:", error)
         return null
       }
-    } catch (error) {
-      toast.error("Fehler beim Erstellen des Todos")
-      console.error("Error adding todo:", error)
-      return null
-    }
-  }
-
-  const updateTodo = async (id: string, updates: Partial<Todo>) => {
-    const pId = currentPractice?.id || HARDCODED_PRACTICE_ID
-
-    const cleanedUpdates = {
-      ...updates,
-      due_date: updates.due_date !== undefined && updates.due_date?.trim() === "" ? null : updates.due_date,
-      recurrence_end_date:
-        updates.recurrence_end_date !== undefined && updates.recurrence_end_date?.trim() === ""
-          ? null
-          : updates.recurrence_end_date,
-    }
-
-    try {
-      const response = await fetch(`/api/practices/${pId}/todos/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedUpdates),
-      })
-
-      if (response.ok) {
-        const updatedTodo = await response.json()
-        setTodos((prev) => prev.map((todo) => (todo.id === id ? updatedTodo : todo)))
-        toast.success("Todo erfolgreich aktualisiert")
-      } else {
-        toast.error("Fehler beim Aktualisieren des Todos")
-      }
-    } catch (error) {
-      toast.error("Fehler beim Aktualisieren des Todos")
-      console.error("Error updating todo:", error)
-    }
-  }
-
-  const deleteTodo = async (id: string) => {
-    const pId = currentPractice?.id || HARDCODED_PRACTICE_ID
-
-    try {
-      const response = await fetch(`/api/practices/${pId}/todos/${id}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        setTodos((prev) => prev.filter((todo) => todo.id !== id))
-        toast.success("Todo erfolgreich gelöscht")
-      } else {
-        toast.error("Fehler beim Löschen des Todos")
-      }
-    } catch (error) {
-      toast.error("Fehler beim Löschen des Todos")
-      console.error("Error deleting todo:", error)
-    }
-  }
-
-  const toggleTodo = async (id: string) => {
-    const todo = todos.find((t) => t.id === id)
-    if (!todo) return
-
-    await updateTodo(id, { completed: !todo.completed })
-  }
-
-  const getTodosByPractice = (practiceId: string) => {
-    return todos.filter((todo) => todo.practice_id === practiceId)
-  }
-
-  return (
-    <TodoContext.Provider
-      value={{
-        todos,
-        addTodo,
-        updateTodo,
-        deleteTodo,
-        toggleTodo,
-        getTodosByPractice,
-        fetchTodos,
-        isLoading,
-      }}
-    >
-      {children}
-    </TodoContext.Provider>
+    },
+    [practiceId, mutate],
   )
+
+  const updateTodo = useCallback(
+    async (id: string, updates: Partial<Todo>) => {
+      const cleanedUpdates = {
+        ...updates,
+        due_date: updates.due_date !== undefined && updates.due_date?.trim() === "" ? null : updates.due_date,
+        recurrence_end_date:
+          updates.recurrence_end_date !== undefined && updates.recurrence_end_date?.trim() === ""
+            ? null
+            : updates.recurrence_end_date,
+      }
+
+      const previousTodos = todos
+      await mutate(
+        (current) => (current || []).map((todo) => (todo.id === id ? { ...todo, ...cleanedUpdates } : todo)),
+        { revalidate: false },
+      )
+
+      try {
+        await mutationFetcher(`${SWR_KEYS.todos(practiceId)}/${id}`, {
+          method: "PUT",
+          body: cleanedUpdates,
+        })
+        toast.success("Todo erfolgreich aktualisiert")
+        // Revalidate to sync with server
+        await mutate()
+      } catch (error) {
+        // Rollback on error
+        await mutate(previousTodos, { revalidate: false })
+        toast.error("Fehler beim Aktualisieren des Todos")
+        console.error("Error updating todo:", error)
+      }
+    },
+    [practiceId, mutate, todos],
+  )
+
+  const deleteTodo = useCallback(
+    async (id: string) => {
+      const previousTodos = todos
+      await mutate((current) => (current || []).filter((todo) => todo.id !== id), { revalidate: false })
+
+      try {
+        await mutationFetcher(`${SWR_KEYS.todos(practiceId)}/${id}`, {
+          method: "DELETE",
+        })
+        toast.success("Todo erfolgreich gelöscht")
+      } catch (error) {
+        // Rollback on error
+        await mutate(previousTodos, { revalidate: false })
+        toast.error("Fehler beim Löschen des Todos")
+        console.error("Error deleting todo:", error)
+      }
+    },
+    [practiceId, mutate, todos],
+  )
+
+  const toggleTodo = useCallback(
+    async (id: string) => {
+      const todo = todos.find((t) => t.id === id)
+      if (!todo) return
+
+      await updateTodo(id, { completed: !todo.completed })
+    },
+    [todos, updateTodo],
+  )
+
+  const getTodosByPractice = useCallback(
+    (practiceId: string) => {
+      return todos.filter((todo) => todo.practice_id === practiceId)
+    },
+    [todos],
+  )
+
+  const contextValue = useMemo(
+    () => ({
+      todos,
+      addTodo,
+      updateTodo,
+      deleteTodo,
+      toggleTodo,
+      getTodosByPractice,
+      fetchTodos,
+      isLoading: practiceLoading || isLoading,
+    }),
+    [todos, addTodo, updateTodo, deleteTodo, toggleTodo, getTodosByPractice, fetchTodos, practiceLoading, isLoading],
+  )
+
+  return <TodoContext.Provider value={contextValue}>{children}</TodoContext.Provider>
 }
 
 export function useTodos() {

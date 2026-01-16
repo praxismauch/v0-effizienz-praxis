@@ -1,8 +1,10 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from "react"
+import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react"
+import useSWR, { useSWRConfig } from "swr"
 import { useUser } from "./user-context"
-import { retryWithBackoff, isAuthError } from "@/lib/retry-utils"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 export interface Practice {
   id: string
@@ -38,87 +40,42 @@ interface PracticeContextType {
   deactivatePractice: (id: string) => void
   reactivatePractice: (id: string) => void
   isLoading: boolean
+  refreshPractices: () => Promise<void>
 }
 
 const PracticeContext = createContext<PracticeContextType | undefined>(undefined)
 
 export function PracticeProvider({ children }: { children: ReactNode }) {
-  const [practices, setPractices] = useState<Practice[]>([])
-  const [currentPractice, setCurrentPracticeState] = useState<Practice | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const hasFetched = useRef(false)
+  const [currentPracticeState, setCurrentPracticeState] = useState<Practice | null>(null)
+  const { mutate: globalMutate } = useSWRConfig()
 
   const { isSuperAdmin, currentUser, loading: userLoading } = useUser()
 
-  useEffect(() => {
-    if (userLoading) return
-    if (!currentUser?.id) {
-      setIsLoading(false)
-      return
-    }
-    if (hasFetched.current) return
-
-    const fetchPractices = async () => {
-      hasFetched.current = true
-      setIsLoading(true)
-
-      try {
-        await retryWithBackoff(
-          async () => {
-            const response = await fetch("/api/practices", {
-              credentials: "include",
-            })
-
-            if (!response.ok) {
-              const errorText =
-                response.status === 401
-                  ? "Sitzung abgelaufen. Bitte melden Sie sich erneut an."
-                  : `Praxis konnte nicht geladen werden (Status: ${response.status})`
-              throw new Error(errorText)
-            }
-
-            const data = await response.json()
-            if (!data.practices || data.practices.length === 0) {
-              console.warn("No practices found for user")
-              setPractices([])
-              setCurrentPracticeState(null)
-              return
-            }
-
-            setPractices(data.practices)
-            const userPractice = data.practices.find((p: Practice) => p.id === currentUser.practiceId)
-            if (userPractice) {
-              setCurrentPracticeState(userPractice)
-            } else {
-              setCurrentPracticeState(data.practices[0])
-            }
-          },
-          {
-            maxAttempts: 3,
-            initialDelay: 1000,
-            onRetry: (attempt, error) => {
-              console.log(`Retrying practice fetch, attempt ${attempt}:`, error)
-            },
-          },
-        )
-      } catch (error) {
-        console.error("Error fetching practices after retries:", error)
-        if (isAuthError(error)) {
-          hasFetched.current = false
+  const { data, error, isLoading, mutate } = useSWR<{ practices: Practice[] }>(
+    currentUser?.id ? SWR_KEYS.practices() : null,
+    swrFetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5000,
+      onSuccess: (data) => {
+        if (data?.practices && data.practices.length > 0 && !currentPracticeState) {
+          const userPractice = data.practices.find((p: Practice) => p.id === currentUser?.practiceId)
+          setCurrentPracticeState(userPractice || data.practices[0])
         }
-        setPractices([])
-        setCurrentPracticeState(null)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+      },
+    },
+  )
 
-    fetchPractices()
-  }, [currentUser, userLoading])
+  const practices = data?.practices || []
 
   const setCurrentPractice = useCallback((practice: Practice) => {
     setCurrentPracticeState(practice)
   }, [])
+
+  const refreshPractices = useCallback(async () => {
+    await mutate()
+  }, [mutate])
 
   const addPractice = useCallback(
     async (
@@ -132,37 +89,79 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
         memberCount: 0,
         lastActivity: new Date().toISOString(),
       }
-      setPractices((prev) => [...prev, newPractice])
+
+      await mutate(
+        (current) => ({
+          practices: [...(current?.practices || []), newPractice],
+        }),
+        { revalidate: false },
+      )
+
       return newPractice
     },
-    [],
+    [mutate],
   )
 
-  const updatePractice = useCallback(async (id: string, updates: Partial<Practice>) => {
-    setPractices((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
-    setCurrentPracticeState((prev) => (prev?.id === id ? { ...prev, ...updates } : prev))
-  }, [])
+  const updatePractice = useCallback(
+    async (id: string, updates: Partial<Practice>) => {
+      await mutate(
+        (current) => ({
+          practices: (current?.practices || []).map((p) => (p.id === id ? { ...p, ...updates } : p)),
+        }),
+        { revalidate: false },
+      )
 
-  const deletePractice = useCallback(async (id: string) => {
-    setPractices((prev) => prev.filter((p) => p.id !== id))
-  }, [])
+      if (currentPracticeState?.id === id) {
+        setCurrentPracticeState((prev) => (prev ? { ...prev, ...updates } : prev))
+      }
+    },
+    [mutate, currentPracticeState?.id],
+  )
+
+  const deletePractice = useCallback(
+    async (id: string) => {
+      await mutate(
+        (current) => ({
+          practices: (current?.practices || []).filter((p) => p.id !== id),
+        }),
+        { revalidate: false },
+      )
+    },
+    [mutate],
+  )
 
   const getAllPracticesForSuperAdmin = useCallback(() => {
     return practices
   }, [practices])
 
-  const deactivatePractice = useCallback((id: string) => {
-    setPractices((prev) => prev.map((p) => (p.id === id ? { ...p, isActive: false } : p)))
-  }, [])
+  const deactivatePractice = useCallback(
+    (id: string) => {
+      mutate(
+        (current) => ({
+          practices: (current?.practices || []).map((p) => (p.id === id ? { ...p, isActive: false } : p)),
+        }),
+        { revalidate: false },
+      )
+    },
+    [mutate],
+  )
 
-  const reactivatePractice = useCallback((id: string) => {
-    setPractices((prev) => prev.map((p) => (p.id === id ? { ...p, isActive: true } : p)))
-  }, [])
+  const reactivatePractice = useCallback(
+    (id: string) => {
+      mutate(
+        (current) => ({
+          practices: (current?.practices || []).map((p) => (p.id === id ? { ...p, isActive: true } : p)),
+        }),
+        { revalidate: false },
+      )
+    },
+    [mutate],
+  )
 
   const contextValue = useMemo(
     () => ({
       practices,
-      currentPractice,
+      currentPractice: currentPracticeState,
       setCurrentPractice,
       addPractice,
       updatePractice,
@@ -170,11 +169,12 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       getAllPracticesForSuperAdmin,
       deactivatePractice,
       reactivatePractice,
-      isLoading,
+      isLoading: userLoading || isLoading,
+      refreshPractices,
     }),
     [
       practices,
-      currentPractice,
+      currentPracticeState,
       setCurrentPractice,
       addPractice,
       updatePractice,
@@ -182,7 +182,9 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       getAllPracticesForSuperAdmin,
       deactivatePractice,
       reactivatePractice,
+      userLoading,
       isLoading,
+      refreshPractices,
     ],
   )
 

@@ -1,12 +1,13 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react"
+import { createContext, useContext, useMemo, useCallback, type ReactNode } from "react"
+import useSWR, { useSWRConfig } from "swr"
 import type { User } from "./user-context"
 import { usePractice } from "./practice-context"
 import { useUser } from "./user-context"
+import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
+import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
 import { toast } from "sonner"
-
-const HARDCODED_PRACTICE_ID = "1"
 
 interface TeamMember extends User {
   permissions: string[]
@@ -60,75 +61,62 @@ interface PendingInvite {
 const TeamContext = createContext<TeamContextType | undefined>(undefined)
 
 export function TeamProvider({ children }: { children: ReactNode }) {
-  const [teams, setTeams] = useState<Team[]>([])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
-  const [loading, setLoading] = useState(true)
-  const hasFetched = useRef(false)
-
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { currentUser, loading: userLoading } = useUser()
+  const { mutate: globalMutate } = useSWRConfig()
 
-  const practiceId = HARDCODED_PRACTICE_ID
+  const practiceId = currentPractice?.id || DEFAULT_PRACTICE_ID
 
-  const fetchTeamsAndMembers = useCallback(async () => {
-    if (!practiceId) return
+  const {
+    data: teamsData,
+    isLoading: teamsLoading,
+    mutate: mutateTeams,
+  } = useSWR<Team[] | { teams: Team[] }>(
+    !userLoading && !practiceLoading && currentUser?.id ? SWR_KEYS.teams(practiceId) : null,
+    swrFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5000 },
+  )
 
-    setLoading(true)
+  const {
+    data: membersData,
+    isLoading: membersLoading,
+    mutate: mutateMembers,
+  } = useSWR<TeamMember[] | { members: TeamMember[] }>(
+    !userLoading && !practiceLoading && currentUser?.id ? SWR_KEYS.teamMembers(practiceId) : null,
+    swrFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5000 },
+  )
 
-    try {
-      // Fetch teams and members in parallel
-      const [teamsResponse, membersResponse] = await Promise.all([
-        fetch(`/api/practices/${practiceId}/teams`, { credentials: "include" }),
-        fetch(`/api/practices/${practiceId}/team-members`, { credentials: "include" }),
-      ])
+  // Normalize data (handle both array and object responses)
+  const teams = useMemo(() => {
+    if (!teamsData) return []
+    return Array.isArray(teamsData) ? teamsData : (teamsData as { teams: Team[] }).teams || []
+  }, [teamsData])
 
-      if (teamsResponse.ok) {
-        const teamsData = await teamsResponse.json()
-        const fetchedTeams = Array.isArray(teamsData) ? teamsData : teamsData.teams || []
-        setTeams(fetchedTeams)
-      }
+  const teamMembers = useMemo(() => {
+    if (!membersData) return []
+    const rawMembers = Array.isArray(membersData)
+      ? membersData
+      : (membersData as { members: TeamMember[] }).members || []
+    return rawMembers.map((m: any) => ({
+      ...m,
+      id: m.id || m.user_id,
+      name: m.name || `${m.first_name || ""} ${m.last_name || ""}`.trim() || "Unknown",
+      practiceId: m.practice_id?.toString() || practiceId,
+      teamIds: m.team_ids || m.teamIds || [],
+      permissions: m.permissions || [],
+      lastActive: m.last_active || m.lastActive || new Date().toISOString(),
+      isActive: m.is_active ?? true,
+      joinedAt: m.created_at || m.joinedAt || new Date().toISOString(),
+    }))
+  }, [membersData, practiceId])
 
-      if (membersResponse.ok) {
-        const membersData = await membersResponse.json()
-        const fetchedMembers = Array.isArray(membersData) ? membersData : membersData.members || []
-        setTeamMembers(
-          fetchedMembers.map((m: any) => ({
-            ...m,
-            id: m.id || m.user_id,
-            name: m.name || `${m.first_name || ""} ${m.last_name || ""}`.trim() || "Unknown",
-            practiceId: m.practice_id?.toString() || practiceId,
-            teamIds: m.team_ids || m.teamIds || [],
-            permissions: m.permissions || [],
-            lastActive: m.last_active || m.lastActive || new Date().toISOString(),
-            isActive: m.is_active ?? true,
-            joinedAt: m.created_at || m.joinedAt || new Date().toISOString(),
-          })),
-        )
-      }
-    } catch (error) {
-      console.error("Error fetching teams/members:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [practiceId])
-
-  useEffect(() => {
-    if (userLoading || practiceLoading) return
-    if (!currentUser?.id) {
-      setLoading(false)
-      return
-    }
-    if (hasFetched.current) return
-
-    hasFetched.current = true
-    fetchTeamsAndMembers()
-  }, [currentUser, userLoading, practiceLoading, fetchTeamsAndMembers])
+  // Pending invites local state (not fetched from server yet)
+  const pendingInvites: PendingInvite[] = []
 
   const refetchTeamMembers = useCallback(async () => {
-    hasFetched.current = false
-    await fetchTeamsAndMembers()
-  }, [fetchTeamsAndMembers])
+    await Promise.all([mutateTeams(), mutateMembers()])
+  }, [mutateTeams, mutateMembers])
 
   const addTeam = useCallback(
     async (team: Omit<Team, "id" | "createdAt" | "memberCount" | "sortOrder">) => {
@@ -140,87 +128,74 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         sortOrder: teams.length,
       }
 
-      // Optimistic update
-      setTeams((prev) => [...prev, newTeam])
+      await mutateTeams(
+        (current) => {
+          const arr = Array.isArray(current) ? current : (current as any)?.teams || []
+          return [...arr, newTeam]
+        },
+        { revalidate: false },
+      )
 
       try {
-        const response = await fetch(`/api/practices/${practiceId}/teams`, {
+        await mutationFetcher(SWR_KEYS.teams(practiceId), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(team),
+          body: team,
         })
-
-        if (response.ok) {
-          const data = await response.json()
-          // Update with server response
-          setTeams((prev) => prev.map((t) => (t.id === newTeam.id ? { ...newTeam, ...data } : t)))
-          toast.success("Team erstellt")
-        } else {
-          // Rollback
-          setTeams((prev) => prev.filter((t) => t.id !== newTeam.id))
-          toast.error("Fehler beim Erstellen des Teams")
-        }
+        toast.success("Team erstellt")
+        await mutateTeams()
       } catch (error) {
-        setTeams((prev) => prev.filter((t) => t.id !== newTeam.id))
+        // Rollback
+        await mutateTeams()
         toast.error("Fehler beim Erstellen des Teams")
       }
     },
-    [practiceId, teams.length],
+    [practiceId, teams.length, mutateTeams],
   )
 
   const updateTeam = useCallback(
     async (id: string, updates: Partial<Team>) => {
-      const previousTeams = teams
-
-      // Optimistic update
-      setTeams((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)))
+      await mutateTeams(
+        (current) => {
+          const arr = Array.isArray(current) ? current : (current as any)?.teams || []
+          return arr.map((t: Team) => (t.id === id ? { ...t, ...updates } : t))
+        },
+        { revalidate: false },
+      )
 
       try {
-        const response = await fetch(`/api/practices/${practiceId}/teams/${id}`, {
+        await mutationFetcher(`${SWR_KEYS.teams(practiceId)}/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(updates),
+          body: updates,
         })
-
-        if (!response.ok) {
-          setTeams(previousTeams)
-          toast.error("Fehler beim Aktualisieren des Teams")
-        }
       } catch (error) {
-        setTeams(previousTeams)
+        await mutateTeams()
         toast.error("Fehler beim Aktualisieren des Teams")
       }
     },
-    [practiceId, teams],
+    [practiceId, mutateTeams],
   )
 
   const deleteTeam = useCallback(
     async (id: string) => {
-      const previousTeams = teams
-
-      // Optimistic update
-      setTeams((prev) => prev.filter((t) => t.id !== id))
+      await mutateTeams(
+        (current) => {
+          const arr = Array.isArray(current) ? current : (current as any)?.teams || []
+          return arr.filter((t: Team) => t.id !== id)
+        },
+        { revalidate: false },
+      )
 
       try {
-        const response = await fetch(`/api/practices/${practiceId}/teams/${id}`, {
+        await mutationFetcher(`${SWR_KEYS.teams(practiceId)}/${id}`, {
           method: "DELETE",
-          credentials: "include",
         })
-
-        if (response.ok) {
-          toast.success("Team gelöscht")
-        } else {
-          setTeams(previousTeams)
-          toast.error("Fehler beim Löschen des Teams")
-        }
+        toast.success("Team gelöscht")
       } catch (error) {
-        setTeams(previousTeams)
+        await mutateTeams()
         toast.error("Fehler beim Löschen des Teams")
       }
     },
-    [practiceId, teams],
+    [practiceId, mutateTeams],
   )
 
   const reorderTeams = useCallback(
@@ -232,7 +207,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         })
         .filter(Boolean) as Team[]
 
-      setTeams(reorderedTeams)
+      await mutateTeams(reorderedTeams, { revalidate: false })
 
       try {
         await fetch(`/api/practices/${practiceId}/teams/reorder`, {
@@ -243,15 +218,22 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         })
       } catch (error) {
         console.error("Error reordering teams:", error)
+        await mutateTeams()
       }
     },
-    [practiceId, teams],
+    [practiceId, teams, mutateTeams],
   )
 
   const assignMemberToTeam = useCallback(
     async (memberId: string, teamId: string) => {
-      setTeamMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? { ...m, teamIds: [...new Set([...m.teamIds, teamId])] } : m)),
+      await mutateMembers(
+        (current) => {
+          const arr = Array.isArray(current) ? current : (current as any)?.members || []
+          return arr.map((m: TeamMember) =>
+            m.id === memberId ? { ...m, teamIds: [...new Set([...m.teamIds, teamId])] } : m,
+          )
+        },
+        { revalidate: false },
       )
 
       try {
@@ -263,15 +245,22 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         })
       } catch (error) {
         console.error("Error assigning member:", error)
+        await mutateMembers()
       }
     },
-    [practiceId],
+    [practiceId, mutateMembers],
   )
 
   const removeMemberFromTeam = useCallback(
     async (memberId: string, teamId: string) => {
-      setTeamMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? { ...m, teamIds: m.teamIds.filter((t) => t !== teamId) } : m)),
+      await mutateMembers(
+        (current) => {
+          const arr = Array.isArray(current) ? current : (current as any)?.members || []
+          return arr.map((m: TeamMember) =>
+            m.id === memberId ? { ...m, teamIds: m.teamIds.filter((t) => t !== teamId) } : m,
+          )
+        },
+        { revalidate: false },
       )
 
       try {
@@ -283,9 +272,10 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         })
       } catch (error) {
         console.error("Error removing member:", error)
+        await mutateMembers()
       }
     },
-    [practiceId],
+    [practiceId, mutateMembers],
   )
 
   const addTeamMember = useCallback(
@@ -297,83 +287,77 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         practiceId: practiceId,
       }
 
-      setTeamMembers((prev) => [...prev, newMember])
+      await mutateMembers(
+        (current) => {
+          const arr = Array.isArray(current) ? current : (current as any)?.members || []
+          return [...arr, newMember]
+        },
+        { revalidate: false },
+      )
 
       try {
-        await fetch(`/api/practices/${practiceId}/team-members`, {
+        await mutationFetcher(SWR_KEYS.teamMembers(practiceId), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(member),
+          body: member,
         })
         toast.success("Teammitglied hinzugefügt")
+        await mutateMembers()
       } catch (error) {
-        setTeamMembers((prev) => prev.filter((m) => m.id !== newMember.id))
+        await mutateMembers()
         toast.error("Fehler beim Hinzufügen")
       }
     },
-    [practiceId],
+    [practiceId, mutateMembers],
   )
 
   const updateTeamMember = useCallback(
     async (id: string, updates: Partial<TeamMember>) => {
-      const previousMembers = teamMembers
-
-      setTeamMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)))
+      await mutateMembers(
+        (current) => {
+          const arr = Array.isArray(current) ? current : (current as any)?.members || []
+          return arr.map((m: TeamMember) => (m.id === id ? { ...m, ...updates } : m))
+        },
+        { revalidate: false },
+      )
 
       try {
-        await fetch(`/api/practices/${practiceId}/team-members/${id}`, {
+        await mutationFetcher(`${SWR_KEYS.teamMembers(practiceId)}/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(updates),
+          body: updates,
         })
       } catch (error) {
-        setTeamMembers(previousMembers)
+        await mutateMembers()
         toast.error("Fehler beim Aktualisieren")
       }
     },
-    [practiceId, teamMembers],
+    [practiceId, mutateMembers],
   )
 
   const removeTeamMember = useCallback(
     async (id: string) => {
-      const previousMembers = teamMembers
-
-      setTeamMembers((prev) => prev.filter((m) => m.id !== id))
+      await mutateMembers(
+        (current) => {
+          const arr = Array.isArray(current) ? current : (current as any)?.members || []
+          return arr.filter((m: TeamMember) => m.id !== id)
+        },
+        { revalidate: false },
+      )
 
       try {
-        const response = await fetch(`/api/practices/${practiceId}/team-members/${id}`, {
+        await mutationFetcher(`${SWR_KEYS.teamMembers(practiceId)}/${id}`, {
           method: "DELETE",
-          credentials: "include",
         })
-
-        if (response.ok) {
-          toast.success("Teammitglied entfernt")
-        } else {
-          setTeamMembers(previousMembers)
-          toast.error("Fehler beim Entfernen")
-        }
+        toast.success("Teammitglied entfernt")
       } catch (error) {
-        setTeamMembers(previousMembers)
+        await mutateMembers()
         toast.error("Fehler beim Entfernen")
       }
     },
-    [practiceId, teamMembers],
+    [practiceId, mutateMembers],
   )
 
   const inviteTeamMember = useCallback(
     async (email: string, role: User["role"]) => {
-      const invite: PendingInvite = {
-        id: crypto.randomUUID(),
-        email,
-        role,
-        sentAt: new Date().toISOString(),
-        status: "pending",
-      }
-
-      setPendingInvites((prev) => [...prev, invite])
-
       try {
         await fetch(`/api/practices/${practiceId}/invites`, {
           method: "POST",
@@ -383,7 +367,6 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         })
         toast.success("Einladung gesendet")
       } catch (error) {
-        setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id))
         toast.error("Fehler beim Senden der Einladung")
       }
     },
@@ -406,7 +389,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       removeTeamMember,
       inviteTeamMember,
       pendingInvites,
-      loading,
+      loading: userLoading || practiceLoading || teamsLoading || membersLoading,
       refetchTeamMembers,
     }),
     [
@@ -424,7 +407,10 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       removeTeamMember,
       inviteTeamMember,
       pendingInvites,
-      loading,
+      userLoading,
+      practiceLoading,
+      teamsLoading,
+      membersLoading,
       refetchTeamMembers,
     ],
   )

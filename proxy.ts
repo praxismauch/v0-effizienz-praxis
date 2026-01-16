@@ -1,9 +1,45 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
+// Do NOT import from lib/supabase/server.ts which uses next/headers
 import { createServerClient } from "@supabase/ssr"
-import { acquireLockWithQueue } from "./lib/supabase/refreshTokenLock"
-import Logger from "./lib/logger"
 
+const edgeLog = {
+  debug: (msg: string, data?: any) => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[proxy] ${msg}`, data || "")
+    }
+  },
+  error: (msg: string, error?: any) => {
+    console.error(`[proxy] ${msg}`, error || "")
+  },
+  generateRequestId: () => `${Date.now()}-${Math.random().toString(36).substring(7)}`,
+}
+
+const pendingRefreshes = new Map<string, Promise<void>>()
+const refreshTokenLock = new Map<string, number>()
+
+async function acquireLockWithQueue(key: string, operation: () => Promise<void>): Promise<void> {
+  const existingPromise = pendingRefreshes.get(key)
+  if (existingPromise) {
+    await existingPromise
+    return
+  }
+
+  const refreshPromise = (async () => {
+    try {
+      refreshTokenLock.set(key, Date.now())
+      await operation()
+    } finally {
+      refreshTokenLock.delete(key)
+      pendingRefreshes.delete(key)
+    }
+  })()
+
+  pendingRefreshes.set(key, refreshPromise)
+  await refreshPromise
+}
+
+// Rate limiting for middleware
 const ipRequestCounts = new Map<string, { count: number; resetTime: number }>()
 const MIDDLEWARE_RATE_LIMIT = 800
 const RATE_LIMIT_WINDOW = 60 * 1000
@@ -25,12 +61,21 @@ function checkMiddlewareRateLimit(ip: string): boolean {
   return true
 }
 
+// Cleanup stale entries periodically
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now()
     for (const [key, entry] of ipRequestCounts.entries()) {
       if (entry.resetTime < now) {
         ipRequestCounts.delete(key)
+      }
+    }
+    // Clean up stale locks
+    const staleThreshold = 10000
+    for (const [key, timestamp] of refreshTokenLock.entries()) {
+      if (now - timestamp > staleThreshold) {
+        refreshTokenLock.delete(key)
+        pendingRefreshes.delete(key)
       }
     }
   }, 60000)
@@ -56,35 +101,41 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 }
 
 async function updateSession(request: NextRequest) {
+  const requestId = edgeLog.generateRequestId()
+
   let supabaseResponse = NextResponse.next({
     request,
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-          supabaseResponse = NextResponse.next({
-            request,
-          })
+  if (!supabaseUrl || !supabaseAnonKey) {
+    edgeLog.error("Missing Supabase environment variables")
+    return supabaseResponse
+  }
 
-          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+
+        supabaseResponse = NextResponse.next({
+          request,
+        })
+
+        cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
       },
     },
-  )
+  })
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+  // Get lock key from auth cookie
   const projectRef = supabaseUrl.split("//")[1]?.split(".")[0] || "default"
   const authTokenCookie = request.cookies.get(`sb-${projectRef}-auth-token`)
-  const lockKey = authTokenCookie?.value || "anonymous"
+  const lockKey = authTokenCookie?.value?.substring(0, 32) || `anon-${requestId}`
 
   let user = null
   try {
@@ -95,9 +146,10 @@ async function updateSession(request: NextRequest) {
       user = refreshedUser
     })
   } catch (error) {
-    console.error("[proxy] Token refresh lock error:", error)
+    edgeLog.error("Token refresh lock error", error)
   }
 
+  // Redirect to login if accessing protected route without auth
   if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
@@ -105,15 +157,14 @@ async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Add request ID header for tracing
+  supabaseResponse.headers.set("x-request-id", requestId)
+
   return supabaseResponse
 }
 
 export async function proxy(request: NextRequest) {
-  const requestId = Logger.generateRequestId()
-  Logger.setRequestId(requestId)
-
   const { pathname } = request.nextUrl
-  const timer = Logger.startTimer("Middleware")
 
   const supabaseResponse = await updateSession(request)
 
@@ -136,12 +187,8 @@ export async function proxy(request: NextRequest) {
       )
     }
 
-    timer.endAndLog("api", { pathname, requestId })
-
     return addSecurityHeaders(supabaseResponse)
   }
-
-  timer.endAndLog("non-api", { pathname, requestId })
 
   return addSecurityHeaders(supabaseResponse)
 }

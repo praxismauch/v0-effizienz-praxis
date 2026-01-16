@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { updateSession } from "./lib/supabase/middleware"
+import { createServerClient } from "@supabase/ssr"
+import { acquireLockWithQueue } from "./lib/supabase/refreshTokenLock"
+import Logger from "./lib/logger"
 
 const ipRequestCounts = new Map<string, { count: number; resetTime: number }>()
 const MIDDLEWARE_RATE_LIMIT = 800
@@ -53,15 +55,66 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
+async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
 
-  // Skip middleware entirely for static files
-  if (pathname.startsWith("/_next") || pathname.includes(".")) {
-    return NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+        },
+      },
+    },
+  )
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+  const projectRef = supabaseUrl.split("//")[1]?.split(".")[0] || "default"
+  const authTokenCookie = request.cookies.get(`sb-${projectRef}-auth-token`)
+  const lockKey = authTokenCookie?.value || "anonymous"
+
+  let user = null
+  try {
+    await acquireLockWithQueue(lockKey, async () => {
+      const {
+        data: { user: refreshedUser },
+      } = await supabase.auth.getUser()
+      user = refreshedUser
+    })
+  } catch (error) {
+    console.error("[proxy] Token refresh lock error:", error)
   }
 
-  // and returns response with refreshed cookies for logged-in users on public pages
+  if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/login"
+    url.searchParams.set("redirect", request.nextUrl.pathname)
+    return NextResponse.redirect(url)
+  }
+
+  return supabaseResponse
+}
+
+export async function proxy(request: NextRequest) {
+  const requestId = Logger.generateRequestId()
+  Logger.setRequestId(requestId)
+
+  const { pathname } = request.nextUrl
+  const timer = Logger.startTimer("Middleware")
+
   const supabaseResponse = await updateSession(request)
 
   if (pathname.startsWith("/api/")) {
@@ -83,15 +136,18 @@ export async function proxy(request: NextRequest) {
       )
     }
 
+    timer.endAndLog("api", { pathname, requestId })
+
     return addSecurityHeaders(supabaseResponse)
   }
 
-  // No longer discarding cookies for public routes
+  timer.endAndLog("non-api", { pathname, requestId })
+
   return addSecurityHeaders(supabaseResponse)
 }
 
 export default proxy
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\..*).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 }

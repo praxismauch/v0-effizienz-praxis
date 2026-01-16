@@ -76,8 +76,8 @@ export default function DashboardPageClient() {
 
   const hadValidPracticeRef = useRef(false)
 
-  const practiceId = "1"
-  const hasValidPracticeId = true
+  const practiceId = currentPractice?.id || currentUser?.practiceId || currentUser?.practice_id
+  const hasValidPracticeId = !!practiceId
 
   useEffect(() => {
     if (hasValidPracticeId) {
@@ -136,7 +136,7 @@ export default function DashboardPageClient() {
   return (
     <OnboardingWrapper>
       <AppLayout>
-        <LazyDashboardOverview practiceId={practiceId} userId={currentUser?.id || "fallback-user-id"} />
+        <LazyDashboardOverview practiceId={practiceId!} userId={currentUser?.id || "fallback-user-id"} />
       </AppLayout>
     </OnboardingWrapper>
   )

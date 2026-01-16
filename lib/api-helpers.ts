@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { isSuperAdminRole, isPracticeAdminRole, isManagerRole } from "@/lib/auth-utils"
-import { cookies } from "next/headers"
 
 export interface ApiAuthResult {
   user: {
@@ -21,75 +20,21 @@ export interface PracticeAuthResult extends ApiAuthResult {
 }
 
 /**
- * Authenticate API request - simplified approach
- * First tries session auth, then falls back to checking cookies directly
+ * Simplified authenticateApiRequest - trust middleware for session
+ * The middleware already refreshes the session and sets cookies properly.
+ * We just need to read the user from the already-refreshed session.
  */
 export async function authenticateApiRequest(): Promise<ApiAuthResult> {
   const adminClient = await createAdminClient()
+  const supabase = await createClient()
 
-  let userId: string | null = null
-  let supabase: Awaited<ReturnType<typeof createClient>>
+  // Get user from session - middleware has already refreshed it
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
 
-  try {
-    supabase = await createClient()
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser()
-
-    if (user && !error) {
-      userId = user.id
-    }
-  } catch (e) {
-    // Session approach failed, try fallback
-    supabase = await createClient()
-  }
-
-  if (!userId) {
-    try {
-      const cookieStore = await cookies()
-      const allCookies = cookieStore.getAll()
-
-      // Look for Supabase auth cookies
-      const accessTokenCookie = allCookies.find((c) => c.name.includes("sb-") && c.name.includes("-auth-token"))
-
-      if (accessTokenCookie?.value) {
-        // Try to parse the JWT to get user ID
-        try {
-          const parts = accessTokenCookie.value.split(".")
-          if (parts.length >= 2) {
-            // Handle base64url encoded JSON (Supabase stores as array)
-            let payload = parts[0]
-            // Add padding if needed
-            while (payload.length % 4) payload += "="
-            const decoded = JSON.parse(Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString())
-
-            // Supabase stores tokens as [access_token, refresh_token] array
-            if (Array.isArray(decoded) && decoded[0]) {
-              const accessToken = decoded[0]
-              const tokenParts = accessToken.split(".")
-              if (tokenParts.length >= 2) {
-                let tokenPayload = tokenParts[1]
-                while (tokenPayload.length % 4) tokenPayload += "="
-                const tokenData = JSON.parse(
-                  Buffer.from(tokenPayload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(),
-                )
-                if (tokenData.sub) {
-                  userId = tokenData.sub
-                }
-              }
-            }
-          }
-        } catch (parseError) {
-          // Token parsing failed
-        }
-      }
-    } catch (cookieError) {
-      // Cookie reading failed
-    }
-  }
-
-  if (!userId) {
+  if (error || !user) {
     throw new Error("Nicht authentifiziert")
   }
 
@@ -97,7 +42,7 @@ export async function authenticateApiRequest(): Promise<ApiAuthResult> {
   const { data: userData, error: userError } = await adminClient
     .from("users")
     .select("id, email, role, practice_id")
-    .eq("id", userId)
+    .eq("id", user.id)
     .single()
 
   if (userError || !userData) {
@@ -170,31 +115,11 @@ export async function checkPracticeAccess(practiceId: string, auth: ApiAuthResul
 
 /**
  * Require authenticated user with access to specific practice
- * This is the MAIN function to use in all practice-scoped API routes
- *
- * Usage:
- * \`\`\`ts
- * export async function GET(req: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
- *   try {
- *     const { practiceId } = await params
- *     const { user, adminClient, accessType } = await requirePracticeAccess(practiceId)
- *
- *     // Now safe to query data - user is verified to have access
- *     const { data } = await adminClient.from("todos").select("*").eq("practice_id", practiceId)
- *
- *     return NextResponse.json(data)
- *   } catch (error) {
- *     return handleApiError(error)
- *   }
- * }
- * \`\`\`
  */
 export async function requirePracticeAccess(
   practiceId: string | number | undefined | null,
 ): Promise<PracticeAuthResult> {
-  console.log("[v0] requirePracticeAccess called with:", practiceId, typeof practiceId)
   const practiceIdStr = String(practiceId ?? "")
-  console.log("[v0] requirePracticeAccess practiceIdStr:", practiceIdStr)
 
   // Validate practice ID format
   if (
@@ -204,11 +129,9 @@ export async function requirePracticeAccess(
     practiceIdStr === "0" ||
     practiceIdStr === ""
   ) {
-    console.log("[v0] requirePracticeAccess VALIDATION FAILED")
     throw new ApiError("Praxis-ID fehlt oder ist ungültig", 400)
   }
 
-  console.log("[v0] requirePracticeAccess validation passed, proceeding with auth")
   const auth = await authenticateApiRequest()
 
   // Super admins can access any practice
@@ -220,13 +143,10 @@ export async function requirePracticeAccess(
     }
   }
 
-  // Just log a warning if practice IDs don't match (for debugging)
+  // Check practice access
   const userPracticeId = String(auth.user.practiceId ?? "")
-
   if (userPracticeId !== practiceIdStr) {
-    console.warn(`[v0] Practice ID mismatch: user has ${userPracticeId}, requested ${practiceIdStr}`)
-    // For now, still allow but with the user's actual practice ID
-    // This helps during debugging to see what data exists
+    throw new ApiError("Keine Berechtigung für diese Praxis", 403)
   }
 
   return {
@@ -262,24 +182,10 @@ export async function requireManagerAccess(practiceId: string): Promise<Practice
   return result
 }
 
-export class ApiError extends Error {
-  status: number
-
-  constructor(message: string, status = 500) {
-    super(message)
-    this.name = "ApiError"
-    this.status = status
-  }
-}
-
 /**
  * Handle API errors with consistent format
  */
 export function handleApiError(error: unknown): NextResponse {
-  if (error instanceof ApiError) {
-    return createErrorResponse(error.message, error.status)
-  }
-
   if (error instanceof Error) {
     const message = error.message
 
@@ -315,8 +221,18 @@ export function isValidUUID(id: string): boolean {
  */
 export function validatePracticeId(practiceId: string | undefined | null): string {
   if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
-    throw new ApiError("Praxis-ID fehlt oder ist ungültig", 400)
+    throw new Error("Praxis-ID fehlt oder ist ungültig")
   }
 
   return practiceId
+}
+
+export class ApiError extends Error {
+  status: number
+
+  constructor(message: string, status = 500) {
+    super(message)
+    this.name = "ApiError"
+    this.status = status
+  }
 }

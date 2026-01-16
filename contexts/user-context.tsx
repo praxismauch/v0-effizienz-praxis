@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { isSuperAdminRole, isPracticeAdminRole, normalizeRole } from "@/lib/auth-utils"
 import Logger from "@/lib/logger"
 import { encryptStorage, decryptStorage, isStorageExpired } from "@/lib/storage-utils"
+import { retryWithBackoff, isAuthError } from "@/lib/retry-utils"
 
 const DEV_USER_EMAIL = process.env.NEXT_PUBLIC_DEV_USER_EMAIL
 const IS_DEV_MODE = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
@@ -183,22 +184,28 @@ export function UserProvider({
       hasFetchedUser.current = true
 
       try {
-        if (IS_DEV_MODE) {
-          if (!DEV_USER_EMAIL) {
-            Logger.error("context", "Dev mode enabled but NEXT_PUBLIC_DEV_USER_EMAIL not set")
-            setLoading(false)
-            return
-          }
+        await retryWithBackoff(
+          async () => {
+            if (IS_DEV_MODE) {
+              if (!DEV_USER_EMAIL) {
+                throw new Error("Dev mode enabled but NEXT_PUBLIC_DEV_USER_EMAIL not set")
+              }
 
-          Logger.debug("context", "Dev mode - fetching dev user from API")
+              Logger.debug("context", "Dev mode - fetching dev user from API")
 
-          const response = await fetch("/api/auth/dev-user", {
-            credentials: "include",
-          })
+              const response = await fetch("/api/auth/dev-user", {
+                credentials: "include",
+              })
 
-          if (response.ok) {
-            const data = await response.json()
-            if (data.user) {
+              if (!response.ok) {
+                throw new Error(`Dev user fetch failed: ${response.status}`)
+              }
+
+              const data = await response.json()
+              if (!data.user) {
+                throw new Error("No user data in dev response")
+              }
+
               const user: User = {
                 id: data.user.id,
                 name:
@@ -215,68 +222,67 @@ export function UserProvider({
               }
               setCurrentUser(user)
               await persistUserToStorage(user)
-              setLoading(false)
               return
             }
-          }
 
-          Logger.debug("context", "Dev mode - dev user fetch failed")
-          setLoading(false)
-          return
-        }
+            const supabase = getSupabase()
+            if (!supabase) {
+              throw new Error("Supabase client not available")
+            }
 
-        const supabase = getSupabase()
-        if (!supabase) {
-          setLoading(false)
-          return
-        }
+            const {
+              data: { user: authUser },
+              error: authError,
+            } = await supabase.auth.getUser()
 
-        const {
-          data: { user: authUser },
-          error: authError,
-        } = await supabase.auth.getUser()
+            if (authError || !authUser) {
+              throw new Error(authError?.message || "No valid Supabase session")
+            }
 
-        if (authError || !authUser) {
-          Logger.debug("context", "No valid Supabase session")
-          setCurrentUser(null)
-          await persistUserToStorage(null)
+            const { data: profile, error: profileError } = await supabase
+              .from("users")
+              .select(
+                "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
+              )
+              .eq("id", authUser.id)
+              .single()
 
-          setLoading(false)
-          return
-        }
+            if (profileError || !profile) {
+              throw new Error(profileError?.message || "No profile found")
+            }
 
-        const { data: profile, error: profileError } = await supabase
-          .from("users")
-          .select(
-            "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
-          )
-          .eq("id", authUser.id)
-          .single()
+            const user: User = {
+              id: profile.id,
+              name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "User",
+              email: profile.email || authUser.email || "",
+              role: normalizeRole(profile.role) as User["role"],
+              avatar: profile.avatar,
+              practiceId: profile.practice_id?.toString() || "1",
+              practice_id: profile.practice_id?.toString() || "1",
+              isActive: profile.is_active ?? true,
+              joinedAt: profile.created_at || new Date().toISOString(),
+              preferred_language: profile.preferred_language,
+              firstName: profile.first_name,
+            }
 
-        if (profileError || !profile) {
-          Logger.warn("context", "No profile found for user")
-          setLoading(false)
-          return
-        }
-
-        const user: User = {
-          id: profile.id,
-          name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "User",
-          email: profile.email || authUser.email || "",
-          role: normalizeRole(profile.role) as User["role"],
-          avatar: profile.avatar,
-          practiceId: profile.practice_id?.toString() || "1",
-          practice_id: profile.practice_id?.toString() || "1",
-          isActive: profile.is_active ?? true,
-          joinedAt: profile.created_at || new Date().toISOString(),
-          preferred_language: profile.preferred_language,
-          firstName: profile.first_name,
-        }
-
-        setCurrentUser(user)
-        await persistUserToStorage(user)
+            setCurrentUser(user)
+            await persistUserToStorage(user)
+          },
+          {
+            maxAttempts: 3,
+            initialDelay: 1000,
+            onRetry: (attempt, error) => {
+              Logger.debug("context", `Retrying user fetch, attempt ${attempt}`, { error })
+            },
+          },
+        )
       } catch (error) {
-        Logger.error("context", "Error fetching user", error)
+        Logger.error("context", "Error fetching user after retries", error)
+        if (isAuthError(error)) {
+          hasFetchedUser.current = false
+        }
+        setCurrentUser(null)
+        await persistUserToStorage(null)
       } finally {
         setLoading(false)
       }

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from "react"
 import { useUser } from "./user-context"
+import { retryWithBackoff, isAuthError } from "@/lib/retry-utils"
 
 export interface Practice {
   id: string
@@ -62,13 +63,28 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       setIsLoading(true)
 
       try {
-        const response = await fetch("/api/practices", {
-          credentials: "include",
-        })
+        await retryWithBackoff(
+          async () => {
+            const response = await fetch("/api/practices", {
+              credentials: "include",
+            })
 
-        if (response.ok) {
-          const data = await response.json()
-          if (data.practices && data.practices.length > 0) {
+            if (!response.ok) {
+              const errorText =
+                response.status === 401
+                  ? "Sitzung abgelaufen. Bitte melden Sie sich erneut an."
+                  : `Praxis konnte nicht geladen werden (Status: ${response.status})`
+              throw new Error(errorText)
+            }
+
+            const data = await response.json()
+            if (!data.practices || data.practices.length === 0) {
+              console.warn("No practices found for user")
+              setPractices([])
+              setCurrentPracticeState(null)
+              return
+            }
+
             setPractices(data.practices)
             const userPractice = data.practices.find((p: Practice) => p.id === currentUser.practiceId)
             if (userPractice) {
@@ -76,18 +92,20 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
             } else {
               setCurrentPracticeState(data.practices[0])
             }
-          } else {
-            console.warn("No practices found for user")
-            setPractices([])
-            setCurrentPracticeState(null)
-          }
-        } else {
-          console.error("Failed to fetch practices:", response.status)
-          setPractices([])
-          setCurrentPracticeState(null)
-        }
+          },
+          {
+            maxAttempts: 3,
+            initialDelay: 1000,
+            onRetry: (attempt, error) => {
+              console.log(`Retrying practice fetch, attempt ${attempt}:`, error)
+            },
+          },
+        )
       } catch (error) {
-        console.error("Error fetching practices:", error)
+        console.error("Error fetching practices after retries:", error)
+        if (isAuthError(error)) {
+          hasFetched.current = false
+        }
         setPractices([])
         setCurrentPracticeState(null)
       } finally {

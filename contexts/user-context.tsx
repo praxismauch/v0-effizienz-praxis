@@ -166,6 +166,8 @@ export function UserProvider({
           if (parsedUser) {
             console.log("[v0] Restored user from storage:", (parsedUser as User).email)
             setCurrentUser(parsedUser as User)
+            hasFetchedUser.current = true
+            console.log("[v0] hasFetchedUser set to true (from storage)")
             setLoading(false)
           } else {
             console.log("[v0] Failed to decrypt stored user")
@@ -195,6 +197,8 @@ export function UserProvider({
     }
     if (currentUser || initialUser) {
       console.log("[v0] fetchUser skipped - user exists")
+      hasFetchedUser.current = true
+      console.log("[v0] hasFetchedUser set to true (user exists)")
       setLoading(false)
       return
     }
@@ -328,8 +332,6 @@ export function UserProvider({
     fetchUser()
   }, [pathname, currentUser, initialUser, router, persistUserToStorage, getSupabase, mounted])
 
-  // ... existing code for auth state change listener ...
-
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!mounted) return
@@ -379,6 +381,8 @@ export function UserProvider({
               console.log("[v0] User profile updated:", user.email)
               setCurrentUser(user)
               await persistUserToStorage(user)
+              hasFetchedUser.current = true // Fixed: was false, should be true
+              console.log("[v0] hasFetchedUser set to true (after sign-in)")
               dispatchAuthRecovered()
             }
           } catch (error) {
@@ -393,8 +397,6 @@ export function UserProvider({
       subscription.unsubscribe()
     }
   }, [mounted, getSupabase, persistUserToStorage])
-
-  // ... existing code for super admins ...
 
   useEffect(() => {
     if (!currentUser) return
@@ -529,18 +531,6 @@ export function UserProvider({
       persistUserToStorage,
     ],
   )
-
-  // useSessionHeartbeat({
-  //   interval: 5 * 60 * 1000,
-  //   enabled: mounted && !!currentUser && !isLoggingOut,
-  //   onRefresh: () => {
-  //     console.log("[v0] Session heartbeat refreshed token")
-  //     dispatchAuthRecovered()
-  //   },
-  //   onError: (error) => {
-  //     console.error("[v0] Session heartbeat failed:", error)
-  //   },
-  // })
 
   return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
 }

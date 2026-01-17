@@ -15,6 +15,68 @@ const edgeLog = {
   generateRequestId: () => `${Date.now()}-${Math.random().toString(36).substring(7)}`,
 }
 
+// Expanded list of protected routes
+const PROTECTED_ROUTES = [
+  "/dashboard",
+  "/team",
+  "/settings",
+  "/zeiterfassung",
+  "/arbeitsmittel",
+  "/devices",
+  "/rooms",
+  "/material",
+  "/kontakte",
+  "/umfragen",
+  "/arbeitsplaetze",
+  "/organigramm",
+  "/kompetenzen",
+  "/selbst-check",
+  "/mitarbeitergespraeche",
+  "/personalsuche",
+  "/hiring",
+  "/goals",
+  "/workflows",
+  "/calendar",
+  "/analytics",
+  "/academy",
+  "/igel-analysis",
+  "/lohnt-es-sich-analyse",
+  "/selbstzahler-analyse",
+  "/konkurrenzanalyse",
+  "/wunschpatient",
+  "/knowledge",
+  "/onboarding",
+  "/tickets",
+]
+
+// Helper function to check if path is protected
+function isProtectedRoute(pathname: string): boolean {
+  return PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
+}
+
+// Helper function to clear all Supabase auth cookies
+function clearAuthCookies(response: NextResponse, request: NextRequest): void {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const projectRef = supabaseUrl?.split("//")[1]?.split(".")[0] || "default"
+
+  // Clear all possible Supabase auth cookie variations
+  const cookieNames = [
+    `sb-${projectRef}-auth-token`,
+    `sb-${projectRef}-auth-token.0`,
+    `sb-${projectRef}-auth-token.1`,
+    `sb-${projectRef}-refresh-token`,
+  ]
+
+  cookieNames.forEach((name) => {
+    response.cookies.set(name, "", {
+      expires: new Date(0),
+      path: "/",
+    })
+  })
+
+  edgeLog.debug("Cleared auth cookies for redirect to login")
+}
+
 const pendingRefreshes = new Map<string, Promise<void>>()
 const refreshTokenLock = new Map<string, number>()
 
@@ -138,6 +200,9 @@ async function updateSession(request: NextRequest) {
   const lockKey = authTokenCookie?.value?.substring(0, 32) || `anon-${requestId}`
 
   let user = null
+  // Track if token refresh failed
+  let refreshFailed = false
+
   try {
     await acquireLockWithQueue(lockKey, async () => {
       const {
@@ -147,14 +212,26 @@ async function updateSession(request: NextRequest) {
     })
   } catch (error) {
     edgeLog.error("Token refresh lock error", error)
+    // Mark refresh as failed
+    refreshFailed = true
   }
 
-  // Redirect to login if accessing protected route without auth
-  if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
+  // Redirect to login if accessing ANY protected route without auth
+  const pathname = request.nextUrl.pathname
+  if (isProtectedRoute(pathname) && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
-    url.searchParams.set("redirect", request.nextUrl.pathname)
-    return NextResponse.redirect(url)
+    url.searchParams.set("redirect", pathname)
+
+    const redirectResponse = NextResponse.redirect(url)
+
+    // Clear stale cookies on auth failure to prevent stuck state
+    if (refreshFailed || authTokenCookie) {
+      clearAuthCookies(redirectResponse, request)
+    }
+
+    edgeLog.debug(`Auth redirect: ${pathname} -> /auth/login (user: ${!!user}, refreshFailed: ${refreshFailed})`)
+    return redirectResponse
   }
 
   // Add request ID header for tracing

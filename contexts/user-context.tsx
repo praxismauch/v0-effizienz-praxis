@@ -8,9 +8,7 @@ import { isSuperAdminRole, isPracticeAdminRole, normalizeRole } from "@/lib/auth
 import Logger from "@/lib/logger"
 import { encryptStorage, decryptStorage, isStorageExpired } from "@/lib/storage-utils"
 import { retryWithBackoff, isAuthError } from "@/lib/retry-utils"
-
-const DEV_USER_EMAIL = process.env.NEXT_PUBLIC_DEV_USER_EMAIL
-const IS_DEV_MODE = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
+import { useSessionHeartbeat } from "@/hooks/use-session-heartbeat"
 
 export interface User {
   id: string
@@ -115,7 +113,7 @@ export function UserProvider({
 
     if (user) {
       try {
-        const encrypted = await encryptStorage(user, 3600) // 1 hour TTL
+        const encrypted = await encryptStorage(user, 86400) // Increased TTL from 1 hour (3600) to 24 hours (86400)
         sessionStorage.setItem("effizienz_current_user", encrypted)
       } catch (error) {
         Logger.error("context", "Error persisting user", error)
@@ -145,6 +143,7 @@ export function UserProvider({
           if (isStorageExpired(stored)) {
             Logger.debug("context", "Stored user expired, clearing")
             sessionStorage.removeItem("effizienz_current_user")
+            setLoading(false)
             return
           }
 
@@ -156,11 +155,15 @@ export function UserProvider({
           } else {
             Logger.warn("context", "Failed to decrypt stored user")
             sessionStorage.removeItem("effizienz_current_user")
+            setLoading(false)
           }
+        } else {
+          setLoading(false)
         }
       } catch (e) {
         Logger.warn("context", "Error parsing stored user", { error: e })
         sessionStorage.removeItem("effizienz_current_user")
+        setLoading(false)
       }
     }
 
@@ -181,11 +184,13 @@ export function UserProvider({
     }
 
     const fetchUser = async () => {
-      hasFetchedUser.current = true
-
       try {
         await retryWithBackoff(
           async () => {
+            const DEV_USER_EMAIL = process.env.NEXT_PUBLIC_DEV_USER_EMAIL
+            const IS_DEV_MODE =
+              process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
+
             if (IS_DEV_MODE) {
               if (!DEV_USER_EMAIL) {
                 throw new Error("Dev mode enabled but NEXT_PUBLIC_DEV_USER_EMAIL not set")
@@ -222,6 +227,8 @@ export function UserProvider({
               }
               setCurrentUser(user)
               await persistUserToStorage(user)
+              hasFetchedUser.current = true
+              dispatchAuthRecovered()
               return
             }
 
@@ -267,6 +274,8 @@ export function UserProvider({
 
             setCurrentUser(user)
             await persistUserToStorage(user)
+            hasFetchedUser.current = true
+            dispatchAuthRecovered()
           },
           {
             maxAttempts: 3,
@@ -279,7 +288,7 @@ export function UserProvider({
       } catch (error) {
         Logger.error("context", "Error fetching user after retries", error)
         if (isAuthError(error)) {
-          hasFetchedUser.current = false
+          hasFetchedUser.current = true // Permanent failure, stop retrying
         }
         setCurrentUser(null)
         await persistUserToStorage(null)
@@ -294,6 +303,8 @@ export function UserProvider({
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!mounted) return
+    const IS_DEV_MODE = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
+
     if (IS_DEV_MODE) return
 
     const supabase = getSupabase()
@@ -337,6 +348,7 @@ export function UserProvider({
               }
               setCurrentUser(user)
               await persistUserToStorage(user)
+              dispatchAuthRecovered()
             }
           } catch (error) {
             Logger.error("context", "Error fetching user profile after sign in", error)
@@ -485,6 +497,21 @@ export function UserProvider({
     ],
   )
 
+  // Integrate session heartbeat to keep tokens fresh
+  useSessionHeartbeat({
+    interval: 5 * 60 * 1000, // 5 minutes
+    enabled: mounted && !!currentUser && !isLoggingOut,
+    onRefresh: () => {
+      Logger.debug("context", "Session heartbeat refreshed token")
+      dispatchAuthRecovered()
+    },
+    onError: (error) => {
+      Logger.error("context", "Session heartbeat failed", error)
+      // If heartbeat fails repeatedly, user may need to re-login
+      // The SWR error boundaries will handle pausing requests
+    },
+  })
+
   return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
 }
 
@@ -497,3 +524,9 @@ export function useUser() {
 }
 
 export default UserProvider
+
+const dispatchAuthRecovered = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("auth-recovered"))
+  }
+}

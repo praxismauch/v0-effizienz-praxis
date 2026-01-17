@@ -74,8 +74,10 @@ export default function OrganigrammPageClient() {
     }
 
     try {
+      console.log("[v0] Organigramm loadData: Setting loading true")
       setLoading(true)
       const practiceIdString = String(currentPractice.id)
+      console.log("[v0] Organigramm loadData: Querying org_chart_positions for practice:", practiceIdString)
 
       const { data, error } = await supabase
         .from("org_chart_positions")
@@ -86,16 +88,23 @@ export default function OrganigrammPageClient() {
         .order("level", { ascending: true })
         .order("display_order", { ascending: true })
 
+      console.log("[v0] Organigramm loadData: Query complete", {
+        dataLength: data?.length,
+        error: error?.message,
+      })
+
       if (error) throw error
       setPositions(data || [])
+      console.log("[v0] Organigramm loadData: Positions set, count:", data?.length || 0)
     } catch (error: any) {
-      console.error("Error loading org chart:", error)
+      console.error("[v0] Organigramm loadData ERROR:", error)
       toast({
         title: "Fehler",
         description: "Organigramm konnte nicht geladen werden",
         variant: "destructive",
       })
     } finally {
+      console.log("[v0] Organigramm loadData: Finally block, setting loading false")
       setLoading(false)
     }
   }

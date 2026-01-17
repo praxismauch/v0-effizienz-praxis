@@ -1,10 +1,15 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
+    console.log("[v0] Candidate GET: Starting...")
     const supabase = await createAdminClient()
-    const { id } = await params
+    console.log("[v0] Candidate GET: Admin client created")
+
+    const { id } = params
+    console.log("[v0] Candidate GET: ID from params:", id)
+
     const { data, error } = await supabase
       .from("candidates")
       .select("*")
@@ -12,26 +17,30 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       .is("deleted_at", null)
       .maybeSingle()
 
+    console.log("[v0] Candidate GET: Query result - data:", data ? "found" : "null", "error:", error?.message || "none")
+
     if (error) {
-      console.error("Error fetching candidate:", error)
+      console.error("[v0] Candidate GET: Supabase error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     if (!data) {
+      console.log("[v0] Candidate GET: No data found for ID:", id)
       return NextResponse.json({ error: "Kandidat nicht gefunden" }, { status: 404 })
     }
 
+    console.log("[v0] Candidate GET: Success, returning candidate:", data.first_name, data.last_name)
     return NextResponse.json(data)
   } catch (error: any) {
-    console.error("Error in candidate GET:", error)
+    console.error("[v0] Candidate GET: Exception:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = await params
+    const { id } = params
     const body = await request.json()
 
     const { stage, ...validFields } = body
@@ -68,10 +77,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = await params
+    const { id } = params
     const body = await request.json()
 
     const { stage, ...validFields } = body
@@ -108,10 +117,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = await params
+    const { id } = params
 
     const { data: existing, error: checkError } = await supabase
       .from("candidates")

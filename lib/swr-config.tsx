@@ -59,30 +59,37 @@ export function SWRProvider({ children }: { children: ReactNode }) {
     // SWR won't trigger a re-render
     compare: (a: any, b: any) => dequal(a, b),
 
-    // isPaused: () => isAuthFailed,  // DO NOT USE THIS
-
     shouldRetryOnError: (error: any) => {
-      // Don't retry auth errors
-      if (isAuthError(error)) {
-        console.warn("[v0] SWR: Auth error detected, stopping retries for this request")
+      const status = error?.status
+
+      // List of all status codes that should NOT retry
+      const noRetryStatuses = [
+        400, // Bad Request - malformed query, won't fix itself
+        401, // Unauthorized - need to re-authenticate
+        403, // Forbidden - permission denied
+        404, // Not Found - resource doesn't exist
+        405, // Method Not Allowed
+        409, // Conflict
+        410, // Gone
+        422, // Unprocessable Entity - validation error
+        429, // Too Many Requests - rate limited (could retry with backoff, but safer to stop)
+        500, // Internal Server Error
+        501, // Not Implemented
+        502, // Bad Gateway
+        503, // Service Unavailable
+        504, // Gateway Timeout
+      ]
+
+      if (noRetryStatuses.includes(status)) {
+        console.warn(`[v0] SWR: HTTP ${status} error, stopping retries`)
         return false
       }
 
-      // Don't retry 500 errors
-      if (error.status === 500) {
-        return false
-      }
-
-      // Don't retry 404 errors (resource not found)
-      if (error.status === 404) {
-        return false
-      }
-
+      // Only retry on network errors or unknown errors
       return true
     },
 
     onError: (error: any, key: string) => {
-      // Just log errors, don't pause anything globally
       console.error("[v0] SWR Error:", {
         key,
         status: error.status,

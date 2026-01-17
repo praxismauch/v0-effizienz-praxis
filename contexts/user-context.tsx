@@ -8,7 +8,13 @@ import { isSuperAdminRole, isPracticeAdminRole, normalizeRole } from "@/lib/auth
 import Logger from "@/lib/logger"
 import { encryptStorage, decryptStorage, isStorageExpired } from "@/lib/storage-utils"
 import { retryWithBackoff, isAuthError } from "@/lib/retry-utils"
-import { useSessionHeartbeat } from "@/hooks/use-session-heartbeat"
+
+const dispatchAuthRecovered = () => {
+  if (typeof window !== "undefined") {
+    console.log("[v0] dispatchAuthRecovered called")
+    window.dispatchEvent(new CustomEvent("auth-recovered"))
+  }
+}
 
 export interface User {
   id: string
@@ -108,12 +114,20 @@ export function UserProvider({
     return supabaseRef.current
   }, [])
 
+  console.log("[v0] UserProvider render", {
+    currentUser: currentUser?.email,
+    loading,
+    mounted,
+    pathname,
+    hasFetchedUser: hasFetchedUser.current,
+  })
+
   const persistUserToStorage = useCallback(async (user: User | null) => {
     if (typeof window === "undefined") return
 
     if (user) {
       try {
-        const encrypted = await encryptStorage(user, 86400) // Increased TTL from 1 hour (3600) to 24 hours (86400)
+        const encrypted = await encryptStorage(user, 86400)
         sessionStorage.setItem("effizienz_current_user", encrypted)
       } catch (error) {
         Logger.error("context", "Error persisting user", error)
@@ -128,6 +142,7 @@ export function UserProvider({
   }, [])
 
   useEffect(() => {
+    console.log("[v0] UserProvider mounted")
     setMounted(true)
   }, [])
 
@@ -136,12 +151,12 @@ export function UserProvider({
     if (currentUser || initialUser) return
 
     const restoreUser = async () => {
+      console.log("[v0] restoreUser called")
       try {
         const stored = sessionStorage.getItem("effizienz_current_user")
         if (stored) {
-          // Check expiry before decryption
           if (isStorageExpired(stored)) {
-            Logger.debug("context", "Stored user expired, clearing")
+            console.log("[v0] Stored user expired, clearing")
             sessionStorage.removeItem("effizienz_current_user")
             setLoading(false)
             return
@@ -149,19 +164,20 @@ export function UserProvider({
 
           const parsedUser = await decryptStorage(stored)
           if (parsedUser) {
-            Logger.debug("context", "Restored user from encrypted storage after hydration")
+            console.log("[v0] Restored user from storage:", (parsedUser as User).email)
             setCurrentUser(parsedUser as User)
             setLoading(false)
           } else {
-            Logger.warn("context", "Failed to decrypt stored user")
+            console.log("[v0] Failed to decrypt stored user")
             sessionStorage.removeItem("effizienz_current_user")
             setLoading(false)
           }
         } else {
+          console.log("[v0] No stored user found")
           setLoading(false)
         }
       } catch (e) {
-        Logger.warn("context", "Error parsing stored user", { error: e })
+        console.error("[v0] Error in restoreUser:", e)
         sessionStorage.removeItem("effizienz_current_user")
         setLoading(false)
       }
@@ -173,17 +189,23 @@ export function UserProvider({
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!mounted) return
-    if (hasFetchedUser.current) return
+    if (hasFetchedUser.current) {
+      console.log("[v0] fetchUser skipped - already fetched")
+      return
+    }
     if (currentUser || initialUser) {
+      console.log("[v0] fetchUser skipped - user exists")
       setLoading(false)
       return
     }
     if (isPublicRoute(pathname)) {
+      console.log("[v0] fetchUser skipped - public route")
       setLoading(false)
       return
     }
 
     const fetchUser = async () => {
+      console.log("[v0] fetchUser starting")
       try {
         await retryWithBackoff(
           async () => {
@@ -192,11 +214,10 @@ export function UserProvider({
               process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
 
             if (IS_DEV_MODE) {
+              console.log("[v0] Dev mode - fetching dev user")
               if (!DEV_USER_EMAIL) {
                 throw new Error("Dev mode enabled but NEXT_PUBLIC_DEV_USER_EMAIL not set")
               }
-
-              Logger.debug("context", "Dev mode - fetching dev user from API")
 
               const response = await fetch("/api/auth/dev-user", {
                 credentials: "include",
@@ -225,6 +246,7 @@ export function UserProvider({
                 preferred_language: data.user.preferred_language,
                 firstName: data.user.first_name,
               }
+              console.log("[v0] Dev user loaded:", user.email)
               setCurrentUser(user)
               await persistUserToStorage(user)
               hasFetchedUser.current = true
@@ -237,15 +259,18 @@ export function UserProvider({
               throw new Error("Supabase client not available")
             }
 
+            console.log("[v0] Fetching Supabase user")
             const {
               data: { user: authUser },
               error: authError,
             } = await supabase.auth.getUser()
 
             if (authError || !authUser) {
+              console.log("[v0] No Supabase user:", authError?.message)
               throw new Error(authError?.message || "No valid Supabase session")
             }
 
+            console.log("[v0] Fetching user profile for:", authUser.id)
             const { data: profile, error: profileError } = await supabase
               .from("users")
               .select(
@@ -255,6 +280,7 @@ export function UserProvider({
               .single()
 
             if (profileError || !profile) {
+              console.log("[v0] No profile found:", profileError?.message)
               throw new Error(profileError?.message || "No profile found")
             }
 
@@ -272,6 +298,7 @@ export function UserProvider({
               firstName: profile.first_name,
             }
 
+            console.log("[v0] User loaded successfully:", user.email)
             setCurrentUser(user)
             await persistUserToStorage(user)
             hasFetchedUser.current = true
@@ -281,24 +308,27 @@ export function UserProvider({
             maxAttempts: 3,
             initialDelay: 1000,
             onRetry: (attempt, error) => {
-              Logger.debug("context", `Retrying user fetch, attempt ${attempt}`, { error })
+              console.log(`[v0] Retrying user fetch, attempt ${attempt}:`, error)
             },
           },
         )
       } catch (error) {
-        Logger.error("context", "Error fetching user after retries", error)
+        console.error("[v0] Error fetching user after retries:", error)
         if (isAuthError(error)) {
-          hasFetchedUser.current = true // Permanent failure, stop retrying
+          hasFetchedUser.current = true
         }
         setCurrentUser(null)
         await persistUserToStorage(null)
       } finally {
+        console.log("[v0] fetchUser complete, setting loading=false")
         setLoading(false)
       }
     }
 
     fetchUser()
   }, [pathname, currentUser, initialUser, router, persistUserToStorage, getSupabase, mounted])
+
+  // ... existing code for auth state change listener ...
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -313,15 +343,15 @@ export function UserProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      Logger.debug("context", "Auth state changed", { event })
+      console.log("[v0] Auth state changed:", event)
 
       if (event === "SIGNED_OUT") {
-        Logger.info("context", "User signed out, clearing session")
+        console.log("[v0] User signed out, clearing session")
         setCurrentUser(null)
         await persistUserToStorage(null)
         hasFetchedUser.current = false
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        Logger.info("context", "User signed in or token refreshed")
+        console.log("[v0] User signed in or token refreshed")
         if (session?.user) {
           try {
             const { data: profile } = await supabase
@@ -346,12 +376,13 @@ export function UserProvider({
                 preferred_language: profile.preferred_language,
                 firstName: profile.first_name,
               }
+              console.log("[v0] User profile updated:", user.email)
               setCurrentUser(user)
               await persistUserToStorage(user)
               dispatchAuthRecovered()
             }
           } catch (error) {
-            Logger.error("context", "Error fetching user profile after sign in", error)
+            console.error("[v0] Error fetching user profile after sign in:", error)
           }
         }
         hasFetchedUser.current = false
@@ -362,6 +393,8 @@ export function UserProvider({
       subscription.unsubscribe()
     }
   }, [mounted, getSupabase, persistUserToStorage])
+
+  // ... existing code for super admins ...
 
   useEffect(() => {
     if (!currentUser) return
@@ -497,20 +530,17 @@ export function UserProvider({
     ],
   )
 
-  // Integrate session heartbeat to keep tokens fresh
-  useSessionHeartbeat({
-    interval: 5 * 60 * 1000, // 5 minutes
-    enabled: mounted && !!currentUser && !isLoggingOut,
-    onRefresh: () => {
-      Logger.debug("context", "Session heartbeat refreshed token")
-      dispatchAuthRecovered()
-    },
-    onError: (error) => {
-      Logger.error("context", "Session heartbeat failed", error)
-      // If heartbeat fails repeatedly, user may need to re-login
-      // The SWR error boundaries will handle pausing requests
-    },
-  })
+  // useSessionHeartbeat({
+  //   interval: 5 * 60 * 1000,
+  //   enabled: mounted && !!currentUser && !isLoggingOut,
+  //   onRefresh: () => {
+  //     console.log("[v0] Session heartbeat refreshed token")
+  //     dispatchAuthRecovered()
+  //   },
+  //   onError: (error) => {
+  //     console.error("[v0] Session heartbeat failed:", error)
+  //   },
+  // })
 
   return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
 }
@@ -524,9 +554,3 @@ export function useUser() {
 }
 
 export default UserProvider
-
-const dispatchAuthRecovered = () => {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("auth-recovered"))
-  }
-}

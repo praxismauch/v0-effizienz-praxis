@@ -1,23 +1,9 @@
 "use client"
 
-import { SWRConfig, useSWRConfig } from "swr"
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react"
+import { SWRConfig } from "swr"
+import type { ReactNode } from "react"
 
-interface AuthStateContextType {
-  isAuthFailed: boolean
-  setAuthFailed: (failed: boolean) => void
-  resetAuth: () => void
-}
-
-const AuthStateContext = createContext<AuthStateContextType>({
-  isAuthFailed: false,
-  setAuthFailed: () => {},
-  resetAuth: () => {},
-})
-
-export function useAuthState() {
-  return useContext(AuthStateContext)
-}
+// Auth errors will stop retrying but won't pause ALL requests globally
 
 function isAuthError(error: any): boolean {
   if (!error) return false
@@ -58,45 +44,7 @@ const fetcher = async (url: string) => {
 }
 
 export function SWRProvider({ children }: { children: ReactNode }) {
-  const [isAuthFailed, setIsAuthFailed] = useState(false)
-  const authErrorCount = useRef(0)
-  const AUTH_ERROR_THRESHOLD = 3 // Only pause after 3 consecutive auth errors
-
-  const setAuthFailed = useCallback((failed: boolean) => {
-    setIsAuthFailed(failed)
-    if (failed) {
-      console.warn("[v0] SWR: Global auth failure detected - pausing all requests")
-    }
-  }, [])
-
-  const resetAuth = useCallback(() => {
-    console.log("[v0] SWR: Auth recovered - resuming requests")
-    setIsAuthFailed(false)
-    authErrorCount.current = 0
-  }, [])
-
-  // Listen for successful auth to auto-recover
-  useEffect(() => {
-    const handleAuthRecovery = () => {
-      if (isAuthFailed) {
-        resetAuth()
-      }
-    }
-
-    window.addEventListener("auth-recovered", handleAuthRecovery)
-    return () => window.removeEventListener("auth-recovered", handleAuthRecovery)
-  }, [isAuthFailed, resetAuth])
-
-  useEffect(() => {
-    const handleSuccess = () => {
-      if (authErrorCount.current > 0) {
-        authErrorCount.current = 0
-      }
-    }
-
-    window.addEventListener("swr-fetch-success", handleSuccess)
-    return () => window.removeEventListener("swr-fetch-success", handleSuccess)
-  }, [])
+  // This prevents the global deadlock where one auth failure stops everything
 
   const swrConfig = {
     dedupingInterval: 2000,
@@ -106,11 +54,12 @@ export function SWRProvider({ children }: { children: ReactNode }) {
     errorRetryCount: 3,
     errorRetryInterval: 1000,
 
-    isPaused: () => isAuthFailed,
+    // isPaused: () => isAuthFailed,  // DO NOT USE THIS
 
     shouldRetryOnError: (error: any) => {
       // Don't retry auth errors
       if (isAuthError(error)) {
+        console.warn("[v0] SWR: Auth error detected, stopping retries for this request")
         return false
       }
 
@@ -119,7 +68,7 @@ export function SWRProvider({ children }: { children: ReactNode }) {
         return false
       }
 
-      // Don't retry 404 errors (resource not found, not auth related)
+      // Don't retry 404 errors (resource not found)
       if (error.status === 404) {
         return false
       }
@@ -127,55 +76,19 @@ export function SWRProvider({ children }: { children: ReactNode }) {
       return true
     },
 
-    onSuccess: () => {
-      if (authErrorCount.current > 0) {
-        authErrorCount.current = 0
-      }
-      // Dispatch success event
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("swr-fetch-success"))
-      }
-    },
-
     onError: (error: any, key: string) => {
+      // Just log errors, don't pause anything globally
       console.error("[v0] SWR Error:", {
         key,
         status: error.status,
         message: error.message,
       })
-
-      if (isAuthError(error)) {
-        authErrorCount.current++
-        console.warn(`[v0] SWR: Auth error ${authErrorCount.current}/${AUTH_ERROR_THRESHOLD}`)
-
-        // Only pause after threshold reached to avoid false positives
-        if (authErrorCount.current >= AUTH_ERROR_THRESHOLD) {
-          console.warn("[v0] SWR: Multiple auth failures - pausing all requests")
-          setAuthFailed(true)
-        }
-      }
     },
 
     fetcher,
   }
 
-  return (
-    <AuthStateContext.Provider value={{ isAuthFailed, setAuthFailed, resetAuth }}>
-      <SWRConfig value={swrConfig}>{children}</SWRConfig>
-    </AuthStateContext.Provider>
-  )
-}
-
-export function useSWRAuthRecovery() {
-  const { isAuthFailed, resetAuth } = useAuthState()
-  const { mutate } = useSWRConfig()
-
-  const recoverAndRefetch = useCallback(async () => {
-    resetAuth()
-    await mutate(() => true, undefined, { revalidate: true })
-  }, [resetAuth, mutate])
-
-  return { isAuthFailed, recoverAndRefetch }
+  return <SWRConfig value={swrConfig}>{children}</SWRConfig>
 }
 
 export default SWRProvider

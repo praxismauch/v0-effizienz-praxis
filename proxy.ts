@@ -55,26 +55,16 @@ function isProtectedRoute(pathname: string): boolean {
 }
 
 // Helper function to clear all Supabase auth cookies
-function clearAuthCookies(response: NextResponse, request: NextRequest): void {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const projectRef = supabaseUrl?.split("//")[1]?.split(".")[0] || "default"
+function clearAuthCookies(response: NextResponse): void {
+  const cookieOptions = {
+    path: "/",
+    maxAge: 0,
+    sameSite: "lax" as const,
+  }
 
-  // Clear all possible Supabase auth cookie variations
-  const cookieNames = [
-    `sb-${projectRef}-auth-token`,
-    `sb-${projectRef}-auth-token.0`,
-    `sb-${projectRef}-auth-token.1`,
-    `sb-${projectRef}-refresh-token`,
-  ]
-
-  cookieNames.forEach((name) => {
-    response.cookies.set(name, "", {
-      expires: new Date(0),
-      path: "/",
-    })
-  })
-
-  edgeLog.debug("Cleared auth cookies for redirect to login")
+  // Only clear the essential auth cookies
+  response.cookies.set("sb-access-token", "", cookieOptions)
+  response.cookies.set("sb-refresh-token", "", cookieOptions)
 }
 
 const pendingRefreshes = new Map<string, Promise<void>>()
@@ -226,8 +216,8 @@ async function updateSession(request: NextRequest) {
     const redirectResponse = NextResponse.redirect(url)
 
     // Clear stale cookies on auth failure to prevent stuck state
-    if (refreshFailed || authTokenCookie) {
-      clearAuthCookies(redirectResponse, request)
+    if (refreshFailed) {
+      clearAuthCookies(redirectResponse)
     }
 
     edgeLog.debug(`Auth redirect: ${pathname} -> /auth/login (user: ${!!user}, refreshFailed: ${refreshFailed})`)

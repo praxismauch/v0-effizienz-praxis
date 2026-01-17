@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react"
 import useSWR, { useSWRConfig } from "swr"
 import { useUser } from "./user-context"
 import { SWR_KEYS } from "@/lib/swr-keys"
@@ -49,6 +49,8 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
   const [currentPracticeState, setCurrentPracticeState] = useState<Practice | null>(null)
   const { mutate: globalMutate } = useSWRConfig()
 
+  const hasSetInitialPractice = useRef(false)
+
   const { isSuperAdmin, currentUser, loading: userLoading } = useUser()
 
   const { data, error, isLoading, mutate } = useSWR<{ practices: Practice[] }>(
@@ -58,16 +60,29 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 5000,
-      onSuccess: (data) => {
-        if (data?.practices && data.practices.length > 0 && !currentPracticeState) {
-          const userPractice = data.practices.find((p: Practice) => p.id === currentUser?.practiceId)
-          setCurrentPracticeState(userPractice || data.practices[0])
-        }
-      },
+      // REMOVED: onSuccess callback that was causing render loop
     },
   )
 
-  const practices = data?.practices || []
+  const practices = useMemo(() => {
+    return data?.practices || []
+  }, [data?.practices])
+
+  useEffect(() => {
+    // Only set initial practice once when data loads and no practice is selected
+    if (practices.length > 0 && !currentPracticeState && !hasSetInitialPractice.current) {
+      hasSetInitialPractice.current = true
+      const userPractice = practices.find((p: Practice) => p.id === currentUser?.practiceId)
+      setCurrentPracticeState(userPractice || practices[0])
+    }
+  }, [practices, currentPracticeState, currentUser?.practiceId])
+
+  useEffect(() => {
+    if (!currentUser?.id) {
+      hasSetInitialPractice.current = false
+      setCurrentPracticeState(null)
+    }
+  }, [currentUser?.id])
 
   const setCurrentPractice = useCallback((practice: Practice) => {
     setCurrentPracticeState(practice)
@@ -158,7 +173,7 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     [mutate],
   )
 
-  const contextValue = useMemo(
+  const stableContextValue = useMemo(
     () => ({
       practices,
       currentPractice: currentPracticeState,
@@ -169,7 +184,6 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       getAllPracticesForSuperAdmin,
       deactivatePractice,
       reactivatePractice,
-      isLoading: userLoading || isLoading,
       refreshPractices,
     }),
     [
@@ -182,10 +196,16 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
       getAllPracticesForSuperAdmin,
       deactivatePractice,
       reactivatePractice,
-      userLoading,
-      isLoading,
       refreshPractices,
     ],
+  )
+
+  const contextValue = useMemo(
+    () => ({
+      ...stableContextValue,
+      isLoading: userLoading || isLoading,
+    }),
+    [stableContextValue, userLoading, isLoading],
   )
 
   return <PracticeContext.Provider value={contextValue}>{children}</PracticeContext.Provider>

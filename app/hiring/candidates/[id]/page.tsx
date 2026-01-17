@@ -133,7 +133,12 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
   }
 
   const getInitials = (name: string) => {
-    const names = name.split(" ")
+    if (!name || typeof name !== "string") return "??"
+    const names = name
+      .trim()
+      .split(" ")
+      .filter((n) => n.length > 0)
+    if (names.length === 0) return "??"
     return names
       .map((n) => n[0])
       .join("")
@@ -432,7 +437,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                 <p className="whitespace-pre-wrap">{candidate.education}</p>
               </div>
             )}
-            {candidate.skills && candidate.skills.length > 0 && (
+            {candidate.skills && Array.isArray(candidate.skills) && candidate.skills.length > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Fähigkeiten</p>
                 <div className="flex flex-wrap gap-2">
@@ -444,7 +449,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                 </div>
               </div>
             )}
-            {candidate.languages && candidate.languages.length > 0 && (
+            {candidate.languages && Array.isArray(candidate.languages) && candidate.languages.length > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Sprachen</p>
                 <div className="flex flex-wrap gap-2">
@@ -456,16 +461,18 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                 </div>
               </div>
             )}
-            {candidate.certifications && candidate.certifications.length > 0 && (
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Zertifikate</p>
-                <ul className="list-disc list-inside space-y-1">
-                  {candidate.certifications.map((cert: string, idx: number) => (
-                    <li key={idx}>{cert}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {candidate.certifications &&
+              Array.isArray(candidate.certifications) &&
+              candidate.certifications.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Zertifikate</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {candidate.certifications.map((cert: string, idx: number) => (
+                      <li key={idx}>{cert}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
           </CardContent>
         </Card>
 
@@ -556,7 +563,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               )}
 
               {/* Uploaded Documents */}
-              {candidate.documents && candidate.documents.length > 0 && (
+              {candidate.documents && Array.isArray(candidate.documents) && candidate.documents.length > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-3">Hochgeladene Dokumente</p>
                   <div className="space-y-2">

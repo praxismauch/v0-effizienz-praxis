@@ -558,8 +558,8 @@ export function HiringPipeline() {
                           <Avatar className="h-10 w-10 flex-shrink-0">
                             <AvatarImage src={application.candidate.image_url || undefined} />
                             <AvatarFallback className="text-xs">
-                              {application.candidate.first_name[0]}
-                              {application.candidate.last_name[0]}
+                              {application.candidate.first_name?.[0] || "?"}
+                              {application.candidate.last_name?.[0] || "?"}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">

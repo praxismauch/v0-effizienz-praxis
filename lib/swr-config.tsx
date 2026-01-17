@@ -2,6 +2,7 @@
 
 import { SWRConfig } from "swr"
 import type { ReactNode } from "react"
+import { dequal } from "dequal"
 
 // Auth errors will stop retrying but won't pause ALL requests globally
 
@@ -53,6 +54,10 @@ export function SWRProvider({ children }: { children: ReactNode }) {
     keepPreviousData: true,
     errorRetryCount: 3,
     errorRetryInterval: 1000,
+
+    // This stabilizes SWR globally - if API returns same data with new reference,
+    // SWR won't trigger a re-render
+    compare: (a: any, b: any) => dequal(a, b),
 
     // isPaused: () => isAuthFailed,  // DO NOT USE THIS
 

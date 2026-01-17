@@ -1,13 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     console.log("[v0] Candidate GET: Starting...")
     const supabase = await createAdminClient()
     console.log("[v0] Candidate GET: Admin client created")
 
-    const { id } = params
+    const { id } = await params
     console.log("[v0] Candidate GET: ID from params:", id)
 
     const { data, error } = await supabase
@@ -37,10 +37,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const { stage, ...validFields } = body
@@ -81,10 +81,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const { stage, ...validFields } = body
@@ -125,10 +125,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createAdminClient()
-    const { id } = params
+    const { id } = await params
 
     const { data: existing, error: checkError } = await supabase
       .from("candidates")

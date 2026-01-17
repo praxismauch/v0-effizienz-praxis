@@ -255,7 +255,9 @@ const CandidatesManager = ({
   }
 
   const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase()
+    const first = firstName?.trim() || ""
+    const last = lastName?.trim() || ""
+    return `${first[0] || "?"}${last[0] || "?"}`.toUpperCase()
   }
 
   const calculateAge = (dateOfBirth: string | undefined) => {

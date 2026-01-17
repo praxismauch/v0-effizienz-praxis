@@ -244,8 +244,7 @@ export function HiringPipeline() {
               title: "Kandidat verschoben",
               description: `Kandidat wurde nach "${newStageId}" verschoben.`,
             })
-            // Revalidate after success to sync with server
-            await mutateApplications()
+            setTimeout(() => mutateApplications(), 2000)
           }
           return
         }
@@ -280,8 +279,7 @@ export function HiringPipeline() {
             title: "Bewerbung verschoben",
             description: `Bewerbung wurde nach "${newStageId}" verschoben.`,
           })
-          // Revalidate after success
-          await mutateApplications()
+          setTimeout(() => mutateApplications(), 2000)
         }
       } catch (error) {
         await mutateApplications(() => previousApplications, { revalidate: false })

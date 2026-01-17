@@ -272,11 +272,14 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
   const getInitials = () => {
     if (!candidateName) return "?"
     const names = candidateName.split(" ")
-    return names
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2)
+    return (
+      names
+        .filter((n) => n.length > 0)
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "?"
+    )
   }
 
   const handleImageError = () => {

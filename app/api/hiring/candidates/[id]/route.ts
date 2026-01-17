@@ -63,11 +63,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       })
       .eq("id", id)
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error("Supabase error updating candidate:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!data) {
+      return NextResponse.json({ error: "Kandidat nicht gefunden" }, { status: 404 })
     }
 
     return NextResponse.json(data)
@@ -103,11 +107,15 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       })
       .eq("id", id)
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error("Supabase error updating candidate:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!data) {
+      return NextResponse.json({ error: "Kandidat nicht gefunden" }, { status: 404 })
     }
 
     return NextResponse.json(data)

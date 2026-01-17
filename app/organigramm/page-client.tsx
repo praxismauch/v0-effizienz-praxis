@@ -59,8 +59,17 @@ export default function OrganigrammPageClient() {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const supabase = createBrowserClient()
 
+  console.log("[v0] Organigramm state:", {
+    loading,
+    practiceLoading,
+    currentPracticeId: currentPractice?.id,
+    currentPracticeName: currentPractice?.name,
+  })
+
   const loadData = async () => {
+    console.log("[v0] Organigramm loadData called, currentPractice?.id:", currentPractice?.id)
     if (!currentPractice?.id) {
+      console.log("[v0] Organigramm loadData early return - no practice id")
       return
     }
 

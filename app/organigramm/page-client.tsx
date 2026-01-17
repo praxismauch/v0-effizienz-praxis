@@ -1,11 +1,12 @@
 "use client"
 
 import type React from "react"
+import useSWR from "swr"
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -45,9 +46,9 @@ interface TreeNode {
   children: TreeNode[]
 }
 
-export default function OrganigrammPageClient() {
+export default function OrganigrammClient() {
+  const [loading, setLoading] = useState(false) // Changed from true to false since SWR handles loading
   const [positions, setPositions] = useState<Position[]>([])
-  const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingPosition, setEditingPosition] = useState<Position | null>(null)
   const [deletingPositionId, setDeletingPositionId] = useState<string | null>(null)
@@ -57,63 +58,37 @@ export default function OrganigrammPageClient() {
   const { toast } = useToast()
   const { user } = useAuth()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const supabase = createBrowserClient()
 
   console.log("[v0] Organigramm state:", {
     loading,
     practiceLoading,
     currentPracticeId: currentPractice?.id,
     currentPracticeName: currentPractice?.name,
+    positionsCount: positions.length,
   })
 
-  const loadData = async () => {
-    console.log("[v0] Organigramm loadData called, currentPractice?.id:", currentPractice?.id)
-    if (!currentPractice?.id) {
-      console.log("[v0] Organigramm loadData early return - no practice id")
-      return
+  const { data: positionsData, error: positionsError } = useSWR<{ positions: Position[] }>(
+    currentPractice?.id ? `/api/practices/${currentPractice.id}/org-chart-positions` : null,
+    swrFetcher,
+  )
+
+  useEffect(() => {
+    if (positionsData?.positions) {
+      console.log("[v0] Organigramm: SWR data loaded, positions:", positionsData.positions.length)
+      setPositions(positionsData.positions)
     }
+  }, [positionsData])
 
-    try {
-      console.log("[v0] Organigramm loadData: Setting loading true")
-      setLoading(true)
-      const practiceIdString = String(currentPractice.id)
-      console.log("[v0] Organigramm loadData: Querying org_chart_positions for practice:", practiceIdString)
-
-      const { data, error } = await supabase
-        .from("org_chart_positions")
-        .select("*")
-        .eq("practice_id", practiceIdString)
-        .or("is_active.eq.true,is_active.is.null")
-        .is("deleted_at", null)
-        .order("level", { ascending: true })
-        .order("display_order", { ascending: true })
-
-      console.log("[v0] Organigramm loadData: Query complete", {
-        dataLength: data?.length,
-        error: error?.message,
-      })
-
-      if (error) throw error
-      setPositions(data || [])
-      console.log("[v0] Organigramm loadData: Positions set, count:", data?.length || 0)
-    } catch (error: any) {
-      console.error("[v0] Organigramm loadData ERROR:", error)
+  useEffect(() => {
+    if (positionsError) {
+      console.error("[v0] Organigramm: SWR error:", positionsError)
       toast({
         title: "Fehler",
         description: "Organigramm konnte nicht geladen werden",
         variant: "destructive",
       })
-    } finally {
-      console.log("[v0] Organigramm loadData: Finally block, setting loading false")
-      setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    if (currentPractice?.id) {
-      loadData()
-    }
-  }, [currentPractice?.id])
+  }, [positionsError, toast])
 
   const buildTree = (): TreeNode[] => {
     const positionMap = new Map<string, TreeNode>()
@@ -159,9 +134,12 @@ export default function OrganigrammPageClient() {
       const parent = parentId ? positions.find((p) => p.id === parentId) : null
       const level = parent ? parent.level + 1 : 0
 
-      const { data: newPosition, error } = await supabase
-        .from("org_chart_positions")
-        .insert({
+      const response = await fetch(`/api/practices/${practiceIdString}/org-chart-positions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           practice_id: practiceIdString,
           position_title: data.position_title,
           department: data.department || null,
@@ -171,11 +149,10 @@ export default function OrganigrammPageClient() {
           color: "#4F7CBA",
           is_active: true,
           created_by: user.id,
-        })
-        .select()
-        .single()
+        }),
+      })
 
-      if (error) throw error
+      const newPosition = await response.json()
 
       setPositions((prev) => [...prev, newPosition])
       setShowCreateDialog(false)
@@ -191,14 +168,17 @@ export default function OrganigrammPageClient() {
 
   const handleUpdate = async (id: string, data: Partial<Position>) => {
     try {
-      const { error } = await supabase
-        .from("org_chart_positions")
-        .update({ ...data, updated_at: new Date().toISOString() })
-        .eq("id", id)
+      const response = await fetch(`/api/practices/${currentPractice?.id}/org-chart-positions/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...data, updated_at: new Date().toISOString() }),
+      })
 
-      if (error) throw error
+      const updatedPosition = await response.json()
 
-      setPositions((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)))
+      setPositions((prev) => prev.map((p) => (p.id === id ? updatedPosition : p)))
       setEditingPosition(null)
       toast({ title: "Erfolg", description: "Position wurde aktualisiert" })
     } catch (error: any) {
@@ -212,12 +192,11 @@ export default function OrganigrammPageClient() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("org_chart_positions")
-        .update({ deleted_at: new Date().toISOString(), is_active: false })
-        .eq("id", id)
+      const response = await fetch(`/api/practices/${currentPractice?.id}/org-chart-positions/${id}`, {
+        method: "DELETE",
+      })
 
-      if (error) throw error
+      if (!response.ok) throw new Error("Position konnte nicht gelöscht werden")
 
       setPositions((prev) => prev.filter((p) => p.id !== id))
       setDeletingPositionId(null)
@@ -360,7 +339,7 @@ export default function OrganigrammPageClient() {
             <Button variant="outline" size="sm" onClick={() => setZoom(1)}>
               <RotateCcw className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={loadData}>
+            <Button variant="outline" size="sm" onClick={() => setLoading(true)}>
               <RefreshCw className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={handlePrint}>

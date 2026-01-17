@@ -75,6 +75,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { room_ids, ...deviceData } = body
 
+    const responsibleUserId = deviceData.responsible_user_id === "" ? null : deviceData.responsible_user_id
+
     const { data: device, error } = await adminClient
       .from("medical_devices")
       .insert({
@@ -94,7 +96,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         warranty_end_date: deviceData.warranty_end_date,
         location: deviceData.location,
         room: deviceData.room,
-        responsible_user_id: deviceData.responsible_user_id,
+        responsible_user_id: responsibleUserId,
         image_url: deviceData.image_url,
         handbook_url: deviceData.handbook_url,
         ce_certificate_url: deviceData.ce_certificate_url,
@@ -123,7 +125,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    if (room_ids && room_ids.length > 0 && device) {
+    if (room_ids && Array.isArray(room_ids) && room_ids.length > 0 && device) {
       const roomAssociations = room_ids.map((roomId: string) => ({
         device_id: device.id,
         room_id: roomId,

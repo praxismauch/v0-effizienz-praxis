@@ -1,14 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
-import { isRateLimitError } from "@/lib/supabase/safe-query"
 
 export const dynamic = "force-dynamic"
-
-async function fetchWithRetry<T>(
-  fetchFn: () => Promise<T>,
-  retries = 3,
-  delay = 1000,
-): Promise<{ data: T | null; error: any }> {}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
@@ -24,25 +16,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       )
     }
 
-    let supabase
-    try {
-      supabase = await createAdminClient()
-    } catch (clientError) {
-      if (isRateLimitError(clientError)) {
-        console.warn("[v0] Analytics GET - Rate limited creating client, returning empty data")
-        return NextResponse.json({
-          practiceGrowthData: [],
-          taskCategoryData: [],
-          teamSatisfactionData: [],
-          kpiData: [],
-          efficiencyData: [],
-          qualityMetricsData: [],
-        })
-      }
-      throw clientError
-    }
+    // Analytics data is currently managed in-memory by the context, not stored in DB
+    return NextResponse.json({
+      practiceGrowthData: [],
+      taskCategoryData: [],
+      teamSatisfactionData: [],
+      kpiData: [],
+      efficiencyData: [],
+      qualityMetricsData: [],
+    })
   } catch (error) {
     console.error("[v0] Error fetching analytics data:", error)
-    return NextResponse.json({ error: "Failed to fetch analytics data" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Failed to fetch analytics data",
+        practiceGrowthData: [],
+        taskCategoryData: [],
+        teamSatisfactionData: [],
+        kpiData: [],
+        efficiencyData: [],
+        qualityMetricsData: [],
+      },
+      { status: 500 },
+    )
   }
 }

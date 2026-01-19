@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin-client"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-utils"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch responsibilities for a specific team member
 export async function GET(
@@ -8,16 +8,22 @@ export async function GET(
   { params }: { params: Promise<{ practiceId: string; memberId: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, memberId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, memberId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     console.log("[v0] Fetching responsibilities for member:", memberId, "in practice:", practiceId)
 
     // Get team member's user_id
-    const { data: teamMemberData, error: memberError } = await supabase
+    const { data: teamMemberData, error: memberError } = await adminClient
       .from("team_members")
       .select("user_id")
       .eq("id", memberId)
@@ -30,7 +36,7 @@ export async function GET(
 
     // Get team assignments
     if (authUserId) {
-      const { data: teamAssignments } = await supabase
+      const { data: teamAssignments } = await adminClient
         .from("team_assignments")
         .select("team_id, teams(id, name, color)")
         .eq("user_id", authUserId)
@@ -39,7 +45,7 @@ export async function GET(
     }
 
     // Fetch all responsibilities for the practice
-    const { data: allResponsibilities, error: respError } = await supabase
+    const { data: allResponsibilities, error: respError } = await adminClient
       .from("responsibilities")
       .select("*")
       .eq("practice_id", practiceId)
@@ -75,11 +81,6 @@ export async function GET(
     return NextResponse.json(responsibilities)
   } catch (error: any) {
     console.error("[v0] Error fetching team member responsibilities:", error)
-
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch responsibilities" },
       { status: 500 }

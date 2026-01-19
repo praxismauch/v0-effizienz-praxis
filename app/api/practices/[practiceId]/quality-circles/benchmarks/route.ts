@@ -1,16 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-utils"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch all quality benchmarks
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { data, error } = await adminClient
       .from("quality_benchmarks")
       .select("*")
       .order("category")
@@ -20,11 +27,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(data || [])
   } catch (error: any) {
     console.error("[v0] Error fetching quality benchmarks:", error)
-
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-
     return NextResponse.json({ error: "Failed to fetch benchmarks" }, { status: 500 })
   }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin-client"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-utils"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch arbeitsmittel assignments for a specific team member
 export async function GET(
@@ -8,16 +8,22 @@ export async function GET(
   { params }: { params: Promise<{ practiceId: string; memberId: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, memberId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, memberId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     console.log("[v0] Fetching arbeitsmittel for member:", memberId, "in practice:", practiceId)
 
     // Fetch assignments
-    const { data: assignmentsData, error: assignmentsError } = await supabase
+    const { data: assignmentsData, error: assignmentsError } = await adminClient
       .from("team_member_arbeitsmittel")
       .select("*")
       .eq("team_member_id", memberId)
@@ -33,7 +39,7 @@ export async function GET(
     // Fetch arbeitsmittel details
     const arbeitsmittelIds = assignmentsData.map((a) => a.arbeitsmittel_id).filter(Boolean)
 
-    const { data: arbeitsmittelData, error: arbeitsmittelError } = await supabase
+    const { data: arbeitsmittelData, error: arbeitsmittelError } = await adminClient
       .from("arbeitsmittel")
       .select("id, name, category, serial_number")
       .in("id", arbeitsmittelIds)
@@ -49,11 +55,6 @@ export async function GET(
     return NextResponse.json(joinedData)
   } catch (error: any) {
     console.error("[v0] Error fetching team member arbeitsmittel:", error)
-
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch arbeitsmittel" },
       { status: 500 }
@@ -67,17 +68,23 @@ export async function POST(
   { params }: { params: Promise<{ practiceId: string; memberId: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, memberId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, memberId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const body = await request.json()
 
     console.log("[v0] Creating arbeitsmittel assignment for member:", memberId)
 
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("team_member_arbeitsmittel")
       .insert({
         practice_id: practiceId,
@@ -96,11 +103,6 @@ export async function POST(
     return NextResponse.json(data)
   } catch (error: any) {
     console.error("[v0] Error creating arbeitsmittel assignment:", error)
-
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create assignment" },
       { status: 500 }

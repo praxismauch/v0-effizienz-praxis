@@ -1,20 +1,27 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-helpers"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch quality circle data (sessions, topics, actions, benchmarks)
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     
     const { searchParams } = new URL(request.url)
     const type = searchParams.get("type") || "all"
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
-
     if (type === "sessions") {
-      const { data, error } = await supabase
+      const { data, error } = await adminClient
         .from("quality_circle_sessions")
         .select(`
           *,
@@ -30,7 +37,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     if (type === "topics") {
-      const { data, error } = await supabase
+      const { data, error } = await adminClient
         .from("quality_circle_topics")
         .select("*")
         .eq("practice_id", practiceId)
@@ -41,7 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     if (type === "actions") {
-      const { data, error } = await supabase
+      const { data, error } = await adminClient
         .from("quality_circle_actions")
         .select("*")
         .eq("practice_id", practiceId)
@@ -52,7 +59,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     if (type === "benchmarks") {
-      const { data, error } = await supabase
+      const { data, error } = await adminClient
         .from("quality_benchmarks")
         .select("*")
 
@@ -62,14 +69,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Default: fetch all
     const [sessions, topics, actions, benchmarks] = await Promise.all([
-      supabase
+      adminClient
         .from("quality_circle_sessions")
         .select(`*, participants:quality_circle_participants(*), agenda_items:quality_circle_agenda_items(*), protocol:quality_circle_protocols(*)`)
         .eq("practice_id", practiceId)
         .order("scheduled_date", { ascending: false }),
-      supabase.from("quality_circle_topics").select("*").eq("practice_id", practiceId).order("created_at", { ascending: false }),
-      supabase.from("quality_circle_actions").select("*").eq("practice_id", practiceId).order("created_at", { ascending: false }),
-      supabase.from("quality_benchmarks").select("*"),
+      adminClient.from("quality_circle_topics").select("*").eq("practice_id", practiceId).order("created_at", { ascending: false }),
+      adminClient.from("quality_circle_actions").select("*").eq("practice_id", practiceId).order("created_at", { ascending: false }),
+      adminClient.from("quality_benchmarks").select("*"),
     ])
 
     return NextResponse.json({
@@ -90,21 +97,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 // POST - Create new quality circle item (session, topic, or action)
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { type, ...data } = body
 
     if (type === "session") {
-      const { data: result, error } = await supabase
+      const { data: result, error } = await adminClient
         .from("quality_circle_sessions")
         .insert({
           ...data,
           practice_id: practiceId,
-          created_by: access.user.id,
+          created_by: user.id,
         })
         .select()
         .single()
@@ -114,12 +128,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     if (type === "topic") {
-      const { data: result, error } = await supabase
+      const { data: result, error } = await adminClient
         .from("quality_circle_topics")
         .insert({
           ...data,
           practice_id: practiceId,
-          created_by: access.user.id,
+          created_by: user.id,
         })
         .select()
         .single()
@@ -129,12 +143,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     if (type === "action") {
-      const { data: result, error } = await supabase
+      const { data: result, error } = await adminClient
         .from("quality_circle_actions")
         .insert({
           ...data,
           practice_id: practiceId,
-          created_by: access.user.id,
+          created_by: user.id,
         })
         .select()
         .single()
@@ -156,16 +170,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 // PATCH - Update quality circle item
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { type, id, ...updates } = body
 
     if (type === "action") {
-      const { data: result, error } = await supabase
+      const { data: result, error } = await adminClient
         .from("quality_circle_actions")
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq("id", id)
@@ -178,7 +199,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     if (type === "topic") {
-      const { data: result, error } = await supabase
+      const { data: result, error } = await adminClient
         .from("quality_circle_topics")
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq("id", id)
@@ -191,7 +212,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     if (type === "session") {
-      const { data: result, error } = await supabase
+      const { data: result, error } = await adminClient
         .from("quality_circle_sessions")
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq("id", id)

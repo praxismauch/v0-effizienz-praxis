@@ -1,16 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-helpers"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // GET - List all IGEL analyses for a practice
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
+
+    const { data, error } = await adminClient
       .from("igel_analyses")
       .select("*")
       .eq("practice_id", practiceId)
@@ -25,11 +33,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(data || [])
   } catch (error: any) {
     console.error("[v0] Error in IGEL GET:", error)
-    
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-    
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch IGEL analyses" },
       { status: 500 }
@@ -40,15 +43,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 // POST - Create a new IGEL analysis
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
     const body = await request.json()
 
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("igel_analyses")
       .insert({
         practice_id: practiceId,
@@ -62,7 +71,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         recommendation: body.recommendation,
         break_even_point: body.break_even_point,
         status: body.status || "draft",
-        created_by: access.user.id,
+        created_by: user.id,
       })
       .select()
       .single()
@@ -75,11 +84,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json(data)
   } catch (error: any) {
     console.error("[v0] Error in IGEL POST:", error)
-    
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-    
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create IGEL analysis" },
       { status: 500 }

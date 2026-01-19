@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requirePracticeAccess } from "@/lib/auth-helpers"
-import { getEffectivePracticeId } from "@/lib/practice-id-helper"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     // Check if requesting action-items only
     const { searchParams } = new URL(request.url)
@@ -16,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (type === "action-items") {
       // Get the latest journal with its action items
-      const { data: journal } = await supabase
+      const { data: journal } = await adminClient
         .from("practice_journals")
         .select("id, title")
         .eq("practice_id", practiceId)
@@ -29,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json({ actionItems: [], journalTitle: "" })
       }
 
-      const { data: items } = await supabase
+      const { data: items } = await adminClient
         .from("journal_action_items")
         .select("*")
         .eq("journal_id", journal.id)
@@ -45,7 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Fetch journals
-    const { data: journalsData, error: journalsError } = await supabase
+    const { data: journalsData, error: journalsError } = await adminClient
       .from("practice_journals")
       .select("*")
       .eq("practice_id", practiceId)
@@ -55,7 +61,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (journalsError) throw journalsError
 
     // Fetch preferences
-    const { data: prefsData, error: prefsError } = await supabase
+    const { data: prefsData, error: prefsError } = await adminClient
       .from("journal_preferences")
       .select("*")
       .eq("practice_id", practiceId)
@@ -67,7 +73,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Fetch action items for the latest journal
     let actionItems: any[] = []
     if (journalsData && journalsData.length > 0) {
-      const { data: actionsData, error: actionsError } = await supabase
+      const { data: actionsData, error: actionsError } = await adminClient
         .from("journal_action_items")
         .select("*")
         .eq("journal_id", journalsData[0].id)
@@ -79,7 +85,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Fetch KPI count
-    const { count, error: kpiError } = await supabase
+    const { count, error: kpiError } = await adminClient
       .from("analytics_parameters")
       .select("*", { count: "exact", head: true })
       .eq("practice_id", practiceId)

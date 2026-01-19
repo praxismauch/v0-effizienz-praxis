@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-helpers"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // POST - Generate insights/journal
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const body = await request.json()
 
     // Create journal entry
-    const { data: journal, error: journalError } = await supabase
+    const { data: journal, error: journalError } = await adminClient
       .from("practice_journals")
       .insert({
         practice_id: practiceId,
@@ -24,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         additional_context: body.additional_context,
         self_check_data: body.self_check_data,
         status: "generating",
-        created_by: access.user.id,
+        created_by: user.id,
       })
       .select()
       .single()
@@ -46,11 +53,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 // GET - Check for existing journal in period
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const { searchParams } = new URL(request.url)
     const periodStart = searchParams.get("period_start")
@@ -60,7 +73,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "period_start and period_end required" }, { status: 400 })
     }
 
-    const { data: existing } = await supabase
+    const { data: existing } = await adminClient
       .from("practice_journals")
       .select("id, period_type, period_start, period_end")
       .eq("practice_id", practiceId)

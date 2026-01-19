@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-utils"
+import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/api-helpers"
 
 // GET - Fetch all quality circle sessions
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {

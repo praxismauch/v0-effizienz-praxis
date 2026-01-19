@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-helpers"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // GET - Fetch single contact
 export async function GET(
@@ -7,13 +8,20 @@ export async function GET(
   { params }: { params: Promise<{ practiceId: string; contactId: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, contactId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, contactId } = await params
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
+
+    const { data, error } = await adminClient
       .from("contacts")
       .select("*")
       .eq("id", contactId)
@@ -26,11 +34,6 @@ export async function GET(
     return NextResponse.json(data)
   } catch (error: any) {
     console.error("[v0] Error fetching contact:", error)
-
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch contact" },
       { status: 500 }
@@ -44,15 +47,21 @@ export async function PATCH(
   { params }: { params: Promise<{ practiceId: string; contactId: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, contactId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, contactId } = await params
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
     const body = await request.json()
 
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("contacts")
       .update({
         ...body,
@@ -68,11 +77,6 @@ export async function PATCH(
     return NextResponse.json(data)
   } catch (error: any) {
     console.error("[v0] Error updating contact:", error)
-
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update contact" },
       { status: 500 }
@@ -86,13 +90,20 @@ export async function DELETE(
   { params }: { params: Promise<{ practiceId: string; contactId: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, contactId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, contactId } = await params
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const { error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
+
+    const { error } = await adminClient
       .from("contacts")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", contactId)
@@ -103,11 +114,6 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error("[v0] Error deleting contact:", error)
-
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete contact" },
       { status: 500 }

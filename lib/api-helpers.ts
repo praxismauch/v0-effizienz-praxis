@@ -227,6 +227,19 @@ export function validatePracticeId(practiceId: string | undefined | null): strin
   return practiceId
 }
 
+/**
+ * Get effective practice ID (normalize string/number to string)
+ */
+export function getEffectivePracticeId(practiceId: string | number | undefined | null): string {
+  const idStr = String(practiceId ?? "")
+  
+  if (!idStr || idStr === "undefined" || idStr === "null" || idStr === "0" || idStr === "") {
+    throw new Error("Praxis-ID fehlt oder ist ungültig")
+  }
+  
+  return idStr
+}
+
 export class ApiError extends Error {
   status: number
 

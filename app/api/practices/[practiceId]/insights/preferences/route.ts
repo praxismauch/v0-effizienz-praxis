@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-helpers"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch journal preferences
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { data, error } = await adminClient
       .from("journal_preferences")
       .select("*")
       .eq("practice_id", practiceId)
@@ -34,11 +41,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 // POST - Create or update journal preferences
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const body = await request.json()
 
@@ -49,7 +62,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Check if preferences exist
-    const { data: existing } = await supabase
+    const { data: existing } = await adminClient
       .from("journal_preferences")
       .select("id")
       .eq("practice_id", practiceId)
@@ -58,7 +71,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     let result
     if (existing?.id) {
-      const { data, error } = await supabase
+      const { data, error } = await adminClient
         .from("journal_preferences")
         .update(dataToSave)
         .eq("id", existing.id)
@@ -68,7 +81,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (error) throw error
       result = data
     } else {
-      const { data, error } = await supabase
+      const { data, error } = await adminClient
         .from("journal_preferences")
         .insert(dataToSave)
         .select()

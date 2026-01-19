@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-helpers"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch all data needed for journal generation
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const { searchParams } = new URL(request.url)
     const periodStart = searchParams.get("period_start")
@@ -16,27 +23,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Fetch all data in parallel
     const [kpisResult, teamResult, goalsResult, workflowsResult, valuesResult] = await Promise.all([
-      supabase
+      adminClient
         .from("analytics_parameters")
         .select("*")
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
-      supabase
+      adminClient
         .from("team_members")
         .select("*")
         .eq("practice_id", practiceId),
-      supabase
+      adminClient
         .from("goals")
         .select("*")
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
-      supabase
+      adminClient
         .from("workflows")
         .select("*")
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
       periodStart && periodEnd
-        ? supabase
+        ? adminClient
             .from("parameter_values")
             .select("*")
             .eq("practice_id", practiceId)
@@ -67,18 +74,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 // POST - Save self-check data
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId } = await params
+    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const body = await request.json()
 
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("user_self_checks")
       .insert({
-        user_id: access.user.id,
+        user_id: user.id,
         practice_id: practiceId,
         assessment_date: body.assessment_date,
         energy_level: body.energy_level,

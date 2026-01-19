@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requirePracticeAccess, getEffectivePracticeId } from "@/lib/auth-helpers"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // GET - Get single IGEL analysis
 export async function GET(
@@ -7,13 +8,20 @@ export async function GET(
   { params }: { params: Promise<{ practiceId: string; id: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, id } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, id } = await params
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
+
+    const { data, error } = await adminClient
       .from("igel_analyses")
       .select("*")
       .eq("id", id)
@@ -28,11 +36,6 @@ export async function GET(
     return NextResponse.json(data)
   } catch (error: any) {
     console.error("[v0] Error in IGEL GET [id]:", error)
-    
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-    
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch IGEL analysis" },
       { status: 500 }
@@ -46,15 +49,21 @@ export async function PATCH(
   { params }: { params: Promise<{ practiceId: string; id: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, id } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, id } = await params
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
     const body = await request.json()
 
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from("igel_analyses")
       .update({
         service_name: body.service_name,
@@ -67,6 +76,8 @@ export async function PATCH(
         recommendation: body.recommendation,
         break_even_point: body.break_even_point,
         status: body.status,
+        total_one_time_cost: body.total_one_time_cost,
+        total_variable_cost: body.total_variable_cost,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -82,11 +93,6 @@ export async function PATCH(
     return NextResponse.json(data)
   } catch (error: any) {
     console.error("[v0] Error in IGEL PATCH:", error)
-    
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-    
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update IGEL analysis" },
       { status: 500 }
@@ -100,13 +106,20 @@ export async function DELETE(
   { params }: { params: Promise<{ practiceId: string; id: string }> }
 ) {
   try {
-    const { practiceId: rawPracticeId, id } = await params
-    const practiceId = getEffectivePracticeId(rawPracticeId)
+    const { practiceId, id } = await params
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const { error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
+
+    const { error } = await adminClient
       .from("igel_analyses")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id)
@@ -120,11 +133,6 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error("[v0] Error in IGEL DELETE:", error)
-    
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
-    }
-    
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete IGEL analysis" },
       { status: 500 }

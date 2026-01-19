@@ -288,6 +288,13 @@ export default function QualitaetszirkelPageClient() {
         title: "Maßnahme erstellt",
         description: "Die neue Maßnahme wurde angelegt.",
       })
+    } catch (error) {
+      console.error("Error creating action:", error)
+      toast({
+        title: "Fehler",
+        description: "Maßnahme konnte nicht erstellt werden.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -301,7 +308,7 @@ export default function QualitaetszirkelPageClient() {
 
     try {
       await updateQualityCircleItem(practiceId, "action", actionId, updates)
-      mutateQuality()
+      mutate()
     } catch (error) {
       console.error("Error updating action:", error)
     }
@@ -312,7 +319,7 @@ export default function QualitaetszirkelPageClient() {
 
     try {
       await updateQualityCircleItem(practiceId, "topic", topicId, { status: newStatus })
-      mutateQuality()
+      mutate()
     } catch (error) {
       console.error("Error updating topic:", error)
     }

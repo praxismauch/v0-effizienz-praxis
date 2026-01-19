@@ -659,6 +659,9 @@ export default function TeamPageClient() {
             is_management: (pos.level ?? 99) <= 1,
           }))
           setOrgChartPositions(validPositions)
+        }
+      } catch (error) {
+        console.error("Error loading team data:", error)
       }
     }
 

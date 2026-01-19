@@ -1,0 +1,108 @@
+import { NextRequest, NextResponse } from "next/server"
+import { requirePracticeAccess } from "@/lib/auth-helpers"
+import { getEffectivePracticeId } from "@/lib/practice-id-helper"
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  try {
+    const { practiceId: rawPracticeId } = await params
+    const practiceId = getEffectivePracticeId(rawPracticeId)
+
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
+
+    // Check if requesting action-items only
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get("type")
+
+    if (type === "action-items") {
+      // Get the latest journal with its action items
+      const { data: journal } = await supabase
+        .from("practice_journals")
+        .select("id, title")
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (!journal) {
+        return NextResponse.json({ actionItems: [], journalTitle: "" })
+      }
+
+      const { data: items } = await supabase
+        .from("journal_action_items")
+        .select("*")
+        .eq("journal_id", journal.id)
+        .is("deleted_at", null)
+        .in("status", ["pending", "in_progress"])
+        .order("priority", { ascending: false })
+        .limit(5)
+
+      return NextResponse.json({
+        actionItems: items || [],
+        journalTitle: journal.title,
+      })
+    }
+
+    // Fetch journals
+    const { data: journalsData, error: journalsError } = await supabase
+      .from("practice_journals")
+      .select("*")
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+      .order("period_start", { ascending: false })
+
+    if (journalsError) throw journalsError
+
+    // Fetch preferences
+    const { data: prefsData, error: prefsError } = await supabase
+      .from("journal_preferences")
+      .select("*")
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+      .maybeSingle()
+
+    if (prefsError) throw prefsError
+
+    // Fetch action items for the latest journal
+    let actionItems: any[] = []
+    if (journalsData && journalsData.length > 0) {
+      const { data: actionsData, error: actionsError } = await supabase
+        .from("journal_action_items")
+        .select("*")
+        .eq("journal_id", journalsData[0].id)
+        .is("deleted_at", null)
+        .order("priority", { ascending: false })
+
+      if (actionsError) throw actionsError
+      actionItems = actionsData || []
+    }
+
+    // Fetch KPI count
+    const { count, error: kpiError } = await supabase
+      .from("analytics_parameters")
+      .select("*", { count: "exact", head: true })
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+
+    if (kpiError) throw kpiError
+
+    return NextResponse.json({
+      journals: journalsData || [],
+      preferences: prefsData,
+      actionItems,
+      kpiCount: count || 0,
+    })
+  } catch (error: any) {
+    console.error("[v0] Error fetching practice insights:", error)
+
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to fetch practice insights" },
+      { status: 500 }
+    )
+  }
+}

@@ -56,7 +56,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import React from "react" // Added for React.useState
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar" // Import Avatar components
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip" // Import Tooltip components
-import { createBrowserClient } from "@/lib/supabase/client"
+
 // REMOVED IMPORT: import { SidebarProvider } from "@/components/ui/sidebar" // ADDED IMPORT
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { TaskDistributionTab } from "@/components/task-distribution-tab" // Added import for TaskDistributionTab
@@ -808,17 +808,17 @@ export default function TodosPage() {
       }
 
       if (pastedFiles.length > 0 && savedTodo?.id) {
-        const supabase = await createBrowserClient()
         for (const file of pastedFiles) {
-          await supabase.from("todo_attachments").insert({
-            todo_id: savedTodo.id,
-            practice_id: practiceId,
-            attachment_type: "file",
-            file_url: file.url,
-            file_name: file.file_name,
-            file_type: file.file_type.startsWith("image/") ? "image" : "document",
-            file_size: file.file_size,
-            created_by: currentUser?.id,
+          await fetch(`/api/practices/${practiceId}/todos/${savedTodo.id}/attachments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              attachment_type: "file",
+              file_url: file.url,
+              file_name: file.file_name,
+              file_type: file.file_type.startsWith("image/") ? "image" : "document",
+              file_size: file.file_size,
+            }),
           })
         }
       }

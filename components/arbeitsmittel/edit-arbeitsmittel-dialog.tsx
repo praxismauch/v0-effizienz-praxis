@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
 import { useToast } from "@/hooks/use-toast"
 
@@ -58,7 +57,6 @@ export function EditArbeitsmittelDialog({
     status: "available",
     notes: "",
   })
-  const supabase = createBrowserClient()
   const { toast } = useToast()
 
   useEffect(() => {
@@ -83,9 +81,12 @@ export function EditArbeitsmittelDialog({
     setLoading(true)
 
     try {
-      const { error } = await supabase
-        .from("arbeitsmittel")
-        .update({
+      if (!item.practice_id) throw new Error("No practice ID")
+
+      const response = await fetch(`/api/practices/${item.practice_id}/arbeitsmittel/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: formData.name,
           type: formData.type,
           description: formData.description || null,
@@ -100,10 +101,13 @@ export function EditArbeitsmittelDialog({
             formData.assigned_to && !item.assigned_to ? new Date().toISOString().split("T")[0] : item.assigned_date,
           return_date:
             !formData.assigned_to && item.assigned_to ? new Date().toISOString().split("T")[0] : item.return_date,
-        })
-        .eq("id", item.id)
+        }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update")
+      }
 
       toast({
         title: "Erfolgreich",

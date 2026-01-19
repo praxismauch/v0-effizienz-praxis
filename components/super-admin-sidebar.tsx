@@ -9,7 +9,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
-import { createClient as createBrowserClient } from "@/lib/supabase/client"
 import {
   Building2,
   Mail,
@@ -404,18 +403,14 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        const supabase = createBrowserClient()
-        await supabase.from("user_sidebar_preferences").upsert(
-          {
-            user_id: currentUser.id,
+        await fetch("/api/user/sidebar-preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             practice_id: "super-admin",
             sidebar_collapsed: newCollapsed,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "user_id,practice_id",
-          },
-        )
+          }),
+        })
       } catch (error) {
         console.debug("Error saving super admin sidebar collapsed state:", error)
       }
@@ -432,18 +427,14 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        const supabase = createBrowserClient()
-        await supabase.from("user_sidebar_preferences").upsert(
-          {
-            user_id: currentUser.id,
+        await fetch("/api/user/sidebar-preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             practice_id: "super-admin",
             expanded_groups: newSections,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "user_id,practice_id",
-          },
-        )
+          }),
+        })
       } catch (error) {
         console.debug("Error saving super admin sidebar sections state:", error)
       }
@@ -460,18 +451,14 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        const supabase = createBrowserClient()
-        await supabase.from("user_sidebar_preferences").upsert(
-          {
-            user_id: currentUser.id,
+        await fetch("/api/user/sidebar-preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             practice_id: "super-admin",
             expanded_items: newExpandedItems,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "user_id,practice_id",
-          },
-        )
+          }),
+        })
       } catch (error) {
         console.debug("Error saving super admin expanded items state:", error)
       }

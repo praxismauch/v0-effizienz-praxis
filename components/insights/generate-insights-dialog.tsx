@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
 import {
   format,
   startOfMonth,
@@ -209,7 +208,6 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
     setExistingJournal(null)
 
     try {
-      const supabase = createClient()
       if (!user) throw new Error("Not authenticated")
 
       const effectivePracticeId = practiceId || currentUser?.practice_id
@@ -220,62 +218,34 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
 
       setProgress(20)
 
-      // Fetch KPIs data
-      const { data: kpis } = await supabase
-        .from("analytics_parameters")
-        .select("*")
-        .eq("practice_id", effectivePracticeId)
-        .is("deleted_at", null)
+      // Fetch all context data from API
+      const dataResponse = await fetch(
+        `/api/practices/${effectivePracticeId}/insights/data?period_start=${format(start, "yyyy-MM-dd")}&period_end=${format(end, "yyyy-MM-dd")}`
+      )
+      
+      if (!dataResponse.ok) {
+        throw new Error("Failed to fetch insights data")
+      }
 
-      setProgress(30)
-
-      // Fetch parameter values for the period
-      const { data: values } = await supabase
-        .from("parameter_values")
-        .select("*")
-        .eq("practice_id", effectivePracticeId)
-        .gte("recorded_date", format(start, "yyyy-MM-dd"))
-        .lte("recorded_date", format(end, "yyyy-MM-dd"))
-        .is("deleted_at", null)
-
-      setProgress(40)
-
-      // Fetch team data
-      const { data: teamMembers } = await supabase
-        .from("team_members")
-        .select("*")
-        .eq("practice_id", effectivePracticeId)
+      const { kpis, teamMembers, goals, workflows, parameterValues: values } = await dataResponse.json()
 
       setProgress(50)
 
-      // Fetch goals
-      const { data: goals } = await supabase
-        .from("goals")
-        .select("*")
-        .eq("practice_id", effectivePracticeId)
-        .is("deleted_at", null)
-
-      setProgress(60)
-
-      // Fetch workflows
-      const { data: workflows } = await supabase
-        .from("workflows")
-        .select("*")
-        .eq("practice_id", effectivePracticeId)
-        .is("deleted_at", null)
-
-      setProgress(70)
-
+      // Save self-check if enabled
       if (includeSelfCheck && user?.id) {
         const overallScore = calculateOverallScore()
-        await supabase.from("user_self_checks").insert({
-          user_id: user.id,
-          practice_id: effectivePracticeId,
-          assessment_date: format(new Date(), "yyyy-MM-dd"),
-          ...selfCheckData,
-          overall_score: overallScore,
+        await fetch(`/api/practices/${effectivePracticeId}/insights/data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            assessment_date: format(new Date(), "yyyy-MM-dd"),
+            ...selfCheckData,
+            overall_score: overallScore,
+          }),
         })
       }
+
+      setProgress(70)
 
       // Generate AI analysis
       const response = await fetch("/api/practice-journals/generate", {

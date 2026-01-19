@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { format, parseISO } from "date-fns"
+import useSWR from "swr"
 import { de } from "date-fns/locale"
 import {
   BookOpen,
@@ -94,75 +94,34 @@ export default function PracticeJournalsPage() {
   const { currentUser: authUser, loading: authLoading } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
 
+  // Use SWR to fetch insights data
+  const { data: insightsData, isLoading: insightsLoading } = useSWR(
+    currentPractice?.id ? `/api/practices/${currentPractice.id}/insights` : null,
+    (url) => fetch(url).then(r => r.json())
+  )
+
+  // Set state from SWR data
   useEffect(() => {
-    if (authLoading || practiceLoading) {
-      return
-    }
-
-    if (!authUser) {
-      return
-    }
-
-    if (!currentPractice?.id) {
-      setLoading(false)
-      return
-    }
-
-    loadData()
-  }, [authUser, authLoading, currentPractice, practiceLoading])
-
-  async function loadData() {
-    if (!authUser || !currentPractice?.id) return
-
-    try {
-      const supabase = createClient()
-      const practiceId = currentPractice.id
-
-      setUser({ ...authUser, practice_id: practiceId })
-
-      const { data: journalsData } = await supabase
-        .from("practice_journals")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null)
-        .order("period_start", { ascending: false })
-
-      setJournals(journalsData || [])
-
-      const { data: prefsData } = await supabase
-        .from("journal_preferences")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null)
-        .maybeSingle()
-
-      setPreferences(prefsData)
-
-      if (journalsData && journalsData.length > 0) {
-        const { data: actionsData } = await supabase
-          .from("journal_action_items")
-          .select("*")
-          .eq("journal_id", journalsData[0].id)
-          .is("deleted_at", null)
-          .order("priority", { ascending: false })
-
-        setActionItems(actionsData || [])
-      }
-
-      const { count } = await supabase
-        .from("analytics_parameters")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null)
-
-      setKpiCount(count || 0)
-
-      setLoading(false)
-    } catch (error) {
-      console.error("Error loading data:", error)
+    if (insightsData) {
+      setJournals(insightsData.journals || [])
+      setPreferences(insightsData.preferences)
+      setActionItems(insightsData.actionItems || [])
+      setKpiCount(insightsData.kpiCount || 0)
       setLoading(false)
     }
-  }
+  }, [insightsData])
+
+  useEffect(() => {
+    if (authUser && currentPractice?.id) {
+      setUser({ ...authUser, practice_id: currentPractice.id })
+    }
+  }, [authUser, currentPractice])
+
+  useEffect(() => {
+    if (!authLoading && !practiceLoading && !insightsLoading) {
+      setLoading(false)
+    }
+  }, [authLoading, practiceLoading, insightsLoading])
 
   const getPeriodTypeLabel = (type: string) => {
     switch (type) {
@@ -208,12 +167,12 @@ export default function PracticeJournalsPage() {
   }
 
   const handleJournalGenerated = () => {
-    loadData()
+    // SWR will automatically revalidate
     setShowGenerateDialog(false)
   }
 
   const handlePreferencesSaved = () => {
-    loadData()
+    // SWR will automatically revalidate
     setShowPreferencesDialog(false)
   }
 

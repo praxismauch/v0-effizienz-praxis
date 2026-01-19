@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { usePractice } from "@/contexts/practice-context"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 
 interface Position {
@@ -72,8 +71,6 @@ export function OrgChartDialog({
   const handleSave = async () => {
     if (!currentPractice?.id) return
 
-    const supabase = createBrowserClient()
-
     try {
       const dataToSave = {
         position_title: formData.position_title,
@@ -84,34 +81,27 @@ export function OrgChartDialog({
         is_management: formData.is_management,
         display_order: formData.display_order,
         color: formData.color,
-        practice_id: currentPractice.id,
       }
 
-      if (position) {
-        // Update existing position
-        const { error } = await supabase
-          .from("org_chart_positions")
-          .update(dataToSave)
-          .eq("id", position.id)
-          .eq("practice_id", currentPractice.id)
+      const url = position 
+        ? `/api/practices/${currentPractice.id}/org-chart-positions/${position.id}`
+        : `/api/practices/${currentPractice.id}/org-chart-positions`
+      
+      const response = await fetch(url, {
+        method: position ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSave),
+      })
 
-        if (error) throw error
-
-        toast({
-          title: "Erfolg",
-          description: "Position wurde aktualisiert",
-        })
-      } else {
-        // Create new position
-        const { error } = await supabase.from("org_chart_positions").insert(dataToSave)
-
-        if (error) throw error
-
-        toast({
-          title: "Erfolg",
-          description: "Position wurde erstellt",
-        })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to save position")
       }
+
+      toast({
+        title: "Erfolg",
+        description: position ? "Position wurde aktualisiert" : "Position wurde erstellt",
+      })
 
       onSuccess()
       onOpenChange(false)

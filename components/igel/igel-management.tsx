@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import useSWR from "swr"
 import {
   Plus,
   TrendingUp,
@@ -18,9 +17,8 @@ import { Badge } from "@/components/ui/badge"
 import { CreateIgelDialog } from "./create-igel-dialog"
 import { ViewIgelDialog } from "./view-igel-dialog"
 import { EditIgelDialog } from "./edit-igel-dialog"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { useUser } from "@/contexts/user-context"
-import { SWR_KEYS } from "@/lib/swr-keys"
+import { useIgelAnalyses } from "@/hooks/use-igel"
 
 interface IgelAnalysis {
   id: string
@@ -39,43 +37,10 @@ export function IgelManagement() {
   const [createOpen, setCreateOpen] = useState(false)
   const [viewAnalysis, setViewAnalysis] = useState<IgelAnalysis | null>(null)
   const [editAnalysis, setEditAnalysis] = useState<IgelAnalysis | null>(null)
-  const supabase = createBrowserClient()
   const { currentUser: user } = useUser()
 
   const practiceId = user?.practice_id
-  const {
-    data: analyses = [],
-    error,
-    isLoading: loading,
-    mutate: mutateAnalyses,
-  } = useSWR<IgelAnalysis[]>(
-    practiceId ? SWR_KEYS.igelAnalyses(practiceId) : null,
-    async () => {
-      console.log("[v0] IGEL: Fetching analyses via SWR for practice:", practiceId)
-
-      const { data, error: fetchError } = await supabase
-        .from("igel_analyses")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .order("created_at", { ascending: false })
-
-      if (fetchError) {
-        console.error("[v0] IGEL: Error loading analyses:", fetchError)
-        throw new Error(
-          fetchError.code === "42P01"
-            ? "Die IGEL-Analyse Tabelle existiert noch nicht in der Datenbank."
-            : `Fehler beim Laden: ${fetchError.message}`,
-        )
-      }
-
-      console.log("[v0] IGEL: Loaded analyses:", data?.length || 0)
-      return data || []
-    },
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-    },
-  )
+  const { analyses, isLoading: loading, error, mutate: mutateAnalyses } = useIgelAnalyses(practiceId)
 
   const getRecommendationColor = (recommendation: string) => {
     if (recommendation?.includes("Sehr empfehlenswert")) return "default"

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 import {
   Dialog,
   DialogContent,
@@ -70,22 +69,15 @@ export function JournalPreferencesDialog({ open, onOpenChange, preferences, prac
   const handleSave = async () => {
     setSaving(true)
     try {
-      const supabase = createClient()
+      const response = await fetch(`/api/practices/${practiceId}/insights/preferences`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
 
-      const dataToSave = {
-        ...formData,
-        practice_id: practiceId,
-        updated_at: new Date().toISOString(),
-      }
-
-      if (preferences?.id) {
-        const { error } = await supabase.from("journal_preferences").update(dataToSave).eq("id", preferences.id)
-
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from("journal_preferences").insert(dataToSave)
-
-        if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to save preferences")
       }
 
       toast({

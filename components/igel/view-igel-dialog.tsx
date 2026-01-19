@@ -24,8 +24,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { deleteIgelAnalysis } from "@/hooks/use-igel"
 
 interface ViewIgelDialogProps {
   analysis: any
@@ -39,7 +39,6 @@ function ViewIgelDialog({ analysis, open, onOpenChange, onSuccess, onEdit }: Vie
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
 
   const getScoreColor = (score: number) => {
     if (score >= 70) return "text-green-600"
@@ -56,12 +55,7 @@ function ViewIgelDialog({ analysis, open, onOpenChange, onSuccess, onEdit }: Vie
   const handleDelete = async () => {
     setDeleting(true)
     try {
-      const { error } = await supabase
-        .from("igel_analyses")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", analysis.id)
-
-      if (error) throw error
+      await deleteIgelAnalysis(analysis.practice_id, analysis.id)
 
       toast({
         title: "Gelöscht",

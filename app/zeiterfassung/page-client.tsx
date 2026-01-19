@@ -1,10 +1,17 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { useUser } from "@/contexts/user-context"
-import { createBrowserClient } from "@/lib/supabase/client"
-import { format, parseISO, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns"
+import { useEffect } from "react"
+
+import { useRef } from "react"
+
+import { useCallback } from "react"
+
+import { useState } from "react"
+
+import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, differenceInMinutes } from "date-fns"
 import { de } from "date-fns/locale"
+import { useTimeTrackingStatus, useTeamLiveView, useTimeBlocks, useTimeActions, useCorrectionRequests, usePlausibilityIssues } from "@/hooks/use-time-tracking"
+import { useUser } from "@/hooks/use-user"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -172,146 +179,71 @@ export default function ZeiterfassungPageClient() {
   const [loadingPolicy, setLoadingPolicy] = useState(false)
   const [showPolicyDialog, setShowPolicyDialog] = useState(false)
 
-  const supabase = createBrowserClient()
+  // SWR hooks for data fetching - replacing direct Supabase queries
+  const { 
+    status: swrStatus, 
+    currentBlock: swrCurrentBlock, 
+    isLoading: statusLoading, 
+    mutate: mutateStatus 
+  } = useTimeTrackingStatus(practiceId, user?.id)
+  
+  const { 
+    members: swrTeamMembers, 
+    isLoading: teamLoading, 
+    mutate: mutateTeam 
+  } = useTeamLiveView(practiceId)
+  
+  const { 
+    blocks: swrTimeBlocks, 
+    isLoading: blocksLoading, 
+    mutate: mutateBlocks 
+  } = useTimeBlocks(practiceId, user?.id, format(startOfMonth(selectedMonth), "yyyy-MM-dd"), format(endOfMonth(selectedMonth), "yyyy-MM-dd"))
+  
+  const { clockIn, clockOut, startBreak, endBreak } = useTimeActions(practiceId, user?.id)
+  
+  const {
+    corrections: swrCorrections,
+    isLoading: correctionsLoading,
+    mutate: mutateCorrections
+  } = useCorrectionRequests(practiceId)
 
-  // Lade aktuellen Status
-  const loadCurrentStatus = useCallback(async () => {
-    if (!practiceId || !user?.id) {
-      toast.error("Zeiterfassung nicht verfügbar", {
-        description: "Praxis-ID oder Benutzer-ID fehlt. Bitte laden Sie die Seite neu.",
-      })
-      return
+  const {
+    issues: swrPlausibilityIssues,
+    isLoading: plausibilityLoading,
+    mutate: mutatePlausibility
+  } = usePlausibilityIssues(practiceId)
+
+  // Sync SWR data with local state
+  useEffect(() => {
+    if (swrStatus) {
+      setCurrentStatus(swrStatus)
     }
+  }, [swrStatus])
 
-    try {
-      // Lade heutigen offenen Block
-      const today = format(new Date(), "yyyy-MM-dd")
-      const { data: blocks } = await supabase
-        .from("time_blocks")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .eq("user_id", user.id)
-        .eq("date", today)
-        .eq("status", "active")
-        .order("start_time", { ascending: false })
-        .limit(1)
-
-      if (blocks && blocks.length > 0) {
-        setCurrentBlock(blocks[0])
-
-        // Prüfe ob gerade in Pause
-        const { data: breaks } = await supabase
-          .from("time_block_breaks")
-          .select("*")
-          .eq("time_block_id", blocks[0].id)
-          .is("end_time", null)
-          .limit(1)
-
-        if (breaks && breaks.length > 0) {
-          setCurrentStatus("break")
-        } else {
-          setCurrentStatus("working")
-        }
-        // Updated default value to 'office' to match the new default
-        setSelectedLocation(blocks[0].location_type || "office")
-      } else {
-        setCurrentStatus("idle")
-        setCurrentBlock(null)
+  useEffect(() => {
+    if (swrCurrentBlock !== undefined) {
+      setCurrentBlock(swrCurrentBlock)
+      if (swrCurrentBlock?.location_type) {
+        setSelectedLocation(swrCurrentBlock.location_type)
       }
-    } catch (error) {
-      console.error("Error loading current status:", error)
-      toast.error("Fehler beim Laden des Status", {
-        description: "Bitte versuchen Sie es erneut.",
-      })
     }
-  }, [practiceId, user?.id, supabase])
+  }, [swrCurrentBlock])
 
-  // Lade Team-Übersicht
-  const loadTeamOverview = useCallback(async () => {
-    if (!practiceId) {
-      toast.error("Team-Übersicht nicht verfügbar", {
-        description: "Praxis-ID fehlt. Bitte laden Sie die Seite neu.",
-      })
-      return
+  useEffect(() => {
+    if (swrTeamMembers) {
+      setTeamMembers(swrTeamMembers)
     }
+  }, [swrTeamMembers])
 
-    try {
-      // Lade alle Teammitglieder
-      const { data: members } = await supabase
-        .from("team_members")
-        .select("id, first_name, last_name, email, avatar_url")
-        .eq("practice_id", practiceId)
-        .eq("is_active", true)
-
-      if (!members) return
-
-      // Lade heutige Zeitblöcke für alle
-      const today = format(new Date(), "yyyy-MM-dd")
-      const { data: todayBlocks } = await supabase
-        .from("time_blocks")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .eq("date", today)
-
-      // Merge Status in Teammitglieder
-      const membersWithStatus = members.map((member) => {
-        const memberBlocks = todayBlocks?.filter((b) => b.user_id === member.id) || []
-        const openBlock = memberBlocks.find((b) => b.status === "active")
-        const totalMinutes = memberBlocks.reduce((sum, b) => {
-          // Calculate net minutes from actual_hours or break_minutes
-          const actualMins = b.actual_hours ? b.actual_hours * 60 : 0
-          return sum + actualMins
-        }, 0)
-
-        return {
-          ...member,
-          current_status: openBlock ? ("working" as const) : ("absent" as const),
-          current_location: openBlock?.location_type,
-          today_minutes: totalMinutes,
-        }
-      })
-
-      setTeamMembers(membersWithStatus)
-    } catch (error) {
-      console.error("Error loading team overview:", error)
-      toast.error("Fehler beim Laden der Team-Übersicht", {
-        description: "Bitte versuchen Sie es erneut.",
-      })
-    }
-  }, [practiceId, supabase])
-
-  // Lade Zeitkonto für Monat
-  const loadMonthlyData = useCallback(async () => {
-    if (!practiceId || !user?.id) {
-      toast.error("Monatsdaten nicht verfügbar", {
-        description: "Praxis-ID oder Benutzer-ID fehlt. Bitte laden Sie die Seite neu.",
-      })
-      return
-    }
-
-    try {
-      const start = format(startOfMonth(selectedMonth), "yyyy-MM-dd")
-      const end = format(endOfMonth(selectedMonth), "yyyy-MM-dd")
-
-      const { data: blocks } = await supabase
-        .from("time_blocks")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .eq("user_id", user.id)
-        .gte("date", start)
-        .lte("date", end)
-        .order("date", { ascending: true })
-
-      setTimeBlocks(blocks || [])
-
-      // Berechne Monatsbericht
-      if (blocks) {
-        const totalNetMinutes = blocks.reduce((sum, b) => sum + (b.actual_hours ? b.actual_hours * 60 : 0), 0)
-        const totalBreakMinutes = blocks.reduce((sum, b) => sum + (b.break_minutes || 0), 0)
-        const workDays = new Set(blocks.map((b) => b.date)).size
-        const homeOfficeDays = blocks.filter((b) => b.location_type === "homeoffice").length
-        const warnings = blocks.filter((b) => b.status !== "completed").length
-
+  useEffect(() => {
+    if (swrTimeBlocks) {
+      setTimeBlocks(swrTimeBlocks)
+      // Calculate monthly report from blocks
+      if (swrTimeBlocks.length > 0) {
+        const totalNetMinutes = swrTimeBlocks.reduce((sum, b) => sum + (b.actual_hours ? b.actual_hours * 60 : 0), 0)
+        const workDays = new Set(swrTimeBlocks.map((b) => b.date)).size
+        const homeOfficeDays = swrTimeBlocks.filter((b) => b.location_type === "homeoffice").length
+        const warnings = swrTimeBlocks.filter((b) => b.status !== "completed").length
         const targetMinutes = workDays * 480
         const overtime = totalNetMinutes - targetMinutes
 
@@ -324,79 +256,30 @@ export default function ZeiterfassungPageClient() {
           plausibility_warnings: warnings,
         })
       }
-
-      // Lade Überstundenkonto
-      const { data: overtimeAccount } = await supabase
-        .from("overtime_accounts")
-        .select("balance_minutes")
-        .eq("practice_id", practiceId)
-        .eq("user_id", user.id)
-        .maybeSingle()
-
-      if (overtimeAccount) {
-        setOvertimeBalance(overtimeAccount.balance_minutes)
-      } else {
-        setOvertimeBalance(0)
-      }
-    } catch (error) {
-      console.error("Error loading monthly data:", error)
-      toast.error("Fehler beim Laden der Monatsdaten", {
-        description: "Bitte versuchen Sie es erneut.",
-      })
     }
-  }, [practiceId, user?.id, selectedMonth, supabase])
+  }, [swrTimeBlocks])
 
-  // Lade Korrekturanträge
-  const loadCorrectionRequests = useCallback(async () => {
-    if (!practiceId) {
-      toast.error("Korrekturanträge nicht verfügbar", {
-        description: "Praxis-ID fehlt. Bitte laden Sie die Seite neu.",
-      })
-      return
+  // Sync corrections data
+  useEffect(() => {
+    if (swrCorrections) {
+      setCorrectionRequests(swrCorrections)
     }
+  }, [swrCorrections])
 
-    try {
-      const { data } = await supabase
-        .from("time_correction_requests")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .order("created_at", { ascending: false })
-        .limit(50)
-
-      setCorrectionRequests(data || [])
-    } catch (error) {
-      console.error("Error loading corrections:", error)
-      toast.error("Fehler beim Laden der Korrekturanträge", {
-        description: "Bitte versuchen Sie es erneut.",
-      })
+  // Sync plausibility issues
+  useEffect(() => {
+    if (swrPlausibilityIssues) {
+      setPlausibilityIssues(swrPlausibilityIssues)
     }
-  }, [practiceId, supabase])
+  }, [swrPlausibilityIssues])
 
-  // Lade Plausibilitätsprobleme
-  const loadPlausibilityIssues = useCallback(async () => {
-    if (!practiceId) {
-      toast.error("Plausibilitätsprüfung nicht verfügbar", {
-        description: "Praxis-ID fehlt. Bitte laden Sie die Seite neu.",
-      })
-      return
+  // Combined loading state
+  useEffect(() => {
+    const allLoading = statusLoading || teamLoading || blocksLoading || correctionsLoading || plausibilityLoading
+    if (!allLoading && practiceId && user?.id) {
+      setIsLoading(false)
     }
-
-    try {
-      const { data } = await supabase
-        .from("time_plausibility_checks")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .eq("is_resolved", false)
-        .order("created_at", { ascending: false })
-
-      setPlausibilityIssues(data || [])
-    } catch (error) {
-      console.error("Error loading plausibility issues:", error)
-      toast.error("Fehler beim Laden der Plausibilitätsprobleme", {
-        description: "Bitte versuchen Sie es erneut.",
-      })
-    }
-  }, [practiceId, supabase])
+  }, [statusLoading, teamLoading, blocksLoading, correctionsLoading, plausibilityLoading, practiceId, user?.id])
 
   const loadHomeofficePolicy = useCallback(async () => {
     if (!practiceId || !user?.id) return
@@ -428,80 +311,29 @@ export default function ZeiterfassungPageClient() {
     }
   }, [practiceId, user?.id])
 
-  // Initial Load
+  // Initial Load - SWR handles data fetching automatically, we just need to manage loading state and homeoffice policy
   const hasLoadedRef = useRef(false)
   const loadingPracticeIdRef = useRef<number | null>(null)
 
   useEffect(() => {
-    const loadAllData = async () => {
-      console.log("[v0] Zeiterfassung loadAllData started")
-      setIsLoading(true)
-
-      if (!practiceId || !user?.id) {
-        console.log("[v0] Zeiterfassung - missing practiceId or userId")
-        setIsLoading(false)
-        return
-      }
-
-      const timeout = (ms: number) =>
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms))
-
-      try {
-        const results = await Promise.allSettled([
-          Promise.race([loadCurrentStatus(), timeout(5000)]),
-          Promise.race([loadTeamOverview(), timeout(5000)]),
-          Promise.race([loadMonthlyData(), timeout(5000)]),
-          Promise.race([loadCorrectionRequests(), timeout(5000)]),
-          Promise.race([loadPlausibilityIssues(), timeout(5000)]),
-          // loadHomeofficePolicy() is intentionally not included here as it's less critical and can run independently if others fail or timeout
-        ])
-
-        const failures = results.filter((r) => r.status === "rejected")
-        console.log("[v0] Zeiterfassung loaded with", failures.length, "failures")
-
-        if (failures.length > 0) {
-          console.warn("[v0] Some data failed to load:", failures)
-          toast.error("Teilweise Ladefehler", {
-            description: `${failures.length} Datenbereiche konnten nicht geladen werden.`,
-          })
-        }
-      } catch (error) {
-        console.error("[v0] Zeiterfassung loadAllData ERROR:", error)
-        toast.error("Ladefehler", {
-          description: "Daten konnten nicht vollständig geladen werden.",
-        })
-      } finally {
-        console.log("[v0] Zeiterfassung setting isLoading to false")
-        setIsLoading(false)
-      }
-    }
-
-    loadAllData()
-    // Load homeoffice policy independently if the main load is done or practiceId is available
+    // SWR hooks handle data fetching automatically
+    // We only need to load homeoffice policy manually
     if (practiceId && user?.id) {
       loadHomeofficePolicy()
     }
 
-    // Refresh alle 30 Sekunden (similar to original, but less critical if some data failed to load)
+    // Refresh data every 30 seconds using SWR mutate
     const interval = setInterval(() => {
       if (user?.id && practiceId) {
-        // Conditionally load only what might change frequently
-        loadCurrentStatus()
-        loadTeamOverview()
+        mutateStatus()
+        mutateTeam()
+        mutateCorrections()
+        mutatePlausibility()
       }
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [
-    user?.id,
-    practiceId,
-    loadCurrentStatus,
-    loadTeamOverview,
-    loadMonthlyData,
-    loadCorrectionRequests,
-    loadPlausibilityIssues,
-    loadHomeofficePolicy, // Include here to ensure the interval re-runs if dependencies change
-  ])
+  }, [user?.id, practiceId, loadHomeofficePolicy, mutateStatus, mutateTeam, mutateCorrections, mutatePlausibility])
 
   useEffect(() => {
     if (practiceId && loadingPracticeIdRef.current !== practiceId) {
@@ -559,141 +391,61 @@ export default function ZeiterfassungPageClient() {
     setIsStamping(true)
 
     try {
-      const now = new Date().toISOString()
-
-      console.log("[v0] 3-API: Inserting time_stamp", { stampAction, now })
-
-      // Columns: id, user_id, practice_id, stamp_type, timestamp, location_type,
-      //          device_fingerprint, ip_address, latitude, longitude, notes, is_manual
-      const { data: stamp, error: stampError } = await supabase
-        .from("time_stamps")
-        .insert({
-          practice_id: practiceId, // TEXT in DB
-          user_id: user.id,
-          stamp_type: stampAction,
-          timestamp: now,
-          // Use selectedLocation directly for location_type
-          location_type: selectedLocation, // was work_location
-          notes: stampComment || null, // was comment
-          is_manual: false,
-          // Removed: browser_info (doesn't exist in DB)
-        })
-        .select()
-        .single()
-
-      if (stampError) {
-        console.error("[v0] time_stamps insert error:", stampError)
-        throw stampError
-      }
-
-      console.log("[v0] time_stamp created:", stamp.id)
-
-      // Verarbeite basierend auf Aktion
+      // Use API routes instead of direct Supabase queries
       if (stampAction === "start") {
-        // Columns: id, user_id, practice_id, date, start_time, end_time, planned_hours,
-        //          actual_hours, break_minutes, overtime_minutes, location_type, status, notes
-        const { error: blockError } = await supabase.from("time_blocks").insert({
-          practice_id: practiceId, // TEXT in DB
-          user_id: user.id,
-          date: format(new Date(), "yyyy-MM-dd"),
-          start_time: now,
-          // Use selectedLocation for location_type
-          location_type: selectedLocation, // was work_location
-          status: "active", // was is_open: true
-          break_minutes: 0,
-          overtime_minutes: 0,
-          // Removed: start_stamp_id, is_open (don't exist in DB)
-        })
-
-        if (blockError) {
-          console.error("[v0] time_blocks insert error:", blockError)
-          throw blockError
-        }
-
-        setCurrentStatus("working")
-        // Use WORK_LOCATIONS to find the label for the toast message
-        toast.success("Arbeitszeit gestartet", {
-          description: `${WORK_LOCATIONS.find((l) => l.value === selectedLocation)?.label}`,
-        })
-      } else if (stampAction === "stop") {
-        // Schließe Block
-        if (currentBlock) {
-          const startTime = parseISO(currentBlock.start_time)
-          const endTime = new Date()
-          const grossMinutes = differenceInMinutes(endTime, startTime)
-          const netMinutes = grossMinutes - (currentBlock.break_minutes || 0)
-
-          const { error: updateError } = await supabase
-            .from("time_blocks")
-            .update({
-              end_time: now,
-              actual_hours: netMinutes / 60, // Store as hours
-              status: "completed", // was is_open: false
-            })
-            .eq("id", currentBlock.id)
-
-          if (updateError) {
-            console.error("[v0] time_blocks update error:", updateError)
-            throw updateError
-          }
-
-          setCurrentStatus("idle")
-          setCurrentBlock(null)
-          toast.success("Arbeitszeit beendet", {
-            description: `${Math.floor(netMinutes / 60)}h ${netMinutes % 60}min gearbeitet`,
+        const result = await clockIn(selectedLocation, stampComment || undefined)
+        if (result.success) {
+          setCurrentStatus("working")
+          toast.success("Arbeitszeit gestartet", {
+            description: `${WORK_LOCATIONS.find((l) => l.value === selectedLocation)?.label}`,
           })
+        } else {
+          throw new Error(result.error || "Fehler beim Einstempeln")
+        }
+      } else if (stampAction === "stop") {
+        if (currentBlock) {
+          const result = await clockOut(currentBlock.id)
+          if (result.success) {
+            const startTime = parseISO(currentBlock.start_time)
+            const endTime = new Date()
+            const grossMinutes = differenceInMinutes(endTime, startTime)
+            const netMinutes = grossMinutes - (currentBlock.break_minutes || 0)
+            
+            setCurrentStatus("idle")
+            setCurrentBlock(null)
+            toast.success("Arbeitszeit beendet", {
+              description: `${Math.floor(netMinutes / 60)}h ${netMinutes % 60}min gearbeitet`,
+            })
+          } else {
+            throw new Error(result.error || "Fehler beim Ausstempeln")
+          }
         }
       } else if (stampAction === "pause_start") {
-        // Pause beginnen
         if (currentBlock) {
-          await supabase.from("time_block_breaks").insert({
-            time_block_id: currentBlock.id,
-            start_time: now,
-          })
-
-          setCurrentStatus("break")
-          toast.success("Pause gestartet")
+          const result = await startBreak(currentBlock.id)
+          if (result.success) {
+            setCurrentStatus("break")
+            toast.success("Pause gestartet")
+          } else {
+            throw new Error(result.error || "Fehler beim Starten der Pause")
+          }
         }
       } else if (stampAction === "pause_end") {
-        // Pause beenden
         if (currentBlock) {
-          // Finde offene Pause
-          const { data: openBreak } = await supabase
-            .from("time_block_breaks")
-            .select("*")
-            .eq("time_block_id", currentBlock.id)
-            .is("end_time", null)
-            .single()
-
-          if (openBreak) {
-            const breakStart = parseISO(openBreak.start_time)
-            const breakEnd = new Date()
-            const breakMinutes = differenceInMinutes(breakEnd, breakStart)
-
-            await supabase
-              .from("time_block_breaks")
-              .update({
-                end_time: now,
-                duration_minutes: breakMinutes,
-              })
-              .eq("id", openBreak.id)
-
-            // Update Gesamtpause im Block
-            await supabase
-              .from("time_blocks")
-              .update({
-                break_minutes: (currentBlock.break_minutes || 0) + breakMinutes,
-              })
-              .eq("id", currentBlock.id)
+          const result = await endBreak(currentBlock.id)
+          if (result.success) {
+            setCurrentStatus("working")
+            toast.success("Pause beendet")
+          } else {
+            throw new Error(result.error || "Fehler beim Beenden der Pause")
           }
-
-          setCurrentStatus("working")
-          toast.success("Pause beendet")
         }
       }
 
-      // Refresh Status
-      await loadCurrentStatus()
+      // Refresh status via SWR
+      mutateStatus()
+      mutateTeam()
+      mutateBlocks()
 
       setShowStampDialog(false)
       setStampComment("")
@@ -724,20 +476,24 @@ export default function ZeiterfassungPageClient() {
     }
 
     try {
-      await supabase.from("time_correction_requests").insert({
-        practice_id: practiceId,
-        user_id: user.id,
-        time_block_id: correctionBlock.id,
-        correction_type: "modify_time",
-        requested_changes: {
-          old_start: correctionBlock.start_time,
-          old_end: correctionBlock.end_time,
-          new_start: correctionNewStart || correctionBlock.start_time,
-          new_end: correctionNewEnd || correctionBlock.end_time,
-        },
-        reason: correctionReason,
-        status: "pending",
+      const response = await fetch(`/api/practices/${practiceId}/time/corrections`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user.id,
+          time_block_id: correctionBlock.id,
+          correction_type: "modify_time",
+          requested_changes: {
+            old_start: correctionBlock.start_time,
+            old_end: correctionBlock.end_time,
+            new_start: correctionNewStart || correctionBlock.start_time,
+            new_end: correctionNewEnd || correctionBlock.end_time,
+          },
+          reason: correctionReason,
+        }),
       })
+
+      if (!response.ok) throw new Error("Failed to submit correction")
 
       toast.success("Korrekturantrag eingereicht", {
         description: "Wartet auf Freigabe durch die Praxisleitung",
@@ -748,7 +504,7 @@ export default function ZeiterfassungPageClient() {
       setCorrectionReason("")
       setCorrectionNewStart("")
       setCorrectionNewEnd("")
-      await loadCorrectionRequests()
+      mutateCorrections()
     } catch (error) {
       console.error("Correction error:", error)
       toast.error("Fehler beim Einreichen")
@@ -838,7 +594,7 @@ export default function ZeiterfassungPageClient() {
             <Shield className="h-3 w-3 mr-1" />
             Audit-geschützt
           </Badge>
-          <Button variant="outline" size="sm" onClick={() => loadCurrentStatus()}>
+          <Button variant="outline" size="sm" onClick={() => mutateStatus()}>
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>

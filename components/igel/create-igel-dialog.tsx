@@ -14,12 +14,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, Trash2, Loader2, Sparkles } from "lucide-react"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
 import { useUser } from "@/contexts/user-context"
+import { createIgelAnalysis } from "@/hooks/use-igel"
 
 interface CreateIgelDialogProps {
   open: boolean
@@ -56,7 +56,6 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
   const { currentUser: user } = useUser()
 
   const [serviceName, setServiceName] = useState("")
@@ -195,8 +194,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
 
       const aiData = await aiResponse.json()
 
-      const { error } = await supabase.from("igel_analyses").insert({
-        practice_id: user.practice_id,
+      await createIgelAnalysis(user.practice_id, {
         created_by: user.id,
         service_name: serviceName,
         service_description: serviceDescription,
@@ -212,8 +210,6 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
         break_even_point: Math.round(avgBreakEven),
         status: "analyzed",
       })
-
-      if (error) throw error
 
       toast({
         title: "Analyse erfolgreich",

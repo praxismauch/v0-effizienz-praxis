@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { Settings, Monitor, X, ImageIcon, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
@@ -69,22 +68,15 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
   const fetchRooms = async (practiceId: number) => {
     setIsLoadingData(true)
     try {
-      const supabase = createBrowserClient()
-      if (!supabase) {
-        toast({ title: "Fehler", description: "Supabase-Client nicht verfügbar", variant: "destructive" })
+      const response = await fetch(`/api/practices/${practiceId}/rooms`)
+      
+      if (!response.ok) {
+        console.error("Error fetching rooms:", response.statusText)
+        toast({ title: "Fehler", description: "Räume konnten nicht geladen werden", variant: "destructive" })
         return
       }
 
-      const { data, error } = await supabase
-        .from("rooms")
-        .select("id, name")
-        .eq("practice_id", String(practiceId))
-        .order("name")
-
-      if (error) {
-        console.error("Error fetching rooms:", error)
-        toast({ title: "Fehler", description: "Räume konnten nicht geladen werden", variant: "destructive" })
-      }
+      const data = await response.json()
       setRooms(data || [])
     } catch (error) {
       console.error("Error fetching data:", error)

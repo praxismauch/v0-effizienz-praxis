@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Upload, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { useUser } from "@/contexts/user-context"
 
 interface AIContactExtractorDialogProps {
@@ -20,7 +19,6 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
   const [loading, setLoading] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
   const { currentUser } = useUser()
 
   async function handleImageUpload(file: File) {
@@ -41,16 +39,18 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
     try {
       if (!currentUser?.practice_id) throw new Error("Keine Praxis zugeordnet")
 
-      const fileName = `${Date.now()}-${file.name}`
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("contact-images")
-        .upload(fileName, file)
-
-      if (uploadError) throw uploadError
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("contact-images").getPublicUrl(fileName)
+      // Upload image via Blob API
+      const formData = new FormData()
+      formData.append("file", file)
+      
+      const uploadResponse = await fetch(`/api/practices/${currentUser.practice_id}/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      
+      if (!uploadResponse.ok) throw new Error("Bild-Upload fehlgeschlagen")
+      
+      const { url: publicUrl } = await uploadResponse.json()
 
       const response = await fetch("/api/contacts/ai-extract", {
         method: "POST",

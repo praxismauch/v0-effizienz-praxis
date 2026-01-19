@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useUser } from "@/contexts/user-context"
-import { createBrowserSupabaseClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
+import { useQualityCircles, useTeamMembersForQuality, createQualityCircleItem, updateQualityCircleItem } from "@/hooks/use-quality-circles"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -137,13 +137,19 @@ interface TeamMember {
 export default function QualitaetszirkelPageClient() {
   const { user, practiceId, loading: userLoading } = useUser()
   const [activeTab, setActiveTab] = useState("sessions")
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [topics, setTopics] = useState<Topic[]>([])
-  const [actions, setActions] = useState<Action[]>([])
-  const [benchmarks, setBenchmarks] = useState<Benchmark[]>([])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  // SWR hooks for data fetching
+  const { sessions, topics, actions, benchmarks, isLoading: swrLoading, mutate } = useQualityCircles(practiceId)
+  const { teamMembers } = useTeamMembersForQuality(practiceId)
+  
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+
+  // Sync SWR loading state
+  useEffect(() => {
+    if (!swrLoading) {
+      setLoading(false)
+    }
+  }, [swrLoading])
 
   // Dialog states
   const [showNewSessionDialog, setShowNewSessionDialog] = useState(false)
@@ -167,164 +173,6 @@ export default function QualitaetszirkelPageClient() {
     priority: "medium",
   })
 
-  const getSupabase = useCallback(() => {
-    const client = createBrowserSupabaseClient()
-    if (!client) {
-      console.error("[v0] Supabase client not available")
-    }
-    return client
-  }, [])
-
-  const loadSessions = useCallback(async () => {
-    const supabase = getSupabase()
-    if (!supabase || !practiceId) {
-      if (!practiceId) {
-        toast({
-          title: "Fehler",
-          description: "Keine Praxis-ID gefunden. Bitte laden Sie die Seite neu.",
-          variant: "destructive",
-        })
-      }
-      return
-    }
-
-    const { data, error } = await supabase
-      .from("quality_circle_sessions")
-      .select("*")
-      .eq("practice_id", practiceId)
-      .order("scheduled_date", { ascending: false })
-
-    if (!error && data) {
-      setSessions(data)
-    }
-  }, [practiceId, getSupabase])
-
-  const loadTopics = useCallback(async () => {
-    const supabase = getSupabase()
-    if (!supabase || !practiceId) {
-      if (!practiceId) {
-        toast({
-          title: "Fehler",
-          description: "Keine Praxis-ID gefunden. Bitte laden Sie die Seite neu.",
-          variant: "destructive",
-        })
-      }
-      return
-    }
-
-    const { data, error } = await supabase
-      .from("quality_circle_topics")
-      .select("*")
-      .eq("practice_id", practiceId)
-      .order("created_at", { ascending: false })
-
-    if (!error && data) {
-      setTopics(data)
-    }
-  }, [practiceId, getSupabase])
-
-  const loadActions = useCallback(async () => {
-    const supabase = getSupabase()
-    if (!supabase || !practiceId) {
-      if (!practiceId) {
-        toast({
-          title: "Fehler",
-          description: "Keine Praxis-ID gefunden. Bitte laden Sie die Seite neu.",
-          variant: "destructive",
-        })
-      }
-      return
-    }
-
-    const { data, error } = await supabase
-      .from("quality_circle_actions")
-      .select("*")
-      .eq("practice_id", practiceId)
-      .order("due_date", { ascending: true })
-
-    if (!error && data) {
-      setActions(data)
-    }
-  }, [practiceId, getSupabase])
-
-  const loadBenchmarks = useCallback(async () => {
-    const supabase = getSupabase()
-    if (!supabase || !practiceId) {
-      if (!practiceId) {
-        toast({
-          title: "Fehler",
-          description: "Keine Praxis-ID gefunden. Bitte laden Sie die Seite neu.",
-          variant: "destructive",
-        })
-      }
-      return
-    }
-
-    const { data: benchmarkData, error: benchmarkError } = await supabase.from("quality_benchmarks").select("*")
-
-    if (!benchmarkError && benchmarkData) {
-      const { data: scoreData } = await supabase
-        .from("practice_benchmark_scores")
-        .select("*")
-        .eq("practice_id", practiceId)
-
-      const benchmarksWithScores = benchmarkData.map((b: any) => {
-        const score = scoreData?.find((s: any) => s.benchmark_id === b.id)
-        return {
-          ...b,
-          practice_score: score?.score,
-          percentile: score?.percentile,
-          trend: score?.trend,
-        }
-      })
-
-      setBenchmarks(benchmarksWithScores)
-    }
-  }, [practiceId, getSupabase])
-
-  const loadTeamMembers = useCallback(async () => {
-    const supabase = getSupabase()
-    if (!supabase || !practiceId) {
-      if (!practiceId) {
-        toast({
-          title: "Fehler",
-          description: "Keine Praxis-ID gefunden. Bitte laden Sie die Seite neu.",
-          variant: "destructive",
-        })
-      }
-      return
-    }
-
-    const { data, error } = await supabase
-      .from("team_members")
-      .select("id, first_name, last_name, position")
-      .eq("practice_id", practiceId)
-      .eq("status", "active")
-
-    if (!error && data) {
-      setTeamMembers(data)
-    }
-  }, [practiceId, getSupabase])
-
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      await Promise.all([loadSessions(), loadTopics(), loadActions(), loadBenchmarks(), loadTeamMembers()])
-    } catch (error) {
-      console.error("Error loading data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [loadSessions, loadTopics, loadActions, loadBenchmarks, loadTeamMembers])
-
-  useEffect(() => {
-    if (practiceId) {
-      loadData()
-    } else if (!userLoading) {
-      setLoading(false)
-    }
-  }, [practiceId, loadData, userLoading])
-
   const generateAITopics = async () => {
     if (!practiceId) {
       toast({
@@ -344,25 +192,21 @@ export default function QualitaetszirkelPageClient() {
       if (!response.ok) throw new Error("Fehler beim Generieren")
 
       const data = await response.json()
-      const supabase = getSupabase()
-      if (!supabase) return
-
+      
       if (data.topics && data.topics.length > 0) {
-        const { error } = await supabase.from("quality_circle_topics").insert(
-          data.topics.map((t: any) => ({
-            ...t,
-            practice_id: practiceId,
+        // Use API to insert topics
+        for (const topic of data.topics) {
+          await createQualityCircleItem(practiceId, "topic", {
+            ...topic,
             source: "ai_suggested",
-          })),
-        )
-
-        if (!error) {
-          await loadTopics()
-          toast({
-            title: "Themen generiert",
-            description: `${data.topics.length} neue Themenvorschläge wurden erstellt.`,
           })
         }
+        
+        mutate()
+        toast({
+          title: "Themen generiert",
+          description: `${data.topics.length} neue Themenvorschläge wurden erstellt.`,
+        })
       }
     } catch (error) {
       toast({
@@ -376,8 +220,7 @@ export default function QualitaetszirkelPageClient() {
   }
 
   const createSession = async () => {
-    const supabase = getSupabase()
-    if (!supabase || !practiceId) {
+    if (!practiceId) {
       toast({
         title: "Fehler",
         description: "Keine Praxis-ID gefunden. Bitte laden Sie die Seite neu.",
@@ -386,14 +229,13 @@ export default function QualitaetszirkelPageClient() {
       return
     }
 
-    const { error } = await supabase.from("quality_circle_sessions").insert({
-      ...newSession,
-      practice_id: practiceId,
-      status: "scheduled",
-    })
+    try {
+      await createQualityCircleItem(practiceId, "session", {
+        ...newSession,
+        status: "scheduled",
+      })
 
-    if (!error) {
-      await loadSessions()
+      mutate()
       setShowNewSessionDialog(false)
       setNewSession({
         title: "",
@@ -406,12 +248,17 @@ export default function QualitaetszirkelPageClient() {
         title: "Sitzung erstellt",
         description: "Die Qualitätszirkel-Sitzung wurde geplant.",
       })
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Sitzung konnte nicht erstellt werden.",
+        variant: "destructive",
+      })
     }
   }
 
   const createAction = async () => {
-    const supabase = getSupabase()
-    if (!supabase || !practiceId) {
+    if (!practiceId) {
       toast({
         title: "Fehler",
         description: "Keine Praxis-ID gefunden. Bitte laden Sie die Seite neu.",
@@ -420,16 +267,15 @@ export default function QualitaetszirkelPageClient() {
       return
     }
 
-    const { error } = await supabase.from("quality_circle_actions").insert({
-      ...newAction,
-      practice_id: practiceId,
-      status: "open",
-      assigned_to: newAction.assigned_to || null,
-      due_date: newAction.due_date || null,
-    })
+    try {
+      await createQualityCircleItem(practiceId, "action", {
+        ...newAction,
+        status: "open",
+        assigned_to: newAction.assigned_to || null,
+        due_date: newAction.due_date || null,
+      })
 
-    if (!error) {
-      await loadActions()
+      mutate()
       setShowNewActionDialog(false)
       setNewAction({
         title: "",
@@ -446,29 +292,29 @@ export default function QualitaetszirkelPageClient() {
   }
 
   const updateActionStatus = async (actionId: string, newStatus: string) => {
-    const supabase = getSupabase()
-    if (!supabase) return
+    if (!practiceId) return
 
     const updates: any = { status: newStatus }
     if (newStatus === "completed") {
       updates.completed_at = new Date().toISOString()
     }
 
-    const { error } = await supabase.from("quality_circle_actions").update(updates).eq("id", actionId)
-
-    if (!error) {
-      await loadActions()
+    try {
+      await updateQualityCircleItem(practiceId, "action", actionId, updates)
+      mutateQuality()
+    } catch (error) {
+      console.error("Error updating action:", error)
     }
   }
 
   const updateTopicStatus = async (topicId: string, newStatus: string) => {
-    const supabase = getSupabase()
-    if (!supabase) return
+    if (!practiceId) return
 
-    const { error } = await supabase.from("quality_circle_topics").update({ status: newStatus }).eq("id", topicId)
-
-    if (!error) {
-      await loadTopics()
+    try {
+      await updateQualityCircleItem(practiceId, "topic", topicId, { status: newStatus })
+      mutateQuality()
+    } catch (error) {
+      console.error("Error updating topic:", error)
     }
   }
 

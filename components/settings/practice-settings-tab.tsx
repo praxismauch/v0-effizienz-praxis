@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { Loader2, Save, Building2, MapPin, Phone, Mail, Globe } from "lucide-react"
 
 interface PracticeSettings {
@@ -59,10 +58,16 @@ export function PracticeSettingsTab() {
 
     setIsSaving(true)
     try {
-      const supabase = createBrowserClient()
-      const { error } = await supabase.from("practices").update(settings).eq("id", currentPractice.id)
+      const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update settings")
+      }
 
       await refreshPractice?.()
       toast({

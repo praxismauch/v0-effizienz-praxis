@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { Settings, Monitor, X, ImageIcon, Loader2 } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { useToast } from "@/hooks/use-toast"
@@ -54,7 +53,6 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const supabase = createBrowserClient()
   const { currentUser } = useUser()
   const { toast } = useToast()
 
@@ -73,13 +71,10 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
     try {
       if (!currentUser?.practice_id) return
 
-      const { data, error } = await supabase
-        .from("rooms")
-        .select("id, name")
-        .eq("practice_id", currentUser.practice_id)
-        .order("name")
-
-      if (error) throw error
+      const response = await fetch(`/api/practices/${currentUser.practice_id}/rooms`)
+      if (!response.ok) throw new Error("Failed to fetch rooms")
+      
+      const data = await response.json()
       setRooms(data || [])
     } catch (error) {
       console.error("Error fetching rooms:", error)
@@ -185,20 +180,25 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
     setLoading(true)
 
     try {
+      if (!currentUser?.practice_id) throw new Error("No practice ID")
+      
       const cleanBeschreibung = beschreibung === "<p></p>" || beschreibung === "" ? null : beschreibung
 
-      const { error } = await supabase
-        .from("arbeitsplaetze")
-        .update({
+      const response = await fetch(`/api/practices/${currentUser.practice_id}/arbeitsplaetze/${arbeitsplatz.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name,
           beschreibung: cleanBeschreibung,
           raum_id: raumId || null,
           image_url: imageUrl || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", arbeitsplatz.id)
+        }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update")
+      }
 
       toast({ title: "Erfolg", description: "Arbeitsplatz wurde aktualisiert" })
       onSuccess()

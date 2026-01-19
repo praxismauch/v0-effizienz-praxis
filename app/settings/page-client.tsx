@@ -430,9 +430,12 @@ export default function SettingsPageClient() {
 
       setPracticeSettings((prev) => ({ ...prev, logo_url: blob.url }))
 
-      // Save immediately to database
-      const supabase = createBrowserClient()
-      await supabase.from("practices").update({ logo_url: blob.url }).eq("id", practiceId)
+      // Save immediately to database via API
+      await fetch(`/api/practices/${practiceId}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logo_url: blob.url }),
+      })
 
       toast({
         title: "Logo hochgeladen",
@@ -455,10 +458,10 @@ export default function SettingsPageClient() {
 
     setSaving(true)
     try {
-      const supabase = createBrowserClient()
-      const { error } = await supabase
-        .from("practices")
-        .update({
+      const response = await fetch(`/api/practices/${practiceId}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: practiceSettings.name,
           email: practiceSettings.email,
           phone: practiceSettings.phone,
@@ -471,10 +474,13 @@ export default function SettingsPageClient() {
           color: practiceSettings.color,
           ai_enabled: practiceSettings.ai_enabled,
           logo_url: practiceSettings.logo_url,
-        })
-        .eq("id", practiceId)
+        }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to save settings")
+      }
 
       if (practiceSettings.google_places_api_key !== undefined) {
         await fetch(`/api/practices/${practiceId}/settings`, {

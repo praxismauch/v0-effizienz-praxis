@@ -104,6 +104,59 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   return PUT(request, { params })
 }
 
+// PATCH - Update practice basic information (name, address, contact info)
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  try {
+    const { practiceId: rawPracticeId } = await params
+    const practiceId = getEffectivePracticeId(rawPracticeId)
+
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
+
+    const body = await request.json()
+
+    console.log("[v0] Updating practice info for practice:", practiceId, "by user:", access.user.id)
+
+    const { data, error } = await supabase
+      .from("practices")
+      .update({
+        name: body.name,
+        address: body.address,
+        phone: body.phone,
+        email: body.email,
+        website: body.website,
+        description: body.description,
+        practice_type: body.practice_type,
+        specialization: body.specialization,
+        logo_url: body.logo_url,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", practiceId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("[v0] Error updating practice:", error)
+      throw error
+    }
+
+    return NextResponse.json({ practice: data })
+  } catch (error: any) {
+    console.error("[v0] Error updating practice info:", error)
+
+    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Failed to update practice information",
+      },
+      { status: 500 },
+    )
+  }
+}
+
 // PUT - Update practice settings
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {

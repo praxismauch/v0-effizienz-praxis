@@ -1,0 +1,49 @@
+import { NextRequest, NextResponse } from "next/server"
+import { createAdminClient } from "@/lib/supabase/server"
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ practiceId: string }> }
+) {
+  try {
+    const { practiceId } = await params
+    const supabase = await createAdminClient()
+    
+    const body = await request.json()
+    const { blockId, startTime, endTime } = body
+
+    if (!blockId || !startTime) {
+      return NextResponse.json(
+        { error: "blockId and startTime are required" },
+        { status: 400 }
+      )
+    }
+
+    // Insert break
+    const { data: breakRecord, error } = await supabase
+      .from("time_block_breaks")
+      .insert({
+        block_id: blockId,
+        start_time: startTime,
+        end_time: endTime,
+      })
+      .select()
+      .maybeSingle()
+
+    if (error) {
+      console.error("[v0] Error creating break:", error)
+      return NextResponse.json(
+        { error: "Failed to create break", details: error.message },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ break: breakRecord })
+  } catch (error) {
+    console.error("[v0] Error in breaks API:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}

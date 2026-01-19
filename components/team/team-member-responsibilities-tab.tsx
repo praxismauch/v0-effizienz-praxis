@@ -1,13 +1,12 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClipboardList, Clock, ExternalLink, FolderOpen, Users, User } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { createBrowserSupabaseClient } from "@/lib/supabase/client"
+import { useTeamMemberResponsibilities } from "@/hooks/use-team-data"
 
 interface Responsibility {
   id: string
@@ -60,109 +59,10 @@ export function TeamMemberResponsibilitiesTab({
   memberName,
 }: TeamMemberResponsibilitiesTabProps) {
   const router = useRouter()
-  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const hasLoadedRef = useRef(false)
-
-  const loadResponsibilities = useCallback(async () => {
-    if (!practiceId || !memberId) {
-      setLoading(false)
-      return
-    }
-
-    if (hasLoadedRef.current) return
-    hasLoadedRef.current = true
-
-    try {
-      setLoading(true)
-      setError(null)
-
-      const supabase = createBrowserSupabaseClient()
-
-      // team_assignments.user_id = auth.users.id, NOT team_members.id
-      const { data: teamMemberData } = await supabase.from("team_members").select("user_id").eq("id", memberId).single()
-
-      const authUserId = teamMemberData?.user_id
-
-      let memberTeamIds: string[] = []
-      const teamsMap = new Map<string, Team>()
-
-      if (authUserId) {
-        const { data: teamAssignments } = await supabase
-          .from("team_assignments")
-          .select("team_id, teams(id, name, color)")
-          .eq("user_id", authUserId)
-
-        memberTeamIds = teamAssignments?.map((ta: any) => ta.team_id) || []
-        teamAssignments?.forEach((ta: any) => {
-          if (ta.teams) {
-            teamsMap.set(ta.teams.id, ta.teams)
-          }
-        })
-      }
-
-      const { data: allResponsibilities, error: fetchError } = await supabase
-        .from("responsibilities")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null)
-        .order("name")
-
-      if (fetchError) throw fetchError
-
-      const filteredResponsibilities: Responsibility[] = []
-      const addedIds = new Set<string>()
-
-      for (const resp of allResponsibilities || []) {
-        // Direct responsibility (Hauptverantwortlicher)
-        if (resp.responsible_user_id === memberId && !addedIds.has(resp.id)) {
-          filteredResponsibilities.push({ ...resp, assignment_type: "direct" })
-          addedIds.add(resp.id)
-          continue
-        }
-
-        // Deputy responsibility (Stellvertreter)
-        if (resp.deputy_user_id === memberId && !addedIds.has(resp.id)) {
-          filteredResponsibilities.push({ ...resp, assignment_type: "deputy" })
-          addedIds.add(resp.id)
-          continue
-        }
-
-        // In team_member_ids array
-        if (resp.team_member_ids?.includes(memberId) && !addedIds.has(resp.id)) {
-          filteredResponsibilities.push({ ...resp, assignment_type: "team_member" })
-          addedIds.add(resp.id)
-          continue
-        }
-
-        // Via team assignment (assigned_teams contains a team the member belongs to)
-        if (resp.assigned_teams && resp.assigned_teams.length > 0 && memberTeamIds.length > 0) {
-          const matchingTeamId = resp.assigned_teams.find((teamId: string) => memberTeamIds.includes(teamId))
-          if (matchingTeamId && !addedIds.has(resp.id)) {
-            const team = teamsMap.get(matchingTeamId)
-            filteredResponsibilities.push({
-              ...resp,
-              assignment_type: "team",
-              assignment_team_name: team?.name || "Team",
-            })
-            addedIds.add(resp.id)
-          }
-        }
-      }
-
-      setResponsibilities(filteredResponsibilities)
-    } catch (err) {
-      console.error("Error loading responsibilities:", err)
-      setError("Fehler beim Laden der Zuständigkeiten")
-    } finally {
-      setLoading(false)
-    }
-  }, [practiceId, memberId])
-
-  useEffect(() => {
-    loadResponsibilities()
-  }, [loadResponsibilities])
+  
+  const { responsibilities, isLoading: loading, error: fetchError } = useTeamMemberResponsibilities(practiceId, memberId)
+  
+  const error = fetchError ? "Fehler beim Laden der Zuständigkeiten" : null
 
   const getCategoryColor = (category?: string) => {
     if (!category) return DEFAULT_COLOR
@@ -248,10 +148,7 @@ export function TeamMemberResponsibilitiesTab({
             <Button
               variant="outline"
               className="mt-4 bg-transparent"
-              onClick={() => {
-                hasLoadedRef.current = false
-                loadResponsibilities()
-              }}
+              onClick={() => window.location.reload()}
             >
               Erneut versuchen
             </Button>

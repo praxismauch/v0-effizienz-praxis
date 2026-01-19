@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useCallback } from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,9 +19,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Package, Plus, Calendar, FileSignature, CheckCircle2, XCircle, Edit, Trash2, PenTool } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
+import { useTeamMemberArbeitsmittel } from "@/hooks/use-team-data"
+import useSWR from "swr"
 
 interface ArbeitsmittelAssignment {
   id: string
@@ -49,98 +49,20 @@ interface ArbeitsmittelAssignmentsProps {
 
 export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: ArbeitsmittelAssignmentsProps) {
   const { toast } = useToast()
-  const [assignments, setAssignments] = useState<ArbeitsmittelAssignment[]>([])
-  const [availableArbeitsmittel, setAvailableArbeitsmittel] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { assignments, isLoading, mutate } = useTeamMemberArbeitsmittel(practiceId, teamMemberId)
+  
+  // Fetch available arbeitsmittel
+  const { data: availableArbeitsmittel = [] } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/arbeitsmittel` : null,
+    (url) => fetch(url).then(r => r.json())
+  )
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingAssignment, setEditingAssignment] = useState<ArbeitsmittelAssignment | null>(null)
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
   const [currentAssignmentToSign, setCurrentAssignmentToSign] = useState<string | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
-
-  useEffect(() => {
-    fetchAssignments()
-    fetchAvailableArbeitsmittel()
-  }, [teamMemberId, practiceId])
-
-  const fetchAssignments = useCallback(async () => {
-    try {
-      const supabase = createClient()
-
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from("team_member_arbeitsmittel")
-        .select("*")
-        .eq("team_member_id", teamMemberId)
-        .eq("practice_id", practiceId)
-        .order("given_date", { ascending: false })
-
-      if (assignmentsError) throw assignmentsError
-
-      if (assignmentsData && assignmentsData.length > 0) {
-        const arbeitsmittelIds = assignmentsData.map((a) => a.arbeitsmittel_id).filter(Boolean)
-
-        const { data: arbeitsmittelData, error: arbeitsmittelError } = await supabase
-          .from("arbeitsmittel")
-          .select("id, name, category, serial_number")
-          .in("id", arbeitsmittelIds)
-
-        if (arbeitsmittelError) throw arbeitsmittelError
-
-        const joinedData = assignmentsData.map((assignment) => ({
-          ...assignment,
-          arbeitsmittel: arbeitsmittelData?.find((a) => a.id === assignment.arbeitsmittel_id) || null,
-        }))
-
-        setAssignments(joinedData as ArbeitsmittelAssignment[])
-      } else {
-        setAssignments([])
-      }
-    } catch (error) {
-      console.error("Error fetching assignments:", error)
-      toast({
-        title: "Fehler",
-        description: "Arbeitsmittel-Zuweisungen konnten nicht geladen werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [teamMemberId, practiceId, toast])
-
-  const fetchAvailableArbeitsmittel = useCallback(async () => {
-    try {
-      const supabase = createClient()
-
-      const { data: arbeitsmittelData, error: arbeitsmittelError } = await supabase
-        .from("arbeitsmittel")
-        .select("*")
-        .eq("practice_id", practiceId)
-        .order("name")
-
-      if (arbeitsmittelError) throw arbeitsmittelError
-
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from("team_member_arbeitsmittel")
-        .select("arbeitsmittel_id")
-        .eq("practice_id", practiceId)
-        .eq("status", "ausgegeben")
-
-      if (assignmentsError) throw assignmentsError
-
-      const assignedIds = new Set(assignmentsData?.map((a) => a.arbeitsmittel_id) || [])
-      const available = arbeitsmittelData?.filter((item) => !assignedIds.has(item.id)) || []
-
-      setAvailableArbeitsmittel(available)
-    } catch (error) {
-      console.error("Error fetching available arbeitsmittel:", error)
-      toast({
-        title: "Fehler",
-        description: "Verfügbare Arbeitsmittel konnten nicht geladen werden.",
-        variant: "destructive",
-      })
-    }
-  }, [practiceId, toast])
 
   const handleSubmit = async () => {
     if (!formData.arbeitsmittel_id || !formData.given_date) {
@@ -153,30 +75,29 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
     }
 
     try {
-      const supabase = createClient()
+      const payload = {
+        ...formData,
+        expected_return_date: formData.expected_return_date || null,
+        status: "ausgegeben",
+      }
 
       if (editingAssignment) {
-        const { error } = await supabase
-          .from("team_member_arbeitsmittel")
-          .update({
-            ...formData,
-            expected_return_date: formData.expected_return_date || null,
-          })
-          .eq("id", editingAssignment.id)
-
-        if (error) throw error
+        const response = await fetch(
+          `/api/practices/${practiceId}/team-members/${teamMemberId}/arbeitsmittel/${editingAssignment.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        )
+        if (!response.ok) throw new Error("Failed to update assignment")
       } else {
-        const { error } = await supabase.from("team_member_arbeitsmittel").insert({
-          practice_id: practiceId,
-          team_member_id: teamMemberId,
-          ...formData,
-          expected_return_date: formData.expected_return_date || null,
-          status: "ausgegeben",
+        const response = await fetch(`/api/practices/${practiceId}/team-members/${teamMemberId}/arbeitsmittel`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         })
-
-        if (error) throw error
-
-        await supabase.from("arbeitsmittel").update({ status: "ausgegeben" }).eq("id", formData.arbeitsmittel_id)
+        if (!response.ok) throw new Error("Failed to create assignment")
       }
 
       toast({
@@ -184,8 +105,7 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
         description: editingAssignment ? "Zuweisung wurde aktualisiert." : "Arbeitsmittel wurde zugewiesen.",
       })
 
-      fetchAssignments()
-      fetchAvailableArbeitsmittel()
+      mutate()
       handleCloseDialog()
     } catch (error) {
       console.error("Error saving assignment:", error)
@@ -199,27 +119,26 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
 
   const handleReturn = async (assignmentId: string, arbeitsmittelId: string) => {
     try {
-      const supabase = createClient()
+      const response = await fetch(
+        `/api/practices/${practiceId}/team-members/${teamMemberId}/arbeitsmittel/${assignmentId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            actual_return_date: format(new Date(), "yyyy-MM-dd"),
+            status: "zurückgegeben",
+          }),
+        }
+      )
 
-      const { error } = await supabase
-        .from("team_member_arbeitsmittel")
-        .update({
-          actual_return_date: format(new Date(), "yyyy-MM-dd"),
-          status: "zurückgegeben",
-        })
-        .eq("id", assignmentId)
-
-      if (error) throw error
-
-      await supabase.from("arbeitsmittel").update({ status: "verfügbar" }).eq("id", arbeitsmittelId)
+      if (!response.ok) throw new Error("Failed to mark as returned")
 
       toast({
         title: "Erfolgreich",
         description: "Arbeitsmittel wurde als zurückgegeben markiert.",
       })
 
-      fetchAssignments()
-      fetchAvailableArbeitsmittel()
+      mutate()
     } catch (error) {
       console.error("Error marking as returned:", error)
       toast({
@@ -234,21 +153,21 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
     if (!confirm("Möchten Sie diese Zuweisung wirklich löschen?")) return
 
     try {
-      const supabase = createClient()
+      const response = await fetch(
+        `/api/practices/${practiceId}/team-members/${teamMemberId}/arbeitsmittel/${assignmentId}`,
+        {
+          method: "DELETE",
+        }
+      )
 
-      const { error } = await supabase.from("team_member_arbeitsmittel").delete().eq("id", assignmentId)
-
-      if (error) throw error
-
-      await supabase.from("arbeitsmittel").update({ status: "verfügbar" }).eq("id", arbeitsmittelId)
+      if (!response.ok) throw new Error("Failed to delete assignment")
 
       toast({
         title: "Erfolgreich",
         description: "Zuweisung wurde gelöscht.",
       })
 
-      fetchAssignments()
-      fetchAvailableArbeitsmittel()
+      mutate()
     } catch (error) {
       console.error("Error deleting assignment:", error)
       toast({
@@ -357,24 +276,27 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
 
     try {
       const signatureData = canvas.toDataURL("image/png")
-      const supabase = createClient()
 
-      const { error } = await supabase
-        .from("team_member_arbeitsmittel")
-        .update({
-          signature_data: signatureData,
-          signed_at: new Date().toISOString(),
-        })
-        .eq("id", currentAssignmentToSign)
+      const response = await fetch(
+        `/api/practices/${practiceId}/team-members/${teamMemberId}/arbeitsmittel/${currentAssignmentToSign}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            signature_data: signatureData,
+            signed_at: new Date().toISOString(),
+          }),
+        }
+      )
 
-      if (error) throw error
+      if (!response.ok) throw new Error("Failed to save signature")
 
       toast({
         title: "Erfolgreich",
         description: "Unterschrift wurde gespeichert.",
       })
 
-      fetchAssignments()
+      mutate()
       setIsSignatureDialogOpen(false)
       setCurrentAssignmentToSign(null)
       clearSignature()

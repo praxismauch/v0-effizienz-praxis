@@ -22,7 +22,6 @@ import {
   Package,
   AlertCircle,
 } from "lucide-react"
-import { createBrowserClient } from "@/lib/supabase/client"
 import CreateArbeitsmittelDialog from "@/components/arbeitsmittel/create-arbeitsmittel-dialog"
 import EditArbeitsmittelDialog from "@/components/arbeitsmittel/edit-arbeitsmittel-dialog"
 import { useRouter } from "next/navigation"
@@ -73,7 +72,6 @@ export default function ArbeitsmittelPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createBrowserClient()
   const { user, loading: authLoading } = useAuth()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
@@ -84,14 +82,9 @@ export default function ArbeitsmittelPage() {
     isLoading: arbeitsmittelLoading,
     mutate: mutateArbeitsmittel,
   } = useSWR(currentPractice?.id ? SWR_KEYS.arbeitsmittel(currentPractice.id) : null, async (url) => {
-    const { data, error } = await supabase
-      .from("arbeitsmittel")
-      .select("*")
-      .eq("practice_id", currentPractice!.id)
-      .order("created_at", { ascending: false })
-
-    if (error) throw error
-    return data || []
+    const response = await fetch(url)
+    if (!response.ok) throw new Error("Failed to fetch arbeitsmittel")
+    return response.json()
   })
 
   const {
@@ -99,14 +92,9 @@ export default function ArbeitsmittelPage() {
     error: teamMembersError,
     isLoading: teamMembersLoading,
   } = useSWR(currentPractice?.id ? SWR_KEYS.teamMembers(currentPractice.id) : null, async (url) => {
-    const { data, error } = await supabase
-      .from("team_members")
-      .select("id, first_name, last_name, role")
-      .eq("practice_id", currentPractice!.id)
-      .order("first_name")
-
-    if (error) throw error
-    return data || []
+    const response = await fetch(url)
+    if (!response.ok) throw new Error("Failed to fetch team members")
+    return response.json()
   })
 
   const filteredItems = useMemo(() => {
@@ -160,17 +148,21 @@ export default function ArbeitsmittelPage() {
   }
 
   const handleDeleteConfirm = async () => {
-    if (!itemToDelete) return
+    if (!itemToDelete || !currentPractice?.id) return
 
     try {
-      const previousItems = arbeitsmittel
       await mutateArbeitsmittel((current) => current?.filter((item: any) => item.id !== itemToDelete), {
         revalidate: false,
       })
 
-      const { error } = await supabase.from("arbeitsmittel").delete().eq("id", itemToDelete)
+      const response = await fetch(`/api/practices/${currentPractice.id}/arbeitsmittel/${itemToDelete}`, {
+        method: "DELETE",
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to delete")
+      }
 
       toast({
         title: "Gelöscht",

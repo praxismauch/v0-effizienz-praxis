@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Upload, FileText, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { useUser } from "@/contexts/user-context"
 
 interface BatchImportContactsDialogProps {
@@ -17,7 +16,6 @@ interface BatchImportContactsDialogProps {
 export function BatchImportContactsDialog({ open, onOpenChange, onSuccess }: BatchImportContactsDialogProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
   const { currentUser } = useUser()
 
   async function handleFileUpload(file: File) {

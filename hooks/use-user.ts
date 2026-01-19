@@ -105,3 +105,10 @@ export function useAuth() {
     refresh: refreshAll,
   }
 }
+
+/**
+ * Alias for useCurrentUser for backward compatibility
+ */
+export function useUser() {
+  return useCurrentUser()
+}

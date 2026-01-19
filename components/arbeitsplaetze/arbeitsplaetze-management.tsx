@@ -5,12 +5,12 @@ import { Plus, Monitor, MapPin, CheckCircle2, Search, LayoutGrid, List } from "l
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { createBrowserClient } from "@/lib/supabase/client"
 import CreateArbeitsplatzDialog from "./create-arbeitsplatz-dialog"
 import EditArbeitsplatzDialog from "./edit-arbeitsplatz-dialog"
 import { ArbeitsplatzCard } from "./arbeitsplatz-card"
 import { cn } from "@/lib/utils"
 import { useUser } from "@/contexts/user-context"
+import { useArbeitsplaetze } from "@/hooks/use-arbeitsplaetze"
 
 interface Room {
   id: string
@@ -27,69 +27,16 @@ interface Arbeitsplatz {
 }
 
 function ArbeitsplaetzeManagement() {
-  const [arbeitsplaetze, setArbeitsplaetze] = useState<Arbeitsplatz[]>([])
-  const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [selectedArbeitsplatz, setSelectedArbeitsplatz] = useState<Arbeitsplatz | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const supabase = createBrowserClient()
   const { currentUser } = useUser()
 
-  const fetchArbeitsplaetze = async () => {
-    try {
-      setLoading(true)
-      if (!currentUser?.id) return
+  const practiceId = currentUser?.practiceId
 
-      const { data: userData } = await supabase
-        .from("users")
-        .select("practice_id")
-        .eq("id", currentUser.id)
-        .maybeSingle()
-
-      if (!userData?.practice_id) return
-
-      // to avoid the "no relationship" error in Supabase schema cache
-      const [arbeitsplaetzeResult, roomsResult] = await Promise.all([
-        supabase
-          .from("arbeitsplaetze")
-          .select("*")
-          .eq("practice_id", userData.practice_id)
-          .is("deleted_at", null)
-          .order("name"),
-        supabase.from("rooms").select("id, name").eq("practice_id", userData.practice_id),
-      ])
-
-      if (arbeitsplaetzeResult.error) throw arbeitsplaetzeResult.error
-
-      // Create a map of rooms for quick lookup
-      const roomsMap = new Map<string, Room>()
-      if (roomsResult.data) {
-        roomsResult.data.forEach((room) => {
-          roomsMap.set(room.id, room)
-        })
-      }
-
-      // Join rooms to arbeitsplaetze in code
-      const dataWithRooms = (arbeitsplaetzeResult.data || []).map((ap) => ({
-        ...ap,
-        room: ap.raum_id ? roomsMap.get(ap.raum_id) || null : null,
-      }))
-
-      setArbeitsplaetze(dataWithRooms)
-    } catch (error) {
-      console.error("Error fetching Arbeitsplätze:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (currentUser?.id) {
-      fetchArbeitsplaetze()
-    }
-  }, [currentUser?.id])
+  const { arbeitsplaetze, isLoading: loading, mutate } = useArbeitsplaetze(practiceId)
 
   const handleEdit = (arbeitsplatz: Arbeitsplatz) => {
     setSelectedArbeitsplatz(arbeitsplatz)
@@ -100,14 +47,13 @@ function ArbeitsplaetzeManagement() {
     if (!confirm("Möchten Sie diesen Arbeitsplatz wirklich löschen?")) return
 
     try {
-      const { error } = await supabase
-        .from("arbeitsplaetze")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", id)
+      const response = await fetch(`/api/practices/${practiceId}/arbeitsplaetze/${id}`, {
+        method: "DELETE",
+      })
 
-      if (error) throw error
+      if (!response.ok) throw new Error("Failed to delete")
 
-      await fetchArbeitsplaetze()
+      mutate()
     } catch (error) {
       console.error("Error deleting Arbeitsplatz:", error)
     }
@@ -115,11 +61,15 @@ function ArbeitsplaetzeManagement() {
 
   const handleToggleActive = async (id: string, newStatus: boolean) => {
     try {
-      const { error } = await supabase.from("arbeitsplaetze").update({ is_active: newStatus }).eq("id", id)
+      const response = await fetch(`/api/practices/${practiceId}/arbeitsplaetze/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: newStatus }),
+      })
 
-      if (error) throw error
+      if (!response.ok) throw new Error("Failed to toggle status")
 
-      await fetchArbeitsplaetze()
+      mutate()
     } catch (error) {
       console.error("Error toggling Arbeitsplatz status:", error)
     }

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { createBrowserClient } from "@/lib/supabase/client"
+import { useUser } from "@/contexts/user-context"
 
 interface Contact {
   id: string
@@ -44,7 +44,7 @@ interface EditContactDialogProps {
 export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: EditContactDialogProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
+  const { currentUser } = useUser()
 
   const [formData, setFormData] = useState({
     salutation: contact.salutation || "",
@@ -95,9 +95,18 @@ export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: Ed
     setLoading(true)
 
     try {
-      const { error } = await supabase.from("contacts").update(formData).eq("id", contact.id)
+      if (!currentUser?.practiceId) throw new Error("No practice ID")
 
-      if (error) throw error
+      const response = await fetch(`/api/practices/${currentUser.practiceId}/contacts/${contact.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update contact")
+      }
 
       toast({
         title: "Erfolg",

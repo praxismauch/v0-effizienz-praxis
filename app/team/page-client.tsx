@@ -30,8 +30,9 @@ import { AppLayout } from "@/components/app-layout"
 import { PageHeader } from "@/components/page-header"
 import { AITeamAnalysisDialog } from "@/components/team/ai-team-analysis-dialog"
 import { CreateTeamMemberDialog } from "@/components/team/create-team-member-dialog"
-import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
+import { mutate } from "swr"
+import { SWR_KEYS } from "@/lib/swr-keys"
 import { formatGermanNumber } from "@/lib/utils/number-format"
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Input } from "@/components/ui/input"
@@ -621,47 +622,43 @@ export default function TeamPageClient() {
   // Add fetchResponsibilities call inside this useEffect
   useEffect(() => {
     const loadData = async () => {
-      const supabase = createClient()
+      try {
+        const [responsibilitiesRes, usersRes, positionsRes] = await Promise.all([
+          fetch(`/api/practices/${practiceId}/responsibilities`),
+          fetch(`/api/practices/${practiceId}/users`),
+          fetch(`/api/practices/${practiceId}/org-chart-positions`),
+        ])
 
-      const [{ data: responsibilitiesData }, { data: usersData }] = await Promise.all([
-        supabase.from("responsibilities").select("*").eq("practice_id", practiceId).order("name"),
-        supabase.from("users").select("id, name").eq("practice_id", practiceId),
-      ])
+        const responsibilitiesData = responsibilitiesRes.ok ? await responsibilitiesRes.json() : null
+        const usersData = usersRes.ok ? await usersRes.json() : null
+        const positionsData = positionsRes.ok ? await positionsRes.json() : null
 
-      if (responsibilitiesData && usersData) {
-        const usersMap = new Map(usersData.map((user) => [user.id, user]))
+        if (responsibilitiesData && usersData) {
+          const usersMap = new Map(usersData.map((user: any) => [user.id, user]))
 
-        const validResponsibilities = responsibilitiesData.map((resp: any) => ({
-          ...resp,
-          responsible_user_id:
-            resp.responsible_user_id && resp.responsible_user_id.trim() !== "" ? resp.responsible_user_id : null,
-          responsible_user_name: resp.responsible_user_id ? usersMap.get(resp.responsible_user_id)?.name || null : null,
-          deputy_user_name: resp.deputy_user_id ? usersMap.get(resp.deputy_user_id)?.name || null : null,
-          group_name: resp.group_name || "",
-          cannot_complete_during_consultation: resp.cannot_complete_during_consultation || false,
-        }))
-        setResponsibilities(validResponsibilities)
-      }
+          const validResponsibilities = responsibilitiesData.map((resp: any) => ({
+            ...resp,
+            responsible_user_id:
+              resp.responsible_user_id && resp.responsible_user_id.trim() !== "" ? resp.responsible_user_id : null,
+            responsible_user_name: resp.responsible_user_id ? usersMap.get(resp.responsible_user_id)?.name || null : null,
+            deputy_user_name: resp.deputy_user_id ? usersMap.get(resp.deputy_user_id)?.name || null : null,
+            group_name: resp.group_name || "",
+            cannot_complete_during_consultation: resp.cannot_complete_during_consultation || false,
+          }))
+          setResponsibilities(validResponsibilities)
+        }
 
-      const { data: positionsData } = await supabase
-        .from("org_chart_positions")
-        .select(
-          "id, practice_id, position_title, department, user_id, reports_to_position_id, level, display_order, color, is_active, created_at, updated_at, created_by",
-        )
-        .eq("practice_id", practiceId)
-        .order("position_title")
-
-      if (positionsData) {
-        const validPositions = positionsData.map((pos) => ({
-          ...pos,
-          user_id: pos.user_id && pos.user_id.trim() !== "" ? pos.user_id : null,
-          reports_to_position_id:
-            pos.reports_to_position_id && pos.reports_to_position_id.trim() !== "" ? pos.reports_to_position_id : null,
-          title: pos.title || pos.position_title,
-          color: pos.color || "#3b82f6",
-          is_management: (pos.level ?? 99) <= 1,
-        }))
-        setOrgChartPositions(validPositions)
+        if (positionsData) {
+          const validPositions = positionsData.map((pos: any) => ({
+            ...pos,
+            user_id: pos.user_id && pos.user_id.trim() !== "" ? pos.user_id : null,
+            reports_to_position_id:
+              pos.reports_to_position_id && pos.reports_to_position_id.trim() !== "" ? pos.reports_to_position_id : null,
+            title: pos.title || pos.position_title,
+            color: pos.color || "#3b82f6",
+            is_management: (pos.level ?? 99) <= 1,
+          }))
+          setOrgChartPositions(validPositions)
       }
     }
 
@@ -846,9 +843,8 @@ export default function TeamPageClient() {
           description: "Team erfolgreich gelöscht.",
         })
         setTeamToDelete(null)
-        // Re-fetch teams
-        const { data: teamsData } = await createClient().from("teams").select("*").eq("practice_id", currentPractice.id)
-        // Similar to handleCreateTeam, update context state or re-fetch
+        // Trigger SWR revalidation for teams
+        mutate(SWR_KEYS.teams(currentPractice.id))
       } else {
         const errorData = await res.json()
         toast({

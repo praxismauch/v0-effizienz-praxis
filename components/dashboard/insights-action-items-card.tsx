@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import useSWR from "swr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -22,53 +21,16 @@ interface Props {
   practiceId: string
 }
 
+const fetcher = (url: string) => fetch(url).then(r => r.json())
+
 export function JournalActionItemsCard({ practiceId }: Props) {
-  const [loading, setLoading] = useState(true)
-  const [actionItems, setActionItems] = useState<ActionItem[]>([])
-  const [journalTitle, setJournalTitle] = useState("")
+  const { data, isLoading: loading } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/insights?type=action-items` : null,
+    fetcher
+  )
 
-  useEffect(() => {
-    loadActionItems()
-  }, [practiceId])
-
-  async function loadActionItems() {
-    try {
-      const supabase = createClient()
-
-      // Get the latest journal
-      const { data: journal } = await supabase
-        .from("practice_journals")
-        .select("id, title")
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (!journal) {
-        setLoading(false)
-        return
-      }
-
-      setJournalTitle(journal.title)
-
-      // Get action items for this journal
-      const { data: items } = await supabase
-        .from("journal_action_items")
-        .select("*")
-        .eq("journal_id", journal.id)
-        .is("deleted_at", null)
-        .in("status", ["pending", "in_progress"])
-        .order("priority", { ascending: false })
-        .limit(5)
-
-      setActionItems(items || [])
-      setLoading(false)
-    } catch (error) {
-      console.error("Error loading action items:", error)
-      setLoading(false)
-    }
-  }
+  const actionItems = data?.actionItems || []
+  const journalTitle = data?.journalTitle || ""
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

@@ -14,11 +14,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, Trash2, Loader2 } from "lucide-react"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { updateIgelAnalysis } from "@/hooks/use-igel"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
+import { useUser } from "@/hooks/use-user" // Import user hook
 
 interface EditIgelDialogProps {
   analysis: any
@@ -59,7 +60,7 @@ const IGEL_CATEGORIES = [
 export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: EditIgelDialogProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const supabase = createBrowserClient()
+  const { user } = useUser() // Declare user variable
 
   // Service Info
   const [serviceName, setServiceName] = useState("")
@@ -170,25 +171,23 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
       if (profitabilityScore >= 70) recommendation = "Sehr empfehlenswert"
       else if (profitabilityScore >= 40) recommendation = "Bedingt empfehlenswert"
 
-      const { error } = await supabase
-        .from("igel_analyses")
-        .update({
-          service_name: serviceName,
-          service_description: serviceDescription,
-          category,
-          one_time_costs: oneTimeCosts,
-          variable_costs: variableCosts,
-          total_one_time_cost: totalOneTime,
-          total_variable_cost: totalVariable,
-          pricing_scenarios: scenarioAnalysis,
-          profitability_score: profitabilityScore,
-          recommendation,
-          break_even_point: Math.round(avgBreakEven),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", analysis.id)
+      if (!user?.practice_id) {
+        throw new Error("Keine Praxis gefunden")
+      }
 
-      if (error) throw error
+      await updateIgelAnalysis(user.practice_id, analysis.id, {
+        service_name: serviceName,
+        service_description: serviceDescription,
+        category,
+        one_time_costs: oneTimeCosts,
+        variable_costs: variableCosts,
+        total_one_time_cost: totalOneTime,
+        total_variable_cost: totalVariable,
+        pricing_scenarios: scenarioAnalysis,
+        profitability_score: profitabilityScore,
+        recommendation,
+        break_even_point: Math.round(avgBreakEven),
+      })
 
       toast({
         title: "Gespeichert",

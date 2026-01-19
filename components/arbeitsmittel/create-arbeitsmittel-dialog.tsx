@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createBrowserClient } from "@/lib/supabase/client"
 import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
 import { usePractice } from "@/contexts/practice-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -58,24 +57,16 @@ export function CreateArbeitsmittelDialog({
     status: "available",
     notes: "",
   })
-  const supabase = createBrowserClient()
   const { currentPractice } = usePractice()
   const { user } = useAuth()
   const { toast } = useToast()
 
-  console.log("[v0] CreateArbeitsmittelDialog - open:", open)
-  console.log("[v0] CreateArbeitsmittelDialog - currentPractice:", currentPractice)
-  console.log("[v0] CreateArbeitsmittelDialog - user:", user?.id)
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    console.log("[v0] handleSubmit called - formData:", formData)
-    console.log("[v0] handleSubmit - currentPractice?.id:", currentPractice?.id)
     setLoading(true)
 
     try {
       if (!currentPractice?.id) {
-        console.log("[v0] ERROR: No practice ID")
         toast({
           title: "Fehler",
           description: "Keine Praxis zugeordnet. Bitte laden Sie die Seite neu.",
@@ -84,24 +75,29 @@ export function CreateArbeitsmittelDialog({
         return
       }
 
-      console.log("[v0] Inserting arbeitsmittel with practice_id:", currentPractice.id)
-      const { error } = await supabase.from("arbeitsmittel").insert({
-        name: formData.name,
-        type: formData.type,
-        description: formData.description || null,
-        serial_number: formData.serial_number || null,
-        purchase_date: formData.purchase_date || null,
-        purchase_price: formData.purchase_price ? Number.parseFloat(formData.purchase_price) : null,
-        condition: formData.condition,
-        status: formData.status,
-        notes: formData.notes || null,
-        practice_id: currentPractice.id,
-        created_by: user?.id || null,
-        assigned_to: formData.assigned_to || null,
-        assigned_date: formData.assigned_to ? new Date().toISOString().split("T")[0] : null,
+      const response = await fetch(`/api/practices/${currentPractice.id}/arbeitsmittel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          type: formData.type,
+          description: formData.description || null,
+          serial_number: formData.serial_number || null,
+          purchase_date: formData.purchase_date || null,
+          purchase_price: formData.purchase_price ? Number.parseFloat(formData.purchase_price) : null,
+          condition: formData.condition,
+          status: formData.status,
+          notes: formData.notes || null,
+          created_by: user?.id || null,
+          assigned_to: formData.assigned_to || null,
+          assigned_date: formData.assigned_to ? new Date().toISOString().split("T")[0] : null,
+        }),
       })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to create")
+      }
 
       toast({
         title: "Erfolgreich",

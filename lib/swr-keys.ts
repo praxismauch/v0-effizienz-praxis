@@ -142,14 +142,14 @@ export const SWR_KEYS = {
     `/api/practices/${practiceId}/devices/${deviceId}/trainings`,
 
   // arbeitsmittel SWR keys
-  arbeitsmittel: (practiceId = DEFAULT_PRACTICE_ID) => `/api/supabase/arbeitsmittel?practiceId=${practiceId}`,
+  arbeitsmittel: (practiceId = DEFAULT_PRACTICE_ID) => `/api/practices/${practiceId}/arbeitsmittel`,
   arbeitsmittelItem: (practiceId = DEFAULT_PRACTICE_ID, itemId: string) =>
-    `/api/supabase/arbeitsmittel/${itemId}?practiceId=${practiceId}`,
+    `/api/practices/${practiceId}/arbeitsmittel/${itemId}`,
 
   // IGEL analyses SWR keys
-  igelAnalyses: (practiceId = DEFAULT_PRACTICE_ID) => `/api/supabase/igel-analyses?practiceId=${practiceId}`,
+  igelAnalyses: (practiceId = DEFAULT_PRACTICE_ID) => `/api/practices/${practiceId}/igel`,
   igelAnalysis: (practiceId = DEFAULT_PRACTICE_ID, analysisId: string) =>
-    `/api/supabase/igel-analyses/${analysisId}?practiceId=${practiceId}`,
+    `/api/practices/${practiceId}/igel/${analysisId}`,
 } as const
 
 // Helper to invalidate all keys for a practice

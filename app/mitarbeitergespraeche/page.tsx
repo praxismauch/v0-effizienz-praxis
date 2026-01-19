@@ -569,11 +569,13 @@ export default function MitarbeitergespraechePage() {
                 {selectedMember?.name ? `Gespräche für ${selectedMember.name}` : "Mitarbeitergespräche"}
               </DialogTitle>
             </DialogHeader>
-            {selectedMember && (
+            {selectedMember && practiceId && (
               <TeamMemberAppraisalsTab
-                teamMemberId={selectedMember.id}
-                teamMemberName={selectedMember.name}
-                onAppraisalChange={() => mutateAppraisals()}
+                memberId={selectedMember.id}
+                practiceId={practiceId}
+                memberName={selectedMember.name}
+                isAdmin={isAdmin}
+                currentUserId={currentUser?.id}
               />
             )}
           </DialogContent>

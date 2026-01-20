@@ -273,13 +273,18 @@ export default function ZeiterfassungPageClient() {
     }
   }, [swrPlausibilityIssues])
 
-  // Combined loading state
+  // Combined loading state - set to false after initial mount or when data is available
   useEffect(() => {
-    const allLoading = statusLoading || teamLoading || blocksLoading || correctionsLoading || plausibilityLoading
-    if (!allLoading && practiceId && user?.id) {
-      setIsLoading(false)
+    // If we have user and practice ID, we can show the page
+    // SWR will handle loading states individually for each section
+    if (practiceId && user?.id) {
+      // Wait a brief moment for initial SWR requests, then show UI regardless
+      const timer = setTimeout(() => {
+        setIsLoading(false)
+      }, 1000)
+      return () => clearTimeout(timer)
     }
-  }, [statusLoading, teamLoading, blocksLoading, correctionsLoading, plausibilityLoading, practiceId, user?.id])
+  }, [practiceId, user?.id])
 
   const loadHomeofficePolicy = useCallback(async () => {
     if (!practiceId || !user?.id) return

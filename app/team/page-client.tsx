@@ -362,7 +362,8 @@ export default function TeamPageClient() {
   const practiceId = currentPractice?.id || "0"
 
   const filteredAndSortedMembers = useMemo(() => {
-    const filtered = teamMembers.filter((member) => {
+    const teamMembersArray = Array.isArray(teamMembers) ? teamMembers : []
+    const filtered = teamMembersArray.filter((member) => {
       const matchesSearch =
         member.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -633,7 +634,7 @@ export default function TeamPageClient() {
         const usersData = usersRes.ok ? await usersRes.json() : null
         const positionsData = positionsRes.ok ? await positionsRes.json() : null
 
-        if (responsibilitiesData && usersData) {
+        if (responsibilitiesData && usersData && Array.isArray(usersData) && Array.isArray(responsibilitiesData)) {
           const usersMap = new Map(usersData.map((user: any) => [user.id, user]))
 
           const validResponsibilities = responsibilitiesData.map((resp: any) => ({
@@ -648,7 +649,7 @@ export default function TeamPageClient() {
           setResponsibilities(validResponsibilities)
         }
 
-        if (positionsData) {
+        if (positionsData && Array.isArray(positionsData)) {
           const validPositions = positionsData.map((pos: any) => ({
             ...pos,
             user_id: pos.user_id && pos.user_id.trim() !== "" ? pos.user_id : null,
@@ -724,14 +725,15 @@ export default function TeamPageClient() {
   }
 
   const responsibilityStats = useMemo(() => {
-    const insideConsultation = responsibilities.filter((r) => !r.cannot_complete_during_consultation)
-    const outsideConsultation = responsibilities.filter((r) => r.cannot_complete_during_consultation)
+    const responsibilitiesArray = Array.isArray(responsibilities) ? responsibilities : []
+    const insideConsultation = responsibilitiesArray.filter((r) => !r.cannot_complete_during_consultation)
+    const outsideConsultation = responsibilitiesArray.filter((r) => r.cannot_complete_during_consultation)
 
     const insideHours = insideConsultation.reduce((sum, r) => sum + (r.suggested_hours_per_week || 0), 0)
     const outsideHours = outsideConsultation.reduce((sum, r) => sum + (r.suggested_hours_per_week || 0), 0)
 
     return {
-      total: responsibilities.length,
+      total: responsibilitiesArray.length,
       insideConsultation,
       outsideConsultation,
       insideHours,

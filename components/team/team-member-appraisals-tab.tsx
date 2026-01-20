@@ -731,7 +731,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                       </div>
                     </div>
 
-                    {formData.performance_areas?.map((area, idx) => (
+                    {Array.isArray(formData.performance_areas) && formData.performance_areas.map((area, idx) => (
                       <div key={idx} className="space-y-2 p-3 rounded-lg border bg-card">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{area.name}</span>
@@ -1141,7 +1141,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                       </Button>
                     </div>
 
-                    {formData.new_goals?.map((goal, idx) => (
+                    {Array.isArray(formData.new_goals) && formData.new_goals.map((goal, idx) => (
                       <Card key={idx}>
                         <CardContent className="pt-4 space-y-3">
                           <div className="flex items-start justify-between">
@@ -1308,7 +1308,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                       </Button>
                     </div>
 
-                    {formData.development_plan?.map((item, idx) => (
+                    {Array.isArray(formData.development_plan) && formData.development_plan.map((item, idx) => (
                       <Card key={idx}>
                         <CardContent className="pt-4 space-y-3">
                           <div className="flex items-start justify-between">
@@ -1316,7 +1316,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                               placeholder="Maßnahme"
                               value={item.title || ""}
                               onChange={(e) => {
-                                const updated = [...(formData.development_plan || [])]
+                                const updated = [...(Array.isArray(formData.development_plan) ? formData.development_plan : [])]
                                 updated[idx] = { ...updated[idx], title: e.target.value }
                                 setFormData((prev) => ({ ...prev, development_plan: updated }))
                               }}
@@ -1326,7 +1326,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                const updated = formData.development_plan?.filter((_, i) => i !== idx)
+                                const updated = Array.isArray(formData.development_plan) ? formData.development_plan.filter((_, i) => i !== idx) : []
                                 setFormData((prev) => ({ ...prev, development_plan: updated }))
                               }}
                             >
@@ -1337,7 +1337,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                             placeholder="Beschreibung"
                             value={item.description || ""}
                             onChange={(e) => {
-                              const updated = [...(formData.development_plan || [])]
+                              const updated = [...(Array.isArray(formData.development_plan) ? formData.development_plan : [])]
                               updated[idx] = { ...updated[idx], description: e.target.value }
                               setFormData((prev) => ({ ...prev, development_plan: updated }))
                             }}

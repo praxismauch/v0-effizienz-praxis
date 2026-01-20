@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useState, Suspense, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { Logo } from "@/components/logo"
 
 async function verifySessionWithRetry(maxRetries = 8, initialDelay = 300): Promise<{ success: boolean; user?: any }> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -71,29 +72,18 @@ function LoginForm() {
     }
   }, [])
 
+  // Check if already logged in on mount
   useEffect(() => {
     if (!supabase) return
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event: string, session: any) => {
-      console.log("[LoginPage] Auth state changed:", event)
-
-      if (event === "SIGNED_IN" && session) {
-        console.log("[LoginPage] User signed in, redirecting to:", redirectTo)
-        setStatus("Erfolgreich angemeldet! Weiterleitung...")
-
-        // Small delay to ensure session is fully established
-        setTimeout(() => {
-          router.push(redirectTo)
-          router.refresh()
-        }, 500)
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.replace(redirectTo)
       }
-    })
-
-    return () => {
-      subscription.unsubscribe()
     }
+    
+    checkExistingSession()
   }, [supabase, redirectTo, router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -122,8 +112,10 @@ function LoginForm() {
         throw new Error("Keine Benutzerdaten erhalten")
       }
 
-      console.log("[LoginPage] Login successful, waiting for auth state change...")
-      // onAuthStateChange will handle the redirect
+      setStatus("Erfolgreich angemeldet! Weiterleitung...")
+      
+      // Direct redirect after successful login - don't rely on onAuthStateChange
+      router.push(redirectTo)
     } catch (error: any) {
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.message) {
@@ -226,8 +218,7 @@ export default function LoginPage() {
           <Link href="/" className="group flex flex-col items-center gap-3 transition-transform hover:scale-105">
             <div className="relative">
               <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-cyan-500/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-              {/* Logo component is assumed to be imported elsewhere */}
-              {/* <Logo className="h-16 w-16 relative" /> */}
+              <Logo className="h-16 w-16 relative" />
             </div>
             <div className="text-center">
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">

@@ -10,6 +10,7 @@ import {
   DollarSign,
   Lightbulb,
   ClipboardList,
+  Clock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +32,8 @@ interface IgelAnalysis {
   status: string
   pricing_scenarios: any[]
   created_at: string
+  arzt_minutes?: number
+  honorar_goal?: number
 }
 
 export function IgelManagement() {
@@ -172,6 +175,23 @@ export function IgelManagement() {
                   <p className="text-sm">
                     Break-Even: <span className="font-medium">{analysis.break_even_point} Leistungen</span>
                   </p>
+                )}
+                {/* Honorarstundensatz-SZL: price * 60 / arzt_minutes */}
+                {analysis.arzt_minutes && analysis.arzt_minutes > 0 && analysis.pricing_scenarios?.[1]?.price && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>Honorarstundensatz-SZL:</span>
+                    <span className={`font-medium ${
+                      ((analysis.pricing_scenarios[1].price * 60) / analysis.arzt_minutes) >= (analysis.honorar_goal || 500)
+                        ? "text-green-600"
+                        : "text-amber-600"
+                    }`}>
+                      {((analysis.pricing_scenarios[1].price * 60) / analysis.arzt_minutes).toFixed(0)} €/Std
+                    </span>
+                    {analysis.honorar_goal && (
+                      <span className="text-muted-foreground text-xs">(Ziel: {analysis.honorar_goal} €)</span>
+                    )}
+                  </div>
                 )}
                 {analysis.pricing_scenarios?.length > 0 && (
                   <p className="text-sm text-muted-foreground">

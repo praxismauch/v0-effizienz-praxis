@@ -111,12 +111,16 @@ const SKILL_LEVEL_CONFIG = [
 ]
 
 const DEFAULT_PERFORMANCE_AREAS = [
-  { name: "Fachkompetenz", rating: 3, weight: 25 },
-  { name: "Arbeitsqualität", rating: 3, weight: 20 },
-  { name: "Zuverlässigkeit", rating: 3, weight: 15 },
-  { name: "Teamarbeit", rating: 3, weight: 15 },
-  { name: "Kommunikation", rating: 3, weight: 15 },
-  { name: "Initiative", rating: 3, weight: 10 },
+  { name: "Sorgfalt", rating: 3, weight: 10 },
+  { name: "Zusammenarbeit / Freundlichkeit", rating: 3, weight: 10 },
+  { name: "Bereitschaft flexibel zu Arbeiten", rating: 3, weight: 10 },
+  { name: "Mitarbeit an Verbesserungen", rating: 3, weight: 10 },
+  { name: "Arbeitsqualität", rating: 3, weight: 10 },
+  { name: "Selbstständigkeit / Planung", rating: 3, weight: 10 },
+  { name: "Patientenbezug", rating: 3, weight: 10 },
+  { name: "Einstellung zu Zielen", rating: 3, weight: 10 },
+  { name: "Initiative zu Projekten", rating: 3, weight: 10 },
+  { name: "Einhaltung von Praxisvorgaben", rating: 3, weight: 10 },
 ]
 
 export default function NeuesMitarbeitergespraechPage() {

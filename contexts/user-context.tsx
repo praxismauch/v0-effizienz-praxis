@@ -11,7 +11,6 @@ import { retryWithBackoff, isAuthError } from "@/lib/retry-utils"
 
 const dispatchAuthRecovered = () => {
   if (typeof window !== "undefined") {
-    console.log("[v0] dispatchAuthRecovered called")
     window.dispatchEvent(new CustomEvent("auth-recovered"))
   }
 }
@@ -104,6 +103,10 @@ export function UserProvider({
   const pathname = usePathname()
   const hasFetchedUser = useRef(false)
   const hasFetchedSuperAdmins = useRef(false)
+  const fetchAttempts = useRef(0)
+  const lastFetchTime = useRef(0)
+  const MAX_FETCH_ATTEMPTS = 3
+  const FETCH_COOLDOWN_MS = 2000
 
   const supabaseRef = useRef<SupabaseClient | null>(null)
   const getSupabase = useCallback(() => {
@@ -114,13 +117,7 @@ export function UserProvider({
     return supabaseRef.current
   }, [])
 
-  console.log("[v0] UserProvider render", {
-    currentUser: currentUser?.email,
-    loading,
-    mounted,
-    pathname,
-    hasFetchedUser: hasFetchedUser.current,
-  })
+  // Removed debug logging
 
   const persistUserToStorage = useCallback(async (user: User | null) => {
     if (typeof window === "undefined") return
@@ -142,74 +139,80 @@ export function UserProvider({
   }, [])
 
   useEffect(() => {
-    console.log("[v0] UserProvider mounted")
     setMounted(true)
   }, [])
 
+  // Restore user from storage - runs only once on mount
   useEffect(() => {
     if (!mounted) return
-    if (currentUser || initialUser) return
+    if (hasFetchedUser.current) return
+    if (initialUser) {
+      hasFetchedUser.current = true
+      setLoading(false)
+      return
+    }
 
     const restoreUser = async () => {
-      console.log("[v0] restoreUser called")
       try {
         const stored = sessionStorage.getItem("effizienz_current_user")
         if (stored) {
           if (isStorageExpired(stored)) {
-            console.log("[v0] Stored user expired, clearing")
             sessionStorage.removeItem("effizienz_current_user")
-            setLoading(false)
             return
           }
 
           const parsedUser = await decryptStorage(stored)
           if (parsedUser) {
-            console.log("[v0] Restored user from storage:", (parsedUser as User).email)
             setCurrentUser(parsedUser as User)
             hasFetchedUser.current = true
-            console.log("[v0] hasFetchedUser set to true (from storage)")
             setLoading(false)
+            return
           } else {
-            console.log("[v0] Failed to decrypt stored user")
             sessionStorage.removeItem("effizienz_current_user")
-            setLoading(false)
           }
-        } else {
-          console.log("[v0] No stored user found")
-          setLoading(false)
         }
       } catch (e) {
-        console.error("[v0] Error in restoreUser:", e)
         sessionStorage.removeItem("effizienz_current_user")
-        setLoading(false)
       }
     }
 
     restoreUser()
-  }, [mounted, currentUser, initialUser])
+  }, [mounted, initialUser])
 
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!mounted) return
     if (hasFetchedUser.current) {
-      console.log("[v0] fetchUser skipped - already fetched")
       return
     }
     if (currentUser || initialUser) {
-      console.log("[v0] fetchUser skipped - user exists")
       hasFetchedUser.current = true
-      console.log("[v0] hasFetchedUser set to true (user exists)")
       setLoading(false)
       return
     }
     if (isPublicRoute(pathname)) {
-      console.log("[v0] fetchUser skipped - public route")
       setLoading(false)
       return
     }
 
     const fetchUser = async () => {
-      console.log("[v0] fetchUser starting")
+      // Loop prevention: check if we're fetching too frequently
+      const now = Date.now()
+      if (now - lastFetchTime.current < FETCH_COOLDOWN_MS) {
+        setLoading(false)
+        return
+      }
+      
+      // Loop prevention: check max attempts
+      fetchAttempts.current += 1
+      if (fetchAttempts.current > MAX_FETCH_ATTEMPTS) {
+        hasFetchedUser.current = true
+        setLoading(false)
+        return
+      }
+      
+      lastFetchTime.current = now
+      
       try {
         await retryWithBackoff(
           async () => {
@@ -218,7 +221,6 @@ export function UserProvider({
               process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
 
             if (IS_DEV_MODE) {
-              console.log("[v0] Dev mode - fetching dev user")
               if (!DEV_USER_EMAIL) {
                 throw new Error("Dev mode enabled but NEXT_PUBLIC_DEV_USER_EMAIL not set")
               }
@@ -330,7 +332,7 @@ export function UserProvider({
     }
 
     fetchUser()
-  }, [pathname, currentUser, initialUser, router, persistUserToStorage, getSupabase, mounted])
+  }, [pathname, initialUser, router, persistUserToStorage, getSupabase, mounted])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -345,15 +347,24 @@ export function UserProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("[v0] Auth state changed:", event)
+      // Loop prevention for auth state changes
+      const now = Date.now()
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        if (now - lastFetchTime.current < FETCH_COOLDOWN_MS) {
+          return
+        }
+        if (hasFetchedUser.current && currentUser) {
+          return
+        }
+        lastFetchTime.current = now
+      }
 
       if (event === "SIGNED_OUT") {
-        console.log("[v0] User signed out, clearing session")
         setCurrentUser(null)
         await persistUserToStorage(null)
         hasFetchedUser.current = false
+        fetchAttempts.current = 0
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        console.log("[v0] User signed in or token refreshed")
         if (session?.user) {
           try {
             const { data: profile } = await supabase
@@ -378,25 +389,22 @@ export function UserProvider({
                 preferred_language: profile.preferred_language,
                 firstName: profile.first_name,
               }
-              console.log("[v0] User profile updated:", user.email)
               setCurrentUser(user)
               await persistUserToStorage(user)
-              hasFetchedUser.current = true // Fixed: was false, should be true
-              console.log("[v0] hasFetchedUser set to true (after sign-in)")
+              hasFetchedUser.current = true
               dispatchAuthRecovered()
             }
           } catch (error) {
-            console.error("[v0] Error fetching user profile after sign in:", error)
+            console.error("Error fetching user profile:", error)
           }
         }
-        hasFetchedUser.current = false
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [mounted, getSupabase, persistUserToStorage])
+  }, [mounted, getSupabase, persistUserToStorage, currentUser])
 
   useEffect(() => {
     if (!currentUser) return

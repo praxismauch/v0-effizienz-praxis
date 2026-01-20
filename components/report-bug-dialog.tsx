@@ -18,10 +18,28 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Bug, Upload, X, Loader2, FileText } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { put } from "@vercel/blob"
 import { useUser } from "@/contexts/user-context"
 import { useTicketConfig } from "@/lib/tickets/hooks"
 import { typesToOptions, prioritiesToOptions } from "@/lib/tickets/utils"
+
+// Helper function to upload file via API
+async function uploadFileToServer(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append("file", file)
+
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || "Upload failed")
+  }
+
+  const data = await response.json()
+  return data.url
+}
 
 interface ReportBugDialogProps {
   open?: boolean
@@ -76,10 +94,8 @@ function ReportBugDialog({
           for (const item of imageItems) {
             const file = item.getAsFile()
             if (file) {
-              const blob = await put(`tickets/${Date.now()}-${file.name}`, file, {
-                access: "public",
-              })
-              setScreenshots((prev) => [...prev, blob.url])
+              const url = await uploadFileToServer(file)
+              setScreenshots((prev) => [...prev, url])
             }
           }
 
@@ -105,10 +121,12 @@ function ReportBugDialog({
   }, [open, toast])
 
   const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = e.target.files
+    if (!files || files.length === 0) return
 
-    if (!file.type.startsWith("image/")) {
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"))
+
+    if (imageFiles.length === 0) {
       toast({
         title: "Fehler",
         description: "Bitte laden Sie nur Bilddateien hoch",
@@ -119,14 +137,14 @@ function ReportBugDialog({
 
     setUploadingScreenshot(true)
     try {
-      const blob = await put(`tickets/${Date.now()}-${file.name}`, file, {
-        access: "public",
-      })
+      for (const file of imageFiles) {
+        const url = await uploadFileToServer(file)
+        setScreenshots((prev) => [...prev, url])
+      }
 
-      setScreenshots([...screenshots, blob.url])
       toast({
         title: "Erfolg",
-        description: "Screenshot hochgeladen",
+        description: `${imageFiles.length} Screenshot(s) hochgeladen`,
       })
     } catch (error) {
       console.error("[v0] Error uploading screenshot:", error)
@@ -137,6 +155,8 @@ function ReportBugDialog({
       })
     } finally {
       setUploadingScreenshot(false)
+      // Reset the input
+      e.target.value = ""
     }
   }
 
@@ -172,10 +192,8 @@ function ReportBugDialog({
     setUploadingScreenshot(true)
     try {
       for (const file of imageFiles) {
-        const blob = await put(`tickets/${Date.now()}-${file.name}`, file, {
-          access: "public",
-        })
-        setScreenshots((prev) => [...prev, blob.url])
+        const url = await uploadFileToServer(file)
+        setScreenshots((prev) => [...prev, url])
       }
 
       toast({
@@ -232,8 +250,6 @@ function ReportBugDialog({
         console.error("[v0] Error response from API:", data)
         throw new Error(data.error || "Failed to create ticket")
       }
-
-      console.log("[v0] Ticket created successfully:", data)
 
       toast({
         title: "Erfolg",

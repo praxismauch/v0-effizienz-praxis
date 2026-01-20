@@ -6,6 +6,17 @@ import { Check, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
+type RawPlan = {
+  name: string
+  price_monthly: number | null
+  price_yearly: number | null
+  old_price_monthly: number | null
+  old_price_yearly: number | null
+  description: string
+  features: string[]
+  is_popular?: boolean
+}
+
 type PricingPlan = {
   name: string
   price: string
@@ -17,15 +28,72 @@ type PricingPlan = {
 }
 
 export default function PreisePage() {
-  const [plans, setPlans] = useState<PricingPlan[]>([])
+  const [rawPlans, setRawPlans] = useState<RawPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly")
-  const [annualDiscount, setAnnualDiscount] = useState(0)
+  const [annualDiscount, setAnnualDiscount] = useState(20)
+  const [plans, setPlans] = useState<PricingPlan[]>([])
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
+  // Fallback raw plan data
+  const fallbackRawPlans: RawPlan[] = [
+    {
+      name: "Starter",
+      price_monthly: 7900,
+      price_yearly: 75840,
+      old_price_monthly: 9900,
+      old_price_yearly: 95040,
+      description: "Perfekt für kleine Praxen",
+      features: [
+        "Bis zu 3 Benutzer",
+        "Basis Kennzahlen Dashboard",
+        "Standard Analytics",
+        "Email Support",
+        "5 GB Speicherplatz",
+      ],
+    },
+    {
+      name: "Professional",
+      price_monthly: 14900,
+      price_yearly: 143040,
+      old_price_monthly: 19900,
+      old_price_yearly: 191040,
+      description: "Für wachsende Praxen",
+      is_popular: true,
+      features: [
+        "Bis zu 10 Benutzer",
+        "Erweiterte Kennzahlen",
+        "Premium Analytics",
+        "Recruiting Pipeline",
+        "Form Builder",
+        "Priority Support",
+        "50 GB Speicherplatz",
+      ],
+    },
+    {
+      name: "Premium",
+      price_monthly: null,
+      price_yearly: null,
+      old_price_monthly: null,
+      old_price_yearly: null,
+      description: "Für gehobene Ansprüche",
+      is_popular: false,
+      features: [
+        "Unbegrenzte Benutzer",
+        "Alle Features",
+        "Custom Integrationen",
+        "Dedicated Account Manager",
+        "24/7 Premium Support",
+        "Unbegrenzter Speicher",
+        "SLA Garantie",
+      ],
+    },
+  ]
+
+  // Fetch raw plans once on mount
   useEffect(() => {
     async function fetchPricing() {
       try {
@@ -33,79 +101,48 @@ export default function PreisePage() {
         if (!response.ok) throw new Error("Failed to fetch pricing")
         const data = await response.json()
 
-        setAnnualDiscount(data.annualDiscountPercentage || 0)
+        setAnnualDiscount(data.annualDiscountPercentage || 20)
 
-        const mappedPlans = data.plans.map((plan: any) => {
-          const isYearly = billingInterval === "yearly"
-          const price = isYearly ? plan.price_yearly : plan.price_monthly
-          const oldPrice = isYearly ? plan.old_price_yearly : plan.old_price_monthly
+        // If no plans returned from API, use fallback
+        if (!data.plans || data.plans.length === 0) {
+          throw new Error("No plans available")
+        }
 
-          return {
-            name: plan.name,
-            price: price ? `${(price / 100).toFixed(0)}€` : "Individuell",
-            oldPrice: oldPrice ? `${(oldPrice / 100).toFixed(0)}€` : undefined,
-            period: price ? (isYearly ? "pro Jahr" : "pro Monat") : "",
-            description: plan.description,
-            features: plan.features,
-            popular: plan.name === "Professional",
-          }
-        })
-        setPlans(mappedPlans)
+        // Store raw plans for re-mapping when billing interval changes
+        setRawPlans(data.plans)
       } catch (error) {
-        console.error("Error fetching pricing:", error)
-        setPlans([
-          {
-            name: "Starter",
-            price: "79€",
-            period: "pro Monat",
-            description: "Perfekt für kleine Praxen",
-            features: [
-              "Bis zu 3 Benutzer",
-              "Basis Kennzahlen Dashboard",
-              "Standard Analytics",
-              "Email Support",
-              "5 GB Speicherplatz",
-            ],
-          },
-          {
-            name: "Professional",
-            price: "149€",
-            period: "pro Monat",
-            description: "Für wachsende Praxen",
-            popular: true,
-            features: [
-              "Bis zu 10 Benutzer",
-              "Erweiterte Kennzahlen",
-              "Premium Analytics",
-              "Recruiting Pipeline",
-              "Form Builder",
-              "Priority Support",
-              "50 GB Speicherplatz",
-            ],
-          },
-          {
-            name: "Premium",
-            price: "Individuell",
-            period: "",
-            description: "Für gehobene Ansprüche",
-            features: [
-              "Unbegrenzte Benutzer",
-              "Alle Features",
-              "Custom Integrationen",
-              "Dedicated Account Manager",
-              "24/7 Premium Support",
-              "Unbegrenzter Speicher",
-              "SLA Garantie",
-            ],
-          },
-        ])
+        // Use fallback pricing data
+        setRawPlans(fallbackRawPlans)
       } finally {
         setLoading(false)
       }
     }
 
     fetchPricing()
-  }, [billingInterval])
+  }, [])
+
+  // Map raw plans to display format whenever rawPlans or billingInterval changes
+  useEffect(() => {
+    if (rawPlans.length === 0) return
+
+    const isYearly = billingInterval === "yearly"
+    const mappedPlans = rawPlans.map((plan) => {
+      const price = isYearly ? plan.price_yearly : plan.price_monthly
+      const oldPrice = isYearly ? plan.old_price_yearly : plan.old_price_monthly
+
+      return {
+        name: plan.name,
+        price: price ? `${Math.round(price / 100)}€` : "Individuell",
+        oldPrice: oldPrice && oldPrice > (price || 0) ? `${Math.round(oldPrice / 100)}€` : undefined,
+        period: price ? (isYearly ? "pro Jahr" : "pro Monat") : "",
+        description: plan.description,
+        features: plan.features || [],
+        popular: plan.is_popular || plan.name === "Professional",
+      }
+    })
+
+    setPlans(mappedPlans)
+  }, [rawPlans, billingInterval])
 
   if (loading) {
     return (

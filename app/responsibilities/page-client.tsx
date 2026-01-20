@@ -264,7 +264,7 @@ export default function ResponsibilitiesPageClient() {
     attachments: [] as File[],
     link_url: "",
     link_title: "",
-    category: null as string | null,
+    group_name: "" as string,
     estimated_time_minutes: null as number | null,
   })
   const [hoursDisplayValue, setHoursDisplayValue] = useState("") // For the input field

@@ -19,7 +19,7 @@ export async function GET(
     const today = format(new Date(), "yyyy-MM-dd")
 
     // Get today's open time block
-    const { data: blocks } = await supabase
+    const { data: block, error: blockError } = await supabase
       .from("time_blocks")
       .select("*")
       .eq("practice_id", practiceId)
@@ -28,27 +28,50 @@ export async function GET(
       .eq("is_open", true)
       .maybeSingle()
 
-    if (!blocks) {
+    if (blockError) {
+      console.error("[v0] Error fetching time block:", blockError)
+    }
+
+    if (!block) {
       return NextResponse.json({
         status: "idle",
-        currentBlock: null,
+        block: null,
         isOnBreak: false,
+        activeBreak: null,
       })
     }
 
     // Check if on break
-    const { data: breaks } = await supabase
+    const { data: activeBreak, error: breakError } = await supabase
       .from("time_block_breaks")
       .select("*")
-      .eq("time_block_id", blocks.id)
+      .eq("time_block_id", block.id)
       .is("end_time", null)
       .maybeSingle()
 
+    if (breakError) {
+      console.error("[v0] Error fetching breaks:", breakError)
+    }
+
+    // Map block to expected format for client
+    const mappedBlock = {
+      id: block.id,
+      user_id: block.user_id,
+      practice_id: block.practice_id,
+      date: block.date,
+      start_time: block.start_time,
+      end_time: block.end_time,
+      break_minutes: block.break_minutes || 0,
+      location_type: block.work_location, // Map work_location to location_type for client
+      status: block.is_open ? "active" : "completed",
+      actual_hours: block.net_minutes ? block.net_minutes / 60 : 0,
+    }
+
     return NextResponse.json({
-      status: breaks ? "break" : "working",
-      currentBlock: blocks,
-      isOnBreak: !!breaks,
-      currentBreak: breaks,
+      status: activeBreak ? "break" : "working",
+      block: mappedBlock,
+      isOnBreak: !!activeBreak,
+      activeBreak: activeBreak,
     })
   } catch (error) {
     console.error("[v0] Error fetching current status:", error)

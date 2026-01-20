@@ -65,9 +65,15 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
   const [oneTimeCosts, setOneTimeCosts] = useState<Cost[]>([
     { name: "Geräteanschaffung", amount: 0, category: "Equipment" },
   ])
+  // State for time-based costs (MFA and Arzt)
+  const [mfaMinutes, setMfaMinutes] = useState(0)
+  const [mfaHourlyRate, setMfaHourlyRate] = useState(25) // Default hourly rate for MFA
+  const [arztMinutes, setArztMinutes] = useState(0)
+  const [arztHourlyRate, setArztHourlyRate] = useState(150) // Default hourly rate for Arzt
+  const [honorarGoal, setHonorarGoal] = useState(500) // Default goal for Honorarstundensatz
+
   const [variableCosts, setVariableCosts] = useState<Cost[]>([
     { name: "Materialkosten", amount: 0, category: "Material" },
-    { name: "Arbeitszeit (MFA)", amount: 0, category: "Labor" },
   ])
 
   const [scenarios, setScenarios] = useState<PricingScenario[]>([
@@ -107,10 +113,22 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
     setVariableCosts(variableCosts.filter((_, i) => i !== index))
   }
 
+  // Calculate labor costs from time inputs
+  const calculateMfaCost = () => (mfaMinutes / 60) * mfaHourlyRate
+  const calculateArztCost = () => (arztMinutes / 60) * arztHourlyRate
+  
+  // Calculate Honorarstundensatz: Price * 60 / arztMinutes
+  const calculateHonorarStundensatz = (price: number) => {
+    if (arztMinutes <= 0) return 0
+    return (price * 60) / arztMinutes
+  }
+
   const calculateTotals = () => {
     const totalOneTime = oneTimeCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
-    const totalVariable = variableCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
-    return { totalOneTime, totalVariable }
+    const materialCosts = variableCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
+    const laborCosts = calculateMfaCost() + calculateArztCost()
+    const totalVariable = materialCosts + laborCosts
+    return { totalOneTime, totalVariable, materialCosts, laborCosts }
   }
 
   const calculateBreakEven = (scenario: PricingScenario, totalOneTime: number, totalVariable: number) => {
@@ -148,6 +166,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
         const monthlyProfit = scenario.expected_monthly_demand * (scenario.price - totalVariable)
         const yearlyProfit = monthlyProfit * 12
         const roi = totalOneTime > 0 ? (yearlyProfit / totalOneTime) * 100 : 0
+        const honorarStundensatz = calculateHonorarStundensatz(scenario.price)
 
         return {
           ...scenario,
@@ -155,6 +174,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
           monthlyProfit,
           yearlyProfit,
           roi,
+          honorarStundensatz,
         }
       })
 
@@ -200,7 +220,11 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
         service_description: serviceDescription,
         category,
         one_time_costs: oneTimeCosts,
-        variable_costs: variableCosts,
+        variable_costs: [
+          ...variableCosts,
+          { name: "Arbeitszeit (MFA)", amount: calculateMfaCost(), category: "Labor", minutes: mfaMinutes, hourlyRate: mfaHourlyRate },
+          { name: "Arztzeit", amount: calculateArztCost(), category: "Labor", minutes: arztMinutes, hourlyRate: arztHourlyRate },
+        ],
         total_one_time_cost: totalOneTime,
         total_variable_cost: totalVariable,
         pricing_scenarios: scenarioAnalysis,
@@ -209,6 +233,8 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
         recommendation,
         break_even_point: Math.round(avgBreakEven),
         status: "analyzed",
+        arzt_minutes: arztMinutes,
+        honorar_goal: honorarGoal,
       })
 
       toast({
@@ -347,7 +373,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
               {variableCosts.map((cost, index) => (
                 <div key={index} className="flex gap-2 items-center">
                   <Input
-                    placeholder="Kostenart (z.B. Material, Arbeitszeit)"
+                    placeholder="Kostenart (z.B. Material)"
                     value={cost.name}
                     onChange={(e) => {
                       const updated = [...variableCosts]
@@ -383,7 +409,83 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
                   </Button>
                 </div>
               ))}
-              <p className="text-sm font-medium">Gesamt: {calculateTotals().totalVariable.toFixed(2)} € pro Leistung</p>
+
+              {/* MFA Time Input */}
+              <div className="flex gap-2 items-center">
+                <span className="flex-1 text-sm font-medium">Arbeitszeit (MFA)</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Minuten"
+                    value={mfaMinutes || ""}
+                    onChange={(e) => setMfaMinutes(Math.max(0, Number.parseInt(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                  />
+                  <span className="text-sm text-muted-foreground">Min</span>
+                  <Input
+                    type="number"
+                    placeholder="Stundensatz"
+                    value={mfaHourlyRate || ""}
+                    onChange={(e) => setMfaHourlyRate(Math.max(0, Number.parseFloat(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                    step="0.01"
+                  />
+                  <span className="text-sm text-muted-foreground">€/Std</span>
+                </div>
+                <span className="w-24 text-right text-sm font-medium">{calculateMfaCost().toFixed(2)} €</span>
+              </div>
+
+              {/* Arzt Time Input */}
+              <div className="flex gap-2 items-center">
+                <span className="flex-1 text-sm font-medium">Arztzeit</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Minuten"
+                    value={arztMinutes || ""}
+                    onChange={(e) => setArztMinutes(Math.max(0, Number.parseInt(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                  />
+                  <span className="text-sm text-muted-foreground">Min</span>
+                  <Input
+                    type="number"
+                    placeholder="Stundensatz"
+                    value={arztHourlyRate || ""}
+                    onChange={(e) => setArztHourlyRate(Math.max(0, Number.parseFloat(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                    step="0.01"
+                  />
+                  <span className="text-sm text-muted-foreground">€/Std</span>
+                </div>
+                <span className="w-24 text-right text-sm font-medium">{calculateArztCost().toFixed(2)} €</span>
+              </div>
+
+              {/* Honorar Goal Input */}
+              <div className="flex gap-2 items-center pt-2 border-t border-dashed">
+                <span className="flex-1 text-sm font-medium">Ziel Honorarstundensatz (SZL)</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Ziel"
+                    value={honorarGoal || ""}
+                    onChange={(e) => setHonorarGoal(Math.max(0, Number.parseFloat(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                    step="1"
+                  />
+                  <span className="text-sm text-muted-foreground">€/Std</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t space-y-1">
+                <p className="text-sm text-muted-foreground">Materialkosten: {calculateTotals().materialCosts.toFixed(2)} €</p>
+                <p className="text-sm text-muted-foreground">Personalkosten: {calculateTotals().laborCosts.toFixed(2)} €</p>
+                <p className="text-sm font-medium">Gesamt: {calculateTotals().totalVariable.toFixed(2)} € pro Leistung</p>
+              </div>
             </div>
           </TabsContent>
 

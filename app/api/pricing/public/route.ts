@@ -8,12 +8,14 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // Fetch active subscription plans
+    // Fetch active subscription plans including old prices for strike-through display
     const { data: plans, error } = await supabase
       .from("subscription_plans")
-      .select("id, name, description, price_monthly, price_yearly, old_price_monthly, old_price_yearly, features")
+      .select("id, name, description, price_monthly, price_yearly, old_price_monthly, old_price_yearly, features, display_order, limits")
       .eq("is_active", true)
       .order("display_order", { ascending: true })
+
+    console.log("[v0] subscription_plans query result:", { plans, error })
 
     if (error) throw error
 
@@ -45,15 +47,23 @@ export async function GET() {
     const annualDiscountPercentage = settings?.value ? Number.parseInt(settings.value) : 20
 
     // Format plans for landing page
-    const formattedPlans = sortedPlans.map((plan) => ({
-      name: plan.name,
-      price_monthly: plan.price_monthly,
-      price_yearly: plan.price_yearly,
-      old_price_monthly: plan.old_price_monthly,
-      old_price_yearly: plan.old_price_yearly,
-      description: plan.description,
-      features: plan.features || [],
-    }))
+    const formattedPlans = sortedPlans.map((plan) => {
+      const limits = plan.limits || {}
+      return {
+        name: plan.name,
+        price_monthly: plan.price_monthly,
+        price_yearly: plan.price_yearly,
+        old_price_monthly: plan.old_price_monthly,
+        old_price_yearly: plan.old_price_yearly,
+        description: plan.description,
+        features: plan.features || [],
+        is_popular: plan.name === "Professional",
+        max_users: limits.max_users,
+        max_team_members: limits.max_team_members,
+      }
+    })
+
+    console.log("[v0] Returning formatted plans:", formattedPlans.length, "plans")
 
     return NextResponse.json({
       plans: formattedPlans,

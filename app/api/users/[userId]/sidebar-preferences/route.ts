@@ -53,8 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             ],
             expanded_items: data.expanded_items || {},
             is_collapsed: data.sidebar_collapsed || false,
-            // Note: favorites and collapsed_sections don't exist in DB, return empty arrays for client compatibility
-            favorites: [],
+            favorites: data.favorites || [],
             collapsed_sections: [],
           }
         : {
@@ -91,8 +90,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const body = await request.json()
-    const { practice_id, expanded_groups, expanded_items, is_collapsed } = body
-    // Note: favorites and collapsed_sections are ignored as they don't exist in DB
+    const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites } = body
 
     const effectivePracticeId = String(practice_id || "1")
 
@@ -112,6 +110,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (expanded_items !== undefined) updateData.expanded_items = expanded_items
       // Map is_collapsed to sidebar_collapsed (the actual DB column name)
       if (is_collapsed !== undefined) updateData.sidebar_collapsed = is_collapsed
+      if (favorites !== undefined) updateData.favorites = favorites
 
       result = await adminClient
         .from("user_sidebar_preferences")

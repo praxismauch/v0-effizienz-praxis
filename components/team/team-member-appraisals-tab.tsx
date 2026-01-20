@@ -199,14 +199,14 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
             action,
             memberName,
             formData,
-            skills: skills.map((s) => ({
+            skills: skills?.filter(Boolean).map((s) => ({
               // Include skills in AI context
               name: s.name,
               category: s.category,
               currentLevel: s.current_level,
               targetLevel: s.target_level,
               gap: (s.target_level ?? 3) - (s.current_level ?? 0),
-            })),
+            })) || [],
             ...context,
           }),
         })
@@ -1373,10 +1373,10 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                               }}
                             />
                             <Select
-                              value={item.skill_id || ""}
+                              value={item.skill_id || "no_skill"}
                               onValueChange={(v) => {
                                 const updated = [...(formData.development_plan || [])]
-                                updated[idx] = { ...updated[idx], skill_id: v === "" ? undefined : v }
+                                updated[idx] = { ...updated[idx], skill_id: v === "no_skill" ? undefined : v }
                                 setFormData((prev) => ({ ...prev, development_plan: updated }))
                               }}
                             >
@@ -1384,8 +1384,8 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
                                 <SelectValue placeholder="Verknüpfter Skill" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Kein Skill</SelectItem>
-                                {skills.map((skill) => (
+                                <SelectItem value="no_skill">Kein Skill</SelectItem>
+                                {skills?.filter(Boolean).map((skill) => (
                                   <SelectItem key={skill.id} value={skill.id}>
                                     {skill.name}
                                   </SelectItem>

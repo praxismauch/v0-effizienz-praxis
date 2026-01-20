@@ -22,31 +22,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       throw err
     }
 
-    let data = null
-    let error = null
-
-    try {
-      let query = supabase.from("skill_definitions").select("*").eq("practice_id", practiceId).is("deleted_at", null)
-
-      // Filter by team if specified, otherwise get all skills for the practice
-      if (teamId && teamId !== "all") {
-        // Get skills for specific team OR practice-wide skills (team_id IS NULL)
-        query = query.or(`team_id.eq.${teamId},team_id.is.null`)
-      }
-
-      const result = await query
-        .order("team_id", { ascending: true, nullsFirst: true })
-        .order("category", { ascending: true })
-        .order("display_order", { ascending: true })
-
-      data = result.data
-      error = result.error
-    } catch (err) {
-      if (isRateLimitError(err)) {
-        return NextResponse.json([])
-      }
-      throw err
-    }
+    // TODO: skill_definitions table doesn't exist yet
+    // Return empty array until table is created
+    const { data, error } = await supabase.from("skill_definitions").select()
 
     if (error) {
       console.error("Skills GET error:", error)

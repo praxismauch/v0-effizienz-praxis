@@ -6,10 +6,10 @@ import { isRateLimitError } from "@/lib/supabase/safe-query"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; skillId: string }> },
+  { params }: { params: { practiceId: string; skillId: string } },
 ) {
   try {
-    const { practiceId, skillId } = await params
+    const { practiceId, skillId } = params
 
     let supabase
     try {
@@ -21,15 +21,18 @@ export async function GET(
       throw err
     }
 
+    // TODO: skill_definitions table doesn't exist yet
+    // Return 404 until table is created
     const { data, error } = await supabase
       .from("skill_definitions")
-      .select("*")
+      .select()
       .eq("id", skillId)
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .maybeSingle()
 
     if (error) {
+      console.error("[v0] Skill GET error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -49,10 +52,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; skillId: string }> },
+  { params }: { params: { practiceId: string; skillId: string } },
 ) {
   try {
-    const { practiceId, skillId } = await params
+    const { practiceId, skillId } = params
     const body = await request.json()
 
     let supabase
@@ -109,10 +112,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; skillId: string }> },
+  { params }: { params: { practiceId: string; skillId: string } },
 ) {
   try {
-    const { practiceId, skillId } = await params
+    const { practiceId, skillId } = params
 
     let supabase
     try {

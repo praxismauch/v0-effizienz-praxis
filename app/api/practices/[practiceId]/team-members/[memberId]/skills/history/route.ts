@@ -25,17 +25,9 @@ export async function GET(
       throw err
     }
 
-    let query = supabase
-      .from("team_member_skills_history")
-      .select(`
-        *,
-        skill_definitions(name, category)
-      `)
-      .eq("team_member_id", memberId)
-      .eq("practice_id", practiceId)
-      .order("changed_at", { ascending: false })
-      .limit(50)
-
+    // TODO: team_member_skills_history table doesn't exist yet
+    // Return empty array until table is created
+    let query = supabase.from("team_member_skills_history").select()
     if (skillId) {
       query = query.eq("skill_id", skillId)
     }

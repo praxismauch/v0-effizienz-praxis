@@ -114,8 +114,17 @@ function LoginForm() {
 
       setStatus("Erfolgreich angemeldet! Weiterleitung...")
       
-      // Direct redirect after successful login - don't rely on onAuthStateChange
-      router.push(redirectTo)
+      // Wait for session cookies to be fully set before redirecting
+      // This is necessary for deployed environments where cookie propagation may take longer
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      
+      // Use window.location for a full page reload to ensure cookies are read correctly
+      // This ensures the middleware reads the freshly set cookies
+      if (typeof window !== "undefined") {
+        window.location.href = redirectTo
+      } else {
+        router.replace(redirectTo)
+      }
     } catch (error: any) {
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.message) {

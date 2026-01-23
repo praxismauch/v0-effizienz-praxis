@@ -14,6 +14,40 @@ interface Message {
   id: string
   role: "user" | "assistant"
   content: string
+  isStreaming?: boolean
+}
+
+// Typewriter effect component for animated text display
+function TypewriterText({ content, onComplete }: { content: string; onComplete?: () => void }) {
+  const [displayedContent, setDisplayedContent] = useState("")
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    if (currentIndex < content.length) {
+      // Variable speed: faster for spaces, slower for punctuation
+      const char = content[currentIndex]
+      const delay = char === " " ? 10 : char.match(/[.,!?]/) ? 80 : 20
+
+      const timer = setTimeout(() => {
+        setDisplayedContent((prev) => prev + char)
+        setCurrentIndex((prev) => prev + 1)
+      }, delay)
+
+      return () => clearTimeout(timer)
+    } else if (onComplete && currentIndex === content.length && content.length > 0) {
+      onComplete()
+    }
+  }, [currentIndex, content, onComplete])
+
+  // Reset when content changes significantly (new message)
+  useEffect(() => {
+    if (content.length < displayedContent.length) {
+      setDisplayedContent("")
+      setCurrentIndex(0)
+    }
+  }, [content, displayedContent.length])
+
+  return <>{displayedContent}<span className="animate-pulse">|</span></>
 }
 
 export function LandingPageChatbot() {
@@ -58,6 +92,7 @@ export function LandingPageChatbot() {
       id: (Date.now() + 1).toString(),
       role: "assistant",
       content: "",
+      isStreaming: true,
     }
 
     setMessages((prev) => [...prev, userMessage, assistantMessage])
@@ -96,15 +131,14 @@ export function LandingPageChatbot() {
         setMessages((prev) => prev.map((m) => (m.id === assistantMessage.id ? { ...m, content: fullText } : m)))
       }
 
-      if (!fullText.trim()) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMessage.id
-              ? { ...m, content: "Entschuldigung, ich konnte keine Antwort generieren." }
-              : m,
-          ),
-        )
-      }
+      // Mark streaming as complete
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMessage.id
+            ? { ...m, isStreaming: false, content: fullText.trim() || "Entschuldigung, ich konnte keine Antwort generieren." }
+            : m,
+        ),
+      )
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Ein unbekannter Fehler ist aufgetreten."
       setMessages((prev) =>

@@ -9,7 +9,7 @@ export function useTimeTrackingStatus(practiceId: string | null, userId: string 
     practiceId && userId ? `/api/practices/${practiceId}/time/current-status?userId=${userId}` : null,
     fetcher,
     {
-      refreshInterval: 30000, // Refresh every 30 seconds
+      refreshInterval: 60000, // Refresh every 60 seconds (1 minute)
       revalidateOnFocus: true,
     }
   )
@@ -30,7 +30,7 @@ export function useTeamLiveView(practiceId: string | null) {
     practiceId ? `/api/practices/${practiceId}/time/team-live` : null,
     fetcher,
     {
-      refreshInterval: 30000, // Refresh every 30 seconds
+      refreshInterval: 60000, // Refresh every 60 seconds (1 minute)
       revalidateOnFocus: true,
     }
   )
@@ -192,51 +192,87 @@ export function useCorrectionRequests(practiceId: string | null) {
 // Hook for time tracking actions
 export function useTimeActions(practiceId: string | null, userId: string | undefined) {
   const clockIn = async (location: string, comment?: string) => {
-    if (!practiceId || !userId) throw new Error("Missing practiceId or userId")
+    if (!practiceId || !userId) {
+      return { success: false, error: "Missing practiceId or userId" }
+    }
     
-    const res = await fetch(`/api/practices/${practiceId}/time/stamps`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, action: "clock_in", location, comment }),
-    })
-    if (!res.ok) throw new Error("Failed to clock in")
-    return res.json()
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/time/stamps`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, action: "clock_in", location, comment }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        return { success: false, error: data.error || "Failed to clock in" }
+      }
+      return { success: true, ...data }
+    } catch (error: any) {
+      return { success: false, error: error.message || "Failed to clock in" }
+    }
   }
 
-  const clockOut = async (comment?: string) => {
-    if (!practiceId || !userId) throw new Error("Missing practiceId or userId")
+  const clockOut = async (blockId?: string, comment?: string) => {
+    if (!practiceId || !userId) {
+      return { success: false, error: "Missing practiceId or userId" }
+    }
     
-    const res = await fetch(`/api/practices/${practiceId}/time/stamps`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, action: "clock_out", comment }),
-    })
-    if (!res.ok) throw new Error("Failed to clock out")
-    return res.json()
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/time/stamps`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, action: "clock_out", comment }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        return { success: false, error: data.error || "Failed to clock out" }
+      }
+      return { success: true, ...data }
+    } catch (error: any) {
+      return { success: false, error: error.message || "Failed to clock out" }
+    }
   }
 
-  const startBreak = async () => {
-    if (!practiceId || !userId) throw new Error("Missing practiceId or userId")
+  const startBreak = async (blockId?: string) => {
+    if (!practiceId || !userId) {
+      return { success: false, error: "Missing practiceId or userId" }
+    }
     
-    const res = await fetch(`/api/practices/${practiceId}/time/breaks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId }),
-    })
-    if (!res.ok) throw new Error("Failed to start break")
-    return res.json()
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/time/breaks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, block_id: blockId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        return { success: false, error: data.error || "Failed to start break" }
+      }
+      return { success: true, ...data }
+    } catch (error: any) {
+      return { success: false, error: error.message || "Failed to start break" }
+    }
   }
 
   const endBreak = async (breakId: string) => {
-    if (!practiceId || !userId) throw new Error("Missing practiceId or userId")
+    if (!practiceId || !userId) {
+      return { success: false, error: "Missing practiceId or userId" }
+    }
     
-    const res = await fetch(`/api/practices/${practiceId}/time/breaks/${breakId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ end_time: new Date().toISOString() }),
-    })
-    if (!res.ok) throw new Error("Failed to end break")
-    return res.json()
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/time/breaks/${breakId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ end_time: new Date().toISOString() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        return { success: false, error: data.error || "Failed to end break" }
+      }
+      return { success: true, ...data }
+    } catch (error: any) {
+      return { success: false, error: error.message || "Failed to end break" }
+    }
   }
 
   return { clockIn, clockOut, startBreak, endBreak }
@@ -257,5 +293,16 @@ export function usePlausibilityIssues(practiceId: string | null) {
     isLoading,
     error,
     mutate,
+  }
+}
+
+// Main hook combining all time tracking functionality
+export function useTimeTracking(practiceId: string | null, userId: string | undefined) {
+  const status = useTimeTrackingStatus(practiceId, userId)
+  const actions = useTimeActions(practiceId, userId)
+  
+  return {
+    ...status,
+    ...actions,
   }
 }

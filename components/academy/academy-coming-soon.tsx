@@ -12,17 +12,35 @@ export function AcademyComingSoon() {
   const [email, setEmail] = useState("")
   const [subscribed, setSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError("")
 
-    // TODO: Add email subscription API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const response = await fetch("/api/academy-waitlist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      })
 
-    setSubscribed(true)
-    setIsLoading(false)
-    setEmail("")
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Ein Fehler ist aufgetreten")
+      }
+
+      setSubscribed(true)
+      setEmail("")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -132,22 +150,27 @@ export function AcademyComingSoon() {
                     <span className="font-medium">Vielen Dank! Wir melden uns bald.</span>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md mx-auto">
-                    <div className="relative flex-1">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="Ihre E-Mail-Adresse"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="pl-10"
-                      />
-                    </div>
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? "Wird gesendet..." : "Benachrichtigen"}
-                    </Button>
-                  </form>
+                  <div className="space-y-2">
+                    <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md mx-auto">
+                      <div className="relative flex-1">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          placeholder="Ihre E-Mail-Adresse"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="pl-10"
+                        />
+                      </div>
+                      <Button type="submit" disabled={isLoading}>
+                        {isLoading ? "Wird gesendet..." : "Benachrichtigen"}
+                      </Button>
+                    </form>
+                    {error && (
+                      <p className="text-sm text-destructive text-center">{error}</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

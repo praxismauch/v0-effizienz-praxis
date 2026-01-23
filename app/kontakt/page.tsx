@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail, Phone, MapPin, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { LandingPageHeader } from "@/components/landing-page-header"
-import { LandingPageFooter } from "@/components/landing-page-footer"
+import { LandingPageLayout } from "@/components/landing-page-layout"
+import { LandingPageFooter } from "@/components/landing-page-footer" // Import LandingPageFooter
 import { useEffect } from "react"
 
 export default function KontaktPage() {
@@ -15,27 +15,28 @@ export default function KontaktPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <LandingPageHeader />
-
+    <LandingPageLayout>
       {/* Hero */}
-      <section className="container py-12 md:py-20">
-        <Link href="/" className="inline-flex items-center gap-2 mb-8">
-          <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Zurück zur Startseite
-          </Button>
-        </Link>
+      <section className="py-12 md:py-20">
+        <div className="container">
+          <div className="max-w-5xl mx-auto">
+            <Link href="/" className="inline-flex items-center gap-2 mb-8">
+              <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+                Zurück zur Startseite
+              </Button>
+            </Link>
 
-        <div className="max-w-5xl mx-auto text-center space-y-6">
-          <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">Kontakt</div>
-          <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-balance leading-tight">
-            Wir sind für Sie da
-          </h1>
-          <p className="text-lg text-muted-foreground text-pretty max-w-[700px] mx-auto">
-            Haben Sie Fragen? Unser Team hilft Ihnen gerne weiter.
-          </p>
+            <div className="text-center space-y-6">
+              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">Kontakt</div>
+              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-balance leading-tight">
+                Wir sind für Sie da
+              </h1>
+              <p className="text-lg text-muted-foreground text-pretty max-w-[700px] mx-auto">
+                Haben Sie Fragen? Unser Team hilft Ihnen gerne weiter.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -136,6 +137,6 @@ export default function KontaktPage() {
 
       {/* Footer */}
       <LandingPageFooter />
-    </div>
+    </LandingPageLayout>
   )
 }

@@ -28,6 +28,25 @@ interface PracticeType {
   name: string
 }
 
+const BUNDESLAENDER = [
+  "Baden-Württemberg",
+  "Bayern",
+  "Berlin",
+  "Brandenburg",
+  "Bremen",
+  "Hamburg",
+  "Hessen",
+  "Mecklenburg-Vorpommern",
+  "Niedersachsen",
+  "Nordrhein-Westfalen",
+  "Rheinland-Pfalz",
+  "Saarland",
+  "Sachsen",
+  "Sachsen-Anhalt",
+  "Schleswig-Holstein",
+  "Thüringen",
+]
+
 export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialogProps) {
   const [practiceTypes, setPracticeTypes] = useState<PracticeType[]>([])
   const [isLoadingTypes, setIsLoadingTypes] = useState(true)
@@ -36,6 +55,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
   const [formData, setFormData] = useState({
     name: "",
     type: "",
+    bundesland: "",
     address: {
       street: "",
       city: "",

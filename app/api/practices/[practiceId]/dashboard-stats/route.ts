@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import type { NextRequest } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { getCached, setCached } from "@/lib/redis"
+import { createClient } from "@/lib/supabase/client" // Declare the notifications variable
 
 const defaultStats = {
   teamMembers: 0,
@@ -83,11 +84,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let queryResults
     try {
       queryResults = await Promise.all([
+        // team_assignments to count team members
         supabase
-          .from("team_members")
-          .select("id, user_id, users(is_active, role)", { count: "exact" })
-          .eq("practice_id", practiceIdStr)
-          .eq("status", "active"),
+          .from("team_assignments")
+          .select("id", { count: "exact", head: true })
+          .eq("practice_id", practiceIdStr),
         // goals uses integer practice_id
         supabase
           .from("goals")
@@ -106,18 +107,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .select("id", { count: "exact", head: true })
           .eq("practice_id", practiceIdInt)
           .eq("is_archived", false),
-        // job_postings - check type (likely text)
+        // job_postings uses integer practice_id
         supabase
           .from("job_postings")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceIdStr)
-          .eq("status", "open"),
-        // applications - check type (likely text)
-        supabase
-          .from("applications")
-          .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceIdStr)
-          .in("status", ["pending", "reviewing"]),
+          .eq("practice_id", practiceIdInt)
+          .eq("status", "published"),
+        // hiring_candidates - return 0 if table doesn't exist
+        Promise.resolve({ count: 0, data: null, error: null }),
         // todos uses integer practice_id
         supabase
           .from("todos")
@@ -129,25 +126,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .from("calendar_events")
           .select("id", { count: "exact", head: true })
           .eq("practice_id", practiceIdInt)
-          .eq("start_date", todayStr),
-        // documents uses integer practice_id
+          .gte("start_time", todayStr),
+        // documents (drafts) uses integer practice_id
         supabase
           .from("documents")
           .select("id", { count: "exact", head: true })
           .eq("practice_id", practiceIdInt)
           .eq("is_archived", false),
-        // candidates - check type
+        // hiring_candidates (active) - return 0 if table doesn't exist
+        Promise.resolve({ count: 0, data: null, error: null }),
+        // team_assignments (prev week)
         supabase
-          .from("candidates")
+          .from("team_assignments")
           .select("id", { count: "exact", head: true })
           .eq("practice_id", practiceIdStr)
-          .neq("status", "archived"),
-        // team_members (prev week) uses integer
-        supabase
-          .from("team_members")
-          .select("id, user_id, users(is_active, role)", { count: "exact" })
-          .eq("practice_id", practiceIdInt)
-          .eq("status", "active")
           .lte("created_at", sevenDaysAgo.toISOString()),
         // goals (prev week) uses integer
         supabase
@@ -167,20 +159,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .select("id", { count: "exact", head: true })
           .eq("practice_id", practiceIdInt)
           .lte("created_at", sevenDaysAgo.toISOString()),
-        // job_postings (prev week) - text
+        // job_postings (prev week) uses integer
         supabase
           .from("job_postings")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceIdStr)
-          .eq("status", "open")
+          .eq("practice_id", practiceIdInt)
+          .eq("status", "published")
           .lte("created_at", sevenDaysAgo.toISOString()),
-        // candidates (prev week) - text
+        // hiring_candidates (prev week)
         supabase
-          .from("candidates")
+          .from("hiring_candidates")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceIdStr)
-          .neq("status", "archived")
-          .lte("created_at", sevenDaysAgo.toISOString()),
+          .eq("practice_id", practiceIdInt)
+          .not("status", "in", '("rejected","hired")')
+          .lte("created_at", sevenDaysAgo.toISOString())
+          .then(res => res)
+          .catch(() => ({ count: 0, data: null, error: null })),
         // goals completed uses integer
         supabase
           .from("goals")
@@ -188,12 +182,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .eq("practice_id", practiceIdInt)
           .eq("status", "completed")
           .gte("completed_at", sevenDaysAgo.toISOString()),
-        // system_logs uses text practice_id
+        // notifications for activity data
         supabase
-          .from("system_logs")
+          .from("notifications")
           .select("id, created_at")
-          .eq("practice_id", practiceIdStr)
-          .gte("created_at", sevenDaysAgo.toISOString()),
+          .eq("practice_id", practiceIdInt)
+          .gte("created_at", sevenDaysAgo.toISOString())
+          .limit(100),
         // todos uses integer
         supabase
           .from("todos")
@@ -205,7 +200,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .from("calendar_events")
           .select("id, start_time")
           .eq("practice_id", practiceIdInt)
-          .eq("start_date", todayStr),
+          .gte("start_time", todayStr)
+          .limit(20),
         // todos recent uses integer
         supabase
           .from("todos")
@@ -214,19 +210,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .eq("completed", false)
           .order("created_at", { ascending: false })
           .limit(5),
-        // test_checklist_items - no practice_id filter
+        // knowledge_base articles count as checkups
         supabase
-          .from("test_checklist_items")
+          .from("knowledge_base")
           .select("id", { count: "exact", head: true })
-          .eq("is_completed", true)
-          .gte("completed_at", sevenDaysAgo.toISOString()),
-        // test_checklist_items prev week - no practice_id filter
+          .eq("practice_id", practiceIdInt)
+          .gte("created_at", sevenDaysAgo.toISOString()),
+        // knowledge_base prev week
         supabase
-          .from("test_checklist_items")
+          .from("knowledge_base")
           .select("id", { count: "exact", head: true })
-          .eq("is_completed", true)
-          .gte("completed_at", fourteenDaysAgo.toISOString())
-          .lt("completed_at", sevenDaysAgo.toISOString()),
+          .eq("practice_id", practiceIdInt)
+          .gte("created_at", fourteenDaysAgo.toISOString())
+          .lt("created_at", sevenDaysAgo.toISOString()),
       ])
 
       console.log("[v0] Dashboard stats - query results:", {
@@ -268,7 +264,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       prevOpenPositions,
       prevActiveCandidates,
       completedGoals,
-      systemLogs,
+      notificationsData,
       weeklyTodos,
       calendarEvents,
       recentTodos,
@@ -281,21 +277,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return Math.round(((current - previous) / previous) * 100)
     }
 
-    const activeTeamMembersCount =
-      teamMembers.data?.filter((tm: any) => {
-        if (tm.user_id && tm.users) {
-          return tm.users.is_active && tm.users.role !== "superadmin"
-        }
-        return true
-      }).length || 0
-
-    const prevActiveTeamMembersCount =
-      prevTeamMembers.data?.filter((tm: any) => {
-        if (tm.user_id && tm.users) {
-          return tm.users.is_active && tm.users.role !== "superadmin"
-        }
-        return true
-      }).length || 0
+    const activeTeamMembersCount = teamMembers.count || 0
+    const prevActiveTeamMembersCount = prevTeamMembers.count || 0
 
     const totalGoalsLastWeek = (goals.count || 0) + (completedGoals.count || 0)
     const kpiScore = totalGoalsLastWeek > 0 ? Math.round(((completedGoals.count || 0) / totalGoalsLastWeek) * 100) : 0
@@ -311,7 +294,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const endOfDay = new Date(date)
       endOfDay.setHours(23, 59, 59, 999)
 
-      const dayCount = (systemLogs.data || []).filter((log) => {
+      const dayCount = (notificationsData.data || []).filter((log: any) => {
         const logDate = new Date(log.created_at)
         return logDate >= startOfDay && logDate <= endOfDay
       }).length

@@ -194,12 +194,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "wellbeing",
       },
       {
-        name: t("sidebar.qualitaetszirkel", "Qualitätszirkel"),
-        href: "/qualitaetszirkel",
-        icon: CircleDot,
-        key: "qualitaetszirkel",
-      },
-      {
         name: t("sidebar.leitbild", "Leitbild"),
         href: "/leitbild",
         icon: Sparkles,
@@ -383,6 +377,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [missionStatement, setMissionStatement] = useState<string | null>(null)
   const [loadingMission, setLoadingMission] = useState(false)
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
+  const initialLoadDone = useRef(false)
+  const favoritesModifiedByUser = useRef(false)
 
   const isAdmin = isPracticeAdminRole(currentUser?.role) || currentUser?.role === "admin"
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true
@@ -392,7 +388,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
     const loadSidebarPreferences = async () => {
       const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
       if (!currentUser?.id) return
-
+      if (initialLoadDone.current) return
+      
       try {
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=${practiceId}`)
         if (response.ok) {
@@ -473,6 +470,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
         console.error("Error loading sidebar preferences:", error)
         setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
       } finally {
+        initialLoadDone.current = true
         setPreferencesLoaded(true)
       }
     }
@@ -505,11 +503,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   useEffect(() => {
     const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
-    if (!currentUser?.id || !preferencesLoaded) return
+    // Only save if user explicitly modified favorites (not on initial load)
+    if (!currentUser?.id || !preferencesLoaded || !favoritesModifiedByUser.current) return
 
     const saveFavorites = async () => {
       try {
-        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
+        const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -517,8 +516,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
             favorites: favorites,
           }),
         })
+        if (!response.ok) {
+          console.error("[v0] Failed to save favorites, status:", response.status)
+        }
       } catch (error) {
-        // Silently fail - not critical
+        console.error("[v0] Error saving favorites:", error)
       }
     }
 
@@ -622,6 +624,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
     const newFavorites = favorites.includes(href) ? favorites.filter((f) => f !== href) : [...favorites, href]
 
+    // Mark that user explicitly modified favorites so the useEffect will save them
+    favoritesModifiedByUser.current = true
     setFavorites(newFavorites)
   }
 

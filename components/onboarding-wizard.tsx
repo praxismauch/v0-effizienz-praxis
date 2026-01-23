@@ -261,18 +261,15 @@ export function OnboardingWizard() {
           </div>
 
           {/* Progress */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Fortschritt</span>
-              <span className="font-medium text-primary">
-                {currentStep + 1} von {steps.length}
-              </span>
-            </div>
-            <Progress value={progress} className="h-2" />
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="text-muted-foreground">Fortschritt</span>
+            <span className="font-medium text-primary">
+              {currentStep + 1} von {steps.length}
+            </span>
           </div>
 
           {/* Step indicators */}
-          <div className="flex items-center justify-between mt-4 gap-1">
+          <div className="flex items-center justify-between gap-1">
             {steps.map((step, index) => {
               const isActive = index === currentStep
               const isCompleted = step.completed || index < currentStep

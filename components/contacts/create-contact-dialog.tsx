@@ -44,6 +44,9 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateCon
     country: "Deutschland",
     category: "",
     notes: "",
+    contact_person: "",
+    direct_phone: "",
+    availability: "",
   })
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,6 +104,9 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateCon
         country: "Deutschland",
         category: "",
         notes: "",
+        contact_person: "",
+        direct_phone: "",
+        availability: "",
       })
     } catch (error: any) {
       console.error("[v0] Contact creation error:", error)

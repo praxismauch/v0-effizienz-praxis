@@ -404,4 +404,4 @@ function CalendarMenuBar({
   )
 }
 
-export default CalendarMenuBar
+export { CalendarMenuBar }

@@ -1,27 +1,16 @@
-import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+
+// Default cockpit card settings - table doesn't exist in database yet
+const DEFAULT_SETTINGS = [
+  { widget_id: "kpis", label: "KPIs", description: "Wichtige Kennzahlen", icon: "BarChart3", column_span: 2, row_span: 1, is_enabled_by_default: true, display_order: 1 },
+  { widget_id: "tasks", label: "Aufgaben", description: "Offene Aufgaben", icon: "CheckSquare", column_span: 1, row_span: 1, is_enabled_by_default: true, display_order: 2 },
+  { widget_id: "calendar", label: "Kalender", description: "Anstehende Termine", icon: "Calendar", column_span: 1, row_span: 1, is_enabled_by_default: true, display_order: 3 },
+  { widget_id: "team", label: "Team", description: "Teamübersicht", icon: "Users", column_span: 1, row_span: 1, is_enabled_by_default: true, display_order: 4 },
+  { widget_id: "documents", label: "Dokumente", description: "Neueste Dokumente", icon: "FileText", column_span: 1, row_span: 1, is_enabled_by_default: true, display_order: 5 },
+]
 
 // Public endpoint for users to get cockpit card settings
 export async function GET() {
-  try {
-    const supabase = await createClient()
-
-    const { data: settings, error } = await supabase
-      .from("cockpit_card_settings")
-      .select(
-        "widget_id, label, description, icon, column_span, row_span, min_height, is_enabled_by_default, display_order, card_style",
-      )
-      .order("display_order", { ascending: true })
-
-    if (error) {
-      console.error("Error fetching cockpit settings:", error)
-      // Return default settings if table doesn't exist
-      return NextResponse.json({ settings: [] })
-    }
-
-    return NextResponse.json({ settings: settings || [] })
-  } catch (error) {
-    console.error("Error in GET /api/cockpit-settings:", error)
-    return NextResponse.json({ settings: [] })
-  }
+  // Return default settings since cockpit_card_settings table doesn't exist
+  return NextResponse.json({ settings: DEFAULT_SETTINGS })
 }

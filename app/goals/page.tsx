@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import useSWR from "swr"
 import { AppLayout } from "@/components/app-layout"
 import { Card } from "@/components/ui/card"
@@ -64,7 +64,18 @@ export default function GoalsPage() {
   const [aiGeneratedGoalData, setAiGeneratedGoalData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("all")
   const [completionFilter, setCompletionFilter] = useState<"all" | "active" | "completed">("all")
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list")
+  const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("goals-view-mode")
+      if (saved === "list" || saved === "grid") return saved
+    }
+    return "list"
+  })
+
+  // Persist view mode to localStorage
+  useEffect(() => {
+    localStorage.setItem("goals-view-mode", viewMode)
+  }, [viewMode])
 
   const practiceId = currentPractice?.id?.toString()
 

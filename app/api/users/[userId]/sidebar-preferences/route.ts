@@ -28,6 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const effectivePracticeId = practiceId || "1"
 
+    // Use select * to avoid schema cache issues with specific columns
     const { data, error } = await adminClient
       .from("user_sidebar_preferences")
       .select("*")
@@ -40,21 +41,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Deduplicate expanded_groups if corrupted
+    const rawExpandedGroups = data?.expanded_groups || []
+    const expandedGroups = Array.isArray(rawExpandedGroups) 
+      ? [...new Set(rawExpandedGroups)] 
+      : ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"]
+
+    console.log("[v0] GET sidebar-preferences data:", JSON.stringify(data, null, 2))
+    console.log("[v0] Favorites from DB:", data?.favorites)
+
     return NextResponse.json({
       preferences: data
         ? {
-            expanded_groups: data.expanded_groups || [
-              "overview",
-              "planning",
-              "data",
-              "strategy",
-              "team-personal",
-              "praxis-einstellungen",
-            ],
+            expanded_groups: expandedGroups,
             expanded_items: data.expanded_items || {},
-            is_collapsed: data.sidebar_collapsed || false,
+            is_collapsed: data.is_collapsed || false,
             favorites: data.favorites || [],
-            collapsed_sections: [],
+            collapsed_sections: data.collapsed_sections || [],
           }
         : {
             expanded_groups: ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
@@ -108,9 +111,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
       if (expanded_groups !== undefined) updateData.expanded_groups = expanded_groups
       if (expanded_items !== undefined) updateData.expanded_items = expanded_items
-      // Map is_collapsed to sidebar_collapsed (the actual DB column name)
-      if (is_collapsed !== undefined) updateData.sidebar_collapsed = is_collapsed
+      if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
       if (favorites !== undefined) updateData.favorites = favorites
+      
+      console.log("[v0] Updating sidebar preferences with:", JSON.stringify(updateData, null, 2))
 
       result = await adminClient
         .from("user_sidebar_preferences")
@@ -134,7 +138,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             "praxis-einstellungen",
           ],
           expanded_items: expanded_items || {},
-          sidebar_collapsed: is_collapsed || false,
+          is_collapsed: is_collapsed || false,
+          favorites: favorites || [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -142,6 +147,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .single()
     }
 
+    console.log("[v0] POST sidebar-preferences result:", JSON.stringify(result, null, 2))
+    
     if (result.error) {
       console.error("[v0] Error saving sidebar preferences:", result.error)
       return NextResponse.json({ error: result.error.message }, { status: 500 })
@@ -150,8 +157,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const responseData = result.data
       ? {
           ...result.data,
-          is_collapsed: result.data.sidebar_collapsed,
-          favorites: [],
+          is_collapsed: result.data.sidebar_collapsed || false,
+          favorites: result.data.favorites || [],
           collapsed_sections: [],
         }
       : null

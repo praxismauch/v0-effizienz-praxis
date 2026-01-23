@@ -1,47 +1,11 @@
 import { NextResponse } from "next/server"
 import { createAdminClient, isUsingMockAdminClient } from "@/lib/supabase/server"
 
-export async function POST(request: Request) {
-  try {
-    if (isUsingMockAdminClient()) {
-      return NextResponse.json({ success: true }, { status: 200 })
-    }
-
-    const logEntry = await request.json()
-
-    if (!logEntry.level || !logEntry.message) {
-      return NextResponse.json({ success: true }, { status: 200 })
-    }
-
-    const supabase = await createAdminClient()
-
-    if (!supabase || typeof supabase.from !== "function") {
-      return NextResponse.json({ success: true }, { status: 200 })
-    }
-
-    try {
-      await supabase.from("system_logs").insert({
-        level: logEntry.level,
-        category: logEntry.category || "other",
-        message: logEntry.message,
-        details: logEntry.details || null,
-        user_id: logEntry.userId || null,
-        practice_id: logEntry.practiceId || null,
-        request_id: logEntry.requestId || null,
-        url: logEntry.url || null,
-        method: logEntry.method || null,
-        stack_trace: logEntry.stackTrace || null,
-        timestamp: logEntry.timestamp || new Date().toISOString(),
-      })
-    } catch {
-      // Silent fail - do nothing
-    }
-
-    return NextResponse.json({ success: true })
-  } catch {
-    // Silent fail - always return success
-    return NextResponse.json({ success: true }, { status: 200 })
-  }
+// Background logging is disabled to reduce database load
+// To re-enable, uncomment the database insert logic below
+export async function POST(_request: Request) {
+  // Logging disabled - return success immediately
+  return NextResponse.json({ success: true }, { status: 200 })
 }
 
 export async function GET(request: Request) {

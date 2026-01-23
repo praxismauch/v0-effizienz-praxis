@@ -15,30 +15,45 @@ export class FetchError extends Error {
 }
 
 /**
- * Default fetcher for SWR with error handling
+ * Default fetcher for SWR with error handling and retry logic for network errors
  */
-export async function swrFetcher<T>(url: string): Promise<T> {
-  const res = await fetch(url)
+export async function swrFetcher<T>(url: string, retries = 2): Promise<T> {
+  try {
+    const res = await fetch(url)
 
-  if (!res.ok) {
-    let errorInfo: unknown
-    try {
-      errorInfo = await res.json()
-    } catch {
-      errorInfo = { message: res.statusText }
+    // Retry on 502/503/504 gateway errors (transient network issues)
+    if ((res.status === 502 || res.status === 503 || res.status === 504) && retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+      return swrFetcher<T>(url, retries - 1)
     }
 
-    const error = new FetchError(
-      (errorInfo as { error?: string; message?: string })?.error ||
-        (errorInfo as { message?: string })?.message ||
-        `Fehler beim Laden der Daten (${res.status})`,
-      res.status,
-      errorInfo,
-    )
-    throw error
-  }
+    if (!res.ok) {
+      let errorInfo: unknown
+      try {
+        errorInfo = await res.json()
+      } catch {
+        errorInfo = { message: res.statusText }
+      }
 
-  return res.json()
+      const error = new FetchError(
+        (errorInfo as { error?: string; message?: string })?.error ||
+          (errorInfo as { message?: string })?.message ||
+          `Fehler beim Laden der Daten (${res.status})`,
+        res.status,
+        errorInfo,
+      )
+      throw error
+    }
+
+    return res.json()
+  } catch (err) {
+    // Retry on network errors (connection lost, etc.)
+    if (retries > 0 && err instanceof TypeError && err.message.includes('fetch')) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+      return swrFetcher<T>(url, retries - 1)
+    }
+    throw err
+  }
 }
 
 /**

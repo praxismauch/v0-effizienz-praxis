@@ -13,13 +13,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, Trash2, Loader2 } from "lucide-react"
+import { Plus, Trash2, Loader2, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { updateIgelAnalysis } from "@/hooks/use-igel"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
-import { useUser } from "@/hooks/use-user" // Import user hook
+import { useUser } from "@/contexts/user-context"
 
 interface EditIgelDialogProps {
   analysis: any
@@ -32,6 +32,8 @@ interface Cost {
   name: string
   amount: number
   category?: string
+  minutes?: number
+  hourlyRate?: number
 }
 
 interface PricingScenario {
@@ -43,6 +45,7 @@ interface PricingScenario {
   monthlyProfit?: number
   yearlyProfit?: number
   roi?: number
+  honorarStundensatz?: number
 }
 
 const IGEL_CATEGORIES = [
@@ -59,8 +62,9 @@ const IGEL_CATEGORIES = [
 
 export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: EditIgelDialogProps) {
   const [loading, setLoading] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
   const { toast } = useToast()
-  const { user } = useUser() // Declare user variable
+  const { currentUser: user } = useUser()
 
   // Service Info
   const [serviceName, setServiceName] = useState("")
@@ -71,6 +75,15 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
   const [oneTimeCosts, setOneTimeCosts] = useState<Cost[]>([])
   const [variableCosts, setVariableCosts] = useState<Cost[]>([])
 
+  // Time-based costs
+  const [mfaMinutes, setMfaMinutes] = useState(0)
+  const [mfaHourlyRate, setMfaHourlyRate] = useState(30)
+  const [arztMinutes, setArztMinutes] = useState(0)
+  const [arztHourlyRate, setArztHourlyRate] = useState(250)
+  const [roomMinutes, setRoomMinutes] = useState(0)
+  const [roomHourlyRate, setRoomHourlyRate] = useState(50)
+  const [honorarGoal, setHonorarGoal] = useState(500)
+
   // Pricing Scenarios
   const [scenarios, setScenarios] = useState<PricingScenario[]>([])
 
@@ -79,8 +92,34 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
       setServiceName(analysis.service_name || "")
       setServiceDescription(analysis.service_description || "")
       setCategory(analysis.category || "")
+      
+      // Filter out labor costs from variable costs (we'll handle them separately)
+      const nonLaborCosts = (analysis.variable_costs || []).filter(
+        (c: Cost) => c.category !== "Labor" && !c.name.includes("Arbeitszeit") && !c.name.includes("Arztzeit")
+      )
       setOneTimeCosts(analysis.one_time_costs || [{ name: "Geräteanschaffung", amount: 0 }])
-      setVariableCosts(analysis.variable_costs || [{ name: "Materialkosten", amount: 0 }])
+      setVariableCosts(nonLaborCosts.length > 0 ? nonLaborCosts : [{ name: "Materialkosten", amount: 0 }])
+      
+      // Extract MFA and Arzt time from variable_costs if present
+      const mfaCost = (analysis.variable_costs || []).find((c: Cost) => c.name.includes("Arbeitszeit") || c.name.includes("MFA"))
+      const arztCost = (analysis.variable_costs || []).find((c: Cost) => c.name.includes("Arztzeit"))
+      
+      if (mfaCost) {
+        setMfaMinutes(mfaCost.minutes || 0)
+        setMfaHourlyRate(mfaCost.hourlyRate || 30)
+      }
+      if (arztCost) {
+        setArztMinutes(arztCost.minutes || 0)
+        setArztHourlyRate(arztCost.hourlyRate || 250)
+      }
+      
+      // Use arzt_minutes from analysis if available
+      if (analysis.arzt_minutes) {
+        setArztMinutes(analysis.arzt_minutes)
+      }
+      
+      setHonorarGoal(analysis.honorar_goal || 500)
+      
       setScenarios(
         analysis.pricing_scenarios || [
           { name: "Konservativ", price: 0, expected_monthly_demand: 0, notes: "" },
@@ -107,10 +146,24 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
     setVariableCosts(variableCosts.filter((_, i) => i !== index))
   }
 
+  // Calculate labor and room costs from time inputs
+  const calculateMfaCost = () => (mfaMinutes / 60) * mfaHourlyRate
+  const calculateArztCost = () => (arztMinutes / 60) * arztHourlyRate
+  const calculateRoomCost = () => (roomMinutes / 60) * roomHourlyRate
+  
+  // Calculate Honorarstundensatz: Price * 60 / arztMinutes
+  const calculateHonorarStundensatz = (price: number) => {
+    if (arztMinutes <= 0) return 0
+    return (price * 60) / arztMinutes
+  }
+
   const calculateTotals = () => {
     const totalOneTime = oneTimeCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
-    const totalVariable = variableCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
-    return { totalOneTime, totalVariable }
+    const materialCosts = variableCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
+    const laborCosts = calculateMfaCost() + calculateArztCost()
+    const roomCosts = calculateRoomCost()
+    const totalVariable = materialCosts + laborCosts + roomCosts
+    return { totalOneTime, totalVariable, materialCosts, laborCosts, roomCosts }
   }
 
   const calculateBreakEven = (scenario: PricingScenario, totalOneTime: number, totalVariable: number) => {
@@ -129,17 +182,30 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
       return
     }
 
+    if (!user?.practice_id) {
+      toast({
+        title: "Fehler",
+        description: "Keine Praxis gefunden. Bitte laden Sie die Seite neu.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setLoading(true)
 
     try {
       const { totalOneTime, totalVariable } = calculateTotals()
 
+      // Only include scenarios that have a price set
+      const validScenarios = scenarios.filter((s) => s.price > 0)
+
       // Recalculate profitability for each scenario
-      const scenarioAnalysis = scenarios.map((scenario) => {
+      const scenarioAnalysis = validScenarios.map((scenario) => {
         const breakEven = calculateBreakEven(scenario, totalOneTime, totalVariable)
         const monthlyProfit = scenario.expected_monthly_demand * (scenario.price - totalVariable)
         const yearlyProfit = monthlyProfit * 12
         const roi = totalOneTime > 0 ? (yearlyProfit / totalOneTime) * 100 : 0
+        const honorarStundensatz = calculateHonorarStundensatz(scenario.price)
 
         return {
           ...scenario,
@@ -147,14 +213,15 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
           monthlyProfit,
           yearlyProfit,
           roi,
+          honorarStundensatz,
         }
       })
 
       // Recalculate profitability score
-      const avgROI = scenarioAnalysis.reduce((sum, s) => sum + s.roi, 0) / scenarios.length
-      const avgBreakEven =
+      const avgROI = validScenarios.length > 0 ? scenarioAnalysis.reduce((sum, s) => sum + s.roi, 0) / validScenarios.length : 0
+      const avgBreakEven = validScenarios.length > 0 ?
         scenarioAnalysis.reduce((sum, s) => sum + (s.breakEven === Number.POSITIVE_INFINITY ? 999 : s.breakEven), 0) /
-        scenarios.length
+        validScenarios.length : 999
 
       let profitabilityScore = 50
       if (avgROI > 100) profitabilityScore += 30
@@ -171,22 +238,24 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
       if (profitabilityScore >= 70) recommendation = "Sehr empfehlenswert"
       else if (profitabilityScore >= 40) recommendation = "Bedingt empfehlenswert"
 
-      if (!user?.practice_id) {
-        throw new Error("Keine Praxis gefunden")
-      }
-
       await updateIgelAnalysis(user.practice_id, analysis.id, {
         service_name: serviceName,
         service_description: serviceDescription,
         category,
         one_time_costs: oneTimeCosts,
-        variable_costs: variableCosts,
+        variable_costs: [
+          ...variableCosts,
+          { name: "Arbeitszeit (MFA)", amount: calculateMfaCost(), category: "Labor", minutes: mfaMinutes, hourlyRate: mfaHourlyRate },
+          { name: "Arztzeit", amount: calculateArztCost(), category: "Labor", minutes: arztMinutes, hourlyRate: arztHourlyRate },
+        ],
         total_one_time_cost: totalOneTime,
         total_variable_cost: totalVariable,
         pricing_scenarios: scenarioAnalysis,
         profitability_score: profitabilityScore,
         recommendation,
         break_even_point: Math.round(avgBreakEven),
+        arzt_minutes: arztMinutes,
+        honorar_goal: honorarGoal,
       })
 
       toast({
@@ -209,7 +278,7 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Selbstzahlerleistung bearbeiten</DialogTitle>
           <DialogDescription>Aktualisieren Sie die Daten für diese Analyse</DialogDescription>
@@ -273,7 +342,7 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
               {oneTimeCosts.map((cost, index) => (
                 <div key={index} className="flex gap-2 items-center">
                   <Input
-                    placeholder="Kostenart"
+                    placeholder="Kostenart (z.B. Geräteanschaffung)"
                     value={cost.name}
                     onChange={(e) => {
                       const updated = [...oneTimeCosts]
@@ -323,7 +392,7 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
               {variableCosts.map((cost, index) => (
                 <div key={index} className="flex gap-2 items-center">
                   <Input
-                    placeholder="Kostenart"
+                    placeholder="Kostenart (z.B. Material)"
                     value={cost.name}
                     onChange={(e) => {
                       const updated = [...variableCosts]
@@ -359,71 +428,189 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
                   </Button>
                 </div>
               ))}
-              <p className="text-sm font-medium">Gesamt: {calculateTotals().totalVariable.toFixed(2)} € pro Leistung</p>
+
+              {/* MFA Time Input */}
+              <div className="flex gap-2 items-center">
+                <span className="flex-1 text-sm font-medium">Arbeitszeit (MFA)</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Minuten"
+                    value={mfaMinutes || ""}
+                    onChange={(e) => setMfaMinutes(Math.max(0, Number.parseInt(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                  />
+                  <span className="text-sm text-muted-foreground">Min</span>
+                  <Input
+                    type="number"
+                    placeholder="Stundensatz"
+                    value={mfaHourlyRate || ""}
+                    onChange={(e) => setMfaHourlyRate(Math.max(0, Number.parseFloat(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                    step="0.01"
+                  />
+                  <span className="text-sm text-muted-foreground">€/Std</span>
+                </div>
+                <span className="w-24 text-right text-sm font-medium">{calculateMfaCost().toFixed(2)} €</span>
+              </div>
+
+              {/* Arzt Time Input */}
+              <div className="flex gap-2 items-center">
+                <span className="flex-1 text-sm font-medium">Arztzeit</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Minuten"
+                    value={arztMinutes || ""}
+                    onChange={(e) => setArztMinutes(Math.max(0, Number.parseInt(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                  />
+                  <span className="text-sm text-muted-foreground">Min</span>
+                  <Input
+                    type="number"
+                    placeholder="Stundensatz"
+                    value={arztHourlyRate || ""}
+                    onChange={(e) => setArztHourlyRate(Math.max(0, Number.parseFloat(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                    step="0.01"
+                  />
+                  <span className="text-sm text-muted-foreground">€/Std</span>
+                </div>
+                <span className="w-24 text-right text-sm font-medium">{calculateArztCost().toFixed(2)} €</span>
+              </div>
+
+              {/* Room Cost Input */}
+              <div className="flex gap-2 items-center">
+                <span className="flex-1 text-sm font-medium">Raumkosten</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Minuten"
+                    value={roomMinutes || ""}
+                    onChange={(e) => setRoomMinutes(Math.max(0, Number.parseInt(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                  />
+                  <span className="text-sm text-muted-foreground">Min</span>
+                  <Input
+                    type="number"
+                    placeholder="Stundensatz"
+                    value={roomHourlyRate || ""}
+                    onChange={(e) => setRoomHourlyRate(Math.max(0, Number.parseFloat(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                    step="0.01"
+                  />
+                  <span className="text-sm text-muted-foreground">€/Std</span>
+                </div>
+                <span className="w-24 text-right text-sm font-medium">{calculateRoomCost().toFixed(2)} €</span>
+              </div>
+
+              {/* Honorar Goal Input */}
+              <div className="flex gap-2 items-center pt-2 border-t border-dashed">
+                <span className="flex-1 text-sm font-medium">Ziel Honorarstundensatz (SZL)</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Ziel"
+                    value={honorarGoal || ""}
+                    onChange={(e) => setHonorarGoal(Math.max(0, Number.parseFloat(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                    step="1"
+                  />
+                  <span className="text-sm text-muted-foreground">€/Std</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t space-y-1">
+                <p className="text-sm text-muted-foreground">Materialkosten: {calculateTotals().materialCosts.toFixed(2)} €</p>
+                <p className="text-sm text-muted-foreground">Personalkosten: {calculateTotals().laborCosts.toFixed(2)} €</p>
+                <p className="text-sm text-muted-foreground">Raumkosten: {calculateTotals().roomCosts.toFixed(2)} €</p>
+                <p className="text-sm font-medium">Gesamt: {calculateTotals().totalVariable.toFixed(2)} € pro Leistung</p>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="pricing" className="space-y-4">
-            {scenarios.map((scenario, index) => (
-              <div key={index} className="p-4 border rounded-lg space-y-3">
-                <h3 className="font-semibold text-base px-3 py-1.5 bg-muted rounded-md inline-block">
-                  {scenario.name}
-                </h3>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Preis pro Leistung (€) *</Label>
-                    <div className="flex items-center gap-1">
+            {scenarios.map((scenario, index) => {
+              const honorarStundensatz = calculateHonorarStundensatz(scenario.price)
+              const isRecommended = honorarStundensatz >= honorarGoal
+              
+              return (
+                <div key={index} className="p-4 border rounded-lg space-y-3">
+                  <h3 className="font-semibold text-base px-3 py-1.5 bg-muted rounded-md inline-block">
+                    {scenario.name}
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Preis pro Leistung (€) *</Label>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={scenario.price || ""}
+                          onChange={(e) => {
+                            const updated = [...scenarios]
+                            updated[index].price = Math.max(0, Number.parseFloat(e.target.value) || 0)
+                            setScenarios(updated)
+                          }}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                        <NettoBruttoCalculator
+                          onApply={(brutto) => {
+                            const updated = [...scenarios]
+                            updated[index].price = Math.max(0, brutto)
+                            setScenarios(updated)
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Erwartete Nachfrage/Monat</Label>
                       <Input
                         type="number"
-                        value={scenario.price || ""}
+                        value={scenario.expected_monthly_demand || ""}
                         onChange={(e) => {
                           const updated = [...scenarios]
-                          updated[index].price = Math.max(0, Number.parseFloat(e.target.value) || 0)
+                          updated[index].expected_monthly_demand = Math.max(0, Number.parseInt(e.target.value) || 0)
                           setScenarios(updated)
                         }}
-                        placeholder="0.00"
+                        placeholder="0"
                         min="0"
-                        step="0.01"
-                      />
-                      <NettoBruttoCalculator
-                        onApply={(brutto) => {
-                          const updated = [...scenarios]
-                          updated[index].price = Math.max(0, brutto)
-                          setScenarios(updated)
-                        }}
                       />
                     </div>
                   </div>
+                  
+                  {/* Show Honorarstundensatz calculation */}
+                  {arztMinutes > 0 && scenario.price > 0 && (
+                    <div className={`text-sm p-2 rounded ${isRecommended ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                      Honorarstundensatz-SZL: <strong>{honorarStundensatz.toFixed(0)} €/Std</strong>
+                      {isRecommended ? ' - Empfehlenswert' : ` (Ziel: ${honorarGoal} €)`}
+                    </div>
+                  )}
+                  
                   <div className="space-y-2">
-                    <Label>Erwartete Nachfrage/Monat</Label>
-                    <Input
-                      type="number"
-                      value={scenario.expected_monthly_demand || ""}
+                    <Label>Notizen</Label>
+                    <Textarea
+                      value={scenario.notes}
                       onChange={(e) => {
                         const updated = [...scenarios]
-                        updated[index].expected_monthly_demand = Math.max(0, Number.parseInt(e.target.value) || 0)
+                        updated[index].notes = e.target.value
                         setScenarios(updated)
                       }}
-                      placeholder="0"
-                      min="0"
+                      placeholder="Begründung für diese Einschätzung"
+                      rows={2}
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Notizen</Label>
-                  <Textarea
-                    value={scenario.notes}
-                    onChange={(e) => {
-                      const updated = [...scenarios]
-                      updated[index].notes = e.target.value
-                      setScenarios(updated)
-                    }}
-                    placeholder="Begründung für diese Einschätzung"
-                    rows={2}
-                  />
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </TabsContent>
         </Tabs>
 

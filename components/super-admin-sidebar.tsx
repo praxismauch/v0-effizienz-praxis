@@ -1,6 +1,8 @@
 "use client"
 
 import type React from "react"
+import { createBrowserClient } from "@/lib/supabase-client" // Import createBrowserClient
+import { Shield, Cog } from "lucide-react" // Import Shield and Cog
 
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
@@ -533,6 +535,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           badgeType: "totalUsers" as const,
         },
         {
+          id: "user-rights",
+          label: "Benutzerrechte",
+          icon: Shield,
+          href: "/super-admin/user-rights",
+        },
+        {
           id: "vorlagen",
           label: "Vorlagen",
           icon: FolderKanban,
@@ -670,6 +678,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           label: "Chat-Protokolle",
           icon: MessageSquare,
           href: "/super-admin/chat-logs",
+        },
+        {
+          id: "admin-settings",
+          label: "Admin-Einstellungen",
+          icon: Cog,
+          href: "/super-admin/settings",
         },
       ],
     },

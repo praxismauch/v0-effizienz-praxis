@@ -30,19 +30,61 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params
     const body = await request.json()
 
-    const { data, error } = await supabase.from("knowledge_base").update(body).eq("id", id).select().single()
+    // Get current article to save as version before updating
+    const { data: currentArticle, error: fetchError } = await supabase
+      .from("knowledge_base")
+      .select("*")
+      .eq("id", id)
+      .single()
 
-    if (error) {
-      if (error.code === "PGRST116") {
+    if (fetchError) {
+      if (fetchError.code === "PGRST116") {
         return NextResponse.json({ error: "Article not found" }, { status: 404 })
       }
-      console.error("[v0] Error updating knowledge base article:", error)
+      return NextResponse.json({ error: fetchError.message }, { status: 500 })
+    }
+
+    // Save current version to history table before updating
+    const currentVersion = currentArticle.version || 1
+    await supabase.from("knowledge_base_versions").insert({
+      article_id: id,
+      version: currentVersion,
+      title: currentArticle.title,
+      content: currentArticle.content,
+      category: currentArticle.category,
+      subcategory: currentArticle.subcategory,
+      tags: currentArticle.tags,
+      status: currentArticle.status,
+      attachments: currentArticle.attachments,
+      related_articles: currentArticle.related_articles,
+      created_by: currentArticle.last_edited_by || currentArticle.created_by,
+      change_summary: body.change_summary || "Automatische Versionierung",
+      change_type: "update",
+      practice_id: currentArticle.practice_id,
+    })
+
+    // Update article with incremented version
+    const newVersion = currentVersion + 1
+    const { data, error } = await supabase
+      .from("knowledge_base")
+      .update({
+        ...body,
+        version: newVersion,
+        previous_version_id: id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Error updating knowledge base article:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Error in knowledge base PUT:", error)
+    console.error("Error in knowledge base PUT:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

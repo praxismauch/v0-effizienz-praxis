@@ -67,9 +67,11 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
   ])
   // State for time-based costs (MFA and Arzt)
   const [mfaMinutes, setMfaMinutes] = useState(0)
-  const [mfaHourlyRate, setMfaHourlyRate] = useState(25) // Default hourly rate for MFA
+  const [mfaHourlyRate, setMfaHourlyRate] = useState(30) // Default hourly rate for MFA
   const [arztMinutes, setArztMinutes] = useState(0)
-  const [arztHourlyRate, setArztHourlyRate] = useState(150) // Default hourly rate for Arzt
+  const [arztHourlyRate, setArztHourlyRate] = useState(250) // Default hourly rate for Arzt
+  const [roomMinutes, setRoomMinutes] = useState(0) // Room usage time in minutes
+  const [roomHourlyRate, setRoomHourlyRate] = useState(50) // Default room cost per hour
   const [honorarGoal, setHonorarGoal] = useState(500) // Default goal for Honorarstundensatz
 
   const [variableCosts, setVariableCosts] = useState<Cost[]>([
@@ -113,9 +115,10 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
     setVariableCosts(variableCosts.filter((_, i) => i !== index))
   }
 
-  // Calculate labor costs from time inputs
+  // Calculate labor and room costs from time inputs
   const calculateMfaCost = () => (mfaMinutes / 60) * mfaHourlyRate
   const calculateArztCost = () => (arztMinutes / 60) * arztHourlyRate
+  const calculateRoomCost = () => (roomMinutes / 60) * roomHourlyRate
   
   // Calculate Honorarstundensatz: Price * 60 / arztMinutes
   const calculateHonorarStundensatz = (price: number) => {
@@ -127,8 +130,9 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
     const totalOneTime = oneTimeCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
     const materialCosts = variableCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
     const laborCosts = calculateMfaCost() + calculateArztCost()
-    const totalVariable = materialCosts + laborCosts
-    return { totalOneTime, totalVariable, materialCosts, laborCosts }
+    const roomCosts = calculateRoomCost()
+    const totalVariable = materialCosts + laborCosts + roomCosts
+    return { totalOneTime, totalVariable, materialCosts, laborCosts, roomCosts }
   }
 
   const calculateBreakEven = (scenario: PricingScenario, totalOneTime: number, totalVariable: number) => {
@@ -138,10 +142,12 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
   }
 
   const handleAnalyze = async () => {
-    if (!serviceName || scenarios.some((s) => !s.price)) {
+    // Only the "Realistisch" scenario (index 1) is required
+    const realisticScenario = scenarios[1]
+    if (!serviceName || !realisticScenario.price) {
       toast({
         title: "Fehlende Angaben",
-        description: "Bitte Service-Name und Preise für alle Szenarien angeben",
+        description: "Bitte Service-Name und Preis für das realistische Szenario angeben",
         variant: "destructive",
       })
       return
@@ -161,7 +167,10 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
     try {
       const { totalOneTime, totalVariable } = calculateTotals()
 
-      const scenarioAnalysis = scenarios.map((scenario) => {
+      // Only include scenarios that have a price set
+      const validScenarios = scenarios.filter((s) => s.price > 0)
+
+      const scenarioAnalysis = validScenarios.map((scenario) => {
         const breakEven = calculateBreakEven(scenario, totalOneTime, totalVariable)
         const monthlyProfit = scenario.expected_monthly_demand * (scenario.price - totalVariable)
         const yearlyProfit = monthlyProfit * 12
@@ -178,10 +187,10 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
         }
       })
 
-      const avgROI = scenarioAnalysis.reduce((sum, s) => sum + s.roi, 0) / scenarios.length
+      const avgROI = scenarioAnalysis.reduce((sum, s) => sum + s.roi, 0) / validScenarios.length
       const avgBreakEven =
         scenarioAnalysis.reduce((sum, s) => sum + (s.breakEven === Number.POSITIVE_INFINITY ? 999 : s.breakEven), 0) /
-        scenarios.length
+        validScenarios.length
 
       let profitabilityScore = 50
       if (avgROI > 100) profitabilityScore += 30

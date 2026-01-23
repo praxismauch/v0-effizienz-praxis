@@ -202,19 +202,17 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
         throw new Error(errorData.error || "Failed to update goal")
       }
 
-      // Update team member assignments
-      if (selectedTeamMembers.length > 0) {
-        await fetch(`/api/practices/${effectivePracticeId}/goals/${goal.id}/assignments`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            teamMemberIds: selectedTeamMembers,
-            assignedBy: effectiveUser?.id,
-          }),
-        })
-        mutateAssignments()
-      }
+      // Update team member assignments (always sync to handle removals too)
+      await fetch(`/api/practices/${effectivePracticeId}/goals/${goal.id}/assignments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          teamMemberIds: selectedTeamMembers,
+          assignedBy: effectiveUser?.id,
+        }),
+      })
+      mutateAssignments()
 
       toast({
         title: "Erfolg",

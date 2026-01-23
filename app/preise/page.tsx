@@ -4,7 +4,7 @@ import { LandingPageLayout } from "@/components/landing-page-layout"
 import { Button } from "@/components/ui/button"
 import { Check, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 
 type RawPlan = {
   name: string
@@ -22,6 +22,7 @@ type PricingPlan = {
   price: string
   oldPrice?: string
   period: string
+  yearlyTotal?: string
   description: string
   features: string[]
   popular?: boolean
@@ -32,7 +33,6 @@ export default function PreisePage() {
   const [loading, setLoading] = useState(true)
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly")
   const [annualDiscount, setAnnualDiscount] = useState(20)
-  const [plans, setPlans] = useState<PricingPlan[]>([])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -121,27 +121,32 @@ export default function PreisePage() {
     fetchPricing()
   }, [])
 
-  // Map raw plans to display format whenever rawPlans or billingInterval changes
-  useEffect(() => {
-    if (rawPlans.length === 0) return
+  // Map raw plans to display format - memoized for performance
+  // For yearly billing, show monthly price (yearly / 12) with "pro Monat (bei 12 Monaten)"
+  const pricingPlans = useMemo<PricingPlan[]>(() => {
+    if (rawPlans.length === 0) return []
 
     const isYearly = billingInterval === "yearly"
-    const mappedPlans = rawPlans.map((plan) => {
-      const price = isYearly ? plan.price_yearly : plan.price_monthly
-      const oldPrice = isYearly ? plan.old_price_yearly : plan.old_price_monthly
+    return rawPlans.map((plan) => {
+      // For yearly: divide by 12 to show monthly equivalent
+      const price = isYearly 
+        ? (plan.price_yearly ? Math.round(plan.price_yearly / 12) : null)
+        : plan.price_monthly
+      const oldPrice = isYearly 
+        ? (plan.old_price_yearly ? Math.round(plan.old_price_yearly / 12) : null)
+        : plan.old_price_monthly
 
       return {
         name: plan.name,
         price: price ? `${Math.round(price / 100)}€` : "Individuell",
         oldPrice: oldPrice && oldPrice > (price || 0) ? `${Math.round(oldPrice / 100)}€` : undefined,
-        period: price ? (isYearly ? "pro Jahr" : "pro Monat") : "",
+        period: price ? "pro Monat" : "",
+        yearlyTotal: isYearly && plan.price_yearly ? `${Math.round(plan.price_yearly / 100)}€ / Jahr` : undefined,
         description: plan.description,
         features: plan.features || [],
         popular: plan.is_popular || plan.name === "Professional",
       }
     })
-
-    setPlans(mappedPlans)
   }, [rawPlans, billingInterval])
 
   if (loading) {
@@ -215,7 +220,7 @@ export default function PreisePage() {
       <section className="pb-20 md:pb-32">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {plans.map((plan, index) => (
+            {pricingPlans.map((plan, index) => (
               <div
                 key={index}
                 className={`relative rounded-2xl border p-8 ${
@@ -230,12 +235,17 @@ export default function PreisePage() {
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                   <p className="text-muted-foreground mb-4">{plan.description}</p>
-                  <div className="flex items-baseline gap-2">
-                    {plan.oldPrice && (
-                      <span className="text-2xl font-medium text-muted-foreground line-through">{plan.oldPrice}</span>
+                  <div className="flex flex-col">
+                    <div className="flex items-baseline gap-2">
+                      {plan.oldPrice && (
+                        <span className="text-2xl font-medium text-muted-foreground line-through">{plan.oldPrice}</span>
+                      )}
+                      <span className="text-4xl font-bold">{plan.price}</span>
+                      {plan.period && <span className="text-muted-foreground">{plan.period}</span>}
+                    </div>
+                    {plan.yearlyTotal && (
+                      <span className="text-sm text-muted-foreground mt-1">{plan.yearlyTotal}</span>
                     )}
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.period && <span className="text-muted-foreground">{plan.period}</span>}
                   </div>
                 </div>
                 <ul className="space-y-3 mb-8">

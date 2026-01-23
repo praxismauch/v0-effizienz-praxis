@@ -116,7 +116,7 @@ export default function AboutPage() {
               Effizienz-Praxis ist nicht als klassische Beratungsfirma entstanden, sondern als{" "}
               <strong className="text-foreground">praxisnahe Antwort aus der Praxis für die Praxis</strong>.
             </p>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
+            <div className="flex flex-wrap justify-center gap-3 mt-8">
               {[
                 "Weniger Chaos",
                 "Klare Strukturen",
@@ -124,7 +124,7 @@ export default function AboutPage() {
                 "Digitale Werkzeuge, die helfen",
                 "Mehr Zeit für Medizin",
               ].map((item, index) => (
-                <div key={index} className="flex items-center gap-2 bg-background rounded-lg p-3 shadow-sm">
+                <div key={index} className="flex items-center gap-2 bg-background rounded-lg px-4 py-3 shadow-sm whitespace-nowrap">
                   <CheckCircle className="h-5 w-5 text-primary shrink-0" />
                   <span className="text-sm font-medium">{item}</span>
                 </div>

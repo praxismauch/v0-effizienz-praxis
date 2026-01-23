@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,8 @@ import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
 import { usePractice } from "@/contexts/practice-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
+import { Upload, X, ImageIcon, Loader2 } from "lucide-react"
+import Image from "next/image"
 
 interface CreateArbeitsmittelDialogProps {
   open: boolean
@@ -57,9 +59,100 @@ export function CreateArbeitsmittelDialog({
     status: "available",
     notes: "",
   })
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const dropZoneRef = useRef<HTMLDivElement>(null)
   const { currentPractice } = usePractice()
   const { user } = useAuth()
   const { toast } = useToast()
+
+  // Handle image upload
+  const uploadImage = useCallback(async (file: File) => {
+    if (!currentPractice?.id) return
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Fehler", description: "Nur Bilddateien sind erlaubt", variant: "destructive" })
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Fehler", description: "Bild darf maximal 5MB groß sein", variant: "destructive" })
+      return
+    }
+
+    setImageUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch(`/api/practices/${currentPractice.id}/arbeitsmittel/upload-image`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error("Upload fehlgeschlagen")
+
+      const data = await response.json()
+      setImageUrl(data.url)
+      toast({ title: "Erfolgreich", description: "Bild wurde hochgeladen" })
+    } catch (error) {
+      toast({ title: "Fehler", description: "Bild konnte nicht hochgeladen werden", variant: "destructive" })
+    } finally {
+      setImageUploading(false)
+    }
+  }, [currentPractice?.id, toast])
+
+  // Handle paste (CTRL+V)
+  useEffect(() => {
+    if (!open) return
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile()
+          if (file) uploadImage(file)
+          break
+        }
+      }
+    }
+
+    document.addEventListener("paste", handlePaste)
+    return () => document.removeEventListener("paste", handlePaste)
+  }, [open, uploadImage])
+
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      uploadImage(files[0])
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      uploadImage(files[0])
+    }
+  }
+
+  const removeImage = () => {
+    setImageUrl(null)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -91,6 +184,7 @@ export function CreateArbeitsmittelDialog({
           created_by: user?.id || null,
           assigned_to: formData.assigned_to || null,
           assigned_date: formData.assigned_to ? new Date().toISOString().split("T")[0] : null,
+          image_url: imageUrl,
         }),
       })
 
@@ -268,11 +362,16 @@ export function CreateArbeitsmittelDialog({
                 <SelectContent>
                   <SelectItem value="__none__">Nicht zugewiesen</SelectItem>
                   {teamMembers && teamMembers.length > 0 ? (
-                    teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name}
-                      </SelectItem>
-                    ))
+                    teamMembers.map((member) => {
+                      const firstName = member.firstName || member.first_name || ""
+                      const lastName = member.lastName || member.last_name || ""
+                      const displayName = member.name || `${firstName} ${lastName}`.trim() || "Unbekannt"
+                      return (
+                        <SelectItem key={member.id} value={member.id}>
+                          {displayName}
+                        </SelectItem>
+                      )
+                    })
                   ) : (
                     <SelectItem value="__no_members__" disabled>
                       Keine Teammitglieder vorhanden
@@ -291,6 +390,72 @@ export function CreateArbeitsmittelDialog({
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
             />
+          </div>
+
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <Label>Bild</Label>
+            <div
+              ref={dropZoneRef}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`
+                border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
+                ${isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"}
+                ${imageUrl ? "border-solid border-muted" : ""}
+              `}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              
+              {imageUploading ? (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Bild wird hochgeladen...</p>
+                </div>
+              ) : imageUrl ? (
+                <div className="relative">
+                  <Image
+                    src={imageUrl || "/placeholder.svg"}
+                    alt="Vorschau"
+                    width={200}
+                    height={150}
+                    className="mx-auto rounded-md object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeImage()
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <div className="rounded-full bg-muted p-3">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Bild hochladen</p>
+                    <p className="text-xs text-muted-foreground">
+                      Drag & Drop, Klicken oder STRG+V zum Einfügen
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <DialogFooter>

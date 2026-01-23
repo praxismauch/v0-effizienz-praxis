@@ -1,5 +1,5 @@
 -- Seed subscription plans with pricing data
--- Version 3: Simplified without system_settings dependency
+-- Version 3: Simplified without system_settings dependency and without old_price columns
 
 -- First, create the subscription_plans table if it doesn't exist
 CREATE TABLE IF NOT EXISTS subscription_plans (
@@ -25,7 +25,7 @@ DELETE FROM subscription_plans WHERE slug IN ('starter', 'professional', 'premiu
 
 -- Insert Starter Plan
 INSERT INTO subscription_plans (
-  name, slug, description, price_monthly, price_yearly, old_price_monthly, old_price_yearly,
+  name, slug, description, price_monthly, price_yearly,
   features, limits, is_active, is_popular, display_order
 ) VALUES (
   'Starter',
@@ -33,8 +33,6 @@ INSERT INTO subscription_plans (
   'Perfekt für kleine Praxen',
   79.00,
   758.40,
-  99.00,
-  950.40,
   '[
     "Bis zu 3 Benutzer",
     "Basis Kennzahlen-Dashboard",
@@ -50,7 +48,7 @@ INSERT INTO subscription_plans (
 
 -- Insert Professional Plan (Most Popular)
 INSERT INTO subscription_plans (
-  name, slug, description, price_monthly, price_yearly, old_price_monthly, old_price_yearly,
+  name, slug, description, price_monthly, price_yearly,
   features, limits, is_active, is_popular, display_order
 ) VALUES (
   'Professional',
@@ -58,8 +56,6 @@ INSERT INTO subscription_plans (
   'Für wachsende Praxen',
   149.00,
   1430.40,
-  199.00,
-  1910.40,
   '[
     "Bis zu 10 Benutzer",
     "Erweiterte Kennzahlen & Analytics",
@@ -76,14 +72,12 @@ INSERT INTO subscription_plans (
 
 -- Insert Premium Plan
 INSERT INTO subscription_plans (
-  name, slug, description, price_monthly, price_yearly, old_price_monthly, old_price_yearly,
+  name, slug, description, price_monthly, price_yearly,
   features, limits, is_active, is_popular, display_order
 ) VALUES (
   'Premium',
   'premium',
   'Für gehobene Ansprüche',
-  NULL,
-  NULL,
   NULL,
   NULL,
   '[
@@ -99,8 +93,3 @@ INSERT INTO subscription_plans (
   false,
   3
 );
-
--- Verify the data was inserted
-SELECT name, slug, price_monthly, price_yearly, is_popular, display_order 
-FROM subscription_plans 
-ORDER BY display_order;

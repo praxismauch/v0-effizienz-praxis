@@ -1,12 +1,11 @@
 import useSWR from "swr"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { swrFetcher } from "@/lib/swr-fetcher"
 
 // Hook for team member responsibilities
 export function useTeamMemberResponsibilities(practiceId: string | null, memberId: string | null) {
   const { data, error, isLoading, mutate } = useSWR(
     practiceId && memberId ? `/api/practices/${practiceId}/team-members/${memberId}/responsibilities` : null,
-    fetcher,
+    swrFetcher,
     {
       revalidateOnFocus: true,
     }
@@ -24,7 +23,7 @@ export function useTeamMemberResponsibilities(practiceId: string | null, memberI
 export function useTeamMemberArbeitsmittel(practiceId: string | null, memberId: string | null) {
   const { data, error, isLoading, mutate } = useSWR(
     practiceId && memberId ? `/api/practices/${practiceId}/team-members/${memberId}/arbeitsmittel` : null,
-    fetcher,
+    swrFetcher,
     {
       revalidateOnFocus: true,
     }
@@ -42,7 +41,7 @@ export function useTeamMemberArbeitsmittel(practiceId: string | null, memberId: 
 export function useAvailableArbeitsmittel(practiceId: string | null) {
   const { data, error, isLoading } = useSWR(
     practiceId ? `/api/practices/${practiceId}/arbeitsmittel` : null,
-    fetcher,
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }

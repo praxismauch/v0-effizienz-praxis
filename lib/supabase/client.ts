@@ -1,5 +1,8 @@
 "use client"
 
+// Singleton promise to prevent race conditions during client creation
+let clientPromise: Promise<SupabaseClient | null> | null = null
+
 if (typeof window !== "undefined" && !window.__btoaPatched) {
   const _btoa = window.btoa
   const _atob = window.atob
@@ -79,8 +82,10 @@ declare global {
   }
 }
 
+// Module-level singleton - survives hot reloads
 let cachedClient: SupabaseClient | null = null
-let isCreating = false
+
+let isCreating = false // Declare the variable before using it
 
 function createClientSafe(): SupabaseClient | null {
   try {
@@ -150,22 +155,23 @@ export function createClient(): SupabaseClient | null {
     return null
   }
 
+  // Return existing singleton immediately
   if (window.__supabaseClient) {
     return window.__supabaseClient
   }
 
-  // Check module-level cache
+  // Check module-level cache (survives component re-renders)
   if (cachedClient) {
     window.__supabaseClient = cachedClient
     return cachedClient
   }
 
-  if (isCreating || window.__supabaseClientCreating) {
-    // Wait and retry
+  // Prevent concurrent creation
+  if (window.__supabaseClientCreating) {
+    // Return null and let caller retry - this prevents duplicate clients
     return null
   }
 
-  isCreating = true
   window.__supabaseClientCreating = true
 
   try {
@@ -178,24 +184,38 @@ export function createClient(): SupabaseClient | null {
 
     return client
   } finally {
-    isCreating = false
     window.__supabaseClientCreating = false
   }
 }
 
 export async function getClientAsync(): Promise<SupabaseClient | null> {
-  if (typeof window !== "undefined" && (isCreating || window.__supabaseClientCreating)) {
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    return createClient()
+  if (typeof window === "undefined") return null
+  
+  // Return existing client immediately
+  if (window.__supabaseClient) return window.__supabaseClient
+  if (cachedClient) {
+    window.__supabaseClient = cachedClient
+    return cachedClient
   }
-  return createClient()
+  
+  // Use promise to prevent multiple concurrent creations
+  if (clientPromise) {
+    return clientPromise
+  }
+  
+  clientPromise = new Promise((resolve) => {
+    const client = createClient()
+    resolve(client)
+  })
+  
+  return clientPromise
 }
 
 export function getClientSafe(): SupabaseClient | null {
   return createClient()
 }
 
-export { createClient as createBrowserClient }
-export { createClient as createBrowserSupabaseClient }
+// Alias for compatibility with code expecting createBrowserClient
+export const createBrowserClient = createClient
 
 export default createClient

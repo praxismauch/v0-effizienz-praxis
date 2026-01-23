@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -42,10 +44,92 @@ import { Logo } from "@/components/logo"
 import { LandingPageFooter } from "@/components/landing-page-footer"
 import { LandingPageChatbot } from "@/components/landing-page-chatbot"
 import { LandingAIQuestionBox } from "@/components/landing-ai-question-box"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ScrollReveal, StaggeredReveal } from "@/components/scroll-reveal"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+
+// Animated text component with gradient shimmer
+function AnimatedGradientText({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span 
+      className={cn(
+        "relative inline-block bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent",
+        "animate-gradient-x bg-[length:200%_auto]",
+        className
+      )}
+      style={{
+        animation: "gradient-shift 3s ease infinite",
+      }}
+    >
+      {children}
+      <style jsx>{`
+        @keyframes gradient-shift {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+      `}</style>
+    </span>
+  )
+}
+
+// Typewriter effect for hero text
+function TypewriterText({ text, className }: { text: string; className?: string }) {
+  const [displayedText, setDisplayedText] = useState("")
+  const [isComplete, setIsComplete] = useState(false)
+  
+  useEffect(() => {
+    let index = 0
+    const timer = setInterval(() => {
+      if (index <= text.length) {
+        setDisplayedText(text.slice(0, index))
+        index++
+      } else {
+        clearInterval(timer)
+        setIsComplete(true)
+      }
+    }, 50)
+    
+    return () => clearInterval(timer)
+  }, [text])
+  
+  return (
+    <span className={cn("relative", className)}>
+      <span 
+        className={cn(
+          "bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent",
+          isComplete && "animate-pulse-subtle"
+        )}
+        style={isComplete ? {
+          animation: "gradient-shift 3s ease infinite",
+          backgroundSize: "200% auto",
+        } : undefined}
+      >
+        {displayedText}
+      </span>
+      {!isComplete && (
+        <span className="inline-block w-[3px] h-[1em] bg-primary animate-blink ml-1 align-middle" />
+      )}
+      <style jsx>{`
+        @keyframes gradient-shift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+        .animate-blink {
+          animation: blink 0.8s step-end infinite;
+        }
+      `}</style>
+    </span>
+  )
+}
 
 const quizQuestions = [
   {
@@ -551,9 +635,10 @@ export default function LandingPageClient() {
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-balance leading-tight">
                 Die Plattform für
                 <br />
-                <span className="bg-gradient-to-r from-primary via-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                  effizientes Praxismanagement
-                </span>
+                <TypewriterText 
+                  text="effizientes Praxismanagement" 
+                  className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
+                />
               </h1>
             </ScrollReveal>
             <ScrollReveal variant="fadeUp" delay={300}>
@@ -637,42 +722,42 @@ export default function LandingPageClient() {
                 {
                   icon: Heart,
                   label: "Weniger Stress",
-                  color: "text-rose-500",
-                  bg: "bg-rose-50",
-                  iconBg: "bg-rose-100",
-                  border: "border-rose-200",
+                  color: "text-rose-500 dark:text-rose-400",
+                  bg: "bg-rose-50 dark:bg-rose-500/10",
+                  iconBg: "bg-rose-100 dark:bg-rose-500/20",
+                  border: "border-rose-200 dark:border-rose-500/30",
                 },
                 {
                   icon: ShieldCheck,
                   label: "Weniger Fehler",
-                  color: "text-emerald-500",
-                  bg: "bg-emerald-50",
-                  iconBg: "bg-emerald-100",
-                  border: "border-emerald-200",
+                  color: "text-emerald-500 dark:text-emerald-400",
+                  bg: "bg-emerald-50 dark:bg-emerald-500/10",
+                  iconBg: "bg-emerald-100 dark:bg-emerald-500/20",
+                  border: "border-emerald-200 dark:border-emerald-500/30",
                 },
                 {
                   icon: Award,
                   label: "Höhere Qualität",
-                  color: "text-amber-500",
-                  bg: "bg-amber-50",
-                  iconBg: "bg-amber-100",
-                  border: "border-amber-200",
+                  color: "text-amber-500 dark:text-amber-400",
+                  bg: "bg-amber-50 dark:bg-amber-500/10",
+                  iconBg: "bg-amber-100 dark:bg-amber-500/20",
+                  border: "border-amber-200 dark:border-amber-500/30",
                 },
                 {
                   icon: Users,
                   label: "Zufriedenere Mitarbeitende",
-                  color: "text-violet-500",
-                  bg: "bg-violet-50",
-                  iconBg: "bg-violet-100",
-                  border: "border-violet-200",
+                  color: "text-violet-500 dark:text-violet-400",
+                  bg: "bg-violet-50 dark:bg-violet-500/10",
+                  iconBg: "bg-violet-100 dark:bg-violet-500/20",
+                  border: "border-violet-200 dark:border-violet-500/30",
                 },
                 {
                   icon: TrendingUp,
                   label: "Höhere Gewinne",
-                  color: "text-sky-500",
-                  bg: "bg-sky-50",
-                  iconBg: "bg-sky-100",
-                  border: "border-sky-200",
+                  color: "text-sky-500 dark:text-sky-400",
+                  bg: "bg-sky-50 dark:bg-sky-500/10",
+                  iconBg: "bg-sky-100 dark:bg-sky-500/20",
+                  border: "border-sky-200 dark:border-sky-500/30",
                 },
               ].map((item, index) => (
                 <ScrollReveal key={index} variant="fadeUp" delay={400 + index * 100}>

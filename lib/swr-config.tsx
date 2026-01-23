@@ -81,7 +81,6 @@ export function SWRProvider({ children }: { children: ReactNode }) {
       ]
 
       if (noRetryStatuses.includes(status)) {
-        console.warn(`[v0] SWR: HTTP ${status} error, stopping retries`)
         return false
       }
 

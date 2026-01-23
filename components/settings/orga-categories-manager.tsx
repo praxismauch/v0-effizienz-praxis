@@ -10,7 +10,7 @@ import { useState, useEffect } from "react"
 import type { OrgaCategory } from "@/types/orgaCategory"
 
 export function OrgaCategoriesManager() {
-  const { practiceId } = usePractice()
+  const { practiceId, isLoading: practiceLoading } = usePractice()
   const [categories, setCategories] = useState<OrgaCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isInitializing, setIsInitializing] = useState(false)
@@ -18,24 +18,26 @@ export function OrgaCategoriesManager() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   useEffect(() => {
-    fetchCategories()
-  }, [practiceId])
+    if (practiceId && !practiceLoading) {
+      fetchCategories()
+    } else if (!practiceLoading && !practiceId) {
+      setIsLoading(false)
+    }
+  }, [practiceId, practiceLoading])
 
   const fetchCategories = async () => {
     if (!practiceId) {
-      toast.error("Keine Praxis-ID gefunden. Bitte neu laden.")
+      setIsLoading(false)
       return
     }
 
-    console.log("[v0] OrgaCategoriesManager - Fetching categories for practice:", practiceId)
     setIsLoading(true)
     try {
       const response = await fetch(`/api/practices/${practiceId}/orga-categories`)
       const data = await response.json()
-      console.log("[v0] OrgaCategoriesManager - Fetched categories:", data.categories?.length || 0)
       setCategories(data.categories || [])
     } catch (error) {
-      console.error("[v0] OrgaCategoriesManager - Fetch error:", error)
+      console.error("OrgaCategoriesManager - Fetch error:", error)
       toast.error("Fehler beim Laden der Kategorien")
     } finally {
       setIsLoading(false)
@@ -75,13 +77,21 @@ export function OrgaCategoriesManager() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || practiceLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Kategorien werden geladen...</p>
         </div>
+      </div>
+    )
+  }
+
+  if (!practiceId) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <p className="text-muted-foreground">Keine Praxis ausgewählt. Bitte wählen Sie zuerst eine Praxis aus.</p>
       </div>
     )
   }

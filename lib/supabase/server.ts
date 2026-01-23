@@ -33,6 +33,9 @@ export async function createServerClient() {
   }
 
   return supabaseCreateServerClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      debug: false,
+    },
     cookies: {
       getAll() {
         return cookieStore.getAll()
@@ -71,6 +74,7 @@ export async function createAdminClient() {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+      debug: false,
     },
   })
 }

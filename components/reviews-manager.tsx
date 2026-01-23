@@ -10,7 +10,9 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ReviewImportDialog from "@/components/review-import-dialog"
-import { Star, Plus, ExternalLink, Calendar, MessageSquare, RefreshCw, Filter, Search, Upload } from "lucide-react"
+import { Star, Plus, ExternalLink, Calendar, MessageSquare, RefreshCw, Filter, Search, Upload, Reply, Sparkles, Loader2, Send } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import { useUser } from "@/contexts/user-context"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
@@ -87,6 +89,11 @@ function ReviewsManager({ practiceId: propPracticeId }: { practiceId?: string } 
   const [searchQuery, setSearchQuery] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
+  const [showReplyDialog, setShowReplyDialog] = useState(false)
+  const [replyingToReview, setReplyingToReview] = useState<Review & { platform: "google" | "jameda" | "sanego" } | null>(null)
+  const [replyText, setReplyText] = useState("")
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
+  const [isSavingReply, setIsSavingReply] = useState(false)
 
   // Form state for adding reviews
   const [newReview, setNewReview] = useState({

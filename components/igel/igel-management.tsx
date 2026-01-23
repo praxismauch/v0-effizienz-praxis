@@ -11,6 +11,7 @@ import {
   Lightbulb,
   ClipboardList,
   Clock,
+  ThumbsUp,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -177,22 +178,48 @@ export function IgelManagement() {
                   </p>
                 )}
                 {/* Honorarstundensatz-SZL: price * 60 / arzt_minutes */}
-                {analysis.arzt_minutes && analysis.arzt_minutes > 0 && analysis.pricing_scenarios?.[1]?.price && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>Honorarstundensatz-SZL:</span>
-                    <span className={`font-medium ${
-                      ((analysis.pricing_scenarios[1].price * 60) / analysis.arzt_minutes) >= (analysis.honorar_goal || 500)
-                        ? "text-green-600"
-                        : "text-amber-600"
-                    }`}>
-                      {((analysis.pricing_scenarios[1].price * 60) / analysis.arzt_minutes).toFixed(0)} €/Std
-                    </span>
-                    {analysis.honorar_goal && (
-                      <span className="text-muted-foreground text-xs">(Ziel: {analysis.honorar_goal} €)</span>
-                    )}
-                  </div>
-                )}
+                {analysis.arzt_minutes && analysis.arzt_minutes > 0 && analysis.pricing_scenarios?.[1]?.price && (() => {
+                  const calculatedHourlyRate = (analysis.pricing_scenarios[1].price * 60) / analysis.arzt_minutes
+                  const targetRate = analysis.honorar_goal || 500
+                  const isRecommended = calculatedHourlyRate >= targetRate
+                  const difference = calculatedHourlyRate - targetRate
+                  const percentOfGoal = (calculatedHourlyRate / targetRate) * 100
+                  
+                  return (
+                    <div className="space-y-2 pt-2 border-t">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          Honorarstundensatz
+                        </span>
+                        <span className={`font-bold text-lg ${isRecommended ? "text-green-600" : "text-amber-600"}`}>
+                          {calculatedHourlyRate.toFixed(0)} €/Std
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Ziel</span>
+                        <span className="font-medium">{targetRate} €/Std</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Differenz</span>
+                        <span className={`font-medium ${difference >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {difference >= 0 ? "+" : ""}{difference.toFixed(0)} €/Std ({percentOfGoal.toFixed(0)}%)
+                        </span>
+                      </div>
+                      {isRecommended ? (
+                        <Badge variant="default" className="bg-green-600 hover:bg-green-700 w-full justify-center">
+                          <ThumbsUp className="h-3 w-3 mr-1" />
+                          Ziel erreicht
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200 w-full justify-center">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Unter Ziel ({(targetRate - calculatedHourlyRate).toFixed(0)} € fehlen)
+                        </Badge>
+                      )}
+                    </div>
+                  )
+                })()}
                 {analysis.pricing_scenarios?.length > 0 && (
                   <p className="text-sm text-muted-foreground">
                     {analysis.pricing_scenarios.length} Preisszenarien analysiert

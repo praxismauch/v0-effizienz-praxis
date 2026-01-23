@@ -94,8 +94,12 @@ export default function ArbeitsmittelPage() {
   } = useSWR(currentPractice?.id ? SWR_KEYS.teamMembers(currentPractice.id) : null, async (url) => {
     const response = await fetch(url)
     if (!response.ok) throw new Error("Failed to fetch team members")
-    return response.json()
+    const data = await response.json()
+    // Ensure we always return an array
+    return Array.isArray(data) ? data : []
   })
+
+  console.log("[v0] teamMembers data:", teamMembers)
 
   const filteredItems = useMemo(() => {
     if (!arbeitsmittel) return []

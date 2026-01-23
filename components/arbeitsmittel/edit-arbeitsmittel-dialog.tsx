@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
 import { useToast } from "@/hooks/use-toast"
+import { X, ImageIcon, Loader2 } from "lucide-react"
+import Image from "next/image"
 
 interface EditArbeitsmittelDialogProps {
   open: boolean
@@ -57,6 +59,10 @@ export function EditArbeitsmittelDialog({
     status: "available",
     notes: "",
   })
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -73,8 +79,95 @@ export function EditArbeitsmittelDialog({
         status: item.status || "available",
         notes: item.notes || "",
       })
+      setImageUrl(item.image_url || null)
     }
   }, [item])
+
+  // Handle image upload
+  const uploadImage = useCallback(async (file: File) => {
+    if (!item?.practice_id) return
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Fehler", description: "Nur Bilddateien sind erlaubt", variant: "destructive" })
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Fehler", description: "Bild darf maximal 5MB groß sein", variant: "destructive" })
+      return
+    }
+
+    setImageUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch(`/api/practices/${item.practice_id}/arbeitsmittel/upload-image`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error("Upload fehlgeschlagen")
+
+      const data = await response.json()
+      setImageUrl(data.url)
+      toast({ title: "Erfolgreich", description: "Bild wurde hochgeladen" })
+    } catch (error) {
+      toast({ title: "Fehler", description: "Bild konnte nicht hochgeladen werden", variant: "destructive" })
+    } finally {
+      setImageUploading(false)
+    }
+  }, [item?.practice_id, toast])
+
+  // Handle paste (CTRL+V)
+  useEffect(() => {
+    if (!open) return
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile()
+          if (file) uploadImage(file)
+          break
+        }
+      }
+    }
+
+    document.addEventListener("paste", handlePaste)
+    return () => document.removeEventListener("paste", handlePaste)
+  }, [open, uploadImage])
+
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      uploadImage(files[0])
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      uploadImage(files[0])
+    }
+  }
+
+  const removeImage = () => {
+    setImageUrl(null)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -101,6 +194,7 @@ export function EditArbeitsmittelDialog({
             formData.assigned_to && !item.assigned_to ? new Date().toISOString().split("T")[0] : item.assigned_date,
           return_date:
             !formData.assigned_to && item.assigned_to ? new Date().toISOString().split("T")[0] : item.return_date,
+          image_url: imageUrl,
         }),
       })
 
@@ -264,11 +358,16 @@ export function EditArbeitsmittelDialog({
                 <SelectContent>
                   <SelectItem value="__none__">Nicht zugewiesen</SelectItem>
                   {teamMembers && teamMembers.length > 0 ? (
-                    teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name}
-                      </SelectItem>
-                    ))
+                    teamMembers.map((member) => {
+                      const firstName = member.firstName || member.first_name || ""
+                      const lastName = member.lastName || member.last_name || ""
+                      const displayName = member.name || `${firstName} ${lastName}`.trim() || "Unbekannt"
+                      return (
+                        <SelectItem key={member.id} value={member.id}>
+                          {displayName}
+                        </SelectItem>
+                      )
+                    })
                   ) : (
                     <SelectItem value="__no_members__" disabled>
                       Keine Teammitglieder vorhanden

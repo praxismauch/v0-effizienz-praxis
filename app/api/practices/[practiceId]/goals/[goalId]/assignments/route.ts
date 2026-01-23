@@ -108,8 +108,13 @@ export async function POST(
     const body = await request.json()
     const { teamMemberIds, assignedBy } = body
 
+    // If no team members provided, delete all existing assignments and return
     if (!teamMemberIds || teamMemberIds.length === 0) {
-      return NextResponse.json({ success: true, assignedCount: 0 })
+      const { error: deleteError } = await supabase.from("goal_assignments").delete().eq("goal_id", goalId)
+      if (deleteError && deleteError.code !== "42P01" && !deleteError.message?.includes("does not exist")) {
+        throw deleteError
+      }
+      return NextResponse.json({ success: true, assignedCount: 0, cleared: true })
     }
 
     let actualTeamMemberIds: string[] = []

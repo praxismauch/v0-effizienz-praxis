@@ -6,7 +6,9 @@ export const maxDuration = 30
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
 
-async function logChatInteraction(data: {
+// Logging is disabled - table doesn't exist yet
+// To enable logging, create the landing_chat_logs table first
+function logChatInteraction(_data: {
   question: string
   response: string
   matchedFaqKey: string | null
@@ -18,31 +20,8 @@ async function logChatInteraction(data: {
   referrer?: string
   pageUrl?: string
 }) {
-  // Only log if Supabase is configured
-  if (!supabaseUrl || !supabaseKey) {
-    console.log("[v0] Landing chatbot: Supabase not configured, skipping log")
-    return
-  }
-
-  try {
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    await supabase.from("landing_chat_logs").insert({
-      question: data.question,
-      response: data.response,
-      matched_faq_key: data.matchedFaqKey,
-      is_default_response: data.isDefaultResponse,
-      is_greeting: data.isGreeting,
-      response_time_ms: data.responseTimeMs,
-      session_id: data.sessionId,
-      user_agent: data.userAgent,
-      referrer: data.referrer,
-      page_url: data.pageUrl,
-    })
-  } catch (error) {
-    // Don't fail the request if logging fails
-    console.error("[v0] Landing chatbot: Failed to log interaction:", error)
-  }
+  // Logging disabled - silently skip
+  return
 }
 
 // Predefined FAQ responses based on the original system prompt

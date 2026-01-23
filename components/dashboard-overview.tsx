@@ -179,10 +179,6 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   const loadingPracticeIdRef = useRef<string | null>(null)
 
   useEffect(() => {
-    console.log("[v0] Dashboard config structure:", JSON.stringify(dashboardConfig, null, 2))
-  }, [dashboardConfig])
-
-  useEffect(() => {
     const fetchCockpitSettings = async () => {
       try {
         const response = await fetch("/api/cockpit-settings")
@@ -200,33 +196,26 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   const fetchDashboardData = useCallback(async () => {
     const hardcodedPracticeId = "1"
 
-    console.log("[v0] DashboardOverview: Fetching data for hardcoded practiceId:", hardcodedPracticeId)
-
     if (
       !hardcodedPracticeId ||
       hardcodedPracticeId === "undefined" ||
       hardcodedPracticeId === "null" ||
       hardcodedPracticeId === "0"
     ) {
-      console.log("[v0] DashboardOverview: Invalid practiceId, skipping fetch:", hardcodedPracticeId)
       return
     }
 
     if (!userId) {
-      console.log("[v0] DashboardOverview: No userId, skipping fetch")
       return
     }
 
     if (loadingPracticeIdRef.current === hardcodedPracticeId && hasLoadedRef.current) {
-      console.log("[v0] DashboardOverview: Already loaded for practiceId:", hardcodedPracticeId)
       return
     }
 
     loadingPracticeIdRef.current = hardcodedPracticeId
     setLoading(true)
     setError(null)
-
-    console.log("[v0] DashboardOverview: Fetching data for practiceId:", hardcodedPracticeId)
 
     try {
       // Helper to safely fetch and parse JSON with rate limit handling

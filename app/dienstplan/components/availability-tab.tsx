@@ -1,0 +1,180 @@
+"use client"
+
+import { format } from "date-fns"
+import { de } from "date-fns/locale"
+import { Plus, Edit, Trash2, Check, X, Clock, Palmtree, AlertCircle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import type { Availability, TeamMember } from "../types"
+import { DAYS_OF_WEEK } from "../types"
+
+interface AvailabilityTabProps {
+  availability: Availability[]
+  teamMembers: TeamMember[]
+  onAddAvailability: (memberId: string) => void
+  onEditAvailability: (availability: Availability) => void
+  onDeleteAvailability: (id: string) => void
+}
+
+const getAvailabilityIcon = (type: string) => {
+  switch (type) {
+    case "available":
+      return Check
+    case "unavailable":
+      return X
+    case "vacation":
+      return Palmtree
+    case "sick":
+      return AlertCircle
+    default:
+      return Clock
+  }
+}
+
+const getAvailabilityColor = (type: string) => {
+  switch (type) {
+    case "available":
+      return "bg-green-100 text-green-800"
+    case "unavailable":
+      return "bg-red-100 text-red-800"
+    case "preferred":
+      return "bg-blue-100 text-blue-800"
+    case "vacation":
+      return "bg-amber-100 text-amber-800"
+    case "sick":
+      return "bg-purple-100 text-purple-800"
+    default:
+      return "bg-gray-100 text-gray-800"
+  }
+}
+
+const getAvailabilityLabel = (type: string) => {
+  switch (type) {
+    case "available":
+      return "Verfügbar"
+    case "unavailable":
+      return "Nicht verfügbar"
+    case "preferred":
+      return "Bevorzugt"
+    case "vacation":
+      return "Urlaub"
+    case "sick":
+      return "Krank"
+    default:
+      return type
+  }
+}
+
+export default function AvailabilityTab({
+  availability,
+  teamMembers,
+  onAddAvailability,
+  onEditAvailability,
+  onDeleteAvailability,
+}: AvailabilityTabProps) {
+  const getMember = (memberId: string) => teamMembers.find((m) => m.id === memberId)
+
+  const groupedAvailability = teamMembers.map((member) => ({
+    member,
+    items: availability.filter((a) => a.team_member_id === member.id),
+  }))
+
+  return (
+    <div className="space-y-4">
+      {groupedAvailability.map(({ member, items }) => (
+        <Card key={member.id}>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
+                  <AvatarFallback>
+                    {member.first_name[0]}
+                    {member.last_name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle className="text-base">
+                    {member.first_name} {member.last_name}
+                  </CardTitle>
+                  {member.role && <p className="text-sm text-muted-foreground">{member.role}</p>}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => onAddAvailability(member.id)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Hinzufügen
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {items.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Keine Verfügbarkeiten eingetragen
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {items.map((item) => {
+                  const Icon = getAvailabilityIcon(item.availability_type)
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${getAvailabilityColor(item.availability_type)}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={getAvailabilityColor(item.availability_type)}>
+                              {getAvailabilityLabel(item.availability_type)}
+                            </Badge>
+                            {item.is_recurring && (
+                              <Badge variant="secondary" className="text-xs">
+                                Wiederkehrend
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {item.is_recurring && item.day_of_week !== undefined
+                              ? DAYS_OF_WEEK[item.day_of_week]
+                              : item.specific_date
+                                ? format(new Date(item.specific_date), "PPP", { locale: de })
+                                : "-"}
+                            {item.start_time && item.end_time && (
+                              <span className="ml-2">
+                                {item.start_time.slice(0, 5)} - {item.end_time.slice(0, 5)}
+                              </span>
+                            )}
+                          </p>
+                          {item.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => onEditAvailability(item)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => onDeleteAvailability(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}

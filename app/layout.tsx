@@ -92,6 +92,11 @@ export default async function RootLayout({
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
+        {/* DNS prefetch and preconnect for external resources */}
+        <link rel="dns-prefetch" href="https://sytvmjmvwkqdzcfvjqkr.supabase.co" />
+        <link rel="preconnect" href="https://sytvmjmvwkqdzcfvjqkr.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

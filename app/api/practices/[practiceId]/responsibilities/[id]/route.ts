@@ -54,6 +54,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       name,
       description,
       group_name,
+      category,
       responsible_user_id,
       deputy_user_id,
       team_member_ids,
@@ -66,6 +67,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       calculate_time_automatically,
       optimization_suggestions,
     } = body
+    
+    // Support both group_name and category from frontend
+    const finalGroupName = group_name || category
 
     if (!name || name.trim() === "") {
       return NextResponse.json({ error: "Name is required" }, { status: 400 })

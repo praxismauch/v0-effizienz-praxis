@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
+import { MultiImageUpload } from "@/components/ui/multi-image-upload"
 
 interface CreateRoomDialogProps {
   open: boolean
@@ -28,6 +29,7 @@ interface CreateRoomDialogProps {
 
 export function CreateRoomDialog({ open, onOpenChange, practiceId, onSuccess }: CreateRoomDialogProps) {
   const [loading, setLoading] = useState(false)
+  const [images, setImages] = useState<string[]>([])
   const [formData, setFormData] = useState({
     name: "",
     beschreibung: "",
@@ -61,6 +63,7 @@ export function CreateRoomDialog({ open, onOpenChange, practiceId, onSuccess }: 
         body: JSON.stringify({
           ...formData,
           practice_id: practiceId,
+          images: images.length > 0 ? JSON.stringify(images) : null,
         }),
       })
 
@@ -115,6 +118,16 @@ export function CreateRoomDialog({ open, onOpenChange, practiceId, onSuccess }: 
               onChange={(e) => setFormData({ ...formData, beschreibung: e.target.value })}
               placeholder="Optionale Beschreibung des Raums"
               rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Bilder</Label>
+            <MultiImageUpload
+              images={images}
+              onImagesChange={setImages}
+              maxImages={10}
+              disabled={loading}
+              uploadEndpoint="/api/upload"
             />
           </div>
           <DialogFooter>

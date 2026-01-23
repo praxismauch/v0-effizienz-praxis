@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import ResponsibilityFormDialog from "@/components/responsibility-form-dialog"
 import { AIResponsibilityGeneratorDialog } from "@/components/responsibilities/ai-responsibility-generator-dialog"
 import { CreateTodoFromResponsibilityDialog } from "@/components/create-todo-from-responsibility-dialog"
+import { CreateMultipleTodosDialog } from "@/components/create-multiple-todos-dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useToast } from "@/hooks/use-toast"
@@ -282,7 +283,7 @@ export default function ResponsibilitiesPageClient() {
     attachments: [] as File[],
     link_url: "",
     link_title: "",
-    group_name: "" as string,
+    category: "" as string,
     estimated_time_minutes: null as number | null,
   })
   const [hoursDisplayValue, setHoursDisplayValue] = useState("") // For the input field
@@ -384,7 +385,7 @@ export default function ResponsibilitiesPageClient() {
       attachments: responsibility.attachments || [],
       link_url: responsibility.link_url || "",
       link_title: responsibility.link_title || "",
-      category: responsibility.category || null,
+      category: (responsibility as any).group_name || responsibility.category || null,
       estimated_time_minutes: responsibility.estimated_time_minutes || null,
     })
     setFormDialogOpen(true)

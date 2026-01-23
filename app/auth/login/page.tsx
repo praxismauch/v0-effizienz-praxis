@@ -77,9 +77,19 @@ function LoginForm() {
     if (!supabase) return
 
     const checkExistingSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        router.replace(redirectTo)
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          // Session check failed (stale/invalid session) - that's fine, user can login fresh
+          console.log("[v0] Session check error (will proceed with fresh login):", error.message)
+          return
+        }
+        if (session) {
+          router.replace(redirectTo)
+        }
+      } catch (err) {
+        // Network error or other issue - ignore and let user login fresh
+        console.log("[v0] Session check failed (will proceed with fresh login)")
       }
     }
     
@@ -99,28 +109,11 @@ function LoginForm() {
     }
 
     try {
-      // Clear any existing stale session before attempting new login (with timeout)
-      // This fixes issues where old session cookies conflict with new login
-      try {
-        await Promise.race([
-          supabase.auth.signOut({ scope: 'local' }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('signOut timeout')), 3000))
-        ])
-      } catch {
-        // Ignore signOut errors/timeouts - proceed with login anyway
-      }
-      
-      // Login with timeout to prevent infinite hanging
-      const loginPromise = supabase.auth.signInWithPassword({
+      // Direct login without clearing session first
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Login timeout - bitte versuchen Sie es erneut')), 15000)
-      )
-      
-      const { data, error: authError } = await Promise.race([loginPromise, timeoutPromise])
 
       if (authError) {
         throw authError

@@ -172,7 +172,7 @@ export async function updateTimeBreak(
 }
 
 // Hook for correction requests
-export function useCorrectionRequests(practiceId: string | null) {
+export function useCorrectionRequests(practiceId: string | null, userId?: string) {
   const { data, error, isLoading, mutate } = useSWR(
     practiceId ? `/api/practices/${practiceId}/time/corrections` : null,
     fetcher,
@@ -181,11 +181,40 @@ export function useCorrectionRequests(practiceId: string | null) {
     }
   )
 
+  const submitCorrection = async (blockId: string, newStart: string, newEnd: string, reason: string) => {
+    if (!practiceId || !userId) {
+      return { success: false, error: "Missing practiceId or userId" }
+    }
+    
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/time/corrections`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          user_id: userId, 
+          block_id: blockId, 
+          requested_start: newStart, 
+          requested_end: newEnd, 
+          reason 
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        return { success: false, error: data.error || "Failed to submit correction" }
+      }
+      mutate()
+      return { success: true, ...data }
+    } catch (error: any) {
+      return { success: false, error: error.message || "Failed to submit correction" }
+    }
+  }
+
   return {
     corrections: data || [],
     isLoading,
     error,
     mutate,
+    submitCorrection,
   }
 }
 

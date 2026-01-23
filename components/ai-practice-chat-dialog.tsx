@@ -215,13 +215,9 @@ export function AIPracticeChatDialog({
 
     if ((!input.trim() && !selectedImage) || loading) return
 
-    console.log("[v0] AI Chat - currentUser:", currentUser)
-    console.log("[v0] AI Chat - practiceId:", currentPractice?.id)
-
     const practiceId = currentPractice?.id
 
     if (!practiceId) {
-      console.log("[v0] AI Chat - No practiceId found")
       toast({
         title: "Keine Praxis ausgewählt",
         description: "Bitte wählen Sie eine Praxis aus.",

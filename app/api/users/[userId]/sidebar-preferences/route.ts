@@ -47,9 +47,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ? [...new Set(rawExpandedGroups)] 
       : ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"]
 
-    console.log("[v0] GET sidebar-preferences data:", JSON.stringify(data, null, 2))
-    console.log("[v0] Favorites from DB:", data?.favorites)
-
     return NextResponse.json({
       preferences: data
         ? {
@@ -114,8 +111,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
       if (favorites !== undefined) updateData.favorites = favorites
       
-      console.log("[v0] Updating sidebar preferences with:", JSON.stringify(updateData, null, 2))
-
       result = await adminClient
         .from("user_sidebar_preferences")
         .update(updateData)
@@ -147,8 +142,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .single()
     }
 
-    console.log("[v0] POST sidebar-preferences result:", JSON.stringify(result, null, 2))
-    
     if (result.error) {
       console.error("[v0] Error saving sidebar preferences:", result.error)
       return NextResponse.json({ error: result.error.message }, { status: 500 })

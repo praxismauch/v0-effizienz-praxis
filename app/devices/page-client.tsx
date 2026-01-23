@@ -147,6 +147,7 @@ export default function DevicesPageClient() {
   const [maintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedDevice, setSelectedDevice] = useState<MedicalDevice | null>(null)
+  const [editingDevice, setEditingDevice] = useState<MedicalDevice | null>(null)
 
   const handleDelete = async () => {
     if (!selectedDevice || !currentPractice?.id) return
@@ -633,10 +634,15 @@ export default function DevicesPageClient() {
       {/* Dialogs */}
       <CreateDeviceDialog
         open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onDeviceCreated={() => {
+        onOpenChange={(open) => {
+          setCreateDialogOpen(open)
+          if (!open) setEditingDevice(null)
+        }}
+        editDevice={editingDevice}
+        onSuccess={() => {
           mutateDevices()
           setCreateDialogOpen(false)
+          setEditingDevice(null)
         }}
       />
 
@@ -646,7 +652,12 @@ export default function DevicesPageClient() {
             open={viewDialogOpen}
             onOpenChange={setViewDialogOpen}
             device={selectedDevice}
-            onDeviceUpdated={() => {
+            onEdit={() => {
+              setEditingDevice(selectedDevice)
+              setViewDialogOpen(false)
+              setCreateDialogOpen(true)
+            }}
+            onRefresh={() => {
               mutateDevices()
             }}
           />

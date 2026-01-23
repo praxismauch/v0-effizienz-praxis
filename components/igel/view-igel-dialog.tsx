@@ -80,133 +80,193 @@ function ViewIgelDialog({ analysis, open, onOpenChange, onSuccess, onEdit }: Vie
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{analysis.service_name}</DialogTitle>
-            <DialogDescription>Analyse Ergebnisse für Selbstzahlerleistung</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[95vh] overflow-y-auto p-0">
+          {/* Header with gradient background */}
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 border-b">
+            <DialogHeader className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <DialogTitle className="text-3xl font-bold tracking-tight">{analysis.service_name}</DialogTitle>
+                  <DialogDescription className="text-base mt-2">
+                    Detaillierte Analyse der Selbstzahlerleistung
+                  </DialogDescription>
+                </div>
+                <div className="flex gap-2">
+                  {onEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        onEdit(analysis)
+                        onOpenChange(false)
+                      }}
+                      className="bg-background"
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Bearbeiten
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </DialogHeader>
+          </div>
 
-          <div className="space-y-6">
-            {/* Score */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">Rentabilitätsscore</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={getScoreColor(analysis.profitability_score || 0)}>
-                      {getScoreIcon(analysis.profitability_score || 0)}
+          <div className="p-8 space-y-8">
+            {/* Score Card - Hero Section */}
+            <Card className="border-2 shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-br from-background to-muted/30 p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Rentabilitätsscore</p>
+                    <div className="flex items-center gap-4">
+                      <div className={`${getScoreColor(analysis.profitability_score || 0)} scale-125`}>
+                        {getScoreIcon(analysis.profitability_score || 0)}
+                      </div>
+                      <span className="text-5xl font-bold tracking-tight">{analysis.profitability_score || 0}<span className="text-2xl text-muted-foreground">/100</span></span>
                     </div>
-                    <span className="text-3xl font-bold">{analysis.profitability_score || 0}/100</span>
                   </div>
                   <Badge
-                    variant={
+                    className={`text-lg px-6 py-2 font-semibold ${
                       analysis.recommendation?.includes("Sehr")
-                        ? "default"
+                        ? "bg-green-500 hover:bg-green-600 text-white"
                         : analysis.recommendation?.includes("Bedingt")
-                          ? "secondary"
-                          : "destructive"
-                    }
+                          ? "bg-amber-500 hover:bg-amber-600 text-white"
+                          : "bg-red-500 hover:bg-red-600 text-white"
+                    }`}
                   >
                     {analysis.recommendation}
                   </Badge>
                 </div>
-                <Progress value={analysis.profitability_score || 0} />
-              </CardContent>
+                <Progress 
+                  value={analysis.profitability_score || 0} 
+                  className="h-4 bg-muted"
+                />
+              </div>
             </Card>
 
-            {/* Key Metrics */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Target className="h-4 w-4" />
-                    Break-Even
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">{analysis.break_even_point} Leistungen</p>
+            {/* Key Metrics - 3 Column Grid */}
+            <div className="grid gap-6 md:grid-cols-3">
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30">
+                      <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Break-Even</p>
+                  </div>
+                  <p className="text-4xl font-bold">{analysis.break_even_point || 0}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Leistungen bis zur Kostendeckung</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Euro className="h-4 w-4" />
-                    Fixkosten
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">{(analysis.total_one_time_cost || 0).toFixed(2)} €</p>
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
+                      <Euro className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Fixkosten</p>
+                  </div>
+                  <p className="text-4xl font-bold">{(analysis.total_one_time_cost || 0).toFixed(2)} <span className="text-xl">€</span></p>
+                  <p className="text-sm text-muted-foreground mt-1">Einmalige Investition</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Euro className="h-4 w-4" />
-                    Variable Kosten
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">{(analysis.total_variable_cost || 0).toFixed(2)} €</p>
-                  <p className="text-xs text-muted-foreground">pro Leistung</p>
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30">
+                      <Euro className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Variable Kosten</p>
+                  </div>
+                  <p className="text-4xl font-bold">{(analysis.total_variable_cost || 0).toFixed(2)} <span className="text-xl">€</span></p>
+                  <p className="text-sm text-muted-foreground mt-1">Pro durchgeführter Leistung</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Pricing Scenarios */}
             {analysis.pricing_scenarios?.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Preisszenarien</CardTitle>
+              <Card className="border-2">
+                <CardHeader className="pb-4 border-b bg-muted/30">
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Preisszenarien im Vergleich
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {analysis.pricing_scenarios.map((scenario: any, idx: number) => (
-                    <div key={idx} className="p-4 border rounded-lg space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{scenario.name}</h4>
-                        <Badge variant="outline">{scenario.price} €</Badge>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Nachfrage/Monat</p>
-                          <p className="font-medium">{scenario.expected_monthly_demand}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Monatsgewinn</p>
-                          <p className="font-medium">{scenario.monthlyProfit?.toFixed(2)} €</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Jahresgewinn</p>
-                          <p className="font-medium">{scenario.yearlyProfit?.toFixed(2)} €</p>
-                        </div>
-                      </div>
-                      {scenario.roi && (
-                        <p className="text-sm">
-                          ROI: <span className="font-medium">{scenario.roi.toFixed(1)}%</span>
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                <CardContent className="p-6">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {analysis.pricing_scenarios.map((scenario: any, idx: number) => {
+                      const isMiddle = idx === 1
+                      return (
+                        <Card 
+                          key={idx} 
+                          className={`border-2 transition-all ${
+                            isMiddle 
+                              ? "border-primary shadow-lg scale-[1.02] bg-primary/5" 
+                              : "hover:border-muted-foreground/30"
+                          }`}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="font-semibold text-lg">{scenario.name}</h4>
+                              {isMiddle && <Badge className="bg-primary text-primary-foreground">Empfohlen</Badge>}
+                            </div>
+                            <div className="text-center py-4 mb-4 bg-muted/50 rounded-lg">
+                              <p className="text-4xl font-bold">{scenario.price} <span className="text-xl">€</span></p>
+                              <p className="text-sm text-muted-foreground">pro Leistung</p>
+                            </div>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-muted-foreground">Nachfrage/Monat</span>
+                                <span className="font-semibold">{scenario.expected_monthly_demand}x</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-muted-foreground">Monatsgewinn</span>
+                                <span className={`font-semibold ${(scenario.monthlyProfit || 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                  {scenario.monthlyProfit?.toFixed(2) || "0.00"} €
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-muted-foreground">Jahresgewinn</span>
+                                <span className={`font-semibold ${(scenario.yearlyProfit || 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                  {scenario.yearlyProfit?.toFixed(2) || "0.00"} €
+                                </span>
+                              </div>
+                              {scenario.roi !== undefined && (
+                                <div className="flex justify-between items-center py-2">
+                                  <span className="text-muted-foreground">ROI</span>
+                                  <Badge variant="outline" className="font-semibold">
+                                    {scenario.roi.toFixed(1)}%
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
                 </CardContent>
               </Card>
             )}
 
             {/* AI Analysis */}
             {analysis.ai_analysis && (
-              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    KI-Empfehlungen
+              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                    </div>
+                    KI-Analyse & Empfehlungen
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-sm dark:prose-invert max-w-none">
                     {typeof analysis.ai_analysis === "string" ? (
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{analysis.ai_analysis}</p>
+                      <p className="text-base leading-relaxed whitespace-pre-wrap">{analysis.ai_analysis}</p>
                     ) : (
-                      <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto">
+                      <pre className="text-sm bg-muted p-4 rounded-lg overflow-auto">
                         {JSON.stringify(analysis.ai_analysis, null, 2)}
                       </pre>
                     )}
@@ -216,27 +276,18 @@ function ViewIgelDialog({ analysis, open, onOpenChange, onSuccess, onEdit }: Vie
             )}
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Schließen
-            </Button>
-            {onEdit && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  onEdit(analysis)
-                  onOpenChange(false)
-                }}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Bearbeiten
+          {/* Footer */}
+          <div className="border-t bg-muted/30 p-6">
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)} size="lg">
+                Schließen
               </Button>
-            )}
-            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Löschen
-            </Button>
-          </DialogFooter>
+              <Button variant="destructive" onClick={() => setDeleteOpen(true)} size="lg">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Analyse löschen
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

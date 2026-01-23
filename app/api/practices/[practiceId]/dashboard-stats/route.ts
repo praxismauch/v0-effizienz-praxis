@@ -75,7 +75,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const today = new Date()
-    const todayStr = today.toISOString().split("T")[0]
+    today.setHours(0, 0, 0, 0) // Start of today
+    const todayStr = today.toISOString() // Full ISO timestamp for timestamp columns
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     const fourteenDaysAgo = new Date()

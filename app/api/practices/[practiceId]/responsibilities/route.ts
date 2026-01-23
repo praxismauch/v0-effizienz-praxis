@@ -63,22 +63,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (resp.deputy_user_id) userIds.add(resp.deputy_user_id)
       })
 
-      console.log("[v0] Looking up", userIds.size, "user IDs:", Array.from(userIds))
-
       if (userIds.size > 0) {
         let teamMembers: any[] = []
         try {
+          // Look up by both id AND user_id since responsible_user_id could be either
           const result = await supabase
             .from("team_members")
-            .select(`
-              id,
-              first_name,
-              last_name,
-              user_id,
-              candidate_id,
-              users(first_name, last_name, is_active, role)
-            `)
-            .in("id", Array.from(userIds))
+            .select(`id, first_name, last_name, user_id`)
+            .eq("practice_id", practiceId)
 
           if (result.error) {
             console.warn("[v0] Team members lookup error:", result.error.message)
@@ -89,30 +81,29 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           if (isRateLimitError(tmError)) {
             console.warn("[v0] Team members lookup: Rate limited")
           }
-          // Continue with empty team members
         }
 
-        console.log("[v0] Found", teamMembers?.length || 0, "team members")
-
         if (teamMembers && teamMembers.length > 0) {
-          const userMap = new Map(
-            teamMembers.map((tm: any) => {
-              let fullName = ""
-              if (tm.users && tm.users.first_name) {
-                fullName = `${tm.users.first_name} ${tm.users.last_name}`.trim()
-              } else if (tm.first_name) {
-                fullName = `${tm.first_name} ${tm.last_name || ""}`.trim()
+          // Create maps for both team_member.id and team_member.user_id lookups
+          const userMapById = new Map<string, string>()
+          const userMapByUserId = new Map<string, string>()
+          
+          teamMembers.forEach((tm: any) => {
+            const fullName = `${tm.first_name || ""} ${tm.last_name || ""}`.trim()
+            if (fullName) {
+              userMapById.set(tm.id, fullName)
+              if (tm.user_id) {
+                userMapByUserId.set(tm.user_id, fullName)
               }
-              console.log("[v0] Mapping team member", tm.id, "to name:", fullName)
-              return [tm.id, fullName || null]
-            }),
-          )
+            }
+          })
 
           const transformedResponsibilities = responsibilities.map((resp: any) => {
-            const responsibleName = userMap.get(resp.responsible_user_id) || null
-            const deputyName = userMap.get(resp.deputy_user_id) || null
-
-            console.log("[v0] Responsibility", resp.name, "- responsible:", responsibleName, "deputy:", deputyName)
+            // Try to find by id first, then by user_id
+            const responsibleName = userMapById.get(resp.responsible_user_id) || 
+                                    userMapByUserId.get(resp.responsible_user_id) || null
+            const deputyName = userMapById.get(resp.deputy_user_id) || 
+                               userMapByUserId.get(resp.deputy_user_id) || null
 
             return {
               ...resp,
@@ -161,7 +152,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const name = body.name
     const description = body.description
-    const groupName = body.group_name || body.groupName
+    const groupName = body.group_name || body.groupName || body.category
     const responsibleUserId = body.responsible_user_id || body.responsibleUserId
     const deputyUserId = body.deputy_user_id || body.deputyUserId
     const teamMemberIds = body.team_member_ids || body.teamMemberIds

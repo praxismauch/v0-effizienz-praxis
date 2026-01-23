@@ -203,29 +203,27 @@ export default function InventoryPage() {
   const [applyingItems, setApplyingItems] = useState(false)
   const [selectedItemsToApply, setSelectedItemsToApply] = useState<number[]>([])
 
-  // Form state for new item
+  // Form state for new item - using database column names
   const [newItem, setNewItem] = useState({
     name: "",
-    sku: "",
+    barcode: "",
     category: "general",
     current_stock: 0,
-    minimum_stock: 5,
-    reorder_point: 10,
-    optimal_stock: 50,
+    min_stock: 5,
+    max_stock: 50,
     unit: "Stück",
-    unit_cost: 0,
+    price: 0,
   })
 
   const [editItem, setEditItem] = useState({
     name: "",
-    sku: "",
+    barcode: "",
     category: "general",
     current_stock: 0,
-    minimum_stock: 5,
-    reorder_point: 10,
-    optimal_stock: 50,
+    min_stock: 5,
+    max_stock: 50,
     unit: "Stück",
-    unit_cost: 0,
+    price: 0,
   })
 
   const practiceId = user?.practice_id
@@ -494,14 +492,13 @@ export default function InventoryPage() {
         setCreateItemOpen(false)
         setNewItem({
           name: "",
-          sku: "",
+          barcode: "",
           category: "general",
           current_stock: 0,
-          minimum_stock: 5,
-          reorder_point: 10,
-          optimal_stock: 50,
+          min_stock: 5,
+          max_stock: 50,
           unit: "Stück",
-          unit_cost: 0,
+          price: 0,
         })
         fetchData()
       } else {
@@ -570,17 +567,16 @@ export default function InventoryPage() {
 
   useEffect(() => {
     if (selectedItem && editItemOpen) {
-      setEditItem({
-        name: selectedItem.name || "",
-        sku: selectedItem.sku || "",
-        category: selectedItem.category || "general",
-        current_stock: selectedItem.current_stock || 0,
-        minimum_stock: selectedItem.minimum_stock || 5,
-        reorder_point: selectedItem.reorder_point || 10,
-        optimal_stock: selectedItem.optimal_stock || 50,
-        unit: selectedItem.unit || "Stück",
-        unit_cost: selectedItem.unit_cost || 0,
-      })
+        setEditItem({
+          name: selectedItem.name || "",
+          barcode: selectedItem.barcode || "",
+          category: selectedItem.category || "general",
+          current_stock: selectedItem.current_stock || 0,
+          min_stock: selectedItem.min_stock || 5,
+          max_stock: selectedItem.max_stock || 50,
+          unit: selectedItem.unit || "Stück",
+          price: selectedItem.price || 0,
+        })
     }
   }, [selectedItem, editItemOpen])
 

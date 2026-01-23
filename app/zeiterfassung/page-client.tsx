@@ -5,8 +5,10 @@ import { Loader2, Clock, Users, FileText, BarChart3, AlertTriangle } from "lucid
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCurrentUser } from "@/hooks/use-current-user"
-import { useTimeTracking, useTimeActions, useCorrectionRequests, usePlausibilityIssues } from "@/hooks/use-time-tracking"
+import { useTimeTrackingStatus, useTimeActions, useCorrectionRequests, usePlausibilityIssues, useTeamLiveView, useTimeBlocks, useTimeTracking } from "@/hooks/use-time-tracking"
 import { toast } from "sonner"
+import { format } from "date-fns"
+import { submitCorrection } from "@/hooks/use-correction"
 
 // Import types
 import type { StampAction, TimeBlock } from "./types"
@@ -52,18 +54,30 @@ export default function ZeiterfassungPageClient() {
 
   // Data hooks
   const {
-    currentSession,
-    timeBlocks,
-    teamMembers,
-    monthlyReport,
-    homeofficePolicy,
-    isLoading: dataLoading,
+    status: currentSession,
+    currentBlock,
+    activeBreak,
+    isLoading: statusLoading,
     mutate,
-  } = useTimeTracking(practiceId, user?.id, selectedMonth)
+  } = useTimeTrackingStatus(practiceId, user?.id)
 
-  const { clockIn, clockOut, startBreak, endBreak } = useTimeActions(practiceId, user?.id, mutate)
-  const { correctionRequests, submitCorrection, mutate: mutateCorrectionRequests } = useCorrectionRequests(practiceId, user?.id)
-  const { plausibilityIssues } = usePlausibilityIssues(practiceId, user?.id)
+  const { blocks: timeBlocks, isLoading: blocksLoading } = useTimeBlocks(
+    practiceId, 
+    user?.id || null,
+    format(selectedMonth, "yyyy-MM-01"),
+    format(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0), "yyyy-MM-dd")
+  )
+  
+  const { members: teamMembers, isLoading: teamLoading } = useTeamLiveView(practiceId)
+
+  const { clockIn, clockOut, startBreak, endBreak } = useTimeActions(practiceId, user?.id)
+  const { corrections: correctionRequests, mutate: mutateCorrectionRequests } = useCorrectionRequests(practiceId)
+  const { issues: plausibilityIssues } = usePlausibilityIssues(practiceId)
+  
+  // Placeholder values for missing data
+  const monthlyReport = null
+  const homeofficePolicy = null
+  const dataLoading = statusLoading || blocksLoading || teamLoading
 
   // Combined loading state
   useEffect(() => {

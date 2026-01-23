@@ -99,6 +99,10 @@ function LoginForm() {
     }
 
     try {
+      // Clear any existing stale session before attempting new login
+      // This fixes issues where old session cookies conflict with new login
+      await supabase.auth.signOut({ scope: 'local' })
+      
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -114,12 +118,7 @@ function LoginForm() {
 
       setStatus("Erfolgreich angemeldet! Weiterleitung...")
       
-      // Wait for session cookies to be fully set before redirecting
-      // This is necessary for deployed environments where cookie propagation may take longer
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      
       // Use window.location for a full page reload to ensure cookies are read correctly
-      // This ensures the middleware reads the freshly set cookies
       if (typeof window !== "undefined") {
         window.location.href = redirectTo
       } else {

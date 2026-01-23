@@ -99,14 +99,28 @@ function LoginForm() {
     }
 
     try {
-      // Clear any existing stale session before attempting new login
+      // Clear any existing stale session before attempting new login (with timeout)
       // This fixes issues where old session cookies conflict with new login
-      await supabase.auth.signOut({ scope: 'local' })
+      try {
+        await Promise.race([
+          supabase.auth.signOut({ scope: 'local' }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('signOut timeout')), 3000))
+        ])
+      } catch {
+        // Ignore signOut errors/timeouts - proceed with login anyway
+      }
       
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      // Login with timeout to prevent infinite hanging
+      const loginPromise = supabase.auth.signInWithPassword({
         email,
         password,
       })
+      
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Login timeout - bitte versuchen Sie es erneut')), 15000)
+      )
+      
+      const { data, error: authError } = await Promise.race([loginPromise, timeoutPromise])
 
       if (authError) {
         throw authError
@@ -132,6 +146,8 @@ function LoginForm() {
           errorMessage = "Ungültige Anmeldedaten. Bitte überprüfen Sie E-Mail und Passwort."
         } else if (msg.includes("email") && msg.includes("confirm")) {
           errorMessage = "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden."
+        } else if (msg.includes("timeout")) {
+          errorMessage = "Zeitüberschreitung - bitte versuchen Sie es erneut oder laden Sie die Seite neu."
         } else {
           errorMessage = error.message
         }

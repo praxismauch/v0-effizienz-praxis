@@ -188,15 +188,22 @@ Antworte auf Deutsch, präzise und hilfreich. Verwende die verfügbaren Daten, u
         messages.push({ role: "user", content: message })
       }
 
+      console.log("[v0] AI Chat - Generating response with model: anthropic/claude-sonnet-4-20250514")
+      console.log("[v0] AI Chat - Messages count:", messages.length)
+      
       const result = await generateText({
         model: "anthropic/claude-sonnet-4-20250514",
         messages,
         maxOutputTokens: 1000,
         temperature: 0.7,
       })
+      
+      console.log("[v0] AI Chat - Response generated successfully")
       text = result.text
     } catch (aiError) {
-      console.error("AI Chat API - AI generation error:", aiError)
+      console.error("[v0] AI Chat - AI generation error:", aiError)
+      console.error("[v0] AI Chat - Error type:", typeof aiError)
+      console.error("[v0] AI Chat - Error details:", JSON.stringify(aiError, null, 2))
 
       const errorMessage = aiError instanceof Error ? aiError.message : String(aiError)
       const isGatewayError = errorMessage.includes("Gateway request failed") || errorMessage.includes("fetch failed")

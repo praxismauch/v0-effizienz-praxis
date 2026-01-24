@@ -8,7 +8,7 @@
 ## Responsibilities Database Schema
 
 ### responsibilities table
-```
+\`\`\`
 column_name                        | data_type                   | is_nullable | column_default
 -----------------------------------|-----------------------------| -----------|----------------
 id                                 | text                        | NO          | gen_random_uuid()
@@ -34,7 +34,7 @@ created_by                         | text                        | YES         |
 created_at                         | timestamp with time zone    | YES         | now()
 updated_at                         | timestamp with time zone    | YES         | now()
 deleted_at                         | timestamp with time zone    | YES         | null
-```
+\`\`\`
 
 **Priority Values:**
 - `low` - Low priority
@@ -76,7 +76,7 @@ deleted_at                         | timestamp with time zone    | YES         |
 ## Employee Appraisals Database Schema
 
 ### employee_appraisals table
-```
+\`\`\`
 column_name     | data_type | is_nullable
 ----------------|-----------|------------
 id              | text      | NO
@@ -88,10 +88,10 @@ appraisal_type  | text      | YES
 status          | text      | YES
 overall_rating  | numeric   | YES
 skill_rating_1-10| numeric  | YES
-```
+\`\`\`
 
 ### skill_definitions table
-```
+\`\`\`
 column_name           | data_type | is_nullable
 ----------------------|-----------|------------
 id                    | text      | NO
@@ -102,7 +102,7 @@ description           | text      | YES
 level_0-3_description | text      | YES
 is_active             | boolean   | YES
 display_order         | integer   | YES
-```
+\`\`\`
 
 ## Calendar Events Database Schema
 
@@ -146,18 +146,18 @@ Different tables use different column names for user references:
 
 **CRITICAL**: `createAdminClient()` returns a Promise and MUST be awaited:
 
-```typescript
+\`\`\`typescript
 // WRONG - causes "TypeError: i.from is not a function"
 const supabase = createAdminClient()
 
 // CORRECT
 const supabase = await createAdminClient()
-```
+\`\`\`
 
 ## Hiring / Personalsuche Database Schema
 
 ### candidates table
-```
+\`\`\`
 column_name         | data_type                   | is_nullable
 --------------------|-----------------------------|-----------
 id                  | uuid                        | NO
@@ -192,10 +192,10 @@ created_by          | text                        | YES
 created_at          | timestamp with time zone    | YES
 updated_at          | timestamp with time zone    | YES
 deleted_at          | timestamp with time zone    | YES
-```
+\`\`\`
 
 ### applications table
-```
+\`\`\`
 column_name      | data_type                   | is_nullable
 -----------------|-----------------------------|-----------
 id               | uuid                        | NO
@@ -212,10 +212,10 @@ rejection_reason | text                        | YES
 created_at       | timestamp with time zone    | YES
 updated_at       | timestamp with time zone    | YES
 deleted_at       | timestamp with time zone    | YES
-```
+\`\`\`
 
 ### questionnaire_responses table (Created 2026-01-15)
-```
+\`\`\`
 column_name      | data_type                   | is_nullable
 -----------------|-----------------------------|-----------
 id               | uuid                        | NO (PK, gen_random_uuid())
@@ -234,7 +234,7 @@ created_by       | text                        | YES
 created_at       | timestamp with time zone    | YES (default NOW())
 updated_at       | timestamp with time zone    | YES (default NOW())
 deleted_at       | timestamp with time zone    | YES
-```
+\`\`\`
 
 **Status values:** `pending`, `in_progress`, `completed`, `expired`
 
@@ -262,9 +262,9 @@ deleted_at       | timestamp with time zone    | YES
 ### Hiring API Patterns
 
 **Always include soft-delete filter:**
-```typescript
+\`\`\`typescript
 .is("deleted_at", null)
-```
+\`\`\`
 
 **Files with soft-delete filters (verified 2026-01-15):**
 - `candidates/route.ts` - GET list

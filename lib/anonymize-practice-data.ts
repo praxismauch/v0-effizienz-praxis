@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { createServerClient } from "@/lib/supabase/server"
 
 /**
  * CRITICAL: Data Anonymization Utility for Datenspende (Data Donation)
@@ -49,8 +48,7 @@ export interface AnonymizedPracticeData {
 export async function fetchAnonymizedDataFromDonatingPractices(
   excludePracticeId?: string,
 ): Promise<AnonymizedPracticeData[]> {
-  const cookieStore = await cookies()
-  const supabase = await createClient(cookieStore)
+  const supabase = await createServerClient()
 
   try {
     // 1. Find practices with Datenspende enabled
@@ -119,8 +117,7 @@ async function anonymizeSinglePractice(
   practiceId: string,
   practiceType: string,
 ): Promise<AnonymizedPracticeData | null> {
-  const cookieStore = await cookies()
-  const supabase = await createClient(cookieStore)
+  const supabase = await createServerClient()
 
   try {
     // Count team members to determine size (NO names or emails)

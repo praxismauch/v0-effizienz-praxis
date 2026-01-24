@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CreateRoiAnalysisDialog } from "@/components/roi/create-roi-analysis-dialog"
 import { RoiAnalysisCard } from "@/components/roi/roi-analysis-card"
 import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 import { AppLayout } from "@/components/app-layout"
 import { toast } from "sonner"
 
@@ -47,19 +48,22 @@ export default function RoiAnalysisPage() {
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const { currentUser, loading: authLoading } = useUser()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
+
+  const practiceId = currentPractice?.id?.toString()
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading || practiceLoading) return
     if (!currentUser) {
       setLoading(false)
       return
     }
-    if (currentUser.practice_id) {
-      fetchAnalyses(currentUser.practice_id)
+    if (practiceId) {
+      fetchAnalyses(practiceId)
     } else {
       setLoading(false)
     }
-  }, [currentUser, authLoading])
+  }, [currentUser, authLoading, practiceLoading, practiceId])
 
   const fetchAnalyses = async (practiceId: string) => {
     if (!practiceId) {

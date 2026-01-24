@@ -58,7 +58,7 @@ export default function CalendarPageClient() {
 
   // Fetch events
   const { data: eventsData, mutate: refreshEvents, isLoading } = useSWR(
-    practiceId ? `/api/practices/${practiceId}/calendar` : null,
+    practiceId ? `/api/practices/${practiceId}/calendar-events` : null,
     fetcher,
     { revalidateOnFocus: false }
   )

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
+import { MultiImageUpload } from "@/components/ui/multi-image-upload"
 
 interface EditRoomDialogProps {
   open: boolean
@@ -24,12 +25,23 @@ interface EditRoomDialogProps {
     id: string
     name: string
     beschreibung: string | null
+    images?: string | null
   }
   onSuccess: (room: any) => void
 }
 
 export function EditRoomDialog({ open, onOpenChange, room, onSuccess }: EditRoomDialogProps) {
   const [loading, setLoading] = useState(false)
+  const [images, setImages] = useState<string[]>(() => {
+    if (room.images) {
+      try {
+        return JSON.parse(room.images)
+      } catch {
+        return []
+      }
+    }
+    return []
+  })
   const [formData, setFormData] = useState({
     name: room.name,
     beschreibung: room.beschreibung || "",
@@ -43,7 +55,10 @@ export function EditRoomDialog({ open, onOpenChange, room, onSuccess }: EditRoom
       const res = await fetch(`/api/rooms/${room.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          images: images.length > 0 ? JSON.stringify(images) : null,
+        }),
       })
 
       if (res.ok) {
@@ -81,6 +96,16 @@ export function EditRoomDialog({ open, onOpenChange, room, onSuccess }: EditRoom
               value={formData.beschreibung}
               onChange={(e) => setFormData({ ...formData, beschreibung: e.target.value })}
               rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Bilder</Label>
+            <MultiImageUpload
+              images={images}
+              onImagesChange={setImages}
+              maxImages={10}
+              disabled={loading}
+              uploadEndpoint="/api/upload"
             />
           </div>
           <DialogFooter>

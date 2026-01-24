@@ -76,7 +76,7 @@ export default function DashboardPageClient() {
 
   const hadValidPracticeRef = useRef(false)
 
-  const practiceId = currentPractice?.id || currentUser?.practiceId || currentUser?.practice_id
+  const practiceId = currentPractice?.id?.toString()
   const hasValidPracticeId = !!practiceId
 
   useEffect(() => {

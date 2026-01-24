@@ -72,7 +72,8 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     // Only set initial practice once when data loads and no practice is selected
     if (practices.length > 0 && !currentPracticeState && !hasSetInitialPractice.current) {
       hasSetInitialPractice.current = true
-      const userPractice = practices.find((p: Practice) => p.id === currentUser?.practiceId)
+      // Use String() comparison to handle both string and integer IDs
+      const userPractice = practices.find((p: Practice) => String(p.id) === String(currentUser?.practiceId))
       setCurrentPracticeState(userPractice || practices[0])
     }
   }, [practices, currentPracticeState, currentUser?.practiceId])

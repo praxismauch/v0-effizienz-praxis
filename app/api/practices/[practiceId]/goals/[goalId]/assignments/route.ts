@@ -44,7 +44,7 @@ export async function GET(
       return NextResponse.json({ error: teamMembersError.message || "Failed to fetch team members" }, { status: 500 })
     }
 
-    const activeTeamMembers = teamMembers?.filter((tm: any) => {
+    const activeTeamMembers = (teamMembers || []).filter((tm: any) => {
       if (tm.user_id && tm.users) {
         return tm.users.is_active && tm.users.role !== "superadmin"
       }
@@ -67,8 +67,8 @@ export async function GET(
       usersData = users || []
     }
 
-    const enrichedAssignments = assignments.map((assignment: any) => {
-      const teamMember = activeTeamMembers?.find((tm: any) => tm.id === assignment.team_member_id)
+    const enrichedAssignments = (assignments || []).map((assignment: any) => {
+      const teamMember = (activeTeamMembers || []).find((tm: any) => tm.id === assignment.team_member_id)
       const user = teamMember?.users || null
 
       return {

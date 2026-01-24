@@ -95,7 +95,8 @@ export default function PracticeDetailsPage({ params }: { params: { id: string }
 
       try {
         // Find practice from context or fetch from API
-        const foundPractice = practices.find((p) => p.id === practiceId)
+        // Use String() comparison to handle both string and integer IDs
+        const foundPractice = practices.find((p) => String(p.id) === String(practiceId))
 
         if (foundPractice) {
           setPractice(foundPractice)

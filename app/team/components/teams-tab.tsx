@@ -23,7 +23,7 @@ export default function TeamsTab({
   onDeleteTeam,
 }: TeamsTabProps) {
   const getTeamMembers = (teamId: string) => {
-    return teamMembers.filter((m) => m.team_id === teamId)
+    return (teamMembers || []).filter((m) => m.team_id === teamId)
   }
 
   if (teams.length === 0) {

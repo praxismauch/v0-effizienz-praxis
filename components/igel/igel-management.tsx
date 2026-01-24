@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useUser } from "@/contexts/user-context" // Import useUser hook
+import { usePractice } from "@/contexts/practice-context" // Import usePractice hook
 import {
   Plus,
   TrendingUp,
@@ -19,7 +21,6 @@ import { Badge } from "@/components/ui/badge"
 import { CreateIgelDialog } from "./create-igel-dialog"
 import { ViewIgelDialog } from "./view-igel-dialog"
 import { EditIgelDialog } from "./edit-igel-dialog"
-import { useUser } from "@/contexts/user-context"
 import { useIgelAnalyses } from "@/hooks/use-igel"
 
 interface IgelAnalysis {
@@ -41,9 +42,9 @@ export function IgelManagement() {
   const [createOpen, setCreateOpen] = useState(false)
   const [viewAnalysis, setViewAnalysis] = useState<IgelAnalysis | null>(null)
   const [editAnalysis, setEditAnalysis] = useState<IgelAnalysis | null>(null)
-  const { currentUser: user } = useUser()
+  const { currentPractice } = usePractice()
 
-  const practiceId = user?.practice_id
+  const practiceId = currentPractice?.id
   const { analyses, isLoading: loading, error, mutate: mutateAnalyses } = useIgelAnalyses(practiceId)
 
   const getRecommendationColor = (recommendation: string) => {

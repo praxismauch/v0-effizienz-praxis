@@ -513,7 +513,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                       >
                         <Star className="h-7 w-7 text-yellow-400" fill="currentColor" />
                       </motion.div>
-                      <span className="text-yellow-400 font-bold text-2xl">+{badge.points} Punkte</span>
+                      <span className="text-yellow-400 font-bold text-2xl">+{badge.points || 0} Punkte</span>
                       <motion.div
                         animate={{ rotate: -360, scale: [1, 1.2, 1] }}
                         transition={{

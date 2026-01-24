@@ -230,6 +230,28 @@ export async function POST(request: Request) {
       analyticsParameters, // Use analytics_parameters instead
       knowledge, // Added knowledge query
       todoStats, // Added todoStats query
+      // Additional data sources for comprehensive analysis
+      inventoryItems, // Inventory management
+      rooms, // Room management
+      arbeitsplaetze, // Workstations
+      arbeitsmittel, // Work equipment
+      timeBlocks, // Time tracking
+      protocols, // Meeting protocols
+      surveys, // Surveys
+      contacts, // Contact management
+      leitbild, // Mission/vision
+      kudos, // Employee recognition
+      moodSurveys, // Anonymous mood surveys
+      moodResponses, // Anonymous mood responses
+      employeeAppraisals, // Performance reviews
+      employeeAvailability, // Staff availability
+      shiftSchedules, // Shift schedules
+      competitorAnalyses, // Competitor analyses
+      igelAnalyses, // IGEL service analyses
+      roiAnalyses, // ROI analyses
+      qualityCircleSessions, // Quality circle sessions
+      wellbeingSuggestions, // Wellbeing suggestions
+      workloadAnalysis, // Workload analysis
     ] = await Promise.all([
       supabase.from("practices").select("*").eq("id", practiceId).single(),
       supabase
@@ -376,6 +398,58 @@ export async function POST(request: Request) {
         .from("todos")
         .select("id, completed")
         .eq("practice_id", practiceId), // Added todoStats query
+      // New comprehensive data queries
+      safeQuery(supabase.from("inventory_items").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("rooms").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("arbeitsplaetze").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("arbeitsmittel").select("*").eq("practice_id", practiceId)),
+      safeQuery(
+        supabase
+          .from("time_blocks")
+          .select("*")
+          .eq("practice_id", practiceId)
+          .gte("date", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
+          .limit(500),
+      ),
+      safeQuery(
+        supabase
+          .from("protocols")
+          .select("*")
+          .eq("practice_id", practiceId)
+          .order("meeting_date", { ascending: false })
+          .limit(50),
+      ),
+      safeQuery(supabase.from("surveys").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("contacts").select("*").eq("practice_id", practiceId)),
+      safeQuery(
+        supabase.from("leitbild").select("*").eq("practice_id", practiceId).eq("is_active", true).maybeSingle(),
+        { data: null },
+      ),
+      safeQuery(supabase.from("kudos").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("anonymous_mood_surveys").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("anonymous_mood_responses").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("employee_appraisals").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("employee_availability").select("*").eq("practice_id", practiceId)),
+      safeQuery(
+        supabase
+          .from("shift_schedules")
+          .select("*")
+          .eq("practice_id", practiceId)
+          .gte("shift_date", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]),
+      ),
+      safeQuery(supabase.from("competitor_analyses").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("igel_analyses").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("roi_analyses").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("quality_circle_sessions").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("wellbeing_suggestions").select("*").eq("practice_id", practiceId)),
+      safeQuery(
+        supabase
+          .from("workload_analysis")
+          .select("*")
+          .eq("practice_id", practiceId)
+          .order("created_at", { ascending: false })
+          .limit(1),
+      ),
     ])
 
     const [ticketStatusesConfig, ticketPrioritiesConfig] = await Promise.all([

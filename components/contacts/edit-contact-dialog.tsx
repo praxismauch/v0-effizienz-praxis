@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { useUser } from "@/contexts/user-context" // Import useUser hook
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 
 interface Contact {
   id: string
@@ -44,7 +44,7 @@ interface EditContactDialogProps {
 export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: EditContactDialogProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const { currentUser } = useUser()
+  const { currentPractice, currentUser } = usePractice() // Declare currentUser variable
 
   const [formData, setFormData] = useState({
     salutation: contact.salutation || "",

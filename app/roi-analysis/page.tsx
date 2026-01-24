@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CreateRoiAnalysisDialog } from "@/components/roi/create-roi-analysis-dialog"
 import { RoiAnalysisCard } from "@/components/roi/roi-analysis-card"
 import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 import { AppLayout } from "@/components/app-layout"
 import { toast } from "sonner"
 
@@ -47,19 +48,22 @@ export default function RoiAnalysisPage() {
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const { currentUser, loading: authLoading } = useUser()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
+
+  const practiceId = currentPractice?.id?.toString()
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading || practiceLoading) return
     if (!currentUser) {
       setLoading(false)
       return
     }
-    if (currentUser.practice_id) {
-      fetchAnalyses(currentUser.practice_id)
+    if (practiceId) {
+      fetchAnalyses(practiceId)
     } else {
       setLoading(false)
     }
-  }, [currentUser, authLoading])
+  }, [currentUser, authLoading, practiceLoading, practiceId])
 
   const fetchAnalyses = async (practiceId: string) => {
     if (!practiceId) {
@@ -95,8 +99,8 @@ export default function RoiAnalysisPage() {
   }
 
   const handleAnalysisCreated = () => {
-    if (currentUser?.practice_id) {
-      fetchAnalyses(currentUser.practice_id)
+    if (practiceId) {
+      fetchAnalyses(practiceId)
     }
     setCreateDialogOpen(false)
   }
@@ -106,7 +110,7 @@ export default function RoiAnalysisPage() {
   }
 
   const handleOpenCreateDialog = () => {
-    if (!currentUser?.practice_id) {
+    if (!practiceId) {
       alert("Bitte warten Sie, bis die Praxis geladen ist.")
       return
     }
@@ -131,7 +135,7 @@ export default function RoiAnalysisPage() {
               Berechnen Sie die Wirtschaftlichkeit neuer Leistungen und Investitionen
             </p>
           </div>
-          <Button onClick={handleOpenCreateDialog} size="lg" disabled={!currentUser?.practice_id}>
+          <Button onClick={handleOpenCreateDialog} size="lg" disabled={!practiceId}>
             <Plus className="h-4 w-4 mr-2" />
             Neue Analyse
           </Button>
@@ -155,7 +159,7 @@ export default function RoiAnalysisPage() {
               <p className="text-muted-foreground text-center mb-4">
                 Erstellen Sie Ihre erste Lohnt-es-sich-Analyse, um die Wirtschaftlichkeit neuer Leistungen zu bewerten.
               </p>
-              <Button onClick={handleOpenCreateDialog} disabled={!currentUser?.practice_id}>
+              <Button onClick={handleOpenCreateDialog} disabled={!practiceId}>
                 <Plus className="h-4 w-4 mr-2" />
                 Erste Analyse erstellen
               </Button>
@@ -168,19 +172,19 @@ export default function RoiAnalysisPage() {
                 key={analysis.id}
                 analysis={analysis}
                 onDeleted={handleAnalysisDeleted}
-                onUpdated={() => currentUser?.practice_id && fetchAnalyses(currentUser.practice_id)}
+                onUpdated={() => practiceId && fetchAnalyses(practiceId)}
               />
             ))}
           </div>
         )}
 
-        {/* Create Dialog - Pass practiceId and userId from currentUser */}
-        {currentUser?.practice_id && (
+        {/* Create Dialog - Pass practiceId from practice context and userId from user context */}
+        {practiceId && currentUser && (
           <CreateRoiAnalysisDialog
             open={createDialogOpen}
             onOpenChange={setCreateDialogOpen}
             onSuccess={handleAnalysisCreated}
-            practiceId={currentUser.practice_id}
+            practiceId={practiceId}
             userId={currentUser.id}
           />
         )}

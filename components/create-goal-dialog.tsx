@@ -20,7 +20,7 @@ import { Switch } from "@/components/ui/switch"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useTranslation } from "@/contexts/translation-context"
-import { Link, ChevronDown, ChevronUp, X, Upload, type File, Users, Loader2 } from "lucide-react"
+import { Link, ChevronDown, ChevronUp, X, Upload, Type as type, File, Users, Loader2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTeam } from "@/contexts/team-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
+import OrgaCategorySelect from "@/components/orga-category-select" // Import OrgaCategorySelect
 
 interface CreateGoalDialogProps {
   open: boolean
@@ -572,28 +573,13 @@ export function CreateGoalDialog({
             </div>
 
             {/* Category Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="category">Kategorie</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Kategorie wählen..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Keine Kategorie</SelectItem>
-                  {orgaCategories.map((cat: any) => (
-                    <SelectItem key={cat.id} value={cat.name}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color || "#64748b" }} />
-                        {cat.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <OrgaCategorySelect
+              value={formData.category}
+              onValueChange={(value) => setFormData({ ...formData, category: value })}
+              categories={orgaCategories}
+              showLabel={true}
+              label="Kategorie"
+            />
 
             {/* Team Assignment */}
             <div className="space-y-2">

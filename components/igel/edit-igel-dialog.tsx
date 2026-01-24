@@ -19,7 +19,8 @@ import { updateIgelAnalysis } from "@/hooks/use-igel"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
-import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
+import { useUser } from "@/contexts/user-context" // Import useUser from the appropriate context
 
 interface EditIgelDialogProps {
   analysis: any
@@ -65,6 +66,7 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
   const [analyzing, setAnalyzing] = useState(false)
   const { toast } = useToast()
   const { currentUser: user } = useUser()
+  const { currentUser: practice } = usePractice() // Use usePractice context for practice data
 
   // Service Info
   const [serviceName, setServiceName] = useState("")

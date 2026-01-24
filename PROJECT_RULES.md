@@ -350,13 +350,13 @@ These tables have DUPLICATE columns - **ALWAYS use `practice_id`**:
 ### RLS Policy Pattern
 
 All main tables use this pattern:
-```sql
+\`\`\`sql
 (auth.role() = 'authenticated') AND (practice_id = get_user_practice_id())
-```
+\`\`\`
 
 ### CRITICAL: `get_user_practice_id()` Function
 
-```sql
+\`\`\`sql
 DECLARE
   user_practice_id TEXT;
 BEGIN
@@ -380,7 +380,7 @@ BEGIN
   
   RETURN user_practice_id;
 END;
-```
+\`\`\`
 
 ### RLS Function Issue
 
@@ -414,17 +414,17 @@ END;
 
 **CRITICAL**: `createAdminClient()` returns a Promise and MUST be awaited:
 
-```typescript
+\`\`\`typescript
 // WRONG - causes "TypeError: i.from is not a function"
 const supabase = createAdminClient()
 
 // CORRECT
 const supabase = await createAdminClient()
-```
+\`\`\`
 
 ### Authentication in API Routes
 
-```typescript
+\`\`\`typescript
 // CORRECT - For user-authenticated routes
 import { createServerClient } from "@/lib/supabase/server"
 
@@ -451,11 +451,11 @@ export async function POST(request: Request) {
   const adminClient = await createAdminClient()
   // ... admin operations
 }
-```
+\`\`\`
 
 ### Supabase Client Usage
 
-```typescript
+\`\`\`typescript
 // Server-side (in API routes)
 import { createClient } from "@/lib/supabase/server"
 const supabase = await createClient()
@@ -467,28 +467,28 @@ const supabase = await createAdminClient()
 // Client-side
 import { createClient } from "@/lib/supabase/client"
 const supabase = createClient()
-```
+\`\`\`
 
 ### Use .maybeSingle() for Optional Data
 
-```typescript
+\`\`\`typescript
 // WRONG - throws error if no row found
 const { data } = await supabase.from("table").select().eq("id", id).single()
 
 // CORRECT - returns null if no row
 const { data } = await supabase.from("table").select().eq("id", id).maybeSingle()
-```
+\`\`\`
 
 ### API Response Format
 
 Always return JSON, never plain text:
-```typescript
+\`\`\`typescript
 // Bad
 return new Response("Error message")
 
 // Good
 return Response.json({ error: "Fehler aufgetreten" }, { status: 400 })
-```
+\`\`\`
 
 ---
 
@@ -498,20 +498,20 @@ return Response.json({ error: "Fehler aufgetreten" }, { status: 400 })
 
 Pages using auth hooks need this pattern:
 
-```tsx
+\`\`\`tsx
 // app/[page]/page.tsx (Server Component)
 export const dynamic = "force-dynamic"
 import { PageClient } from "./page-client"
 export default function Page() {
   return <PageClient />
 }
-```
+\`\`\`
 
 ### AppLayout Wrapper
 
 All dashboard pages must be wrapped in AppLayout:
 
-```tsx
+\`\`\`tsx
 import AppLayout from "@/components/app-layout"
 
 export default function PageClient() {
@@ -521,19 +521,19 @@ export default function PageClient() {
     </AppLayout>
   )
 }
-```
+\`\`\`
 
 ### Next.js Router Import
 
 **CRITICAL:** Always use App Router imports, not Pages Router:
 
-```typescript
+\`\`\`typescript
 // WRONG - Pages Router (causes hydration errors)
 import { useRouter } from "next/router"
 
 // CORRECT - App Router
 import { useRouter } from "next/navigation"
-```
+\`\`\`
 
 ### Optimistic Updates Pattern (For Instant UI)
 
@@ -541,7 +541,7 @@ import { useRouter } from "next/navigation"
 
 **Solution:** Update local state immediately, then sync with server
 
-```typescript
+\`\`\`typescript
 // BEFORE (Pessimistic - Slow)
 const handleSave = async (data) => {
   await fetch('/api/save', { method: 'POST', body: JSON.stringify(data) })
@@ -578,7 +578,7 @@ const handleSave = async (data) => {
     toast.error("Speichern fehlgeschlagen")
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -677,9 +677,9 @@ The dienstplan page requires **shift_types** to be defined before it can load.
 2. Team members linked to practice
 
 **Diagnostic SQL:**
-```sql
+\`\`\`sql
 SELECT COUNT(*) FROM shift_types WHERE practice_id = 'YOUR_PRACTICE_ID';
-```
+\`\`\`
 
 ### Practice IDs Reference
 
@@ -688,7 +688,7 @@ SELECT COUNT(*) FROM shift_types WHERE practice_id = 'YOUR_PRACTICE_ID';
 
 ### RLS Diagnostic Script
 
-```sql
+\`\`\`sql
 -- Check if user has practice access
 SELECT 
   u.id,
@@ -701,7 +701,7 @@ WHERE u.id = 'USER_ID_HERE';
 
 -- Test get_user_practice_id() function
 SELECT get_user_practice_id();
-```
+\`\`\`
 
 ---
 

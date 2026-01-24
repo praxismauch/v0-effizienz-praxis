@@ -78,7 +78,7 @@ Verteile die Test-Items sinnvoll auf verschiedene Kategorien.`
     console.log("[v0] Generating AI suggestions with prompt length:", prompt.length)
 
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt,
     })
 

@@ -71,7 +71,7 @@ Wenn keine Bewertungen gefunden werden, antworte mit einem leeren Array: []
       if (imageUrl) {
         // Use vision model for image analysis
         result = await generateText({
-          model: "openai/gpt-4o",
+          model: "anthropic/claude-sonnet-4-20250514",
           messages: [
             {
               role: "user",
@@ -84,7 +84,7 @@ Wenn keine Bewertungen gefunden werden, antworte mit einem leeren Array: []
         })
       } else {
         result = await generateText({
-          model: "openai/gpt-4o-mini",
+          model: "anthropic/claude-sonnet-4-20250514",
           prompt: extractionPrompt,
         })
       }

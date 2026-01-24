@@ -10,7 +10,7 @@ async function searchGoogleRatings(
   try {
     // Use AI to search and extract real Google ratings
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Search for the Google rating of this medical practice in Germany:
 Practice: ${practiceName}
 Location: ${location}
@@ -23,7 +23,7 @@ If you cannot find real information, respond with:
 {"rating": null, "reviewCount": null, "found": false}
 
 Only respond with the JSON, nothing else.`,
-      maxTokens: 100,
+      maxOutputTokens: 100,
     })
 
     const result = JSON.parse(text)
@@ -218,7 +218,7 @@ WICHTIG:
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 10000,
+      maxOutputTokens: 10000,
     })
 
     // Parse the AI response

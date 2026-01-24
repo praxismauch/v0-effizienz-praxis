@@ -100,7 +100,7 @@ Schreibe nur die Antwort, keine Erklärungen.`
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 500,
+      maxOutputTokens: 500,
     })
 
     return NextResponse.json({ suggestion: text.trim() })

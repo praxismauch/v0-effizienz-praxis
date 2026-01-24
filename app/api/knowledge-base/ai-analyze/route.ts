@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // AI Analysis
     const { text } = await generateText({
-      model: "openai/gpt-4o", // Upgraded from gpt-4o-mini to gpt-4o for better knowledge base analysis
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Analysiere die folgende QM-Dokumentation einer medizinischen Praxis und gib eine strukturierte Bewertung:
 
 Anzahl Artikel: ${articles.length}

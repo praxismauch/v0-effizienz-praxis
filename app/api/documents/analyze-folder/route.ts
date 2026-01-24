@@ -103,10 +103,10 @@ Gib eine detaillierte, professionelle Analyse auf Deutsch zurück, die sich auf 
 
     try {
       const { text } = await generateText({
-        model: "openai/gpt-4o",
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt,
         temperature: 0.7,
-        maxTokens: 3000,
+        maxOutputTokens: 3000,
       })
       analysisText = text
     } catch (error) {

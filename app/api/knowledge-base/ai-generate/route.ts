@@ -56,11 +56,11 @@ export async function POST(request: Request) {
     }
 
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     })
 
     return new Response(

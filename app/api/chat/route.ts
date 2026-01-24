@@ -4,7 +4,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json()
 
   const result = streamText({
-    model: "openai/gpt-4o-mini",
+    model: "anthropic/claude-sonnet-4-20250514",
     messages,
     system: "You are a helpful assistant...",
   })

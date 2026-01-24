@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Analysiere dieses Dokument detailliert und erstelle eine umfassende Analyse auf Deutsch.
 
 Dokument: ${fileName}

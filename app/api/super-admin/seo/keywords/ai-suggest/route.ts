@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Generate AI keyword suggestions
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Du bist ein SEO-Experte für medizinische Praxen in Deutschland.
 
 Kontext: Die Anwendung ist eine Praxismanagement-Software für: ${practiceContext}

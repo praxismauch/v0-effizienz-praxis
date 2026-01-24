@@ -87,13 +87,13 @@ Bitte gib 3-5 konkrete Optimierungsvorschläge, die helfen:
 
 Formatiere deine Antwort als nummerierte Liste mit klaren, umsetzbaren Vorschlägen. Sei spezifisch und praxisnah.`
 
-    console.log("[v0] Generating AI text with model: openai/gpt-4o")
+    console.log("[v0] Generating AI text with model: anthropic/claude-sonnet-4-20250514")
 
     try {
       const { text } = await generateText({
-        model: "openai/gpt-4o",
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt,
-        maxTokens: 1000,
+        maxOutputTokens: 1000,
       })
 
       console.log("[v0] AI text generated successfully, length:", text.length)

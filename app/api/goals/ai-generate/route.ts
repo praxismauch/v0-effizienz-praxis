@@ -38,10 +38,10 @@ Antworte ausschließlich mit einem JSON-Array von Zielen in folgendem Format (oh
 ]`
 
       const { text } = await generateText({
-        model: "openai/gpt-4o",
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt,
         temperature: 0.7,
-        maxTokens: 2000,
+        maxOutputTokens: 2000,
       })
 
       const cleanedText = text.trim().replace(/```json\n?|\n?```/g, "")

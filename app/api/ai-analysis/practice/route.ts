@@ -865,9 +865,9 @@ Sei konstruktiv, aber ehrlich. Hebe Stärken hervor UND identifiziere konkrete V
     let analysis
     try {
       const { text } = await generateText({
-        model: "openai/gpt-4o", // Upgraded from gpt-4o-mini to gpt-4o for comprehensive practice analysis
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt: fullPrompt,
-        maxTokens: 8000,
+        maxOutputTokens: 8000,
         temperature: 0.5,
       })
 

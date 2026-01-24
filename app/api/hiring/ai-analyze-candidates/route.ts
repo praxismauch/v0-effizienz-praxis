@@ -225,9 +225,9 @@ Erstelle eine PROFESSIONELLE ANALYSE im folgenden Format:
 Nutze deutsche Umlaute und professionelle Sprache. Sei präzise und konkret. WICHTIG: Beziehe dich auf die tatsächlichen Inhalte der hochgeladenen Lebensläufe und Dokumente in deiner Analyse.`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o", // Upgraded from gpt-4o-mini to gpt-4o for better candidate analysis
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 3000,
+      maxOutputTokens: 3000,
     })
 
     return NextResponse.json({

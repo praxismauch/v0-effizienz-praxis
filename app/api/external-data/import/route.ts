@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
         // Use AI to categorize the file
         const { text: aiResponse } = await generateText({
-          model: "openai/gpt-4o-mini",
+          model: "anthropic/claude-sonnet-4-20250514",
           prompt: `Categorize this file and determine which system section it belongs to:
           
 File name: ${file.name}

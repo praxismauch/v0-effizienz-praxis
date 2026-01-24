@@ -158,7 +158,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     let suggestions
     try {
       const { text } = await generateText({
-        model: "openai/gpt-4o",
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt: `Du bist ein KI-Terminassistent. 
 
 HEUTIGES DATUM: ${todayStr}

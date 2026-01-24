@@ -65,9 +65,9 @@ Wichtig:
 - Fokussiere auf konkrete, ausführbare Tätigkeiten`
 
       const { text } = await generateText({
-        model: "openai/gpt-4o", // Upgraded from gpt-4o-mini to gpt-4o for smarter todo suggestions
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt,
-        maxTokens: 2000,
+        maxOutputTokens: 2000,
       })
 
       // Parse AI response

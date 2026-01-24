@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const speakerList = speakers && speakers.length > 0 ? `Teilnehmer: ${speakers.join(", ")}` : ""
 
     const { text: protocol } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       messages: [
         {
           role: "system",

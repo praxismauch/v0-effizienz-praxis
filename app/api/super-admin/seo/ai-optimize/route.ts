@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     // Generate AI-powered SEO recommendations
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Du bist ein SEO-Experte. Analysiere das folgende Keyword und gib konkrete Optimierungsvorschläge.
 
 Keyword: "${keyword}"

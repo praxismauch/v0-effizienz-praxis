@@ -66,7 +66,7 @@ Antworte nur mit dem JSON-Objekt, keine Erklärungen.
           }
         } else {
           const { text } = await generateText({
-            model: "openai/gpt-4o",
+            model: "anthropic/claude-sonnet-4-20250514",
             prompt: `Analysiere diese KV-Abrechnung und extrahiere die Daten als JSON.
 
 Erforderliche Felder:

@@ -26,10 +26,9 @@ export async function GET(request: NextRequest) {
     // Run diagnostics
     const diagnostics = await checkAIDiagnostics(userData.practice_id, user.id)
 
-    // Test AI connection with different models
+    // Test AI connection with Claude model
     const connectionTests = await Promise.allSettled([
-      testAIConnection("openai/gpt-4o-mini"),
-      testAIConnection("openai/gpt-4o"),
+      testAIConnection("anthropic/claude-sonnet-4-20250514"),
     ])
 
     return NextResponse.json({

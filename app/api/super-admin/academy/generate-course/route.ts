@@ -61,7 +61,7 @@ Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text.`
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     })
 
     // Parse the JSON response

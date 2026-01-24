@@ -73,7 +73,7 @@ export async function checkAIDiagnostics(practiceId?: string, userId?: string) {
 /**
  * Test AI connectivity
  */
-export async function testAIConnection(model: string = "openai/gpt-4o-mini") {
+export async function testAIConnection(model: string = "anthropic/claude-sonnet-4-20250514") {
   try {
     const { generateText } = await import("ai")
 
@@ -81,7 +81,7 @@ export async function testAIConnection(model: string = "openai/gpt-4o-mini") {
     const { text } = await generateText({
       model,
       prompt: "Say 'AI is working' in German",
-      maxTokens: 50,
+      maxOutputTokens: 50,
     })
     const endTime = Date.now()
 

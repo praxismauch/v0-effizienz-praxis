@@ -43,9 +43,9 @@ Bitte erstelle eine strukturierte Analyse mit folgenden Abschnitten:
 Schreibe die Analyse auf Deutsch und formatiere sie übersichtlich.`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     })
 
     return NextResponse.json({ analysis: text })

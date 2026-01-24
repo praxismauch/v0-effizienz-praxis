@@ -65,7 +65,7 @@ Gib eine strukturierte, praxisnahe Analyse mit konkreten Handlungsempfehlungen.`
     let text: string
     try {
       const result = await generateText({
-        model: "openai/gpt-4o",
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt,
       })
       text = result.text

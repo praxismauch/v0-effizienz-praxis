@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .limit(100)
 
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Analysiere die folgenden Parameter-Daten einer Arztpraxis und erkenne Trends, Anomalien und Vorhersagen:
 
 Parameter-Daten: ${JSON.stringify(analyticsData?.slice(0, 20))}

@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .eq("is_archived", false)
 
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Analysiere die Dokumentenstruktur einer Arztpraxis und gib Organisationsempfehlungen:
 
 Dokumente: ${JSON.stringify(documents?.map((d) => ({ name: d.name, folder: d.folder, tags: d.tags })))}

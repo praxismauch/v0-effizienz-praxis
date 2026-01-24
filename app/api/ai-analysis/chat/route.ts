@@ -189,9 +189,9 @@ Antworte auf Deutsch, präzise und hilfreich. Verwende die verfügbaren Daten, u
       }
 
       const result = await generateText({
-        model: "openai/gpt-4o",
+        model: "anthropic/claude-sonnet-4-20250514",
         messages,
-        maxTokens: 1000,
+        maxOutputTokens: 1000,
         temperature: 0.7,
       })
       text = result.text

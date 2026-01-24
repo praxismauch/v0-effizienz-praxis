@@ -43,10 +43,10 @@ Antworte ausschließlich mit einem JSON-Array in folgendem Format (ohne Markdown
 ]`
 
       const { text } = await generateText({
-        model: "openai/gpt-4o",
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt,
         temperature: 0.8,
-        maxTokens: 3000,
+        maxOutputTokens: 3000,
       })
 
       const cleanedText = text.trim().replace(/```json\n?|\n?```/g, "")

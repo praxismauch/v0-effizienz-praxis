@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
     // Use AI to interpret the command
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "anthropic/claude-sonnet-4-20250514",
       system: `Du bist ein Sprach-Assistent für eine Praxisverwaltungs-Software. 
 Analysiere den Befehl des Benutzers und gib eine strukturierte JSON-Antwort zurück.
 

@@ -34,10 +34,10 @@ Antworte ausschließlich mit einem JSON-Array von Zuständigkeiten in folgendem 
 ]`
 
       const { text } = await generateText({
-        model: "openai/gpt-4o", // Upgraded from gpt-4o-mini to gpt-4o for better responsibilities generation
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt,
         temperature: 0.7,
-        maxTokens: 2000,
+        maxOutputTokens: 2000,
       })
 
       console.log("[v0] AI generation successful, parsing response")

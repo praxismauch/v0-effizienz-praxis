@@ -134,7 +134,7 @@ Erstelle einen JSON-Antwort mit folgendem Format:
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     })
 
     // Parse AI response

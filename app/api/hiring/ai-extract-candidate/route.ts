@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         if (file.type === "application/pdf" || file.type.startsWith("image/")) {
           try {
             const visionResponse = await generateText({
-              model: "openai/gpt-4o",
+              model: "anthropic/claude-sonnet-4-20250514",
               messages: [
                 {
                   role: "user",
@@ -99,7 +99,7 @@ Wenn du persönliche Daten wie Name, Adresse, Telefon, E-Mail, Geburtsdatum, Ber
     let aiResponse
     try {
       aiResponse = await generateText({
-        model: "openai/gpt-4o-mini",
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt: `Du bist ein KI-Assistent, der Kandidateninformationen aus Bewerbungsunterlagen extrahiert.
 
 Analysiere den folgenden Text aus Bewerbungsdokumenten und extrahiere alle verfügbaren Informationen über den Kandidaten.

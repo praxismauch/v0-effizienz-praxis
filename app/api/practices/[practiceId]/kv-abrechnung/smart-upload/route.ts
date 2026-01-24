@@ -68,7 +68,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         }
 
         const { text } = await generateText({
-          model: "openai/gpt-4o",
+          model: "anthropic/claude-sonnet-4-20250514",
           messages: [
             {
               role: "user",

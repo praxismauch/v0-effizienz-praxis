@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Du bist ein erfahrener SEO-Experte und berätst eine Praxissoftware-Website.
 
 **Aktuelle SEO-Situation:**

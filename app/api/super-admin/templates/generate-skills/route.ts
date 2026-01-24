@@ -30,9 +30,9 @@ Die Kriterien müssen klar, beobachtbar und messbar sein.
 Antworte NUR mit einem validen JSON-Array ohne weitere Erklärungen.`
 
     const { text } = await generateText({
-      model: "anthropic/claude-sonnet-4",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     })
 
     // Parse the response

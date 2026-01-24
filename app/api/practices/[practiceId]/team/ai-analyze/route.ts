@@ -103,7 +103,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const { text: analysis } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt: `Du bist ein HR-Experte für medizinische Praxen. Analysiere das folgende Team und gib Empfehlungen:
 
 Team Daten:

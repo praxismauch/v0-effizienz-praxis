@@ -190,7 +190,7 @@ Nutze diese Informationen um personalisierte und relevante Antworten zu geben.`
       model: "anthropic/claude-sonnet-4-20250514",
       system: contextualPrompt,
       messages: messages,
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
       temperature: 0.7,
     })
 

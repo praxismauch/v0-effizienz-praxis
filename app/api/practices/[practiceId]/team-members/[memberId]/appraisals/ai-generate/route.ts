@@ -198,7 +198,7 @@ Antworte NUR mit dem JSON-Objekt, ohne zusätzliche Erklärungen.`
       system: systemPrompt,
       prompt,
       temperature: 0.7,
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     })
 
     // Try to parse JSON responses

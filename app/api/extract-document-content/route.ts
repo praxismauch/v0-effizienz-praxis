@@ -90,7 +90,7 @@ function getFileTypeFromExtension(ext: string): string {
 async function extractPDFWithAI(pdfUrl: string) {
   try {
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       messages: [
         {
           role: "user",
@@ -112,7 +112,7 @@ If any text is unclear or illegible, mark it as [UNCLEAR].`,
           ],
         },
       ],
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     })
 
     return {
@@ -134,7 +134,7 @@ If any text is unclear or illegible, mark it as [UNCLEAR].`,
 async function extractDocumentWithAI(docUrl: string) {
   try {
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       messages: [
         {
           role: "user",
@@ -158,7 +158,7 @@ Format as clean readable text.`,
           ],
         },
       ],
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     })
 
     return { text: text || "[No text extracted from document]", metadata: { hasContent: text.length > 0 } }
@@ -174,7 +174,7 @@ Format as clean readable text.`,
 async function extractImageTextWithAI(imageUrl: string) {
   try {
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       messages: [
         {
           role: "user",
@@ -195,7 +195,7 @@ If the image contains no readable text, state "No text found in image".`,
           ],
         },
       ],
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     })
 
     return {
@@ -217,14 +217,14 @@ If the image contains no readable text, state "No text found in image".`,
 async function extractWithAIFallback(fileUrl: string, fileType: string) {
   try {
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       messages: [
         {
           role: "user",
           content: `Attempt to extract any readable content from this file (type: ${fileType}). Extract all visible text, data, or information that can be read. If the file cannot be processed, explain why.`,
         },
       ],
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     })
 
     return { text: text || `[Could not extract content from ${fileType}]`, metadata: { attemptedFallback: true } }

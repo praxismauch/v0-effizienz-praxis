@@ -136,9 +136,9 @@ Erstelle eine detaillierte Analyse mit folgenden Abschnitten:
 Formatiere die Antwort als strukturiertes Markdown mit Überschriften, Aufzählungen und wichtigen Kennzahlen hervorgehoben.`
 
     const { text: analysis } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     })
 
     return NextResponse.json({ analysis })

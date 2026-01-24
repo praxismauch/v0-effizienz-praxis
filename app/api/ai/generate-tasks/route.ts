@@ -33,9 +33,9 @@ Antworte NUR mit einem validen JSON-Array in diesem Format:
 ]`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt,
-      maxTokens: 1000,
+      maxOutputTokens: 1000,
     })
 
     // Parse the JSON response

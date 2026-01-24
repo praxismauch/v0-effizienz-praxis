@@ -9,11 +9,11 @@ export async function POST(request: NextRequest) {
     const userPrompt = constructUserPrompt(prompt, context, fieldType)
 
     const result = await streamText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
-      maxTokens: 1000,
+      maxOutputTokens: 1000,
     })
 
     return result.toTextStreamResponse()

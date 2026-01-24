@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
     // Use AI to extract contact information from the image
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       messages: [
         {
           role: "user",
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         ai_confidence: confidence,
         ai_metadata: {
           extracted_at: new Date().toISOString(),
-          model: "gpt-4o",
+          model: "claude-sonnet-4",
         },
       })
       .select()

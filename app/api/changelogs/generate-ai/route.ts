@@ -47,7 +47,7 @@ Return ONLY a valid JSON object in this exact format:
 Make the descriptions clear, concise, and focused on user benefits. Use German language for the output.`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o", // Upgraded from gpt-4o-mini to gpt-4o for better changelog generation
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt,
     })
 

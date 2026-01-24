@@ -69,7 +69,7 @@ Antworte im folgenden JSON-Format:
     let generated
     try {
       const { text } = await generateText({
-        model: "openai/gpt-4o",
+        model: "anthropic/claude-sonnet-4-20250514",
         prompt,
         temperature: 0.7,
       })

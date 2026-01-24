@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { applyRateLimitRedis } from "@/lib/api/rate-limit-redis"
 import Logger from "@/lib/logger"
+import { sendEmail } from "@/lib/email/send-email"
 
 export const dynamic = "force-dynamic"
 
@@ -65,6 +66,44 @@ export async function POST(request: Request) {
       }
 
       Logger.info("auth", "Created new user profile")
+
+      // Notify super admins about new registration
+      try {
+        const { data: superAdmins } = await supabase
+          .from("users")
+          .select("email, name")
+          .eq("role", "superadmin")
+          .eq("is_active", true)
+
+        if (superAdmins && superAdmins.length > 0) {
+          const superAdminEmails = superAdmins.map((admin) => admin.email)
+
+          await sendEmail({
+            to: superAdminEmails,
+            subject: "Neue Benutzerregistrierung - Effizienz Praxis",
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #333;">Neue Benutzerregistrierung</h2>
+                <p>Ein neuer Benutzer hat sich registriert und wartet auf Genehmigung:</p>
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                  <p><strong>E-Mail:</strong> ${newUser.email}</p>
+                  <p><strong>Name:</strong> ${newUser.name}</p>
+                  <p><strong>Registriert am:</strong> ${new Date().toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
+                <p>Bitte überprüfen und genehmigen Sie den neuen Benutzer in den Admin-Einstellungen.</p>
+                <p style="color: #666; font-size: 12px; margin-top: 30px;">
+                  Diese E-Mail wurde automatisch vom Effizienz Praxis System gesendet.
+                </p>
+              </div>
+            `,
+          })
+
+          Logger.info("auth", "Notification email sent to super admins")
+        }
+      } catch (emailError) {
+        // Don't fail registration if email fails
+        Logger.error("auth", "Failed to send notification email", emailError)
+      }
 
       return NextResponse.json(
         {

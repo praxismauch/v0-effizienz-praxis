@@ -83,7 +83,7 @@ export default function ContactsPage() {
   const hasLoadedRef = useRef(false)
   const loadingPracticeIdRef = useRef<string | null>(null)
 
-  const practiceId = currentPractice?.id || currentUser?.practice_id
+  const practiceId = currentPractice?.id?.toString()
 
   const loadContacts = useCallback(async () => {
     if (!practiceId) return

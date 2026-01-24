@@ -146,7 +146,7 @@ export default function MitarbeitergespraechePage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [appraisalToDelete, setAppraisalToDelete] = useState<Appraisal | null>(null)
 
-  const practiceId = currentPractice?.id?.toString() || currentUser?.practice_id?.toString()
+  const practiceId = currentPractice?.id?.toString()
 
   const {
     data: appraisals = [],

@@ -801,7 +801,7 @@ export default function InventoryPage() {
 
           <TabsContent value="smart" className="space-y-4">
             <SmartInventoryDashboard
-              practiceId={user?.practice_id || ""}
+              practiceId={practiceId || ""}
               items={items}
               suppliers={suppliers}
               onRefresh={loadData}

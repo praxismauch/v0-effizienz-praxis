@@ -69,8 +69,8 @@ export default function TodosPage() {
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
-  // FIX: Fixed property name from practiceId to practice_id and removed fallback to practice-demo-001
-  const practiceId = currentUser?.practice_id || ""
+  // Use practice context for practiceId (supports practice switching for super admins)
+  const practiceId = currentPractice?.id?.toString() || ""
   const isAdmin = currentUser?.role === "admin" // Added isAdmin check
 
   // Menu bar state

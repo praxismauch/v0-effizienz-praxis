@@ -132,11 +132,11 @@ export default function TeamPageClient() {
 
   // Stats
   const stats = {
-    totalMembers: teamMembers.length,
-    activeMembers: teamMembers.filter((m) => m.status === "active").length,
-    totalTeams: teams.length,
-    openHolidayRequests: holidayRequests.filter((r) => r.status === "pending").length,
-    currentSickLeaves: sickLeaves.filter(
+    totalMembers: (teamMembers || []).length,
+    activeMembers: (teamMembers || []).filter((m) => m.status === "active").length,
+    totalTeams: (teams || []).length,
+    openHolidayRequests: (holidayRequests || []).filter((r) => r.status === "pending").length,
+    currentSickLeaves: (sickLeaves || []).filter(
       (s) => !s.end_date || new Date(s.end_date) >= new Date()
     ).length,
   }

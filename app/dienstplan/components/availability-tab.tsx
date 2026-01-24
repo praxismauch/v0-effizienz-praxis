@@ -76,9 +76,9 @@ export default function AvailabilityTab({
 }: AvailabilityTabProps) {
   const getMember = (memberId: string) => teamMembers.find((m) => m.id === memberId)
 
-  const groupedAvailability = teamMembers.map((member) => ({
+  const groupedAvailability = (teamMembers || []).map((member) => ({
     member,
-    items: availability.filter((a) => a.team_member_id === member.id),
+    items: (availability || []).filter((a) => a.team_member_id === member.id),
   }))
 
   return (

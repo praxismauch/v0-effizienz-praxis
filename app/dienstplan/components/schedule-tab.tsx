@@ -44,7 +44,7 @@ export default function ScheduleTab({
 }: ScheduleTabProps) {
   const getShiftsForCell = (date: Date, memberId: string) => {
     const dateStr = format(date, "yyyy-MM-dd")
-    return schedules.filter((s) => s.team_member_id === memberId && s.date === dateStr)
+    return (schedules || []).filter((s) => s.team_member_id === memberId && s.date === dateStr)
   }
 
   const getShiftType = (shiftTypeId: string) => {

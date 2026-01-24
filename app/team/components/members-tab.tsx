@@ -17,7 +17,7 @@ interface MembersTabProps {
 }
 
 export default function MembersTab({ members, teams, searchTerm, isAdmin }: MembersTabProps) {
-  const filteredMembers = members.filter(
+  const filteredMembers = (members || []).filter(
     (member) =>
       member.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -31,7 +31,7 @@ export default function MembersTab({ members, teams, searchTerm, isAdmin }: Memb
 
   const getMemberTeams = (member: TeamMember) => {
     if (!member.team_ids || member.team_ids.length === 0) return []
-    return teams.filter((team) => member.team_ids?.includes(team.id))
+    return (teams || []).filter((team) => member.team_ids?.includes(team.id))
   }
 
   if (filteredMembers.length === 0) {

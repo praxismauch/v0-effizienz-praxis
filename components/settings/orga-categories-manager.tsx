@@ -10,7 +10,8 @@ import { useState, useEffect } from "react"
 import type { OrgaCategory } from "@/types/orgaCategory"
 
 export function OrgaCategoriesManager() {
-  const { practiceId, isLoading: practiceLoading } = usePractice()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const practiceId = currentPractice?.id
   const [categories, setCategories] = useState<OrgaCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isInitializing, setIsInitializing] = useState(false)

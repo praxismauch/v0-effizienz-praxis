@@ -42,10 +42,10 @@ export default function DienstplanPageClient() {
 
   // Stats
   const stats: DienstplanStats = useMemo(() => {
-    const pendingSwaps = swapRequests.filter((r) => r.status === "pending").length
-    const activeViolations = violations.filter((v) => !v.resolved).length
-    const totalShifts = schedules.length
-    const coveredShifts = schedules.filter((s) => s.status === "approved" || s.status === "scheduled").length
+    const pendingSwaps = (swapRequests || []).filter((r) => r.status === "pending").length
+    const activeViolations = (violations || []).filter((v) => !v.resolved).length
+    const totalShifts = (schedules || []).length
+    const coveredShifts = (schedules || []).filter((s) => s.status === "approved" || s.status === "scheduled").length
 
     return {
       pendingSwaps,

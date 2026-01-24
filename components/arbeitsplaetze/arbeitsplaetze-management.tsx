@@ -9,8 +9,9 @@ import CreateArbeitsplatzDialog from "./create-arbeitsplatz-dialog"
 import EditArbeitsplatzDialog from "./edit-arbeitsplatz-dialog"
 import { ArbeitsplatzCard } from "./arbeitsplatz-card"
 import { cn } from "@/lib/utils"
-import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 import { useArbeitsplaetze } from "@/hooks/use-arbeitsplaetze"
+import { useUser } from "@/contexts/user-context" // Import useUser hook
 
 interface Room {
   id: string
@@ -33,8 +34,8 @@ function ArbeitsplaetzeManagement() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const { currentUser } = useUser()
-
-  const practiceId = currentUser?.practiceId
+  const { currentPractice } = usePractice()
+  const practiceId = currentPractice?.id
 
   const { arbeitsplaetze, isLoading: loading, mutate } = useArbeitsplaetze(practiceId)
 
@@ -85,6 +86,8 @@ function ArbeitsplaetzeManagement() {
   const activeCount = arbeitsplaetze.filter((ap) => ap.is_active).length
   const inactiveCount = arbeitsplaetze.filter((ap) => !ap.is_active).length
   const withRoomCount = arbeitsplaetze.filter((ap) => ap.room).length
+
+  const fetchArbeitsplaetze = () => mutate() // Declare fetchArbeitsplaetze function
 
   if (loading) {
     return null

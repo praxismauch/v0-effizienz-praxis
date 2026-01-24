@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NettoBruttoCalculator } from "@/components/ui/netto-brutto-calculator"
+import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { createIgelAnalysis } from "@/hooks/use-igel"
 
@@ -56,7 +57,9 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const { toast } = useToast()
-  const { currentUser: user } = useUser()
+  const { currentPractice } = usePractice()
+  const { currentUser } = useUser()
+  const user = currentUser; // Declare the user variable here
 
   const [serviceName, setServiceName] = useState("")
   const [serviceDescription, setServiceDescription] = useState("")
@@ -153,7 +156,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
       return
     }
 
-    if (!user?.practice_id) {
+    if (!currentPractice?.id) {
       toast({
         title: "Fehler",
         description: "Keine Praxis gefunden. Bitte laden Sie die Seite neu.",
@@ -223,8 +226,8 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
 
       const aiData = await aiResponse.json()
 
-      await createIgelAnalysis(user.practice_id, {
-        created_by: user.id,
+      await createIgelAnalysis(currentPractice?.id, {
+        created_by: currentUser?.id,
         service_name: serviceName,
         service_description: serviceDescription,
         category,

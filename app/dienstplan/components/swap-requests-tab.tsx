@@ -17,8 +17,8 @@ interface SwapRequestsTabProps {
 }
 
 export default function SwapRequestsTab({ swapRequests, onApprove, onReject, isLoading }: SwapRequestsTabProps) {
-  const pendingRequests = swapRequests.filter((r) => r.status === "pending")
-  const processedRequests = swapRequests.filter((r) => r.status !== "pending")
+  const pendingRequests = (swapRequests || []).filter((r) => r.status === "pending")
+  const processedRequests = (swapRequests || []).filter((r) => r.status !== "pending")
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase()

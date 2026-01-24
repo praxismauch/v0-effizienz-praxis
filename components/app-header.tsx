@@ -273,7 +273,7 @@ function AppHeader() {
   const { state: sidebarState, toggleSidebar } = useSidebar()
 
   // Generate breadcrumbs from pathname
-  const pathSegments = pathname.split("/").filter(Boolean)
+  const pathSegments = pathname?.split("/").filter(Boolean) || []
   const filteredSegments = pathSegments.filter((segment) => !isUUID(segment))
   const breadcrumbs = filteredSegments.map((segment, index) => {
     const path = "/" + pathSegments.slice(0, pathSegments.indexOf(segment) + 1).join("/")

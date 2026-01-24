@@ -388,6 +388,71 @@ export function EditArbeitsmittelDialog({
             />
           </div>
 
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <Label>Bild</Label>
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`
+                border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
+                ${isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"}
+                ${imageUrl ? "border-solid border-muted" : ""}
+              `}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              
+              {imageUploading ? (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Bild wird hochgeladen...</p>
+                </div>
+              ) : imageUrl ? (
+                <div className="relative">
+                  <Image
+                    src={imageUrl || "/placeholder.svg"}
+                    alt="Vorschau"
+                    width={200}
+                    height={150}
+                    className="mx-auto rounded-md object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeImage()
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <div className="rounded-full bg-muted p-3">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Bild hochladen</p>
+                    <p className="text-xs text-muted-foreground">
+                      Drag & Drop, Klicken oder STRG+V zum Einfügen
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Abbrechen

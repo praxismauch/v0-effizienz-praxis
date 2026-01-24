@@ -24,11 +24,12 @@ import { useTeam } from "@/contexts/team-context"
 import { useUser } from "@/contexts/user-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useTranslation } from "@/contexts/translation-context"
-import { Loader2, Link, ChevronDown, ChevronUp } from "lucide-react"
+import { Loader2, Link, ChevronDown, ChevronUp, Users } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
+import OrgaCategorySelect from "@/components/orga-category-select" // Import OrgaCategorySelect
 
 interface Goal {
   id: string
@@ -80,6 +81,16 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
     swrFetcher,
   )
 
+  const { data: categoriesData } = useSWR(
+    open && effectivePracticeId ? SWR_KEYS.orgaCategories(effectivePracticeId) : null,
+    swrFetcher,
+  )
+
+  const { data: teamsData } = useSWR(
+    open && effectivePracticeId ? SWR_KEYS.teams(effectivePracticeId) : null,
+    swrFetcher,
+  )
+
   const { data: assignmentsData, mutate: mutateAssignments } = useSWR(
     open && effectivePracticeId && goal?.id ? SWR_KEYS.goalAssignments(effectivePracticeId, goal.id) : null,
     swrFetcher,
@@ -96,9 +107,28 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
   const availableParameters = parametersData?.parameters || []
   const hasSubgoals = (subgoalsData?.goals || []).filter((g: any) => g.parentGoalId === goal.id).length > 0
   const initialAssignments = (assignmentsData?.assignments || []).map((a: any) => a.team_member_id)
+  
+  // Process categories with deduplication
+  const orgaCategories = (() => {
+    const categories = categoriesData?.categories || []
+    const seen = new Set<string>()
+    return categories.filter((cat: any) => {
+      const key = cat.name?.toLowerCase()?.trim()
+      if (key && !seen.has(key)) {
+        seen.add(key)
+        return true
+      }
+      return false
+    })
+  })()
+  
+  // Process teams
+  const rawTeams = Array.isArray(teamsData) ? teamsData : []
+  const teams = rawTeams.filter((t: any) => t.isActive !== false)
 
   const [loading, setLoading] = useState(false)
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([])
+  const [selectedTeams, setSelectedTeams] = useState<string[]>(goal.teams || [])
   const [showExtended, setShowExtended] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -274,19 +304,18 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status">{t("goals.form.status", "Status")}</Label>
+                <Label htmlFor="goalType">{t("goals.form.goalType", "Zieltyp")}</Label>
                 <Select
-                  value={formData.status}
-                  onValueChange={(value: any) => setFormData({ ...formData, status: value })}
+                  value={formData.goalType}
+                  onValueChange={(value: any) => setFormData({ ...formData, goalType: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="not-started">{t("goals.status.notStarted", "Nicht begonnen")}</SelectItem>
-                    <SelectItem value="in-progress">{t("goals.status.inProgress", "In Bearbeitung")}</SelectItem>
-                    <SelectItem value="completed">{t("goals.status.completed", "Abgeschlossen")}</SelectItem>
-                    <SelectItem value="cancelled">{t("goals.status.cancelled", "Abgebrochen")}</SelectItem>
+                    <SelectItem value="personal">{t("goals.type.personal", "Persönlich")}</SelectItem>
+                    <SelectItem value="team">{t("goals.type.team", "Team")}</SelectItem>
+                    <SelectItem value="practice">{t("goals.type.practice", "Praxis")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -307,6 +336,34 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">{t("goals.form.status", "Status")}</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: any) => setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="not-started">{t("goals.status.notStarted", "Nicht begonnen")}</SelectItem>
+                    <SelectItem value="in-progress">{t("goals.status.inProgress", "In Bearbeitung")}</SelectItem>
+                    <SelectItem value="completed">{t("goals.status.completed", "Abgeschlossen")}</SelectItem>
+                    <SelectItem value="cancelled">{t("goals.status.cancelled", "Abgebrochen")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <OrgaCategorySelect
+                value={formData.category}
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                categories={orgaCategories}
+                showLabel={true}
+                label="Kategorie"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -365,6 +422,42 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 />
               </div>
+            </div>
+
+            {/* Team Assignment */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Teams zuweisen
+              </Label>
+              {teams.length > 0 ? (
+                <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-2">
+                  {teams.map((team: any) => (
+                    <div key={team.id} className="flex items-center space-x-3">
+                      <Checkbox
+                        id={`edit-team-${team.id}`}
+                        checked={selectedTeams.includes(team.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedTeams([...selectedTeams, team.id])
+                          } else {
+                            setSelectedTeams(selectedTeams.filter((id: string) => id !== team.id))
+                          }
+                        }}
+                      />
+                      <label htmlFor={`edit-team-${team.id}`} className="flex items-center space-x-2 cursor-pointer flex-1">
+                        <div
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: team.color || "#64748b" }}
+                        />
+                        <span className="text-sm font-medium">{team.name}</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground border rounded-md p-3">Keine Teams verfügbar</p>
+              )}
             </div>
 
             {/* Team member selection */}

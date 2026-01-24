@@ -67,7 +67,7 @@ export function usePracticeId(): PracticeIdResult {
 
     // Source 1: currentPractice from PracticeContext (best for super admins)
     if (currentPractice?.id && isValidPracticeId(currentPractice.id)) {
-      practiceId = currentPractice.id
+      practiceId = String(currentPractice.id)
       source = "currentPractice"
     }
     // Source 2: currentUser.practice_id from UserContext
@@ -116,9 +116,17 @@ export function usePracticeId(): PracticeIdResult {
 
 /**
  * Validates that a practice ID is valid (not null, undefined, empty, "0", "null", "undefined")
+ * Handles both string and number IDs since database returns integers
  */
-export function isValidPracticeId(id: string | null | undefined): id is string {
-  if (!id) return false
+export function isValidPracticeId(id: string | number | null | undefined): boolean {
+  if (id === null || id === undefined) return false
+  
+  // Handle number IDs (from database)
+  if (typeof id === "number") {
+    return id > 0
+  }
+  
+  // Handle string IDs
   if (typeof id !== "string") return false
 
   const trimmed = id.trim()

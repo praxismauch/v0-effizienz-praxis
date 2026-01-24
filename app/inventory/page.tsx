@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useCallback } from "react"
 import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 import { AppLayout } from "@/components/app-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -173,6 +174,7 @@ interface InventoryBill {
 
 export default function InventoryPage() {
   const { user } = useUser()
+  const { currentPractice } = usePractice()
   const [activeTab, setActiveTab] = useState("overview")
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState<InventoryItem[]>([])
@@ -226,7 +228,7 @@ export default function InventoryPage() {
     price: 0,
   })
 
-  const practiceId = user?.practice_id
+  const practiceId = currentPractice?.id?.toString()
 
   // Fetch data
   const fetchData = useCallback(async () => {

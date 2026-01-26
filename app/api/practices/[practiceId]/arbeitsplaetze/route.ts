@@ -30,7 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data || [])
+    return NextResponse.json({ arbeitsplaetze: data || [] })
   } catch (error: any) {
     console.error("Error in arbeitsplaetze GET:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })

@@ -113,7 +113,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             }
           })
 
-          return NextResponse.json(transformedResponsibilities)
+          return NextResponse.json({ responsibilities: transformedResponsibilities })
         }
       }
     }
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       deputy_user_name: null,
     }))
 
-    return NextResponse.json(transformedResponsibilities)
+    return NextResponse.json({ responsibilities: transformedResponsibilities })
   } catch (error: any) {
     if (isRateLimitError(error)) {
       console.warn("[v0] Responsibilities: Rate limited (outer catch)")

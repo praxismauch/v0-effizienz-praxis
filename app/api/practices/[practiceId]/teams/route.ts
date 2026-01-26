@@ -113,7 +113,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         memberCount: Array.isArray(team.team_assignments) ? team.team_assignments.length : 0,
       })) || []
 
-    return NextResponse.json(teamsWithCount)
+    return NextResponse.json({ teams: teamsWithCount })
   } catch (error) {
     if (isRateLimitError(error)) {
       return NextResponse.json([])

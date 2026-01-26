@@ -187,8 +187,9 @@ export default function CommunicationPage() {
       const response = await fetch(`/api/practices/${currentPractice.id}/team-members`)
       if (response.ok) {
         const data = await response.json()
+        const members = data.teamMembers || []
         setTeamMembers(
-          (Array.isArray(data) ? data : []).filter((m: TeamMember) => m.user_id !== user?.id && isActiveMember(m)),
+          members.filter((m: TeamMember) => m.user_id !== user?.id && isActiveMember(m)),
         )
       }
     } catch (error) {

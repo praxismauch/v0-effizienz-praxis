@@ -52,7 +52,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 })
     }
 
-    return NextResponse.json({ reports: reports || [] })
+    return NextResponse.json({ data: reports || [] })
   } catch (error) {
     console.error("Time reports API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

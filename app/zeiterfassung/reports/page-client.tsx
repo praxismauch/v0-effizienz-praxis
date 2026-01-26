@@ -135,12 +135,12 @@ export default function TimeReportsPageClient() {
         return
       }
 
-      setReports(data.data || [])
-      setFilteredReports(data.data || [])
+      setReports(data.reports || [])
+      setFilteredReports(data.reports || [])
 
       const uniqueMembers = Array.from(
         new Map(
-          data.data
+          (data.reports || [])
             .filter((r: MonthlyTimeReport) => r.team_members)
             .map((r: MonthlyTimeReport) => [
               r.user_id,

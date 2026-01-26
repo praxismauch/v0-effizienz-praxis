@@ -77,9 +77,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       teamIds: teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id) || [],
     }))
 
-    return NextResponse.json(teamMembers || [])
+    return NextResponse.json({ teamMembers: teamMembers || [] })
   } catch (error) {
     console.error("[v0] Team GET exception:", error instanceof Error ? error.message : "Unknown error")
-    return NextResponse.json([])
+    return NextResponse.json({ teamMembers: [] })
   }
 }

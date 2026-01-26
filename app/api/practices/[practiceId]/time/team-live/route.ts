@@ -62,7 +62,7 @@ export async function GET(
       }
     })
 
-    return NextResponse.json({ teamStatus })
+    return NextResponse.json({ members: teamStatus })
   } catch (error) {
     console.error("[v0] Error in team-live API:", error)
     return NextResponse.json(

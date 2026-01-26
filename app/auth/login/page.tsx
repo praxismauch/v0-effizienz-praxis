@@ -72,13 +72,24 @@ function LoginForm() {
     }
   }, [])
 
-  // Check if already logged in on mount
+  // Check if already logged in on mount - but don't block login if check fails
   useEffect(() => {
     if (!supabase) return
 
+    let isMounted = true
+    const controller = new AbortController()
+
     const checkExistingSession = async () => {
       try {
+        // Use a timeout to prevent hanging
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        
         const { data: { session }, error } = await supabase.auth.getSession()
+        
+        clearTimeout(timeoutId)
+        
+        if (!isMounted) return
+        
         if (error) {
           // Session check failed (stale/invalid session) - that's fine, user can login fresh
           console.log("[v0] Session check error (will proceed with fresh login):", error.message)
@@ -87,13 +98,23 @@ function LoginForm() {
         if (session) {
           router.replace(redirectTo)
         }
-      } catch (err) {
+      } catch (err: any) {
         // Network error or other issue - ignore and let user login fresh
-        console.log("[v0] Session check failed (will proceed with fresh login)")
+        // This includes "Failed to fetch" errors
+        if (err?.name === 'AbortError') {
+          console.log("[v0] Session check timed out (will proceed with fresh login)")
+        } else {
+          console.log("[v0] Session check failed (will proceed with fresh login):", err?.message || err)
+        }
       }
     }
     
     checkExistingSession()
+
+    return () => {
+      isMounted = false
+      controller.abort()
+    }
   }, [supabase, redirectTo, router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -135,7 +156,9 @@ function LoginForm() {
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.message) {
         const msg = error.message.toLowerCase()
-        if (msg.includes("invalid") || msg.includes("credentials")) {
+        if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("fetch")) {
+          errorMessage = "Verbindungsfehler - bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+        } else if (msg.includes("invalid") || msg.includes("credentials")) {
           errorMessage = "Ungültige Anmeldedaten. Bitte überprüfen Sie E-Mail und Passwort."
         } else if (msg.includes("email") && msg.includes("confirm")) {
           errorMessage = "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden."

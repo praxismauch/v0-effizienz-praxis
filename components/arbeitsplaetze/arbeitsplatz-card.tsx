@@ -12,6 +12,23 @@ interface Room {
   name: string
 }
 
+export type ArbeitsplatzColor = "green" | "blue" | "purple" | "orange" | "red" | "teal" | "pink" | "yellow"
+
+export const ARBEITSPLATZ_COLORS: { value: ArbeitsplatzColor; label: string; bg: string; icon: string; border: string; gradient: string }[] = [
+  { value: "green", label: "Grün", bg: "bg-green-100 dark:bg-green-900/30", icon: "text-green-600 dark:text-green-400", border: "border-t-green-500", gradient: "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30" },
+  { value: "blue", label: "Blau", bg: "bg-blue-100 dark:bg-blue-900/30", icon: "text-blue-600 dark:text-blue-400", border: "border-t-blue-500", gradient: "bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-950/30 dark:to-sky-950/30" },
+  { value: "purple", label: "Lila", bg: "bg-purple-100 dark:bg-purple-900/30", icon: "text-purple-600 dark:text-purple-400", border: "border-t-purple-500", gradient: "bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30" },
+  { value: "orange", label: "Orange", bg: "bg-orange-100 dark:bg-orange-900/30", icon: "text-orange-600 dark:text-orange-400", border: "border-t-orange-500", gradient: "bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30" },
+  { value: "red", label: "Rot", bg: "bg-red-100 dark:bg-red-900/30", icon: "text-red-600 dark:text-red-400", border: "border-t-red-500", gradient: "bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30" },
+  { value: "teal", label: "Türkis", bg: "bg-teal-100 dark:bg-teal-900/30", icon: "text-teal-600 dark:text-teal-400", border: "border-t-teal-500", gradient: "bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30" },
+  { value: "pink", label: "Pink", bg: "bg-pink-100 dark:bg-pink-900/30", icon: "text-pink-600 dark:text-pink-400", border: "border-t-pink-500", gradient: "bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30" },
+  { value: "yellow", label: "Gelb", bg: "bg-yellow-100 dark:bg-yellow-900/30", icon: "text-yellow-600 dark:text-yellow-400", border: "border-t-yellow-500", gradient: "bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30" },
+]
+
+export function getColorConfig(color: ArbeitsplatzColor | string | null | undefined) {
+  return ARBEITSPLATZ_COLORS.find(c => c.value === color) || ARBEITSPLATZ_COLORS[0]
+}
+
 interface Arbeitsplatz {
   id: string
   name: string
@@ -20,6 +37,7 @@ interface Arbeitsplatz {
   is_active: boolean
   room?: Room | null
   image_url?: string | null
+  color?: ArbeitsplatzColor | null
 }
 
 interface ArbeitsplatzCardProps {
@@ -44,6 +62,7 @@ function isHtmlEmpty(html: string | null): boolean {
 
 export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "grid" }: ArbeitsplatzCardProps) {
   const router = useRouter()
+  const colorConfig = getColorConfig(arbeitsplatz.color)
 
   const beschreibungPreview = stripHtml(arbeitsplatz.beschreibung)
   const hasBeschreibung = !isHtmlEmpty(arbeitsplatz.beschreibung)
@@ -65,13 +84,13 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
               <div
                 className={cn(
                   "p-3 rounded-xl shrink-0",
-                  arbeitsplatz.is_active ? "bg-green-100 dark:bg-green-900/30" : "bg-gray-100 dark:bg-gray-800",
+                  arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
                 )}
               >
                 <Monitor
                   className={cn(
                     "h-5 w-5",
-                    arbeitsplatz.is_active ? "text-green-600 dark:text-green-400" : "text-gray-500",
+                    arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
                   )}
                 />
               </div>

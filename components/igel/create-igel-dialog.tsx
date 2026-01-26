@@ -476,6 +476,33 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
                 <span className="w-24 text-right text-sm font-medium">{calculateArztCost().toFixed(2)} €</span>
               </div>
 
+              {/* Room Cost Input */}
+              <div className="flex gap-2 items-center">
+                <span className="flex-1 text-sm font-medium">Raumkosten</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Minuten"
+                    value={roomMinutes || ""}
+                    onChange={(e) => setRoomMinutes(Math.max(0, Number.parseInt(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                  />
+                  <span className="text-sm text-muted-foreground">Min</span>
+                  <Input
+                    type="number"
+                    placeholder="Stundensatz"
+                    value={roomHourlyRate || ""}
+                    onChange={(e) => setRoomHourlyRate(Math.max(0, Number.parseFloat(e.target.value) || 0))}
+                    className="w-24"
+                    min="0"
+                    step="0.01"
+                  />
+                  <span className="text-sm text-muted-foreground">€/Std</span>
+                </div>
+                <span className="w-24 text-right text-sm font-medium">{calculateRoomCost().toFixed(2)} €</span>
+              </div>
+
               {/* Honorar Goal Input */}
               <div className="flex gap-2 items-center pt-2 border-t border-dashed">
                 <span className="flex-1 text-sm font-medium">Ziel Honorarstundensatz (SZL)</span>
@@ -496,6 +523,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
               <div className="pt-2 border-t space-y-1">
                 <p className="text-sm text-muted-foreground">Materialkosten: {calculateTotals().materialCosts.toFixed(2)} €</p>
                 <p className="text-sm text-muted-foreground">Personalkosten: {calculateTotals().laborCosts.toFixed(2)} €</p>
+                <p className="text-sm text-muted-foreground">Raumkosten: {calculateTotals().roomCosts.toFixed(2)} €</p>
                 <p className="text-sm font-medium">Gesamt: {calculateTotals().totalVariable.toFixed(2)} € pro Leistung</p>
               </div>
             </div>

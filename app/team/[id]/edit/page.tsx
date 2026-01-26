@@ -468,7 +468,7 @@ export default function EditTeamMemberPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
             <TabsTrigger value="profile">Profil</TabsTrigger>
             {canEditPermissions && <TabsTrigger value="permissions">Berechtigungen</TabsTrigger>}
             <TabsTrigger value="contracts">Verträge</TabsTrigger>

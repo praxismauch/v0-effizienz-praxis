@@ -1,5 +1,25 @@
 type LogLevel = "debug" | "info" | "warn" | "error"
-type LogCategory = "api" | "context" | "auth" | "database" | "supabase" | "ui" | "cron" | "email" | "ai" | "other"
+type LogCategory = "api" | "context" | "auth" | "database" | "supabase" | "ui" | "cron" | "email" | "ai" | "middleware" | "security" | "performance" | "other"
+
+// Error tracking queue for batching
+interface ErrorTrackingEntry {
+  timestamp: string
+  level: LogLevel
+  category: LogCategory
+  message: string
+  error?: {
+    name: string
+    message: string
+    stack?: string
+  }
+  context?: Record<string, unknown>
+  userAgent?: string
+  url?: string
+}
+
+const errorTrackingQueue: ErrorTrackingEntry[] = []
+const ERROR_TRACKING_BATCH_SIZE = 10
+const ERROR_TRACKING_FLUSH_INTERVAL = 30000 // 30 seconds
 
 interface LogEntry {
   level: LogLevel
@@ -327,6 +347,78 @@ class Logger {
   }
 }
 
+// Error tracking functions
+function addToErrorTrackingQueue(entry: ErrorTrackingEntry) {
+  errorTrackingQueue.push(entry)
+  
+  if (errorTrackingQueue.length >= ERROR_TRACKING_BATCH_SIZE) {
+    flushErrorTracking()
+  }
+}
+
+async function flushErrorTracking() {
+  if (errorTrackingQueue.length === 0) return
+  
+  const batch = errorTrackingQueue.splice(0, ERROR_TRACKING_BATCH_SIZE)
+  
+  try {
+    if (typeof window !== "undefined" && window.location) {
+      await fetch(`${window.location.origin}/api/error-tracking`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ errors: batch }),
+      }).catch(() => {
+        // Silent fail - don't cause more errors while reporting errors
+      })
+    }
+  } catch {
+    // Silent fail
+  }
+}
+
+// Setup periodic flush
+if (typeof window !== "undefined") {
+  setInterval(flushErrorTracking, ERROR_TRACKING_FLUSH_INTERVAL)
+  
+  // Flush on page unload
+  window.addEventListener("beforeunload", () => {
+    if (errorTrackingQueue.length > 0) {
+      const batch = errorTrackingQueue.splice(0)
+      navigator.sendBeacon?.(
+        "/api/error-tracking",
+        JSON.stringify({ errors: batch })
+      )
+    }
+  })
+}
+
+// Global error handlers for uncaught errors
+function setupGlobalErrorHandlers() {
+  if (typeof window === "undefined") return
+  
+  // Uncaught errors
+  window.addEventListener("error", (event) => {
+    Logger.error("ui", "Uncaught error", event.error, {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    })
+  })
+  
+  // Unhandled promise rejections
+  window.addEventListener("unhandledrejection", (event) => {
+    Logger.error("ui", "Unhandled promise rejection", event.reason, {
+      reason: String(event.reason),
+    })
+  })
+}
+
+// Initialize global handlers
+if (typeof window !== "undefined") {
+  setupGlobalErrorHandlers()
+}
+
 export default Logger
-export { Logger, PerformanceTimer }
-export type { LogLevel, LogCategory, LogEntry, StructuredLog }
+export { Logger, PerformanceTimer, flushErrorTracking, addToErrorTrackingQueue }
+export type { LogLevel, LogCategory, LogEntry, StructuredLog, ErrorTrackingEntry }

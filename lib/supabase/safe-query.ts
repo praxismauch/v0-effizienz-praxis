@@ -4,16 +4,34 @@
  * This wrapper catches those errors and returns graceful fallbacks
  */
 
+interface ErrorLike {
+  message?: string
+  name?: string
+  body?: string
+  code?: string
+}
+
+interface SupabaseError {
+  message: string
+  code: string
+}
+
+interface QueryResult<T> {
+  data: T | null
+  error: SupabaseError | null
+}
+
 export function isRateLimitError(error: unknown): boolean {
   if (!error) return false
 
   // Check for SyntaxError (JSON parse failure from "Too Many Requests" text)
   if (error instanceof SyntaxError) return true
 
+  const errorObj = error as ErrorLike
   const errorString = String(error)
-  const errorMessage = (error as any)?.message || ""
-  const errorName = (error as any)?.name || ""
-  const errorBody = (error as any)?.body || ""
+  const errorMessage = errorObj?.message || ""
+  const errorName = errorObj?.name || ""
+  const errorBody = errorObj?.body || ""
 
   return (
     errorName === "SyntaxError" ||
@@ -33,15 +51,15 @@ export function isRateLimitError(error: unknown): boolean {
   )
 }
 
-export function isRateLimitResponse(response: { error: any }): boolean {
+export function isRateLimitResponse(response: { error: unknown }): boolean {
   if (!response.error) return false
   return isRateLimitError(response.error)
 }
 
 export async function safeSupabaseQuery<T>(
-  queryFn: () => Promise<{ data: T | null; error: any }>,
+  queryFn: () => Promise<QueryResult<T>>,
   fallback: T,
-): Promise<{ data: T | null; error: any }> {
+): Promise<QueryResult<T>> {
   try {
     const result = await queryFn()
 
@@ -58,31 +76,32 @@ export async function safeSupabaseQuery<T>(
     }
 
     // Return fallback for any other unexpected errors instead of throwing
-    console.error("[v0] Unexpected error in safeSupabaseQuery:", error)
-    return { data: fallback, error: error }
+    console.error("Unexpected error in safeSupabaseQuery:", error)
+    return { data: fallback, error: { message: String(error), code: "UNKNOWN_ERROR" } }
   }
 }
 
 /**
  * Safely executes multiple Supabase queries in parallel with rate limit protection
  */
-export async function safeSupabaseQueries<T extends Record<string, any>>(
-  queries: Record<keyof T, () => Promise<{ data: any; error: any }>>,
+export async function safeSupabaseQueries<T extends Record<string, unknown>>(
+  queries: Record<keyof T, () => Promise<QueryResult<T[keyof T]>>>,
   fallbacks: T,
-): Promise<Record<keyof T, { data: any; error: any }>> {
-  const results: any = {}
+): Promise<Record<keyof T, QueryResult<T[keyof T]>>> {
+  const results = {} as Record<keyof T, QueryResult<T[keyof T]>>
 
   await Promise.all(
     Object.entries(queries).map(async ([key, queryFn]) => {
+      const typedKey = key as keyof T
       try {
-        results[key] = await (queryFn as () => Promise<{ data: any; error: any }>)()
+        results[typedKey] = await (queryFn as () => Promise<QueryResult<T[keyof T]>>)()
       } catch (error) {
         if (isRateLimitError(error)) {
-          console.warn(`[v0] Rate limit detected for ${key}, using fallback`)
-          results[key] = { data: fallbacks[key as keyof T], error: { message: "Rate limited", code: "RATE_LIMITED" } }
+          console.warn(`Rate limit detected for ${key}, using fallback`)
+          results[typedKey] = { data: fallbacks[typedKey], error: { message: "Rate limited", code: "RATE_LIMITED" } }
         } else {
-          console.error(`[v0] Unexpected error for ${key}:`, error)
-          results[key] = { data: fallbacks[key as keyof T], error: error }
+          console.error(`Unexpected error for ${key}:`, error)
+          results[typedKey] = { data: fallbacks[typedKey], error: { message: String(error), code: "UNKNOWN_ERROR" } }
         }
       }
     }),

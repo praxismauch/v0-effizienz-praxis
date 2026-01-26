@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { usePractice } from "@/contexts/practice-context"
@@ -143,9 +144,10 @@ const statusConfig = {
   archived: { label: "Archiviert", color: "bg-slate-100 text-slate-700", icon: Archive },
 }
 
-const audienceConfig = {
+const audienceConfig: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   all: { label: "Alle Mitarbeiter", icon: Users },
-  specific: { label: "Ausgewählte Benutzer", icon: Target }, // Added Target icon
+  team: { label: "Team", icon: Users },
+  specific: { label: "Ausgewählte Benutzer", icon: Target },
   anonymous: { label: "Anonym", icon: Eye },
   patients: { label: "Patienten (Extern)", icon: ExternalLink },
 }
@@ -682,7 +684,7 @@ export default function SurveysPage() {
         {/* Tabs and Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-            <TabsList className="grid grid-cols-5 w-full sm:w-auto">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
               <TabsTrigger value="all">Alle</TabsTrigger>
               <TabsTrigger value="draft">Entwürfe</TabsTrigger>
               <TabsTrigger value="active">Aktiv</TabsTrigger>

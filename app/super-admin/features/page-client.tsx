@@ -683,7 +683,7 @@ export default function FeaturesClient() {
           />
         </div>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "frontend" | "backend")}>
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="frontend" className="gap-2">
               <Monitor className="h-4 w-4" />
               Frontend

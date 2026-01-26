@@ -42,8 +42,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
   }
 }
 
-// PUT update arbeitsplatz
-export async function PUT(request: Request, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
+// PATCH update arbeitsplatz
+export async function PATCH(request: Request, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
     const { practiceId, id } = await params
     const body = await request.json()

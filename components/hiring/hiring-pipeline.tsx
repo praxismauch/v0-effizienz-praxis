@@ -177,6 +177,9 @@ export function HiringPipeline() {
     },
   )
 
+  // Filter out applications with missing candidate data
+  const validApplications = applications.filter((app) => app.candidate && app.candidate.id)
+
   // Compute stages with applications
   const stagesWithApplications =
     selectedJobPostingId === "alle"
@@ -188,11 +191,11 @@ export function HiringPipeline() {
             color: stage.color,
             stage_order: index,
             job_posting_id: "alle",
-            applications: applications.filter((app) => app.stage === stage.name),
+            applications: validApplications.filter((app) => app.stage === stage.name),
           }))
       : stages.map((stage) => ({
           ...stage,
-          applications: applications.filter((app) => app.stage === stage.id),
+          applications: validApplications.filter((app) => app.stage === stage.id),
         }))
 
   const handleMoveApplication = useCallback(
@@ -508,7 +511,7 @@ export function HiringPipeline() {
             </div>
           </div>
           <CardDescription>
-            Verfolgen Sie Kandidaten durch den Recruiting-Prozess ({applications.length} aktive Bewerbungen)
+            Verfolgen Sie Kandidaten durch den Recruiting-Prozess ({validApplications.length} aktive Bewerbungen)
           </CardDescription>
         </CardHeader>
       </Card>
@@ -662,7 +665,7 @@ export function HiringPipeline() {
       <AICandidateAnalysisDialog
         open={showAIAnalysis}
         onOpenChange={setShowAIAnalysis}
-        candidates={applications.map((app) => ({
+        candidates={validApplications.map((app) => ({
           id: app.candidate.id,
           first_name: app.candidate.first_name,
           last_name: app.candidate.last_name,

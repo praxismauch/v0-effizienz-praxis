@@ -200,7 +200,7 @@ export default function ZeiterfassungPageClient() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
           <TabsTrigger value="stechuhr" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">Stechuhr</span>

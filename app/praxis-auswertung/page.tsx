@@ -19,7 +19,7 @@ export default function PraxisAuswertungPage() {
 
       <div className="mt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
             <TabsTrigger value="dateien" className="gap-2">
               <FileText className="h-4 w-4" />
               Dateien

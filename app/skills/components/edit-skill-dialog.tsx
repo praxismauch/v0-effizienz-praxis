@@ -101,7 +101,7 @@ export function EditSkillDialog({
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
             <TabsTrigger value="basic">Grunddaten</TabsTrigger>
             <TabsTrigger value="levels">Level-Definitionen</TabsTrigger>
             <TabsTrigger value="arbeitsplaetze">Arbeitsplätze</TabsTrigger>

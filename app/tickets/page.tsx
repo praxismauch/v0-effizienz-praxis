@@ -290,7 +290,7 @@ export default function TicketsPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
             <TabsTrigger value="all">Alle ({tickets.length})</TabsTrigger>
             <TabsTrigger value="open">
               Offen ({tickets.filter((t) => t.status === "open" || t.status === "in_progress").length})

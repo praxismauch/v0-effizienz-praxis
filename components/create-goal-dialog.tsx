@@ -20,7 +20,7 @@ import { Switch } from "@/components/ui/switch"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useTranslation } from "@/contexts/translation-context"
-import { Link, ChevronDown, ChevronUp, X, Upload, Type as type, File, Users, Loader2 } from "lucide-react"
+import { Link, ChevronDown, ChevronUp, X, Upload, Type as type, File, Users, Loader2, Settings } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTeam } from "@/contexts/team-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -673,18 +673,28 @@ export function CreateGoalDialog({
 
             {/* Extended Settings */}
             <div className="border-t pt-4">
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                className="w-full justify-between"
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all duration-200 ${
+                  showExtended 
+                    ? "bg-primary/5 border-primary/20 shadow-sm" 
+                    : "bg-muted/30 border-border hover:bg-muted/50 hover:border-muted-foreground/20"
+                }`}
                 onClick={() => setShowExtended(!showExtended)}
               >
-                <span className="font-semibold">{t("goals.form.extendedSettings", "Erweiterte Einstellungen")}</span>
-                {showExtended ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
+                <div className="flex items-center gap-2">
+                  <div className={`p-1.5 rounded-md transition-colors ${showExtended ? "bg-primary/10" : "bg-muted"}`}>
+                    <Settings className={`h-4 w-4 transition-colors ${showExtended ? "text-primary" : "text-muted-foreground"}`} />
+                  </div>
+                  <span className={`font-medium transition-colors ${showExtended ? "text-primary" : "text-foreground"}`}>
+                    {t("goals.form.extendedSettings", "Erweiterte Einstellungen")}
+                  </span>
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showExtended ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
+              </button>
 
               {showExtended && (
-                <div className="space-y-4 mt-4">
+                <div className="space-y-4 mt-4 pl-2 border-l-2 border-primary/20">
                   <div className="space-y-2">
                     <Label htmlFor="unit">{t("goals.form.unit", "Einheit")}</Label>
                     <Input

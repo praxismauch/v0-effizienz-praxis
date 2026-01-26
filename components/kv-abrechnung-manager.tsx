@@ -132,44 +132,25 @@ export function KVAbrechnungManager() {
   const [loadingInsights, setLoadingInsights] = useState(false)
 
   useEffect(() => {
-    const fetchDataWrapper = async () => {
-      if (currentPractice?.id) {
-        console.log("[v0] KV - Current practice ID:", currentPractice.id)
-        console.log("[v0] KV - Current user:", currentUser)
-        fetchData()
-      } else {
-        console.log("[v0] KV - No practice ID available, current practice:", currentPractice)
-        console.log("[v0] KV - Current user practice_id:", currentUser?.practice_id)
-      }
+    if (currentPractice?.id) {
+      fetchData()
     }
-
-    fetchDataWrapper()
   }, [currentPractice])
 
   const fetchData = async () => {
-    if (!currentPractice?.id) {
-      console.log("[v0] KV Abrechnung - No practice ID available")
-      return
-    }
+    if (!currentPractice?.id) return
 
     try {
-      console.log("[v0] KV Abrechnung - Fetching data for practice:", currentPractice.id)
       setIsLoading(true)
       const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung`)
 
-      console.log("[v0] KV Abrechnung - Response status:", response.status)
-
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("[v0] KV Abrechnung - API error response:", errorText)
         throw new Error("Fehler beim Laden der Daten")
       }
 
       const result = await response.json()
-      console.log("[v0] KV Abrechnung - Data loaded successfully:", result.length, "records")
       setData(result)
     } catch (error) {
-      console.error("[v0] KV Abrechnung - Error fetching data:", error)
       toast({
         title: "Fehler",
         description: "Daten konnten nicht geladen werden",

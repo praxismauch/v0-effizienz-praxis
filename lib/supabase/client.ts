@@ -88,6 +88,10 @@ let cachedClient: SupabaseClient | null = null
 let isCreating = false // Declare the variable before using it
 
 function createClientSafe(): SupabaseClient | null {
+  // Double-check we're not creating duplicate clients
+  if (cachedClient) return cachedClient
+  if (typeof window !== "undefined" && window.__supabaseClient) return window.__supabaseClient
+
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -106,7 +110,6 @@ function createClientSafe(): SupabaseClient | null {
           const item = localStorage.getItem(key)
           return item
         } catch (error) {
-          console.error("[v0] Storage getItem error:", error)
           return null
         }
       },
@@ -114,14 +117,14 @@ function createClientSafe(): SupabaseClient | null {
         try {
           localStorage.setItem(key, value)
         } catch (error) {
-          console.error("[v0] Storage setItem error:", error, "Key:", key)
+          // Silently fail - storage might be full or unavailable
         }
       },
       removeItem: (key: string) => {
         try {
           localStorage.removeItem(key)
         } catch (error) {
-          console.error("[v0] Storage removeItem error:", error)
+          // Silently fail
         }
       },
     }
@@ -130,7 +133,7 @@ function createClientSafe(): SupabaseClient | null {
       auth: {
         storageKey: storageKey,
         persistSession: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: false, // Disable to prevent multiple auth checks
         flowType: "pkce",
         autoRefreshToken: true,
         debug: false,

@@ -173,7 +173,7 @@ export default function TeamMemberDetailPage() {
 
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7 mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto gap-1 mb-6">
               <TabsTrigger value="overview">Übersicht</TabsTrigger>
               <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
               <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>

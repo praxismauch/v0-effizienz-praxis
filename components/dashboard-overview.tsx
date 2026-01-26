@@ -712,30 +712,30 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
         case "showKPIs":
           if (!widgets.showKPIs || !stats) return null
           return wrapWithSpan(
-            <Card key="kpis" className="p-6 border-muted col-span-full">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground font-medium">Praxis-Score</p>
-                  <p className="text-4xl font-bold tracking-tight">{stats.kpiScore || 85}/100</p>
+            <Card key="kpis" className="p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Praxis-Score</p>
+                  <p className="text-2xl font-bold">{stats.kpiScore || 85}/100</p>
                   <p className="text-xs text-muted-foreground">Gesamtbewertung Ihrer Praxisleistung</p>
-                  {(stats.kpiTrend || 5) !== 0 && (
-                    <div
-                      className={`flex items-center text-sm ${(stats.kpiTrend || 5) >= 0 ? "text-emerald-600" : "text-red-600"}`}
-                    >
-                      {(stats.kpiTrend || 5) >= 0 ? (
-                        <TrendingUp className="h-3.5 w-3.5 mr-1" />
-                      ) : (
-                        <TrendingDown className="h-3.5 w-3.5 mr-1" />
-                      )}
-                      <span>{Math.abs(stats.kpiTrend || 5)}%</span>
-                      <span className="text-muted-foreground ml-1">vs. letzte Woche</span>
-                    </div>
-                  )}
                 </div>
-                <div className="bg-primary/10 text-primary p-4 rounded-lg">
-                  <TrendingUp className="h-6 w-6" />
+                <div className="bg-primary/10 text-primary p-2 rounded-lg">
+                  <TrendingUp className="h-5 w-5" />
                 </div>
               </div>
+              {(stats.kpiTrend || 5) !== 0 && (
+                <div className="mt-2 flex items-center gap-1 text-xs">
+                  {(stats.kpiTrend || 5) >= 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                  )}
+                  <span className={(stats.kpiTrend || 5) >= 0 ? "text-green-500" : "text-red-500"}>
+                    {Math.abs(stats.kpiTrend || 5)}%
+                  </span>
+                  <span className="text-muted-foreground">vs letzte Woche</span>
+                </div>
+              )}
             </Card>,
             widgetId,
           )

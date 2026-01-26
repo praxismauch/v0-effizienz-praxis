@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { createAdminClient, createClient } from "@/lib/supabase/server"
+import { isSuperAdminRole } from "@/lib/auth-utils"
 
 const translations = [
   // Sidebar translations
@@ -22,7 +23,31 @@ const translations = [
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createAdminClient()
+    // Authentication check
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+    }
+
+    // Authorization check - super admin only
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
+    if (userError || !userData || !isSuperAdminRole(userData.role)) {
+      return NextResponse.json(
+        { error: "Forbidden - Super admin access required" },
+        { status: 403 }
+      )
+    }
+
+    const adminClient = await createAdminClient()
 
     console.log(`[v0] Seeding ${translations.length} translations...`)
 

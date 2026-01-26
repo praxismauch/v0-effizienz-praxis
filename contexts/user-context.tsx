@@ -283,11 +283,16 @@ export function UserProvider({
                 "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
               )
               .eq("id", authUser.id)
-              .single()
+              .maybeSingle()
 
-            if (profileError || !profile) {
-              console.log("[v0] No profile found:", profileError?.message)
-              throw new Error(profileError?.message || "No profile found")
+            if (profileError) {
+              console.log("[v0] Error fetching profile:", profileError.message)
+              throw new Error(profileError.message || "Error fetching user profile")
+            }
+
+            if (!profile) {
+              console.log("[v0] No profile found for authenticated user")
+              throw new Error("User profile not found - please contact support")
             }
 
             const user: User = {
@@ -367,33 +372,41 @@ export function UserProvider({
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
           try {
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
               .from("users")
               .select(
                 "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
               )
               .eq("id", session.user.id)
-              .single()
+              .maybeSingle()
 
-            if (profile) {
-              const user: User = {
-                id: profile.id,
-                name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "User",
-                email: profile.email || session.user.email || "",
-                role: normalizeRole(profile.role) as User["role"],
-                avatar: profile.avatar,
-                practiceId: profile.practice_id?.toString() || "1",
-                practice_id: profile.practice_id?.toString() || "1",
-                isActive: profile.is_active ?? true,
-                joinedAt: profile.created_at || new Date().toISOString(),
-                preferred_language: profile.preferred_language,
-                firstName: profile.first_name,
-              }
-              setCurrentUser(user)
-              await persistUserToStorage(user)
-              hasFetchedUser.current = true
-              dispatchAuthRecovered()
+            if (profileError) {
+              console.error("Error fetching user profile:", profileError.message)
+              return
             }
+
+            if (!profile) {
+              console.error("No profile found for authenticated user")
+              return
+            }
+
+            const user: User = {
+              id: profile.id,
+              name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "User",
+              email: profile.email || session.user.email || "",
+              role: normalizeRole(profile.role) as User["role"],
+              avatar: profile.avatar,
+              practiceId: profile.practice_id?.toString() || "1",
+              practice_id: profile.practice_id?.toString() || "1",
+              isActive: profile.is_active ?? true,
+              joinedAt: profile.created_at || new Date().toISOString(),
+              preferred_language: profile.preferred_language,
+              firstName: profile.first_name,
+            }
+            setCurrentUser(user)
+            await persistUserToStorage(user)
+            hasFetchedUser.current = true
+            dispatchAuthRecovered()
           } catch (error) {
             console.error("Error fetching user profile:", error)
           }

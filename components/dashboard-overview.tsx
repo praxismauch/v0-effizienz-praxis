@@ -194,14 +194,8 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   }, [])
 
   const fetchDashboardData = useCallback(async () => {
-    const hardcodedPracticeId = "1"
-
-    if (
-      !hardcodedPracticeId ||
-      hardcodedPracticeId === "undefined" ||
-      hardcodedPracticeId === "null" ||
-      hardcodedPracticeId === "0"
-    ) {
+    // Get practice ID from context - should never be hardcoded
+    if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") {
       return
     }
 
@@ -209,11 +203,11 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
       return
     }
 
-    if (loadingPracticeIdRef.current === hardcodedPracticeId && hasLoadedRef.current) {
+    if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) {
       return
     }
 
-    loadingPracticeIdRef.current = hardcodedPracticeId
+    loadingPracticeIdRef.current = practiceId
     setLoading(true)
     setError(null)
 
@@ -241,7 +235,7 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
 
       // Fetch in batches with small delays to avoid rate limiting
       const preferences = await safeFetch(
-        `/api/practices/${hardcodedPracticeId}/dashboard-preferences?userId=${userId}`,
+        `/api/practices/${practiceId}/dashboard-preferences?userId=${userId}`,
         null,
       )
 
@@ -249,13 +243,13 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       const [statsData, activities] = await Promise.all([
-        safeFetch(`/api/practices/${hardcodedPracticeId}/dashboard-stats`, null),
-        safeFetch(`/api/dashboard/recent-activities?practiceId=${hardcodedPracticeId}&limit=5`, null),
+        safeFetch(`/api/practices/${practiceId}/dashboard-stats`, null),
+        safeFetch(`/api/dashboard/recent-activities?practiceId=${practiceId}&limit=5`, null),
       ])
 
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      const documents = await safeFetch(`/api/practices/${hardcodedPracticeId}/documents?limit=5`, null)
+      const documents = await safeFetch(`/api/practices/${practiceId}/documents?limit=5`, null)
 
 
 

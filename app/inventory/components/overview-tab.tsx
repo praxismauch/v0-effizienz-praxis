@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, TrendingUp } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
@@ -11,16 +12,31 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ items }: OverviewTabProps) {
-  // Consumption chart data (mock)
-  const consumptionData = [
-    { name: "Mo", value: 12 },
-    { name: "Di", value: 19 },
-    { name: "Mi", value: 15 },
-    { name: "Do", value: 22 },
-    { name: "Fr", value: 18 },
-    { name: "Sa", value: 8 },
-    { name: "So", value: 5 },
-  ]
+  const [consumptionData, setConsumptionData] = useState<Array<{ name: string; value: number }>>([])
+
+  useEffect(() => {
+    const fetchConsumptionData = async () => {
+      try {
+        // Fetch real consumption data from database
+        const response = await fetch("/api/inventory/consumption-history?days=7")
+        if (response.ok) {
+          const data = await response.json()
+          setConsumptionData(data)
+        } else {
+          // Fallback: generate empty data structure if no history
+          const days = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+          setConsumptionData(days.map((day) => ({ name: day, value: 0 })))
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching consumption data:", error)
+        // Fallback empty data
+        const days = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+        setConsumptionData(days.map((day) => ({ name: day, value: 0 })))
+      }
+    }
+    
+    fetchConsumptionData()
+  }, [items])
 
   // Category distribution
   const categoryData = CATEGORIES.map((cat) => ({

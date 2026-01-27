@@ -106,35 +106,37 @@ export default async function RootLayout({
   // Guard: Only patch once
   if (typeof window === 'undefined') return;
   
-  // SUPPRESS SUPABASE AUTH FETCH ERRORS - Must be FIRST
-  if (!window.__supabaseErrorSuppressed) {
-    window.__supabaseErrorSuppressed = true;
+  // PATCH GLOBALTHIS.FETCH FOR SUPABASE AUTH - Must be FIRST
+  if (!window.__fetchPatched) {
+    window.__fetchPatched = true;
     
-    // Suppress unhandled promise rejections for auth errors
+    var originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+      var urlStr = String(url || '');
+      var isSupabaseAuth = urlStr.indexOf('supabase') !== -1 && 
+        (urlStr.indexOf('/auth/') !== -1 || urlStr.indexOf('gotrue') !== -1 || urlStr.indexOf('/token') !== -1);
+      
+      if (isSupabaseAuth) {
+        return originalFetch.apply(this, arguments).catch(function() {
+          // Return mock response for auth failures
+          return new Response(JSON.stringify({ data: { user: null, session: null }, error: null }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        });
+      }
+      return originalFetch.apply(this, arguments);
+    };
+    
+    // Also suppress unhandled rejections
     window.addEventListener('unhandledrejection', function(event) {
       var msg = (event.reason && event.reason.message) || String(event.reason || '');
-      if (msg.indexOf('Failed to fetch') !== -1 || 
-          msg.indexOf('_getUser') !== -1 || 
-          msg.indexOf('_useSession') !== -1 ||
-          msg.indexOf('auth-js') !== -1 ||
-          msg.indexOf('supabase') !== -1) {
+      if (msg.indexOf('Failed to fetch') !== -1 || msg.indexOf('_getUser') !== -1 || msg.indexOf('_useSession') !== -1) {
         event.preventDefault();
         event.stopImmediatePropagation();
         return false;
       }
     }, true);
-    
-    // Also suppress global errors
-    var origOnError = window.onerror;
-    window.onerror = function(msg, src, line, col, err) {
-      var message = String(msg || '');
-      if (message.indexOf('Failed to fetch') !== -1 ||
-          message.indexOf('_getUser') !== -1 ||
-          message.indexOf('_useSession') !== -1) {
-        return true;
-      }
-      return origOnError ? origOnError.apply(this, arguments) : false;
-    };
   }
   
   if (window.__btoaPatched === true) return;

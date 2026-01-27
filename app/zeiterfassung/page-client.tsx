@@ -34,6 +34,7 @@ export default function ZeiterfassungPageClient() {
   const [activeTab, setActiveTab] = useState("stechuhr")
   const [selectedMonth, setSelectedMonth] = useState(new Date())
   const [isLoading, setIsLoading] = useState(true)
+  const [teamFilter, setTeamFilter] = useState("all")
 
   // Stamp dialog state
   const [showStampDialog, setShowStampDialog] = useState(false)
@@ -236,7 +237,11 @@ export default function ZeiterfassungPageClient() {
         </TabsContent>
 
         <TabsContent value="team">
-          <TeamLiveTab teamMembers={teamMembers} isLoading={dataLoading} />
+          <TeamLiveTab 
+            teamMembers={teamMembers || []} 
+            teamFilter={teamFilter}
+            setTeamFilter={setTeamFilter}
+          />
         </TabsContent>
 
         <TabsContent value="zeitkonto">

@@ -53,7 +53,7 @@ export async function POST(
         .from("time_stamps")
         .insert({
           user_id,
-          practice_id: parseInt(practiceId),
+          practice_id: practiceId,
           stamp_type: "start",
           work_location: location || "office",
           timestamp: now.toISOString(),
@@ -75,7 +75,7 @@ export async function POST(
         .from("time_blocks")
         .insert({
           user_id,
-          practice_id: parseInt(practiceId),
+          practice_id: practiceId,
           date: today,
           start_time: now.toISOString(),
           start_stamp_id: stamp.id,
@@ -121,7 +121,7 @@ export async function POST(
         .from("time_stamps")
         .insert({
           user_id,
-          practice_id: parseInt(practiceId),
+          practice_id: practiceId,
           stamp_type: "stop",
           work_location: openBlock.work_location,
           timestamp: now.toISOString(),

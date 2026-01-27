@@ -15,18 +15,16 @@ import { toast } from "sonner"
 
 const DashboardSkeleton = memo(function DashboardSkeleton() {
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
-        <Skeleton className="h-[300px]" />
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-48" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
       </div>
-    </AppLayout>
+      <Skeleton className="h-[300px]" />
+    </div>
   )
 })
 
@@ -43,27 +41,25 @@ const LoadingOverlay = memo(function LoadingOverlay({ message }: { message: stri
 
 const NoPracticeFound = memo(function NoPracticeFound({ onRetry }: { onRetry: () => void }) {
   return (
-    <AppLayout>
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
-              <CardTitle>Keine Praxis gefunden</CardTitle>
-            </div>
-            <CardDescription>
-              Es konnte keine Praxis für Ihr Konto gefunden werden. Bitte wenden Sie sich an den Administrator.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={onRetry} variant="outline" className="w-full bg-transparent">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Erneut versuchen
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </AppLayout>
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <CardTitle>Keine Praxis gefunden</CardTitle>
+          </div>
+          <CardDescription>
+            Es konnte keine Praxis für Ihr Konto gefunden werden. Bitte wenden Sie sich an den Administrator.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={onRetry} variant="outline" className="w-full bg-transparent">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Erneut versuchen
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   )
 })
 
@@ -135,9 +131,7 @@ export default function DashboardPageClient() {
 
   return (
     <OnboardingWrapper>
-      <AppLayout>
-        <LazyDashboardOverview practiceId={practiceId!} userId={currentUser?.id || "fallback-user-id"} />
-      </AppLayout>
+      <LazyDashboardOverview practiceId={practiceId!} userId={currentUser?.id || "fallback-user-id"} />
     </OnboardingWrapper>
   )
 }

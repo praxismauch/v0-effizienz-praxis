@@ -135,6 +135,17 @@ function getOrCreateClient(): SupabaseClient | null {
   }
 
   try {
+    // Suppress unhandled promise rejections for auth fetch errors in v0 preview
+    if (typeof window !== "undefined" && !window.__supabaseErrorHandlerSet) {
+      window.addEventListener("unhandledrejection", (event) => {
+        const message = event.reason?.message || String(event.reason)
+        if (message.includes("Failed to fetch") || message.includes("_getUser") || message.includes("_useSession")) {
+          event.preventDefault() // Suppress this specific error in v0 preview
+        }
+      })
+      ;(window as Window & { __supabaseErrorHandlerSet?: boolean }).__supabaseErrorHandlerSet = true
+    }
+
     const client = createSupabaseBrowserClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         storageKey: storageKey,

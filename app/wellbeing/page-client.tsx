@@ -267,11 +267,6 @@ export default function WellbeingPageClient() {
         setMoodTrends(data.trends || [])
         setMoodAverages(data.averages || null)
         setHasSubmittedToday(data.hasSubmittedToday || false)
-        // Debug log removed: Mood data loaded:", {
-          trends: data.trends?.length,
-          averages: data.averages,
-          hasSubmittedToday: data.hasSubmittedToday,
-        })
       } else {
         console.error("[v0] Failed to load mood data:", res.status, res.statusText)
       }

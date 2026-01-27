@@ -73,7 +73,11 @@ const refreshTokenLock = new Map<string, number>()
 async function acquireLockWithQueue(key: string, operation: () => Promise<void>): Promise<void> {
   const existingPromise = pendingRefreshes.get(key)
   if (existingPromise) {
-    await existingPromise
+    try {
+      await existingPromise
+    } catch {
+      // Ignore errors from existing promise - we'll try our own operation
+    }
     return
   }
 
@@ -81,6 +85,14 @@ async function acquireLockWithQueue(key: string, operation: () => Promise<void>)
     try {
       refreshTokenLock.set(key, Date.now())
       await operation()
+    } catch (error: unknown) {
+      // Re-throw non-abort errors
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const isAbortError = errorMessage.includes("abort") || (error instanceof Error && error.name === "AbortError")
+      if (!isAbortError) {
+        throw error
+      }
+      // Silently swallow abort errors
     } finally {
       refreshTokenLock.delete(key)
       pendingRefreshes.delete(key)
@@ -200,8 +212,15 @@ async function updateSession(request: NextRequest) {
       } = await supabase.auth.getUser()
       user = refreshedUser
     })
-  } catch (error) {
-    edgeLog.error("Token refresh lock error", error)
+  } catch (error: unknown) {
+    // Silently handle AbortError and network errors - these are expected in v0 preview
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const isAbortError = errorMessage.includes("abort") || errorMessage.includes("AbortError") || (error instanceof Error && error.name === "AbortError")
+    const isNetworkError = errorMessage.includes("fetch") || errorMessage.includes("network")
+    
+    if (!isAbortError && !isNetworkError) {
+      edgeLog.error("Token refresh lock error", error)
+    }
     // Mark refresh as failed
     refreshFailed = true
   }

@@ -17,12 +17,11 @@ import type { TeamMember, Shift, ShiftType } from "../types"
 
 interface ScheduleTabProps {
   weekDays: Date[]
-  filteredTeamMembers: TeamMember[]
+  teamMembers: TeamMember[]
   schedules: Shift[]
   shiftTypes: ShiftType[]
-  onCellClick: (date: Date, memberId: string) => void
-  onEditShift: (shift: Shift) => void
-  onDeleteShift: (shiftId: string) => void
+  practiceId: string
+  onRefresh: () => void
 }
 
 const getShiftIcon = (name: string) => {
@@ -35,20 +34,35 @@ const getShiftIcon = (name: string) => {
 
 export default function ScheduleTab({
   weekDays,
-  filteredTeamMembers,
+  teamMembers,
   schedules,
   shiftTypes,
-  onCellClick,
-  onEditShift,
-  onDeleteShift,
+  practiceId,
+  onRefresh,
 }: ScheduleTabProps) {
+  // Use teamMembers directly (with fallback to empty array)
+  const filteredTeamMembers = teamMembers || []
+
   const getShiftsForCell = (date: Date, memberId: string) => {
     const dateStr = format(date, "yyyy-MM-dd")
     return (schedules || []).filter((s) => s.team_member_id === memberId && s.date === dateStr)
   }
 
   const getShiftType = (shiftTypeId: string) => {
-    return shiftTypes.find((st) => st.id === shiftTypeId)
+    return (shiftTypes || []).find((st) => st.id === shiftTypeId)
+  }
+
+  // Placeholder handlers for cell interactions
+  const onCellClick = (date: Date, memberId: string) => {
+    console.log("[v0] Cell clicked:", format(date, "yyyy-MM-dd"), memberId)
+  }
+
+  const onEditShift = (shift: Shift) => {
+    console.log("[v0] Edit shift:", shift.id)
+  }
+
+  const onDeleteShift = async (shiftId: string) => {
+    console.log("[v0] Delete shift:", shiftId)
   }
 
   return (

@@ -517,11 +517,7 @@ export function HiringPipeline() {
       </Card>
 
       <div
-        className="grid gap-4"
-        style={{
-          gridTemplateColumns: `repeat(auto-fit, minmax(130px, 1fr))`,
-          maxWidth: "100%",
-        }}
+        className="flex gap-4 overflow-x-auto pb-4"
       >
         {stagesWithApplications.map((stage) => (
           <Card
@@ -557,7 +553,7 @@ export function HiringPipeline() {
                       } ${isMoving === application.id ? "animate-pulse" : ""}`}
                     >
                       <CardContent className="p-3">
-                        <div className="flex items-start gap-2">
+                        <div className="flex items-start gap-3">
                           <Avatar className="h-10 w-10 flex-shrink-0">
                             <AvatarImage src={application.candidate.image_url || undefined} />
                             <AvatarFallback className="text-xs">
@@ -565,8 +561,8 @@ export function HiringPipeline() {
                               {application.candidate.last_name?.[0] || "?"}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="font-medium text-sm truncate" title={`${application.candidate.first_name} ${application.candidate.last_name}`}>
                               {application.candidate.first_name} {application.candidate.last_name}
                             </p>
                             {application.candidate.date_of_birth && (
@@ -575,7 +571,7 @@ export function HiringPipeline() {
                               </p>
                             )}
                             {application.job_posting?.title && (
-                              <Badge variant="outline" className="text-xs mt-1 max-w-full truncate">
+                              <Badge variant="outline" className="text-xs mt-1 inline-block max-w-full truncate" title={application.job_posting.title}>
                                 {application.job_posting.title}
                               </Badge>
                             )}

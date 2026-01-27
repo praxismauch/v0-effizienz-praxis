@@ -76,7 +76,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const today = new Date()
     today.setHours(0, 0, 0, 0) // Start of today
-    const todayStr = today.toISOString() // Full ISO timestamp for timestamp columns
+    const todayDateStr = today.toISOString().split('T')[0] // Just the date YYYY-MM-DD
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     const fourteenDaysAgo = new Date()
@@ -122,12 +122,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .select("id", { count: "exact", head: true })
           .eq("practice_id", practiceIdInt)
           .eq("completed", false),
-        // calendar_events uses integer practice_id
+        // calendar_events uses integer practice_id - filter by start_date only (start_time is TIME not TIMESTAMP)
         supabase
           .from("calendar_events")
           .select("id", { count: "exact", head: true })
           .eq("practice_id", practiceIdInt)
-          .gte("start_time", todayStr),
+          .gte("start_date", todayDateStr),
         // documents (drafts) uses integer practice_id
         supabase
           .from("documents")
@@ -196,12 +196,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .select("id, completed, created_at, updated_at")
           .eq("practice_id", practiceIdInt)
           .gte("created_at", sevenDaysAgo.toISOString()),
-        // calendar_events uses integer
+        // calendar_events uses integer - filter by start_date only (start_time is TIME not TIMESTAMP)
         supabase
           .from("calendar_events")
-          .select("id, start_time")
+          .select("id, start_time, start_date")
           .eq("practice_id", practiceIdInt)
-          .gte("start_time", todayStr)
+          .gte("start_date", todayDateStr)
           .limit(20),
         // todos recent uses integer
         supabase
@@ -339,7 +339,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const endTimeStr = endHour === 24 ? "23:59:59" : endHour.toString().padStart(2, "0") + ":00:00"
 
       const appointmentsCount = (calendarEvents.data || []).filter(
-        (event) => event.start_time >= startTimeStr && event.start_time < endTimeStr,
+        (event) => {
+          // Only count events for today
+          if (event.start_date !== todayDateStr) return false
+          // Check if time falls within the hour range
+          return event.start_time >= startTimeStr && event.start_time < endTimeStr
+        },
       ).length
 
       todayScheduleData.push({

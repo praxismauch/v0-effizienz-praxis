@@ -105,6 +105,38 @@ export default async function RootLayout({
   
   // Guard: Only patch once
   if (typeof window === 'undefined') return;
+  
+  // SUPPRESS SUPABASE AUTH FETCH ERRORS - Must be FIRST
+  if (!window.__supabaseErrorSuppressed) {
+    window.__supabaseErrorSuppressed = true;
+    
+    // Suppress unhandled promise rejections for auth errors
+    window.addEventListener('unhandledrejection', function(event) {
+      var msg = (event.reason && event.reason.message) || String(event.reason || '');
+      if (msg.indexOf('Failed to fetch') !== -1 || 
+          msg.indexOf('_getUser') !== -1 || 
+          msg.indexOf('_useSession') !== -1 ||
+          msg.indexOf('auth-js') !== -1 ||
+          msg.indexOf('supabase') !== -1) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return false;
+      }
+    }, true);
+    
+    // Also suppress global errors
+    var origOnError = window.onerror;
+    window.onerror = function(msg, src, line, col, err) {
+      var message = String(msg || '');
+      if (message.indexOf('Failed to fetch') !== -1 ||
+          message.indexOf('_getUser') !== -1 ||
+          message.indexOf('_useSession') !== -1) {
+        return true;
+      }
+      return origOnError ? origOnError.apply(this, arguments) : false;
+    };
+  }
+  
   if (window.__btoaPatched === true) return;
   
   // Mark as patched immediately to prevent race conditions

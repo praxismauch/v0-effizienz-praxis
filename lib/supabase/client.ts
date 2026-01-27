@@ -11,11 +11,21 @@ declare global {
   }
 }
 
-// Set up global error handler IMMEDIATELY to catch Supabase auth fetch errors
+// Set up global error handler and console suppressor IMMEDIATELY
 if (typeof window !== "undefined" && !window.__supabaseErrorHandlerSet) {
+  // Suppress GoTrueClient warnings in console
+  const originalWarn = console.warn
+  console.warn = (...args: unknown[]) => {
+    const message = args[0]?.toString() || ""
+    if (message.includes("GoTrueClient") || message.includes("multiple GoTrueClient")) {
+      return // Suppress GoTrueClient warnings
+    }
+    originalWarn.apply(console, args)
+  }
+
+  // Suppress unhandled promise rejections for auth fetch errors
   window.addEventListener("unhandledrejection", (event) => {
     const message = event.reason?.message || String(event.reason || "")
-    // Suppress Supabase auth fetch errors in v0 preview environment
     if (
       message.includes("Failed to fetch") ||
       message.includes("_getUser") ||

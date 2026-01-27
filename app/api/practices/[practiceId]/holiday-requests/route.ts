@@ -105,7 +105,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       current.setDate(current.getDate() + 1)
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { data, error } = await adminClient
       .from("holiday_requests")

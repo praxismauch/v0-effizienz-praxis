@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     console.log("[v0] team-members GET: Using practice ID:", practiceIdStr)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     let customRoleOrder: string[] | undefined
     try {
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const practiceIdStr = String(practiceId)
     const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const body = await request.json()
 
@@ -301,7 +301,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const practiceIdStr = String(practiceId)
     const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     // Extract member ID from the URL or body

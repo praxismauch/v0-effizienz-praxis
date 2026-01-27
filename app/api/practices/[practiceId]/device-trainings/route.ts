@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     // Get all trainings for the practice
     const { data: trainings, error } = await adminClient
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const body = await request.json()
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     // Bulk create trainings
     if (Array.isArray(body.trainings)) {

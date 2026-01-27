@@ -27,7 +27,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ error: "Forbidden - can only fetch own preferences" }, { status: 403 })
     }
 
-    const supabaseAdmin = createAdminClient()
+    const supabaseAdmin = await createAdminClient()
 
     // Fetch dashboard preferences from database
     const { data, error } = await supabaseAdmin
@@ -74,7 +74,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "config is required in request body" }, { status: 400 })
     }
 
-    const supabaseAdmin = createAdminClient()
+    const supabaseAdmin = await createAdminClient()
 
     // Upsert dashboard preferences
     const { data, error } = await supabaseAdmin

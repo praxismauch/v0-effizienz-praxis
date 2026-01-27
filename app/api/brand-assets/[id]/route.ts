@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { data, error } = await supabase.from("brand_assets").select("*").eq("id", id).single()
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     const { data, error } = await supabase
@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { error } = await supabase.from("brand_assets").delete().eq("id", id)
 

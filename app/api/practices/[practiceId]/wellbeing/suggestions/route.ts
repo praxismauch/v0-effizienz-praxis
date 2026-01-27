@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: suggestions, error } = await supabase
       .from("wellbeing_suggestions")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
     if (error) throw error

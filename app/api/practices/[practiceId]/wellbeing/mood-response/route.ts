@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data, error } = await supabase
       .from("anonymous_mood_responses")
       .insert({
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         survey_id: body.survey_id || null,
         energy_level: body.energy_level,
         stress_level: body.stress_level,

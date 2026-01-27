@@ -139,12 +139,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return {
         id: memberId,
         user_id: member.user_id,
+        first_name: firstName,
+        last_name: lastName,
         firstName: firstName,
         lastName: lastName,
         name: name,
         email: "", // No email in team_members table
         role: member.role || "user",
         avatar: null, // No avatar in team_members table
+        avatar_url: null, // No avatar in team_members table
         practiceId: practiceId,
         isActive: member.status === "active" || !member.status,
         is_active: member.status === "active" || !member.status,
@@ -154,6 +157,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         created_at: member.created_at,
         permissions: [],
         lastActive: new Date().toISOString(),
+        team_ids: member.user_id
+          ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
+          : [],
         teamIds: member.user_id
           ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
           : [],

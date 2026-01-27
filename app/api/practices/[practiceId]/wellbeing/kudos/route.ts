@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: kudos, error } = await supabase
       .from("kudos")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .eq("is_public", true)
       .order("created_at", { ascending: false })
       .limit(50)
@@ -28,8 +28,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { data: teamMembers } = await supabase
       .from("team_members")
-      .select("id, name, avatar")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .select("id, first_name, last_name, avatar")
+      .eq("practice_id", practiceId)
 
     const userMap = new Map()
     users?.forEach((u) => userMap.set(u.id, u))
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data, error } = await supabase
       .from("kudos")
       .insert({
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         from_user_id: body.from_user_id,
         to_user_id: body.to_user_id,
         to_team_member_id: body.to_team_member_id || body.to_user_id,

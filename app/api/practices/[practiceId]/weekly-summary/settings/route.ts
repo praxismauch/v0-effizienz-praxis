@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: settings, error } = await supabase
       .from("weekly_summary_settings")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .maybeSingle()
 
     if (error && error.code !== "PGRST116") {
@@ -34,11 +34,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { data: existing } = await supabase
       .from("weekly_summary_settings")
       .select("id")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .maybeSingle()
 
     const settingsData = {
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
       is_enabled: body.is_enabled,
       send_day: body.send_day,
       send_time: body.send_time,

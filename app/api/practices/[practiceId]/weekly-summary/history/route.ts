@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: history, error } = await supabase
       .from("weekly_summary_history")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .order("sent_at", { ascending: false })
       .limit(50)
 

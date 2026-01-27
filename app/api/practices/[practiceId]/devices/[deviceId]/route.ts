@@ -20,7 +20,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
     const { data: device, error } = await adminClient
       .from("medical_devices")
       .select("*")
@@ -68,7 +68,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { room_ids, ...deviceData } = body
 
@@ -195,7 +195,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     await adminClient.from("device_rooms").delete().eq("device_id", deviceId)
 

@@ -17,7 +17,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
     const { data: reports, error } = await adminClient
       .from("device_maintenance_reports")
       .select("*")
@@ -52,7 +52,7 @@ export async function POST(
     }
 
     const body = await request.json()
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     // Create maintenance report
     const { data: report, error } = await adminClient

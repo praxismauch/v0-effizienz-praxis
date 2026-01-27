@@ -264,10 +264,21 @@ export function UserProvider({
               throw new Error("Supabase client not available")
             }
 
-            const {
-              data: { user: authUser },
-              error: authError,
-            } = await supabase.auth.getUser()
+            let authUser = null
+            let authError = null
+            
+            try {
+              const result = await supabase.auth.getUser()
+              authUser = result.data?.user
+              authError = result.error
+            } catch (fetchError: unknown) {
+              // Handle network errors gracefully - user is not logged in
+              const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError)
+              if (errorMessage.includes("fetch") || errorMessage.includes("Failed") || errorMessage.includes("network")) {
+                throw new Error("Network error - no session available")
+              }
+              throw fetchError
+            }
 
             if (authError || !authUser) {
               throw new Error(authError?.message || "No valid Supabase session")

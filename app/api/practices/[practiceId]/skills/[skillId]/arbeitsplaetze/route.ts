@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { practiceId, skillId } = await params
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { data, error } = await supabase
       .from("skill_arbeitsplaetze")
@@ -44,7 +44,7 @@ export async function PUT(
     const body = await request.json()
     const { arbeitsplatz_ids } = body
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { error: checkError } = await supabase.from("skill_arbeitsplaetze").select("skill_id").limit(1)
 

@@ -148,7 +148,7 @@ export default function PageClient(_props: PageClientProps) {
       const response = await fetch(`/api/practices/${currentPractice.id}/team-members`)
       if (response.ok) {
         const data = await response.json()
-        setTeamMembers(data || [])
+        setTeamMembers(data.teamMembers || [])
       }
     } catch (error) {
       console.error("Error fetching team members:", error)

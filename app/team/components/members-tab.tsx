@@ -4,34 +4,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { Users } from "lucide-react"
-import type { TeamMember, Team } from "../types"
-import { getTeamColor } from "../types"
+import type { TeamMember } from "../types"
 
 interface MembersTabProps {
-  members: TeamMember[]
-  teams: Team[]
-  searchTerm: string
-  isAdmin: boolean
+  teamMembers: TeamMember[]
+  onAddMember: () => void
+  onEditMember: (member: TeamMember) => void
+  onDeleteMember: (member: TeamMember) => void
 }
 
-export default function MembersTab({ members, teams, searchTerm, isAdmin }: MembersTabProps) {
-  const filteredMembers = (members || []).filter(
-    (member) =>
-      member.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.position?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+export default function MembersTab({ teamMembers, onAddMember, onEditMember, onDeleteMember }: MembersTabProps) {
+  const filteredMembers = teamMembers || []
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase()
-  }
-
-  const getMemberTeams = (member: TeamMember) => {
-    if (!member.team_ids || member.team_ids.length === 0) return []
-    return (teams || []).filter((team) => member.team_ids?.includes(team.id))
   }
 
   if (filteredMembers.length === 0) {
@@ -41,7 +28,7 @@ export default function MembersTab({ members, teams, searchTerm, isAdmin }: Memb
           <Users className="h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-lg font-medium text-muted-foreground">Keine Teammitglieder gefunden</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {searchTerm ? "Passen Sie Ihre Suche an" : "Fügen Sie Ihr erstes Teammitglied hinzu"}
+            Fügen Sie Ihr erstes Teammitglied hinzu
           </p>
         </CardContent>
       </Card>
@@ -68,25 +55,12 @@ export default function MembersTab({ members, teams, searchTerm, isAdmin }: Memb
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {getMemberTeams(member).length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {getMemberTeams(member).map((team) => (
-                    <Badge
-                      key={team.id}
-                      variant="outline"
-                      style={{
-                        borderColor: getTeamColor(team.color),
-                        backgroundColor: `${getTeamColor(team.color)}15`,
-                      }}
-                    >
-                      {team.name}
-                    </Badge>
-                  ))}
-                </div>
+              {member.email && (
+                <p className="text-sm text-muted-foreground truncate">{member.email}</p>
               )}
-              <div className="flex justify-end">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/team/${member.id}`}>Profil ansehen</Link>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => onEditMember(member)}>
+                  Profil ansehen
                 </Button>
               </div>
             </div>

@@ -198,19 +198,22 @@ export function useCorrectionRequests(practiceId: string | null, userId?: string
           reason 
         }),
       })
-      const data = await res.json()
+      const responseData = await res.json()
       if (!res.ok) {
-        return { success: false, error: data.error || "Failed to submit correction" }
+        return { success: false, error: responseData.error || "Failed to submit correction" }
       }
       mutate()
-      return { success: true, ...data }
-    } catch (error: any) {
-      return { success: false, error: error.message || "Failed to submit correction" }
+      return { success: true, ...responseData }
+    } catch (err: any) {
+      return { success: false, error: err.message || "Failed to submit correction" }
     }
   }
 
+  // Ensure we always return an array, even if data is undefined or null
+  const corrections = Array.isArray(data) ? data : []
+
   return {
-    corrections: data || [],
+    corrections,
     isLoading,
     error,
     mutate,
@@ -317,8 +320,11 @@ export function usePlausibilityIssues(practiceId: string | null) {
     }
   )
 
+  // Ensure we always return an array, even if data is undefined or null
+  const issues = Array.isArray(data) ? data : []
+
   return {
-    issues: data || [],
+    issues,
     isLoading,
     error,
     mutate,

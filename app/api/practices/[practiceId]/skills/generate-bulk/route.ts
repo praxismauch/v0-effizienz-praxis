@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Bitte geben Sie Stichworte oder Beschreibungen ein" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     // Get practice info for context
     const { data: practice } = await supabase.from("practices").select("name, specialty").eq("id", practiceId).single()

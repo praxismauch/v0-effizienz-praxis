@@ -46,7 +46,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
 
-    const supabase = createAdminClient()
+    console.log("[v0] team-members GET: Using practice ID:", practiceIdStr)
+
+    const supabase = await createAdminClient()
 
     let customRoleOrder: string[] | undefined
     try {
@@ -100,8 +102,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           { status: 503, headers: { "Retry-After": "5" } },
         )
       }
-      console.error("Query error in team-members GET:", queryError)
-      return NextResponse.json([])
+      console.error("[v0] Query error in team-members GET:", queryError)
+      return NextResponse.json({ teamMembers: [] })
     }
 
     const activeMembers = members.filter((member) => member.status === "active" || !member.status)
@@ -131,12 +133,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return {
         id: memberId,
         user_id: member.user_id,
+        first_name: firstName,
+        last_name: lastName,
         firstName: firstName,
         lastName: lastName,
         name: name,
         email: "",
         role: member.role || "user",
-        avatar: null,
+        avatar: null, // No avatar in team_members table
+        avatar_url: null, // No avatar in team_members table
         practiceId: practiceId,
         isActive: member.status === "active" || !member.status,
         is_active: member.status === "active" || !member.status,
@@ -146,6 +151,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         created_at: member.created_at,
         permissions: [],
         lastActive: new Date().toISOString(),
+        team_ids: member.user_id
+          ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
+          : [],
         teamIds: member.user_id
           ? teamAssignments.filter((ta) => ta.user_id === member.user_id).map((ta) => ta.team_id)
           : [],
@@ -155,8 +163,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const sortedTeamMembers = sortTeamMembersByRole(teamMembers, customRoleOrder)
 
-    return NextResponse.json(sortedTeamMembers || [])
-  } catch (error: unknown) {
+    console.log("[v0] team-members GET: returning", sortedTeamMembers.length, "members")
+    console.log(
+      "[v0] team-members GET: Response sample:",
+      JSON.stringify(sortedTeamMembers.slice(0, 2)).substring(0, 300),
+    )
+
+    return NextResponse.json({ teamMembers: sortedTeamMembers || [] })
+  } catch (error: any) {
     if (isRateLimitError(error)) {
       return NextResponse.json(
         { error: "Service temporarily unavailable", retryable: true },
@@ -174,7 +188,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const practiceIdStr = String(practiceId)
     const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const body = await request.json()
 
@@ -286,7 +300,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const practiceIdStr = String(practiceId)
     const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     const memberId = body.id || body.user_id

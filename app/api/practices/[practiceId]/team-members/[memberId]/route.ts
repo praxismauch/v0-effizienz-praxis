@@ -9,7 +9,7 @@ export async function PUT(
     const { practiceId, memberId } = await params
     const practiceIdText = String(practiceId) || "1"
     const memberIdText = String(memberId)
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     console.log("[v0] PUT team member API called:", { practiceId: practiceIdText, memberId: memberIdText, body })
@@ -149,7 +149,7 @@ export async function DELETE(
 
     console.log("[v0] DELETE team member API called:", { practiceId: practiceIdText, memberId: memberIdText })
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     let checkMember = null
 

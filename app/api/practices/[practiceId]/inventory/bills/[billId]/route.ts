@@ -5,7 +5,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
   try {
     const { practiceId, billId } = await params
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { data, error } = await supabase
       .from("inventory_bills")
@@ -32,7 +32,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
     const { practiceId, billId } = await params
     const body = await request.json()
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { data, error } = await supabase
       .from("inventory_bills")
@@ -64,7 +64,7 @@ export async function DELETE(
   try {
     const { practiceId, billId } = await params
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { error } = await supabase
       .from("inventory_bills")

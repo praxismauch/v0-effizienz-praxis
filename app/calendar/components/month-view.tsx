@@ -10,43 +10,22 @@ import type { CalendarEvent } from "../types"
 import { getEventTypeColor } from "../types"
 
 interface MonthViewProps {
+  monthDays: Date[]
   currentDate: Date
-  selectedDate: Date | null
-  events: CalendarEvent[]
-  onSelectDate: (date: Date) => void
-  onSelectEvent: (event: CalendarEvent) => void
+  getEventsForDay: (day: Date) => CalendarEvent[]
+  onDayClick: (day: Date) => void
+  onEventClick: (event: CalendarEvent) => void
 }
 
 export function MonthView({
+  monthDays,
   currentDate,
-  selectedDate,
-  events,
-  onSelectDate,
-  onSelectEvent,
+  getEventsForDay,
+  onDayClick,
+  onEventClick,
 }: MonthViewProps) {
-  // Generate calendar days for the current month
-  const calendarDays = useMemo(() => {
-    const monthStart = startOfMonth(currentDate)
-    const monthEnd = endOfMonth(currentDate)
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
-
-    const days = []
-    let day = startDate
-    while (day <= endDate) {
-      days.push(day)
-      day = addDays(day, 1)
-    }
-    return days
-  }, [currentDate])
-
-  const getEventsForDay = (day: Date) => {
-    return events.filter((event) => {
-      const eventStart = parseISO(event.startDate)
-      const eventEnd = parseISO(event.endDate)
-      return day >= eventStart && day <= eventEnd
-    })
-  }
+  // Use provided monthDays instead of calculating
+  const calendarDays = monthDays
 
   return (
     <div className="bg-card rounded-lg border">
@@ -64,7 +43,6 @@ export function MonthView({
         {calendarDays.map((day, index) => {
           const dayEvents = getEventsForDay(day)
           const isCurrentMonth = isSameMonth(day, currentDate)
-          const isSelected = selectedDate && isSameDay(day, selectedDate)
           const isTodayDate = isToday(day)
 
           return (
@@ -73,10 +51,9 @@ export function MonthView({
               className={cn(
                 "min-h-[100px] p-2 border-b border-r cursor-pointer transition-colors hover:bg-muted/50",
                 !isCurrentMonth && "bg-muted/20 text-muted-foreground",
-                isSelected && "bg-primary/10 ring-2 ring-primary ring-inset",
-                isTodayDate && !isSelected && "bg-primary/5"
+                isTodayDate && "bg-primary/5"
               )}
-              onClick={() => onSelectDate(day)}
+              onClick={() => onDayClick(day)}
             >
               <div className="flex justify-between items-start">
                 <span
@@ -100,7 +77,7 @@ export function MonthView({
                     )}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onSelectEvent(event)
+                      onEventClick(event)
                     }}
                     title={event.title}
                   >

@@ -232,10 +232,10 @@ export default function TodosPage() {
 
     try {
       const response = await fetch(`/api/practices/${currentPractice.id}/team-members`)
-      if (response.ok) {
-        const data = await response.json()
-        setTeamMembers(data)
-      }
+        if (response.ok) {
+          const data = await response.json()
+          setTeamMembers(data.teamMembers || [])
+        }
     } catch (error) {
       console.error("[v0] Error fetching team members:", error)
     }

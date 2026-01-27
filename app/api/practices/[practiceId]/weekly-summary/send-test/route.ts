@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = await createClient()
     const { settings } = await request.json()
 
-    // Get practice info
+    // Get practice info (practices table uses INTEGER id)
     const { data: practice } = await supabase
       .from("practices")
       .select("name, email, logo_url")
@@ -34,40 +34,40 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const nextWeekStart = addDays(weekEnd, 1)
     const nextWeekEnd = addDays(nextWeekStart, 6)
 
-    // Get todos count
+    // Get todos count (todos table uses TEXT practice_id)
     const { count: openTodos } = await supabase
       .from("todos")
       .select("*", { count: "exact", head: true })
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .eq("completed", false)
 
     const { count: completedTodos } = await supabase
       .from("todos")
       .select("*", { count: "exact", head: true })
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .eq("completed", true)
       .gte("updated_at", lastWeekStart.toISOString())
 
-    // Get appointments count
+    // Get appointments count (calendar_events uses TEXT practice_id)
     const { count: appointmentsCount } = await supabase
       .from("calendar_events")
       .select("*", { count: "exact", head: true })
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .gte("start_time", weekStart.toISOString())
       .lte("start_time", weekEnd.toISOString())
 
-    // Get team members
+    // Get team members (team_members uses TEXT practice_id)
     const { count: teamCount } = await supabase
       .from("team_members")
       .select("*", { count: "exact", head: true })
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .eq("is_active", true)
 
-    // Get documents count
+    // Get documents count (documents uses TEXT practice_id)
     const { count: documentsCount } = await supabase
       .from("documents")
       .select("*", { count: "exact", head: true })
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .gte("created_at", lastWeekStart.toISOString())
 
     const forecastItems: ForecastItem[] = []
@@ -102,11 +102,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         })
       }
 
-      // 2. Get calendar events for next week
+      // 2. Get calendar events for next week (calendar_events uses TEXT practice_id)
       const { data: nextWeekEvents } = await supabase
         .from("calendar_events")
         .select("id, title, start_time, event_type, description")
-        .eq("practice_id", Number.parseInt(practiceId))
+        .eq("practice_id", practiceId)
         .gte("start_time", nextWeekStart.toISOString())
         .lte("start_time", nextWeekEnd.toISOString())
         .order("start_time", { ascending: true })
@@ -124,11 +124,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         })
       }
 
-      // 3. Get todos due next week
+      // 3. Get todos due next week (todos uses TEXT practice_id)
       const { data: dueTodos } = await supabase
         .from("todos")
         .select("id, title, due_date, priority, category")
-        .eq("practice_id", Number.parseInt(practiceId))
+        .eq("practice_id", practiceId)
         .eq("completed", false)
         .gte("due_date", nextWeekStart.toISOString().split("T")[0])
         .lte("due_date", nextWeekEnd.toISOString().split("T")[0])
@@ -148,11 +148,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         })
       }
 
-      // 4. Get device maintenance due next week
+      // 4. Get device maintenance due next week (devices uses TEXT practice_id)
       const { data: maintenanceDue } = await supabase
         .from("devices")
         .select("id, name, next_maintenance_date, device_type")
-        .eq("practice_id", Number.parseInt(practiceId))
+        .eq("practice_id", practiceId)
         .gte("next_maintenance_date", nextWeekStart.toISOString().split("T")[0])
         .lte("next_maintenance_date", nextWeekEnd.toISOString().split("T")[0])
         .limit(5)
@@ -169,11 +169,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         })
       }
 
-      // 5. Get training/certifications expiring next week
+      // 5. Get training/certifications expiring next week (team_member_skills uses TEXT practice_id)
       const { data: expiringCerts } = await supabase
         .from("team_member_skills")
         .select("id, certification_expires_at, skills(name), team_members(users(first_name, last_name))")
-        .eq("practice_id", Number.parseInt(practiceId))
+        .eq("practice_id", practiceId)
         .gte("certification_expires_at", nextWeekStart.toISOString().split("T")[0])
         .lte("certification_expires_at", nextWeekEnd.toISOString().split("T")[0])
         .limit(5)

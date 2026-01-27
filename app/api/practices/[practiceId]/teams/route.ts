@@ -43,7 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const practiceIdText = String(practiceId)
 
@@ -71,9 +71,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       error = result.error
     } catch (queryError) {
       if (isRateLimitError(queryError)) {
-        return NextResponse.json([])
+        return NextResponse.json({ teams: [] })
       }
-      return NextResponse.json([])
+      return NextResponse.json({ teams: [] })
     }
 
     if (!teams || teams.length === 0) {
@@ -113,10 +113,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         memberCount: Array.isArray(team.team_assignments) ? team.team_assignments.length : 0,
       })) || []
 
-    return NextResponse.json(teamsWithCount)
+    return NextResponse.json({ teams: teamsWithCount })
   } catch (error) {
     if (isRateLimitError(error)) {
-      return NextResponse.json([])
+      return NextResponse.json({ teams: [] })
     }
     return handleApiError(error)
   }
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     const practiceIdText = String(practiceId)
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     const practiceIdText = String(practiceId)

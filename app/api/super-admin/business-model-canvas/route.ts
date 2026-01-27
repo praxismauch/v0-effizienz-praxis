@@ -10,7 +10,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const { data, error } = await supabase
       .from("business_model_canvas")
       .select("*")
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     // Transform camelCase to snake_case for database
     const dbData = {

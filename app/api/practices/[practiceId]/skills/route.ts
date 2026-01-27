@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const teamId = searchParams.get("team_id")
 
     if (!practiceId || practiceId === "0" || practiceId === "undefined") {
-      return NextResponse.json([])
+      return NextResponse.json({ skills: [] })
     }
 
     let supabase
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       supabase = await createAdminClient()
     } catch (err) {
       if (isRateLimitError(err)) {
-        return NextResponse.json([])
+        return NextResponse.json({ skills: [] })
       }
       throw err
     }
@@ -31,11 +31,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data || [])
+    return NextResponse.json({ skills: data || [] })
   } catch (error) {
     console.error("Skills GET error:", error)
     if (isRateLimitError(error)) {
-      return NextResponse.json([])
+      return NextResponse.json({ skills: [] })
     }
     return NextResponse.json({ error: "Fehler beim Laden der Skills" }, { status: 500 })
   }

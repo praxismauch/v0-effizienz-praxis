@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: responses, error } = await supabase
       .from("anonymous_mood_responses")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .gte("submitted_at", thirtyDaysAgo)
       .order("submitted_at", { ascending: true })
 
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: todayResponse } = await supabase
       .from("anonymous_mood_responses")
       .select("id")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .gte("submitted_at", today)
       .limit(1)
 

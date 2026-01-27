@@ -10,7 +10,7 @@ export async function GET(
   try {
     const { practiceId, memberId } = await params
     const supabase = await createClient()
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const {
       data: { user },
@@ -70,7 +70,7 @@ export async function POST(
   try {
     const { practiceId, memberId } = await params
     const supabase = await createClient()
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const {
       data: { user },

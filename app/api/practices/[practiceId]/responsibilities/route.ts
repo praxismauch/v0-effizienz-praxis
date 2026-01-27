@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         supabase = await createClient()
       } catch (clientError) {
         console.warn("[v0] Responsibilities: Failed to create any client")
-        return NextResponse.json([])
+        return NextResponse.json({ responsibilities: [] })
       }
     }
 
@@ -42,16 +42,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       if (result.error) {
         console.warn("[v0] Responsibilities query error:", result.error.message)
-        return NextResponse.json([])
+        return NextResponse.json({ responsibilities: [] })
       }
       responsibilities = result.data || []
     } catch (queryError: any) {
       if (isRateLimitError(queryError)) {
         console.warn("[v0] Responsibilities: Rate limited, returning empty array")
-        return NextResponse.json([])
+        return NextResponse.json({ responsibilities: [] })
       }
       console.warn("[v0] Responsibilities: Query failed:", queryError?.message)
-      return NextResponse.json([])
+      return NextResponse.json({ responsibilities: [] })
     }
 
     console.log("[v0] Found", responsibilities?.length || 0, "responsibilities")
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             }
           })
 
-          return NextResponse.json(transformedResponsibilities)
+          return NextResponse.json({ responsibilities: transformedResponsibilities })
         }
       }
     }
@@ -125,14 +125,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       deputy_user_name: null,
     }))
 
-    return NextResponse.json(transformedResponsibilities)
+    return NextResponse.json({ responsibilities: transformedResponsibilities })
   } catch (error: any) {
     if (isRateLimitError(error)) {
       console.warn("[v0] Responsibilities: Rate limited (outer catch)")
-      return NextResponse.json([])
+      return NextResponse.json({ responsibilities: [] })
     }
     console.error("Error fetching responsibilities:", error)
-    return NextResponse.json([])
+    return NextResponse.json({ responsibilities: [] })
   }
 }
 

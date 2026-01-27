@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: analysis, error } = await supabase
       .from("workload_analysis")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
       .limit(1)
       .single()

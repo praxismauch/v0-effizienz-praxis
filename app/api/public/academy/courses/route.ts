@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 // Public endpoint - no authentication required
 export async function GET() {
   try {
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const { count } = await supabase.from("academy_courses").select("*", { count: "exact", head: true })
 

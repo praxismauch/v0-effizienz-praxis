@@ -8,14 +8,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
-
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const { data: contacts, error } = await supabase
       .from("contacts")
       .select("*")
-      .eq("practice_id", practiceIdInt)
+      .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .order("last_name", { ascending: true })
 
@@ -36,8 +34,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!practiceId) {
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
-
-    const practiceIdInt = Number.parseInt(practiceId, 10)
 
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
 
@@ -62,7 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       country: body.country || null,
       category: body.category || null,
       notes: body.notes || null,
-      practice_id: practiceIdInt,
+      practice_id: practiceId,
       created_by: user.id,
     }
 
@@ -87,8 +83,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!body.id) {
       return NextResponse.json({ error: "Contact ID required" }, { status: 400 })
     }
-
-    const practiceIdInt = Number.parseInt(practiceId, 10)
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
@@ -116,7 +110,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         updated_at: new Date().toISOString(),
       })
       .eq("id", body.id)
-      .eq("practice_id", practiceIdInt)
+      .eq("practice_id", practiceId)
       .select()
       .single()
 
@@ -141,15 +135,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Contact ID required" }, { status: 400 })
     }
 
-    const practiceIdInt = Number.parseInt(practiceId, 10)
-
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const { error } = await supabase
       .from("contacts")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", contactId)
-      .eq("practice_id", practiceIdInt)
+      .eq("practice_id", practiceId)
 
     if (error) {
       console.error("[v0] Error deleting contact:", error)

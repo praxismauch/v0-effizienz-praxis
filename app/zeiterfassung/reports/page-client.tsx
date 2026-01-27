@@ -105,8 +105,8 @@ export default function TimeReportsPageClient() {
       const response = await fetch(`/api/practices/${practiceId}/team`)
       const data = await response.json()
 
-      if (data.data) {
-        const members = data.data.map((member: any) => ({
+      if (data.teamMembers) {
+        const members = data.teamMembers.map((member: any) => ({
           id: member.user_id,
           name: `${member.first_name} ${member.last_name}`,
         }))

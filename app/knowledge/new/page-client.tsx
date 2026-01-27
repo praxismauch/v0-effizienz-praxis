@@ -26,7 +26,7 @@ const categoryOptions = [
 
 export default function NewKnowledgeEntryPageClient() {
   const router = useRouter()
-  const { user } = useUser()
+  const { currentUser } = useUser()
   const { currentPractice } = usePractice()
   const { toast } = useToast()
   const { isAiEnabled } = useAiEnabled()

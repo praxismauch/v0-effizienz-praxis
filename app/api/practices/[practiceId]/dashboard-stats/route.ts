@@ -38,10 +38,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
-    const practiceIdInt = 1
-    const practiceIdStr = "1"
+    // Use the actual practiceId from URL params, with fallback only if truly invalid
+    const practiceIdStr = practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
+    const practiceIdInt = Number.parseInt(practiceIdStr, 10) || 1
 
-    console.log("[v0] Dashboard stats - using hardcoded practiceId:", practiceIdStr)
+    console.log("[v0] Dashboard stats - using practiceId:", practiceIdStr, "int:", practiceIdInt)
 
     const cacheKey = `dashboard-stats:${practiceId}`
     try {

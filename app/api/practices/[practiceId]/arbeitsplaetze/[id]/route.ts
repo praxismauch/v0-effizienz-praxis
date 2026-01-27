@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { data, error } = await adminClient
       .from("arbeitsplaetze")
@@ -57,7 +57,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     // Build update object with only provided fields
     const updateData: Record<string, any> = {
@@ -109,7 +109,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ p
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     // Soft delete per PROJECT_RULES - never hard delete user data
     const { data, error } = await adminClient

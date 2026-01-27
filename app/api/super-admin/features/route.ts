@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is super admin
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
     const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
 
     if (!userData?.is_super_admin && userData?.role !== "superadmin") {
@@ -91,7 +91,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if user is super admin
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
     const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
 
     if (!userData?.is_super_admin && userData?.role !== "superadmin") {
@@ -207,7 +207,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user is super admin
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
     const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
 
     if (!userData?.is_super_admin && userData?.role !== "superadmin") {
@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is super admin
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
     const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
 
     if (!userData?.is_super_admin && userData?.role !== "superadmin") {

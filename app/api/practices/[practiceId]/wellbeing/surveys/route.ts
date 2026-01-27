@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: surveys, error } = await supabase
       .from("anonymous_mood_surveys")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
     if (error) throw error
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data, error } = await supabase
       .from("anonymous_mood_surveys")
       .insert({
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         title: body.title || "Wöchentliche Stimmungsumfrage",
         description: body.description || "Anonyme Umfrage zur Team-Stimmung",
         survey_type: body.survey_type || "weekly",

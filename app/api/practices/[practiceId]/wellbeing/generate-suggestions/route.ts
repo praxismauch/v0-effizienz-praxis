@@ -68,7 +68,7 @@ Antworte auf Deutsch.`,
 
     // Save suggestions to database
     const suggestionsToInsert = object.suggestions.map((s) => ({
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
       ...s,
     }))
 

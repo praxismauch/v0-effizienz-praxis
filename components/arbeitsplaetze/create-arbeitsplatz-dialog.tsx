@@ -47,7 +47,7 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const { user, loading: authLoading } = useAuth()
-  const { currentPractice, loading: practiceLoading } = usePractice()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
 
   useEffect(() => {
     if (open && currentPractice?.id && !practiceLoading) {

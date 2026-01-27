@@ -26,8 +26,8 @@ import type { TeamMember, FormData, Goal, DevelopmentPlan } from "./types"
 export default function NeueMitarbeitergespraechPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const { currentPractice, loading: practiceLoading } = usePractice()
-  const { user } = useUser()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const { currentUser } = useUser()
 
   const [step, setStep] = useState<"select-member" | "form">("select-member")
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)

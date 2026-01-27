@@ -1,13 +1,17 @@
 "use client"
 
-import { useAuth } from "@/contexts/auth-context"
+import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 
 export function useCurrentUser() {
-  const { currentUser, isLoading } = useAuth()
+  const { currentUser, loading: userLoading } = useUser()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
   
   return {
     user: currentUser,
-    isLoading,
+    currentUser,
+    currentPractice,
+    isLoading: userLoading || practiceLoading,
     isAuthenticated: !!currentUser,
   }
 }

@@ -85,7 +85,7 @@ export function WeekView({
                 {hour.toString().padStart(2, "0")}:00
               </div>
               {weekDays.map((day, dayIndex) => {
-                const hourEvents = getEventsForDayAndHour(day, hour)
+                const hourEvents = (getEventsForHour(day, hour) || []).filter(e => e && e.title)
                 return (
                   <div
                     key={`${hour}-${dayIndex}`}
@@ -101,7 +101,7 @@ export function WeekView({
                           "text-xs p-1 rounded text-white cursor-pointer hover:opacity-80 truncate",
                           getEventTypeColor(event.type)
                         )}
-                        onClick={() => onSelectEvent(event)}
+                        onClick={() => onEventClick(event)}
                         title={event.title}
                       >
                         {event.startTime} - {event.title}

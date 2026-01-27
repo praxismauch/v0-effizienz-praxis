@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Praxis-ID ist erforderlich" }, { status: 400 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { data, error } = await adminClient
       .from("rooms")

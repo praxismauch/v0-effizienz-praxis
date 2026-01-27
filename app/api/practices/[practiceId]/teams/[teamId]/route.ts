@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const { practiceId, teamId } = await params
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     const practiceIdText = String(practiceId)
@@ -45,7 +45,7 @@ export async function DELETE(
 ) {
   try {
     const { practiceId, teamId } = await params
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const practiceIdText = String(practiceId)
     const teamIdText = String(teamId)

@@ -226,6 +226,17 @@ export default function ScheduleTab({
           </table>
         </div>
       </CardContent>
+
+      <ShiftDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        shift={editingShift}
+        shiftTypes={shiftTypes || []}
+        teamMembers={teamMembers || []}
+        defaultDate={selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined}
+        defaultTeamMemberId={selectedMemberId || undefined}
+        onSave={handleSaveShift}
+      />
     </Card>
   )
 }

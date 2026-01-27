@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { searchParams } = new URL(request.url)
     const practiceId = searchParams.get("practice_id")
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const effectivePracticeId = practiceId || "1"
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const effectivePracticeId = String(practice_id || "1")
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { data: existing } = await adminClient
       .from("user_sidebar_preferences")

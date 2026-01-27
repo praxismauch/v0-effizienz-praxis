@@ -75,17 +75,57 @@ export default function AvailabilityTab({
   practiceId,
   onRefresh,
 }: AvailabilityTabProps) {
-  // Placeholder handlers for availability interactions
+  const { toast } = useToast()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
+  const [editingAvailability, setEditingAvailability] = useState<Availability | null>(null)
+
   const onAddAvailability = (memberId: string) => {
-    console.log("[v0] Add availability for member:", memberId)
+    setSelectedMemberId(memberId)
+    setEditingAvailability(null)
+    setDialogOpen(true)
   }
 
   const onEditAvailability = (item: Availability) => {
-    console.log("[v0] Edit availability:", item.id)
+    setSelectedMemberId(item.team_member_id)
+    setEditingAvailability(item)
+    setDialogOpen(true)
   }
 
-  const onDeleteAvailability = (id: string) => {
-    console.log("[v0] Delete availability:", id)
+  const onDeleteAvailability = async (id: string) => {
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/availability/${id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        toast({ title: "Verfügbarkeit gelöscht" })
+        onRefresh()
+      } else {
+        throw new Error("Failed to delete")
+      }
+    } catch {
+      toast({ title: "Fehler beim Löschen", variant: "destructive" })
+    }
+  }
+
+  const handleSaveAvailability = async (data: Partial<Availability>) => {
+    const isEditing = !!editingAvailability
+    const url = isEditing
+      ? `/api/practices/${practiceId}/dienstplan/availability/${editingAvailability.id}`
+      : `/api/practices/${practiceId}/dienstplan/availability`
+
+    const res = await fetch(url, {
+      method: isEditing ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (res.ok) {
+      toast({ title: isEditing ? "Verfügbarkeit aktualisiert" : "Verfügbarkeit erstellt" })
+      onRefresh()
+    } else {
+      throw new Error("Failed to save availability")
+    }
   }
 
   const getMember = (memberId: string) => (teamMembers || []).find((m) => m.id === memberId)

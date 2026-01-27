@@ -345,13 +345,21 @@ export default function DienstplanPageClient() {
         <TabsContent value="settings">
           <ShiftTypesTab
             shiftTypes={shiftTypes}
-            onAdd={() => {}}
-            onEdit={() => {}}
+            onAdd={handleAddShiftType}
+            onEdit={handleEditShiftType}
             onDelete={handleDeleteShiftType}
             isLoading={isLoading}
           />
         </TabsContent>
       </Tabs>
+
+      {/* Shift Type Dialog */}
+      <ShiftTypeDialog
+        open={shiftTypeDialogOpen}
+        onOpenChange={setShiftTypeDialogOpen}
+        shiftType={editingShiftType}
+        onSave={handleSaveShiftType}
+      />
     </div>
   )
 }

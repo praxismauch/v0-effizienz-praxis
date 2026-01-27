@@ -517,10 +517,10 @@ export function HiringPipeline() {
       </Card>
 
       <div
-        className="grid gap-4 overflow-x-auto pb-2"
+        className="grid gap-4"
         style={{
-          gridTemplateColumns: `repeat(${stagesWithApplications.length}, minmax(280px, 1fr))`,
-          minWidth: stagesWithApplications.length > 4 ? `${stagesWithApplications.length * 280}px` : "100%",
+          gridTemplateColumns: `repeat(auto-fit, minmax(130px, 1fr))`,
+          maxWidth: "100%",
         }}
       >
         {stagesWithApplications.map((stage) => (
@@ -557,7 +557,7 @@ export function HiringPipeline() {
                       } ${isMoving === application.id ? "animate-pulse" : ""}`}
                     >
                       <CardContent className="p-3">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-2">
                           <Avatar className="h-10 w-10 flex-shrink-0">
                             <AvatarImage src={application.candidate.image_url || undefined} />
                             <AvatarFallback className="text-xs">
@@ -565,8 +565,8 @@ export function HiringPipeline() {
                               {application.candidate.last_name?.[0] || "?"}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0 overflow-hidden">
-                            <p className="font-medium text-sm truncate" title={`${application.candidate.first_name} ${application.candidate.last_name}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">
                               {application.candidate.first_name} {application.candidate.last_name}
                             </p>
                             {application.candidate.date_of_birth && (
@@ -575,7 +575,7 @@ export function HiringPipeline() {
                               </p>
                             )}
                             {application.job_posting?.title && (
-                              <Badge variant="outline" className="text-xs mt-1 inline-block max-w-full truncate" title={application.job_posting.title}>
+                              <Badge variant="outline" className="text-xs mt-1 max-w-full truncate">
                                 {application.job_posting.title}
                               </Badge>
                             )}

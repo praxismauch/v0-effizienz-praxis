@@ -142,55 +142,37 @@ function getOrCreateClient(): SupabaseClient | null {
     },
   }
 
-  // Custom fetch that handles ALL network errors gracefully for v0 preview
+  // Custom fetch that handles network errors gracefully
   const customFetch = async (url: RequestInfo | URL, options?: RequestInit): Promise<Response> => {
-    // Check if this is an auth endpoint - always return mock for auth in v0 preview
-    const urlString = url.toString()
-    const isAuthEndpoint = urlString.includes('/auth/') || urlString.includes('gotrue') || urlString.includes('/token')
-    
-    // In v0 preview, auth endpoints always fail - return mock response immediately
-    if (isAuthEndpoint && typeof window !== "undefined" && (window as Window & { __v0__?: boolean }).__v0__) {
-      return new Response(JSON.stringify({ 
-        data: { user: null, session: null },
-        error: null 
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      })
-    }
-    
     try {
       const response = await fetch(url, options)
       return response
-    } catch {
-      // Return a mock response for ANY error - never throw
-      return new Response(JSON.stringify({ 
-        data: { user: null, session: null },
-        error: { message: "Network request failed", code: "network_error" }
-      }), {
-        status: 200, // Return 200 so Supabase doesn't throw
-        headers: { "Content-Type": "application/json" },
-      })
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      // Return a mock error response for network failures instead of throwing
+      if (errorMessage.includes("fetch") || errorMessage.includes("network") || errorMessage.includes("Failed")) {
+        return new Response(JSON.stringify({ 
+          error: "network_error", 
+          error_description: "Network request failed" 
+        }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        })
+      }
+      throw error
     }
   }
 
   try {
-    // Detect if we're in v0 preview environment
-    const isV0Preview = typeof window !== "undefined" && 
-      (window.location.hostname.includes("vusercontent.net") || 
-       window.location.hostname.includes("v0.dev") ||
-       (window as Window & { __v0__?: boolean }).__v0__ === true)
-
     const client = createSupabaseBrowserClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         storageKey: storageKey,
-        // In v0 preview, disable session persistence to prevent auto-fetch on init
-        persistSession: !isV0Preview,
+        persistSession: true,
         detectSessionInUrl: false,
         flowType: "pkce",
         autoRefreshToken: false, // Disable to prevent background fetch errors
         debug: false,
-        storage: isV0Preview ? undefined : customStorage, // Skip custom storage in v0 to avoid triggering session restore
+        storage: customStorage,
       },
       global: {
         headers: {

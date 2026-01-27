@@ -45,7 +45,7 @@ import {
   Compass,
   Award,
   ChevronDown,
-  StarOff,
+
   ExternalLink,
   CalendarClock,
   Clock,
@@ -856,7 +856,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
                                   </>
                                 ) : (
                                   <>
-                                    <StarOff className="mr-2 h-4 w-4 text-amber-500" />
+                                    <Star className="mr-2 h-4 w-4 text-amber-500" />
                                     Zu Favoriten hinzufügen
                                   </>
                                 )}

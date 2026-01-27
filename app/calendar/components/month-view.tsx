@@ -51,10 +51,9 @@ export function MonthView({
               className={cn(
                 "min-h-[100px] p-2 border-b border-r cursor-pointer transition-colors hover:bg-muted/50",
                 !isCurrentMonth && "bg-muted/20 text-muted-foreground",
-                isSelected && "bg-primary/10 ring-2 ring-primary ring-inset",
-                isTodayDate && !isSelected && "bg-primary/5"
+                isTodayDate && "bg-primary/5"
               )}
-              onClick={() => onSelectDate(day)}
+              onClick={() => onDayClick(day)}
             >
               <div className="flex justify-between items-start">
                 <span
@@ -78,7 +77,7 @@ export function MonthView({
                     )}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onSelectEvent(event)
+                      onEventClick(event)
                     }}
                     title={event.title}
                   >

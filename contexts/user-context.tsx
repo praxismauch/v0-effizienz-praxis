@@ -73,6 +73,8 @@ const PUBLIC_ROUTES = [
   "/agb",
   "/sicherheit",
   "/cookies",
+  "/whats-new",
+  "/updates",
 ]
 
 const PUBLIC_ROUTE_PREFIXES = ["/features/", "/blog/", "/auth/"]

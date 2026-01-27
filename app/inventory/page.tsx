@@ -15,10 +15,10 @@ import { BillsTab } from "./components/bills-tab"
 import { ArchiveTab } from "./components/archive-tab"
 import { SettingsTab } from "./components/settings-tab"
 import { 
-  AddItemDialog, 
+  CreateItemDialog, 
   EditItemDialog, 
-  AddSupplierDialog,
-  AddBillDialog 
+  BillDetailDialog,
+  DeleteItemDialog 
 } from "./components/inventory-dialogs"
 import type { InventoryItem, Supplier } from "./types"
 
@@ -191,12 +191,13 @@ export default function InventoryPage() {
         </TabsContent>
       </Tabs>
 
-      <AddItemDialog
+      <CreateItemDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        onAdd={addItem}
-        suppliers={suppliers}
-        categories={categories}
+        formData={itemFormData}
+        onFormChange={setItemFormData}
+        onSubmit={handleCreateItem}
+        disabled={isCreating}
       />
 
       {selectedItem && (

@@ -226,13 +226,18 @@ export default function ZeiterfassungPageClient() {
 
         <TabsContent value="stechuhr">
           <StechuhrTab
-            currentSession={currentSession}
-            homeofficePolicy={homeofficePolicy}
+            currentStatus={currentSession}
+            currentBlock={currentBlock}
             selectedLocation={selectedLocation}
-            onLocationChange={setSelectedLocation}
-            onStampAction={openStampDialog}
-            onShowPolicy={() => setShowPolicyDialog(true)}
-            plausibilityIssues={plausibilityIssues}
+            setSelectedLocation={setSelectedLocation}
+            timeBlocks={timeBlocks || []}
+            plausibilityIssues={plausibilityIssues || []}
+            userId={user?.id}
+            overtimeBalance={0}
+            homeofficePolicy={homeofficePolicy}
+            homeofficeCheckResult={null}
+            onStamp={openStampDialog}
+            onShowPolicyDialog={() => setShowPolicyDialog(true)}
           />
         </TabsContent>
 

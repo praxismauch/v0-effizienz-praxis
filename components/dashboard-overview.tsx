@@ -219,29 +219,22 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
 
     try {
       // Helper to safely fetch and parse JSON with rate limit handling
-      const safeFetch = async (url: string, fallback: any = null) => {
+      const safeFetch = async <T = unknown>(url: string, fallback: T | null = null): Promise<T | null> => {
         try {
           const response = await fetch(url)
           if (!response.ok) {
-            if (response.status === 429) {
-              console.log("[v0] Rate limited:", url)
-              return fallback
-            }
             return fallback
           }
           const contentType = response.headers.get("content-type")
           if (!contentType || !contentType.includes("application/json")) {
-            console.log("[v0] Non-JSON response:", url)
             return fallback
           }
           const text = await response.text()
           if (text.startsWith("Too Many") || text.includes("rate limit")) {
-            console.log("[v0] Rate limited (text):", url)
             return fallback
           }
-          return JSON.parse(text)
-        } catch (e) {
-          console.log("[v0] Fetch error:", url, e)
+          return JSON.parse(text) as T
+        } catch {
           return fallback
         }
       }
@@ -264,12 +257,7 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
 
       const documents = await safeFetch(`/api/practices/${hardcodedPracticeId}/documents?limit=5`, null)
 
-      console.log("[v0] Dashboard API responses:", {
-        preferences: preferences ? "ok" : "fallback",
-        stats: statsData ? "ok" : "fallback",
-        activities: activities ? "ok" : "fallback",
-        documents: documents ? "ok" : "fallback",
-      })
+
 
       if (preferences?.config) {
         setDashboardConfig({

@@ -67,32 +67,31 @@ function LoginForm() {
     }
   }, [])
 
-  // Check if already logged in on mount - but don't block login if check fails
+  // Check if already logged in on mount - completely skip if any error occurs
   useEffect(() => {
     if (!supabase) return
 
     let isMounted = true
 
-    const checkExistingSession = async () => {
+    // Wrap in setTimeout to avoid blocking the render and to catch any sync errors
+    const timeoutId = setTimeout(async () => {
       try {
-        // Try to get session from local storage first (no network call)
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!isMounted) return
-        
-        if (session?.user) {
-          router.replace(redirectTo)
+        // Only check local storage session, don't make network calls
+        const storedSession = localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL?.split("//")[1]?.split(".")[0] || "default"}-auth-token`)
+        if (storedSession && isMounted) {
+          const parsed = JSON.parse(storedSession)
+          if (parsed?.user || parsed?.access_token) {
+            router.replace(redirectTo)
+          }
         }
       } catch {
-        // Silently ignore any errors - user can just login fresh
-        // This handles "Failed to fetch" and any other network errors
+        // Silently ignore - user can login fresh
       }
-    }
+    }, 100)
     
-    checkExistingSession()
-
     return () => {
       isMounted = false
+      clearTimeout(timeoutId)
     }
   }, [supabase, redirectTo, router])
 

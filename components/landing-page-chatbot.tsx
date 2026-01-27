@@ -17,39 +17,6 @@ interface Message {
   isStreaming?: boolean
 }
 
-// Typewriter effect component for animated text display
-function TypewriterText({ content, onComplete }: { content: string; onComplete?: () => void }) {
-  const [displayedContent, setDisplayedContent] = useState("")
-  const [currentIndex, setCurrentIndex] = useState(0)
-
-  useEffect(() => {
-    if (currentIndex < content.length) {
-      // Variable speed: faster for spaces, slower for punctuation
-      const char = content[currentIndex]
-      const delay = char === " " ? 10 : char.match(/[.,!?]/) ? 80 : 20
-
-      const timer = setTimeout(() => {
-        setDisplayedContent((prev) => prev + char)
-        setCurrentIndex((prev) => prev + 1)
-      }, delay)
-
-      return () => clearTimeout(timer)
-    } else if (onComplete && currentIndex === content.length && content.length > 0) {
-      onComplete()
-    }
-  }, [currentIndex, content, onComplete])
-
-  // Reset when content changes significantly (new message)
-  useEffect(() => {
-    if (content.length < displayedContent.length) {
-      setDisplayedContent("")
-      setCurrentIndex(0)
-    }
-  }, [content, displayedContent.length])
-
-  return <>{displayedContent}<span className="animate-pulse">|</span></>
-}
-
 export function LandingPageChatbot() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -303,11 +270,20 @@ export function LandingPageChatbot() {
                     {message.role === "assistant" ? (
                       message.content ? (
                         <div className="text-xs sm:text-sm text-slate-900 dark:text-slate-100">
-                          <FormattedAIContent
-                            content={message.content}
-                            showCard={false}
-                            className="[&_h1]:text-base [&_h1]:mb-3 [&_h2]:text-sm [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_p]:text-xs [&_p]:sm:text-sm [&_p]:mb-2 [&_p]:text-slate-800 [&_p]:dark:text-slate-200 [&_li]:text-xs [&_li]:sm:text-sm [&_li]:text-slate-800 [&_li]:dark:text-slate-200 [&_ul]:my-2 [&_ol]:my-2"
-                          />
+                          {message.isStreaming ? (
+                            // While streaming from API, show with cursor
+                            <div className="whitespace-pre-wrap">
+                              {message.content}
+                              <span className="inline-block w-1.5 h-4 ml-0.5 bg-purple-500 animate-pulse rounded-sm align-middle" />
+                            </div>
+                          ) : (
+                            // After streaming complete, show formatted content with animation
+                            <FormattedAIContent
+                              content={message.content}
+                              showCard={false}
+                              className="animate-in fade-in-0 duration-300 [&_h1]:text-base [&_h1]:mb-3 [&_h2]:text-sm [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_p]:text-xs [&_p]:sm:text-sm [&_p]:mb-2 [&_p]:text-slate-800 [&_p]:dark:text-slate-200 [&_li]:text-xs [&_li]:sm:text-sm [&_li]:text-slate-800 [&_li]:dark:text-slate-200 [&_ul]:my-2 [&_ol]:my-2"
+                            />
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">

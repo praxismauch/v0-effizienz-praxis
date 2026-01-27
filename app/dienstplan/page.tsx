@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 import DienstplanPageClient from "./page-client"
-import AppLayout from "@/components/app-layout"
 
 export const metadata = {
   title: "Dienstplan | Effizienz Praxis",
@@ -10,9 +9,7 @@ export const metadata = {
 export default function DienstplanPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-screen">Laden...</div>}>
-      <AppLayout>
-        <DienstplanPageClient />
-      </AppLayout>
+      <DienstplanPageClient />
     </Suspense>
   )
 }

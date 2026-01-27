@@ -11,7 +11,7 @@ import { usePersistedTab } from "@/hooks/use-persisted-tab"
 import { useTranslation } from "@/contexts/translation-context"
 import AIAnalyticsInsightsDialog from "@/components/ai-analytics-insights-dialog"
 import KVAbrechnungManager from "@/components/kv-abrechnung-manager"
-import BankAccountManager from "@/components/bank-account-manager"
+import { BankAccountManager } from "@/components/bank-account-manager"
 import ReviewsManager from "@/components/reviews-manager"
 import { useUser } from "@/contexts/user-context"
 

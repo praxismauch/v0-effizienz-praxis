@@ -12,12 +12,12 @@ import { OverviewTab } from "./components/overview-tab"
 import { ArticlesTab } from "./components/articles-tab"
 import { VideosTab } from "./components/videos-tab"
 import { LearningTab } from "./components/learning-tab"
-import { FaqTab } from "./components/faq-tab"
+import { FAQTab } from "./components/faq-tab"
 import { AIAssistantTab } from "./components/ai-assistant-tab"
 
 // Import data and types
-import { helpCategories, helpArticles, helpVideos, faqs, learningPaths } from "./data"
-import type { HelpArticle, HelpVideo, FAQ, LearningPath, HelpCategory } from "./types"
+import { helpCategories, helpArticles, videoTutorials, faqs, learningPaths } from "./data"
+import type { HelpArticle, VideoTutorial, FAQ, LearningPath, HelpCategory } from "./types"
 
 export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -38,7 +38,7 @@ export default function HelpPage() {
   })
 
   // Filter videos based on search
-  const filteredVideos = helpVideos.filter((video) => {
+  const filteredVideos = videoTutorials.filter((video) => {
     return (
       searchQuery === "" ||
       video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -160,7 +160,7 @@ export default function HelpPage() {
 
             {/* FAQ Tab */}
             <TabsContent value="faq">
-              <FaqTab faqs={filteredFaqs} />
+              <FAQTab faqs={filteredFaqs} />
             </TabsContent>
 
             {/* AI Assistant Tab */}

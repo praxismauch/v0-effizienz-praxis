@@ -33,21 +33,16 @@ async function verifySessionWithRetry(maxRetries = 8, initialDelay = 300): Promi
       if (response.ok) {
         const data = await response.json()
         if (data.user) {
-          console.log(`[v0] Session verified on attempt ${attempt + 1}`)
           return { success: true, user: data.user }
         }
       }
 
       // 401 means session not ready yet, keep trying
       if (response.status === 401) {
-        console.log(`[v0] Session not ready (attempt ${attempt + 1}/${maxRetries}), waiting ${Math.round(delay)}ms...`)
         continue
       }
-
-      // Other errors, log but continue trying
-      console.warn(`[v0] Session verification attempt ${attempt + 1} failed with status ${response.status}`)
-    } catch (error) {
-      console.warn(`[v0] Session verification attempt ${attempt + 1} error:`, error)
+    } catch {
+      // Network errors - keep trying
     }
   }
 
@@ -77,35 +72,20 @@ function LoginForm() {
     if (!supabase) return
 
     let isMounted = true
-    const controller = new AbortController()
 
     const checkExistingSession = async () => {
       try {
-        // Use a timeout to prevent hanging
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
-        
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        clearTimeout(timeoutId)
+        // Try to get session from local storage first (no network call)
+        const { data: { session } } = await supabase.auth.getSession()
         
         if (!isMounted) return
         
-        if (error) {
-          // Session check failed (stale/invalid session) - that's fine, user can login fresh
-          console.log("[v0] Session check error (will proceed with fresh login):", error.message)
-          return
-        }
-        if (session) {
+        if (session?.user) {
           router.replace(redirectTo)
         }
-      } catch (err: any) {
-        // Network error or other issue - ignore and let user login fresh
-        // This includes "Failed to fetch" errors
-        if (err?.name === 'AbortError') {
-          console.log("[v0] Session check timed out (will proceed with fresh login)")
-        } else {
-          console.log("[v0] Session check failed (will proceed with fresh login):", err?.message || err)
-        }
+      } catch {
+        // Silently ignore any errors - user can just login fresh
+        // This handles "Failed to fetch" and any other network errors
       }
     }
     
@@ -113,7 +93,6 @@ function LoginForm() {
 
     return () => {
       isMounted = false
-      controller.abort()
     }
   }, [supabase, redirectTo, router])
 

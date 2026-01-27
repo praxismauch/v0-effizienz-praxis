@@ -100,26 +100,26 @@ export default function CalendarPageClient() {
   // Event helpers
   const getEventsForDay = useCallback((day: Date) => {
     const dayStr = format(day, "yyyy-MM-dd")
-    return events.filter((event) => event.startDate === dayStr)
+    return events.filter((event) => event && event.startDate === dayStr)
   }, [events])
 
   const getEventsForHour = useCallback((day: Date, hour: number) => {
     const dayStr = format(day, "yyyy-MM-dd")
     return events.filter((event) => {
-      if (event.startDate !== dayStr || event.isAllDay) return false
-      const eventHour = Number.parseInt(event.startTime.split(":")[0], 10)
+      if (!event || event.startDate !== dayStr || event.isAllDay) return false
+      const eventHour = Number.parseInt(event.startTime?.split(":")[0] || "0", 10)
       return eventHour === hour
     })
   }, [events])
 
   const getAllDayEventsForDay = useCallback((day: Date) => {
     const dayStr = format(day, "yyyy-MM-dd")
-    return events.filter((event) => event.startDate === dayStr && event.isAllDay)
+    return events.filter((event) => event && event.startDate === dayStr && event.isAllDay)
   }, [events])
 
   // Filtered events
   const filteredAndSortedEvents = useMemo(() => {
-    let filtered = [...events]
+    let filtered = [...events].filter((e) => e && e.title) // Filter out undefined/null events
     if (searchTerm) {
       filtered = filtered.filter((e) =>
         e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

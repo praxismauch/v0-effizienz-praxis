@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: items, error } = await adminClient
       .from("inventory_items")
       .select("supplier")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .eq("is_active", true)
       .not("supplier", "is", null)
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const suppliers = uniqueSuppliers.map((name, index) => ({
       id: `supplier-${index}`,
       name,
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
     }))
 
     return NextResponse.json(suppliers)

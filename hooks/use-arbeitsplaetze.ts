@@ -12,7 +12,7 @@ export function useArbeitsplaetze(practiceId: string | null | undefined) {
   )
 
   return {
-    arbeitsplaetze: data || [],
+    arbeitsplaetze: data?.arbeitsplaetze || [],
     isLoading,
     error,
     mutate,
@@ -29,7 +29,7 @@ export function useArbeitsmittel(practiceId: string | null | undefined) {
   )
 
   return {
-    arbeitsmittel: data || [],
+    arbeitsmittel: data?.arbeitsmittel || [],
     isLoading,
     error,
     mutate,

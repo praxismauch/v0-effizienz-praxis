@@ -34,6 +34,7 @@ export default function ZeiterfassungPageClient() {
   const [activeTab, setActiveTab] = useState("stechuhr")
   const [selectedMonth, setSelectedMonth] = useState(new Date())
   const [isLoading, setIsLoading] = useState(true)
+  const [teamFilter, setTeamFilter] = useState("all")
 
   // Stamp dialog state
   const [showStampDialog, setShowStampDialog] = useState(false)
@@ -225,18 +226,27 @@ export default function ZeiterfassungPageClient() {
 
         <TabsContent value="stechuhr">
           <StechuhrTab
-            currentSession={currentSession}
-            homeofficePolicy={homeofficePolicy}
+            currentStatus={currentSession}
+            currentBlock={currentBlock}
             selectedLocation={selectedLocation}
-            onLocationChange={setSelectedLocation}
-            onStampAction={openStampDialog}
-            onShowPolicy={() => setShowPolicyDialog(true)}
-            plausibilityIssues={plausibilityIssues}
+            setSelectedLocation={setSelectedLocation}
+            timeBlocks={timeBlocks || []}
+            plausibilityIssues={plausibilityIssues || []}
+            userId={user?.id}
+            overtimeBalance={0}
+            homeofficePolicy={homeofficePolicy}
+            homeofficeCheckResult={null}
+            onStamp={openStampDialog}
+            onShowPolicyDialog={() => setShowPolicyDialog(true)}
           />
         </TabsContent>
 
         <TabsContent value="team">
-          <TeamLiveTab teamMembers={teamMembers} isLoading={dataLoading} />
+          <TeamLiveTab 
+            teamMembers={teamMembers || []} 
+            teamFilter={teamFilter}
+            setTeamFilter={setTeamFilter}
+          />
         </TabsContent>
 
         <TabsContent value="zeitkonto">

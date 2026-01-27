@@ -121,7 +121,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data: report, error: insertError } = await supabase
       .from("monthly_time_reports")
       .insert({
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         user_id,
         year,
         month,

@@ -15,20 +15,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data: moodData } = await supabase
       .from("anonymous_mood_responses")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .gte("submitted_at", thirtyDaysAgo.toISOString())
 
     // Get team size
     const { data: teamMembers } = await supabase
       .from("team_members")
       .select("id")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
 
     // Get time tracking data if available
     const { data: timeData } = await supabase
       .from("time_blocks")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .gte("date", thirtyDaysAgo.toISOString().split("T")[0])
 
     // Calculate metrics
@@ -126,7 +126,7 @@ Gib eine kurze, konstruktive Einschätzung auf Deutsch.`,
     const { data: analysis, error } = await supabase
       .from("workload_analysis")
       .insert({
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         analysis_period_start: thirtyDaysAgo.toISOString().split("T")[0],
         analysis_period_end: new Date().toISOString().split("T")[0],
         avg_weekly_hours: avgWeeklyHours,

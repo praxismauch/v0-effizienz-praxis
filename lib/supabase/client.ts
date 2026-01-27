@@ -175,15 +175,22 @@ function getOrCreateClient(): SupabaseClient | null {
   }
 
   try {
+    // Detect if we're in v0 preview environment
+    const isV0Preview = typeof window !== "undefined" && 
+      (window.location.hostname.includes("vusercontent.net") || 
+       window.location.hostname.includes("v0.dev") ||
+       (window as Window & { __v0__?: boolean }).__v0__ === true)
+
     const client = createSupabaseBrowserClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         storageKey: storageKey,
-        persistSession: true,
+        // In v0 preview, disable session persistence to prevent auto-fetch on init
+        persistSession: !isV0Preview,
         detectSessionInUrl: false,
         flowType: "pkce",
         autoRefreshToken: false, // Disable to prevent background fetch errors
         debug: false,
-        storage: customStorage,
+        storage: isV0Preview ? undefined : customStorage, // Skip custom storage in v0 to avoid triggering session restore
       },
       global: {
         headers: {

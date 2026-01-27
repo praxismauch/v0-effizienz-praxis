@@ -53,7 +53,7 @@ import {
 import { format, startOfWeek } from "date-fns"
 import { de } from "date-fns/locale"
 
-console.log("[v0] WellbeingPageClient module loaded")
+
 
 interface MoodSurvey {
   id: string
@@ -153,12 +153,12 @@ const SUGGESTION_CATEGORIES = [
 ]
 
 export default function WellbeingPageClient() {
-  console.log("[v0] WellbeingPageClient rendering")
+  // Debug log removed: WellbeingPageClient rendering")
 
   const { user, currentPractice } = useUser()
   const { toast } = useToast()
 
-  console.log("[v0] User context:", { user: user?.id, currentPractice: currentPractice?.id })
+  // Debug log removed: User context:", { user: user?.id, currentPractice: currentPractice?.id })
 
   const [activeTab, setActiveTab] = useState("overview")
   const [isLoading, setIsLoading] = useState(true)
@@ -211,17 +211,17 @@ export default function WellbeingPageClient() {
 
   // Load initial data
   useEffect(() => {
-    console.log("[v0] useEffect triggered, currentPractice:", currentPractice?.id)
+    // Debug log removed: useEffect triggered, currentPractice:", currentPractice?.id)
     if (currentPractice?.id) {
       loadAllData()
     } else {
-      console.log("[v0] No currentPractice, setting loading to false")
+      // Debug log removed: No currentPractice, setting loading to false")
       setIsLoading(false)
     }
   }, [currentPractice?.id])
 
   const loadAllData = async () => {
-    console.log("[v0] loadAllData called")
+    // Debug log removed: loadAllData called")
     setIsLoading(true)
     try {
       await Promise.all([
@@ -232,7 +232,7 @@ export default function WellbeingPageClient() {
         loadKudos(),
         loadTeamMembers(),
       ])
-      console.log("[v0] All data loaded successfully")
+      // Debug log removed: All data loaded successfully")
     } catch (error) {
       console.error("[v0] Error loading all data:", error)
     }
@@ -240,7 +240,7 @@ export default function WellbeingPageClient() {
   }
 
   const loadSurveys = async () => {
-    console.log("[v0] loadSurveys called")
+    // Debug log removed: loadSurveys called")
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/surveys`)
       if (res.ok) {
@@ -249,7 +249,7 @@ export default function WellbeingPageClient() {
         // Find active survey
         const active = data.surveys?.find((s: MoodSurvey) => s.is_active)
         setActiveSurvey(active || null)
-        console.log("[v0] Surveys loaded:", data.surveys)
+        // Debug log removed: Surveys loaded:", data.surveys)
       } else {
         console.error("[v0] Failed to load surveys:", res.status, res.statusText)
       }
@@ -259,7 +259,7 @@ export default function WellbeingPageClient() {
   }
 
   const loadMoodData = async () => {
-    console.log("[v0] loadMoodData called")
+    // Debug log removed: loadMoodData called")
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/mood-data`)
       if (res.ok) {
@@ -267,7 +267,7 @@ export default function WellbeingPageClient() {
         setMoodTrends(data.trends || [])
         setMoodAverages(data.averages || null)
         setHasSubmittedToday(data.hasSubmittedToday || false)
-        console.log("[v0] Mood data loaded:", {
+        // Debug log removed: Mood data loaded:", {
           trends: data.trends?.length,
           averages: data.averages,
           hasSubmittedToday: data.hasSubmittedToday,
@@ -281,13 +281,13 @@ export default function WellbeingPageClient() {
   }
 
   const loadWorkloadAnalysis = async () => {
-    console.log("[v0] loadWorkloadAnalysis called")
+    // Debug log removed: loadWorkloadAnalysis called")
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/workload-analysis`)
       if (res.ok) {
         const data = await res.json()
         setWorkloadAnalysis(data.analysis || null)
-        console.log("[v0] Workload analysis loaded:", data.analysis)
+        // Debug log removed: Workload analysis loaded:", data.analysis)
       } else {
         console.error("[v0] Failed to load workload analysis:", res.status, res.statusText)
       }
@@ -297,13 +297,13 @@ export default function WellbeingPageClient() {
   }
 
   const loadSuggestions = async () => {
-    console.log("[v0] loadSuggestions called")
+    // Debug log removed: loadSuggestions called")
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/suggestions`)
       if (res.ok) {
         const data = await res.json()
         setSuggestions(data.suggestions || [])
-        console.log("[v0] Suggestions loaded:", data.suggestions)
+        // Debug log removed: Suggestions loaded:", data.suggestions)
       } else {
         console.error("[v0] Failed to load suggestions:", res.status, res.statusText)
       }
@@ -313,13 +313,13 @@ export default function WellbeingPageClient() {
   }
 
   const loadKudos = async () => {
-    console.log("[v0] loadKudos called")
+    // Debug log removed: loadKudos called")
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/kudos`)
       if (res.ok) {
         const data = await res.json()
         setKudosList(data.kudos || [])
-        console.log("[v0] Kudos loaded:", data.kudos?.length)
+        // Debug log removed: Kudos loaded:", data.kudos?.length)
       } else {
         console.error("[v0] Failed to load kudos:", res.status, res.statusText)
       }
@@ -329,13 +329,13 @@ export default function WellbeingPageClient() {
   }
 
   const loadTeamMembers = async () => {
-    console.log("[v0] loadTeamMembers called")
+    // Debug log removed: loadTeamMembers called")
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/team-members`)
       if (res.ok) {
         const data = await res.json()
         setTeamMembers(data || [])
-        console.log("[v0] Team members loaded:", data?.length)
+        // Debug log removed: Team members loaded:", data?.length)
       } else {
         console.error("[v0] Failed to load team members:", res.status, res.statusText)
       }
@@ -372,7 +372,7 @@ export default function WellbeingPageClient() {
         setImprovementSuggestions("")
         setConcerns("")
         loadMoodData()
-        console.log("[v0] Mood response submitted successfully")
+        // Debug log removed: Mood response submitted successfully")
       } else {
         console.error("[v0] Failed to submit mood response:", res.status, res.statusText)
         throw new Error("Failed to submit")
@@ -405,7 +405,7 @@ export default function WellbeingPageClient() {
           title: "Analyse abgeschlossen",
           description: "Die Arbeitsbelastungs-Analyse wurde erstellt.",
         })
-        console.log("[v0] Workload analysis triggered successfully")
+        // Debug log removed: Workload analysis triggered successfully")
       } else {
         console.error("[v0] Failed to trigger workload analysis:", res.status, res.statusText)
         throw new Error("Failed to analyze")
@@ -443,7 +443,7 @@ export default function WellbeingPageClient() {
           title: "Vorschläge generiert",
           description: "KI-basierte Wellbeing-Vorschläge wurden erstellt.",
         })
-        console.log("[v0] Suggestions generated successfully:", data.suggestions)
+        // Debug log removed: Suggestions generated successfully:", data.suggestions)
       } else {
         console.error("[v0] Failed to generate suggestions:", res.status, res.statusText)
         throw new Error("Failed to generate")
@@ -494,7 +494,7 @@ export default function WellbeingPageClient() {
           is_anonymous: false,
         })
         loadKudos()
-        console.log("[v0] Kudos sent successfully")
+        // Debug log removed: Kudos sent successfully")
       } else {
         console.error("[v0] Failed to send kudos:", res.status, res.statusText)
         throw new Error("Failed to send kudos")
@@ -522,7 +522,7 @@ export default function WellbeingPageClient() {
 
       if (res.ok) {
         loadKudos()
-        console.log("[v0] Kudos reaction added successfully")
+        // Debug log removed: Kudos reaction added successfully")
       } else {
         console.error("[v0] Failed to react to kudos:", res.status, res.statusText)
       }
@@ -556,7 +556,7 @@ export default function WellbeingPageClient() {
   }
 
   if (isLoading) {
-    console.log("[v0] Loading state active")
+    // Debug log removed: Loading state active")
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -566,7 +566,7 @@ export default function WellbeingPageClient() {
     )
   }
 
-  console.log("[v0] Rendering main component")
+  // Debug log removed: Rendering main component")
   return (
     <AppLayout>
       <div className="container mx-auto py-6 space-y-6">

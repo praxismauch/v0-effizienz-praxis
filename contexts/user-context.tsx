@@ -252,7 +252,6 @@ export function UserProvider({
                 preferred_language: data.user.preferred_language,
                 firstName: data.user.first_name,
               }
-              console.log("[v0] Dev user loaded:", user.email)
               setCurrentUser(user)
               await persistUserToStorage(user)
               hasFetchedUser.current = true
@@ -265,18 +264,15 @@ export function UserProvider({
               throw new Error("Supabase client not available")
             }
 
-            console.log("[v0] Fetching Supabase user")
             const {
               data: { user: authUser },
               error: authError,
             } = await supabase.auth.getUser()
 
             if (authError || !authUser) {
-              console.log("[v0] No Supabase user:", authError?.message)
               throw new Error(authError?.message || "No valid Supabase session")
             }
 
-            console.log("[v0] Fetching user profile for:", authUser.id)
             const { data: profile, error: profileError } = await supabase
               .from("users")
               .select(
@@ -286,7 +282,6 @@ export function UserProvider({
               .single()
 
             if (profileError || !profile) {
-              console.log("[v0] No profile found:", profileError?.message)
               throw new Error(profileError?.message || "No profile found")
             }
 

@@ -102,6 +102,19 @@ function getOrCreateClient(): SupabaseClient | null {
     return null
   }
 
+  // Detect v0 preview environment - DO NOT create Supabase client here
+  // v0's patched globalThis.fetch causes "Failed to fetch" errors that cannot be suppressed
+  // The server-side admin client fallback handles all API calls correctly
+  const isV0Preview = 
+    window.location.hostname.includes("vusercontent.net") || 
+    window.location.hostname.includes("v0.dev") ||
+    window.location.hostname.includes("preview-") ||
+    (window as Window & { __v0__?: boolean }).__v0__ === true
+  
+  if (isV0Preview) {
+    return null // Skip client creation entirely in v0 preview
+  }
+
   // Return existing singleton immediately - this is the key to preventing duplicates
   if (window.__supabaseClient) {
     return window.__supabaseClient

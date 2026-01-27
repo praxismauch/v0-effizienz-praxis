@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { Plus, Edit, Trash2, Check, X, Clock, Palmtree, AlertCircle } from "lucide-react"
@@ -7,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/hooks/use-toast"
+import AvailabilityDialog from "./availability-dialog"
 import type { Availability, TeamMember } from "../types"
 import { DAYS_OF_WEEK } from "../types"
 

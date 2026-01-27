@@ -15,6 +15,7 @@ import ScheduleTab from "./components/schedule-tab"
 import AvailabilityTab from "./components/availability-tab"
 import SwapRequestsTab from "./components/swap-requests-tab"
 import ShiftTypesTab from "./components/shift-types-tab"
+import ShiftTypeDialog from "./components/shift-type-dialog"
 import type { TeamMember, ShiftType, Shift, Availability, SwapRequest, Violation, DienstplanStats } from "./types"
 
 export default function DienstplanPageClient() {
@@ -34,6 +35,10 @@ export default function DienstplanPageClient() {
   const [availability, setAvailability] = useState<Availability[]>([])
   const [swapRequests, setSwapRequests] = useState<SwapRequest[]>([])
   const [violations, setViolations] = useState<Violation[]>([])
+
+  // Dialog state for shift types
+  const [shiftTypeDialogOpen, setShiftTypeDialogOpen] = useState(false)
+  const [editingShiftType, setEditingShiftType] = useState<ShiftType | null>(null)
 
   // Week days
   const weekDays = useMemo(() => {
@@ -159,6 +164,37 @@ export default function DienstplanPageClient() {
       }
     } catch {
       toast({ title: "Fehler", variant: "destructive" })
+    }
+  }
+
+  // Shift type add/edit handlers
+  const handleAddShiftType = () => {
+    setEditingShiftType(null)
+    setShiftTypeDialogOpen(true)
+  }
+
+  const handleEditShiftType = (shiftType: ShiftType) => {
+    setEditingShiftType(shiftType)
+    setShiftTypeDialogOpen(true)
+  }
+
+  const handleSaveShiftType = async (data: Partial<ShiftType>) => {
+    const isEditing = !!editingShiftType
+    const url = isEditing
+      ? `/api/practices/${currentPractice?.id}/dienstplan/shift-types/${editingShiftType.id}`
+      : `/api/practices/${currentPractice?.id}/dienstplan/shift-types`
+
+    const res = await fetch(url, {
+      method: isEditing ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (res.ok) {
+      toast({ title: isEditing ? "Schichttyp aktualisiert" : "Schichttyp erstellt" })
+      fetchData()
+    } else {
+      throw new Error("Failed to save shift type")
     }
   }
 

@@ -62,7 +62,7 @@ export default function ShiftTypesTab({ shiftTypes, onAdd, onEdit, onDelete, isL
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Clock className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground">Keine Schichttypen vorhanden</p>
-            <Button className="mt-4" onClick={onAdd}>
+            <Button className="mt-4" onClick={handleAdd}>
               <Plus className="h-4 w-4 mr-2" />
               Ersten Schichttyp erstellen
             </Button>
@@ -106,7 +106,7 @@ export default function ShiftTypesTab({ shiftTypes, onAdd, onEdit, onDelete, isL
                     variant="outline"
                     size="sm"
                     className="text-destructive hover:text-destructive bg-transparent"
-                    onClick={() => onDelete(shiftType.id)}
+                    onClick={() => handleDelete(shiftType.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

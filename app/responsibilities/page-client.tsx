@@ -325,7 +325,10 @@ export default function ResponsibilitiesPageClient() {
             open={createTodoDialogOpen}
             onOpenChange={setCreateTodoDialogOpen}
             responsibility={responsibilityForTodo}
-            onSuccess={() => {}}
+            onSuccess={() => {
+              setCreateTodoDialogOpen(false)
+              setResponsibilityForTodo(null)
+            }}
           />
         )}
       </div>

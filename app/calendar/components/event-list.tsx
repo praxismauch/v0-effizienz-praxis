@@ -11,12 +11,16 @@ import { getEventTypeColor, getEventTypeLabel } from "../types"
 
 interface EventListProps {
   events: CalendarEvent[]
-  onSelectEvent: (event: CalendarEvent) => void
+  onEventClick: (event: CalendarEvent) => void
+  title?: string
   emptyMessage?: string
 }
 
-export function EventList({ events, onSelectEvent, emptyMessage = "Keine Termine vorhanden" }: EventListProps) {
-  if (events.length === 0) {
+export function EventList({ events, onEventClick, title, emptyMessage = "Keine Termine vorhanden" }: EventListProps) {
+  // Filter out any undefined/null events or events without titles
+  const safeEvents = (events || []).filter(e => e && e.title)
+  
+  if (safeEvents.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
@@ -28,7 +32,7 @@ export function EventList({ events, onSelectEvent, emptyMessage = "Keine Termine
   }
 
   // Group events by date
-  const groupedEvents = events.reduce(
+  const groupedEvents = safeEvents.reduce(
     (groups, event) => {
       const date = event.startDate
       if (!groups[date]) {
@@ -58,7 +62,7 @@ export function EventList({ events, onSelectEvent, emptyMessage = "Keine Termine
                   <Card
                     key={event.id}
                     className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => onSelectEvent(event)}
+                    onClick={() => onEventClick(event)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">

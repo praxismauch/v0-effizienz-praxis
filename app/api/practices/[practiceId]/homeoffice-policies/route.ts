@@ -109,7 +109,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .from("homeoffice_policies")
       .insert({
         id: policyId,
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         user_id: body.user_id || null,
         is_allowed: body.is_allowed,
         allowed_days: body.allowed_days || [],

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data, error } = await adminClient
       .from("inventory_items")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .eq("is_active", true)
       .order("name", { ascending: true })
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .from("inventory_items")
       .insert({
         ...body,
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .select()
       .single()
 
@@ -112,7 +112,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
 
     if (error) {
       console.error("[v0] Error deleting inventory item:", error)

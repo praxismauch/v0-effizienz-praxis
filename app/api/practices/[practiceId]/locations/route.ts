@@ -71,7 +71,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = access.adminClient
 
     const locationData = {
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
       name: body.name,
       street: body.street || null,
       city: body.city || null,

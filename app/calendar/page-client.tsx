@@ -25,7 +25,7 @@ const fetcher = (url: string) => fetch(url, { credentials: "include" }).then((re
 
 export default function CalendarPageClient() {
   const { currentPractice } = usePractice()
-  const { user, loading: userLoading } = useCurrentUser()
+  const { user, isLoading: userLoading } = useCurrentUser()
   const practiceId = currentPractice?.id?.toString()
 
   // View state

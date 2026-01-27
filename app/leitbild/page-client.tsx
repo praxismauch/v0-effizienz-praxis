@@ -95,7 +95,7 @@ const questions = [
 
 export default function LeitbildPageClient() {
   const { currentUser: user, loading: userLoading } = useUser()
-  const { currentPractice, loading: practiceLoading } = usePractice()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { t } = useTranslation()
 
   const [versions, setVersions] = useState<LeitbildVersion[]>([])

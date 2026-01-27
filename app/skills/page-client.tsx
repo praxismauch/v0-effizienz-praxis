@@ -22,7 +22,7 @@ import { EditSkillDialog } from "./components/edit-skill-dialog"
 import { AiGeneratorDialog } from "./components/ai-generator-dialog"
 
 export default function SkillsPageClient() {
-  const { user } = useUser()
+  const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { isAiEnabled } = useAiEnabled()
 

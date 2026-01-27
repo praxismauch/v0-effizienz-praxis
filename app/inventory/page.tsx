@@ -173,7 +173,7 @@ interface InventoryBill {
 }
 
 export default function InventoryPage() {
-  const { user } = useUser()
+  const { currentUser } = useUser()
   const { currentPractice } = usePractice()
   const [activeTab, setActiveTab] = useState("overview")
   const [loading, setLoading] = useState(true)

@@ -420,8 +420,6 @@ export function KVAbrechnungManager() {
     if (!currentPractice?.id || !currentUser?.id || files.length === 0) return
 
     try {
-      console.log("[v0] Smart upload - Starting with", files.length, "files")
-
       setSmartUploadProgress({
         total: files.length,
         current: 0,

@@ -38,6 +38,12 @@ export const getChartTypeLabel = (chartType: "area" | "line" | "pie" | "bar", t:
   return labels[chartType]
 }
 
+export const categoryLabels = {
+  overview: "Übersicht",
+  performance: "Leistung",
+  charts: "Diagramme",
+}
+
 export const categoryColors = {
   overview: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
   performance: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",

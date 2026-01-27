@@ -13,7 +13,7 @@ import { ArticlesTab } from "./components/articles-tab"
 import { VideosTab } from "./components/videos-tab"
 import { LearningTab } from "./components/learning-tab"
 import { FaqTab } from "./components/faq-tab"
-import { AiAssistantTab } from "./components/ai-assistant-tab"
+import { AIAssistantTab } from "./components/ai-assistant-tab"
 
 // Import data and types
 import { helpCategories, helpArticles, helpVideos, faqs, learningPaths } from "./data"
@@ -165,7 +165,7 @@ export default function HelpPage() {
 
             {/* AI Assistant Tab */}
             <TabsContent value="ai">
-              <AiAssistantTab />
+              <AIAssistantTab />
             </TabsContent>
           </Tabs>
         </div>

@@ -44,8 +44,9 @@ export default function InventoryPage() {
   const [activeTab, setActiveTab] = useState("overview")
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [showAddSupplierDialog, setShowAddSupplierDialog] = useState(false)
-  const [showAddBillDialog, setShowAddBillDialog] = useState(false)
+  // TODO: Re-enable when dialogs are created
+  // const [showAddSupplierDialog, setShowAddSupplierDialog] = useState(false)
+  // const [showAddBillDialog, setShowAddBillDialog] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
@@ -163,14 +164,14 @@ export default function InventoryPage() {
         <TabsContent value="suppliers" className="mt-6">
           <SuppliersTab
             suppliers={suppliers}
-            onAddSupplier={() => setShowAddSupplierDialog(true)}
+            onAddSupplier={() => {/* TODO: Implement */}}
           />
         </TabsContent>
 
         <TabsContent value="bills" className="mt-6">
           <BillsTab
             bills={bills}
-            onAddBill={() => setShowAddBillDialog(true)}
+            onAddBill={() => {/* TODO: Implement */}}
           />
         </TabsContent>
 
@@ -211,7 +212,8 @@ export default function InventoryPage() {
         />
       )}
 
-      <AddSupplierDialog
+      {/* TODO: Create AddSupplierDialog and AddBillDialog components */}
+      {/* <AddSupplierDialog
         open={showAddSupplierDialog}
         onOpenChange={setShowAddSupplierDialog}
         onAdd={async (supplier) => {
@@ -230,7 +232,7 @@ export default function InventoryPage() {
           return true
         }}
         suppliers={suppliers}
-      />
+      /> */}
     </div>
   )
 }

@@ -274,6 +274,7 @@ export function UserProvider({
             } catch (fetchError: unknown) {
               // Handle network errors gracefully - user is not logged in
               const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError)
+              console.log("[v0] Auth getUser error (network):", errorMessage)
               if (errorMessage.includes("fetch") || errorMessage.includes("Failed") || errorMessage.includes("network")) {
                 throw new Error("Network error - no session available")
               }

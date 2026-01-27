@@ -149,16 +149,8 @@ function getOrCreateClient(): SupabaseClient | null {
       return response
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      // Return a mock error response for network failures instead of throwing
-      if (errorMessage.includes("fetch") || errorMessage.includes("network") || errorMessage.includes("Failed")) {
-        return new Response(JSON.stringify({ 
-          error: "network_error", 
-          error_description: "Network request failed" 
-        }), {
-          status: 503,
-          headers: { "Content-Type": "application/json" },
-        })
-      }
+      console.error("[v0] Supabase fetch error:", errorMessage, "URL:", url)
+      // Let network errors propagate - don't mask them with mock responses
       throw error
     }
   }
@@ -168,9 +160,9 @@ function getOrCreateClient(): SupabaseClient | null {
       auth: {
         storageKey: storageKey,
         persistSession: true,
-        detectSessionInUrl: false,
+        detectSessionInUrl: true, // Enable to detect session tokens in URLs after login
         flowType: "pkce",
-        autoRefreshToken: false, // Disable to prevent background fetch errors
+        autoRefreshToken: true, // Enable token refresh for session continuity
         debug: false,
         storage: customStorage,
       },

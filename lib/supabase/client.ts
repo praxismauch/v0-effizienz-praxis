@@ -129,13 +129,42 @@ function createClientSafe(): SupabaseClient | null {
       },
     }
 
+    // Custom fetch that handles network errors gracefully
+    const customFetch = async (url: RequestInfo | URL, options?: RequestInit): Promise<Response> => {
+      try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000)
+        
+        const response = await fetch(url, {
+          ...options,
+          signal: options?.signal || controller.signal,
+        })
+        
+        clearTimeout(timeoutId)
+        return response
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        // Return a mock error response for network failures instead of throwing
+        if (errorMessage.includes("fetch") || errorMessage.includes("network") || errorMessage.includes("Failed") || errorMessage.includes("aborted")) {
+          return new Response(JSON.stringify({ 
+            error: "network_error", 
+            error_description: "Network request failed - please check your connection" 
+          }), {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+        throw error
+      }
+    }
+
     const client = createSupabaseBrowserClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         storageKey: storageKey,
         persistSession: true,
         detectSessionInUrl: false, // Disable to prevent multiple auth checks
         flowType: "pkce",
-        autoRefreshToken: true,
+        autoRefreshToken: false, // Disable to prevent background fetch errors
         debug: false,
         storage: customStorage,
       },
@@ -143,6 +172,7 @@ function createClientSafe(): SupabaseClient | null {
         headers: {
           "x-client-info": "effizienz-praxis-client",
         },
+        fetch: customFetch,
       },
     })
 

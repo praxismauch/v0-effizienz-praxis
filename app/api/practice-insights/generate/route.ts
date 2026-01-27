@@ -21,13 +21,22 @@ function getWeekEnd(date: Date): Date {
   return end
 }
 
+interface KPI {
+  id: string
+  name: string
+  description?: string
+}
+
+interface Goal {
+  title: string
+  status: string
+}
+
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Practice journal generation started")
     const supabase = await createAdminClient()
 
     const body = await request.json()
-    console.log("[v0] Request body received:", { hasPracticeId: !!body.practiceId, practiceId: body.practiceId })
 
     const {
       practiceId,
@@ -39,18 +48,14 @@ export async function POST(request: NextRequest) {
       parameterValues,
       teamMembers,
       goals,
-      workflows,
     } = body
 
     if (!practiceId || practiceId === "null" || practiceId === "undefined") {
-      console.error("[v0] Missing or invalid practiceId:", practiceId)
       return NextResponse.json({ error: "Keine Praxis zugeordnet. Bitte laden Sie die Seite neu." }, { status: 400 })
     }
 
     const effectivePeriodStart = periodStart || getWeekStart(new Date()).toISOString().split("T")[0]
     const effectivePeriodEnd = periodEnd || getWeekEnd(new Date()).toISOString().split("T")[0]
-
-    console.log("[v0] Checking for existing journal:", { practiceId, periodType, effectivePeriodStart })
 
     const { data: existingJournals, error: checkError } = await supabase
       .from("practice_journals")
@@ -60,12 +65,11 @@ export async function POST(request: NextRequest) {
       .eq("period_start", effectivePeriodStart)
 
     if (checkError) {
-      console.error("[v0] Error checking for existing journal:", checkError)
+      console.error("Error checking for existing journal:", checkError)
     }
 
     if (existingJournals && existingJournals.length > 0) {
       const existing = existingJournals[0]
-      console.log("[v0] Found existing journal:", existing.id)
       return NextResponse.json(
         {
           error: `Ein Journal für diesen Zeitraum existiert bereits: "${existing.title}" (erstellt am ${new Date(existing.created_at).toLocaleDateString("de-DE")})`,
@@ -74,8 +78,6 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       )
     }
-
-    console.log("[v0] No existing journal found, proceeding with generation")
 
     // Get auth user
     const authHeader = request.headers.get("authorization")
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Build context for AI
     const kpiSummary =
-      kpis?.map((k: any) => `- ${k.name}: ${k.description || "Keine Beschreibung"}`).join("\n") ||
+      (kpis as KPI[])?.map((k) => `- ${k.name}: ${k.description || "Keine Beschreibung"}`).join("\n") ||
       "Keine KPIs definiert"
 
     const valuesSummary =
@@ -100,7 +102,9 @@ export async function POST(request: NextRequest) {
     const teamSummary = teamMembers?.length > 0 ? `${teamMembers.length} Teammitglieder aktiv` : "Keine Teammitglieder"
 
     const goalsSummary =
-      goals?.length > 0 ? goals.map((g: any) => `- ${g.title}: ${g.status}`).join("\n") : "Keine Ziele definiert"
+      (goals as Goal[])?.length > 0
+        ? (goals as Goal[]).map((g) => `- ${g.title}: ${g.status}`).join("\n")
+        : "Keine Ziele definiert"
 
     const prompt = `Du bist ein erfahrener Praxisberater für medizinische Praxen. Erstelle einen professionellen Praxis-Journalbericht für den Zeitraum ${effectivePeriodStart} bis ${effectivePeriodEnd}.
 
@@ -174,8 +178,6 @@ Sei konkret, konstruktiv und praxisnah. Verwende deutsche Sprache.`
             : "Wochenbericht"
     const title = `${periodLabel} ${new Date(effectivePeriodStart).toLocaleDateString("de-DE", { month: "long", year: "numeric" })}`
 
-    console.log("[v0] Creating journal with practice_id:", practiceId)
-
     // Save journal
     const { data: journal, error: journalError } = await supabase
       .from("practice_journals")
@@ -187,7 +189,7 @@ Sei konkret, konstruktiv und praxisnah. Verwende deutsche Sprache.`
         title,
         summary: aiAnalysis.summary,
         ai_analysis: aiAnalysis,
-        kpis_included: kpis?.map((k: any) => ({ id: k.id, name: k.name })) || [],
+        kpis_included: (kpis as KPI[])?.map((k) => ({ id: k.id, name: k.name })) || [],
         user_notes: userNotes || null,
         status: "draft",
         generated_by: userId,
@@ -196,9 +198,8 @@ Sei konkret, konstruktiv und praxisnah. Verwende deutsche Sprache.`
       .single()
 
     if (journalError) {
-      console.error("[v0] Journal insert error:", journalError.message)
+      console.error("Journal insert error:", journalError.message)
       if (journalError.code === "23505") {
-        // Fetch the existing journal to return its ID
         const { data: existing } = await supabase
           .from("practice_journals")
           .select("id, title, created_at")
@@ -220,8 +221,6 @@ Sei konkret, konstruktiv und praxisnah. Verwende deutsche Sprache.`
       throw journalError
     }
 
-    console.log("[v0] Journal created successfully:", journal.id)
-
     // Create action items from recommendations
     if (aiAnalysis.recommendations && aiAnalysis.recommendations.length > 0) {
       const actionItems = aiAnalysis.recommendations.map((rec: string, index: number) => ({
@@ -238,8 +237,9 @@ Sei konkret, konstruktiv und praxisnah. Verwende deutsche Sprache.`
     }
 
     return NextResponse.json({ success: true, journal })
-  } catch (error: any) {
-    console.error("[v0] Error generating journal:", error)
-    return NextResponse.json({ error: error.message || "Failed to generate journal" }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to generate journal"
+    console.error("Error generating journal:", error)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

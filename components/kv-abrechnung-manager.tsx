@@ -439,12 +439,10 @@ export function KVAbrechnungManager() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
-        console.error("[v0] Smart upload - API error:", errorData)
         throw new Error(errorData.error || "Fehler beim Upload")
       }
 
       const { results } = await response.json()
-      console.log("[v0] Smart upload - Results:", results)
 
       const needsManualSelection = results.find((r: any) => r.needs_manual_selection && r.year && r.blob_url)
 

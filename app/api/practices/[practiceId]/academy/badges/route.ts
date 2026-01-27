@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server-admin"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] GET /academy/badges - practiceId:", practiceId)
 
     const practiceIdInt =
       practiceId === "0" || !practiceId || practiceId === "undefined" ? 1 : Number.parseInt(practiceId)
@@ -15,7 +14,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // If user_id is provided, get user's earned badges
     if (userId) {
-      console.log("[v0] Fetching user badges for userId:", userId)
       const { data: badges, error } = await supabase
         .from("academy_user_badges")
         .select(`
@@ -26,19 +24,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .order("earned_at", { ascending: false })
 
       if (error) {
-        console.error("[v0] Error fetching user badges:", error)
+        console.error("Error fetching user badges:", error)
         if (error.message?.includes("Too Many") || error.code === "429") {
           return NextResponse.json([])
         }
         throw error
       }
 
-      console.log("[v0] User badges fetched:", badges?.length)
       return NextResponse.json(badges || [])
     }
 
     // Otherwise, get all available badges for management
-    console.log("[v0] Fetching all badges")
     const { data: badges, error } = await supabase
       .from("academy_badges")
       .select("*")
@@ -47,29 +43,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("[v0] Error fetching badges:", error)
+      console.error("Error fetching badges:", error)
       throw error
     }
 
-    console.log("[v0] Badges fetched:", badges?.length)
     return NextResponse.json(badges || [])
-  } catch (error: any) {
-    console.error("[v0] GET /academy/badges error:", error)
-    if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("GET /academy/badges error:", errorMessage)
+    if (errorMessage.includes("Not authenticated") || errorMessage.includes("Access denied")) {
+      return NextResponse.json({ error: errorMessage }, { status: 401 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] POST /academy/badges - practiceId:", practiceId)
 
     const supabase = createClient()
     const body = await request.json()
-    console.log("[v0] Creating badge:", body)
 
     const badgeData = {
       name: body.name,
@@ -92,14 +86,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data: badge, error } = await supabase.from("academy_badges").insert(badgeData).select().single()
 
     if (error) {
-      console.error("[v0] Error creating badge:", error)
+      console.error("Error creating badge:", error)
       throw error
     }
 
-    console.log("[v0] Badge created:", badge.id)
     return NextResponse.json(badge)
-  } catch (error: any) {
-    console.error("[v0] POST /academy/badges error:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("POST /academy/badges error:", errorMessage)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

@@ -5,15 +5,24 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
+interface ModuleUpdateData {
+  updated_at: string
+  title?: string
+  description?: string
+  display_order?: number
+  order_index?: number
+  is_published?: boolean
+  estimated_minutes?: number
+  duration_minutes?: number
+  xp_reward?: number
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string; moduleId: string }> },
 ) {
   try {
-    const { practiceId, moduleId } = await params
-    const practiceIdInt = practiceId === "0" || !practiceId ? 1 : Number.parseInt(practiceId) || 1
-
-    console.log("[v0] GET /api/practices/[practiceId]/academy/modules/[moduleId] - moduleId:", moduleId)
+    const { moduleId } = await params
 
     const { data, error } = await supabase
       .from("academy_modules")
@@ -23,16 +32,15 @@ export async function GET(
       .single()
 
     if (error) {
-      console.error("[v0] Error fetching module:", error)
+      console.error("Error fetching module:", error)
       return NextResponse.json({ error: error.message }, { status: 404 })
     }
 
-    console.log("[v0] Fetched module:", data.id)
-
     return NextResponse.json({ module: data })
-  } catch (error: any) {
-    console.error("[v0] Unexpected error in GET module:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("Unexpected error in GET module:", errorMessage)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -41,15 +49,11 @@ export async function PUT(
   { params }: { params: Promise<{ practiceId: string; moduleId: string }> },
 ) {
   try {
-    const { practiceId, moduleId } = await params
-    const practiceIdInt = practiceId === "0" || !practiceId ? 1 : Number.parseInt(practiceId) || 1
-
-    console.log("[v0] PUT /api/practices/[practiceId]/academy/modules/[moduleId] - moduleId:", moduleId)
+    const { moduleId } = await params
 
     const body = await request.json()
-    console.log("[v0] Update data:", body)
 
-    const updateData: any = {
+    const updateData: ModuleUpdateData = {
       updated_at: new Date().toISOString(),
     }
 
@@ -75,16 +79,15 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error("[v0] Error updating module:", error)
+      console.error("Error updating module:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Module updated successfully:", data.id)
-
     return NextResponse.json({ module: data })
-  } catch (error: any) {
-    console.error("[v0] Unexpected error in PUT module:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("Unexpected error in PUT module:", errorMessage)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -93,10 +96,7 @@ export async function DELETE(
   { params }: { params: Promise<{ practiceId: string; moduleId: string }> },
 ) {
   try {
-    const { practiceId, moduleId } = await params
-    const practiceIdInt = practiceId === "0" || !practiceId ? 1 : Number.parseInt(practiceId) || 1
-
-    console.log("[v0] DELETE /api/practices/[practiceId]/academy/modules/[moduleId] - moduleId:", moduleId)
+    const { moduleId } = await params
 
     const { data, error } = await supabase
       .from("academy_modules")
@@ -106,15 +106,14 @@ export async function DELETE(
       .single()
 
     if (error) {
-      console.error("[v0] Error deleting module:", error)
+      console.error("Error deleting module:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Module deleted successfully:", moduleId)
-
     return NextResponse.json({ success: true, module: data })
-  } catch (error: any) {
-    console.error("[v0] Unexpected error in DELETE module:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("Unexpected error in DELETE module:", errorMessage)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

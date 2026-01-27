@@ -5,15 +5,31 @@ import { sortTeamMembersByRole } from "@/lib/team-role-order"
 import { handleApiError } from "@/lib/api-helpers"
 import { createAdminClient } from "@/lib/supabase/admin"
 
+interface TeamMember {
+  id: string
+  user_id: string | null
+  role: string
+  department: string | null
+  status: string
+  joined_date: string | null
+  created_at: string
+  first_name: string | null
+  last_name: string | null
+}
+
+interface TeamAssignment {
+  user_id: string
+  team_id: string
+}
+
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelay = 1000): Promise<T> {
-  let lastError: any
+  let lastError: unknown
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn()
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error
       if (isRateLimitError(error) && i < maxRetries - 1) {
-        // Add jitter to prevent thundering herd
         const jitter = Math.random() * 500
         const delay = baseDelay * Math.pow(2, i) + jitter
         await new Promise((resolve) => setTimeout(resolve, delay))
@@ -25,21 +41,10 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelay = 10
   throw lastError
 }
 
-function isValidName(name: string | null | undefined): boolean {
-  if (!name) return false
-  const trimmed = name.trim()
-  if (!trimmed || trimmed === "null null" || trimmed === "null" || trimmed === "Kein Name") {
-    return false
-  }
-  return true
-}
-
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
-
-    console.log("[v0] team-members GET: Using practice ID:", practiceIdStr)
 
     const supabase = createAdminClient()
 
@@ -53,14 +58,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .single()
 
       customRoleOrder = practiceSettings?.system_settings?.team_member_role_order
-    } catch (settingsError) {
+    } catch {
       // Use default order if settings not found
     }
 
-    let members: any[] = []
+    let members: TeamMember[] = []
     try {
       const result = await withRetry(async () => {
-        console.log("[v0] team-members GET: Querying database with practice_id:", practiceIdStr, "(type: string)")
         const res = await supabase
           .from("team_members")
           .select(`
@@ -82,39 +86,29 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           if (isRateLimitError(res.error)) {
             throw res.error
           }
-          console.error("[v0] team_members GET error:", res.error.message)
+          console.error("team_members GET error:", res.error.message)
           return { data: [], error: res.error }
-        }
-        console.log("[v0] team_members GET practiceId:", practiceIdStr, "result count:", res.data?.length || 0)
-        if (res.data && res.data.length > 0) {
-          console.log("[v0] team_members GET sample record:", JSON.stringify(res.data[0]).substring(0, 200))
         }
         return res
       })
 
       members = result.data || []
-    } catch (queryError: any) {
+    } catch (queryError: unknown) {
       if (isRateLimitError(queryError)) {
         return NextResponse.json(
           { error: "Service temporarily unavailable", retryable: true },
           { status: 503, headers: { "Retry-After": "5" } },
         )
       }
-      console.error("[v0] Query error in team-members GET:", queryError)
+      console.error("Query error in team-members GET:", queryError)
       return NextResponse.json([])
     }
 
-    console.log("[v0] team-members: fetched", members.length, "members before filtering")
-
     const activeMembers = members.filter((member) => member.status === "active" || !member.status)
 
-    console.log("[v0] team-members: active members count:", activeMembers.length)
+    const userIds = activeMembers.map((m) => m.user_id).filter(Boolean) as string[]
 
-    const userIds = activeMembers.map((m: any) => m.user_id).filter(Boolean)
-
-    console.log("[v0] team-members: extracting team assignments for", userIds.length, "user IDs")
-
-    let teamAssignments: any[] = []
+    let teamAssignments: TeamAssignment[] = []
 
     if (userIds.length > 0) {
       try {
@@ -122,14 +116,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           return await supabase.from("team_assignments").select("user_id, team_id").in("user_id", userIds)
         })
         teamAssignments = result.data || []
-        console.log("[v0] team-members: found", teamAssignments.length, "team assignments")
-      } catch (assignError: any) {
-        console.error("[v0] team-members: error fetching team assignments:", assignError)
-        // Continue with empty assignments rather than failing
+      } catch (assignError: unknown) {
+        console.error("Error fetching team assignments:", assignError)
       }
     }
 
-    const teamMembers = activeMembers.map((member: any) => {
+    const teamMembers = activeMembers.map((member) => {
       const memberId = member.user_id || member.id
 
       const firstName = member.first_name?.trim() || ""
@@ -142,9 +134,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         firstName: firstName,
         lastName: lastName,
         name: name,
-        email: "", // No email in team_members table
+        email: "",
         role: member.role || "user",
-        avatar: null, // No avatar in team_members table
+        avatar: null,
         practiceId: practiceId,
         isActive: member.status === "active" || !member.status,
         is_active: member.status === "active" || !member.status,
@@ -155,22 +147,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         permissions: [],
         lastActive: new Date().toISOString(),
         teamIds: member.user_id
-          ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
+          ? teamAssignments.filter((ta) => ta.user_id === member.user_id).map((ta) => ta.team_id)
           : [],
-        date_of_birth: null, // No date_of_birth in team_members table
+        date_of_birth: null,
       }
     })
 
     const sortedTeamMembers = sortTeamMembersByRole(teamMembers, customRoleOrder)
 
-    console.log("[v0] team-members GET: returning", sortedTeamMembers.length, "members")
-    console.log(
-      "[v0] team-members GET: Response sample:",
-      JSON.stringify(sortedTeamMembers.slice(0, 2)).substring(0, 300),
-    )
-
     return NextResponse.json(sortedTeamMembers || [])
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (isRateLimitError(error)) {
       return NextResponse.json(
         { error: "Service temporarily unavailable", retryable: true },
@@ -213,8 +199,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (body.email && body.email.trim() !== "") {
       userId = uuidv4()
 
-      // users table uses integer for practice_id
-      const { data: userData, error: userError } = await supabase
+      const { error: userError } = await supabase
         .from("users")
         .insert({
           id: userId,
@@ -232,7 +217,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .single()
 
       if (userError) {
-        console.error("[v0] User insert error:", userError.message)
+        console.error("User insert error:", userError.message)
         return NextResponse.json({ error: userError.message }, { status: 500 })
       }
     }
@@ -254,7 +239,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single()
 
     if (memberError) {
-      console.error("[v0] Team member insert error:", memberError.message)
+      console.error("Team member insert error:", memberError.message)
       return NextResponse.json({ error: memberError.message }, { status: 500 })
     }
 
@@ -266,7 +251,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       const { error: assignError } = await supabase.from("team_assignments").insert(assignments)
       if (assignError) {
-        console.error("[v0] Team assignments error:", assignError.message)
+        console.error("Team assignments error:", assignError.message)
       }
     }
 
@@ -290,7 +275,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       date_of_birth: body.date_of_birth || null,
     })
   } catch (error) {
-    console.error("[v0] Team members POST exception:", error)
+    console.error("Team members POST exception:", error)
     return handleApiError(error)
   }
 }
@@ -304,17 +289,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = createAdminClient()
     const body = await request.json()
 
-    // Extract member ID from the URL or body
     const memberId = body.id || body.user_id
 
     if (!memberId) {
       return NextResponse.json({ error: "Mitglied-ID fehlt" }, { status: 400 })
     }
 
-    console.log("[v0] team-members PUT: Updating member", memberId, "with data:", body)
-
-    // Build update object for team_members table
-    const teamMemberUpdates: any = {}
+    const teamMemberUpdates: Record<string, unknown> = {}
 
     if (body.firstName !== undefined || body.lastName !== undefined) {
       const firstName = body.firstName?.trim() || body.first_name?.trim() || ""
@@ -340,7 +321,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       teamMemberUpdates.status = body.status
     }
 
-    // Update team_members table
     if (Object.keys(teamMemberUpdates).length > 0) {
       const { error: memberError } = await supabase
         .from("team_members")
@@ -349,13 +329,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         .eq("practice_id", practiceIdStr)
 
       if (memberError) {
-        console.error("[v0] Team member update error:", memberError.message)
+        console.error("Team member update error:", memberError.message)
         return NextResponse.json({ error: memberError.message }, { status: 500 })
       }
     }
 
-    // Update users table if email or other user fields changed
-    const userUpdates: any = {}
+    const userUpdates: Record<string, unknown> = {}
 
     if (body.firstName !== undefined || body.lastName !== undefined) {
       const firstName = body.firstName?.trim() || body.first_name?.trim() || ""
@@ -393,12 +372,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         .eq("practice_id", practiceIdInt)
 
       if (userError) {
-        console.error("[v0] User update error:", userError.message)
-        // Don't fail the request if user update fails - member update succeeded
+        console.error("User update error:", userError.message)
       }
     }
-
-    console.log("[v0] team-members PUT: Successfully updated member", memberId)
 
     return NextResponse.json({
       success: true,
@@ -406,7 +382,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       message: "Teammitglied erfolgreich aktualisiert",
     })
   } catch (error) {
-    console.error("[v0] Team members PUT exception:", error)
+    console.error("Team members PUT exception:", error)
     return handleApiError(error)
   }
 }

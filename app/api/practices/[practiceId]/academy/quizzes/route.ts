@@ -5,20 +5,30 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
   auth: { persistSession: false },
 })
 
+interface QuizQuestion {
+  options?: QuizOption[]
+  [key: string]: unknown
+}
+
+interface QuizOption {
+  [key: string]: unknown
+}
+
+interface Quiz {
+  academy_quiz_questions?: (QuizQuestion & {
+    display_order?: number
+    academy_quiz_options?: (QuizOption & { display_order?: number })[]
+  })[]
+  [key: string]: unknown
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = await params
+    await params
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get("course_id")
     const moduleId = searchParams.get("module_id")
     const lessonId = searchParams.get("lesson_id")
-
-    console.log("[v0] GET /api/practices/[practiceId]/academy/quizzes - Start", {
-      practiceId,
-      courseId,
-      moduleId,
-      lessonId,
-    })
 
     let query = supabase
       .from("academy_quizzes")
@@ -32,7 +42,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
-    // Filter by course/module/lesson
     if (courseId) {
       query = query.eq("course_id", courseId)
     }
@@ -46,12 +55,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     const { data: quizzes, error } = await query
 
     if (error) {
-      console.error("[v0] Error fetching quizzes:", error)
+      console.error("Error fetching quizzes:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     // Sort questions and options by display_order
-    const sortedQuizzes = quizzes?.map((quiz) => ({
+    const sortedQuizzes = (quizzes as Quiz[])?.map((quiz) => ({
       ...quiz,
       academy_quiz_questions: quiz.academy_quiz_questions
         ?.sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
@@ -63,26 +72,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
         })),
     }))
 
-    console.log("[v0] Fetched quizzes successfully:", sortedQuizzes?.length)
-
     return NextResponse.json({ quizzes: sortedQuizzes || [] })
   } catch (error) {
-    console.error("[v0] Unexpected error in GET quizzes:", error)
+    console.error("Unexpected error in GET quizzes:", error)
     return NextResponse.json({ error: "Failed to fetch quizzes" }, { status: 500 })
   }
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = await params
+    await params
     const body = await request.json()
     const { questions, ...quizData } = body
-
-    console.log("[v0] POST /api/practices/[practiceId]/academy/quizzes - Start", {
-      practiceId,
-      quizData,
-      questionsCount: questions?.length,
-    })
 
     // Create quiz
     const { data: quiz, error: quizError } = await supabase
@@ -96,15 +97,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .single()
 
     if (quizError) {
-      console.error("[v0] Error creating quiz:", quizError)
+      console.error("Error creating quiz:", quizError)
       return NextResponse.json({ error: quizError.message }, { status: 500 })
     }
 
-    console.log("[v0] Quiz created successfully:", quiz.id)
-
     // Create questions and options if provided
     if (questions && questions.length > 0) {
-      for (const question of questions) {
+      for (const question of questions as QuizQuestion[]) {
         const { options, ...questionData } = question
 
         const { data: createdQuestion, error: questionError } = await supabase
@@ -119,15 +118,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
           .single()
 
         if (questionError) {
-          console.error("[v0] Error creating question:", questionError)
+          console.error("Error creating question:", questionError)
           continue
         }
 
-        console.log("[v0] Question created:", createdQuestion.id)
-
         // Create options if provided
         if (options && options.length > 0) {
-          const optionsToInsert = options.map((opt: any) => ({
+          const optionsToInsert = options.map((opt: QuizOption) => ({
             ...opt,
             question_id: createdQuestion.id,
             created_at: new Date().toISOString(),
@@ -137,9 +134,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
           const { error: optionsError } = await supabase.from("academy_quiz_options").insert(optionsToInsert)
 
           if (optionsError) {
-            console.error("[v0] Error creating options:", optionsError)
-          } else {
-            console.log("[v0] Options created:", optionsToInsert.length)
+            console.error("Error creating options:", optionsError)
           }
         }
       }
@@ -158,11 +153,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .eq("id", quiz.id)
       .single()
 
-    console.log("[v0] Quiz created with all nested data")
-
     return NextResponse.json({ quiz: completeQuiz || quiz }, { status: 201 })
   } catch (error) {
-    console.error("[v0] Unexpected error in POST quiz:", error)
+    console.error("Unexpected error in POST quiz:", error)
     return NextResponse.json({ error: "Failed to create quiz" }, { status: 500 })
   }
 }

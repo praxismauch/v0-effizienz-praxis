@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { practice_id, sidebar_collapsed, expanded_groups, expanded_items } = body
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const dataToUpsert: Record<string, any> = {
       user_id: user.id,

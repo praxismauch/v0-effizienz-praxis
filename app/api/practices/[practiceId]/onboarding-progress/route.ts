@@ -18,7 +18,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const supabaseAdmin = createAdminClient()
+    const supabaseAdmin = await createAdminClient()
 
     const effectivePracticeId =
       practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID
@@ -70,7 +70,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       interactionsCount,
     } = body
 
-    const supabaseAdmin = createAdminClient()
+    const supabaseAdmin = await createAdminClient()
 
     const effectivePracticeId =
       practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID

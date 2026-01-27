@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     console.log("[v0] team-members GET: Using practice ID:", practiceIdStr)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     let customRoleOrder: string[] | undefined
     try {
@@ -139,12 +139,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return {
         id: memberId,
         user_id: member.user_id,
+        first_name: firstName,
+        last_name: lastName,
         firstName: firstName,
         lastName: lastName,
         name: name,
         email: "", // No email in team_members table
         role: member.role || "user",
         avatar: null, // No avatar in team_members table
+        avatar_url: null, // No avatar in team_members table
         practiceId: practiceId,
         isActive: member.status === "active" || !member.status,
         is_active: member.status === "active" || !member.status,
@@ -154,6 +157,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         created_at: member.created_at,
         permissions: [],
         lastActive: new Date().toISOString(),
+        team_ids: member.user_id
+          ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
+          : [],
         teamIds: member.user_id
           ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
           : [],
@@ -188,7 +194,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const practiceIdStr = String(practiceId)
     const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const body = await request.json()
 
@@ -301,7 +307,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const practiceIdStr = String(practiceId)
     const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     // Extract member ID from the URL or body

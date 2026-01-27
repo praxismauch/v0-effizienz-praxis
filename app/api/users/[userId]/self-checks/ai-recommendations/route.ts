@@ -6,7 +6,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { userId } = await params
     const body = await request.json()
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     const dimensions = {
       energy_level: body.energy_level,

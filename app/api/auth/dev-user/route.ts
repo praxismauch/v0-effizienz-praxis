@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Invalid dev user email" }, { status: 403 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { data: profile, error: profileError } = await adminClient
       .from("users")

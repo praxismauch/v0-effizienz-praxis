@@ -15,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { data, error } = await adminClient
       .from("arbeitsplaetze")
@@ -51,7 +51,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { data, error } = await adminClient
       .from("arbeitsplaetze")

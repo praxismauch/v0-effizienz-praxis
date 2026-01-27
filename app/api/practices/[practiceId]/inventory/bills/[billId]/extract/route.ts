@@ -6,7 +6,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
   try {
     const { practiceId, billId } = await params
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     // Get the bill record
     const { data: bill, error: fetchError } = await supabase

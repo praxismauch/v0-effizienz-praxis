@@ -18,7 +18,7 @@ export async function getCurrentUserProfile(): Promise<User | null> {
   try {
     const isDevMode = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
     if (isDevMode) {
-      const adminClient = createAdminClient()
+      const adminClient = await createAdminClient()
 
       const { data: userProfile, error: profileError } = await adminClient
         .from("users")

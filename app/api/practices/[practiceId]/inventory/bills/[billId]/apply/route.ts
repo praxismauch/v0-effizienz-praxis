@@ -7,7 +7,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     const body = await request.json()
     const { items_to_apply } = body // Array of item indices to apply to inventory
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     // Get the bill with extracted items
     const { data: bill, error: fetchError } = await supabase

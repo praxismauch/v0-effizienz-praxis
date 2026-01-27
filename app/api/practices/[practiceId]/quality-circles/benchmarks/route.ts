@@ -7,7 +7,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
     const supabase = await createClient()
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const {
       data: { user },

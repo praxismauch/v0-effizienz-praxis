@@ -16,7 +16,7 @@ export async function POST(
 
     const practiceIdStr = String(practiceId) || "1"
     const memberIdStr = String(memberId)
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     let teamMember = null
 

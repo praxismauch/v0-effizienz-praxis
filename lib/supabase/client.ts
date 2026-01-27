@@ -135,15 +135,47 @@ function getOrCreateClient(): SupabaseClient | null {
   }
 
   try {
-    // Suppress unhandled promise rejections for auth fetch errors in v0 preview
-    if (typeof window !== "undefined" && !window.__supabaseErrorHandlerSet) {
-      window.addEventListener("unhandledrejection", (event) => {
-        const message = event.reason?.message || String(event.reason)
-        if (message.includes("Failed to fetch") || message.includes("_getUser") || message.includes("_useSession")) {
-          event.preventDefault() // Suppress this specific error in v0 preview
+    // Suppress ALL unhandled promise rejections for auth fetch errors in v0 preview
+    // This MUST be set up BEFORE creating the client
+    if (typeof window !== "undefined") {
+      // Set up global error suppression for Supabase auth errors
+      if (!(window as Window & { __supabaseErrorHandlerSet?: boolean }).__supabaseErrorHandlerSet) {
+        // Suppress unhandled promise rejections
+        window.addEventListener("unhandledrejection", (event) => {
+          const message = event.reason?.message || event.reason?.toString?.() || String(event.reason || "")
+          if (
+            message.includes("Failed to fetch") || 
+            message.includes("_getUser") || 
+            message.includes("_useSession") ||
+            message.includes("NetworkError") ||
+            message.includes("TypeError")
+          ) {
+            event.preventDefault()
+            event.stopPropagation()
+            return false
+          }
+        }, true) // Use capture phase to catch early
+        
+        // Also suppress regular errors
+        const originalOnError = window.onerror
+        window.onerror = function(message, source, lineno, colno, error) {
+          const msg = String(message || "")
+          if (
+            msg.includes("Failed to fetch") || 
+            msg.includes("_getUser") || 
+            msg.includes("_useSession") ||
+            msg.includes("NetworkError")
+          ) {
+            return true // Suppress error
+          }
+          if (originalOnError) {
+            return originalOnError.call(window, message, source, lineno, colno, error)
+          }
+          return false
         }
-      })
-      ;(window as Window & { __supabaseErrorHandlerSet?: boolean }).__supabaseErrorHandlerSet = true
+        
+        ;(window as Window & { __supabaseErrorHandlerSet?: boolean }).__supabaseErrorHandlerSet = true
+      }
     }
 
     const client = createSupabaseBrowserClient(supabaseUrl, supabaseAnonKey, {

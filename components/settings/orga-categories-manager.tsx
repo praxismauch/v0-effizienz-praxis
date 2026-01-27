@@ -3,20 +3,23 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FolderPlus, Plus, Pencil, Trash2, GripVertical, Sparkles } from "lucide-react"
+import { FolderPlus, Plus, Pencil, Trash2, GripVertical, Sparkles, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { usePractice } from "@/contexts/practice-context"
+import { useUser } from "@/contexts/user-context"
 import { useState, useEffect } from "react"
 import type { OrgaCategory } from "@/types/orgaCategory"
 
 export function OrgaCategoriesManager() {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const practiceId = currentPractice?.id
+  const { currentUser } = useUser()
+  const practiceId = currentPractice?.id || currentUser?.practice_id
   const [categories, setCategories] = useState<OrgaCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isInitializing, setIsInitializing] = useState(false)
   const [editingCategory, setEditingCategory] = useState<OrgaCategory | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     if (practiceId && !practiceLoading) {
@@ -33,12 +36,17 @@ export function OrgaCategoriesManager() {
     }
 
     setIsLoading(true)
+    setFetchError(null)
     try {
       const response = await fetch(`/api/practices/${practiceId}/orga-categories`)
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`)
+      }
       const data = await response.json()
       setCategories(data.categories || [])
     } catch (error) {
       console.error("OrgaCategoriesManager - Fetch error:", error)
+      setFetchError("Fehler beim Laden der Kategorien")
       toast.error("Fehler beim Laden der Kategorien")
     } finally {
       setIsLoading(false)
@@ -97,6 +105,20 @@ export function OrgaCategoriesManager() {
     )
   }
 
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center">
+        <FolderPlus className="h-16 w-16 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Fehler beim Laden</h3>
+        <p className="text-muted-foreground mb-6 max-w-md">{fetchError}</p>
+        <Button onClick={() => fetchCategories()} variant="default">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Erneut versuchen
+        </Button>
+      </div>
+    )
+  }
+
   if (categories.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
@@ -140,11 +162,13 @@ export function OrgaCategoriesManager() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge>{category.itemsCount}</Badge>
-            <Button variant="ghost">
+            {category.is_active && (
+              <Badge variant="secondary">Aktiv</Badge>
+            )}
+            <Button variant="ghost" size="icon">
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button variant="ghost">
+            <Button variant="ghost" size="icon">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>

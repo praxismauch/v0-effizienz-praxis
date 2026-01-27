@@ -100,8 +100,8 @@ export default function GoalsPage() {
     })
   }, [goalsData])
 
-  // ... existing code for URL params handling ...
-  useState(() => {
+  // Handle URL params for tab selection
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
       const tabParam = params.get("tab")
@@ -110,7 +110,7 @@ export default function GoalsPage() {
         window.history.replaceState({}, "", "/goals")
       }
     }
-  })
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -281,7 +281,7 @@ export default function GoalsPage() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <div className="space-y-4">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
                   <TabsTrigger
                     value="all"
                     className="gap-2 hover:ring-2 hover:ring-primary/20 hover:shadow-sm transition-all duration-200"

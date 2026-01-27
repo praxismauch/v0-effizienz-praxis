@@ -11,7 +11,7 @@ import { usePersistedTab } from "@/hooks/use-persisted-tab"
 import { useTranslation } from "@/contexts/translation-context"
 import AIAnalyticsInsightsDialog from "@/components/ai-analytics-insights-dialog"
 import KVAbrechnungManager from "@/components/kv-abrechnung-manager"
-import BankAccountManager from "@/components/bank-account-manager"
+import { BankAccountManager } from "@/components/bank-account-manager"
 import ReviewsManager from "@/components/reviews-manager"
 import { useUser } from "@/contexts/user-context"
 
@@ -31,7 +31,7 @@ export default function AnalyticsPageClient() {
       </div>
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto gap-1">
             <TabsTrigger
               value="analytics"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"

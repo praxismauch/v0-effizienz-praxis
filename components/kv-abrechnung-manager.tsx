@@ -132,44 +132,25 @@ export function KVAbrechnungManager() {
   const [loadingInsights, setLoadingInsights] = useState(false)
 
   useEffect(() => {
-    const fetchDataWrapper = async () => {
-      if (currentPractice?.id) {
-        console.log("[v0] KV - Current practice ID:", currentPractice.id)
-        console.log("[v0] KV - Current user:", currentUser)
-        fetchData()
-      } else {
-        console.log("[v0] KV - No practice ID available, current practice:", currentPractice)
-        console.log("[v0] KV - Current user practice_id:", currentUser?.practice_id)
-      }
+    if (currentPractice?.id) {
+      fetchData()
     }
-
-    fetchDataWrapper()
   }, [currentPractice])
 
   const fetchData = async () => {
-    if (!currentPractice?.id) {
-      console.log("[v0] KV Abrechnung - No practice ID available")
-      return
-    }
+    if (!currentPractice?.id) return
 
     try {
-      console.log("[v0] KV Abrechnung - Fetching data for practice:", currentPractice.id)
       setIsLoading(true)
       const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung`)
 
-      console.log("[v0] KV Abrechnung - Response status:", response.status)
-
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("[v0] KV Abrechnung - API error response:", errorText)
         throw new Error("Fehler beim Laden der Daten")
       }
 
       const result = await response.json()
-      console.log("[v0] KV Abrechnung - Data loaded successfully:", result.length, "records")
       setData(result)
     } catch (error) {
-      console.error("[v0] KV Abrechnung - Error fetching data:", error)
       toast({
         title: "Fehler",
         description: "Daten konnten nicht geladen werden",
@@ -233,13 +214,7 @@ export function KVAbrechnungManager() {
     try {
       setUploadingQuarter({ year, quarter })
 
-      console.log("[v0] 📤 Starting multiple file upload:", {
-        fileCount: files.length,
-        year,
-        quarter,
-        practiceId: currentPractice.id,
-        fileNames: Array.from(files).map((f) => f.name),
-      })
+
 
       // Show initial toast
       toast({
@@ -251,7 +226,7 @@ export function KVAbrechnungManager() {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        console.log(`[v0] 📁 Uploading file ${i + 1}/${files.length}:`, file.name)
+
 
         try {
           const blob = await put(
@@ -263,7 +238,7 @@ export function KVAbrechnungManager() {
             },
           )
 
-          console.log(`[v0] ✅ Blob uploaded for ${file.name}:`, blob.url)
+
 
           // Save to database
           const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung`, {
@@ -286,12 +261,9 @@ export function KVAbrechnungManager() {
             throw new Error(errorData.error || `Fehler beim Speichern von ${file.name}`)
           }
 
-          const data = await response.json()
-          console.log(`[v0] ✅ Database saved for ${file.name}:`, data.id)
-
+          await response.json()
           results.push({ success: true, filename: file.name })
         } catch (error) {
-          console.error(`[v0] ❌ Error uploading ${file.name}:`, error)
           results.push({
             success: false,
             filename: file.name,
@@ -302,8 +274,6 @@ export function KVAbrechnungManager() {
 
       const successCount = results.filter((r) => r.success).length
       const failCount = results.filter((r) => !r.success).length
-
-      console.log("[v0] 📊 Upload results:", { successCount, failCount, results })
 
       if (failCount === 0) {
         toast({
@@ -367,18 +337,14 @@ export function KVAbrechnungManager() {
   }
 
   const handleAnalyze = async (id: string, imageUrl: string) => {
-    console.log("[v0] KV Abrechnung - Starting analysis for ID:", id)
     try {
       setAnalyzingId(id)
 
-      console.log("[v0] KV Abrechnung - Sending analysis request...")
       const response = await fetch(`/api/practices/${currentPractice?.id}/kv-abrechnung/${id}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image_url: imageUrl }),
       })
-
-      console.log("[v0] KV Abrechnung - Analysis response status:", response.status)
 
       if (!response.ok) {
         let errorData: any = {}
@@ -393,7 +359,6 @@ export function KVAbrechnungManager() {
       }
 
       const result = await response.json()
-      console.log("[v0] KV Abrechnung - Analysis result:", result)
 
       toast({
         title: "Analyse abgeschlossen",
@@ -417,8 +382,6 @@ export function KVAbrechnungManager() {
     if (!currentPractice?.id) return
 
     try {
-      console.log("[v0] Deleting KV Abrechnung:", id)
-
       const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung/${id}`, {
         method: "DELETE",
       })
@@ -457,8 +420,6 @@ export function KVAbrechnungManager() {
     if (!currentPractice?.id || !currentUser?.id || files.length === 0) return
 
     try {
-      console.log("[v0] Smart upload - Starting with", files.length, "files")
-
       setSmartUploadProgress({
         total: files.length,
         current: 0,
@@ -470,23 +431,18 @@ export function KVAbrechnungManager() {
       const formData = new FormData()
       Array.from(files).forEach((file) => formData.append("files", file))
 
-      console.log("[v0] Smart upload - Sending request to API")
       const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung/smart-upload`, {
         method: "POST",
         body: formData,
         credentials: "include",
       })
 
-      console.log("[v0] Smart upload - Response status:", response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
-        console.error("[v0] Smart upload - API error:", errorData)
         throw new Error(errorData.error || "Fehler beim Upload")
       }
 
       const { results } = await response.json()
-      console.log("[v0] Smart upload - Results:", results)
 
       const needsManualSelection = results.find((r: any) => r.needs_manual_selection && r.year && r.blob_url)
 

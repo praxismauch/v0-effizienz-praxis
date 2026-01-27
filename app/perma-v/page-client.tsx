@@ -314,7 +314,7 @@ export default function PermaVPageClient() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
             <TabsTrigger value="overview">
               <BarChart3 className="h-4 w-4 mr-2" />
               Übersicht

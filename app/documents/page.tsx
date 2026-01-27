@@ -26,7 +26,7 @@ export default function DocumentsPage() {
       </div>
 
       <Tabs defaultValue="files" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
           <TabsTrigger
             value="files"
             className="gap-2 hover:ring-2 hover:ring-primary/20 hover:shadow-sm transition-all duration-200"

@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { usePractice } from "@/contexts/practice-context"
 import { useEffect, useState } from "react"
-import { Sparkles, Loader2, ChevronDown, X, Upload } from "lucide-react"
+import { Sparkles, Loader2, ChevronDown, X, Upload, Settings, Monitor, Check } from "lucide-react"
 import { formatGermanNumber, parseGermanNumber } from "@/lib/utils/number-format"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 
@@ -35,6 +35,10 @@ interface ResponsibilityFormDialogProps {
     attachments?: File[]
     link_url?: string
     link_title?: string
+    arbeitsplatz_ids?: string[]
+    joint_execution?: boolean
+    joint_execution_user_id?: string | null
+    joint_execution_team_group?: string | null
   }
   setFormData: (data: any) => void
   hoursDisplayValue: string
@@ -57,6 +61,9 @@ function ResponsibilityFormDialog({
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [orgaCategories, setOrgaCategories] = useState<
     Array<{ id: string; name: string; color: string; display_order: number }>
+  >([])
+  const [arbeitsplaetze, setArbeitsplaetze] = useState<
+    Array<{ id: string; name: string; beschreibung: string | null; is_active: boolean }>
   >([])
   const [isGeneratingOptimization, setIsGeneratingOptimization] = useState(false)
   const [timeAmountDisplay, setTimeAmountDisplay] = useState("")
@@ -175,6 +182,24 @@ function ResponsibilityFormDialog({
         .catch((error) => {
           console.error("[v0] Error fetching orga categories:", error)
           setOrgaCategories([])
+        })
+
+      // Fetch arbeitsplaetze
+      fetch(`/api/practices/${currentPractice.id}/arbeitsplaetze`)
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+          return res.json()
+        })
+        .then((data) => {
+          const activeArbeitsplaetze = (data || []).filter((ap: any) => ap.is_active !== false)
+          console.log("[v0] Loaded arbeitsplaetze:", activeArbeitsplaetze.length)
+          setArbeitsplaetze(activeArbeitsplaetze)
+        })
+        .catch((error) => {
+          console.error("[v0] Error fetching arbeitsplaetze:", error)
+          setArbeitsplaetze([])
         })
     }
   }, [currentPractice?.id, open])
@@ -734,6 +759,59 @@ function ResponsibilityFormDialog({
                   onChange={(e) => setFormData({ ...formData, link_title: e.target.value })}
                   placeholder="z.B. Weitere Informationen"
                 />
+              </div>
+
+              {/* Arbeitsplätze Selection */}
+              <div>
+                <Label className="mb-2 block">Arbeitsplätze</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Wählen Sie die Arbeitsplätze, an denen diese Zuständigkeit relevant ist
+                </p>
+                {arbeitsplaetze.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">
+                    Keine Arbeitsplätze verfügbar. Erstellen Sie zuerst Arbeitsplätze.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-md bg-muted/20">
+                    {arbeitsplaetze.map((ap) => {
+                      const isSelected = (formData.arbeitsplatz_ids || []).includes(ap.id)
+                      return (
+                        <div
+                          key={ap.id}
+                          onClick={() => {
+                            const currentIds = formData.arbeitsplatz_ids || []
+                            const newIds = isSelected
+                              ? currentIds.filter((id) => id !== ap.id)
+                              : [...currentIds, ap.id]
+                            setFormData({ ...formData, arbeitsplatz_ids: newIds })
+                          }}
+                          className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors border ${
+                            isSelected
+                              ? "bg-primary/10 border-primary/30 text-primary"
+                              : "bg-background border-border hover:bg-muted/50"
+                          }`}
+                        >
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                              isSelected ? "bg-primary border-primary" : "border-muted-foreground/30"
+                            }`}
+                          >
+                            {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <Monitor className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="text-sm truncate">{ap.name}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                {(formData.arbeitsplatz_ids || []).length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {(formData.arbeitsplatz_ids || []).length} Arbeitsplatz/Arbeitsplätze ausgewählt
+                  </p>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>

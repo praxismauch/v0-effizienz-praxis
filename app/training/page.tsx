@@ -581,7 +581,7 @@ export default function TrainingPage() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
             <TabsTrigger value="overview">Übersicht</TabsTrigger>
             <TabsTrigger value="certifications">Zertifikate</TabsTrigger>
             <TabsTrigger value="courses">Kurse</TabsTrigger>

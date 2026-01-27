@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { AppLayout } from "@/components/app-layout"
 import {
   Users,
   UserPlus,
@@ -142,7 +143,8 @@ export default function TeamPageClient() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl space-y-6">
+    <AppLayout>
+      <div className="container mx-auto p-6 max-w-7xl space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -204,7 +206,7 @@ export default function TeamPageClient() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1">
           <TabsTrigger value="members" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Mitarbeiter</span>
@@ -285,6 +287,7 @@ export default function TeamPageClient() {
           />
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AppLayout>
   )
 }

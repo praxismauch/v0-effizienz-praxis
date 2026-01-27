@@ -98,17 +98,17 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     const rawMembers = Array.isArray(membersData)
       ? membersData
       : (membersData as { members: TeamMember[] }).members || []
-    return rawMembers.map((m: any) => ({
+    return rawMembers.map((m: Partial<TeamMember> & Record<string, unknown>) => ({
       ...m,
-      id: m.id || m.user_id,
+      id: (m.id || m.user_id) as string,
       name: m.name || `${m.first_name || ""} ${m.last_name || ""}`.trim() || "Unknown",
-      practiceId: m.practice_id?.toString() || practiceId,
-      teamIds: m.team_ids || m.teamIds || [],
+      practiceId: (m.practice_id as string)?.toString() || practiceId,
+      teamIds: (m.team_ids as string[]) || m.teamIds || [],
       permissions: m.permissions || [],
-      lastActive: m.last_active || m.lastActive || new Date().toISOString(),
-      isActive: m.is_active ?? true,
-      joinedAt: m.created_at || m.joinedAt || new Date().toISOString(),
-    }))
+      lastActive: (m.last_active as string) || m.lastActive || new Date().toISOString(),
+      isActive: (m.is_active as boolean) ?? true,
+      joinedAt: (m.created_at as string) || m.joinedAt || new Date().toISOString(),
+    })) as TeamMember[]
   }, [membersData, practiceId])
 
   // Pending invites local state (not fetched from server yet)

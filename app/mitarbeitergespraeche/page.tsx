@@ -399,7 +399,7 @@ export default function MitarbeitergespraechePage() {
 
         {/* Appraisals List */}
         <Tabs defaultValue="list" className="space-y-4">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="list">Listenansicht</TabsTrigger>
             <TabsTrigger value="team">Nach Mitarbeiter</TabsTrigger>
           </TabsList>

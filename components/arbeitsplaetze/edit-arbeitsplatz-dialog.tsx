@@ -190,7 +190,7 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
         body: JSON.stringify({
           name,
           beschreibung: cleanBeschreibung,
-          raum_id: raumId || null,
+          raum_id: raumId && raumId !== "none" ? raumId : null,
           image_url: imageUrl || null,
         }),
       })

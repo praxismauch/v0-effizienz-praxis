@@ -14,7 +14,6 @@ const nextConfig = {
     serverMinification: true,
     optimizePackageImports: ['lucide-react'],
   },
-  swcMinify: true,
   async headers() {
     return [
       {

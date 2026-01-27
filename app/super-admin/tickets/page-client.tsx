@@ -217,7 +217,7 @@ export default function SuperAdminTicketManager() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
           <TabsTrigger value="all">Alle <Badge variant="secondary" className="ml-2">{stats.total}</Badge></TabsTrigger>
           <TabsTrigger value="open">Offen <Badge variant="secondary" className="ml-2">{stats.open}</Badge></TabsTrigger>
           <TabsTrigger value="in_progress">In Bearbeitung <Badge variant="secondary" className="ml-2">{stats.in_progress}</Badge></TabsTrigger>

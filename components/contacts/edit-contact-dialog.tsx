@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useUser } from "@/contexts/user-context" // Import useUser hook
+import { useUser } from "@/contexts/user-context"
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,6 +32,9 @@ interface Contact {
   country: string | null
   category: string | null
   notes: string | null
+  contact_person?: string | null
+  direct_phone?: string | null
+  availability?: string | null
 }
 
 interface EditContactDialogProps {
@@ -44,7 +47,8 @@ interface EditContactDialogProps {
 export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: EditContactDialogProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const { currentPractice, currentUser } = usePractice() // Declare currentUser variable
+  const { currentPractice } = usePractice()
+  const { currentUser } = useUser()
 
   const [formData, setFormData] = useState({
     salutation: contact.salutation || "",
@@ -65,6 +69,9 @@ export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: Ed
     country: contact.country || "Deutschland",
     category: contact.category || "",
     notes: contact.notes || "",
+    contact_person: contact.contact_person || "",
+    direct_phone: contact.direct_phone || "",
+    availability: contact.availability || "",
   })
 
   useEffect(() => {
@@ -87,17 +94,33 @@ export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: Ed
       country: contact.country || "Deutschland",
       category: contact.category || "",
       notes: contact.notes || "",
+      contact_person: contact.contact_person || "",
+      direct_phone: contact.direct_phone || "",
+      availability: contact.availability || "",
     })
   }, [contact])
+
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value === "__none__" ? "" : value })
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
 
     try {
-      if (!currentUser?.practiceId) throw new Error("No practice ID")
+      const practiceId = currentPractice?.id || currentUser?.practice_id
 
-      const response = await fetch(`/api/practices/${currentUser.practiceId}/contacts/${contact.id}`, {
+      if (!practiceId) {
+        toast({
+          title: "Fehler",
+          description: "Keine Praxis zugeordnet. Bitte laden Sie die Seite neu.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const response = await fetch(`/api/practices/${practiceId}/contacts/${contact.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -125,25 +148,28 @@ export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: Ed
     }
   }
 
+  const hasPractice = currentPractice?.id || currentUser?.practice_id
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Kontakt bearbeiten</DialogTitle>
+          <DialogDescription>Bearbeiten Sie die Kontaktdaten</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Same form fields as CreateContactDialog */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="salutation">Anrede</Label>
               <Select
-                value={formData.salutation}
-                onValueChange={(value) => setFormData({ ...formData, salutation: value })}
+                value={formData.salutation || "__none__"}
+                onValueChange={(value) => handleSelectChange("salutation", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Wählen..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">Keine Angabe</SelectItem>
                   <SelectItem value="Herr">Herr</SelectItem>
                   <SelectItem value="Frau">Frau</SelectItem>
                   <SelectItem value="Divers">Divers</SelectItem>
@@ -220,6 +246,36 @@ export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: Ed
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="mobile">Mobil</Label>
+              <Input
+                id="mobile"
+                value={formData.mobile}
+                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="fax">Fax</Label>
+              <Input
+                id="fax"
+                value={formData.fax}
+                onChange={(e) => setFormData({ ...formData, fax: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website"
+              type="url"
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+              placeholder="https://..."
+            />
+          </div>
+
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="street">Straße</Label>
@@ -259,13 +315,14 @@ export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: Ed
             <div>
               <Label htmlFor="category">Kategorie</Label>
               <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                value={formData.category || "__none__"}
+                onValueChange={(value) => handleSelectChange("category", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Wählen..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">Keine Angabe</SelectItem>
                   <SelectItem value="Patient">Patient</SelectItem>
                   <SelectItem value="Lieferant">Lieferant</SelectItem>
                   <SelectItem value="Partner">Partner</SelectItem>
@@ -290,7 +347,7 @@ export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: Ed
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !hasPractice}>
               {loading ? "Speichert..." : "Speichern"}
             </Button>
           </div>

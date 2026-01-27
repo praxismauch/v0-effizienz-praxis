@@ -32,8 +32,6 @@ export function AIWritingAssistant({
   const [error, setError] = useState<string | null>(null)
   const [isFallback, setIsFallback] = useState(false)
 
-  console.log("[v0] AIWritingAssistant: Dialog open state:", open)
-
   useEffect(() => {
     if (open && defaultPrompt && action === "generate") {
       setPrompt(defaultPrompt)
@@ -41,12 +39,7 @@ export function AIWritingAssistant({
   }, [open, defaultPrompt, action])
 
   const handleGenerate = async () => {
-    console.log("[v0] AIWritingAssistant: handleGenerate called")
-    console.log("[v0] AIWritingAssistant: prompt:", prompt)
-    console.log("[v0] AIWritingAssistant: action:", action)
-
     if (!prompt.trim() && action === "generate") {
-      console.log("[v0] AIWritingAssistant: Empty prompt for generate action, returning")
       return
     }
 
@@ -54,7 +47,6 @@ export function AIWritingAssistant({
     setGeneratedContent("")
     setError(null)
     setIsFallback(false)
-    console.log("[v0] AIWritingAssistant: Starting generation...")
 
     try {
       const requestBody = {
@@ -62,7 +54,6 @@ export function AIWritingAssistant({
         action,
         context: currentContent,
       }
-      console.log("[v0] AIWritingAssistant: Request body:", requestBody)
 
       const response = await fetch("/api/knowledge-base/ai-generate", {
         method: "POST",
@@ -72,19 +63,13 @@ export function AIWritingAssistant({
         body: JSON.stringify(requestBody),
       })
 
-      console.log("[v0] AIWritingAssistant: Response status:", response.status)
-
       if (!response.ok) {
         const errorData = await response.json()
-        console.error("[v0] AIWritingAssistant: API error:", errorData)
         throw new Error(errorData.error || `Failed to generate content: ${response.status}`)
       }
 
       const data = await response.json()
       const content = data.text || ""
-
-      console.log("[v0] AIWritingAssistant: Generated content length:", content.length)
-      console.log("[v0] AIWritingAssistant: Content preview:", content.substring(0, 100))
 
       setGeneratedContent(content)
       if (data.isFallback) {
@@ -92,18 +77,16 @@ export function AIWritingAssistant({
         setError(data.message || "KI-Assistent ist derzeit nicht verfügbar.")
       }
     } catch (error) {
-      console.error("[v0] AIWritingAssistant: Error generating content:", error)
+      console.error("Error generating content:", error)
       const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
       setError(`Fehler beim Generieren des Inhalts: ${errorMessage}`)
       setGeneratedContent("")
     } finally {
       setIsLoading(false)
-      console.log("[v0] AIWritingAssistant: Generation complete, isLoading set to false")
     }
   }
 
   const handleInsert = () => {
-    console.log("[v0] AIWritingAssistant: handleInsert called, content length:", generatedContent.length)
     if (generatedContent) {
       onInsert(generatedContent)
       onOpenChange(false)
@@ -111,7 +94,6 @@ export function AIWritingAssistant({
       setGeneratedContent("")
       setError(null)
       setIsFallback(false)
-      console.log("[v0] AIWritingAssistant: Content inserted and dialog closed")
     }
   }
 
@@ -120,7 +102,6 @@ export function AIWritingAssistant({
       await navigator.clipboard.writeText(generatedContent)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-      console.log("[v0] AIWritingAssistant: Content copied to clipboard")
     }
   }
 
@@ -138,7 +119,7 @@ export function AIWritingAssistant({
         <div className="flex-1 overflow-auto space-y-4">
           <div className="space-y-2">
             <Label htmlFor="action">Aktion</Label>
-            <Select value={action} onValueChange={(value: any) => setAction(value)}>
+            <Select value={action} onValueChange={(value: "generate" | "improve" | "expand" | "summarize") => setAction(value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -232,7 +213,6 @@ export function AIWritingAssistant({
               setGeneratedContent("")
               setError(null)
               setIsFallback(false)
-              console.log("[v0] AIWritingAssistant: Dialog closed via cancel button")
             }}
           >
             Abbrechen

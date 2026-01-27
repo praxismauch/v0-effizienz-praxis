@@ -150,7 +150,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const responseData = result.data
       ? {
           ...result.data,
-          is_collapsed: result.data.sidebar_collapsed || false,
+          is_collapsed: result.data.is_collapsed || false,
           favorites: result.data.favorites || [],
           collapsed_sections: [],
         }

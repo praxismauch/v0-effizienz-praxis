@@ -24,12 +24,12 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
         result.push(
           <ListTag
             key={`list-${result.length}`}
-            className={cn("space-y-2 my-4", listType === "ol" ? "list-decimal" : "list-disc", "ml-6")}
+            className={cn("space-y-1 my-3", listType === "ol" ? "list-decimal" : "list-disc", "ml-5")}
           >
             {currentList.map((item, idx) => (
               <li
                 key={idx}
-                className="text-sm leading-relaxed"
+                className="text-sm leading-relaxed text-foreground"
                 dangerouslySetInnerHTML={{ __html: formatInlineText(item) }}
               />
             ))}
@@ -55,12 +55,12 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
       }
 
       // Main section headers (e.g., **1. EINLEITUNG & KENNENLERNEN**)
-      if (/^\*\*\d+\.\s+[A-ZÄÖÜ\s&]+\*\*$/.test(trimmed)) {
+      if (/^\*\*\d+\.\s+[A-ZÄÖÜ\s&()]+\*\*$/.test(trimmed)) {
         flushList()
         const text = trimmed.replace(/^\*\*|\*\*$/g, "")
         result.push(
-          <div key={`header-${index}`} className="mt-6 first:mt-0 mb-3">
-            <h3 className="text-lg font-bold text-primary border-l-4 border-primary pl-3 py-1">{text}</h3>
+          <div key={`header-${index}`} className="mt-5 first:mt-0 mb-2">
+            <h3 className="text-base font-bold text-primary border-l-4 border-primary/70 pl-3 py-1 leading-tight">{text}</h3>
           </div>,
         )
         return
@@ -71,8 +71,8 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
         flushList()
         const text = trimmed.replace(/^-\s+\*\*|\*\*$/g, "")
         result.push(
-          <div key={`subheader-${index}`} className="mt-4 mb-2">
-            <h4 className="text-base font-semibold text-foreground">{text}</h4>
+          <div key={`subheader-${index}`} className="mt-3 mb-2">
+            <h4 className="text-sm font-semibold text-foreground">{text}</h4>
           </div>,
         )
         return
@@ -83,8 +83,8 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
         flushList()
         const text = trimmed.replace(/^\*\*|\*\*$/g, "")
         result.push(
-          <div key={`title-${index}`} className="mb-4">
-            <h2 className="text-xl font-bold text-primary">{text}</h2>
+          <div key={`title-${index}`} className="mb-3">
+            <h2 className="text-base font-bold text-primary leading-tight">{text}</h2>
           </div>,
         )
         return
@@ -113,7 +113,7 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
       // Separator (---)
       if (trimmed === "---") {
         flushList()
-        result.push(<hr key={`hr-${index}`} className="my-6 border-border" />)
+        result.push(<hr key={`hr-${index}`} className="my-4 border-border/50" />)
         return
       }
 
@@ -122,7 +122,7 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
       result.push(
         <p
           key={`p-${index}`}
-          className="text-sm leading-relaxed mb-3 text-muted-foreground"
+          className="text-xs leading-relaxed mb-2 text-muted-foreground"
           dangerouslySetInnerHTML={{ __html: formatInlineText(trimmed) }}
         />,
       )
@@ -132,7 +132,7 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
 
     if (maxLines && lines.length > maxLines) {
       result.push(
-        <p key="truncated" className="text-xs text-muted-foreground italic mt-2">
+        <p key="truncated" className="text-xs text-muted-foreground italic mt-3 pt-2 border-t border-border/30">
           ... ({lines.length - maxLines} weitere Zeilen)
         </p>,
       )
@@ -141,5 +141,5 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
     return result
   }
 
-  return <div className={cn("space-y-2", className)}>{parseContent(content)}</div>
+  return <div className={cn("space-y-1 text-sm", className)}>{parseContent(content)}</div>
 }

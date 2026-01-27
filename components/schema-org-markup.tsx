@@ -1,4 +1,5 @@
-"use client"
+// This component is server-only - do not use "use client"
+// Schema.org JSON-LD markup should only be rendered on the server
 
 export function SchemaOrgMarkup() {
   // Software Application Schema - Main product

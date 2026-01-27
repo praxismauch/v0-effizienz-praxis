@@ -33,21 +33,16 @@ async function verifySessionWithRetry(maxRetries = 8, initialDelay = 300): Promi
       if (response.ok) {
         const data = await response.json()
         if (data.user) {
-          console.log(`[v0] Session verified on attempt ${attempt + 1}`)
           return { success: true, user: data.user }
         }
       }
 
       // 401 means session not ready yet, keep trying
       if (response.status === 401) {
-        console.log(`[v0] Session not ready (attempt ${attempt + 1}/${maxRetries}), waiting ${Math.round(delay)}ms...`)
         continue
       }
-
-      // Other errors, log but continue trying
-      console.warn(`[v0] Session verification attempt ${attempt + 1} failed with status ${response.status}`)
-    } catch (error) {
-      console.warn(`[v0] Session verification attempt ${attempt + 1} error:`, error)
+    } catch {
+      // Network errors - keep trying
     }
   }
 
@@ -72,28 +67,32 @@ function LoginForm() {
     }
   }, [])
 
-  // Check if already logged in on mount
+  // Check if already logged in on mount - completely skip if any error occurs
   useEffect(() => {
     if (!supabase) return
 
-    const checkExistingSession = async () => {
+    let isMounted = true
+
+    // Wrap in setTimeout to avoid blocking the render and to catch any sync errors
+    const timeoutId = setTimeout(async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) {
-          // Session check failed (stale/invalid session) - that's fine, user can login fresh
-          console.log("[v0] Session check error (will proceed with fresh login):", error.message)
-          return
+        // Only check local storage session, don't make network calls
+        const storedSession = localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL?.split("//")[1]?.split(".")[0] || "default"}-auth-token`)
+        if (storedSession && isMounted) {
+          const parsed = JSON.parse(storedSession)
+          if (parsed?.user || parsed?.access_token) {
+            router.replace(redirectTo)
+          }
         }
-        if (session) {
-          router.replace(redirectTo)
-        }
-      } catch (err) {
-        // Network error or other issue - ignore and let user login fresh
-        console.log("[v0] Session check failed (will proceed with fresh login)")
+      } catch {
+        // Silently ignore - user can login fresh
       }
-    }
+    }, 100)
     
-    checkExistingSession()
+    return () => {
+      isMounted = false
+      clearTimeout(timeoutId)
+    }
   }, [supabase, redirectTo, router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -135,7 +134,9 @@ function LoginForm() {
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.message) {
         const msg = error.message.toLowerCase()
-        if (msg.includes("invalid") || msg.includes("credentials")) {
+        if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("fetch")) {
+          errorMessage = "Verbindungsfehler - bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+        } else if (msg.includes("invalid") || msg.includes("credentials")) {
           errorMessage = "Ungültige Anmeldedaten. Bitte überprüfen Sie E-Mail und Passwort."
         } else if (msg.includes("email") && msg.includes("confirm")) {
           errorMessage = "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden."

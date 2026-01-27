@@ -1,5 +1,5 @@
 import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js"
 
 function getSupabaseUrl(): string | undefined {
   return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
@@ -17,6 +17,9 @@ export function isUsingMockAdminClient(): boolean {
   return false
 }
 
+// Cache for admin client (service role) - this is safe to cache as it doesn't use cookies
+let adminClientCache: SupabaseClient | null = null
+
 export async function createServerClient() {
   const { cookies } = await import("next/headers")
   const cookieStore = await cookies()
@@ -32,9 +35,12 @@ export async function createServerClient() {
     throw new Error("Supabase not configured")
   }
 
+  // Server client must be created fresh each request to get updated cookies
+  // But we disable debug mode to reduce noise
   return supabaseCreateServerClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       debug: false,
+      detectSessionInUrl: false,
     },
     cookies: {
       getAll() {
@@ -59,6 +65,11 @@ export async function createClient() {
 }
 
 export async function createAdminClient() {
+  // Return cached admin client if available
+  if (adminClientCache) {
+    return adminClientCache
+  }
+
   const supabaseUrl = getSupabaseUrl()
   const serviceRoleKey = getServiceRoleKey()
 
@@ -70,13 +81,15 @@ export async function createAdminClient() {
     throw new Error("Supabase admin client not configured")
   }
 
-  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+  adminClientCache = createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
       debug: false,
     },
   })
+
+  return adminClientCache
 }
 
 export async function getServiceRoleClient() {

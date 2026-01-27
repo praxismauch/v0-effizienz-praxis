@@ -183,7 +183,7 @@ export default function NeueMitarbeitergespraechPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1">
             <TabsTrigger value="performance">Leistung</TabsTrigger>
             <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
             <TabsTrigger value="goals">Ziele</TabsTrigger>

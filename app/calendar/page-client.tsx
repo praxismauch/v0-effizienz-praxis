@@ -238,7 +238,7 @@ export default function CalendarPageClient() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
           <TabsTrigger value="calendar">Kalender-Ansicht</TabsTrigger>
           <TabsTrigger value="upcoming">Kommende Termine</TabsTrigger>
           <TabsTrigger value="all">Alle Termine</TabsTrigger>

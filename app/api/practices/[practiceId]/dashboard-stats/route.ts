@@ -64,7 +64,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let supabase
     try {
-      supabase = createAdminClient()
+      supabase = await createAdminClient()
     } catch (clientError) {
       if (isRateLimitError(clientError)) {
         return new Response(JSON.stringify(defaultStats), {

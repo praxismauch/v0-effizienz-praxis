@@ -143,7 +143,7 @@ export default function PracticeDetailPage() {
 
           {/* Tabs - full width */}
           <Tabs defaultValue="overview" className="space-y-4 w-full">
-            <TabsList className="w-full grid grid-cols-4">
+            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-auto gap-1">
               <TabsTrigger value="overview">Übersicht</TabsTrigger>
               <TabsTrigger value="members">Mitglieder</TabsTrigger>
               <TabsTrigger value="billing">Abrechnung</TabsTrigger>

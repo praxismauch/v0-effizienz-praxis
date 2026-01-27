@@ -73,6 +73,8 @@ const PUBLIC_ROUTES = [
   "/agb",
   "/sicherheit",
   "/cookies",
+  "/whats-new",
+  "/updates",
 ]
 
 const PUBLIC_ROUTE_PREFIXES = ["/features/", "/blog/", "/auth/"]
@@ -252,7 +254,6 @@ export function UserProvider({
                 preferred_language: data.user.preferred_language,
                 firstName: data.user.first_name,
               }
-              console.log("[v0] Dev user loaded:", user.email)
               setCurrentUser(user)
               await persistUserToStorage(user)
               hasFetchedUser.current = true
@@ -265,18 +266,27 @@ export function UserProvider({
               throw new Error("Supabase client not available")
             }
 
-            console.log("[v0] Fetching Supabase user")
-            const {
-              data: { user: authUser },
-              error: authError,
-            } = await supabase.auth.getUser()
+            let authUser = null
+            let authError = null
+            
+            try {
+              const result = await supabase.auth.getUser()
+              authUser = result.data?.user
+              authError = result.error
+            } catch (fetchError: unknown) {
+              // Handle network errors gracefully - user is not logged in
+              const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError)
+              console.log("[v0] Auth getUser error (network):", errorMessage)
+              if (errorMessage.includes("fetch") || errorMessage.includes("Failed") || errorMessage.includes("network")) {
+                throw new Error("Network error - no session available")
+              }
+              throw fetchError
+            }
 
             if (authError || !authUser) {
-              console.log("[v0] No Supabase user:", authError?.message)
               throw new Error(authError?.message || "No valid Supabase session")
             }
 
-            console.log("[v0] Fetching user profile for:", authUser.id)
             const { data: profile, error: profileError } = await supabase
               .from("users")
               .select(

@@ -65,9 +65,7 @@ interface TeamMember {
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
-  const [teamMembersLoading, setTeamMembersLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -75,7 +73,6 @@ export default function ContactsPage() {
   const [showAIDialog, setShowAIDialog] = useState(false)
   const [showBatchDialog, setShowBatchDialog] = useState(false)
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
-  const [activeTab, setActiveTab] = useState<"contacts" | "team">("contacts")
   const { toast } = useToast()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { currentUser, loading: userLoading } = useUser()

@@ -45,7 +45,7 @@ function MarketingContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
           <TabsTrigger value="seo" className="gap-2">
             <Search className="h-4 w-4" />
             SEO Keywords

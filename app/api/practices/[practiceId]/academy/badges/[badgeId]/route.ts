@@ -1,13 +1,31 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server-admin"
 
+interface BadgeUpdateData {
+  name?: string
+  description?: string
+  badge_type?: string
+  icon_name?: string
+  icon_url?: string
+  icon?: string
+  color?: string
+  criteria?: string
+  criteria_type?: string
+  criteria_value?: number
+  xp_reward?: number
+  rarity?: string
+  is_active?: boolean
+  display_order?: number
+  category?: string
+  updated_at: string
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string; badgeId: string }> },
 ) {
   try {
-    const { practiceId, badgeId } = await params
-    console.log("[v0] GET /academy/badges/[badgeId] - practiceId:", practiceId, "badgeId:", badgeId)
+    const { badgeId } = await params
 
     const supabase = createClient()
 
@@ -19,7 +37,7 @@ export async function GET(
       .single()
 
     if (error) {
-      console.error("[v0] Error fetching badge:", error)
+      console.error("Error fetching badge:", error)
       throw error
     }
 
@@ -27,11 +45,11 @@ export async function GET(
       return NextResponse.json({ error: "Badge not found" }, { status: 404 })
     }
 
-    console.log("[v0] Badge fetched:", badge.id)
     return NextResponse.json(badge)
-  } catch (error: any) {
-    console.error("[v0] GET /academy/badges/[badgeId] error:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to fetch badge"
+    console.error("GET /academy/badges/[badgeId] error:", error)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -40,14 +58,12 @@ export async function PUT(
   { params }: { params: Promise<{ practiceId: string; badgeId: string }> },
 ) {
   try {
-    const { practiceId, badgeId } = await params
-    console.log("[v0] PUT /academy/badges/[badgeId] - practiceId:", practiceId, "badgeId:", badgeId)
+    const { badgeId } = await params
 
     const supabase = createClient()
     const body = await request.json()
-    console.log("[v0] Updating badge:", badgeId)
 
-    const updateData: any = {
+    const updateData: BadgeUpdateData = {
       updated_at: new Date().toISOString(),
     }
 
@@ -86,15 +102,15 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error("[v0] Error updating badge:", error)
+      console.error("Error updating badge:", error)
       throw error
     }
 
-    console.log("[v0] Badge updated:", badge.id)
     return NextResponse.json(badge)
-  } catch (error: any) {
-    console.error("[v0] PUT /academy/badges/[badgeId] error:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to update badge"
+    console.error("PUT /academy/badges/[badgeId] error:", error)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -103,8 +119,7 @@ export async function DELETE(
   { params }: { params: Promise<{ practiceId: string; badgeId: string }> },
 ) {
   try {
-    const { practiceId, badgeId } = await params
-    console.log("[v0] DELETE /academy/badges/[badgeId] - practiceId:", practiceId, "badgeId:", badgeId)
+    const { badgeId } = await params
 
     const supabase = createClient()
 
@@ -116,14 +131,14 @@ export async function DELETE(
       .single()
 
     if (error) {
-      console.error("[v0] Error deleting badge:", error)
+      console.error("Error deleting badge:", error)
       throw error
     }
 
-    console.log("[v0] Badge soft deleted:", badge.id)
     return NextResponse.json({ success: true, badge })
-  } catch (error: any) {
-    console.error("[v0] DELETE /academy/badges/[badgeId] error:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to delete badge"
+    console.error("DELETE /academy/badges/[badgeId] error:", error)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

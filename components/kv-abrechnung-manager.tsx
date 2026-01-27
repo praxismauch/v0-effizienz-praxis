@@ -431,14 +431,11 @@ export function KVAbrechnungManager() {
       const formData = new FormData()
       Array.from(files).forEach((file) => formData.append("files", file))
 
-      console.log("[v0] Smart upload - Sending request to API")
       const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung/smart-upload`, {
         method: "POST",
         body: formData,
         credentials: "include",
       })
-
-      console.log("[v0] Smart upload - Response status:", response.status)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }))

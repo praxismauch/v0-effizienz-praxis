@@ -517,7 +517,11 @@ export function HiringPipeline() {
       </Card>
 
       <div
-        className="flex gap-4 overflow-x-auto pb-4"
+        className="grid gap-4 overflow-x-auto pb-2"
+        style={{
+          gridTemplateColumns: `repeat(${stagesWithApplications.length}, minmax(280px, 1fr))`,
+          minWidth: stagesWithApplications.length > 4 ? `${stagesWithApplications.length * 280}px` : "100%",
+        }}
       >
         {stagesWithApplications.map((stage) => (
           <Card

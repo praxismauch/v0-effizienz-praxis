@@ -229,6 +229,14 @@ export default function AvailabilityTab({
           </CardContent>
         </Card>
       ))}
+
+      <AvailabilityDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        availability={editingAvailability}
+        teamMemberId={selectedMemberId || ""}
+        onSave={handleSaveAvailability}
+      />
     </div>
   )
 }

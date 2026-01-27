@@ -33,7 +33,7 @@ interface HiringCounts {
 export default function HiringPageClient() {
   const { t } = useTranslation()
   const { currentPractice } = usePractice()
-  const { user, isLoading: userLoading } = useUser()
+  const { currentUser, loading: userLoading } = useUser()
   const [activeTab, setActiveTab] = useState("postings")
   const [showAIAnalysis, setShowAIAnalysis] = useState(false)
   const [showArchived, setShowArchived] = useState(false)

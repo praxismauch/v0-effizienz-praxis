@@ -34,7 +34,7 @@ export function CreateRoomDialog({ open, onOpenChange, practiceId, onSuccess }: 
     name: "",
     beschreibung: "",
   })
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

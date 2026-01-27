@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json({ actionItems: [], journalTitle: "" })
       }
 
-      const { data: items } = await adminClient
+      const { data: items, error: itemsError } = await adminClient
         .from("journal_action_items")
         .select("*")
         .eq("journal_id", journal.id)
@@ -44,9 +44,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .order("priority", { ascending: false })
         .limit(5)
 
+      if (itemsError) {
+        console.error("[v0] Error fetching action items:", itemsError)
+        return NextResponse.json({ actionItems: [], journalTitle: journal.title })
+      }
+
       return NextResponse.json({
         actionItems: items || [],
-        journalTitle: journal.title,
+        journalTitle: journal.title || "",
       })
     }
 

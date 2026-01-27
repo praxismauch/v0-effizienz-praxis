@@ -101,7 +101,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         )
       }
       console.error("[v0] Query error in team-members GET:", queryError)
-      return NextResponse.json([])
+      return NextResponse.json({ teamMembers: [] })
     }
 
     console.log("[v0] team-members: fetched", members.length, "members before filtering")
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       JSON.stringify(sortedTeamMembers.slice(0, 2)).substring(0, 300),
     )
 
-    return NextResponse.json(sortedTeamMembers || [])
+    return NextResponse.json({ teamMembers: sortedTeamMembers || [] })
   } catch (error: any) {
     if (isRateLimitError(error)) {
       return NextResponse.json(

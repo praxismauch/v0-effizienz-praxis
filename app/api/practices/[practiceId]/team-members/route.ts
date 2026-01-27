@@ -101,7 +101,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         )
       }
       console.error("[v0] Query error in team-members GET:", queryError)
-      return NextResponse.json([])
+      return NextResponse.json({ teamMembers: [] })
     }
 
     console.log("[v0] team-members: fetched", members.length, "members before filtering")

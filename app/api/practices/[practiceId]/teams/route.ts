@@ -71,9 +71,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       error = result.error
     } catch (queryError) {
       if (isRateLimitError(queryError)) {
-        return NextResponse.json([])
+        return NextResponse.json({ teams: [] })
       }
-      return NextResponse.json([])
+      return NextResponse.json({ teams: [] })
     }
 
     if (!teams || teams.length === 0) {
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ teams: teamsWithCount })
   } catch (error) {
     if (isRateLimitError(error)) {
-      return NextResponse.json([])
+      return NextResponse.json({ teams: [] })
     }
     return handleApiError(error)
   }

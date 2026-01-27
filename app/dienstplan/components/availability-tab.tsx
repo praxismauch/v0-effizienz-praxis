@@ -13,9 +13,8 @@ import { DAYS_OF_WEEK } from "../types"
 interface AvailabilityTabProps {
   availability: Availability[]
   teamMembers: TeamMember[]
-  onAddAvailability: (memberId: string) => void
-  onEditAvailability: (availability: Availability) => void
-  onDeleteAvailability: (id: string) => void
+  practiceId: string
+  onRefresh: () => void
 }
 
 const getAvailabilityIcon = (type: string) => {
@@ -70,11 +69,23 @@ const getAvailabilityLabel = (type: string) => {
 export default function AvailabilityTab({
   availability,
   teamMembers,
-  onAddAvailability,
-  onEditAvailability,
-  onDeleteAvailability,
+  practiceId,
+  onRefresh,
 }: AvailabilityTabProps) {
-  const getMember = (memberId: string) => teamMembers.find((m) => m.id === memberId)
+  // Placeholder handlers for availability interactions
+  const onAddAvailability = (memberId: string) => {
+    console.log("[v0] Add availability for member:", memberId)
+  }
+
+  const onEditAvailability = (item: Availability) => {
+    console.log("[v0] Edit availability:", item.id)
+  }
+
+  const onDeleteAvailability = (id: string) => {
+    console.log("[v0] Delete availability:", id)
+  }
+
+  const getMember = (memberId: string) => (teamMembers || []).find((m) => m.id === memberId)
 
   const groupedAvailability = (teamMembers || []).map((member) => ({
     member,

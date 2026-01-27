@@ -8,13 +8,37 @@ import type { ShiftType } from "../types"
 
 interface ShiftTypesTabProps {
   shiftTypes: ShiftType[]
-  onAdd: () => void
-  onEdit: (shiftType: ShiftType) => void
-  onDelete: (id: string) => void
+  onAdd?: () => void
+  onEdit?: (shiftType: ShiftType) => void
+  onDelete?: (id: string) => void
   isLoading?: boolean
 }
 
 export default function ShiftTypesTab({ shiftTypes, onAdd, onEdit, onDelete, isLoading }: ShiftTypesTabProps) {
+  // Safe handlers with fallbacks
+  const handleAdd = () => {
+    if (typeof onAdd === "function") {
+      onAdd()
+    } else {
+      console.log("[v0] Add shift type clicked - handler not provided")
+    }
+  }
+
+  const handleEdit = (shiftType: ShiftType) => {
+    if (typeof onEdit === "function") {
+      onEdit(shiftType)
+    } else {
+      console.log("[v0] Edit shift type clicked:", shiftType.id)
+    }
+  }
+
+  const handleDelete = (id: string) => {
+    if (typeof onDelete === "function") {
+      onDelete(id)
+    } else {
+      console.log("[v0] Delete shift type clicked:", id)
+    }
+  }
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -27,13 +51,13 @@ export default function ShiftTypesTab({ shiftTypes, onAdd, onEdit, onDelete, isL
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Schichttypen verwalten</h3>
-        <Button onClick={onAdd}>
+        <Button onClick={handleAdd}>
           <Plus className="h-4 w-4 mr-2" />
           Neuer Schichttyp
         </Button>
       </div>
 
-      {shiftTypes.length === 0 ? (
+      {(!shiftTypes || shiftTypes.length === 0) ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Clock className="h-12 w-12 text-muted-foreground mb-4" />
@@ -74,7 +98,7 @@ export default function ShiftTypesTab({ shiftTypes, onAdd, onEdit, onDelete, isL
                   <span>Min. {shiftType.min_staff} Mitarbeiter</span>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => onEdit(shiftType)}>
+                  <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => handleEdit(shiftType)}>
                     <Edit className="h-4 w-4 mr-1" />
                     Bearbeiten
                   </Button>

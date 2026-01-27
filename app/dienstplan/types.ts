@@ -26,7 +26,8 @@ export interface Shift {
   practice_id: number
   team_member_id: string
   shift_type_id: string
-  date: string
+  shift_date: string  // Database column name
+  date?: string       // Alias for backwards compatibility
   start_time: string
   end_time: string
   status: "scheduled" | "approved" | "rejected" | "pending"

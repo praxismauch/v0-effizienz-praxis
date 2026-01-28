@@ -90,7 +90,9 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   // Normalize data (handle both array and object responses)
   const teams = useMemo(() => {
     if (!teamsData) return []
-    return Array.isArray(teamsData) ? teamsData : (teamsData as { teams: Team[] }).teams || []
+    const result = Array.isArray(teamsData) ? teamsData : (teamsData as { teams: Team[] }).teams || []
+    console.log("[v0] TeamContext - teams processed:", { teamsData, result: result.length })
+    return result
   }, [teamsData])
 
   const teamMembers = useMemo(() => {
@@ -98,7 +100,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     const rawMembers = Array.isArray(membersData)
       ? membersData
       : (membersData as { members: TeamMember[] }).members || []
-    return rawMembers.map((m: Partial<TeamMember> & Record<string, unknown>) => ({
+    const result = rawMembers.map((m: Partial<TeamMember> & Record<string, unknown>) => ({
       ...m,
       id: (m.id || m.user_id) as string,
       name: m.name || `${m.first_name || ""} ${m.last_name || ""}`.trim() || "Unknown",
@@ -109,6 +111,8 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       isActive: (m.is_active as boolean) ?? true,
       joinedAt: (m.created_at as string) || m.joinedAt || new Date().toISOString(),
     })) as TeamMember[]
+    console.log("[v0] TeamContext - teamMembers processed:", { membersData, result: result.length })
+    return result
   }, [membersData, practiceId])
 
   // Pending invites local state (not fetched from server yet)

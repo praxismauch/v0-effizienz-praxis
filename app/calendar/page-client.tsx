@@ -89,12 +89,7 @@ export default function CalendarPageClient() {
   const monthDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 })
     const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 })
-    const days = eachDayOfInterval({ start, end })
-    console.log("[v0] monthDays calculated:", days.length, "days")
-    console.log("[v0] first day:", format(days[0], "yyyy-MM-dd"))
-    console.log("[v0] last day:", format(days[days.length - 1], "yyyy-MM-dd"))
-    console.log("[v0] all days:", days.map(d => format(d, "d MMM")))
-    return days
+    return eachDayOfInterval({ start, end })
   }, [currentDate])
 
   const weekDays = useMemo(() => {

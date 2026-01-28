@@ -60,6 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         beschreibung: body.beschreibung || null,
         raum_id: body.raum_id || null,
         image_url: body.image_url || null,
+        color: body.color || "green",
         practice_id: practiceId,
         created_by: user.id,
         is_active: true,

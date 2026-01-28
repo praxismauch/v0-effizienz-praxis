@@ -38,6 +38,7 @@ import {
   Search,
   MoreVertical,
   Edit,
+  Edit2,
   Trash2,
   Copy,
   ExternalLink,
@@ -60,6 +61,8 @@ import {
   Heart,
   Zap,
   Pause,
+  PlayCircle,
+  PauseCircle,
   LineChart,
   TrendingDown,
 } from "lucide-react"

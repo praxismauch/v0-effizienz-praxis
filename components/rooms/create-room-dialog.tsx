@@ -19,6 +19,7 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { MultiImageUpload } from "@/components/ui/multi-image-upload"
+import { cn } from "@/lib/utils"
 
 interface CreateRoomDialogProps {
   open: boolean
@@ -30,11 +31,23 @@ interface CreateRoomDialogProps {
 export function CreateRoomDialog({ open, onOpenChange, practiceId, onSuccess }: CreateRoomDialogProps) {
   const [loading, setLoading] = useState(false)
   const [images, setImages] = useState<string[]>([])
+  const [selectedColor, setSelectedColor] = useState<string>("blue")
   const [formData, setFormData] = useState({
     name: "",
     beschreibung: "",
   })
   const { user, loading: authLoading } = useAuth()
+
+  const COLORS = [
+    { value: "green", label: "Grün", class: "bg-green-500" },
+    { value: "blue", label: "Blau", class: "bg-blue-500" },
+    { value: "purple", label: "Lila", class: "bg-purple-500" },
+    { value: "orange", label: "Orange", class: "bg-orange-500" },
+    { value: "red", label: "Rot", class: "bg-red-500" },
+    { value: "teal", label: "Türkis", class: "bg-teal-500" },
+    { value: "pink", label: "Pink", class: "bg-pink-500" },
+    { value: "yellow", label: "Gelb", class: "bg-yellow-500" },
+  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,6 +77,7 @@ export function CreateRoomDialog({ open, onOpenChange, practiceId, onSuccess }: 
           ...formData,
           practice_id: practiceId,
           images: images.length > 0 ? JSON.stringify(images) : null,
+          color: selectedColor,
         }),
       })
 
@@ -119,6 +133,28 @@ export function CreateRoomDialog({ open, onOpenChange, practiceId, onSuccess }: 
               placeholder="Optionale Beschreibung des Raums"
               rows={3}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Farbe</Label>
+            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
+            <div className="grid grid-cols-4 gap-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setSelectedColor(color.value)}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                    selectedColor === color.value
+                      ? "border-primary shadow-sm scale-105"
+                      : "border-border hover:border-primary/50",
+                  )}
+                >
+                  <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                  <span className="text-sm font-medium">{color.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Bilder</Label>

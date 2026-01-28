@@ -682,8 +682,8 @@ export default function SurveysPage() {
         </div>
 
         {/* Tabs and Search */}
-        <div className="flex flex-col gap-4 mt-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
               <TabsTrigger value="all">Alle</TabsTrigger>
               <TabsTrigger value="draft">Entwürfe</TabsTrigger>
@@ -692,7 +692,7 @@ export default function SurveysPage() {
               <TabsTrigger value="archived">Archiv</TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="relative w-full sm:w-64 sm:ml-auto">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Umfrage suchen..."

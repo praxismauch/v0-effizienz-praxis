@@ -62,6 +62,7 @@ export default function ResponsibilitiesPageClient() {
     createTodoDialogOpen,
     setCreateTodoDialogOpen,
     responsibilityForTodo,
+    setResponsibilityForTodo,
     formData,
     setFormData,
     hoursDisplayValue,

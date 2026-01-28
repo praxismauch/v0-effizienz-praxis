@@ -308,6 +308,7 @@ export function useResponsibilities() {
     createTodoDialogOpen,
     setCreateTodoDialogOpen,
     responsibilityForTodo,
+    setResponsibilityForTodo,
     formData,
     setFormData,
     hoursDisplayValue,

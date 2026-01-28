@@ -33,6 +33,7 @@ interface Arbeitsplatz {
   raum_id: string | null
   is_active: boolean
   image_url?: string | null
+  color?: string | null
 }
 
 interface EditArbeitsplatzDialogProps {
@@ -52,9 +53,21 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
   const [imagePreview, setImagePreview] = useState<string>("")
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [selectedColor, setSelectedColor] = useState<string>(arbeitsplatz.color || "green")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { currentUser } = useUser()
   const { toast } = useToast()
+
+  const COLORS = [
+    { value: "green", label: "Grün", class: "bg-green-500" },
+    { value: "blue", label: "Blau", class: "bg-blue-500" },
+    { value: "purple", label: "Lila", class: "bg-purple-500" },
+    { value: "orange", label: "Orange", class: "bg-orange-500" },
+    { value: "red", label: "Rot", class: "bg-red-500" },
+    { value: "teal", label: "Türkis", class: "bg-teal-500" },
+    { value: "pink", label: "Pink", class: "bg-pink-500" },
+    { value: "yellow", label: "Gelb", class: "bg-yellow-500" },
+  ]
 
   useEffect(() => {
     if (open) {
@@ -63,6 +76,7 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
       setRaumId(arbeitsplatz.raum_id || "")
       setImageUrl(arbeitsplatz.image_url || "")
       setImagePreview("")
+      setSelectedColor(arbeitsplatz.color || "green")
       fetchRooms()
     }
   }, [open, arbeitsplatz])
@@ -177,37 +191,55 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("[v0] Edit Arbeitsplatz - Submit started")
+    console.log("[v0] Edit Arbeitsplatz - Current user:", currentUser)
+    console.log("[v0] Edit Arbeitsplatz - Arbeitsplatz ID:", arbeitsplatz.id)
     setLoading(true)
 
     try {
-      if (!currentUser?.practice_id) throw new Error("No practice ID")
+      if (!currentUser?.practice_id) {
+        console.error("[v0] Edit Arbeitsplatz - No practice ID found")
+        throw new Error("No practice ID")
+      }
       
       const cleanBeschreibung = beschreibung === "<p></p>" || beschreibung === "" ? null : beschreibung
+
+      const payload = {
+        name,
+        beschreibung: cleanBeschreibung,
+        raum_id: raumId && raumId !== "none" ? raumId : null,
+        image_url: imageUrl || null,
+        color: selectedColor,
+      }
+
+      console.log("[v0] Edit Arbeitsplatz - Payload:", payload)
+      console.log("[v0] Edit Arbeitsplatz - URL:", `/api/practices/${currentUser.practice_id}/arbeitsplaetze/${arbeitsplatz.id}`)
 
       const response = await fetch(`/api/practices/${currentUser.practice_id}/arbeitsplaetze/${arbeitsplatz.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          beschreibung: cleanBeschreibung,
-          raum_id: raumId && raumId !== "none" ? raumId : null,
-          image_url: imageUrl || null,
-        }),
+        body: JSON.stringify(payload),
       })
+
+      console.log("[v0] Edit Arbeitsplatz - Response status:", response.status)
 
       if (!response.ok) {
         const error = await response.json()
+        console.error("[v0] Edit Arbeitsplatz - Error response:", error)
         throw new Error(error.error || "Failed to update")
       }
+
+      const result = await response.json()
+      console.log("[v0] Edit Arbeitsplatz - Success:", result)
 
       toast({ title: "Erfolg", description: "Arbeitsplatz wurde aktualisiert" })
       onSuccess()
       onOpenChange(false)
     } catch (error) {
-      console.error("Error updating Arbeitsplatz:", error)
+      console.error("[v0] Edit Arbeitsplatz - Exception:", error)
       toast({
         title: "Fehler",
-        description: "Fehler beim Aktualisieren des Arbeitsplatzes",
+        description: error instanceof Error ? error.message : "Fehler beim Aktualisieren des Arbeitsplatzes",
         variant: "destructive",
       })
     } finally {
@@ -263,6 +295,29 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Farbe</Label>
+            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Arbeitsplatz</p>
+            <div className="grid grid-cols-4 gap-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setSelectedColor(color.value)}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                    selectedColor === color.value
+                      ? "border-primary shadow-sm scale-105"
+                      : "border-border hover:border-primary/50",
+                  )}
+                >
+                  <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                  <span className="text-sm font-medium">{color.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 

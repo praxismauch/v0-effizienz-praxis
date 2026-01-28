@@ -71,16 +71,15 @@ export default function HelpPage() {
 
   return (
     <LandingPageLayout>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        {/* Hero Section */}
-        <HelpHero
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onSearch={handleSearch}
-        />
+      {/* Hero Section */}
+      <HelpHero
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onSearch={handleSearch}
+      />
 
-        {/* Main Content */}
-        <div className="container mx-auto px-4 py-12 max-w-7xl">
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-12 max-w-7xl">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1 bg-muted/50 p-1.5 rounded-xl">
               <TabsTrigger
@@ -169,7 +168,6 @@ export default function HelpPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
     </LandingPageLayout>
   )
 }

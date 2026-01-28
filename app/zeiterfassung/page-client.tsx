@@ -19,6 +19,7 @@ import TeamLiveTab from "./components/team-live-tab"
 import ZeitkontoTab from "./components/zeitkonto-tab"
 import KorrekturenTab from "./components/korrekturen-tab"
 import AuswertungTab from "./components/auswertung-tab"
+import ZeitLogsTab from "./components/zeit-logs-tab"
 
 // Import dialog components
 import StampDialog from "./components/stamp-dialog"
@@ -116,6 +117,8 @@ export default function ZeiterfassungPageClient() {
       }
       setShowStampDialog(false)
       setStampComment("")
+      // Refresh status to update UI immediately
+      mutate()
     } catch (error) {
       toast.error("Fehler beim Stempeln")
       console.error(error)
@@ -251,23 +254,31 @@ export default function ZeiterfassungPageClient() {
 
         <TabsContent value="zeitkonto">
           <ZeitkontoTab
-            timeBlocks={timeBlocks}
-            monthlyReport={monthlyReport}
-            selectedMonth={selectedMonth}
-            onMonthChange={setSelectedMonth}
-            onRequestCorrection={openCorrectionDialog}
+            timeBalance={null}
+            plausibilityIssues={plausibilityIssues || []}
+            isLoadingBalance={dataLoading}
+            isLoadingIssues={dataLoading}
+            onResolveIssue={(issue) => {
+              toast.info("Funktion wird noch implementiert")
+            }}
           />
         </TabsContent>
 
         <TabsContent value="korrekturen">
-          <KorrekturenTab correctionRequests={correctionRequests} />
+          <KorrekturenTab 
+            corrections={correctionRequests || []}
+            isLoading={dataLoading}
+            onNewCorrection={() => toast.info("Funktion wird noch implementiert")}
+            onViewCorrection={(correction) => toast.info("Funktion wird noch implementiert")}
+          />
         </TabsContent>
 
         <TabsContent value="auswertung">
           <AuswertungTab
-            monthlyReport={monthlyReport}
+            timeEntries={timeBlocks || []}
+            isLoading={dataLoading}
             selectedMonth={selectedMonth}
-            onExport={exportMonthlyReport}
+            onMonthChange={setSelectedMonth}
           />
         </TabsContent>
       </Tabs>

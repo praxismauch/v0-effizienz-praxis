@@ -80,6 +80,53 @@ export function CreateKnowledgeDialog({ open, onOpenChange, onSuccess }: CreateK
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate required fields
+    if (!formData.title.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie einen Titel ein.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!formData.category) {
+      toast({
+        title: "Fehler",
+        description: "Bitte wählen Sie eine Kategorie aus.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!formData.status) {
+      toast({
+        title: "Fehler",
+        description: "Bitte wählen Sie einen Status aus.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!currentPractice?.id) {
+      toast({
+        title: "Fehler",
+        description: "Keine Praxis ausgewählt. Bitte laden Sie die Seite neu.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!currentUser?.id) {
+      toast({
+        title: "Fehler",
+        description: "Benutzer nicht authentifiziert. Bitte laden Sie die Seite neu.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -89,8 +136,8 @@ export function CreateKnowledgeDialog({ open, onOpenChange, onSuccess }: CreateK
         body: JSON.stringify({
           ...formData,
           tags,
-          practice_id: currentPractice?.id,
-          created_by: currentUser?.id,
+          practice_id: currentPractice.id,
+          created_by: currentUser.id,
           published_at: formData.status === "published" ? new Date().toISOString() : null,
         }),
       })
@@ -167,7 +214,6 @@ export function CreateKnowledgeDialog({ open, onOpenChange, onSuccess }: CreateK
             <Select
               value={formData.category}
               onValueChange={(value) => setFormData({ ...formData, category: value })}
-              required
               disabled={loadingCategories}
             >
               <SelectTrigger>

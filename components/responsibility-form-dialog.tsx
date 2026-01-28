@@ -70,6 +70,7 @@ function ResponsibilityFormDialog({
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [uploadingFiles, setUploadingFiles] = useState(false)
   const [pastedFiles, setPastedFiles] = useState<Array<{ name: string; url: string; type: string; size: number }>>([])
+  const [teams, setTeams] = useState<any[]>([])
 
   useEffect(() => {
     if (open && formData.calculate_time_automatically) {
@@ -138,8 +139,6 @@ function ResponsibilityFormDialog({
 
   useEffect(() => {
     if (currentPractice?.id && open) {
-      console.log("[v0] Fetching team members and orga categories for practice:", currentPractice.id)
-
       fetch(`/api/practices/${currentPractice.id}/team-members`)
         .then((res) => {
           if (!res.ok) {
@@ -149,10 +148,11 @@ function ResponsibilityFormDialog({
         })
         .then((data) => {
           // Data is an array directly, not wrapped in an object
-          setTeamMembers(Array.isArray(data) ? data : [])
+          const members = Array.isArray(data) ? data : []
+          setTeamMembers(members)
         })
         .catch((error) => {
-          console.error("[v0] Error fetching team members:", error)
+          console.error("Error fetching team members:", error)
           setTeamMembers([])
         })
 
@@ -176,11 +176,10 @@ function ResponsibilityFormDialog({
             }
             return false
           })
-          console.log("[v0] Loaded orga categories:", uniqueCategories.length)
           setOrgaCategories(uniqueCategories)
         })
         .catch((error) => {
-          console.error("[v0] Error fetching orga categories:", error)
+          console.error("Error fetching orga categories:", error)
           setOrgaCategories([])
         })
 
@@ -196,12 +195,28 @@ function ResponsibilityFormDialog({
           // Handle both array and object with arbeitsplaetze property
           const arbeitsplaetzeArray = Array.isArray(data) ? data : (data?.arbeitsplaetze || [])
           const activeArbeitsplaetze = arbeitsplaetzeArray.filter((ap: any) => ap.is_active !== false)
-          console.log("[v0] Loaded arbeitsplaetze:", activeArbeitsplaetze.length)
           setArbeitsplaetze(activeArbeitsplaetze)
         })
         .catch((error) => {
-          console.error("[v0] Error fetching arbeitsplaetze:", error)
+          console.error("Error fetching arbeitsplaetze:", error)
           setArbeitsplaetze([])
+        })
+
+      // Fetch teams
+      fetch(`/api/practices/${currentPractice.id}/teams`)
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+          return res.json()
+        })
+        .then((data) => {
+          const teamsArray = data?.teams || []
+          setTeams(teamsArray)
+        })
+        .catch((error) => {
+          console.error("Error fetching teams:", error)
+          setTeams([])
         })
     }
   }, [currentPractice?.id, open])
@@ -581,6 +596,132 @@ function ResponsibilityFormDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Gemeinsame Durchführung Section */}
+          <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="joint_execution"
+                checked={formData.joint_execution || false}
+                onCheckedChange={(checked) => {
+                  setFormData({
+                    ...formData,
+                    joint_execution: !!checked,
+                    joint_execution_type: checked ? "team_member" : undefined,
+                    joint_execution_user_id: checked ? formData.joint_execution_user_id : undefined,
+                    joint_execution_team_id: checked ? formData.joint_execution_team_id : undefined,
+                  })
+                }}
+              />
+              <Label htmlFor="joint_execution" className="cursor-pointer font-medium">
+                Gemeinsame Durchführung
+              </Label>
+            </div>
+
+            {formData.joint_execution && (
+              <div className="space-y-3 pl-6">
+                <p className="text-sm text-muted-foreground">
+                  Wählen Sie ein Teammitglied oder eine Teamgruppe für die gemeinsame Durchführung
+                </p>
+
+                {/* Selection Type Toggle */}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={formData.joint_execution_type === "team_member" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        joint_execution_type: "team_member",
+                        joint_execution_team_id: undefined,
+                      })
+                    }
+                  >
+                    Teammitglied
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={formData.joint_execution_type === "team_group" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        joint_execution_type: "team_group",
+                        joint_execution_user_id: undefined,
+                      })
+                    }
+                  >
+                    Teamgruppe
+                  </Button>
+                </div>
+
+                {/* Team Member Selection */}
+                {formData.joint_execution_type === "team_member" && (
+                  <div>
+                    <Label htmlFor="joint_execution_user">Teammitglied auswählen</Label>
+                    <Select
+                      value={formData.joint_execution_user_id || "unassigned"}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          joint_execution_user_id: value === "unassigned" ? undefined : value,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Wählen Sie ein Teammitglied" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Nicht zugewiesen</SelectItem>
+                        {teamMembers.filter(isActiveMember).map((member) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Team Group Selection */}
+                {formData.joint_execution_type === "team_group" && (
+                  <div>
+                    <Label htmlFor="joint_execution_team">Teamgruppe auswählen</Label>
+                    <Select
+                      value={formData.joint_execution_team_id || "unassigned"}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          joint_execution_team_id: value === "unassigned" ? undefined : value,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Wählen Sie eine Teamgruppe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Nicht zugewiesen</SelectItem>
+                        {teams
+                          .filter((team) => team.isActive !== false)
+                          .map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: team.color || "#64748b" }}
+                                />
+                                {team.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center space-x-2">

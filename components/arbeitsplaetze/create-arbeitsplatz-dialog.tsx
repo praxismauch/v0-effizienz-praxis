@@ -44,10 +44,22 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
   const [imagePreview, setImagePreview] = useState<string>("")
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [selectedColor, setSelectedColor] = useState<string>("green")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const { user, loading: authLoading } = useAuth()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
+
+  const COLORS = [
+    { value: "green", label: "Grün", class: "bg-green-500" },
+    { value: "blue", label: "Blau", class: "bg-blue-500" },
+    { value: "purple", label: "Lila", class: "bg-purple-500" },
+    { value: "orange", label: "Orange", class: "bg-orange-500" },
+    { value: "red", label: "Rot", class: "bg-red-500" },
+    { value: "teal", label: "Türkis", class: "bg-teal-500" },
+    { value: "pink", label: "Pink", class: "bg-pink-500" },
+    { value: "yellow", label: "Gelb", class: "bg-yellow-500" },
+  ]
 
   useEffect(() => {
     if (open && currentPractice?.id && !practiceLoading) {
@@ -62,6 +74,7 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
       setRaumId("")
       setImageUrl("")
       setImagePreview("")
+      setSelectedColor("green")
     }
   }, [open])
 
@@ -211,6 +224,7 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
           beschreibung: cleanBeschreibung,
           raum_id: raumId && raumId !== "none" ? raumId : null,
           image_url: imageUrl || null,
+          color: selectedColor,
         }),
       })
 
@@ -293,6 +307,29 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Farbe</Label>
+            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Arbeitsplatz</p>
+            <div className="grid grid-cols-4 gap-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setSelectedColor(color.value)}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                    selectedColor === color.value
+                      ? "border-primary shadow-sm scale-105"
+                      : "border-border hover:border-primary/50",
+                  )}
+                >
+                  <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                  <span className="text-sm font-medium">{color.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 

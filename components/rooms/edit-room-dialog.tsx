@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
 import { MultiImageUpload } from "@/components/ui/multi-image-upload"
+import { cn } from "@/lib/utils"
 
 interface EditRoomDialogProps {
   open: boolean
@@ -26,6 +27,7 @@ interface EditRoomDialogProps {
     name: string
     beschreibung: string | null
     images?: string | null
+    color?: string | null
   }
   onSuccess: (room: any) => void
 }
@@ -42,10 +44,22 @@ export function EditRoomDialog({ open, onOpenChange, room, onSuccess }: EditRoom
     }
     return []
   })
+  const [selectedColor, setSelectedColor] = useState<string>(room.color || "blue")
   const [formData, setFormData] = useState({
     name: room.name,
     beschreibung: room.beschreibung || "",
   })
+
+  const COLORS = [
+    { value: "green", label: "Grün", class: "bg-green-500" },
+    { value: "blue", label: "Blau", class: "bg-blue-500" },
+    { value: "purple", label: "Lila", class: "bg-purple-500" },
+    { value: "orange", label: "Orange", class: "bg-orange-500" },
+    { value: "red", label: "Rot", class: "bg-red-500" },
+    { value: "teal", label: "Türkis", class: "bg-teal-500" },
+    { value: "pink", label: "Pink", class: "bg-pink-500" },
+    { value: "yellow", label: "Gelb", class: "bg-yellow-500" },
+  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,6 +72,7 @@ export function EditRoomDialog({ open, onOpenChange, room, onSuccess }: EditRoom
         body: JSON.stringify({
           ...formData,
           images: images.length > 0 ? JSON.stringify(images) : null,
+          color: selectedColor,
         }),
       })
 
@@ -97,6 +112,28 @@ export function EditRoomDialog({ open, onOpenChange, room, onSuccess }: EditRoom
               onChange={(e) => setFormData({ ...formData, beschreibung: e.target.value })}
               rows={3}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Farbe</Label>
+            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
+            <div className="grid grid-cols-4 gap-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setSelectedColor(color.value)}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                    selectedColor === color.value
+                      ? "border-primary shadow-sm scale-105"
+                      : "border-border hover:border-primary/50",
+                  )}
+                >
+                  <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                  <span className="text-sm font-medium">{color.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Bilder</Label>

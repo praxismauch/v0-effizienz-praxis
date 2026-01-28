@@ -593,7 +593,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           id: "waitlist",
           label: "Warteliste",
           icon: ListTodo,
-          href: "/super-admin/academy?tab=waitlist",
+          href: "/super-admin/waitlist",
           badge: true,
           badgeType: "waitlist" as const,
         },

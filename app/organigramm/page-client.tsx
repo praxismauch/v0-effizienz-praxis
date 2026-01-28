@@ -359,6 +359,34 @@ export default function OrganigrammClient() {
             Stand: {new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
           </p>
         </div>
+        {positions.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-2xl font-bold">{positions.length}</p>
+                <p className="text-sm text-muted-foreground">Positionen</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-2xl font-bold">{new Set(positions.map((p) => p.department).filter(Boolean)).size}</p>
+                <p className="text-sm text-muted-foreground">Abteilungen</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-2xl font-bold">{positions.filter((p) => p.user_id).length}</p>
+                <p className="text-sm text-muted-foreground">Besetzt</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-2xl font-bold">{new Set(positions.map((p) => p.level)).size}</p>
+                <p className="text-sm text-muted-foreground">Ebenen</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         <Card className="overflow-hidden">
           <CardContent className="p-0">
             <div ref={chartRef} className="min-h-[500px] overflow-auto bg-white print:bg-white print:overflow-visible">
@@ -392,34 +420,6 @@ export default function OrganigrammClient() {
             </div>
           </CardContent>
         </Card>
-        {positions.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-2xl font-bold">{positions.length}</p>
-                <p className="text-sm text-muted-foreground">Positionen</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-2xl font-bold">{new Set(positions.map((p) => p.department).filter(Boolean)).size}</p>
-                <p className="text-sm text-muted-foreground">Abteilungen</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-2xl font-bold">{positions.filter((p) => p.user_id).length}</p>
-                <p className="text-sm text-muted-foreground">Besetzt</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-2xl font-bold">{new Set(positions.map((p) => p.level)).size}</p>
-                <p className="text-sm text-muted-foreground">Ebenen</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </div>
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>

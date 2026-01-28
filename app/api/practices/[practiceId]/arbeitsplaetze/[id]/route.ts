@@ -68,6 +68,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
     if (body.beschreibung !== undefined) updateData.beschreibung = body.beschreibung
     if (body.raum_id !== undefined) updateData.raum_id = body.raum_id
     if (body.image_url !== undefined) updateData.image_url = body.image_url
+    if (body.color !== undefined) updateData.color = body.color
     if (body.is_active !== undefined) updateData.is_active = body.is_active
 
     const { data, error } = await adminClient

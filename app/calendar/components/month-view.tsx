@@ -26,6 +26,9 @@ export function MonthView({
 }: MonthViewProps) {
   // Use provided monthDays instead of calculating
   const calendarDays = monthDays
+  
+  console.log("[v0] MonthView rendering with", calendarDays.length, "days")
+  console.log("[v0] Days:", calendarDays.map((d, i) => `${i}: ${format(d, "d MMM")}`))
 
   return (
     <div className="bg-card rounded-lg border">

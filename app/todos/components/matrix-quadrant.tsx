@@ -117,6 +117,7 @@ export function MatrixQuadrant({
           ? `${config.activeBorderColor} border-2 ring-4 ${config.ringColor} scale-[1.01] shadow-lg`
           : config.borderColor
       )}
+      data-droppable="true"
       onDragOver={(e) => {
         e.preventDefault()
         onDragOver(e, config.zoneId)

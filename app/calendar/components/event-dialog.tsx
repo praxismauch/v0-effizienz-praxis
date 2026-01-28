@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import type { CalendarEvent, FormData } from "../types"
 
@@ -160,13 +159,12 @@ export function EventDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="title">Titel *</Label>
               <Input
@@ -357,7 +355,6 @@ export function EventDialog({
               </>
             )}
           </div>
-        </ScrollArea>
         <DialogFooter className="gap-2">
           {isEdit && (
             <Button variant="destructive" onClick={handleDelete} disabled={isSubmitting}>

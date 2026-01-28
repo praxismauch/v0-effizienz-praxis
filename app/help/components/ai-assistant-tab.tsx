@@ -221,7 +221,7 @@ export function AIAssistantTab({ suggestedQuestions }: AIAssistantTabProps) {
                           "max-w-[85%] rounded-2xl px-4 py-3",
                           message.role === "user"
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted/80 border",
+                            : "bg-muted/80 dark:bg-slate-800 border text-foreground dark:text-slate-100",
                         )}
                       >
                         {message.practiceContext && message.role === "assistant" && (

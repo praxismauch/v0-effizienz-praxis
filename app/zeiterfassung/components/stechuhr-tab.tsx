@@ -1,6 +1,7 @@
 "use client"
 
-import { format, parseISO, differenceInMinutes } from "date-fns"
+import { useState, useEffect } from "react"
+import { format, parseISO, differenceInMinutes, differenceInSeconds } from "date-fns"
 import { de } from "date-fns/locale"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -54,6 +55,14 @@ const getWeekDayLabel = (day: string) => {
   return days[day] || day
 }
 
+// Format seconds to HH:MM:SS
+const formatElapsedTime = (totalSeconds: number) => {
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+}
+
 function StechuhrTab({
   currentStatus,
   currentBlock,
@@ -68,6 +77,35 @@ function StechuhrTab({
   onStamp,
   onShowPolicyDialog,
 }: StechuhrTabProps) {
+  // Real-time elapsed time counter
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  // Update elapsed time every second when working
+  useEffect(() => {
+    if (currentStatus !== "idle" && currentBlock) {
+      const startTime = parseISO(currentBlock.start_time)
+      const breakSeconds = (currentBlock.break_minutes || 0) * 60
+      
+      // Calculate initial elapsed time
+      const calculateElapsed = () => {
+        const now = new Date()
+        const totalSeconds = differenceInSeconds(now, startTime)
+        return Math.max(0, totalSeconds - breakSeconds)
+      }
+      
+      setElapsedSeconds(calculateElapsed())
+      
+      // Update every second
+      const interval = setInterval(() => {
+        setElapsedSeconds(calculateElapsed())
+      }, 1000)
+      
+      return () => clearInterval(interval)
+    } else {
+      setElapsedSeconds(0)
+    }
+  }, [currentStatus, currentBlock])
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {/* Hauptkarte: Stechuhr */}
@@ -134,7 +172,7 @@ function StechuhrTab({
             {currentStatus !== "idle" ? (
               <>
                 <div className="text-5xl font-mono font-bold text-primary mb-2">
-                  {formatMinutes(getCurrentWorkDuration(currentBlock))}
+                  {formatElapsedTime(elapsedSeconds)}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Seit {currentBlock && format(parseISO(currentBlock.start_time), "HH:mm")} Uhr
@@ -142,7 +180,7 @@ function StechuhrTab({
               </>
             ) : (
               <>
-                <div className="text-5xl font-mono font-bold text-muted-foreground mb-2">--:--</div>
+                <div className="text-5xl font-mono font-bold text-muted-foreground mb-2">--:--:--</div>
                 <div className="text-sm text-muted-foreground">Noch nicht eingestempelt</div>
               </>
             )}

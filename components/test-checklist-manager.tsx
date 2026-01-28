@@ -426,8 +426,8 @@ function TestChecklistManager() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "templates" | "checklists")}>
-        <div className="flex items-center justify-between mb-4">
-          <TabsList className="grid w-full grid-cols-2">
+        <div className="flex items-center justify-between mb-4 gap-4">
+          <TabsList className="grid w-auto grid-cols-2">
             <TabsTrigger value="templates" className="gap-2">
               <FileText className="h-4 w-4" />
               Vorlagen
@@ -488,20 +488,15 @@ function TestChecklistManager() {
           )}
 
           {activeTab === "checklists" && (
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">
-                {checklists.length} Checkliste{checklists.length !== 1 ? "n" : ""}
-              </p>
-              <Button onClick={handleGenerateChecklist}>
-                <Play className="h-4 w-4 mr-2" />
-                Neue Checkliste generieren
-              </Button>
-            </div>
+            <Button onClick={handleGenerateChecklist} className="gap-2">
+              <Play className="h-4 w-4" />
+              Neue Checkliste generieren
+            </Button>
           )}
         </div>
 
         <TabsContent value="templates" className="space-y-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-4">
             <p className="text-sm text-muted-foreground">
               {templates.length} Vorlage{templates.length !== 1 ? "n" : ""}
             </p>

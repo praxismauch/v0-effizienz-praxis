@@ -32,15 +32,18 @@ export async function GET() {
       }
     }
 
-    // Fetch all waitlist entries
-    const { data, error } = await clientToUse.from("waitlist").select("*").order("created_at", { ascending: false })
+    // Fetch all waitlist entries from waitlist table
+    const { data, error } = await clientToUse
+      .from("waitlist")
+      .select("*")
+      .order("created_at", { ascending: false })
 
     if (error) {
       console.error("Error fetching waitlist:", error)
       return NextResponse.json({ error: "Failed to fetch waitlist entries" }, { status: 500 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json({ entries: data || [] })
   } catch (error) {
     console.error("Error in waitlist GET route:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

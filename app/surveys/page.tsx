@@ -588,9 +588,10 @@ export default function SurveysPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="space-y-6 -mx-4 sm:-mx-6 lg:-mx-8">
+        <div className="px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
@@ -623,10 +624,10 @@ export default function SurveysPage() {
               Neue Umfrage
             </Button>
           </div>
-        </div>
+          </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           <Card className="border-0 shadow-sm bg-gradient-to-br from-violet-50 to-purple-50">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -679,29 +680,36 @@ export default function SurveysPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Tabs and Search */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
-              <TabsTrigger value="all">Alle</TabsTrigger>
-              <TabsTrigger value="draft">Entwürfe</TabsTrigger>
-              <TabsTrigger value="active">Aktiv</TabsTrigger>
-              <TabsTrigger value="closed">Beendet</TabsTrigger>
-              <TabsTrigger value="archived">Archiv</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Umfrage suchen..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
           </div>
         </div>
+
+        {/* Tabs and Search - Full Width */}
+        <div className="border-y bg-muted/30">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
+                  <TabsTrigger value="all">Alle</TabsTrigger>
+                  <TabsTrigger value="draft">Entwürfe</TabsTrigger>
+                  <TabsTrigger value="active">Aktiv</TabsTrigger>
+                  <TabsTrigger value="closed">Beendet</TabsTrigger>
+                  <TabsTrigger value="archived">Archiv</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Umfrage suchen..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 sm:px-6 lg:px-8">
 
         {/* Team Mood Dashboard Toggle and Quick Action */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 mt-6">
@@ -809,253 +817,12 @@ export default function SurveysPage() {
                       ))}
                     </div>
                   )}
-
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Arbeitszufriedenheit</span>
-                        {moodAverages.morale >= 3.5 ? (
-                          <TrendingUp className="h-4 w-4 text-emerald-500" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                      <div className="text-2xl font-bold">{moodAverages.morale.toFixed(1)}</div>
-                      <Progress value={moodAverages.morale * 20} className="h-2 mt-2" />
-                    </div>
-                    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Stresslevel</span>
-                        {moodAverages.stress <= 2.5 ? (
-                          <TrendingDown className="h-4 w-4 text-emerald-500" />
-                        ) : (
-                          <TrendingUp className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                      <div className="text-2xl font-bold">{moodAverages.stress.toFixed(1)}</div>
-                      <Progress value={moodAverages.stress * 20} className="h-2 mt-2" />
-                    </div>
-                    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Team-Unterstützung</span>
-                        {moodAverages.satisfaction >= 3.5 ? (
-                          <TrendingUp className="h-4 w-4 text-emerald-500" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                      <div className="text-2xl font-bold">{moodAverages.satisfaction.toFixed(1)}</div>
-                      <Progress value={moodAverages.satisfaction * 20} className="h-2 mt-2" />
-                    </div>
-                  </div>
-
-                  {/* Trend Chart */}
-                  <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border">
-                    <h4 className="font-medium mb-4 flex items-center gap-2">
-                      <LineChart className="h-4 w-4" />
-                      Trend über Zeit
-                    </h4>
-                    <div className="h-48">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsLineChart data={moodTrendData}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                          <XAxis dataKey="weekLabel" tick={{ fontSize: 12 }} />
-                          <YAxis domain={[1, 5]} tick={{ fontSize: 12 }} />
-                          <RechartsTooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--background))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                            }}
-                          />
-                          <Legend />
-                          <Line
-                            type="monotone"
-                            dataKey="morale"
-                            name="Zufriedenheit"
-                            stroke="#10b981"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="stress"
-                            name="Stress"
-                            stroke="#ef4444"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="satisfaction"
-                            name="Unterstützung"
-                            stroke="#8b5cf6"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                          />
-                        </RechartsLineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
-        )}
-
-        {/* Survey Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredSurveys.map((survey) => {
-            const StatusIcon = statusConfig[survey.status].icon
-            const AudienceIcon = audienceConfig[survey.target_audience].icon
-            const timeStatus = getSurveyTimeStatus(survey)
-
-            return (
-              <Card
-                key={survey.id}
-                className="group hover:shadow-lg transition-all duration-200 border-0 shadow-sm overflow-hidden"
-              >
-                <div
-                  className={`h-1 ${survey.status === "active" ? "bg-emerald-500" : survey.status === "draft" ? "bg-gray-300" : survey.status === "closed" ? "bg-amber-500" : survey.status === "archived" ? "bg-slate-500" : ""}`}
-                />
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate pr-2">{survey.title}</CardTitle>
-                      <CardDescription className="line-clamp-2 mt-1">
-                        {survey.description || "Keine Beschreibung"}
-                      </CardDescription>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/surveys/${survey.id}/edit`)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Bearbeiten
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedSurvey(survey)
-                            setShowResultsDialog(true)
-                          }}
-                        >
-                          <BarChart3 className="h-4 w-4 mr-2" />
-                          Ergebnisse
-                        </DropdownMenuItem>
-                        {survey.public_token && (
-                          <DropdownMenuItem onClick={() => copyPublicLink(survey)}>
-                            <Link2 className="h-4 w-4 mr-2" />
-                            Link kopieren
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => handleDuplicateSurvey(survey)}>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Duplizieren
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {survey.status !== "archived" && (
-                          <DropdownMenuItem onClick={() => handleToggleStatus(survey)}>
-                            {survey.status === "active" ? (
-                              <>
-                                <Pause className="h-4 w-4 mr-2" />
-                                Beenden
-                              </>
-                            ) : (
-                              <>
-                                <Bell className="h-4 w-4 mr-2" /> {/* Changed to Bell for activating */}
-                                Aktivieren
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteSurvey(survey.id)}>
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Löschen
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={statusConfig[survey.status].color}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
-                      {statusConfig[survey.status].label}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <AudienceIcon className="h-3 w-3 mr-1" />
-                      {audienceConfig[survey.target_audience]?.label || "Unbekannt"} {/* Added optional chaining */}
-                    </Badge>
-                    {survey.is_anonymous && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Eye className="h-3 w-3 mr-1" />
-                        Anonym
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-4">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="flex items-center gap-1 text-muted-foreground">
-                            <MessageSquare className="h-4 w-4" />
-                            <span className="font-medium">{survey.response_count || 0}</span> {/* Handle undefined */}
-                          </TooltipTrigger>
-                          <TooltipContent>Antworten</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      {timeStatus && <span className={`text-xs ${timeStatus.color}`}>{timeStatus.label}</span>}
-                    </div>
-                  </div>
-
-                  {(survey.start_date || survey.end_date) && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {survey.start_date && format(parseISO(survey.start_date), "dd.MM.yyyy", { locale: de })}
-                      {survey.start_date && survey.end_date && " - "}
-                      {survey.end_date && format(parseISO(survey.end_date), "dd.MM.yyyy", { locale: de })}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => router.push(`/surveys/${survey.id}/edit`)}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Bearbeiten
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        setSelectedSurvey(survey)
-                        setShowResultsDialog(true)
-                      }}
-                    >
-                      <BarChart3 className="h-4 w-4 mr-1" />
-                      Ergebnisse
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Create Survey Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

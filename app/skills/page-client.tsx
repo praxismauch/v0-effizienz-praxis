@@ -86,44 +86,6 @@ export default function SkillsPageClient() {
     setMounted(true)
   }, [])
 
-  // Fetch skills
-  const fetchSkills = useCallback(async () => {
-    if (!practiceId) return
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/practices/${practiceId}/skills`)
-      if (response.ok) {
-        const data = await response.json()
-        setSkills(data.skills || [])
-      }
-    } catch (error) {
-      toast.error("Fehler beim Laden der Kompetenzen")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [practiceId])
-
-  // Fetch arbeitsplaetze
-  const fetchArbeitsplaetze = useCallback(async () => {
-    if (!practiceId) return
-    try {
-      const response = await fetch(`/api/practices/${practiceId}/arbeitsplaetze`)
-      if (response.ok) {
-        const data = await response.json()
-        setArbeitsplaetze(data.arbeitsplaetze || [])
-      }
-    } catch (error) {
-      console.error("Error fetching arbeitsplaetze:", error)
-    }
-  }, [practiceId])
-
-  useEffect(() => {
-    if (practiceId) {
-      fetchSkills()
-      fetchArbeitsplaetze()
-    }
-  }, [practiceId, fetchSkills, fetchArbeitsplaetze])
-
   // Filter skills
   const filteredSkills = useMemo(() => {
     return skills.filter((skill) => {
@@ -188,7 +150,7 @@ export default function SkillsPageClient() {
       })
       if (response.ok) {
         toast.success("Kompetenz gelöscht")
-        fetchSkills()
+        refreshSkills()
       } else {
         toast.error("Fehler beim Löschen")
       }
@@ -373,7 +335,7 @@ export default function SkillsPageClient() {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           practiceId={practiceId?.toString() || ""}
-          onSuccess={fetchSkills}
+          onSuccess={() => refreshSkills()}
         />
 
         {editingSkill && (
@@ -383,7 +345,7 @@ export default function SkillsPageClient() {
             skill={editingSkill}
             practiceId={practiceId?.toString() || ""}
             onSuccess={() => {
-              fetchSkills()
+              refreshSkills()
               setEditingSkill(null)
             }}
           />
@@ -393,7 +355,7 @@ export default function SkillsPageClient() {
           open={isAiDialogOpen}
           onOpenChange={setIsAiDialogOpen}
           practiceId={practiceId?.toString() || ""}
-          onSuccess={fetchSkills}
+          onSuccess={() => refreshSkills()}
         />
       </div>
     </AppLayout>

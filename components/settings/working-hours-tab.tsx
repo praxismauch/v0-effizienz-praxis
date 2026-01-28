@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -7,6 +8,8 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Clock, Coins, Loader2, Save } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { usePractice } from "@/contexts/practice-context"
 
 interface WorkingHoursSettings {
   hours_per_week: number
@@ -18,14 +21,77 @@ interface WorkingHoursSettings {
   track_breaks: boolean
 }
 
-interface WorkingHoursTabProps {
-  settings: WorkingHoursSettings
-  onChange: (settings: WorkingHoursSettings) => void
-  onSave: () => void
-  saving: boolean
-}
+export function WorkingHoursTab() {
+  const { toast } = useToast()
+  const { currentPractice } = usePractice()
+  const [saving, setSaving] = useState(false)
+  const [settings, setSettings] = useState<WorkingHoursSettings>({
+    hours_per_week: 40,
+    days_per_week: 5,
+    vacation_days: 30,
+    flex_time_enabled: false,
+    overtime_limit: 20,
+    break_duration: 30,
+    track_breaks: true,
+  })
 
-export function WorkingHoursTab({ settings, onChange, onSave, saving }: WorkingHoursTabProps) {
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!currentPractice?.id) return
+      
+      try {
+        const response = await fetch(`/api/practices/${currentPractice.id}/settings/working-hours`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data) {
+            setSettings({
+              hours_per_week: data.hours_per_week || 40,
+              days_per_week: data.days_per_week || 5,
+              vacation_days: data.vacation_days || 30,
+              flex_time_enabled: data.flex_time_enabled || false,
+              overtime_limit: data.overtime_limit || 20,
+              break_duration: data.break_duration || 30,
+              track_breaks: data.track_breaks !== false,
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error loading working hours settings:", error)
+      }
+    }
+    
+    loadSettings()
+  }, [currentPractice?.id])
+
+  const handleSave = async () => {
+    if (!currentPractice?.id) return
+    
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/settings/working-hours`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Erfolgreich gespeichert",
+          description: "Die Arbeitszeit-Einstellungen wurden gespeichert.",
+        })
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Die Einstellungen konnten nicht gespeichert werden.",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
   return (
     <div className="space-y-4">
       <Card>
@@ -44,7 +110,7 @@ export function WorkingHoursTab({ settings, onChange, onSave, saving }: WorkingH
                 id="hours-per-week"
                 type="number"
                 value={settings.hours_per_week}
-                onChange={(e) => onChange({ ...settings, hours_per_week: Number(e.target.value) })}
+                onChange={(e) => setSettings({ ...settings, hours_per_week: Number(e.target.value) })}
               />
             </div>
             <div className="space-y-2">
@@ -53,7 +119,7 @@ export function WorkingHoursTab({ settings, onChange, onSave, saving }: WorkingH
                 id="days-per-week"
                 type="number"
                 value={settings.days_per_week}
-                onChange={(e) => onChange({ ...settings, days_per_week: Number(e.target.value) })}
+                onChange={(e) => setSettings({ ...settings, days_per_week: Number(e.target.value) })}
               />
             </div>
           </div>
@@ -65,7 +131,7 @@ export function WorkingHoursTab({ settings, onChange, onSave, saving }: WorkingH
                 id="vacation-days"
                 type="number"
                 value={settings.vacation_days}
-                onChange={(e) => onChange({ ...settings, vacation_days: Number(e.target.value) })}
+                onChange={(e) => setSettings({ ...settings, vacation_days: Number(e.target.value) })}
               />
             </div>
             <div className="space-y-2">
@@ -74,7 +140,7 @@ export function WorkingHoursTab({ settings, onChange, onSave, saving }: WorkingH
                 id="break-duration"
                 type="number"
                 value={settings.break_duration}
-                onChange={(e) => onChange({ ...settings, break_duration: Number(e.target.value) })}
+                onChange={(e) => setSettings({ ...settings, break_duration: Number(e.target.value) })}
               />
             </div>
           </div>
@@ -97,7 +163,7 @@ export function WorkingHoursTab({ settings, onChange, onSave, saving }: WorkingH
             </div>
             <Switch
               checked={settings.flex_time_enabled}
-              onCheckedChange={(checked) => onChange({ ...settings, flex_time_enabled: checked })}
+              onCheckedChange={(checked) => setSettings({ ...settings, flex_time_enabled: checked })}
             />
           </div>
           <Separator />
@@ -108,7 +174,7 @@ export function WorkingHoursTab({ settings, onChange, onSave, saving }: WorkingH
             </div>
             <Switch
               checked={settings.track_breaks}
-              onCheckedChange={(checked) => onChange({ ...settings, track_breaks: checked })}
+              onCheckedChange={(checked) => setSettings({ ...settings, track_breaks: checked })}
             />
           </div>
           <Separator />
@@ -118,14 +184,14 @@ export function WorkingHoursTab({ settings, onChange, onSave, saving }: WorkingH
               id="overtime-limit"
               type="number"
               value={settings.overtime_limit}
-              onChange={(e) => onChange({ ...settings, overtime_limit: Number(e.target.value) })}
+              onChange={(e) => setSettings({ ...settings, overtime_limit: Number(e.target.value) })}
               className="max-w-xs"
             />
           </div>
         </CardContent>
       </Card>
 
-      <Button onClick={onSave} disabled={saving}>
+      <Button onClick={handleSave} disabled={saving}>
         {saving ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

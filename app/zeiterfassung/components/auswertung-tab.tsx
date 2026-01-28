@@ -55,7 +55,7 @@ export default function AuswertungTab({
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const date = new Date()
     date.setMonth(date.getMonth() - i)
-    return date
+    return new Date(date)
   })
 
   if (isLoading) {

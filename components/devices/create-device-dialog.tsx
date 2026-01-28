@@ -306,7 +306,14 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
   const [isDraggingInstructionDocs, setIsDraggingInstructionDocs] = useState(false)
 
   const handleSubmit = async () => {
+    console.log("[v0] Device submit started")
+    console.log("[v0] Form data:", formData)
+    console.log("[v0] Practice ID:", practiceId)
+    console.log("[v0] Selected rooms:", selectedRoomIds)
+    console.log("[v0] Images:", images)
+    
     if (!formData.name.trim()) {
+      console.log("[v0] Validation failed: empty device name")
       toast({ title: "Fehler", description: "Bitte geben Sie einen Gerätenamen ein.", variant: "destructive" })
       return
     }
@@ -359,16 +366,19 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
       console.log("[v0] Device API response:", { status: response.status, data })
 
       if (response.ok) {
+        console.log("[v0] Device save successful, calling onSuccess")
         toast({
           title: editDevice ? "Gerät aktualisiert" : "Gerät erstellt",
           description: editDevice
             ? "Das Gerät wurde erfolgreich aktualisiert."
             : "Das Gerät wurde erfolgreich erstellt.",
         })
+        onOpenChange(false)
         onSuccess()
       } else {
         const errorMessage = data?.error || "Unbekannter Fehler"
         console.error("[v0] Device save error:", errorMessage)
+        console.error("[v0] Full error response:", data)
         throw new Error(errorMessage)
       }
     } catch (error) {

@@ -349,20 +349,21 @@ export function UserRightsManager() {
                 </CardTitle>
                 <CardDescription>{Object.keys(permsByKey).length} Funktionen</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto -mx-6 px-6">
-                  <table className="w-full border-collapse min-w-[900px]">
-                    <thead>
-                      <tr className="border-b bg-muted/50">
-                        <th className="text-left p-3 font-semibold w-[140px]">Funktion</th>
-                        <th className="text-left p-3 font-semibold w-[90px]">Aktion</th>
-                        {roles.map((role) => (
-                          <th key={role} className="text-center p-2 font-semibold min-w-[80px]">
-                            <Badge className={`text-xs ${roleColors[role]}`}>{roleLabels[role]}</Badge>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <div className="inline-block min-w-full align-middle">
+                    <table className="min-w-full border-collapse">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-left p-3 font-semibold whitespace-nowrap">Funktion</th>
+                          <th className="text-left p-3 font-semibold whitespace-nowrap">Aktion</th>
+                          {roles.map((role) => (
+                            <th key={role} className="text-center p-2 font-semibold whitespace-nowrap">
+                              <Badge className={`text-xs ${roleColors[role]}`}>{roleLabels[role]}</Badge>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
                     <tbody>
                       {Object.entries(permsByKey).map(([key, rolePerms]) => (
                         <React.Fragment key={key}>
@@ -380,12 +381,12 @@ export function UserRightsManager() {
                                 {isFirstAction && (
                                   <td
                                     rowSpan={actions.length}
-                                    className="p-3 font-medium capitalize border-r align-middle bg-muted/20"
+                                    className="p-3 font-medium capitalize border-r align-middle bg-muted/20 whitespace-nowrap"
                                   >
                                     <span className="text-sm">{key.replace(/_/g, " ")}</span>
                                   </td>
                                 )}
-                                <td className="p-2 border-r">
+                                <td className="p-2 border-r whitespace-nowrap">
                                   <div className="flex items-center gap-1.5">
                                     <ActionIcon className="h-3.5 w-3.5 text-muted-foreground" />
                                     <span className="text-xs">{action.label}</span>
@@ -425,8 +426,9 @@ export function UserRightsManager() {
                           })}
                         </React.Fragment>
                       ))}
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </CardContent>
             </Card>

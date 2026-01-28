@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -7,16 +8,90 @@ import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Loader2, Save } from "lucide-react"
-import type { CalendarSettings } from "@/app/settings/types"
+import { useToast } from "@/hooks/use-toast"
+import { usePractice } from "@/contexts/practice-context"
 
-interface CalendarSettingsTabProps {
-  settings: CalendarSettings
-  onChange: (settings: CalendarSettings) => void
-  onSave: () => void
-  saving: boolean
+interface CalendarSettings {
+  defaultView: string
+  weekStart: string
+  workStart: string
+  workEnd: string
+  defaultDuration: string
+  showWeekends: boolean
+  showHolidays: boolean
 }
 
-export function CalendarSettingsTab({ settings, onChange, onSave, saving }: CalendarSettingsTabProps) {
+export function CalendarSettingsTab() {
+  const { toast } = useToast()
+  const { currentPractice } = usePractice()
+  const [saving, setSaving] = useState(false)
+  const [settings, setSettings] = useState<CalendarSettings>({
+    defaultView: "week",
+    weekStart: "monday",
+    workStart: "08:00",
+    workEnd: "18:00",
+    defaultDuration: "30",
+    showWeekends: false,
+    showHolidays: true,
+  })
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!currentPractice?.id) return
+      
+      try {
+        const response = await fetch(`/api/practices/${currentPractice.id}/settings/calendar`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data) {
+            setSettings({
+              defaultView: data.defaultView || "week",
+              weekStart: data.weekStart || "monday",
+              workStart: data.workStart || "08:00",
+              workEnd: data.workEnd || "18:00",
+              defaultDuration: data.defaultDuration || "30",
+              showWeekends: data.showWeekends !== false,
+              showHolidays: data.showHolidays !== false,
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error loading calendar settings:", error)
+      }
+    }
+    
+    loadSettings()
+  }, [currentPractice?.id])
+
+  const handleSave = async () => {
+    if (!currentPractice?.id) return
+    
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/settings/calendar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Erfolgreich gespeichert",
+          description: "Die Kalender-Einstellungen wurden gespeichert.",
+        })
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Die Einstellungen konnten nicht gespeichert werden.",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
   return (
     <div className="space-y-4">
       <Card>
@@ -33,7 +108,7 @@ export function CalendarSettingsTab({ settings, onChange, onSave, saving }: Cale
               <Label>Standard-Ansicht</Label>
               <Select
                 value={settings.defaultView}
-                onValueChange={(value) => onChange({ ...settings, defaultView: value })}
+                onValueChange={(value) => setSettings({ ...settings, defaultView: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Ansicht auswählen" />
@@ -49,7 +124,7 @@ export function CalendarSettingsTab({ settings, onChange, onSave, saving }: Cale
               <Label>Woche beginnt am</Label>
               <Select
                 value={settings.weekStart}
-                onValueChange={(value) => onChange({ ...settings, weekStart: value })}
+                onValueChange={(value) =>                 setSettings({ ...settings, weekStart: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tag auswählen" />
@@ -67,7 +142,7 @@ export function CalendarSettingsTab({ settings, onChange, onSave, saving }: Cale
               <Label>Arbeitsbeginn</Label>
               <Select
                 value={settings.workStart}
-                onValueChange={(value) => onChange({ ...settings, workStart: value })}
+                onValueChange={(value) =>                 setSettings({ ...settings, workStart: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Uhrzeit auswählen" />
@@ -84,7 +159,7 @@ export function CalendarSettingsTab({ settings, onChange, onSave, saving }: Cale
               <Label>Arbeitsende</Label>
               <Select
                 value={settings.workEnd}
-                onValueChange={(value) => onChange({ ...settings, workEnd: value })}
+                onValueChange={(value) =>                 setSettings({ ...settings, workEnd: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Uhrzeit auswählen" />
@@ -105,7 +180,7 @@ export function CalendarSettingsTab({ settings, onChange, onSave, saving }: Cale
               <Label>Standard-Termindauer</Label>
               <Select
                 value={settings.defaultDuration}
-                onValueChange={(value) => onChange({ ...settings, defaultDuration: value })}
+                onValueChange={(value) =>                 setSettings({ ...settings, defaultDuration: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Dauer auswählen" />
@@ -128,7 +203,7 @@ export function CalendarSettingsTab({ settings, onChange, onSave, saving }: Cale
               </div>
               <Switch
                 checked={settings.showWeekends}
-                onCheckedChange={(checked) => onChange({ ...settings, showWeekends: checked })}
+                onCheckedChange={(checked) =>                 setSettings({ ...settings, showWeekends: checked })}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -138,14 +213,14 @@ export function CalendarSettingsTab({ settings, onChange, onSave, saving }: Cale
               </div>
               <Switch
                 checked={settings.showHolidays}
-                onCheckedChange={(checked) => onChange({ ...settings, showHolidays: checked })}
+                onCheckedChange={(checked) =>                 setSettings({ ...settings, showHolidays: checked })}
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Button onClick={onSave} disabled={saving}>
+      <Button onClick={handleSave} disabled={saving}>
         {saving ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

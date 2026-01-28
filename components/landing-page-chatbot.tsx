@@ -264,7 +264,7 @@ export function LandingPageChatbot() {
                       "rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-[85%] shadow-sm",
                       message.role === "user"
                         ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
-                        : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100",
+                        : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
                     )}
                   >
                     {message.role === "assistant" ? (
@@ -281,7 +281,7 @@ export function LandingPageChatbot() {
                             <FormattedAIContent
                               content={message.content}
                               showCard={false}
-                              className="animate-in fade-in-0 duration-300 [&_h1]:text-base [&_h1]:mb-3 [&_h2]:text-sm [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_p]:text-xs [&_p]:sm:text-sm [&_p]:mb-2 [&_p]:text-slate-800 [&_p]:dark:text-slate-200 [&_li]:text-xs [&_li]:sm:text-sm [&_li]:text-slate-800 [&_li]:dark:text-slate-200 [&_ul]:my-2 [&_ol]:my-2"
+                              className="animate-in fade-in-0 duration-300 text-slate-900 dark:text-slate-100 [&_h1]:text-base [&_h1]:mb-3 [&_h1]:text-slate-900 [&_h1]:dark:text-slate-100 [&_h2]:text-sm [&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-slate-900 [&_h2]:dark:text-slate-100 [&_h3]:text-sm [&_h3]:text-slate-900 [&_h3]:dark:text-slate-100 [&_p]:text-xs [&_p]:sm:text-sm [&_p]:mb-2 [&_p]:text-slate-900 [&_p]:dark:text-slate-100 [&_li]:text-xs [&_li]:sm:text-sm [&_li]:text-slate-900 [&_li]:dark:text-slate-100 [&_ul]:my-2 [&_ol]:my-2 [&_strong]:text-slate-900 [&_strong]:dark:text-slate-100 [&_code]:text-slate-900 [&_code]:dark:text-slate-100"
                             />
                           )}
                         </div>

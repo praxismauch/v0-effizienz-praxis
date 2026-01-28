@@ -431,11 +431,13 @@ export function AIPracticeChatDialog({
                         />
                       )}
                       {message.role === "assistant" ? (
-                        <div className="p-4 bg-background border border-border rounded-lg">
-                          <FormattedAIContent content={message.content} />
+                        <div className="p-4 bg-background dark:bg-slate-900 border border-border rounded-lg">
+                          <div className="text-foreground dark:text-slate-100">
+                            <FormattedAIContent content={message.content} />
+                          </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                        <p className="text-sm text-primary-foreground whitespace-pre-wrap leading-relaxed">{message.content}</p>
                       )}
                     </div>
                   </div>

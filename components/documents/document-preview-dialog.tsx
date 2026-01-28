@@ -67,7 +67,29 @@ export function DocumentPreviewDialog({
               />
             </div>
           ) : document.file_type === "application/pdf" ? (
-            <iframe src={document.file_url} className="w-full h-full" title={document.name} />
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <FileText className="h-16 w-16 text-muted-foreground" />
+              <p className="text-center text-muted-foreground max-w-md">
+                {t(
+                  "documents.pdfPreviewInfo",
+                  "PDF-Vorschau kann aus Sicherheitsgründen nicht eingebettet werden. Bitte öffnen Sie die Datei in einem neuen Tab oder laden Sie sie herunter.",
+                )}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    window.open(document.file_url, "_blank", "noopener,noreferrer")
+                  }}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  {t("documents.openInNewTab", "In neuem Tab öffnen")}
+                </Button>
+                <Button variant="outline" onClick={() => onDownload(document)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {t("documents.download", "Herunterladen")}
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <FileText className="h-16 w-16 text-muted-foreground" />

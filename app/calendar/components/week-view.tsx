@@ -55,7 +55,7 @@ export function WeekView({
           Ganztägig
         </div>
         {weekDays.map((day, dayIndex) => {
-          const allDayEvents = getAllDayEventsForDay(day)
+          const allDayEvents = getAllDayEventsForDay(day) || []
           return (
             <div key={dayIndex} className="p-1 border-r last:border-r-0 flex flex-wrap gap-1">
               {allDayEvents.filter(e => e && e.title).map((event) => (

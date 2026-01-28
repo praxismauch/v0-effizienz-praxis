@@ -242,9 +242,8 @@ export default function NeueMitarbeitergespraechPage() {
 
           <TabsContent value="goals">
             <GoalsTab
-              goals={formData.goals}
-              onAddGoal={handleAddGoal}
-              onRemoveGoal={handleRemoveGoal}
+              goals={formData.goals || []}
+              onUpdate={(goals) => handleFormChange("goals", goals)}
             />
           </TabsContent>
 

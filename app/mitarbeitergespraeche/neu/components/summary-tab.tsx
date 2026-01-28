@@ -34,18 +34,21 @@ export function SummaryTab({
   aiLoading,
   aiSummary,
 }: SummaryTabProps) {
+  // Ensure followUpActions is always an array
+  const safeFollowUpActions = Array.isArray(followUpActions) ? followUpActions : []
+
   const addAction = () => {
-    onUpdate("follow_up_actions", [...followUpActions, { action: "", responsible: "", status: "open" }])
+    onUpdate("follow_up_actions", [...safeFollowUpActions, { action: "", responsible: "", status: "open" }])
   }
 
   const updateAction = (index: number, field: keyof FollowUpAction, value: string) => {
-    const newActions = [...followUpActions]
+    const newActions = [...safeFollowUpActions]
     newActions[index] = { ...newActions[index], [field]: value }
     onUpdate("follow_up_actions", newActions)
   }
 
   const removeAction = (index: number) => {
-    onUpdate("follow_up_actions", followUpActions.filter((_, i) => i !== index))
+    onUpdate("follow_up_actions", safeFollowUpActions.filter((_, i) => i !== index))
   }
 
   return (
@@ -152,7 +155,7 @@ export function SummaryTab({
             Maßnahme hinzufügen
           </Button>
         </div>
-        {followUpActions.map((action, index) => (
+        {safeFollowUpActions.map((action, index) => (
           <Card key={index}>
             <CardContent className="py-3">
               <div className="flex gap-3 items-start">

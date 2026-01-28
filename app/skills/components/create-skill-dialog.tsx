@@ -57,6 +57,9 @@ export function CreateSkillDialog({
   arbeitsplaetze,
   isSaving,
 }: CreateSkillDialogProps) {
+  // Ensure arbeitsplaetze is always an array
+  const safeArbeitsplaetze = Array.isArray(arbeitsplaetze) ? arbeitsplaetze : []
+  
   const [formData, setFormData] = useState<SkillFormData>(initialFormData)
 
   const handleSubmit = async () => {

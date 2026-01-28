@@ -813,10 +813,16 @@ export default function SurveysPage() {
                           <Badge variant={alert.type === "critical" ? "destructive" : "outline"}>
                             {alert.value.toFixed(1)}/5
                           </Badge>
-          </div>
-        ))}
-        </div>
-      </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Create Survey Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

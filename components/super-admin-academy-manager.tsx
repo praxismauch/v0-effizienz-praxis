@@ -259,6 +259,7 @@ export function SuperAdminAcademyManager() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [badges, setBadges] = useState<AcademyBadge[]>([])
   const [stats, setStats] = useState<AcademyStats | null>(null)
+  const [waitlistEntries, setWaitlistEntries] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const fetchedRef = useRef(false)
 
@@ -298,6 +299,18 @@ export function SuperAdminAcademyManager() {
       }
     } catch (error) {
       console.error("[v0] Error fetching badges:", error)
+    }
+  }, [])
+
+  const fetchWaitlist = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/admin/waitlist`)
+      if (response.ok) {
+        const data = await response.json()
+        setWaitlistEntries(data.entries || [])
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching waitlist:", error)
     }
   }, [])
 
@@ -1671,7 +1684,7 @@ export function SuperAdminAcademyManager() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="overview">
             <BarChart3 className="h-4 w-4 mr-2" />
             Übersicht
@@ -1687,6 +1700,10 @@ export function SuperAdminAcademyManager() {
           <TabsTrigger value="badges">
             <Award className="h-4 w-4 mr-2" />
             Badges
+          </TabsTrigger>
+          <TabsTrigger value="waitlist">
+            <Users className="h-4 w-4 mr-2" />
+            Warteliste
           </TabsTrigger>
           <TabsTrigger value="content" disabled={!selectedCourse}>
             <Layers className="h-4 w-4 mr-2" />
@@ -1705,6 +1722,9 @@ export function SuperAdminAcademyManager() {
         </TabsContent>
         <TabsContent value="badges" className="mt-6">
           {renderBadges()}
+        </TabsContent>
+        <TabsContent value="waitlist" className="mt-6">
+          {renderWaitlist()}
         </TabsContent>
         <TabsContent value="content" className="mt-6">
           {renderContent()}

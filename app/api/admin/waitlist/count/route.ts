@@ -13,7 +13,6 @@ export async function GET() {
     const { count, error } = await supabase
       .from("waitlist")
       .select("*", { count: "exact", head: true })
-      .or("status.is.null,status.eq.pending,status.eq.contacted")
 
     if (error) {
       if (error.code === "42P01" || error.message?.includes("does not exist")) {

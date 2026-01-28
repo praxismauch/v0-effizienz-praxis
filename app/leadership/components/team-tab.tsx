@@ -3,67 +3,45 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
-import { Users } from "lucide-react"
-import type { TeamMember } from "@/contexts/team-context"
+import type { TeamPerformance } from "../types"
 import { getScoreColor } from "../types"
 
 interface TeamTabProps {
-  teamMembers: TeamMember[]
-  isLoading: boolean
+  teamPerformance: TeamPerformance[]
 }
 
-export default function TeamTab({ teamMembers, isLoading }: TeamTabProps) {
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    )
-  }
-
-  if (!teamMembers || teamMembers.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Users className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Keine Teammitglieder gefunden</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
+export default function TeamTab({ teamPerformance }: TeamTabProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {teamMembers.filter((m) => m.isActive !== false).map((member) => (
-        <Card key={member.id}>
+      {teamPerformance.map((member) => (
+        <Card key={member.memberId}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <Avatar className="h-12 w-12">
                 <AvatarImage src={member.avatar || "/placeholder.svg"} />
                 <AvatarFallback>
-                  {member.name
+                  {member.memberName
                     .split(" ")
                     .map((n) => n[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold">{member.name}</h3>
-                <p className="text-sm text-muted-foreground">{member.role || "Teammitglied"}</p>
+                <h3 className="font-semibold">{member.memberName}</h3>
+                <p className="text-sm text-muted-foreground">{member.role}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Status</span>
-                <span className="text-emerald-500">Aktiv</span>
+                <span>Aufgaben</span>
+                <span>
+                  {member.completedTasks}/{member.totalTasks}
+                </span>
               </div>
+              <Progress value={(member.completedTasks / member.totalTasks) * 100} />
               <div className="flex justify-between text-sm">
-                <span>Teams</span>
-                <span className="text-muted-foreground">{member.teamIds?.length || 0}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Berechtigungen</span>
-                <span className="text-muted-foreground">{member.permissions?.length || 0}</span>
+                <span>Zufriedenheit</span>
+                <span className={getScoreColor(member.satisfaction)}>{member.satisfaction}%</span>
               </div>
             </div>
           </CardContent>

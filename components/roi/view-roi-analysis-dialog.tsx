@@ -84,7 +84,12 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
   }
 
   const handleSave = async () => {
+    console.log("[v0] ROI Edit - Save started")
+    console.log("[v0] ROI Edit - Analysis ID:", analysisId)
+    console.log("[v0] ROI Edit - Service name:", serviceName)
+
     if (!serviceName.trim()) {
+      console.error("[v0] ROI Edit - Missing service name")
       alert("Bitte geben Sie einen Namen für die Leistung ein.")
       return
     }
@@ -94,36 +99,44 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
       const totalFixed = fixedCosts.reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0)
       const totalVariable = variableCosts.reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0)
 
+      const payload = {
+        service_name: serviceName,
+        description,
+        fixed_costs: fixedCosts.filter((c) => c.name && c.amount > 0),
+        variable_costs: variableCosts.filter((c) => c.name && c.amount > 0),
+        total_fixed_costs: totalFixed,
+        total_variable_costs: totalVariable,
+        scenario_pessimistic: pricePessimistic,
+        scenario_realistic: priceRealistic,
+        scenario_optimistic: priceOptimistic,
+        demand_pessimistic: demandPessimistic,
+        demand_realistic: demandRealistic,
+        demand_optimistic: demandOptimistic,
+      }
+
+      console.log("[v0] ROI Edit - Payload:", payload)
+
       const response = await fetch(`/api/roi-analysis/${analysisId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          service_name: serviceName,
-          description,
-          fixed_costs: fixedCosts.filter((c) => c.name && c.amount > 0),
-          variable_costs: variableCosts.filter((c) => c.name && c.amount > 0),
-          total_fixed_costs: totalFixed,
-          total_variable_costs: totalVariable,
-          scenario_pessimistic: pricePessimistic,
-          scenario_realistic: priceRealistic,
-          scenario_optimistic: priceOptimistic,
-          demand_pessimistic: demandPessimistic,
-          demand_realistic: demandRealistic,
-          demand_optimistic: demandOptimistic,
-        }),
+        body: JSON.stringify(payload),
       })
+
+      console.log("[v0] ROI Edit - Response status:", response.status)
 
       if (response.ok) {
         const updatedAnalysis = await response.json()
+        console.log("[v0] ROI Edit - Update successful:", updatedAnalysis)
         setAnalysis(updatedAnalysis)
         setIsEditing(false)
         onUpdated()
       } else {
         const error = await response.json()
+        console.error("[v0] ROI Edit - Update failed:", error)
         alert(error.error || "Fehler beim Speichern")
       }
     } catch (error) {
-      console.error("Error saving analysis:", error)
+      console.error("[v0] ROI Edit - Exception:", error)
       alert("Fehler beim Speichern")
     } finally {
       setSaving(false)

@@ -44,51 +44,16 @@ export default function InventoryPage() {
   const [activeTab, setActiveTab] = useState("overview")
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
   // TODO: Re-enable when dialogs are created
   // const [showAddSupplierDialog, setShowAddSupplierDialog] = useState(false)
   // const [showAddBillDialog, setShowAddBillDialog] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
-  const [itemFormData, setItemFormData] = useState<Partial<InventoryItem>>({
-    name: "",
-    category: "",
-    quantity: 0,
-    unit: "",
-    sku: "",
-    price: 0,
-    supplier_id: "",
-    location: "",
-    notes: "",
-  })
 
   const handleEditItem = (item: InventoryItem) => {
     setSelectedItem(item)
     setShowEditDialog(true)
-  }
-
-  const handleCreateItem = async () => {
-    setIsCreating(true)
-    try {
-      const success = await addItem(itemFormData)
-      if (success) {
-        setShowAddDialog(false)
-        setItemFormData({
-          name: "",
-          category: "",
-          quantity: 0,
-          unit: "",
-          sku: "",
-          price: 0,
-          supplier_id: "",
-          location: "",
-          notes: "",
-        })
-      }
-    } finally {
-      setIsCreating(false)
-    }
   }
 
   const handleSaveSettings = async () => {

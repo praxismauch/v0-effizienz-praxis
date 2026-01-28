@@ -353,7 +353,7 @@ export function CreateArbeitsmittelDialog({
             <div className="space-y-2">
               <Label htmlFor="assigned_to">Zugewiesen an</Label>
               <Select
-                value={formData.assigned_to || "__none__"}
+                value={formData.assigned_to}
                 onValueChange={(value) => setFormData({ ...formData, assigned_to: value === "__none__" ? "" : value })}
               >
                 <SelectTrigger>

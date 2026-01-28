@@ -698,8 +698,8 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Praxis-Score</p>
-                  <p className="text-2xl font-bold">{stats.kpiScore || 85}/100</p>
-                  <p className="text-xs text-muted-foreground">Gesamtbewertung Ihrer Praxisleistung</p>
+                  <p className="text-2xl font-bold">{stats.kpiScore || 85}</p>
+                  <p className="text-xs text-muted-foreground">von 100 Punkten</p>
                 </div>
                 <div className="bg-primary/10 text-primary p-2 rounded-lg">
                   <TrendingUp className="h-5 w-5" />

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Fehler beim Laden der Bestandsdaten" }, { status: 500 })
     }
 
-    return NextResponse.json(data || [])
+    return NextResponse.json({ items: data || [] })
   } catch (error) {
     return handleApiError(error)
   }

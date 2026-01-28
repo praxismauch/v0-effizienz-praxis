@@ -30,7 +30,9 @@ export default function CreateProtocolRecordingDialog({
   onOpenChange,
   onTranscriptComplete,
 }: CreateProtocolRecordingDialogProps) {
-  const [meetingTitle, setMeetingTitle] = useState("")
+  const [meetingTitle, setMeetingTitle] = useState(() => 
+    `Protokoll - ${format(new Date(), "dd.MM.yyyy - HH:mm", { locale: de })}`
+  )
   const [participants, setParticipants] = useState("")
   const [isRecording, setIsRecording] = useState(false)
   const [duration, setDuration] = useState(0)
@@ -349,7 +351,7 @@ export default function CreateProtocolRecordingDialog({
       stopRecording()
     }
     onOpenChange(false)
-    setMeetingTitle("")
+    setMeetingTitle(`Protokoll - ${format(new Date(), "dd.MM.yyyy - HH:mm", { locale: de })}`)
     setParticipants("")
     setDuration(0)
     setError(null)

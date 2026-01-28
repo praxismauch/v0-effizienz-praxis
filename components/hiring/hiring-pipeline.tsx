@@ -519,7 +519,7 @@ export function HiringPipeline() {
       <div
         className="grid gap-4"
         style={{
-          gridTemplateColumns: `repeat(auto-fit, minmax(130px, 1fr))`,
+          gridTemplateColumns: `repeat(auto-fit, minmax(280px, 1fr))`,
           maxWidth: "100%",
         }}
       >

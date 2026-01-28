@@ -116,6 +116,8 @@ export default function ZeiterfassungPageClient() {
       }
       setShowStampDialog(false)
       setStampComment("")
+      // Refresh status to update UI immediately
+      mutate()
     } catch (error) {
       toast.error("Fehler beim Stempeln")
       console.error(error)

@@ -56,12 +56,27 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateCon
     try {
       const practiceId = currentPractice?.id || currentUser?.practice_id
 
+      console.log("[v0] Creating contact - practiceId:", practiceId)
+      console.log("[v0] Creating contact - currentUser:", currentUser?.id)
+      console.log("[v0] Creating contact - formData:", formData)
+
       if (!practiceId) {
         toast({
           title: "Fehler",
           description: "Keine Praxis zugeordnet. Bitte laden Sie die Seite neu.",
           variant: "destructive",
         })
+        setLoading(false)
+        return
+      }
+
+      if (!formData.last_name?.trim()) {
+        toast({
+          title: "Fehler",
+          description: "Bitte geben Sie mindestens einen Nachnamen ein.",
+          variant: "destructive",
+        })
+        setLoading(false)
         return
       }
 
@@ -74,8 +89,11 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateCon
         }),
       })
 
+      console.log("[v0] Create contact response status:", response.status)
+
       if (!response.ok) {
         const data = await response.json()
+        console.error("[v0] Create contact error response:", data)
         throw new Error(data.error || "Kontakt konnte nicht erstellt werden")
       }
 

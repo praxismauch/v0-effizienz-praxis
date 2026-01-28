@@ -172,7 +172,7 @@ function StechuhrTab({
             {currentStatus !== "idle" ? (
               <>
                 <div className="text-5xl font-mono font-bold text-primary mb-2">
-                  {formatMinutes(getCurrentWorkDuration(currentBlock))}
+                  {formatElapsedTime(elapsedSeconds)}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Seit {currentBlock && format(parseISO(currentBlock.start_time), "HH:mm")} Uhr
@@ -180,7 +180,7 @@ function StechuhrTab({
               </>
             ) : (
               <>
-                <div className="text-5xl font-mono font-bold text-muted-foreground mb-2">--:--</div>
+                <div className="text-5xl font-mono font-bold text-muted-foreground mb-2">--:--:--</div>
                 <div className="text-sm text-muted-foreground">Noch nicht eingestempelt</div>
               </>
             )}

@@ -29,22 +29,11 @@ const suggestionSchema = z.object({
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   const { practiceId } = await params
   const supabase = await createClient()
-  
-  let body
-  try {
-    body = await request.json()
-  } catch (error) {
-    console.error("Error parsing request body:", error)
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
-  }
-
-  console.log("[v0] Generating suggestions for practice:", practiceId)
-  console.log("[v0] Mood averages:", body.mood_averages)
-  console.log("[v0] Workload analysis:", body.workload_analysis)
+  const body = await request.json()
 
   try {
     const { object } = await generateObject({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-20250514",
       schema: suggestionSchema,
       prompt: `Generiere 5 konkrete Wellbeing-Maßnahmen für ein Arztpraxis-Team basierend auf diesen Daten:
 
@@ -83,28 +72,16 @@ Antworte auf Deutsch.`,
       ...s,
     }))
 
-    console.log("[v0] Generated suggestions:", object.suggestions)
-
     const { data: savedSuggestions, error } = await supabase
       .from("wellbeing_suggestions")
       .insert(suggestionsToInsert)
       .select()
 
-    if (error) {
-      console.error("[v0] Error saving suggestions to database:", error)
-      throw error
-    }
+    if (error) throw error
 
-    console.log("[v0] Saved suggestions to database:", savedSuggestions)
     return NextResponse.json({ suggestions: savedSuggestions })
   } catch (error) {
-    console.error("[v0] Error generating suggestions:", error)
-    return NextResponse.json(
-      { 
-        error: "Failed to generate suggestions",
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    )
+    console.error("Error generating suggestions:", error)
+    return NextResponse.json({ error: "Failed to generate suggestions" }, { status: 500 })
   }
 }

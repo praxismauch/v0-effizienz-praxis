@@ -3,13 +3,23 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { TrendingUp, TrendingDown, Minus } from "lucide-react"
-import type { LeadershipMetric } from "../types"
+import type { LeadershipMetric, PermaScores } from "../types"
 
 interface OverviewTabProps {
   metrics: LeadershipMetric[]
+  permaScores: PermaScores
+  avgScore: number
+  isLoading: boolean
 }
 
-export default function OverviewTab({ metrics }: OverviewTabProps) {
+export default function OverviewTab({ metrics, permaScores, avgScore, isLoading }: OverviewTabProps) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    )
+  }
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {metrics.map((metric) => (

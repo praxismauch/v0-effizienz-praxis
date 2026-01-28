@@ -54,30 +54,6 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
         return
       }
 
-      // H1 Headers (e.g., # ALLGEMEINER INTERVIEWLEITFADEN)
-      if (/^#\s+[A-ZÄÖÜ\s&()]+$/.test(trimmed)) {
-        flushList()
-        const text = trimmed.replace(/^#\s+/, "")
-        result.push(
-          <div key={`h1-${index}`} className="mt-6 first:mt-0 mb-4">
-            <h1 className="text-xl font-bold text-primary border-b-2 border-primary/30 pb-2 leading-tight">{text}</h1>
-          </div>,
-        )
-        return
-      }
-
-      // H2 Headers (e.g., ## 1. EINLEITUNG & KENNENLERNEN)
-      if (/^##\s+\d+\.\s+[A-ZÄÖÜ\s&()]+$/.test(trimmed)) {
-        flushList()
-        const text = trimmed.replace(/^##\s+/, "")
-        result.push(
-          <div key={`h2-${index}`} className="mt-5 first:mt-0 mb-3">
-            <h2 className="text-lg font-bold text-primary border-l-4 border-primary/70 pl-3 py-1 leading-tight">{text}</h2>
-          </div>,
-        )
-        return
-      }
-
       // Main section headers (e.g., **1. EINLEITUNG & KENNENLERNEN**)
       if (/^\*\*\d+\.\s+[A-ZÄÖÜ\s&()]+\*\*$/.test(trimmed)) {
         flushList()
@@ -90,10 +66,10 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
         return
       }
 
-      // Subsection headers (e.g., - **Begrüßung und Vorstellung**, Begrüßung:, or just **Begrüßung**)
-      if (/^-\s+\*\*(.+?)\*\*$/.test(trimmed) || /^[A-ZÄÖÜ][a-zäöüß\s]+:$/.test(trimmed)) {
+      // Subsection headers (e.g., - **Begrüßung und Vorstellung**)
+      if (/^-\s+\*\*(.+?)\*\*$/.test(trimmed)) {
         flushList()
-        const text = trimmed.replace(/^-\s+\*\*|\*\*$/g, "").replace(/:$/, "")
+        const text = trimmed.replace(/^-\s+\*\*|\*\*$/g, "")
         result.push(
           <div key={`subheader-${index}`} className="mt-3 mb-2">
             <h4 className="text-sm font-semibold text-foreground">{text}</h4>
@@ -124,15 +100,13 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
         return
       }
 
-      // Bullet list item (e.g., "- Item", "• Item", or "• • Item")
-      if (/^[-•]\s+/.test(trimmed) || /^•\s+•\s+/.test(trimmed)) {
+      // Bullet list item (e.g., "- Item")
+      if (/^-\s+/.test(trimmed)) {
         if (listType !== "ul") {
           flushList()
           listType = "ul"
         }
-        // Clean up multiple bullet symbols
-        const cleanedItem = trimmed.replace(/^[-•]\s+/, "").replace(/^•\s+/, "")
-        currentList.push(cleanedItem)
+        currentList.push(trimmed.replace(/^-\s+/, ""))
         return
       }
 

@@ -5,19 +5,91 @@ import { AppLayout } from "@/components/app-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, Target, Lightbulb, TrendingUp, CheckCircle } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface PageClientProps {
   practiceId?: string
 }
 
+interface StrategyStep {
+  key: string
+  number: number
+  name: string
+  description: string
+  detailedDescription?: string
+  keyQuestions?: string[]
+  actionItems?: string[]
+  tips?: string[]
+  estimatedDuration?: string
+  difficulty?: string
+  status?: string
+}
+
 export default function PageClient({ practiceId }: PageClientProps) {
   const [loading, setLoading] = useState(true)
+  const [steps, setSteps] = useState<StrategyStep[]>([])
+  const [selectedStep, setSelectedStep] = useState<StrategyStep | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const { currentUser, currentPractice } = useAuth()
 
   useEffect(() => {
-    // Simulate initial loading
-    const timer = setTimeout(() => setLoading(false), 500)
-    return () => clearTimeout(timer)
-  }, [])
+    const fetchSteps = async () => {
+      try {
+        const id = practiceId || currentPractice?.id
+        if (!id) {
+          setLoading(false)
+          return
+        }
+
+        const response = await fetch(`/api/strategy-journey?practiceId=${id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setSteps(data.steps || [])
+        }
+      } catch (error) {
+        console.error("Error fetching strategy journey:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSteps()
+  }, [practiceId, currentPractice?.id])
+
+  const handleStartStep = (stepKey: string) => {
+    const step = steps.find((s) => s.key === stepKey)
+    if (step) {
+      setSelectedStep(step)
+      setDialogOpen(true)
+    }
+  }
+
+  const handleUpdateStatus = async (stepKey: string, status: string) => {
+    try {
+      const id = practiceId || currentPractice?.id
+      if (!id) return
+
+      await fetch("/api/strategy-journey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          practiceId: id,
+          stepKey,
+          status,
+        }),
+      })
+
+      // Refresh steps
+      const response = await fetch(`/api/strategy-journey?practiceId=${id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSteps(data.steps || [])
+      }
+    } catch (error) {
+      console.error("Error updating strategy journey:", error)
+    }
+  }
 
   if (loading) {
     return (
@@ -51,7 +123,11 @@ export default function PageClient({ practiceId }: PageClientProps) {
             </CardHeader>
             <CardContent>
               <CardDescription>Definieren Sie Ihre langfristige Vision für die Praxis</CardDescription>
-              <Button variant="outline" className="mt-4 w-full bg-transparent">
+              <Button
+                variant="outline"
+                className="mt-4 w-full bg-transparent"
+                onClick={() => handleStartStep("vision_values")}
+              >
                 Starten
               </Button>
             </CardContent>
@@ -68,7 +144,11 @@ export default function PageClient({ practiceId }: PageClientProps) {
             </CardHeader>
             <CardContent>
               <CardDescription>Sammeln und bewerten Sie strategische Ideen</CardDescription>
-              <Button variant="outline" className="mt-4 w-full bg-transparent">
+              <Button
+                variant="outline"
+                className="mt-4 w-full bg-transparent"
+                onClick={() => handleStartStep("target_patient")}
+              >
                 Entdecken
               </Button>
             </CardContent>
@@ -85,7 +165,11 @@ export default function PageClient({ practiceId }: PageClientProps) {
             </CardHeader>
             <CardContent>
               <CardDescription>Planen Sie Wachstumsstrategien und Meilensteine</CardDescription>
-              <Button variant="outline" className="mt-4 w-full bg-transparent">
+              <Button
+                variant="outline"
+                className="mt-4 w-full bg-transparent"
+                onClick={() => handleStartStep("business_model")}
+              >
                 Planen
               </Button>
             </CardContent>
@@ -102,7 +186,11 @@ export default function PageClient({ practiceId }: PageClientProps) {
             </CardHeader>
             <CardContent>
               <CardDescription>Verfolgen Sie die Umsetzung Ihrer Strategien</CardDescription>
-              <Button variant="outline" className="mt-4 w-full bg-transparent">
+              <Button
+                variant="outline"
+                className="mt-4 w-full bg-transparent"
+                onClick={() => handleStartStep("annual_goals")}
+              >
                 Verfolgen
               </Button>
             </CardContent>

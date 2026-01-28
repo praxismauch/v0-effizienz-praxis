@@ -193,7 +193,9 @@ function ResponsibilityFormDialog({
           return res.json()
         })
         .then((data) => {
-          const activeArbeitsplaetze = (data || []).filter((ap: any) => ap.is_active !== false)
+          // Handle both array and object with arbeitsplaetze property
+          const arbeitsplaetzeArray = Array.isArray(data) ? data : (data?.arbeitsplaetze || [])
+          const activeArbeitsplaetze = arbeitsplaetzeArray.filter((ap: any) => ap.is_active !== false)
           console.log("[v0] Loaded arbeitsplaetze:", activeArbeitsplaetze.length)
           setArbeitsplaetze(activeArbeitsplaetze)
         })

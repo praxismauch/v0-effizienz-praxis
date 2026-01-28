@@ -230,7 +230,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         (current) => {
           const arr = Array.isArray(current) ? current : (current as any)?.members || []
           return arr.map((m: TeamMember) =>
-            m.id === memberId ? { ...m, teamIds: [...new Set([...m.teamIds, teamId])] } : m,
+            m.id === memberId ? { ...m, teamIds: [...new Set([...(m.teamIds || []), teamId])] } : m,
           )
         },
         { revalidate: false },
@@ -257,7 +257,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         (current) => {
           const arr = Array.isArray(current) ? current : (current as any)?.members || []
           return arr.map((m: TeamMember) =>
-            m.id === memberId ? { ...m, teamIds: m.teamIds.filter((t) => t !== teamId) } : m,
+            m.id === memberId ? { ...m, teamIds: (m.teamIds || []).filter((t) => t !== teamId) } : m,
           )
         },
         { revalidate: false },

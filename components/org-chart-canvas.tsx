@@ -26,7 +26,9 @@ interface OrgChartCanvasProps {
   teamMembers: TeamMember[]
   onEditPosition: (position: Position) => void
   onDeletePosition: (id: string) => void
+  onCreate?: () => void
   isAdmin: boolean
+  practiceId?: string
 }
 
 export function OrgChartCanvas({
@@ -34,7 +36,9 @@ export function OrgChartCanvas({
   teamMembers,
   onEditPosition,
   onDeletePosition,
+  onCreate,
   isAdmin,
+  practiceId = "",
 }: OrgChartCanvasProps) {
   // Adapt positions to include user_name from teamMembers
   const adaptedPositions = positions.map((pos) => {
@@ -50,9 +54,9 @@ export function OrgChartCanvas({
       positions={adaptedPositions}
       onEdit={onEditPosition}
       onDelete={onDeletePosition}
-      onCreate={() => {}}
+      onCreate={onCreate || (() => console.log("[v0] onCreate handler not provided"))}
       isAdmin={isAdmin}
-      practiceId=""
+      practiceId={practiceId}
     />
   )
 }

@@ -1,5 +1,7 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { format } from "date-fns"
 import {
   Dialog,
   DialogContent,
@@ -15,41 +17,153 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { FormData } from "../types"
+import { useToast } from "@/hooks/use-toast"
+import type { CalendarEvent, FormData } from "../types"
+
+const defaultFormData: FormData = {
+  title: "",
+  description: "",
+  startDate: format(new Date(), "yyyy-MM-dd"),
+  endDate: format(new Date(), "yyyy-MM-dd"),
+  startTime: "09:00",
+  endTime: "10:00",
+  type: "meeting",
+  priority: "medium",
+  location: "",
+  isAllDay: false,
+  recurrence: "none",
+  interviewType: "",
+  interviewStatus: "scheduled",
+  candidateEmail: "",
+  meetingLink: "",
+  trainingCourseId: "",
+  trainingStatus: "",
+  isOnline: false,
+}
 
 interface EventDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  title: string
-  description: string
-  formData: FormData
-  onFormDataChange: (data: FormData) => void
-  onSubmit: () => void
-  onDelete?: () => void
-  isEdit?: boolean
+  practiceId?: string
+  event?: CalendarEvent | null
+  initialDate?: Date | null
+  onSaved?: () => void
 }
 
 export function EventDialog({
   open,
   onOpenChange,
-  title,
-  description,
-  formData,
-  onFormDataChange,
-  onSubmit,
-  onDelete,
-  isEdit = false,
+  practiceId,
+  event,
+  initialDate,
+  onSaved,
 }: EventDialogProps) {
+  const { toast } = useToast()
+  const [formData, setFormData] = useState<FormData>(defaultFormData)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const isEdit = !!event
+
+  // Initialize form data when dialog opens
+  useEffect(() => {
+    if (open) {
+      if (event) {
+        // Editing existing event
+        setFormData({
+          title: event.title || "",
+          description: event.description || "",
+          startDate: event.startDate || format(new Date(), "yyyy-MM-dd"),
+          endDate: event.endDate || event.startDate || format(new Date(), "yyyy-MM-dd"),
+          startTime: event.startTime || "09:00",
+          endTime: event.endTime || "10:00",
+          type: event.type || "meeting",
+          priority: event.priority || "medium",
+          location: event.location || "",
+          isAllDay: event.isAllDay || false,
+          recurrence: event.recurrence || "none",
+          interviewType: event.interviewType || "",
+          interviewStatus: event.interviewStatus || "scheduled",
+          candidateEmail: event.candidateEmail || "",
+          meetingLink: event.meetingLink || "",
+          trainingCourseId: event.trainingCourseId || "",
+          trainingStatus: event.trainingStatus || "",
+          isOnline: event.isOnline || false,
+        })
+      } else if (initialDate) {
+        // Creating new event with initial date
+        setFormData({
+          ...defaultFormData,
+          startDate: format(initialDate, "yyyy-MM-dd"),
+          endDate: format(initialDate, "yyyy-MM-dd"),
+        })
+      } else {
+        // Creating new event without initial date
+        setFormData(defaultFormData)
+      }
+    }
+  }, [open, event, initialDate])
+
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
-    onFormDataChange({ ...formData, [field]: value })
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
+
+  const handleSubmit = async () => {
+    if (!practiceId || !formData.title.trim()) return
+
+    setIsSubmitting(true)
+    try {
+      const url = isEdit
+        ? `/api/practices/${practiceId}/calendar-events/${event?.id}`
+        : `/api/practices/${practiceId}/calendar-events`
+
+      const res = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      if (!res.ok) throw new Error("Failed to save event")
+
+      toast({ title: isEdit ? "Termin aktualisiert" : "Termin erstellt" })
+      onOpenChange(false)
+      onSaved?.()
+    } catch (error) {
+      toast({ title: "Fehler beim Speichern", variant: "destructive" })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!practiceId || !event?.id) return
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/calendar-events/${event.id}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) throw new Error("Failed to delete event")
+
+      toast({ title: "Termin gelöscht" })
+      onOpenChange(false)
+      onSaved?.()
+    } catch (error) {
+      toast({ title: "Fehler beim Löschen", variant: "destructive" })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const dialogTitle = isEdit ? "Termin bearbeiten" : "Neuer Termin"
+  const dialogDescription = isEdit ? "Bearbeiten Sie die Details des Termins." : "Erstellen Sie einen neuen Termin."
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="grid gap-4 py-4">
@@ -245,16 +359,16 @@ export function EventDialog({
           </div>
         </ScrollArea>
         <DialogFooter className="gap-2">
-          {isEdit && onDelete && (
-            <Button variant="destructive" onClick={onDelete}>
+          {isEdit && (
+            <Button variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
               Löschen
             </Button>
           )}
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Abbrechen
           </Button>
-          <Button onClick={onSubmit} disabled={!formData.title.trim()}>
-            {isEdit ? "Speichern" : "Erstellen"}
+          <Button onClick={handleSubmit} disabled={!formData.title.trim() || isSubmitting}>
+            {isSubmitting ? "Wird gespeichert..." : isEdit ? "Speichern" : "Erstellen"}
           </Button>
         </DialogFooter>
       </DialogContent>

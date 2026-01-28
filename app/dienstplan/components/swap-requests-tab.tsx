@@ -11,12 +11,28 @@ import type { SwapRequest } from "../types"
 
 interface SwapRequestsTabProps {
   swapRequests: SwapRequest[]
-  onApprove: (id: string) => void
-  onReject: (id: string) => void
+  onApprove?: (id: string) => void
+  onReject?: (id: string) => void
   isLoading?: boolean
 }
 
 export default function SwapRequestsTab({ swapRequests, onApprove, onReject, isLoading }: SwapRequestsTabProps) {
+  // Safe handlers with fallbacks
+  const handleApprove = (id: string) => {
+    if (typeof onApprove === "function") {
+      onApprove(id)
+    } else {
+      console.log("[v0] Approve swap clicked - handler not provided:", id)
+    }
+  }
+
+  const handleReject = (id: string) => {
+    if (typeof onReject === "function") {
+      onReject(id)
+    } else {
+      console.log("[v0] Reject swap clicked - handler not provided:", id)
+    }
+  }
   const pendingRequests = (swapRequests || []).filter((r) => r.status === "pending")
   const processedRequests = (swapRequests || []).filter((r) => r.status !== "pending")
 
@@ -85,11 +101,11 @@ export default function SwapRequestsTab({ swapRequests, onApprove, onReject, isL
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => onReject(request.id)}>
+                    <Button size="sm" variant="outline" onClick={() => handleReject(request.id)}>
                       <X className="h-4 w-4 mr-1" />
                       Ablehnen
                     </Button>
-                    <Button size="sm" onClick={() => onApprove(request.id)}>
+                    <Button size="sm" onClick={() => handleApprove(request.id)}>
                       <Check className="h-4 w-4 mr-1" />
                       Genehmigen
                     </Button>

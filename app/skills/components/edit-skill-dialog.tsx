@@ -24,10 +24,8 @@ interface EditSkillDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   skill: Skill | null
-  onSubmit: (id: string, data: SkillUpdateData) => Promise<void>
-  arbeitsplaetze: Arbeitsplatz[]
-  skillArbeitsplatzIds: string[]
-  isSaving: boolean
+  practiceId: string
+  onSuccess: () => void
 }
 
 export interface SkillUpdateData {
@@ -45,11 +43,16 @@ export function EditSkillDialog({
   open,
   onOpenChange,
   skill,
-  onSubmit,
-  arbeitsplaetze,
-  skillArbeitsplatzIds,
-  isSaving,
+  practiceId,
+  onSuccess,
 }: EditSkillDialogProps) {
+  const [arbeitsplaetze, setArbeitsplaetze] = useState<Arbeitsplatz[]>([])
+  const [skillArbeitsplatzIds, setSkillArbeitsplatzIds] = useState<string[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  
+  // Ensure arbeitsplaetze is always an array
+  const safeArbeitsplaetze = Array.isArray(arbeitsplaetze) ? arbeitsplaetze : []
+  
   const [formData, setFormData] = useState<SkillUpdateData>({
     name: "",
     description: "",
@@ -60,6 +63,25 @@ export function EditSkillDialog({
     level_3_description: "",
     arbeitsplatzIds: [],
   })
+
+  // Fetch arbeitsplaetze and skill arbeitsplatz associations
+  useEffect(() => {
+    if (open && practiceId) {
+      // Fetch arbeitsplaetze
+      fetch(`/api/practices/${practiceId}/arbeitsplaetze`)
+        .then((res) => res.json())
+        .then((data) => setArbeitsplaetze(data.arbeitsplaetze || []))
+        .catch(() => setArbeitsplaetze([]))
+      
+      // Fetch skill arbeitsplatz associations
+      if (skill) {
+        fetch(`/api/practices/${practiceId}/skills/${skill.id}/arbeitsplaetze`)
+          .then((res) => res.json())
+          .then((data) => setSkillArbeitsplatzIds(data.arbeitsplatzIds || []))
+          .catch(() => setSkillArbeitsplatzIds([]))
+      }
+    }
+  }, [open, practiceId, skill])
 
   useEffect(() => {
     if (skill) {
@@ -77,8 +99,24 @@ export function EditSkillDialog({
   }, [skill, skillArbeitsplatzIds])
 
   const handleSubmit = async () => {
-    if (skill) {
-      await onSubmit(skill.id, formData)
+    if (!skill || !practiceId || !formData.name) return
+    
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/skills/${skill.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      
+      if (!response.ok) throw new Error("Failed to update skill")
+      
+      onOpenChange(false)
+      onSuccess()
+    } catch (error) {
+      console.error("Error updating skill:", error)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -186,12 +224,12 @@ export function EditSkillDialog({
               </p>
               <ScrollArea className="h-[200px] border rounded-md p-4">
                 <div className="space-y-3">
-                  {arbeitsplaetze.length === 0 ? (
+                  {safeArbeitsplaetze.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       Keine Arbeitsplätze vorhanden
                     </p>
                   ) : (
-                    arbeitsplaetze.map((ap) => (
+                    safeArbeitsplaetze.map((ap) => (
                       <div key={ap.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`edit-ap-${ap.id}`}

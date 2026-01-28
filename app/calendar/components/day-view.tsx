@@ -10,26 +10,17 @@ import { getEventTypeColor, getEventTypeLabel, HOURS } from "../types"
 
 interface DayViewProps {
   currentDate: Date
-  events: CalendarEvent[]
-  onSelectEvent: (event: CalendarEvent) => void
+  getEventsForHour: (day: Date, hour: number) => CalendarEvent[]
+  getAllDayEventsForDay: (day: Date) => CalendarEvent[]
+  onEventClick: (event: CalendarEvent) => void
 }
 
-export function DayView({ currentDate, events, onSelectEvent }: DayViewProps) {
-  const getEventsForHour = (hour: number) => {
-    return events.filter((event) => {
-      if (event.isAllDay) return false
-      const eventStart = parseISO(event.startDate)
-      const eventStartHour = parseInt(event.startTime?.split(":")[0] || "0", 10)
-      return isSameDay(eventStart, currentDate) && eventStartHour === hour
-    })
+export function DayView({ currentDate, getEventsForHour, getAllDayEventsForDay, onEventClick }: DayViewProps) {
+  const getHourEvents = (hour: number) => {
+    return (getEventsForHour(currentDate, hour) || []).filter(e => e && e.title)
   }
 
-  const allDayEvents = events.filter((event) => {
-    if (!event.isAllDay) return false
-    const eventStart = parseISO(event.startDate)
-    const eventEnd = parseISO(event.endDate)
-    return currentDate >= eventStart && currentDate <= eventEnd
-  })
+  const allDayEvents = (getAllDayEventsForDay(currentDate) || []).filter(e => e && e.title)
 
   return (
     <div className="bg-card rounded-lg border">
@@ -52,7 +43,7 @@ export function DayView({ currentDate, events, onSelectEvent }: DayViewProps) {
                   "px-3 py-2 rounded text-white cursor-pointer hover:opacity-80",
                   getEventTypeColor(event.type)
                 )}
-                onClick={() => onSelectEvent(event)}
+                onClick={() => onEventClick(event)}
               >
                 <div className="flex items-center gap-2">
                   {event.isRecurringInstance && <Repeat className="h-3 w-3" />}
@@ -68,7 +59,7 @@ export function DayView({ currentDate, events, onSelectEvent }: DayViewProps) {
       <ScrollArea className="h-[600px]">
         <div className="divide-y">
           {HOURS.map((hour) => {
-            const hourEvents = getEventsForHour(hour)
+            const hourEvents = getHourEvents(hour)
             return (
               <div key={hour} className="flex min-h-[60px]">
                 <div className="w-20 p-2 text-sm text-muted-foreground border-r flex-shrink-0">
@@ -85,7 +76,7 @@ export function DayView({ currentDate, events, onSelectEvent }: DayViewProps) {
                           getEventTypeColor(event.type),
                           "text-white"
                         )}
-                        onClick={() => onSelectEvent(event)}
+                        onClick={() => onEventClick(event)}
                       >
                         <div className="flex items-start justify-between">
                           <div>

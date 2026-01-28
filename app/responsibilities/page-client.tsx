@@ -62,6 +62,7 @@ export default function ResponsibilitiesPageClient() {
     createTodoDialogOpen,
     setCreateTodoDialogOpen,
     responsibilityForTodo,
+    setResponsibilityForTodo,
     formData,
     setFormData,
     hoursDisplayValue,
@@ -325,7 +326,10 @@ export default function ResponsibilitiesPageClient() {
             open={createTodoDialogOpen}
             onOpenChange={setCreateTodoDialogOpen}
             responsibility={responsibilityForTodo}
-            onSuccess={() => {}}
+            onSuccess={() => {
+              setCreateTodoDialogOpen(false)
+              setResponsibilityForTodo(null)
+            }}
           />
         )}
       </div>

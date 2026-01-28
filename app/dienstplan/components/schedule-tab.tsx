@@ -1,11 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -13,16 +13,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
+import ShiftDialog from "./shift-dialog"
 import type { TeamMember, Shift, ShiftType } from "../types"
 
 interface ScheduleTabProps {
   weekDays: Date[]
-  filteredTeamMembers: TeamMember[]
+  teamMembers: TeamMember[]
   schedules: Shift[]
   shiftTypes: ShiftType[]
-  onCellClick: (date: Date, memberId: string) => void
-  onEditShift: (shift: Shift) => void
-  onDeleteShift: (shiftId: string) => void
+  practiceId: string
+  onRefresh: () => void
 }
 
 const getShiftIcon = (name: string) => {
@@ -35,20 +36,84 @@ const getShiftIcon = (name: string) => {
 
 export default function ScheduleTab({
   weekDays,
-  filteredTeamMembers,
+  teamMembers,
   schedules,
   shiftTypes,
-  onCellClick,
-  onEditShift,
-  onDeleteShift,
+  practiceId,
+  onRefresh,
 }: ScheduleTabProps) {
+  const { toast } = useToast()
+  
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingShift, setEditingShift] = useState<Shift | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
+
+  // Use teamMembers directly (with fallback to empty array)
+  const filteredTeamMembers = teamMembers || []
+
   const getShiftsForCell = (date: Date, memberId: string) => {
     const dateStr = format(date, "yyyy-MM-dd")
-    return (schedules || []).filter((s) => s.team_member_id === memberId && s.date === dateStr)
+    return (schedules || []).filter((s) => s.team_member_id === memberId && (s.shift_date === dateStr || s.date === dateStr))
   }
 
   const getShiftType = (shiftTypeId: string) => {
-    return shiftTypes.find((st) => st.id === shiftTypeId)
+    return (shiftTypes || []).find((st) => st.id === shiftTypeId)
+  }
+
+  // Cell click handler - open dialog to add new shift
+  const onCellClick = (date: Date, memberId: string) => {
+    setSelectedDate(date)
+    setSelectedMemberId(memberId)
+    setEditingShift(null)
+    setDialogOpen(true)
+  }
+
+  // Edit shift handler
+  const onEditShift = (shift: Shift) => {
+    setEditingShift(shift)
+    setSelectedDate(null)
+    setSelectedMemberId(null)
+    setDialogOpen(true)
+  }
+
+  // Delete shift handler
+  const onDeleteShift = async (shiftId: string) => {
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/schedules/${shiftId}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        toast({ title: "Schicht gelöscht" })
+        onRefresh()
+      } else {
+        throw new Error("Failed to delete")
+      }
+    } catch {
+      toast({ title: "Fehler beim Löschen", variant: "destructive" })
+    }
+  }
+
+  // Save shift handler
+  const handleSaveShift = async (data: Partial<Shift>) => {
+    const isEditing = !!editingShift
+    const url = isEditing
+      ? `/api/practices/${practiceId}/dienstplan/schedules/${editingShift.id}`
+      : `/api/practices/${practiceId}/dienstplan/schedules`
+
+    const res = await fetch(url, {
+      method: isEditing ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, practice_id: parseInt(practiceId) }),
+    })
+
+    if (res.ok) {
+      toast({ title: isEditing ? "Schicht aktualisiert" : "Schicht erstellt" })
+      onRefresh()
+    } else {
+      throw new Error("Failed to save shift")
+    }
   }
 
   return (
@@ -161,6 +226,17 @@ export default function ScheduleTab({
           </table>
         </div>
       </CardContent>
+
+      <ShiftDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        shift={editingShift}
+        shiftTypes={shiftTypes || []}
+        teamMembers={teamMembers || []}
+        defaultDate={selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined}
+        defaultTeamMemberId={selectedMemberId || undefined}
+        onSave={handleSaveShift}
+      />
     </Card>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
+import useSWR from "swr"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent } from "@/components/ui/card"
@@ -27,9 +28,6 @@ export default function SkillsPageClient() {
   const { isAiEnabled } = useAiEnabled()
 
   const [mounted, setMounted] = useState(false)
-  const [skills, setSkills] = useState<Skill[]>([])
-  const [arbeitsplaetze, setArbeitsplaetze] = useState<Arbeitsplatz[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [arbeitsplatzFilter, setArbeitsplatzFilter] = useState<string>("all")
@@ -52,6 +50,32 @@ export default function SkillsPageClient() {
   const [initialExpandDone, setInitialExpandDone] = useState(false)
 
   const practiceId = currentPractice?.id
+
+  // Fetch skills with SWR
+  const { data: skillsData, mutate: refreshSkills, isLoading } = useSWR<{ skills: Skill[] }>(
+    practiceId ? `/api/practices/${practiceId}/skills` : null,
+    async (url) => {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error("Failed to fetch skills")
+      return res.json()
+    }
+  )
+
+  // Fetch arbeitsplaetze with SWR
+  const { data: arbeitsplaetzeData } = useSWR<{ arbeitsplaetze: Arbeitsplatz[] }>(
+    practiceId ? `/api/practices/${practiceId}/arbeitsplaetze` : null,
+    async (url) => {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error("Failed to fetch arbeitsplaetze")
+      return res.json()
+    }
+  )
+
+  const skills = skillsData?.skills || []
+  const arbeitsplaetze = arbeitsplaetzeData?.arbeitsplaetze || []
+
+  // Ensure arbeitsplaetze is always an array for safe access
+  const safeArbeitsplaetze = Array.isArray(arbeitsplaetze) ? arbeitsplaetze : []
 
   // Persist view mode
   useEffect(() => {
@@ -271,7 +295,7 @@ export default function SkillsPageClient() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alle Arbeitsplätze</SelectItem>
-              {arbeitsplaetze.map((ap) => (
+              {safeArbeitsplaetze.map((ap) => (
                 <SelectItem key={ap.id} value={ap.id}>
                   {ap.name}
                 </SelectItem>

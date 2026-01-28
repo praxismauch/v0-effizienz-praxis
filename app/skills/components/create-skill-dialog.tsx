@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -23,9 +23,8 @@ import { categoryLabels, type Arbeitsplatz } from "../types"
 interface CreateSkillDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: SkillFormData) => Promise<void>
-  arbeitsplaetze: Arbeitsplatz[]
-  isSaving: boolean
+  practiceId: string
+  onSuccess: () => void
 }
 
 export interface SkillFormData {
@@ -53,15 +52,47 @@ const initialFormData: SkillFormData = {
 export function CreateSkillDialog({
   open,
   onOpenChange,
-  onSubmit,
-  arbeitsplaetze,
-  isSaving,
+  practiceId,
+  onSuccess,
 }: CreateSkillDialogProps) {
   const [formData, setFormData] = useState<SkillFormData>(initialFormData)
+  const [arbeitsplaetze, setArbeitsplaetze] = useState<Arbeitsplatz[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  
+  // Ensure arbeitsplaetze is always an array
+  const safeArbeitsplaetze = Array.isArray(arbeitsplaetze) ? arbeitsplaetze : []
+  
+  // Fetch arbeitsplaetze when dialog opens
+  useEffect(() => {
+    if (open && practiceId) {
+      fetch(`/api/practices/${practiceId}/arbeitsplaetze`)
+        .then((res) => res.json())
+        .then((data) => setArbeitsplaetze(data.arbeitsplaetze || []))
+        .catch(() => setArbeitsplaetze([]))
+    }
+  }, [open, practiceId])
 
   const handleSubmit = async () => {
-    await onSubmit(formData)
-    setFormData(initialFormData)
+    if (!practiceId || !formData.name) return
+    
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/skills`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      
+      if (!response.ok) throw new Error("Failed to create skill")
+      
+      setFormData(initialFormData)
+      onOpenChange(false)
+      onSuccess()
+    } catch (error) {
+      console.error("Error creating skill:", error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleClose = (isOpen: boolean) => {
@@ -175,12 +206,12 @@ export function CreateSkillDialog({
               </p>
               <ScrollArea className="h-[200px] border rounded-md p-4">
                 <div className="space-y-3">
-                  {arbeitsplaetze.length === 0 ? (
+                  {safeArbeitsplaetze.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       Keine Arbeitsplätze vorhanden
                     </p>
                   ) : (
-                    arbeitsplaetze.map((ap) => (
+                    safeArbeitsplaetze.map((ap) => (
                       <div key={ap.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`ap-${ap.id}`}

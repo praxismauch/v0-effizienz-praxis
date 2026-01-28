@@ -44,7 +44,9 @@ export function useResponsibilities() {
         throw new Error(`Fehler beim Laden: ${response.status}`)
       }
       const data = await response.json()
-      setResponsibilities(data || [])
+      // Handle both { responsibilities: [] } and [] formats
+      const responsibilitiesArray = Array.isArray(data) ? data : (data.responsibilities || [])
+      setResponsibilities(responsibilitiesArray)
     } catch (err) {
       console.error("Error fetching responsibilities:", err)
       setError(err instanceof Error ? err.message : "Fehler beim Laden der Zuständigkeiten")
@@ -306,6 +308,7 @@ export function useResponsibilities() {
     createTodoDialogOpen,
     setCreateTodoDialogOpen,
     responsibilityForTodo,
+    setResponsibilityForTodo,
     formData,
     setFormData,
     hoursDisplayValue,

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { Plus, Edit, Trash2, Check, X, Clock, Palmtree, AlertCircle } from "lucide-react"
@@ -7,15 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/hooks/use-toast"
+import AvailabilityDialog from "./availability-dialog"
 import type { Availability, TeamMember } from "../types"
 import { DAYS_OF_WEEK } from "../types"
 
 interface AvailabilityTabProps {
   availability: Availability[]
   teamMembers: TeamMember[]
-  onAddAvailability: (memberId: string) => void
-  onEditAvailability: (availability: Availability) => void
-  onDeleteAvailability: (id: string) => void
+  practiceId: string
+  onRefresh: () => void
 }
 
 const getAvailabilityIcon = (type: string) => {
@@ -70,11 +72,63 @@ const getAvailabilityLabel = (type: string) => {
 export default function AvailabilityTab({
   availability,
   teamMembers,
-  onAddAvailability,
-  onEditAvailability,
-  onDeleteAvailability,
+  practiceId,
+  onRefresh,
 }: AvailabilityTabProps) {
-  const getMember = (memberId: string) => teamMembers.find((m) => m.id === memberId)
+  const { toast } = useToast()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
+  const [editingAvailability, setEditingAvailability] = useState<Availability | null>(null)
+
+  const onAddAvailability = (memberId: string) => {
+    setSelectedMemberId(memberId)
+    setEditingAvailability(null)
+    setDialogOpen(true)
+  }
+
+  const onEditAvailability = (item: Availability) => {
+    setSelectedMemberId(item.team_member_id)
+    setEditingAvailability(item)
+    setDialogOpen(true)
+  }
+
+  const onDeleteAvailability = async (id: string) => {
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/availability/${id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        toast({ title: "Verfügbarkeit gelöscht" })
+        onRefresh()
+      } else {
+        throw new Error("Failed to delete")
+      }
+    } catch {
+      toast({ title: "Fehler beim Löschen", variant: "destructive" })
+    }
+  }
+
+  const handleSaveAvailability = async (data: Partial<Availability>) => {
+    const isEditing = !!editingAvailability
+    const url = isEditing
+      ? `/api/practices/${practiceId}/dienstplan/availability/${editingAvailability.id}`
+      : `/api/practices/${practiceId}/dienstplan/availability`
+
+    const res = await fetch(url, {
+      method: isEditing ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (res.ok) {
+      toast({ title: isEditing ? "Verfügbarkeit aktualisiert" : "Verfügbarkeit erstellt" })
+      onRefresh()
+    } else {
+      throw new Error("Failed to save availability")
+    }
+  }
+
+  const getMember = (memberId: string) => (teamMembers || []).find((m) => m.id === memberId)
 
   const groupedAvailability = (teamMembers || []).map((member) => ({
     member,
@@ -175,6 +229,14 @@ export default function AvailabilityTab({
           </CardContent>
         </Card>
       ))}
+
+      <AvailabilityDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        availability={editingAvailability}
+        teamMemberId={selectedMemberId || ""}
+        onSave={handleSaveAvailability}
+      />
     </div>
   )
 }

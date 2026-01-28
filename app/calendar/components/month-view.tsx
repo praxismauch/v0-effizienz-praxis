@@ -41,7 +41,7 @@ export function MonthView({
       {/* Calendar grid */}
       <div className="grid grid-cols-7">
         {calendarDays.map((day, index) => {
-          const dayEvents = getEventsForDay(day)
+          const dayEvents = (getEventsForDay(day) || []).filter(e => e && e.title)
           const isCurrentMonth = isSameMonth(day, currentDate)
           const isTodayDate = isToday(day)
 

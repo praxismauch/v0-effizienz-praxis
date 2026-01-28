@@ -26,18 +26,21 @@ export function GoalsTab({
   aiSuggestions,
   onAcceptSuggestion,
 }: GoalsTabProps) {
+  // Ensure goals is always an array
+  const safeGoals = Array.isArray(goals) ? goals : []
+
   const addGoal = () => {
-    onUpdate([...goals, { title: "", description: "", priority: "medium", status: "open" }])
+    onUpdate([...safeGoals, { title: "", description: "", priority: "medium", status: "open" }])
   }
 
   const updateGoal = (index: number, field: keyof NewGoal, value: string) => {
-    const newGoals = [...goals]
+    const newGoals = [...safeGoals]
     newGoals[index] = { ...newGoals[index], [field]: value }
     onUpdate(newGoals)
   }
 
   const removeGoal = (index: number) => {
-    onUpdate(goals.filter((_, i) => i !== index))
+    onUpdate(safeGoals.filter((_, i) => i !== index))
   }
 
   return (
@@ -89,7 +92,7 @@ export function GoalsTab({
 
       {/* Goals List */}
       <div className="space-y-3">
-        {goals.map((goal, index) => (
+        {safeGoals.map((goal, index) => (
           <Card key={index}>
             <CardContent className="py-4">
               <div className="grid gap-3">

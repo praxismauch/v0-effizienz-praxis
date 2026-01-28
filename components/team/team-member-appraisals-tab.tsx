@@ -166,16 +166,20 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
   // Define toast here
   const { toast } = useToast()
 
-  const { data: skills = [], mutate: mutateSkills } = useSWR<SkillDefinition[]>(
+  const { data: skillsData, mutate: mutateSkills } = useSWR<SkillDefinition[]>(
     practiceId && memberId ? `/api/practices/${practiceId}/team-members/${memberId}/skills` : null,
     swrFetcher,
   )
+  
+  // Ensure skills is always an array
+  const skills = Array.isArray(skillsData) ? skillsData : []
 
   const [skillsLoading, setSkillsLoading] = useState(false)
 
   const convertSkillsToCompetencies = useCallback((skillsData: SkillDefinition[]) => {
-    return skillsData
-      .filter((s) => s.current_level !== null || s.target_level !== null)
+    const safeSkills = Array.isArray(skillsData) ? skillsData : []
+    return safeSkills
+      .filter((s) => s && (s.current_level !== null || s.target_level !== null))
       .map((skill) => ({
         skill_id: skill.id,
         name: skill.name,
@@ -199,14 +203,14 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
             action,
             memberName,
             formData,
-            skills: skills?.filter(Boolean).map((s) => ({
+            skills: (Array.isArray(skills) ? skills : []).filter(Boolean).map((s) => ({
               // Include skills in AI context
               name: s.name,
               category: s.category,
               currentLevel: s.current_level,
               targetLevel: s.target_level,
               gap: (s.target_level ?? 3) - (s.current_level ?? 0),
-            })) || [],
+            })),
             ...context,
           }),
         })

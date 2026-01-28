@@ -170,6 +170,7 @@ export default function MitarbeitergespraechePage() {
 
   // Filter team members based on user permissions
   const filteredTeamMembers = useMemo(() => {
+    if (!Array.isArray(teamMembers)) return []
     return teamMembers.filter((m: TeamMember) => m.id !== currentUser?.id || isAdmin || isSuperAdmin)
   }, [teamMembers, currentUser?.id, isAdmin, isSuperAdmin])
 
@@ -178,8 +179,9 @@ export default function MitarbeitergespraechePage() {
 
     // Optimistic update - remove from UI immediately
     const previousAppraisals = appraisals
+    const safeAppraisals = Array.isArray(appraisals) ? appraisals : []
     mutateAppraisals(
-      appraisals.filter((a) => a.id !== appraisalToDelete.id),
+      safeAppraisals.filter((a) => a.id !== appraisalToDelete.id),
       { revalidate: false },
     )
 
@@ -205,6 +207,7 @@ export default function MitarbeitergespraechePage() {
   }
 
   const filteredAppraisals = useMemo(() => {
+    if (!Array.isArray(appraisals)) return []
     return appraisals.filter((appraisal) => {
       const matchesSearch =
         !searchQuery ||
@@ -219,22 +222,22 @@ export default function MitarbeitergespraechePage() {
   }, [appraisals, searchQuery, statusFilter, typeFilter])
 
   // Statistics
-  const stats = useMemo(
-    () => ({
-      total: appraisals.length,
-      completed: appraisals.filter((a) => a.status === "completed").length,
-      pending: appraisals.filter((a) => ["draft", "scheduled", "in_progress"].includes(a.status)).length,
-      upcoming: appraisals.filter((a) => {
+  const stats = useMemo(() => {
+    const safeAppraisals = Array.isArray(appraisals) ? appraisals : []
+    return {
+      total: safeAppraisals.length,
+      completed: safeAppraisals.filter((a) => a.status === "completed").length,
+      pending: safeAppraisals.filter((a) => ["draft", "scheduled", "in_progress"].includes(a.status)).length,
+      upcoming: safeAppraisals.filter((a) => {
         if (!a.next_review_date) return false
         const nextDate = parseISO(a.next_review_date)
         return isAfter(nextDate, new Date()) && isBefore(nextDate, addMonths(new Date(), 3))
       }).length,
       avgRating:
-        appraisals.filter((a) => a.overall_rating).reduce((sum, a) => sum + (a.overall_rating || 0), 0) /
-          (appraisals.filter((a) => a.overall_rating).length || 1) || 0,
-    }),
-    [appraisals],
-  )
+        safeAppraisals.filter((a) => a.overall_rating).reduce((sum, a) => sum + (a.overall_rating || 0), 0) /
+          (safeAppraisals.filter((a) => a.overall_rating).length || 1) || 0,
+    }
+  }, [appraisals])
 
   const renderRating = (rating?: number) => {
     if (!rating) return <span className="text-muted-foreground">-</span>
@@ -516,7 +519,8 @@ export default function MitarbeitergespraechePage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredTeamMembers.map((member) => {
-                  const memberAppraisals = appraisals.filter((a) => a.employee_id === member.id)
+                  const safeAppraisalsForMember = Array.isArray(appraisals) ? appraisals : []
+                  const memberAppraisals = safeAppraisalsForMember.filter((a) => a.employee_id === member.id)
                   const latestAppraisal = memberAppraisals[0]
 
                   return (

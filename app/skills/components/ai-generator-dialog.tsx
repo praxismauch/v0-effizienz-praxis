@@ -16,56 +16,99 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sparkles, CheckCircle2, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { categoryLabels, categoryColors, type GeneratedSkill } from "../types"
 
 interface AIGeneratorDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onGenerate: (prompt: string) => Promise<void>
-  onSaveSkills: (skills: GeneratedSkill[]) => Promise<void>
-  generatedSkills: GeneratedSkill[]
-  setGeneratedSkills: (skills: GeneratedSkill[]) => void
-  isGenerating: boolean
-  isSaving: boolean
+  practiceId: string
+  onSuccess?: () => void
 }
 
 export function AiGeneratorDialog({
   open,
   onOpenChange,
-  onGenerate,
-  onSaveSkills,
-  generatedSkills,
-  setGeneratedSkills,
-  isGenerating,
-  isSaving,
+  practiceId,
+  onSuccess,
 }: AIGeneratorDialogProps) {
   const [aiPrompt, setAiPrompt] = useState("")
+  const [generatedSkills, setGeneratedSkills] = useState<GeneratedSkill[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const handleGenerate = async () => {
-    await onGenerate(aiPrompt)
+    if (!aiPrompt.trim() || !practiceId) return
+    
+    setIsGenerating(true)
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/skills/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const skills = Array.isArray(data.skills) ? data.skills : []
+        setGeneratedSkills(skills.map((s: any) => ({ ...s, selected: true })))
+        toast.success(`${skills.length} Kompetenzen generiert`)
+      } else {
+        toast.error("Fehler beim Generieren")
+      }
+    } catch (error) {
+      toast.error("Fehler beim Generieren")
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const handleSave = async () => {
-    const selected = generatedSkills.filter((s) => s.selected)
-    await onSaveSkills(selected)
-    setAiPrompt("")
+    const selected = (generatedSkills || []).filter((s) => s.selected)
+    if (selected.length === 0 || !practiceId) return
+    
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/skills/generate-bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skills: selected }),
+      })
+      
+      if (response.ok) {
+        toast.success(`${selected.length} Kompetenzen gespeichert`)
+        setAiPrompt("")
+        setGeneratedSkills([])
+        onOpenChange(false)
+        onSuccess?.()
+      } else {
+        toast.error("Fehler beim Speichern")
+      }
+    } catch (error) {
+      toast.error("Fehler beim Speichern")
+    } finally {
+      setIsSaving(false)
+    }
   }
+  
+  // Ensure generatedSkills is always an array
+  const safeGeneratedSkills = Array.isArray(generatedSkills) ? generatedSkills : []
 
   const toggleSkillSelection = (index: number) => {
-    const updated = [...generatedSkills]
+    const updated = [...safeGeneratedSkills]
     updated[index].selected = !updated[index].selected
     setGeneratedSkills(updated)
   }
 
   const selectAll = () => {
-    setGeneratedSkills(generatedSkills.map((s) => ({ ...s, selected: true })))
+    setGeneratedSkills(safeGeneratedSkills.map((s) => ({ ...s, selected: true })))
   }
 
   const deselectAll = () => {
-    setGeneratedSkills(generatedSkills.map((s) => ({ ...s, selected: false })))
+    setGeneratedSkills(safeGeneratedSkills.map((s) => ({ ...s, selected: false })))
   }
 
-  const selectedCount = generatedSkills.filter((s) => s.selected).length
+  const selectedCount = safeGeneratedSkills.filter((s) => s.selected).length
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,10 +146,10 @@ export function AiGeneratorDialog({
             )}
           </Button>
 
-          {generatedSkills.length > 0 && (
+          {safeGeneratedSkills.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Generierte Kompetenzen ({generatedSkills.length})</Label>
+                <Label>Generierte Kompetenzen ({safeGeneratedSkills.length})</Label>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={selectAll}>
                     Alle auswählen
@@ -118,7 +161,7 @@ export function AiGeneratorDialog({
               </div>
               <ScrollArea className="h-[300px] border rounded-lg">
                 <div className="p-4 space-y-3">
-                  {generatedSkills.map((skill, index) => (
+                  {safeGeneratedSkills.map((skill, index) => (
                     <div
                       key={index}
                       className={`p-4 rounded-lg border cursor-pointer transition-colors ${
@@ -163,7 +206,7 @@ export function AiGeneratorDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
-          {generatedSkills.length > 0 && (
+          {safeGeneratedSkills.length > 0 && (
             <Button onClick={handleSave} disabled={selectedCount === 0 || isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {selectedCount} Kompetenz{selectedCount !== 1 ? "en" : ""} speichern

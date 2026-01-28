@@ -26,10 +26,15 @@ export function MemberSelection({
   onSelectMember,
   onBack,
 }: MemberSelectionProps) {
-  const filteredMembers = teamMembers.filter(
+  // Ensure teamMembers is always an array
+  const safeTeamMembers = Array.isArray(teamMembers) ? teamMembers : []
+  
+  const filteredMembers = safeTeamMembers.filter(
     (member) =>
-      member.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.role?.toLowerCase().includes(searchQuery.toLowerCase()),
+      member && (
+        member.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        member.role?.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
   )
 
   return (

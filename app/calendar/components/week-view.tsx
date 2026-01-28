@@ -1,49 +1,27 @@
 "use client"
 
-import { format, isSameDay, isToday, parseISO, addDays, startOfWeek, endOfWeek } from "date-fns"
+import { format, isToday } from "date-fns"
 import { de } from "date-fns/locale"
-import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { CalendarEvent } from "../types"
 import { getEventTypeColor, HOURS } from "../types"
 
 interface WeekViewProps {
-  currentDate: Date
-  events: CalendarEvent[]
-  onSelectEvent: (event: CalendarEvent) => void
+  weekDays: Date[]
+  getEventsForHour: (day: Date, hour: number) => CalendarEvent[]
+  getAllDayEventsForDay: (day: Date) => CalendarEvent[]
+  onDayClick: (day: Date) => void
+  onEventClick: (event: CalendarEvent) => void
 }
 
-export function WeekView({ currentDate, events, onSelectEvent }: WeekViewProps) {
-  const weekDays = useMemo(() => {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
-    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
-    const days = []
-    let day = weekStart
-    while (day <= weekEnd) {
-      days.push(day)
-      day = addDays(day, 1)
-    }
-    return days
-  }, [currentDate])
-
-  const getEventsForDayAndHour = (day: Date, hour: number) => {
-    return events.filter((event) => {
-      if (event.isAllDay) return false
-      const eventStart = parseISO(event.startDate)
-      const eventStartHour = parseInt(event.startTime?.split(":")[0] || "0", 10)
-      return isSameDay(eventStart, day) && eventStartHour === hour
-    })
-  }
-
-  const getAllDayEvents = (day: Date) => {
-    return events.filter((event) => {
-      if (!event.isAllDay) return false
-      const eventStart = parseISO(event.startDate)
-      const eventEnd = parseISO(event.endDate)
-      return day >= eventStart && day <= eventEnd
-    })
-  }
+export function WeekView({ 
+  weekDays, 
+  getEventsForHour, 
+  getAllDayEventsForDay, 
+  onDayClick, 
+  onEventClick 
+}: WeekViewProps) {
 
   return (
     <div className="bg-card rounded-lg border">
@@ -77,17 +55,17 @@ export function WeekView({ currentDate, events, onSelectEvent }: WeekViewProps) 
           Ganztägig
         </div>
         {weekDays.map((day, dayIndex) => {
-          const allDayEvents = getAllDayEvents(day)
+          const allDayEvents = getAllDayEventsForDay(day) || []
           return (
             <div key={dayIndex} className="p-1 border-r last:border-r-0 flex flex-wrap gap-1">
-              {allDayEvents.map((event) => (
+              {allDayEvents.filter(e => e && e.title).map((event) => (
                 <div
                   key={event.id}
                   className={cn(
                     "text-xs p-1 rounded text-white cursor-pointer hover:opacity-80 truncate max-w-full",
                     getEventTypeColor(event.type)
                   )}
-                  onClick={() => onSelectEvent(event)}
+                  onClick={() => onEventClick(event)}
                   title={event.title}
                 >
                   {event.title}
@@ -107,7 +85,7 @@ export function WeekView({ currentDate, events, onSelectEvent }: WeekViewProps) 
                 {hour.toString().padStart(2, "0")}:00
               </div>
               {weekDays.map((day, dayIndex) => {
-                const hourEvents = getEventsForDayAndHour(day, hour)
+                const hourEvents = (getEventsForHour(day, hour) || []).filter(e => e && e.title)
                 return (
                   <div
                     key={`${hour}-${dayIndex}`}
@@ -123,7 +101,7 @@ export function WeekView({ currentDate, events, onSelectEvent }: WeekViewProps) 
                           "text-xs p-1 rounded text-white cursor-pointer hover:opacity-80 truncate",
                           getEventTypeColor(event.type)
                         )}
-                        onClick={() => onSelectEvent(event)}
+                        onClick={() => onEventClick(event)}
                         title={event.title}
                       >
                         {event.startTime} - {event.title}

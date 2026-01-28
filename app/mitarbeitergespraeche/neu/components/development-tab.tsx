@@ -26,18 +26,21 @@ export function DevelopmentTab({
   aiSuggestions,
   onAcceptSuggestion,
 }: DevelopmentTabProps) {
+  // Ensure plans is always an array
+  const safePlans = Array.isArray(plans) ? plans : []
+
   const addPlan = () => {
-    onUpdate([...plans, { title: "", description: "", type: "training", status: "planned" }])
+    onUpdate([...safePlans, { title: "", description: "", type: "training", status: "planned" }])
   }
 
   const updatePlan = (index: number, field: keyof DevelopmentPlan, value: string) => {
-    const newPlans = [...plans]
+    const newPlans = [...safePlans]
     newPlans[index] = { ...newPlans[index], [field]: value }
     onUpdate(newPlans)
   }
 
   const removePlan = (index: number) => {
-    onUpdate(plans.filter((_, i) => i !== index))
+    onUpdate(safePlans.filter((_, i) => i !== index))
   }
 
   return (
@@ -89,7 +92,7 @@ export function DevelopmentTab({
 
       {/* Development Plans List */}
       <div className="space-y-3">
-        {plans.map((plan, index) => (
+        {safePlans.map((plan, index) => (
           <Card key={index}>
             <CardContent className="py-4">
               <div className="grid gap-3">
@@ -152,7 +155,7 @@ export function DevelopmentTab({
             </CardContent>
           </Card>
         ))}
-        {plans.length === 0 && (
+        {safePlans.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             Noch keine Entwicklungsmaßnahmen definiert.
           </div>

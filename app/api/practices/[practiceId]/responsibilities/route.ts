@@ -156,6 +156,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const responsibleUserId = body.responsible_user_id || body.responsibleUserId
     const deputyUserId = body.deputy_user_id || body.deputyUserId
     const teamMemberIds = body.team_member_ids || body.teamMemberIds
+    const arbeitsplatzIds = body.arbeitsplatz_ids || body.arbeitsplatzIds || []
     const assignedTeams = body.assigned_teams || body.assignedTeams || []
     const priority = body.priority || "medium"
     const createdBy = body.created_by || body.createdBy
@@ -187,6 +188,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       responsible_user_id: responsibleUserId || null,
       deputy_user_id: deputyUserId || null,
       team_member_ids: teamMemberIds || [],
+      arbeitsplatz_ids: arbeitsplatzIds,
       assigned_teams: assignedTeams,
       priority: priority,
       created_by: finalCreatedBy,

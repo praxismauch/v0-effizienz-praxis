@@ -163,7 +163,7 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
           className={cn(
             "p-4 border-b",
             arbeitsplatz.is_active
-              ? "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30"
+              ? colorConfig.gradient
               : "bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30",
           )}
         >
@@ -172,13 +172,13 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
               <div
                 className={cn(
                   "p-2.5 rounded-xl shrink-0",
-                  arbeitsplatz.is_active ? "bg-green-100 dark:bg-green-900/50" : "bg-gray-100 dark:bg-gray-800",
+                  arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
                 )}
               >
                 <Monitor
                   className={cn(
                     "h-5 w-5",
-                    arbeitsplatz.is_active ? "text-green-600 dark:text-green-400" : "text-gray-500",
+                    arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
                   )}
                 />
               </div>

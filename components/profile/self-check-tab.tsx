@@ -9,6 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import {
@@ -34,6 +42,9 @@ import {
   Clock,
   ArrowRight,
   RefreshCw,
+  Plus,
+  Eye,
+  X,
 } from "lucide-react"
 import {
   Line,
@@ -51,6 +62,8 @@ import {
   Area,
   AreaChart,
 } from "recharts"
+import { format, startOfWeek, endOfWeek, isWithinInterval, subWeeks, addWeeks } from "date-fns"
+import { de } from "date-fns/locale"
 
 interface SelfCheckData {
   id: string
@@ -163,9 +176,21 @@ const DIMENSIONS = [
   },
 ]
 
+// Helper to get week info
+const getWeekInfo = (date: Date) => {
+  const start = startOfWeek(date, { weekStartsOn: 1 })
+  const end = endOfWeek(date, { weekStartsOn: 1 })
+  return {
+    start,
+    end,
+    label: `KW ${format(date, "w", { locale: de })}`,
+    dateRange: `${format(start, "dd.MM.", { locale: de })} - ${format(end, "dd.MM.yyyy", { locale: de })}`,
+  }
+}
+
 export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
   const { toast } = useToast()
-  const [activeSubTab, setActiveSubTab] = useState("assessment")
+  const [activeSubTab, setActiveSubTab] = useState("weekly")
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
@@ -182,6 +207,14 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
   const [notes, setNotes] = useState("")
   const [aiRecommendations, setAiRecommendations] = useState<AIRecommendations | null>(null)
   const [savedAssessmentId, setSavedAssessmentId] = useState<string | null>(null)
+  
+  // New state for card-based UI
+  const [selectedWeek, setSelectedWeek] = useState<Date>(new Date())
+  const [selectedCard, setSelectedCard] = useState<{ dimension: typeof DIMENSIONS[0]; data: SelfCheckData | null } | null>(null)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [editingDimension, setEditingDimension] = useState<typeof DIMENSIONS[0] | null>(null)
+  const [editValue, setEditValue] = useState<number>(5)
 
   const loadHistory = useCallback(async () => {
     try {

@@ -33,6 +33,9 @@ export default function NeueMitarbeitergespraechPage() {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [activeTab, setActiveTab] = useState("performance")
   const [saving, setSaving] = useState(false)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [loadingMembers, setLoadingMembers] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -48,6 +51,32 @@ export default function NeueMitarbeitergespraechPage() {
   })
 
   const practiceId = currentPractice?.id?.toString()
+
+  // Fetch team members
+  useEffect(() => {
+    if (!practiceId) return
+    
+    const fetchTeamMembers = async () => {
+      setLoadingMembers(true)
+      try {
+        const res = await fetch(`/api/practices/${practiceId}/team-members`, {
+          credentials: "include",
+        })
+        if (res.ok) {
+          const data = await res.json()
+          // Handle both array and object with team_members property
+          const members = Array.isArray(data) ? data : (data?.team_members || data?.teamMembers || [])
+          setTeamMembers(members)
+        }
+      } catch (error) {
+        console.error("Failed to fetch team members:", error)
+      } finally {
+        setLoadingMembers(false)
+      }
+    }
+    
+    fetchTeamMembers()
+  }, [practiceId])
 
   // Handle member selection
   const handleSelectMember = (member: TeamMember) => {
@@ -142,7 +171,10 @@ export default function NeueMitarbeitergespraechPage() {
   if (step === "select-member") {
     return (
       <MemberSelection
-        practiceId={practiceId}
+        teamMembers={teamMembers}
+        loadingMembers={loadingMembers}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
         onSelectMember={handleSelectMember}
         onBack={() => router.push("/mitarbeitergespraeche")}
       />

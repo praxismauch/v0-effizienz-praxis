@@ -537,7 +537,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
                 </h3>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Preis pro Leistung (€) *</Label>
+                    <Label>Preis pro Leistung (€) {index === 1 ? '*' : ''}</Label>
                     <div className="flex items-center gap-1">
                       <Input
                         type="number"

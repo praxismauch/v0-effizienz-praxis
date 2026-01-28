@@ -53,6 +53,9 @@ export default function SkillsPageClient() {
 
   const practiceId = currentPractice?.id
 
+  // Ensure arbeitsplaetze is always an array for safe access
+  const safeArbeitsplaetze = Array.isArray(arbeitsplaetze) ? arbeitsplaetze : []
+
   // Persist view mode
   useEffect(() => {
     localStorage.setItem("skills-view-mode", viewMode)
@@ -271,7 +274,7 @@ export default function SkillsPageClient() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alle Arbeitsplätze</SelectItem>
-              {arbeitsplaetze.map((ap) => (
+              {safeArbeitsplaetze.map((ap) => (
                 <SelectItem key={ap.id} value={ap.id}>
                   {ap.name}
                 </SelectItem>

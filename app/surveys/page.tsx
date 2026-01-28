@@ -1000,6 +1000,7 @@ export default function SurveysPage() {
           )}
         </div>
         </div>
+      </div>
 
       {/* Create Survey Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

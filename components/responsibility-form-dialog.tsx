@@ -139,6 +139,10 @@ function ResponsibilityFormDialog({
   useEffect(() => {
     if (currentPractice?.id && open) {
       console.log("[v0] Fetching team members and orga categories for practice:", currentPractice.id)
+      console.log("[v0] Current formData:", {
+        responsible_user_id: formData.responsible_user_id,
+        deputy_user_id: formData.deputy_user_id,
+      })
 
       fetch(`/api/practices/${currentPractice.id}/team-members`)
         .then((res) => {
@@ -149,7 +153,12 @@ function ResponsibilityFormDialog({
         })
         .then((data) => {
           // Data is an array directly, not wrapped in an object
-          setTeamMembers(Array.isArray(data) ? data : [])
+          const members = Array.isArray(data) ? data : []
+          console.log("[v0] Fetched team members:", {
+            count: members.length,
+            members: members.map((m: any) => ({ id: m.id, name: m.name })),
+          })
+          setTeamMembers(members)
         })
         .catch((error) => {
           console.error("[v0] Error fetching team members:", error)
@@ -540,20 +549,30 @@ function ResponsibilityFormDialog({
               <Label htmlFor="responsible_user_id">Hauptverantwortlicher</Label>
               <Select
                 value={formData.responsible_user_id || "unassigned"}
-                onValueChange={(value) =>
+                onValueChange={(value) => {
+                  console.log("[v0] Hauptverantwortlicher changed:", value)
                   setFormData({ ...formData, responsible_user_id: value === "unassigned" ? null : value })
-                }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Wählen Sie eine Person" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unassigned">Nicht zugewiesen</SelectItem>
-                  {teamMembers.filter(isActiveMember).map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name}
-                    </SelectItem>
-                  ))}
+                  {teamMembers.filter(isActiveMember).map((member) => {
+                    console.log(
+                      "[v0] Rendering team member option:",
+                      member.id,
+                      member.name,
+                      "selected:",
+                      formData.responsible_user_id === member.id,
+                    )
+                    return (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>

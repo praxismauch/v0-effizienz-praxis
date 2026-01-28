@@ -50,6 +50,9 @@ export function EditSkillDialog({
   skillArbeitsplatzIds,
   isSaving,
 }: EditSkillDialogProps) {
+  // Ensure arbeitsplaetze is always an array
+  const safeArbeitsplaetze = Array.isArray(arbeitsplaetze) ? arbeitsplaetze : []
+  
   const [formData, setFormData] = useState<SkillUpdateData>({
     name: "",
     description: "",
@@ -186,12 +189,12 @@ export function EditSkillDialog({
               </p>
               <ScrollArea className="h-[200px] border rounded-md p-4">
                 <div className="space-y-3">
-                  {arbeitsplaetze.length === 0 ? (
+                  {safeArbeitsplaetze.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       Keine Arbeitsplätze vorhanden
                     </p>
                   ) : (
-                    arbeitsplaetze.map((ap) => (
+                    safeArbeitsplaetze.map((ap) => (
                       <div key={ap.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`edit-ap-${ap.id}`}

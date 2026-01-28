@@ -55,9 +55,6 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
 
   const teams: Team[] = Array.isArray(teamsData) ? teamsData.filter((t: Team) => t.isActive !== false) : []
 
-  console.log("[v0] CreateTodoDialog - Teams data:", { teamsData, teams: teams.length, loadingTeams })
-  console.log("[v0] CreateTodoDialog - Team members:", { teamMembers: teamMembers?.length, teamLoading })
-
   const [attachments, setAttachments] = useState<any[]>([])
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([])
   const [assignedTeamIds, setAssignedTeamIds] = useState<string[]>([])

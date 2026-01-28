@@ -9,15 +9,14 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Home, Loader2, Plus, Save, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { usePractice } from "@/contexts/practice-context"
 import type { HomeofficePolicy, PolicyFormData } from "@/app/settings/types"
 import { WEEK_DAYS } from "@/app/settings/types"
 
-interface HomeofficeTabProps {
-  practiceId: string
-  teamMembers: Array<{ id: string; name: string }>
-}
-
-export function HomeofficeTab({ practiceId, teamMembers }: HomeofficeTabProps) {
+export function HomeofficeTab() {
+  const { currentPractice } = usePractice()
+  const practiceId = currentPractice?.id || ""
+  const [teamMembers, setTeamMembers] = useState<Array<{ id: string; name: string }>>([])
   const [policies, setPolicies] = useState<HomeofficePolicy[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -34,15 +33,35 @@ export function HomeofficeTab({ practiceId, teamMembers }: HomeofficeTabProps) {
   })
 
   useEffect(() => {
-    fetchPolicies()
+    if (practiceId) {
+      fetchPolicies()
+      fetchTeamMembers()
+    }
   }, [practiceId])
+
+  const fetchTeamMembers = async () => {
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/team-members`)
+      if (response.ok) {
+        const data = await response.json()
+        const formatted = data.map((member: any) => ({
+          id: member.user_id || member.id,
+          name: `${member.first_name || ""} ${member.last_name || ""}`.trim() || "Unbekannt"
+        }))
+        setTeamMembers(formatted)
+      }
+    } catch (error) {
+      console.error("Error fetching team members:", error)
+    }
+  }
 
   const fetchPolicies = async () => {
     try {
       const response = await fetch(`/api/practices/${practiceId}/homeoffice-policies`)
       if (response.ok) {
         const data = await response.json()
-        setPolicies(data.policies || [])
+        // API returns array directly, not wrapped in { policies: [...] }
+        setPolicies(Array.isArray(data) ? data : data.policies || [])
       }
     } catch (error) {
       console.error("Error fetching policies:", error)

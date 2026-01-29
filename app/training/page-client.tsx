@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
+import { fetchWithRetry, safeJsonParse } from "@/lib/fetch-with-retry"
 import { Search, Calendar, Award, Euro, BookOpen, Filter } from "lucide-react"
 import {
   AlertDialog,
@@ -33,7 +34,6 @@ import { CoursesTab } from "./components/courses-tab"
 import { EventsTab } from "./components/events-tab"
 import { CertificationsTab } from "./components/certifications-tab"
 import { BudgetsTab } from "./components/budgets-tab"
-import { useTrainingData } from "./hooks/use-training-data"
 
 export default function TrainingPageClient() {
   const { currentUser: user } = useUser()
@@ -42,6 +42,14 @@ export default function TrainingPageClient() {
   const [activeTab, setActiveTab] = useState("courses")
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Data states - using useState with functional updates
+  const [courses, setCourses] = useState<TrainingCourse[]>([])
+  const [events, setEvents] = useState<TrainingEvent[]>([])
+  const [certifications, setCertifications] = useState<Certification[]>([])
+  const [teamMemberCertifications, setTeamMemberCertifications] = useState<TeamMemberCertification[]>([])
+  const [budgets, setBudgets] = useState<TrainingBudget[]>([])
 
   // Delete confirmation state
   const [itemToDelete, setItemToDelete] = useState<{
@@ -52,14 +60,42 @@ export default function TrainingPageClient() {
 
   const practiceId = currentPractice?.id
 
-  // Use SWR for data fetching
-  const { data, isLoading, error, mutateCourses, mutateEvents, mutateCertifications } = useTrainingData(practiceId?.toString())
-  const { courses, events, certifications, teamMemberCertifications, budgets } = data
+  // Fetch data function
+  const fetchData = useCallback(async () => {
+    if (!practiceId) return
 
-  // Handle errors
-  if (error && !isLoading) {
-    console.error("Error fetching training data:", error)
-  }
+    try {
+      const coursesRes = await fetchWithRetry(`/api/practices/${practiceId}/training/courses`)
+      const coursesData = await safeJsonParse(coursesRes)
+      setCourses(() => coursesData?.courses || [])
+
+      const eventsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/events`)
+      const eventsData = await safeJsonParse(eventsRes)
+      setEvents(() => eventsData?.events || [])
+
+      const certificationsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/certifications`)
+      const certificationsData = await safeJsonParse(certificationsRes)
+      setCertifications(() => certificationsData?.certifications || [])
+
+      const teamCertsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/team-member-certifications`)
+      const teamCertsData = await safeJsonParse(teamCertsRes)
+      setTeamMemberCertifications(() => teamCertsData?.team_member_certifications || [])
+
+      const budgetsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/budgets`)
+      const budgetsData = await safeJsonParse(budgetsRes)
+      setBudgets(() => budgetsData?.budgets || [])
+    } catch (error) {
+      console.error("Error fetching training data:", error)
+    }
+  }, [practiceId])
+
+  // Initial load
+  useEffect(() => {
+    if (practiceId) {
+      setIsLoading(true)
+      fetchData().finally(() => setIsLoading(false))
+    }
+  }, [fetchData, practiceId])
 
   const handleDeleteItem = (type: "course" | "event" | "certification", id: string, name: string) => {
     setItemToDelete({ type, id, name })
@@ -71,16 +107,16 @@ export default function TrainingPageClient() {
     try {
       if (itemToDelete.type === "course") {
         await fetch(`/api/practices/${practiceId}/training/courses/${itemToDelete.id}`, { method: "DELETE" })
-        // Use SWR mutate for instant update
-        await mutateCourses()
+        // Instant update using functional state
+        setCourses(prev => prev.filter(c => c.id !== itemToDelete.id))
       } else if (itemToDelete.type === "event") {
         await fetch(`/api/practices/${practiceId}/training/events/${itemToDelete.id}`, { method: "DELETE" })
-        // Use SWR mutate for instant update
-        await mutateEvents()
+        // Instant update using functional state
+        setEvents(prev => prev.filter(e => e.id !== itemToDelete.id))
       } else if (itemToDelete.type === "certification") {
         await fetch(`/api/practices/${practiceId}/training/certifications/${itemToDelete.id}`, { method: "DELETE" })
-        // Use SWR mutate for instant update
-        await mutateCertifications()
+        // Instant update using functional state
+        setCertifications(prev => prev.filter(c => c.id !== itemToDelete.id))
       }
     } catch (error) {
       console.error("Error deleting item:", error)
@@ -262,7 +298,7 @@ export default function TrainingPageClient() {
           <CoursesTab
             courses={filteredCourses}
             practiceId={practiceId!}
-            onCoursesChange={mutateCourses}
+            onCoursesChange={setCourses}
             onDelete={(id, name) => handleDeleteItem("course", id, name)}
           />
         </TabsContent>
@@ -272,7 +308,7 @@ export default function TrainingPageClient() {
             events={filteredEvents}
             courses={courses}
             practiceId={practiceId!}
-            onEventsChange={mutateEvents}
+            onEventsChange={setEvents}
             onDelete={(id, name) => handleDeleteItem("event", id, name)}
           />
         </TabsContent>
@@ -281,7 +317,7 @@ export default function TrainingPageClient() {
           <CertificationsTab
             certifications={filteredCertifications}
             practiceId={practiceId!}
-            onCertificationsChange={mutateCertifications}
+            onCertificationsChange={setCertifications}
             onDelete={(id, name) => handleDeleteItem("certification", id, name)}
           />
         </TabsContent>

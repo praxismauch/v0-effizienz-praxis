@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { usePractice } from "@/contexts/practice-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -26,9 +26,6 @@ import TeamsTab from "./components/teams-tab"
 import HolidaysTab from "./components/holidays-tab"
 import SickLeavesTab from "./components/sickleaves-tab"
 
-// Import custom hook
-import { useTeamData } from "./hooks/use-team-data"
-
 // Import types
 import type {
   TeamMember,
@@ -45,18 +42,54 @@ export default function TeamPageClient() {
   const { user } = useAuth()
 
   const [activeTab, setActiveTab] = useState("members")
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Data states - using useState with functional updates
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [teams, setTeams] = useState<Team[]>([])
+  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([])
+  const [staffingPlans, setStaffingPlans] = useState<StaffingPlan[]>([])
+  const [holidayRequests, setHolidayRequests] = useState<HolidayRequest[]>([])
+  const [sickLeaves, setSickLeaves] = useState<SickLeave[]>([])
 
   const practiceId = currentPractice?.id?.toString()
 
-  // Use SWR for data fetching
-  const { data, isLoading, error, refresh, mutateTeamMembers } = useTeamData(practiceId)
-  const { teamMembers, teams, responsibilities, staffingPlans, holidayRequests, sickLeaves } = data
+  // Fetch data function
+  const fetchData = useCallback(async () => {
+    if (!practiceId) return
 
-  // Handle errors
-  if (error && !isLoading) {
-    console.error("Error fetching team data:", error)
-    toast.error("Fehler beim Laden der Teamdaten")
-  }
+    try {
+      const [membersRes, teamsRes, responsibilitiesRes] = await Promise.all([
+        fetch(`/api/practices/${practiceId}/team-members`),
+        fetch(`/api/practices/${practiceId}/teams`),
+        fetch(`/api/practices/${practiceId}/responsibilities`),
+      ])
+
+      if (membersRes.ok) {
+        const data = await membersRes.json()
+        setTeamMembers(() => data.teamMembers || [])
+      }
+      if (teamsRes.ok) {
+        const data = await teamsRes.json()
+        setTeams(() => data.teams || [])
+      }
+      if (responsibilitiesRes.ok) {
+        const data = await responsibilitiesRes.json()
+        setResponsibilities(() => data.responsibilities || [])
+      }
+    } catch (error) {
+      console.error("Error fetching team data:", error)
+      toast.error("Fehler beim Laden der Teamdaten")
+    }
+  }, [practiceId])
+
+  // Initial load
+  useEffect(() => {
+    if (!practiceLoading && practiceId) {
+      setIsLoading(true)
+      fetchData().finally(() => setIsLoading(false))
+    }
+  }, [fetchData, practiceLoading, practiceId])
 
   // Handler stubs - implement as needed
   const handleAddMember = () => router.push("/team/add")
@@ -68,9 +101,9 @@ export default function TeamPageClient() {
         method: "DELETE",
       })
       if (res.ok) {
+        // Instant update using functional state
+        setTeamMembers(prev => prev.filter(m => m.id !== member.id))
         toast.success("Mitarbeiter entfernt")
-        // Use SWR mutate for instant update
-        await mutateTeamMembers()
       }
     } catch {
       toast.error("Fehler beim Entfernen")

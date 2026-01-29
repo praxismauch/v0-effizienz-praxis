@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +29,6 @@ import {
 import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { AppLayout } from "@/components/app-layout"
-import { useRoomsData } from "./hooks/use-rooms-data"
 
 interface Room {
   id: string
@@ -98,6 +97,10 @@ export default function PageClient(_props: PageClientProps) {
   const { currentUser: user, loading: authLoading } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const [searchQuery, setSearchQuery] = useState("")
+  const [loading, setLoading] = useState(true)
+
+  // Data state - using useState with functional updates
+  const [rooms, setRooms] = useState<Room[]>([])
 
   // Dialog states
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -110,16 +113,29 @@ export default function PageClient(_props: PageClientProps) {
   const [formName, setFormName] = useState("")
   const [formBeschreibung, setFormBeschreibung] = useState("")
 
-  // Use SWR for data fetching
-  const { data, isLoading, error, mutate } = useRoomsData(currentPractice?.id?.toString())
-  const rooms = data.rooms
-  const loading = isLoading
+  // Fetch rooms function
+  const fetchRooms = useCallback(async () => {
+    if (!currentPractice?.id) return
 
-  // Handle errors
-  if (error && !isLoading) {
-    console.error("Error fetching rooms:", error)
-    toast.error("Fehler beim Laden der Räume")
-  }
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/rooms`)
+      if (response.ok) {
+        const data = await response.json()
+        setRooms(() => data || [])
+      }
+    } catch (error) {
+      console.error("Error fetching rooms:", error)
+      toast.error("Fehler beim Laden der Räume")
+    }
+  }, [currentPractice?.id])
+
+  // Initial load
+  useEffect(() => {
+    if (currentPractice?.id && !practiceLoading) {
+      setLoading(true)
+      fetchRooms().finally(() => setLoading(false))
+    }
+  }, [fetchRooms, currentPractice?.id, practiceLoading])
 
   const handleCreate = async () => {
     if (!currentPractice?.id || !formName.trim()) return
@@ -147,11 +163,12 @@ export default function PageClient(_props: PageClientProps) {
       }
 
       if (response.ok) {
+        const newRoom = await response.json()
+        // Instant update using functional state
+        setRooms(prev => [...prev, newRoom].sort((a, b) => a.name.localeCompare(b.name)))
         setIsCreateOpen(false)
         resetForm()
         toast.success("Raum erfolgreich erstellt")
-        // Use SWR mutate for instant update
-        await mutate()
       } else {
         const error = await response.json().catch(() => ({}))
         toast.error(error.error || "Fehler beim Erstellen des Raums")
@@ -190,12 +207,13 @@ export default function PageClient(_props: PageClientProps) {
       }
 
       if (response.ok) {
+        const updatedRoom = await response.json()
+        // Instant update using functional state
+        setRooms(prev => prev.map(r => r.id === updatedRoom.id ? updatedRoom : r).sort((a, b) => a.name.localeCompare(b.name)))
         setIsEditOpen(false)
         resetForm()
         setSelectedRoom(null)
         toast.success("Raum erfolgreich aktualisiert")
-        // Use SWR mutate for instant update
-        await mutate()
       } else {
         const error = await response.json().catch(() => ({}))
         toast.error(error.error || "Fehler beim Aktualisieren des Raums")
@@ -221,18 +239,16 @@ export default function PageClient(_props: PageClientProps) {
       })
 
       if (response.ok) {
+        // Instant update using functional state
+        setRooms(prev => prev.filter(r => r.id !== roomId))
         toast.success("Raum erfolgreich gelöscht")
-        // Use SWR mutate for instant update
-        await mutate()
       } else {
         const error = await response.json().catch(() => ({}))
         toast.error(error.error || "Fehler beim Löschen des Raums")
-        await mutate()
       }
     } catch (error) {
       console.error("Error deleting room:", error)
       toast.error("Fehler beim Löschen des Raums")
-      await mutate()
     }
   }
     } catch (error) {

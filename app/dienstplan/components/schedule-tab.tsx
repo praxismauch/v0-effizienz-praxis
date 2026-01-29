@@ -23,7 +23,8 @@ interface ScheduleTabProps {
   schedules: Shift[]
   shiftTypes: ShiftType[]
   practiceId: string
-  onRefresh: () => void
+  onRefresh: () => Promise<void>
+  setSchedules: React.Dispatch<React.SetStateAction<Shift[]>>
 }
 
 const getShiftIcon = (name: string) => {
@@ -41,6 +42,7 @@ export default function ScheduleTab({
   shiftTypes,
   practiceId,
   onRefresh,
+  setSchedules,
 }: ScheduleTabProps) {
   const { toast } = useToast()
   
@@ -52,17 +54,6 @@ export default function ScheduleTab({
 
   // Use teamMembers directly (with fallback to empty array)
   const filteredTeamMembers = teamMembers || []
-  
-  // Debug: Log schedules when they change
-  React.useEffect(() => {
-    if (schedules && schedules.length > 0) {
-      console.log("[v0] ScheduleTab received", schedules.length, "schedules:", schedules.map(s => ({
-        id: s.id.substring(0, 8),
-        date: s.shift_date || s.date,
-        member: s.team_member_id.substring(0, 8)
-      })))
-    }
-  }, [schedules])
 
   // Memoize shifts by date and member for efficient lookups
   const shiftsByDateAndMember = React.useMemo(() => {
@@ -102,15 +93,16 @@ export default function ScheduleTab({
     setDialogOpen(true)
   }
 
-  // Delete shift handler
+  // Delete shift handler - instant update using functional state
   const onDeleteShift = async (shiftId: string) => {
     try {
       const res = await fetch(`/api/practices/${practiceId}/dienstplan/schedules/${shiftId}`, {
         method: "DELETE",
       })
       if (res.ok) {
+        // Instant update - remove from state immediately
+        setSchedules(prev => prev.filter(s => s.id !== shiftId))
         toast({ title: "Schicht gelöscht" })
-        onRefresh()
       } else {
         throw new Error("Failed to delete")
       }
@@ -119,14 +111,12 @@ export default function ScheduleTab({
     }
   }
 
-  // Save shift handler
+  // Save shift handler - instant update using functional state
   const handleSaveShift = async (data: Partial<Shift>) => {
     const isEditing = !!editingShift
     const url = isEditing
       ? `/api/practices/${practiceId}/dienstplan/schedules/${editingShift.id}`
       : `/api/practices/${practiceId}/dienstplan/schedules`
-
-    console.log("[v0] Saving shift to:", url, "Data:", data)
     
     try {
       const res = await fetch(url, {
@@ -138,14 +128,17 @@ export default function ScheduleTab({
 
       if (res.ok) {
         const savedData = await res.json()
-        console.log("[v0] Shift saved successfully:", savedData)
         
-        // Refresh data first to ensure UI updates
-        console.log("[v0] Triggering refresh...")
-        await onRefresh()
-        console.log("[v0] Refresh completed")
+        // Instant update using functional state
+        if (isEditing) {
+          // Update existing shift
+          setSchedules(prev => prev.map(s => s.id === editingShift.id ? { ...s, ...savedData.schedule || savedData } : s))
+        } else {
+          // Add new shift
+          setSchedules(prev => [...prev, savedData.schedule || savedData])
+        }
         
-        // Close dialog after refresh
+        // Close dialog immediately
         setDialogOpen(false)
         setEditingShift(null)
         
@@ -153,12 +146,10 @@ export default function ScheduleTab({
         toast({ title: isEditing ? "Schicht aktualisiert" : "Schicht erstellt" })
       } else {
         const error = await res.text()
-        console.error("[v0] Failed to save shift:", error)
         toast({ title: "Fehler beim Speichern", description: error, variant: "destructive" })
         throw new Error("Failed to save shift")
       }
     } catch (error) {
-      console.error("[v0] Error in handleSaveShift:", error)
       toast({ title: "Fehler beim Speichern", variant: "destructive" })
       throw error
     }

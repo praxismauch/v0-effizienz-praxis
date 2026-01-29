@@ -58,16 +58,23 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
   const { currentUser } = useUser()
   const { toast } = useToast()
 
-  const COLORS = [
-    { value: "green", label: "Grün", class: "bg-green-500" },
-    { value: "blue", label: "Blau", class: "bg-blue-500" },
-    { value: "purple", label: "Lila", class: "bg-purple-500" },
-    { value: "orange", label: "Orange", class: "bg-orange-500" },
-    { value: "red", label: "Rot", class: "bg-red-500" },
-    { value: "teal", label: "Türkis", class: "bg-teal-500" },
-    { value: "pink", label: "Pink", class: "bg-pink-500" },
-    { value: "yellow", label: "Gelb", class: "bg-yellow-500" },
-  ]
+  // Map color names to hex values for the color picker
+  const colorNameToHex: Record<string, string> = {
+    green: "#22c55e",
+    blue: "#3b82f6",
+    purple: "#a855f7",
+    orange: "#f97316",
+    red: "#ef4444",
+    teal: "#14b8a6",
+    pink: "#ec4899",
+    yellow: "#eab308",
+  }
+
+  // Convert the selected color to hex for the input (handles both named colors and hex)
+  const getHexColor = (color: string) => {
+    if (color.startsWith("#")) return color
+    return colorNameToHex[color] || "#22c55e"
+  }
 
   useEffect(() => {
     if (open) {
@@ -305,25 +312,29 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
           </div>
 
           <div className="space-y-2">
-            <Label>Farbe</Label>
-            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Arbeitsplatz</p>
-            <div className="grid grid-cols-4 gap-2">
-              {COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => setSelectedColor(color.value)}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
-                    selectedColor === color.value
-                      ? "border-primary shadow-sm scale-105"
-                      : "border-border hover:border-primary/50",
-                  )}
-                >
-                  <div className={cn("w-5 h-5 rounded-full", color.class)} />
-                  <span className="text-sm font-medium">{color.label}</span>
-                </button>
-              ))}
+            <Label htmlFor="color">Farbe</Label>
+            <div className="flex items-center gap-3">
+              <input
+                id="color"
+                type="color"
+                value={getHexColor(selectedColor)}
+                onChange={(e) => setSelectedColor(e.target.value)}
+                className="w-12 h-10 rounded-lg border border-input cursor-pointer bg-transparent p-1"
+              />
+              <div className="flex-1">
+                <Input
+                  value={getHexColor(selectedColor)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                      setSelectedColor(val)
+                    }
+                  }}
+                  placeholder="#22c55e"
+                  className="font-mono text-sm"
+                  maxLength={7}
+                />
+              </div>
             </div>
           </div>
 

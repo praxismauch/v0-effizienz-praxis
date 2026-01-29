@@ -44,9 +44,12 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.effizienz-praxis.de"
     const inviteLink = `${appUrl}/register?ref=${referralCode}`
 
+    console.log("[v0] Referral: Checking email configuration")
     const emailConfigured = await isEmailConfigured()
+    console.log("[v0] Referral: Email configured:", emailConfigured)
     
     if (emailConfigured) {
+      console.log("[v0] Referral: Attempting to send email to", email)
       const emailResult = await sendEmail({
         to: email,
         subject: `${referrerName} lädt Sie zu Effizienz Praxis ein - 3 Monate kostenlos!`,
@@ -104,14 +107,16 @@ export async function POST(request: NextRequest) {
         `,
       })
 
+      console.log("[v0] Referral: Email send result", { success: emailResult.success, error: emailResult.error })
+
       if (!emailResult.success) {
-        console.error("Failed to send referral email:", emailResult.error)
+        console.error("[v0] Referral: Failed to send referral email:", emailResult.error)
         // Still return success since the referral was created
         return NextResponse.json({ 
           success: true, 
           referral: data,
           emailSent: false,
-          emailError: "Email konnte nicht gesendet werden"
+          emailError: emailResult.error || "Email konnte nicht gesendet werden"
         })
       }
 
@@ -121,7 +126,7 @@ export async function POST(request: NextRequest) {
         emailSent: true 
       })
     } else {
-      console.warn("Email not configured, referral created but email not sent")
+      console.warn("[v0] Referral: Email not configured, referral created but email not sent")
       return NextResponse.json({ 
         success: true, 
         referral: data,

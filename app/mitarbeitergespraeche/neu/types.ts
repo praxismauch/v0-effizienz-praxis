@@ -7,6 +7,41 @@ export interface TeamMember {
   department?: string
 }
 
+export interface Skill {
+  name: string
+  current_level: number
+  target_level: number
+  comment?: string
+}
+
+export interface Goal {
+  goal: string
+  target_date?: string
+  success_criteria?: string
+  progress?: number
+  status?: string
+}
+
+export interface DevelopmentPlan {
+  action: string
+  timeline?: string
+  resources?: string
+  status?: string
+  responsible?: string
+}
+
+export interface FormData {
+  performance_rating: number
+  performance_notes: string
+  skills: Skill[]
+  goals: Goal[]
+  development_plans: DevelopmentPlan[]
+  feedback_employee: string
+  feedback_manager: string
+  next_steps: string
+  next_meeting_date: string
+}
+
 export interface SkillDefinition {
   id: string
   name: string

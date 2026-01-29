@@ -258,17 +258,28 @@ export default function SurveysPage() {
   }, [showMoodDashboard, fetchMoodData])
 
   const handleCreateSurvey = async () => {
-    if (!currentPractice?.id || !newSurvey.title.trim()) return
+    console.log("[v0] handleCreateSurvey called")
+    console.log("[v0] currentPractice:", currentPractice)
+    console.log("[v0] newSurvey:", newSurvey)
+
+    if (!currentPractice?.id || !newSurvey.title.trim()) {
+      console.log("[v0] Missing practice or title")
+      return
+    }
     setIsCreating(true)
     try {
+      console.log("[v0] Fetching /api/practices/" + currentPractice.id + "/surveys")
       const response = await fetch(`/api/practices/${currentPractice.id}/surveys`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(newSurvey),
       })
+      console.log("[v0] Response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Survey created successfully:", data.survey.id)
         toast({ title: "Umfrage erstellt", description: "Die Umfrage wurde erfolgreich erstellt." })
         setShowCreateDialog(false)
         setNewSurvey({
@@ -283,10 +294,17 @@ export default function SurveysPage() {
         })
         router.push(`/surveys/${data.survey.id}/edit`)
       } else {
-        throw new Error("Failed to create survey")
+        const errorData = await response.text()
+        console.log("[v0] Error response:", errorData)
+        throw new Error(`Failed to create survey: ${response.status}`)
       }
     } catch (error) {
-      toast({ title: "Fehler", description: "Die Umfrage konnte nicht erstellt werden.", variant: "destructive" })
+      console.error("[v0] Error creating survey:", error)
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "Die Umfrage konnte nicht erstellt werden.",
+        variant: "destructive",
+      })
     } finally {
       setIsCreating(false)
     }

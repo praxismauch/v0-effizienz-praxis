@@ -123,11 +123,33 @@ export default function ContactsPage() {
     loadContacts()
   }, [practiceId, practiceLoading, userLoading, loadContacts])
 
-  const handleReload = useCallback(() => {
+  const handleReload = useCallback(async () => {
     hasLoadedRef.current = false
     loadingPracticeIdRef.current = null
-    loadContacts()
-  }, [loadContacts])
+    if (practiceId) {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/practices/${practiceId}/contacts`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch contacts")
+        }
+        const data = await response.json()
+        const activeContacts = data.filter((c: Contact & { deleted_at?: string }) => !c.deleted_at)
+        setContacts(activeContacts)
+        hasLoadedRef.current = true
+        loadingPracticeIdRef.current = practiceId
+      } catch (error: any) {
+        console.error("[v0] Error reloading contacts:", error)
+        toast({
+          title: "Fehler",
+          description: "Kontakte konnten nicht aktualisiert werden",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+  }, [practiceId, toast])
 
   async function confirmDelete() {
     if (!contactToDelete || !practiceId) return

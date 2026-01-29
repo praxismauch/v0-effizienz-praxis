@@ -45,8 +45,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     const bankHolidays = bankHolidaysRes.data || []
 
     // Calculate holiday entitlement for each team member
-    const memberEntitlements = teamMembers.map((member) => {
-      const contract = contracts.find((c) => c.team_member_id === member.id)
+    const memberEntitlements = teamMembers.map((member: any) => {
+      const contract = contracts.find((c: any) => c.team_member_id === member.id)
       const fullTimeHours = 40
       const workingDaysFulltime = contract?.working_days_fulltime || 5
       const holidayDaysFulltime = contract?.holiday_days_fulltime || 30
@@ -60,12 +60,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       const holidayEntitlement = Math.ceil((workingDaysPartTime / workingDaysFulltime) * holidayDaysFulltime)
 
       const usedDays = requests
-        .filter((r) => r.team_member_id === member.id && ["approved", "requested"].includes(r.status))
-        .reduce((sum, r) => sum + (r.days_count || 0), 0)
+        .filter((r: any) => r.team_member_id === member.id && ["approved", "requested"].includes(r.status))
+        .reduce((sum: number, r: any) => sum + (r.days_count || 0), 0)
 
       const wishedDays = requests
-        .filter((r) => r.team_member_id === member.id && r.status === "wish")
-        .reduce((sum, r) => sum + (r.days_count || 0), 0)
+        .filter((r: any) => r.team_member_id === member.id && r.status === "wish")
+        .reduce((sum: number, r: any) => sum + (r.days_count || 0), 0)
 
       return {
         id: member.id,
@@ -78,7 +78,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     })
 
     // Prepare context for AI
-    const wishRequests = requests.filter((r) => r.status === "wish")
+    const wishRequests = requests.filter((r: any) => r.status === "wish")
 
     if (wishRequests.length === 0) {
       return NextResponse.json({
@@ -92,21 +92,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
 Analysiere die folgenden Urlaubswünsche und erstelle einen optimalen Urlaubsplan.
 
 TEAM-MITGLIEDER UND URLAUBSANSPRUCH:
-${memberEntitlements.map((m) => `- ${m.name}: ${m.entitlement} Tage Anspruch, ${m.used} genommen, ${m.wished} gewünscht, ${m.remaining} verbleibend`).join("\n")}
+${memberEntitlements.map((m: any) => `- ${m.name}: ${m.entitlement} Tage Anspruch, ${m.used} genommen, ${m.wished} gewünscht, ${m.remaining} verbleibend`).join("\n")}
 
 URLAUBSWÜNSCHE:
 ${wishRequests
   .map(
-    (r) =>
+    (r: any) =>
       `- ${r.team_member?.first_name} ${r.team_member?.last_name}: ${r.start_date} bis ${r.end_date} (${r.days_count} Tage, Priorität: ${r.priority}/5)${r.reason ? `, Grund: ${r.reason}` : ""}`,
   )
   .join("\n")}
 
 GESPERRTE ZEITRÄUME:
-${blockedPeriods.length > 0 ? blockedPeriods.map((b) => `- ${b.name}: ${b.start_date} bis ${b.end_date}${b.reason ? ` (${b.reason})` : ""}`).join("\n") : "Keine gesperrten Zeiträume"}
+${blockedPeriods.length > 0 ? blockedPeriods.map((b: any) => `- ${b.name}: ${b.start_date} bis ${b.end_date}${b.reason ? ` (${b.reason})` : ""}`).join("\n") : "Keine gesperrten Zeiträume"}
 
 FEIERTAGE:
-${bankHolidays.length > 0 ? bankHolidays.map((h) => `- ${h.name}: ${h.holiday_date}`).join("\n") : "Keine Feiertage definiert"}
+${bankHolidays.length > 0 ? bankHolidays.map((h: any) => `- ${h.name}: ${h.holiday_date}`).join("\n") : "Keine Feiertage definiert"}
 
 REGELN:
 1. Maximal 30% des Teams sollte gleichzeitig im Urlaub sein

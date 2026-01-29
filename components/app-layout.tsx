@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { OnboardingWizard } from "@/components/onboarding-wizard"
 
 interface AppLayoutProps {
-  children: React.ReactNode
+  children?: React.ReactNode
   loading?: boolean
   loadingMessage?: string
   showFooter?: boolean

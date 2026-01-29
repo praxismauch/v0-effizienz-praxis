@@ -40,7 +40,13 @@ const analysisTypeColors: Record<string, string> = {
   practice: "bg-pink-100 text-pink-800",
 }
 
-export function AIAnalysisHistoryTable({ userId }: { userId: string }) {
+interface AIAnalysisHistoryTableProps {
+  userId: string
+  practiceId?: string
+  limit?: number
+}
+
+export function AIAnalysisHistoryTable({ userId, practiceId, limit }: AIAnalysisHistoryTableProps) {
   const { toast } = useToast()
   const [analyses, setAnalyses] = useState<AIAnalysis[]>([])
   const [filteredAnalyses, setFilteredAnalyses] = useState<AIAnalysis[]>([])
@@ -69,7 +75,11 @@ export function AIAnalysisHistoryTable({ userId }: { userId: string }) {
         return
       }
 
-      const response = await fetch(`/api/ai-analysis-history?userId=${userId}`)
+      const queryParams = new URLSearchParams({ userId })
+      if (practiceId) queryParams.append('practiceId', practiceId)
+      if (limit) queryParams.append('limit', limit.toString())
+      
+      const response = await fetch(`/api/ai-analysis-history?${queryParams}`)
       console.log("[v0] AI analyses response status:", response.status)
 
       if (response.status === 503) {

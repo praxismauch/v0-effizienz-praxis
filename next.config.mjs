@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// Next.js 16 - TypeScript errors temporarily ignored for deployment
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,

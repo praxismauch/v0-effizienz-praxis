@@ -23,9 +23,9 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 50
   return null
 }
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
 
     const effectivePracticeId =
       practiceId && practiceId !== "0" && practiceId !== "undefined" ? String(practiceId) : "1"
@@ -71,9 +71,9 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId } = params
+    const { practiceId } = await params
     const body = await request.json()
 
     const effectivePracticeId =

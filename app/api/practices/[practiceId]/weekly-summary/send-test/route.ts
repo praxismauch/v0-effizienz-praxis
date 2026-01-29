@@ -251,7 +251,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       `
 
       // Birthdays section (special highlight)
-      const birthdays = forecastItems.filter((i) => i.type === "birthday")
+      const birthdays = forecastItems.filter((i: ForecastItem) => i.type === "birthday")
       if (birthdays.length > 0) {
         forecastHtml += `
         <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
@@ -272,10 +272,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
 
       // Other items grouped by type
-      const events = forecastItems.filter((i) => i.type === "event")
-      const todos = forecastItems.filter((i) => i.type === "todo")
-      const maintenance = forecastItems.filter((i) => i.type === "maintenance")
-      const training = forecastItems.filter((i) => i.type === "training")
+      const events = forecastItems.filter((i: ForecastItem) => i.type === "event")
+      const todos = forecastItems.filter((i: ForecastItem) => i.type === "todo")
+      const maintenance = forecastItems.filter((i: ForecastItem) => i.type === "maintenance")
+      const training = forecastItems.filter((i: ForecastItem) => i.type === "training")
 
       if (events.length > 0) {
         forecastHtml += `
@@ -519,8 +519,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     )
 
     const results = await Promise.allSettled(emailPromises)
-    const successCount = results.filter((r) => r.status === "fulfilled").length
-    const failedCount = results.filter((r) => r.status === "rejected").length
+    const successCount = results.filter((r: any) => r.status === "fulfilled").length
+    const failedCount = results.filter((r: any) => r.status === "rejected").length
 
     // Log to history
     await supabase.from("weekly_summary_history").insert({
@@ -535,10 +535,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       summary_data: {
         team_count: teamCount,
         documents_count: documentsCount,
-        forecast_items_count: forecastItems.length,
-        forecast_birthdays: forecastItems.filter((i) => i.type === "birthday").length,
-        forecast_events: forecastItems.filter((i) => i.type === "event").length,
-        forecast_todos: forecastItems.filter((i) => i.type === "todo").length,
+      forecast_items_count: forecastItems.length,
+      forecast_birthdays: forecastItems.filter((i: ForecastItem) => i.type === "birthday").length,
+      forecast_events: forecastItems.filter((i: ForecastItem) => i.type === "event").length,
+      forecast_todos: forecastItems.filter((i: ForecastItem) => i.type === "todo").length,
       },
     })
 

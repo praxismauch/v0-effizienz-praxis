@@ -134,7 +134,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Forbidden - You do not have access to this practice's data" }, { status: 403 })
     }
 
-    const { enabled: aiEnabled, isSuper } = await checkAIEnabled(practiceId, userId)
+    const { enabled: aiEnabled, isSuperAdmin: isSuper } = await checkAIEnabled(practiceId, userId)
 
     if (!aiEnabled && !isSuper) {
       return Response.json(
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
       knowledgeCount = 0
     }
 
-    const safeQuery = async (query: Promise<any>, fallback: any = { data: [] }) => {
+    const safeQuery = async (query: Promise<any> | PromiseLike<any>, fallback: any = { data: [] }) => {
       try {
         const result = await query
         return result
@@ -458,41 +458,41 @@ export async function POST(request: Request) {
     ])
 
     const openStatusValues = ticketStatusesConfig
-      .filter((s) => ["open", "in_progress", "pending"].includes(s.value))
-      .map((s) => s.value)
+      .filter((s: any) => ["open", "in_progress", "pending"].includes(s.value))
+      .map((s: any) => s.value)
     const resolvedStatusValues = ticketStatusesConfig
-      .filter((s) => ["resolved", "closed", "wont_fix"].includes(s.value))
-      .map((s) => s.value)
+      .filter((s: any) => ["resolved", "closed", "wont_fix"].includes(s.value))
+      .map((s: any) => s.value)
 
-    const highPriorityValues = ticketPrioritiesConfig.filter((p) => p.urgency_level >= 3).map((p) => p.value)
+    const highPriorityValues = ticketPrioritiesConfig.filter((p: any) => p.urgency_level >= 3).map((p: any) => p.value)
 
     const totalTransactions = bankTransactions.data?.length || 0
-    const transactionAmounts = bankTransactions.data?.map((t) => Number(t.amount || 0)) || []
-    const totalRevenue = transactionAmounts.filter((a) => a > 0).reduce((sum, a) => sum + a, 0)
-    const totalExpenses = Math.abs(transactionAmounts.filter((a) => a < 0).reduce((sum, a) => sum + a, 0))
+    const transactionAmounts = bankTransactions.data?.map((t: any) => Number(t.amount || 0)) || []
+    const totalRevenue = transactionAmounts.filter((a: number) => a > 0).reduce((sum: number, a: number) => sum + a, 0)
+    const totalExpenses = Math.abs(transactionAmounts.filter((a: number) => a < 0).reduce((sum: number, a: number) => sum + a, 0))
     const netCashFlow = totalRevenue - totalExpenses
     const avgTransactionSize = totalTransactions > 0 ? (totalRevenue + totalExpenses) / totalTransactions : 0
     const categoriesCount = bankTransactionCategories.data?.length || 0
-    const categorizedTransactions = bankTransactions.data?.filter((t) => t.category)?.length || 0
+    const categorizedTransactions = bankTransactions.data?.filter((t: any) => t.category)?.length || 0
     const categorizationRate =
-      totalTransactions > 0 ? ((categorizedTransactions / totalTransactions) * 100).toFixed(1) : 0
+      totalTransactions > 0 ? ((categorizedTransactions / totalTransactions) * 100).toFixed(1) : "0"
 
     const kvAbrechnungCount = kvData.data?.length || 0
     const latestKV = kvData.data?.[0]
-    const kvQuarters = kvData.data?.map((kv) => `Q${kv.quarter} ${kv.year}`).join(", ") || "Keine"
+    const kvQuarters = kvData.data?.map((kv: any) => `Q${kv.quarter} ${kv.year}`).join(", ") || "Keine"
 
     const totalTickets = tickets.data?.length || 0
-    const openTickets = tickets.data?.filter((t) => openStatusValues.includes(t.status))?.length || 0
-    const resolvedTickets = tickets.data?.filter((t) => resolvedStatusValues.includes(t.status))?.length || 0
-    const highPriorityTickets = tickets.data?.filter((t) => highPriorityValues.includes(t.priority))?.length || 0
+    const openTickets = tickets.data?.filter((t: any) => openStatusValues.includes(t.status))?.length || 0
+    const resolvedTickets = tickets.data?.filter((t: any) => resolvedStatusValues.includes(t.status))?.length || 0
+    const highPriorityTickets = tickets.data?.filter((t: any) => highPriorityValues.includes(t.priority))?.length || 0
     const ticketResolutionRate = totalTickets > 0 ? ((resolvedTickets / totalTickets) * 100).toFixed(1) : 0
     const avgCommentsPerTicket =
       totalTickets > 0
-        ? (tickets.data?.reduce((sum, t) => sum + (t.ticket_comments?.[0]?.count || 0), 0) / totalTickets).toFixed(1)
+        ? (tickets.data?.reduce((sum: number, t: any) => sum + (t.ticket_comments?.[0]?.count || 0), 0) / totalTickets).toFixed(1)
         : 0
     const ticketsByType =
       tickets.data?.reduce(
-        (acc, t) => {
+        (acc: Record<string, number>, t: any) => {
           acc[t.type || "Unbekannt"] = (acc[t.type || "Unbekannt"] || 0) + 1
           return acc
         },
@@ -502,40 +502,40 @@ export async function POST(request: Request) {
     const recentChanges = systemChanges.data?.length || 0
     const changesByType =
       systemChanges.data?.reduce(
-        (acc, c) => {
+        (acc: Record<string, number>, c: any) => {
           acc[c.change_type || "Unbekannt"] = (acc[c.change_type || "Unbekannt"] || 0) + 1
           return acc
         },
         {} as Record<string, number>,
       ) || {}
-    const userFacingChanges = systemChanges.data?.filter((c) => c.is_user_facing)?.length || 0
+    const userFacingChanges = systemChanges.data?.filter((c: any) => c.is_user_facing)?.length || 0
 
     const totalGoogleRatings = googleRatings.data?.length || 0
     const avgGoogleRating =
       totalGoogleRatings > 0
-        ? (googleRatings.data?.reduce((sum, r) => sum + (r.rating || 0), 0) / totalGoogleRatings).toFixed(1)
+        ? (googleRatings.data?.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / totalGoogleRatings).toFixed(1)
         : 0
-    const ratingsWithReviews = googleRatings.data?.filter((r) => r.review_text)?.length || 0
-    const ratingsWithResponses = googleRatings.data?.filter((r) => r.response_text)?.length || 0
+    const ratingsWithReviews = googleRatings.data?.filter((r: any) => r.review_text)?.length || 0
+    const ratingsWithResponses = googleRatings.data?.filter((r: any) => r.response_text)?.length || 0
     const responseRateForGoogleRatings =
       totalGoogleRatings > 0 ? ((ratingsWithResponses / totalGoogleRatings) * 100).toFixed(1) : 0
     const recentRatings =
-      googleRatings.data?.filter((r) => {
+      googleRatings.data?.filter((r: any) => {
         const ratingDate = new Date(r.review_date)
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         return ratingDate >= thirtyDaysAgo
       })?.length || 0
 
     const departmentsCount = departments.data?.length || 0
-    const activeDepartments = departments.data?.filter((d) => d.is_active)?.length || 0
+    const activeDepartments = departments.data?.filter((d: any) => d.is_active)?.length || 0
     const interviewTemplatesCount = interviewTemplates.data?.length || 0
     const pipelineStagesCount = hiringPipelineStages.data?.length || 0
-    const activePipelineStages = hiringPipelineStages.data?.filter((s) => s.is_active)?.length || 0
+    const activePipelineStages = hiringPipelineStages.data?.filter((s: any) => s.is_active)?.length || 0
     const recruitingFieldsCount = recruitingFormFields.data?.length || 0
-    const enabledRecruitingFields = recruitingFormFields.data?.filter((f) => f.enabled)?.length || 0
+    const enabledRecruitingFields = recruitingFormFields.data?.filter((f: any) => f.enabled)?.length || 0
 
     const totalWorkflowTemplates = workflowTemplates.data?.length || 0
-    const activeWorkflowTemplates = workflowTemplates.data?.filter((t) => t.is_active)?.length || 0
+    const activeWorkflowTemplates = workflowTemplates.data?.filter((t: any) => t.is_active)?.length || 0
     const sidebarPermissionsCount = sidebarPermissions.data?.length || 0
     const userPreferencesCount = userPreferences.data?.length || 0
     const todoAttachmentsCount = todoAttachments.data?.length || 0
@@ -543,45 +543,45 @@ export async function POST(request: Request) {
     const attachmentsPerTodo = totalTodos > 0 ? (todoAttachmentsCount / totalTodos).toFixed(1) : 0
 
     const teamSize = teamMembersData.data?.length || 0
-    const activeTeamMembers = teamMembersData.data?.filter((m) => m.users?.is_active)?.length || 0
+    const activeTeamMembers = teamMembersData.data?.filter((m: any) => m.users?.is_active)?.length || 0
     const inactiveTeamMembers = teamSize - activeTeamMembers
     const teamsCount = teams.data?.length || 0
-    const activeContracts = contracts.data?.filter((c) => c.is_active)?.length || 0
+    const activeContracts = contracts.data?.filter((c: any) => c.is_active)?.length || 0
 
-    const totalWeeklyHours = staffingPlan.data?.reduce((sum, s) => sum + Number(s.hours || 0), 0) || 0
+    const totalWeeklyHours = staffingPlan.data?.reduce((sum: number, s: any) => sum + Number(s.hours || 0), 0) || 0
     const monthlyHours = totalWeeklyHours * 4.23
     const avgHoursPerTeamMember = activeTeamMembers > 0 ? (totalWeeklyHours / activeTeamMembers).toFixed(1) : 0
-    const activeStaffingPlans = staffingPlans.data?.filter((sp) => sp.is_active)?.length || 0
+    const activeStaffingPlans = staffingPlans.data?.filter((sp: any) => sp.is_active)?.length || 0
 
     const totalGoals = goals.data?.length || 0
-    const completedGoals = goals.data?.filter((g) => g.status === "completed")?.length || 0
-    const activeGoals = goals.data?.filter((g) => g.status === "in_progress")?.length || 0
+    const completedGoals = goals.data?.filter((g: any) => g.status === "completed")?.length || 0
+    const activeGoals = goals.data?.filter((g: any) => g.status === "in_progress")?.length || 0
     const overdueGoals =
-      goals.data?.filter((g) => g.status !== "completed" && g.end_date && new Date(g.end_date) < new Date())?.length ||
+      goals.data?.filter((g: any) => g.status !== "completed" && g.end_date && new Date(g.end_date) < new Date())?.length ||
       0
-    const highPriorityGoals = goals.data?.filter((g) => g.priority === "high")?.length || 0
+    const highPriorityGoals = goals.data?.filter((g: any) => g.priority === "high")?.length || 0
     const goalCompletionRate = totalGoals > 0 ? ((completedGoals / totalGoals) * 100).toFixed(1) : 0
     const avgGoalProgress =
-      goals.data?.reduce((sum, g) => sum + (g.progress_percentage || 0), 0) / (totalGoals || 1) || 0
+      goals.data?.reduce((sum: number, g: any) => sum + (g.progress_percentage || 0), 0) / (totalGoals || 1) || 0
 
-    const completedTodos = todoStats.data?.filter((t) => t.completed)?.length || 0
+    const completedTodos = todoStats.data?.filter((t: any) => t.completed)?.length || 0
     const pendingTodos = totalTodos - completedTodos
     const overdueTodos =
-      todos.data?.filter((t) => !t.completed && t.due_date && new Date(t.due_date) < new Date())?.length || 0
-    const highPriorityTodos = todos.data?.filter((t) => t.priority === "high")?.length || 0
+      todos.data?.filter((t: any) => !t.completed && t.due_date && new Date(t.due_date) < new Date())?.length || 0
+    const highPriorityTodos = todos.data?.filter((t: any) => t.priority === "high")?.length || 0
     const todoCompletionRate = totalTodos > 0 ? ((completedTodos / totalTodos) * 100).toFixed(1) : 0
 
     const totalCandidates = candidates.data?.length || 0
-    const activeCandidates = candidates.data?.filter((c) => c.status !== "rejected")?.length || 0
-    const rejectedCandidates = candidates.data?.filter((c) => c.status === "rejected")?.length || 0
+    const activeCandidates = candidates.data?.filter((c: any) => c.status !== "rejected")?.length || 0
+    const rejectedCandidates = candidates.data?.filter((c: any) => c.status === "rejected")?.length || 0
     const totalApplications = applications.data?.length || 0
-    const pendingApplications = applications.data?.filter((a) => a.status === "pending")?.length || 0
-    const acceptedApplications = applications.data?.filter((a) => a.status === "accepted")?.length || 0
-    const rejectedApplications = applications.data?.filter((a) => a.status === "rejected")?.length || 0
-    const activeJobPostings = jobPostings.data?.filter((j) => j.status === "active")?.length || 0
-    const closedJobPostings = jobPostings.data?.filter((j) => j.status === "closed")?.length || 0
-    const scheduledInterviews = interviews.data?.filter((i) => i.status === "scheduled")?.length || 0
-    const completedInterviews = interviews.data?.filter((i) => i.status === "completed")?.length || 0
+    const pendingApplications = applications.data?.filter((a: any) => a.status === "pending")?.length || 0
+    const acceptedApplications = applications.data?.filter((a: any) => a.status === "accepted")?.length || 0
+    const rejectedApplications = applications.data?.filter((a: any) => a.status === "rejected")?.length || 0
+    const activeJobPostings = jobPostings.data?.filter((j: any) => j.status === "active")?.length || 0
+    const closedJobPostings = jobPostings.data?.filter((j: any) => j.status === "closed")?.length || 0
+    const scheduledInterviews = interviews.data?.filter((i: any) => i.status === "scheduled")?.length || 0
+    const completedInterviews = interviews.data?.filter((i: any) => i.status === "completed")?.length || 0
     const applicationConversionRate =
       totalApplications > 0 ? ((acceptedApplications / totalApplications) * 100).toFixed(1) : 0
     const candidatesPerJob = activeJobPostings > 0 ? (totalCandidates / activeJobPostings).toFixed(1) : 0
@@ -590,23 +590,23 @@ export async function POST(request: Request) {
     const knowledgeArticles = knowledgeCount
 
     const totalCustomForms = customForms.data?.length || 0
-    const activeCustomForms = customForms.data?.filter((f) => f.status === "active")?.length || 0
+    const activeCustomForms = customForms.data?.filter((f: any) => f.status === "active")?.length || 0
     const totalFormSubmissions = formSubmissions.data?.length || 0
-    const pendingFormSubmissions = formSubmissions.data?.filter((s) => s.status === "pending")?.length || 0
-    const approvedFormSubmissions = formSubmissions.data?.filter((s) => s.status === "approved")?.length || 0
+    const pendingFormSubmissions = formSubmissions.data?.filter((s: any) => s.status === "pending")?.length || 0
+    const approvedFormSubmissions = formSubmissions.data?.filter((s: any) => s.status === "approved")?.length || 0
     const submissionsPerForm = totalCustomForms > 0 ? (totalFormSubmissions / totalCustomForms).toFixed(1) : 0
 
     const totalWorkflows = workflows.data?.length || 0
-    const activeWorkflows = workflows.data?.filter((w) => w.status === "in_progress")?.length || 0
-    const completedWorkflows = workflows.data?.filter((w) => w.status === "completed")?.length || 0
-    const blockedWorkflows = workflows.data?.filter((w) => w.status === "blocked")?.length || 0
+    const activeWorkflows = workflows.data?.filter((w: any) => w.status === "in_progress")?.length || 0
+    const completedWorkflows = workflows.data?.filter((w: any) => w.status === "completed")?.length || 0
+    const blockedWorkflows = workflows.data?.filter((w: any) => w.status === "blocked")?.length || 0
     const avgWorkflowProgress =
-      workflows.data?.reduce((sum, w) => sum + (w.progress_percentage || 0), 0) / (workflows.data?.length || 1) || 0
+      workflows.data?.reduce((sum: number, w: any) => sum + (w.progress_percentage || 0), 0) / (workflows.data?.length || 1) || 0
     const workflowCompletionRate = totalWorkflows > 0 ? ((completedWorkflows / totalWorkflows) * 100).toFixed(1) : 0
 
     const upcomingEvents = calendarEvents.data?.length || 0
     const eventsThisWeek =
-      calendarEvents.data?.filter((e) => {
+      calendarEvents.data?.filter((e: any) => {
         const eventDate = new Date(e.start_date)
         const now = new Date()
         const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
@@ -614,36 +614,36 @@ export async function POST(request: Request) {
       })?.length || 0
 
     const totalResponsibilities = responsibilities.data?.length || 0
-    const activeResponsibilities = responsibilities.data?.filter((r) => r.is_active)?.length || 0
-    const responsibilitiesWithLeader = responsibilities.data?.filter((r) => r.responsible_user_id)?.length || 0
-    const responsibilityGroups = [...new Set(responsibilities.data?.map((r) => r.group_name).filter(Boolean))].length
+    const activeResponsibilities = responsibilities.data?.filter((r: any) => r.is_active)?.length || 0
+    const responsibilitiesWithLeader = responsibilities.data?.filter((r: any) => r.responsible_user_id)?.length || 0
+    const responsibilityGroups = [...new Set(responsibilities.data?.map((r: any) => r.group_name).filter(Boolean))].length
     const responsibilityCoverage =
       totalResponsibilities > 0 ? ((responsibilitiesWithLeader / totalResponsibilities) * 100).toFixed(1) : 0
     const avgMembersPerResponsibility =
       responsibilities.data?.reduce(
-        (sum, r) => sum + (Array.isArray(r.team_member_ids) ? r.team_member_ids.length : 0),
+        (sum: number, r: any) => sum + (Array.isArray(r.team_member_ids) ? r.team_member_ids.length : 0),
         0,
       ) / (totalResponsibilities || 1) || 0
 
     const totalOrgPositions = orgChart.data?.length || 0
-    const filledPositions = orgChart.data?.filter((p) => p.user_id)?.length || 0
+    const filledPositions = orgChart.data?.filter((p: any) => p.user_id)?.length || 0
     const vacantPositions = totalOrgPositions - filledPositions
-    const orgLevels = Math.max(...(orgChart.data?.map((p) => p.level || 0) || [0]))
+    const orgLevels = Math.max(...(orgChart.data?.map((p: any) => p.level || 0) || [0]))
     const positionFillRate = totalOrgPositions > 0 ? ((filledPositions / totalOrgPositions) * 100).toFixed(1) : 0
-    const departmentsInOrg = [...new Set(orgChart.data?.map((p) => p.department).filter(Boolean))].length
+    const departmentsInOrg = [...new Set(orgChart.data?.map((p: any) => p.department).filter(Boolean))].length
 
     const workflowStepsData =
-      workflowSteps.data?.filter((s) => workflows.data?.some((w) => w.id === s.workflow_id)) || []
-    const completedSteps = workflowStepsData.filter((s) => s.status === "completed").length
-    const blockedSteps = workflowStepsData.filter((s) => s.status === "blocked").length
+      workflowSteps.data?.filter((s: any) => workflows.data?.some((w: any) => w.id === s.workflow_id)) || []
+    const completedSteps = workflowStepsData.filter((s: any) => s.status === "completed").length
+    const blockedSteps = workflowStepsData.filter((s: any) => s.status === "blocked").length
     const totalSteps = workflowStepsData.length
     const stepCompletionRate = totalSteps > 0 ? ((completedSteps / totalSteps) * 100).toFixed(1) : 0
     const stepBlockageRate = totalSteps > 0 ? ((blockedSteps / totalSteps) * 100).toFixed(1) : 0
 
     const categoryCount = orgaCategories.data?.length || 0
-    const activeCategoriesCount = orgaCategories.data?.filter((c) => c.is_active)?.length || 0
+    const activeCategoriesCount = orgaCategories.data?.filter((c: any) => c.is_active)?.length || 0
 
-    const unreadNotifications = notifications.data?.filter((n) => !n.is_read)?.length || 0
+    const unreadNotifications = notifications.data?.filter((n: any) => !n.is_read)?.length || 0
     const totalNotifications = notifications.data?.length || 0
     const notificationReadRate =
       totalNotifications > 0 ? (((totalNotifications - unreadNotifications) / totalNotifications) * 100).toFixed(1) : 0
@@ -651,17 +651,17 @@ export async function POST(request: Request) {
     const totalFolders = documentFolders.data?.length || 0
     const documentsPerFolder = totalFolders > 0 ? (totalDocuments / totalFolders).toFixed(1) : 0
     const documentsWithTags =
-      documentsData.filter((d) => d.tags && Array.isArray(d.tags) && d.tags.length > 0)?.length || 0
+      documentsData.filter((d: any) => d.tags && Array.isArray(d.tags) && d.tags.length > 0)?.length || 0
     const documentTaggingRate = totalDocuments > 0 ? ((documentsWithTags / totalDocuments) * 100).toFixed(1) : 0
 
     const totalQuestionnaires = questionnaires.data?.length || 0
     const totalResponses = questionnaireResponses.data?.length || 0
-    const completedResponses = questionnaireResponses.data?.filter((r) => r.status === "completed")?.length || 0
+    const completedResponses = questionnaireResponses.data?.filter((r: any) => r.status === "completed")?.length || 0
     const avgResponsesPerQuestionnaire = totalQuestionnaires > 0 ? (totalResponses / totalQuestionnaires).toFixed(1) : 0
 
     const departmentDistribution =
       teamMembersData.data?.reduce(
-        (acc, tm) => {
+        (acc: Record<string, number>, tm: any) => {
           const dept = tm.department || "Unzugeordnet"
           acc[dept] = (acc[dept] || 0) + 1
           return acc
@@ -673,7 +673,7 @@ export async function POST(request: Request) {
 
     const totalAnalyticsParameters = analyticsParameters.data?.length || 0
     const recentAnalyticsParameters =
-      analyticsParameters.data?.filter((a) => {
+      analyticsParameters.data?.filter((a: any) => {
         const recordedDate = new Date(a.recorded_date)
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         return recordedDate >= thirtyDaysAgo

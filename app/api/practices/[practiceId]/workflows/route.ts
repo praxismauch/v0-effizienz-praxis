@@ -8,9 +8,9 @@ export const revalidate = 0
 
 const HARDCODED_PRACTICE_ID = "1"
 
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = params
+    const { practiceId: rawPracticeId } = await params
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
@@ -88,9 +88,9 @@ export async function GET(request: NextRequest, { params }: { params: { practice
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = params
+    const { practiceId: rawPracticeId } = await params
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0") {
@@ -176,9 +176,9 @@ export async function POST(request: NextRequest, { params }: { params: { practic
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { practiceId: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = params
+    const { practiceId: rawPracticeId } = await params
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0") {

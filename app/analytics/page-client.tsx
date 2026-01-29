@@ -104,7 +104,12 @@ export default function AnalyticsPageClient() {
           </TabsContent>
 
           <TabsContent value="bank" className="space-y-4">
-            <BankAccountManager />
+            {currentUser?.practiceId && <BankAccountManager practiceId={currentUser.practiceId} />}
+            {!currentUser?.practiceId && (
+              <div className="text-center text-muted-foreground py-8">
+                Keine Praxis-ID verfügbar. Bitte stellen Sie sicher, dass Sie einer Praxis zugeordnet sind.
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="excel" className="space-y-4">

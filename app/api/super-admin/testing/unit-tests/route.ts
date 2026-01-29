@@ -46,10 +46,10 @@ export async function POST(req: NextRequest) {
           description: "Tests für alle API Endpunkte",
           tests: apiTests,
           totalTests: apiTests.length,
-          passedTests: apiTests.filter((t) => t.status === "passed").length,
-          failedTests: apiTests.filter((t) => t.status === "failed").length,
-          skippedTests: apiTests.filter((t) => t.status === "skipped").length,
-          duration: apiTests.reduce((sum, t) => sum + t.duration, 0),
+          passedTests: apiTests.filter((t: any) => t.status === "passed").length,
+          failedTests: apiTests.filter((t: any) => t.status === "failed").length,
+          skippedTests: apiTests.filter((t: any) => t.status === "skipped").length,
+          duration: apiTests.reduce((sum: number, t: any) => sum + t.duration, 0),
         })
       } catch (error) {
         console.error("Error running API tests:", error)
@@ -84,10 +84,10 @@ export async function POST(req: NextRequest) {
           description: "Tests für Datenbankverbindungen und Tabellenzugriffe",
           tests: dbTests,
           totalTests: dbTests.length,
-          passedTests: dbTests.filter((t) => t.status === "passed").length,
-          failedTests: dbTests.filter((t) => t.status === "failed").length,
-          skippedTests: dbTests.filter((t) => t.status === "skipped").length,
-          duration: dbTests.reduce((sum, t) => sum + t.duration, 0),
+          passedTests: dbTests.filter((t: any) => t.status === "passed").length,
+          failedTests: dbTests.filter((t: any) => t.status === "failed").length,
+          skippedTests: dbTests.filter((t: any) => t.status === "skipped").length,
+          duration: dbTests.reduce((sum: number, t: any) => sum + t.duration, 0),
         })
       } catch (error) {
         console.error("Error running database tests:", error)
@@ -122,10 +122,10 @@ export async function POST(req: NextRequest) {
           description: "Tests für Authentifizierungs- und Autorisierungslogik",
           tests: authTests,
           totalTests: authTests.length,
-          passedTests: authTests.filter((t) => t.status === "passed").length,
-          failedTests: authTests.filter((t) => t.status === "failed").length,
-          skippedTests: authTests.filter((t) => t.status === "skipped").length,
-          duration: authTests.reduce((sum, t) => sum + t.duration, 0),
+          passedTests: authTests.filter((t: any) => t.status === "passed").length,
+          failedTests: authTests.filter((t: any) => t.status === "failed").length,
+          skippedTests: authTests.filter((t: any) => t.status === "skipped").length,
+          duration: authTests.reduce((sum: number, t: any) => sum + t.duration, 0),
         })
       } catch (error) {
         console.error("Error running auth tests:", error)
@@ -160,10 +160,10 @@ export async function POST(req: NextRequest) {
           description: "Tests für externe Integrationen und Services",
           tests: integrationTests,
           totalTests: integrationTests.length,
-          passedTests: integrationTests.filter((t) => t.status === "passed").length,
-          failedTests: integrationTests.filter((t) => t.status === "failed").length,
-          skippedTests: integrationTests.filter((t) => t.status === "skipped").length,
-          duration: integrationTests.reduce((sum, t) => sum + t.duration, 0),
+          passedTests: integrationTests.filter((t: any) => t.status === "passed").length,
+          failedTests: integrationTests.filter((t: any) => t.status === "failed").length,
+          skippedTests: integrationTests.filter((t: any) => t.status === "skipped").length,
+          duration: integrationTests.reduce((sum: number, t: any) => sum + t.duration, 0),
         })
       } catch (error) {
         console.error("Error running integration tests:", error)

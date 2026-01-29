@@ -116,10 +116,14 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
   }
 
   const sendEmailInvite = async () => {
-    if (!email || !referralCode) return
+    if (!email || !referralCode) {
+      console.log("[v0] Referral: Email or referral code missing", { email, referralCode })
+      return
+    }
 
     setLoading(true)
     try {
+      console.log("[v0] Referral: Sending invite to", email)
       const response = await fetch("/api/referrals/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,18 +135,36 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
         }),
       })
 
-      if (!response.ok) throw new Error("Failed to send invite")
+      console.log("[v0] Referral: API response status", response.status)
 
-      toast({
-        title: "Einladung versendet!",
-        description: `Eine Einladung wurde an ${email} gesendet.`,
-      })
-      setEmail("")
-      loadReferralData()
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        console.error("[v0] Referral: API error", errorData)
+        throw new Error(errorData.error || "Failed to send invite")
+      }
+
+      const result = await response.json()
+      console.log("[v0] Referral: API success", result)
+
+      if (!result.emailSent && result.emailError) {
+        toast({
+          title: "Teilweise erfolgreich",
+          description: `Einladung erstellt, aber E-Mail konnte nicht versendet werden: ${result.emailError}`,
+          variant: "destructive",
+        })
+      } else if (result.success) {
+        toast({
+          title: "Einladung versendet!",
+          description: `Eine Einladung wurde an ${email} gesendet.`,
+        })
+        setEmail("")
+        loadReferralData()
+      }
     } catch (error) {
+      console.error("[v0] Referral: Exception", error)
       toast({
         title: "Fehler",
-        description: "Einladung konnte nicht versendet werden.",
+        description: error instanceof Error ? error.message : "Einladung konnte nicht versendet werden.",
         variant: "destructive",
       })
     } finally {

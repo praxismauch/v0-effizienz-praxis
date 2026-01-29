@@ -63,6 +63,7 @@ export default function DienstplanPageClient() {
 
   // Fetch all data
   const fetchData = useCallback(async () => {
+    console.log("[v0] fetchData called, currentPractice:", currentPractice?.id)
     if (!currentPractice) {
       setIsLoading(false)
       return
@@ -72,13 +73,14 @@ export default function DienstplanPageClient() {
     try {
       const weekStart = format(currentWeek, "yyyy-MM-dd")
       const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "yyyy-MM-dd")
+      console.log("[v0] Fetching schedules for week:", weekStart, "to", weekEnd)
 
       const [teamRes, shiftTypesRes, schedulesRes, availabilityRes, swapRes] = await Promise.all([
-        fetch(`/api/practices/${currentPractice.id}/team-members`),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/shift-types`),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/schedules?start=${weekStart}&end=${weekEnd}`),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/availability`),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/swap-requests?status=pending`),
+        fetch(`/api/practices/${currentPractice.id}/team-members`, { cache: "no-store" }),
+        fetch(`/api/practices/${currentPractice.id}/dienstplan/shift-types`, { cache: "no-store" }),
+        fetch(`/api/practices/${currentPractice.id}/dienstplan/schedules?start=${weekStart}&end=${weekEnd}`, { cache: "no-store" }),
+        fetch(`/api/practices/${currentPractice.id}/dienstplan/availability`, { cache: "no-store" }),
+        fetch(`/api/practices/${currentPractice.id}/dienstplan/swap-requests?status=pending`, { cache: "no-store" }),
       ])
 
       if (teamRes.ok) {
@@ -91,6 +93,7 @@ export default function DienstplanPageClient() {
       }
       if (schedulesRes.ok) {
         const data = await schedulesRes.json()
+        console.log("[v0] Fetched schedules:", data.schedules?.length || 0, "shifts")
         setSchedules(data.schedules || [])
       }
       if (availabilityRes.ok) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,6 +29,7 @@ import {
 import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { AppLayout } from "@/components/app-layout"
+import { useRoomsData } from "./hooks/use-rooms-data"
 
 interface Room {
   id: string
@@ -96,8 +97,6 @@ type PageClientProps = {}
 export default function PageClient(_props: PageClientProps) {
   const { currentUser: user, loading: authLoading } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
 
   // Dialog states
@@ -111,48 +110,15 @@ export default function PageClient(_props: PageClientProps) {
   const [formName, setFormName] = useState("")
   const [formBeschreibung, setFormBeschreibung] = useState("")
 
-  useEffect(() => {
-    if (currentPractice?.id) {
-      fetchRooms()
-    } else if (!practiceLoading && !currentPractice) {
-      setLoading(false)
-    }
-  }, [currentPractice, practiceLoading]) // Updated dependency array
+  // Use SWR for data fetching
+  const { data, isLoading, error, mutate } = useRoomsData(currentPractice?.id?.toString())
+  const rooms = data.rooms
+  const loading = isLoading
 
-  const fetchRooms = async () => {
-    if (!currentPractice?.id) return
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/practices/${currentPractice.id}/rooms`)
-
-      const contentType = response.headers.get("content-type")
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await response.text()
-        if (text.includes("Too Many") || response.status === 429) {
-          toast.error("Zu viele Anfragen. Bitte warten Sie einen Moment.")
-          return
-        }
-        console.error("Non-JSON response:", text.substring(0, 100))
-        toast.error("Fehler beim Laden der Räume")
-        return
-      }
-
-      if (response.ok) {
-        const data = await response.json()
-        setRooms(data)
-      } else if (response.status === 429) {
-        toast.error("Zu viele Anfragen. Bitte warten Sie einen Moment.")
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error("Error fetching rooms:", errorData)
-        toast.error("Fehler beim Laden der Räume")
-      }
-    } catch (error) {
-      console.error("Error fetching rooms:", error)
-      toast.error("Fehler beim Laden der Räume")
-    } finally {
-      setLoading(false)
-    }
+  // Handle errors
+  if (error && !isLoading) {
+    console.error("Error fetching rooms:", error)
+    toast.error("Fehler beim Laden der Räume")
   }
 
   const handleCreate = async () => {
@@ -181,11 +147,11 @@ export default function PageClient(_props: PageClientProps) {
       }
 
       if (response.ok) {
-        const newRoom = await response.json()
-        setRooms((prev) => [...prev, newRoom].sort((a, b) => a.name.localeCompare(b.name)))
         setIsCreateOpen(false)
         resetForm()
         toast.success("Raum erfolgreich erstellt")
+        // Use SWR mutate for instant update
+        await mutate()
       } else {
         const error = await response.json().catch(() => ({}))
         toast.error(error.error || "Fehler beim Erstellen des Raums")
@@ -224,14 +190,12 @@ export default function PageClient(_props: PageClientProps) {
       }
 
       if (response.ok) {
-        const updatedRoom = await response.json()
-        setRooms((prev) =>
-          prev.map((r) => (r.id === updatedRoom.id ? updatedRoom : r)).sort((a, b) => a.name.localeCompare(b.name)),
-        )
         setIsEditOpen(false)
-        setSelectedRoom(null)
         resetForm()
+        setSelectedRoom(null)
         toast.success("Raum erfolgreich aktualisiert")
+        // Use SWR mutate for instant update
+        await mutate()
       } else {
         const error = await response.json().catch(() => ({}))
         toast.error(error.error || "Fehler beim Aktualisieren des Raums")
@@ -248,8 +212,6 @@ export default function PageClient(_props: PageClientProps) {
     if (!currentPractice?.id || !selectedRoom) return
 
     const roomId = selectedRoom.id
-
-    setRooms((prev) => prev.filter((r) => r.id !== roomId))
     setIsDeleteOpen(false)
     setSelectedRoom(null)
 
@@ -260,11 +222,19 @@ export default function PageClient(_props: PageClientProps) {
 
       if (response.ok) {
         toast.success("Raum erfolgreich gelöscht")
+        // Use SWR mutate for instant update
+        await mutate()
       } else {
-        await fetchRooms()
-        const error = await response.json()
+        const error = await response.json().catch(() => ({}))
         toast.error(error.error || "Fehler beim Löschen des Raums")
+        await mutate()
       }
+    } catch (error) {
+      console.error("Error deleting room:", error)
+      toast.error("Fehler beim Löschen des Raums")
+      await mutate()
+    }
+  }
     } catch (error) {
       await fetchRooms()
       console.error("Error deleting room:", error)

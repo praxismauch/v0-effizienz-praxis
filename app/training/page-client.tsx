@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
-import { fetchWithRetry, safeJsonParse } from "@/lib/fetch-with-retry"
 import { Search, Calendar, Award, Euro, BookOpen, Filter } from "lucide-react"
 import {
   AlertDialog,
@@ -34,6 +33,7 @@ import { CoursesTab } from "./components/courses-tab"
 import { EventsTab } from "./components/events-tab"
 import { CertificationsTab } from "./components/certifications-tab"
 import { BudgetsTab } from "./components/budgets-tab"
+import { useTrainingData } from "./hooks/use-training-data"
 
 export default function TrainingPageClient() {
   const { currentUser: user } = useUser()
@@ -42,14 +42,6 @@ export default function TrainingPageClient() {
   const [activeTab, setActiveTab] = useState("courses")
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Data states
-  const [courses, setCourses] = useState<TrainingCourse[]>([])
-  const [events, setEvents] = useState<TrainingEvent[]>([])
-  const [certifications, setCertifications] = useState<Certification[]>([])
-  const [teamMemberCertifications, setTeamMemberCertifications] = useState<TeamMemberCertification[]>([])
-  const [budgets, setBudgets] = useState<TrainingBudget[]>([])
 
   // Delete confirmation state
   const [itemToDelete, setItemToDelete] = useState<{
@@ -60,48 +52,14 @@ export default function TrainingPageClient() {
 
   const practiceId = currentPractice?.id
 
-  const fetchData = useCallback(async () => {
-    if (!practiceId) return
-    setIsLoading(true)
+  // Use SWR for data fetching
+  const { data, isLoading, error, mutateCourses, mutateEvents, mutateCertifications } = useTrainingData(practiceId?.toString())
+  const { courses, events, certifications, teamMemberCertifications, budgets } = data
 
-    try {
-      const coursesRes = await fetchWithRetry(`/api/practices/${practiceId}/training/courses`)
-      const coursesData = await safeJsonParse(coursesRes)
-      setCourses(coursesData?.courses || [])
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      const eventsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/events`)
-      const eventsData = await safeJsonParse(eventsRes)
-      setEvents(eventsData?.events || [])
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      const certificationsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/certifications`)
-      const certificationsData = await safeJsonParse(certificationsRes)
-      setCertifications(certificationsData?.certifications || [])
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      const teamCertsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/team-member-certifications`)
-      const teamCertsData = await safeJsonParse(teamCertsRes)
-      setTeamMemberCertifications(teamCertsData?.team_member_certifications || [])
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      const budgetsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/budgets`)
-      const budgetsData = await safeJsonParse(budgetsRes)
-      setBudgets(budgetsData?.budgets || [])
-    } catch (error) {
-      console.error("Error fetching training data:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [practiceId])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  // Handle errors
+  if (error && !isLoading) {
+    console.error("Error fetching training data:", error)
+  }
 
   const handleDeleteItem = (type: "course" | "event" | "certification", id: string, name: string) => {
     setItemToDelete({ type, id, name })
@@ -112,18 +70,20 @@ export default function TrainingPageClient() {
 
     try {
       if (itemToDelete.type === "course") {
-        setCourses((prev) => prev.filter((c) => c.id !== itemToDelete.id))
         await fetch(`/api/practices/${practiceId}/training/courses/${itemToDelete.id}`, { method: "DELETE" })
+        // Use SWR mutate for instant update
+        await mutateCourses()
       } else if (itemToDelete.type === "event") {
-        setEvents((prev) => prev.filter((e) => e.id !== itemToDelete.id))
         await fetch(`/api/practices/${practiceId}/training/events/${itemToDelete.id}`, { method: "DELETE" })
+        // Use SWR mutate for instant update
+        await mutateEvents()
       } else if (itemToDelete.type === "certification") {
-        setCertifications((prev) => prev.filter((c) => c.id !== itemToDelete.id))
         await fetch(`/api/practices/${practiceId}/training/certifications/${itemToDelete.id}`, { method: "DELETE" })
+        // Use SWR mutate for instant update
+        await mutateCertifications()
       }
     } catch (error) {
       console.error("Error deleting item:", error)
-      fetchData()
     } finally {
       setItemToDelete(null)
     }
@@ -302,7 +262,7 @@ export default function TrainingPageClient() {
           <CoursesTab
             courses={filteredCourses}
             practiceId={practiceId!}
-            onCoursesChange={setCourses}
+            onCoursesChange={mutateCourses}
             onDelete={(id, name) => handleDeleteItem("course", id, name)}
           />
         </TabsContent>
@@ -312,7 +272,7 @@ export default function TrainingPageClient() {
             events={filteredEvents}
             courses={courses}
             practiceId={practiceId!}
-            onEventsChange={setEvents}
+            onEventsChange={mutateEvents}
             onDelete={(id, name) => handleDeleteItem("event", id, name)}
           />
         </TabsContent>
@@ -321,7 +281,7 @@ export default function TrainingPageClient() {
           <CertificationsTab
             certifications={filteredCertifications}
             practiceId={practiceId!}
-            onCertificationsChange={setCertifications}
+            onCertificationsChange={mutateCertifications}
             onDelete={(id, name) => handleDeleteItem("certification", id, name)}
           />
         </TabsContent>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { usePractice } from "@/contexts/practice-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -26,6 +26,9 @@ import TeamsTab from "./components/teams-tab"
 import HolidaysTab from "./components/holidays-tab"
 import SickLeavesTab from "./components/sickleaves-tab"
 
+// Import custom hook
+import { useTeamData } from "./hooks/use-team-data"
+
 // Import types
 import type {
   TeamMember,
@@ -42,72 +45,18 @@ export default function TeamPageClient() {
   const { user } = useAuth()
 
   const [activeTab, setActiveTab] = useState("members")
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Data states
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [teams, setTeams] = useState<Team[]>([])
-  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([])
-  const [staffingPlans, setStaffingPlans] = useState<StaffingPlan[]>([])
-  const [holidayRequests, setHolidayRequests] = useState<HolidayRequest[]>([])
-  const [sickLeaves, setSickLeaves] = useState<SickLeave[]>([])
 
   const practiceId = currentPractice?.id?.toString()
 
-  // Fetch data
-  useEffect(() => {
-    if (!practiceId) return
+  // Use SWR for data fetching
+  const { data, isLoading, error, refresh, mutateTeamMembers } = useTeamData(practiceId)
+  const { teamMembers, teams, responsibilities, staffingPlans, holidayRequests, sickLeaves } = data
 
-    const fetchData = async () => {
-      setIsLoading(true)
-      try {
-        const [membersRes, teamsRes, responsibilitiesRes] = await Promise.all([
-          fetch(`/api/practices/${practiceId}/team-members`),
-          fetch(`/api/practices/${practiceId}/teams`),
-          fetch(`/api/practices/${practiceId}/responsibilities`),
-        ])
-
-        if (membersRes.ok) {
-          const data = await membersRes.json()
-          setTeamMembers(data.teamMembers || [])
-        } else {
-          const errorData = await membersRes.json().catch(() => ({}))
-          console.error("Error fetching team members:", errorData)
-          toast.error(`Teammitglieder konnten nicht geladen werden: ${errorData.error || `HTTP ${membersRes.status}`}`)
-        }
-        
-        if (teamsRes.ok) {
-          const data = await teamsRes.json()
-          setTeams(data.teams || [])
-        } else {
-          const errorData = await teamsRes.json().catch(() => ({}))
-          console.error("Error fetching teams:", errorData)
-          toast.error(`Teams konnten nicht geladen werden: ${errorData.error || `HTTP ${teamsRes.status}`}`)
-        }
-        
-        if (responsibilitiesRes.ok) {
-          const data = await responsibilitiesRes.json()
-          setResponsibilities(data.responsibilities || [])
-        } else {
-          const errorData = await responsibilitiesRes.json().catch(() => ({}))
-          console.error("Error fetching responsibilities:", errorData)
-          toast.error(`Verantwortlichkeiten konnten nicht geladen werden: ${errorData.error || `HTTP ${responsibilitiesRes.status}`}`)
-        }
-      } catch (error) {
-        console.error("Error fetching team data:", error)
-        const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
-        if (error instanceof TypeError && errorMessage.includes("fetch")) {
-          toast.error("Netzwerkfehler: Verbindung zum Server fehlgeschlagen")
-        } else {
-          toast.error(`Fehler beim Laden der Teamdaten: ${errorMessage}`)
-        }
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [practiceId])
+  // Handle errors
+  if (error && !isLoading) {
+    console.error("Error fetching team data:", error)
+    toast.error("Fehler beim Laden der Teamdaten")
+  }
 
   // Handler stubs - implement as needed
   const handleAddMember = () => router.push("/team/add")
@@ -119,8 +68,9 @@ export default function TeamPageClient() {
         method: "DELETE",
       })
       if (res.ok) {
-        setTeamMembers((prev) => prev.filter((m) => m.id !== member.id))
         toast.success("Mitarbeiter entfernt")
+        // Use SWR mutate for instant update
+        await mutateTeamMembers()
       }
     } catch {
       toast.error("Fehler beim Entfernen")

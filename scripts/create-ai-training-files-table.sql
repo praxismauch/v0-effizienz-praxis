@@ -26,60 +26,32 @@ ALTER TABLE ai_training_files ENABLE ROW LEVEL SECURITY;
 -- RLS policies for ai_training_files (super admin only)
 CREATE POLICY "Super admins can view all ai training files"
   ON ai_training_files FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users au
-      LEFT JOIN users u ON au.id = u.id
-      WHERE au.id = auth.uid()
-      AND (u.role = 'super_admin' OR au.email IN (
-        SELECT email FROM auth.users WHERE id IN (
-          SELECT id FROM users WHERE role = 'super_admin'
-        )
-      ))
-    )
-  );
+  USING (EXISTS (
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.role = 'super_admin'
+  ));
 
 CREATE POLICY "Super admins can insert ai training files"
   ON ai_training_files FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users au
-      LEFT JOIN users u ON au.id = u.id
-      WHERE au.id = auth.uid()
-      AND (u.role = 'super_admin' OR au.email IN (
-        SELECT email FROM auth.users WHERE id IN (
-          SELECT id FROM users WHERE role = 'super_admin'
-        )
-      ))
-    )
-  );
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.role = 'super_admin'
+  ));
 
 CREATE POLICY "Super admins can update ai training files"
   ON ai_training_files FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users au
-      LEFT JOIN users u ON au.id = u.id
-      WHERE au.id = auth.uid()
-      AND (u.role = 'super_admin' OR au.email IN (
-        SELECT email FROM auth.users WHERE id IN (
-          SELECT id FROM users WHERE role = 'super_admin'
-        )
-      ))
-    )
-  );
+  USING (EXISTS (
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.role = 'super_admin'
+  ));
 
 CREATE POLICY "Super admins can delete ai training files"
   ON ai_training_files FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users au
-      LEFT JOIN users u ON au.id = u.id
-      WHERE au.id = auth.uid()
-      AND (u.role = 'super_admin' OR au.email IN (
-        SELECT email FROM auth.users WHERE id IN (
-          SELECT id FROM users WHERE role = 'super_admin'
-        )
-      ))
-    )
-  );
+  USING (EXISTS (
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.role = 'super_admin'
+  ));

@@ -78,10 +78,10 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
   // Check Google Drive connection
   const checkGoogleDriveConnection = useCallback(async () => {
     try {
-      const response = await fetch("/api/superadmin/backups/google-drive/status")
+      const response = await fetch("/api/super-admin/backups/google-drive/status")
       if (!response.ok) throw new Error("Failed to fetch connection status")
       const data = await response.json()
-      setGoogleDriveConnected(data.isConnected)
+      setGoogleDriveConnected(data.connected || false)
     } catch (error) {
       console.error("Error checking Google Drive connection:", error)
       setGoogleDriveConnected(false)
@@ -503,7 +503,7 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
       setIsConnectingGoogleDrive(true)
       const userEmail = process.env.NEXT_PUBLIC_DEV_USER_EMAIL || userId
       const response = await fetch(
-        `/api/superadmin/backups/google-drive/auth?userId=${encodeURIComponent(userEmail || "")}`,
+        `/api/super-admin/backups/google-drive/auth?userId=${encodeURIComponent(userEmail || "")}`,
         { credentials: "include" }
       )
 
@@ -532,7 +532,7 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
   const disconnectGoogleDrive = useCallback(async () => {
     try {
       setIsConnectingGoogleDrive(true)
-      const response = await fetch("/api/superadmin/backups/google-drive/disconnect", {
+      const response = await fetch("/api/super-admin/backups/google-drive/disconnect", {
         method: "POST",
       })
 
@@ -558,7 +558,7 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
   // Sync to Google Drive
   const syncToGoogleDrive = useCallback(async (backupId: string, practiceId: string | null) => {
     try {
-      const response = await fetch("/api/superadmin/backups/google-drive/upload", {
+      const response = await fetch("/api/super-admin/backups/google-drive/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ backupId, practiceId: practiceId || "0" }),

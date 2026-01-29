@@ -80,6 +80,7 @@ export function useResponsibilities() {
       name: responsibility.name || "",
       description: responsibility.description || "",
       optimization_suggestions: responsibility.optimization_suggestions || "",
+      group_name: responsibility.category || responsibility.group_name || "",
       responsible_user_id: responsibility.responsible_user_id || null,
       deputy_user_id: responsibility.deputy_user_id || null,
       team_member_ids: responsibility.team_member_ids || [],
@@ -91,8 +92,10 @@ export function useResponsibilities() {
       attachments: responsibility.attachments || [],
       link_url: responsibility.link_url || "",
       link_title: responsibility.link_title || "",
-      category: (responsibility as any).group_name || responsibility.category || null,
-      estimated_time_minutes: responsibility.estimated_time_minutes || null,
+      arbeitsplatz_ids: (responsibility as any).arbeitsplatz_ids || [],
+      joint_execution: responsibility.joint_execution || false,
+      joint_execution_user_id: (responsibility as any).joint_execution_user_id || null,
+      joint_execution_team_group: (responsibility as any).joint_execution_team_group || null,
     })
     setFormDialogOpen(true)
   }
@@ -251,7 +254,8 @@ export function useResponsibilities() {
     const matchesSearch =
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = categoryFilter === "all" || r.category === categoryFilter
+    const categoryValue = r.category || r.group_name || "Nicht kategorisiert"
+    const matchesCategory = categoryFilter === "all" || categoryValue === categoryFilter
 
     let matchesTeamMember = true
     if (teamMemberFilter === "all") {
@@ -267,7 +271,7 @@ export function useResponsibilities() {
 
   const groupedResponsibilities = filteredResponsibilities.reduce(
     (acc, r) => {
-      const group = r.category || "Nicht kategorisiert"
+      const group = r.category || r.group_name || "Nicht kategorisiert"
       if (!acc[group]) acc[group] = []
       acc[group].push(r)
       return acc
@@ -275,7 +279,13 @@ export function useResponsibilities() {
     {} as Record<string, Responsibility[]>,
   )
 
-  const categories = Array.from(new Set(responsibilities.map((r) => r.category).filter(Boolean))) as string[]
+  const categories = Array.from(
+    new Set(
+      responsibilities
+        .map((r) => r.category || r.group_name)
+        .filter((cat): cat is string => typeof cat === "string" && cat.length > 0),
+    ),
+  ).sort()
 
   const stats: ResponsibilityStats = {
     total: responsibilities.length,

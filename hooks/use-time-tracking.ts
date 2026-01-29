@@ -11,8 +11,22 @@ export function useTimeTrackingStatus(practiceId: string | null, userId: string 
     {
       refreshInterval: 60000, // Refresh every 60 seconds (1 minute)
       revalidateOnFocus: true,
+      onSuccess: (data) => {
+        console.log("[v0] useTimeTrackingStatus: Data fetched successfully:", data)
+      },
+      onError: (error) => {
+        console.error("[v0] useTimeTrackingStatus: Fetch error:", error)
+      },
     }
   )
+
+  console.log("[v0] useTimeTrackingStatus: Hook state:", { 
+    url: practiceId && userId ? `/api/practices/${practiceId}/time/current-status?userId=${userId}` : null,
+    status: data?.status,
+    hasBlock: !!data?.block,
+    isLoading,
+    error: error?.message
+  })
 
   return {
     status: data?.status || "idle",

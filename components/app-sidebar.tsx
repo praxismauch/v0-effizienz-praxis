@@ -53,6 +53,11 @@ import {
   CircleDot,
   MessageCircle,
   GraduationCap,
+  AlertCircle,
+  BookMarked,
+  TrendingUp,
+  FileCheck,
+  HelpCircle,
 } from "lucide-react"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -118,12 +123,14 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/todos",
         icon: ClipboardList,
         key: "tasks",
+        badge: "tasks",
       },
       {
         name: t("sidebar.goals", "Ziele"),
         href: "/goals",
         icon: Target,
         key: "goals",
+        badge: "goals",
       },
       {
         name: t("sidebar.workflows", "Workflows"),
@@ -138,6 +145,19 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: ClipboardCheck,
         key: "responsibilities",
         badge: "responsibilities",
+      },
+      {
+        name: t("sidebar.communication", "Kommunikation"),
+        href: "/communication",
+        icon: MessageSquare,
+        key: "communication",
+      },
+      {
+        name: t("sidebar.tickets", "Tickets"),
+        href: "/tickets",
+        icon: AlertCircle,
+        key: "tickets",
+        badge: "tickets",
       },
     ],
   },
@@ -158,6 +178,24 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "documents",
       },
       {
+        name: t("sidebar.journal", "Journal"),
+        href: "/journal",
+        icon: BookMarked,
+        key: "journal",
+      },
+      {
+        name: t("sidebar.praxis_auswertung", "Praxis-Auswertung"),
+        href: "/praxis-auswertung",
+        icon: BarChart3,
+        key: "praxis_auswertung",
+      },
+      {
+        name: t("sidebar.practice_insights", "Practice Insights"),
+        href: "/practice-insights",
+        icon: TrendingUp,
+        key: "practice_insights",
+      },
+      {
         name: t("sidebar.knowledge", "Wissen"),
         href: "/knowledge",
         icon: BookOpen,
@@ -166,7 +204,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
       {
         name: t("sidebar.protocols", "Protokolle"),
         href: "/protocols",
-        icon: MessageSquare,
+        icon: FileCheck,
         key: "protocols",
       },
     ],
@@ -309,6 +347,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/inventory",
         icon: Package,
         key: "inventory",
+        badge: "inventory",
       },
       {
         name: t("sidebar.devices", "Geräte"),
@@ -322,6 +361,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/messages",
         icon: MessageSquare,
         key: "messages",
+      },
+      {
+        name: t("sidebar.help", "Hilfe"),
+        href: "/help",
+        icon: HelpCircle,
+        key: "help",
       },
       {
         name: t("sidebar.settings", "Einstellungen"),

@@ -1,21 +1,71 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Bell, Loader2, Save } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { usePractice } from "@/contexts/practice-context"
+import { useUser } from "@/contexts/user-context"
 import type { NotificationSettings } from "@/app/settings/types"
 
-interface NotificationsTabProps {
-  settings: NotificationSettings
-  onChange: (settings: NotificationSettings) => void
-  onSave: () => void
-  saving: boolean
-}
+export function NotificationsTab() {
+  const { toast } = useToast()
+  const { currentPractice } = usePractice()
+  const { currentUser } = useUser()
+  const [saving, setSaving] = useState(false)
+  const [settings, setSettings] = useState<NotificationSettings>({
+    emailNotifications: true,
+    taskReminders: true,
+    todoDueDateEmail: true,
+    appointmentReminders: true,
+    weeklyReport: false,
+    marketingEmails: false,
+  })
 
-export function NotificationsTab({ settings, onChange, onSave, saving }: NotificationsTabProps) {
+  useEffect(() => {
+    if (currentUser?.notification_settings) {
+      setSettings({
+        emailNotifications: currentUser.notification_settings.emailNotifications ?? true,
+        taskReminders: currentUser.notification_settings.taskReminders ?? true,
+        todoDueDateEmail: currentUser.notification_settings.todoDueDateEmail ?? true,
+        appointmentReminders: currentUser.notification_settings.appointmentReminders ?? true,
+        weeklyReport: currentUser.notification_settings.weeklyReport ?? false,
+        marketingEmails: currentUser.notification_settings.marketingEmails ?? false,
+      })
+    }
+  }, [currentUser])
+
+  const handleSave = async () => {
+    if (!currentUser || !currentPractice) return
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/users/${currentUser.id}/notification-settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      })
+
+      if (!response.ok) throw new Error("Failed to save settings")
+
+      toast({
+        title: "Erfolg",
+        description: "Benachrichtigungseinstellungen wurden gespeichert",
+      })
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Benachrichtigungseinstellungen konnten nicht gespeichert werden",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
   return (
     <div className="space-y-4">
       <Card>
@@ -34,7 +84,7 @@ export function NotificationsTab({ settings, onChange, onSave, saving }: Notific
             </div>
             <Switch
               checked={settings.emailNotifications}
-              onCheckedChange={(checked) => onChange({ ...settings, emailNotifications: checked })}
+              onCheckedChange={(checked) => setSettings({ ...settings, emailNotifications: checked })}
             />
           </div>
           <Separator />
@@ -45,7 +95,7 @@ export function NotificationsTab({ settings, onChange, onSave, saving }: Notific
             </div>
             <Switch
               checked={settings.taskReminders}
-              onCheckedChange={(checked) => onChange({ ...settings, taskReminders: checked })}
+              onCheckedChange={(checked) => setSettings({ ...settings, taskReminders: checked })}
             />
           </div>
           <Separator />
@@ -58,7 +108,7 @@ export function NotificationsTab({ settings, onChange, onSave, saving }: Notific
             </div>
             <Switch
               checked={settings.todoDueDateEmail}
-              onCheckedChange={(checked) => onChange({ ...settings, todoDueDateEmail: checked })}
+              onCheckedChange={(checked) => setSettings({ ...settings, todoDueDateEmail: checked })}
             />
           </div>
           <Separator />
@@ -69,7 +119,7 @@ export function NotificationsTab({ settings, onChange, onSave, saving }: Notific
             </div>
             <Switch
               checked={settings.appointmentReminders}
-              onCheckedChange={(checked) => onChange({ ...settings, appointmentReminders: checked })}
+              onCheckedChange={(checked) => setSettings({ ...settings, appointmentReminders: checked })}
             />
           </div>
           <Separator />
@@ -80,11 +130,11 @@ export function NotificationsTab({ settings, onChange, onSave, saving }: Notific
             </div>
             <Switch
               checked={settings.weeklyReport}
-              onCheckedChange={(checked) => onChange({ ...settings, weeklyReport: checked })}
+              onCheckedChange={(checked) => setSettings({ ...settings, weeklyReport: checked })}
             />
           </div>
           <div className="pt-4">
-            <Button onClick={onSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

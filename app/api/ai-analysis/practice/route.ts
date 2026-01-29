@@ -468,8 +468,8 @@ export async function POST(request: Request) {
 
     const totalTransactions = bankTransactions.data?.length || 0
     const transactionAmounts = bankTransactions.data?.map((t: any) => Number(t.amount || 0)) || []
-    const totalRevenue = transactionAmounts.filter((a) => a > 0).reduce((sum, a) => sum + a, 0)
-    const totalExpenses = Math.abs(transactionAmounts.filter((a) => a < 0).reduce((sum, a) => sum + a, 0))
+    const totalRevenue = transactionAmounts.filter((a: number) => a > 0).reduce((sum: number, a: number) => sum + a, 0)
+    const totalExpenses = Math.abs(transactionAmounts.filter((a: number) => a < 0).reduce((sum: number, a: number) => sum + a, 0))
     const netCashFlow = totalRevenue - totalExpenses
     const avgTransactionSize = totalTransactions > 0 ? (totalRevenue + totalExpenses) / totalTransactions : 0
     const categoriesCount = bankTransactionCategories.data?.length || 0

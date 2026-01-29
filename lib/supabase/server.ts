@@ -1,47 +1,25 @@
 import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
 import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js"
-
-function getSupabaseUrl(): string | undefined {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-}
-
-function getSupabaseAnonKey(): string | undefined {
-  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-}
-
-function getServiceRoleKey(): string | undefined {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY
-}
-
-export function isUsingMockAdminClient(): boolean {
-  return false
-}
+import { cookies } from "next/headers"
 
 // Cache for admin client (service role) - this is safe to cache as it doesn't use cookies
 let adminClientCache: SupabaseClient | null = null
 
-export async function createServerClient() {
-  const { cookies } = await import("next/headers")
+/**
+ * Create a server client for use in Server Components and Route Handlers.
+ * IMPORTANT: Always create a fresh client for each request - do not cache.
+ */
+export async function createClient() {
   const cookieStore = await cookies()
 
-  const supabaseUrl = getSupabaseUrl()
-  const supabaseAnonKey = getSupabaseAnonKey()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("[supabase/server] Missing env vars", {
-      url: !!supabaseUrl,
-      anon: !!supabaseAnonKey,
-    })
-    throw new Error("Supabase not configured")
+    throw new Error("Supabase not configured - missing environment variables")
   }
 
-  // Server client must be created fresh each request to get updated cookies
-  // But we disable debug mode to reduce noise
   return supabaseCreateServerClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      debug: false,
-      detectSessionInUrl: false,
-    },
     cookies: {
       getAll() {
         return cookieStore.getAll()
@@ -60,32 +38,32 @@ export async function createServerClient() {
   })
 }
 
-export async function createClient() {
-  return createServerClient()
+// Alias for backwards compatibility
+export async function createServerClient() {
+  return createClient()
 }
 
+/**
+ * Create an admin client with service role key.
+ * Use this for operations that need to bypass RLS.
+ * This is cached since it doesn't use cookies.
+ */
 export async function createAdminClient() {
-  // Return cached admin client if available
   if (adminClientCache) {
     return adminClientCache
   }
 
-  const supabaseUrl = getSupabaseUrl()
-  const serviceRoleKey = getServiceRoleKey()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error("[supabase/server] Missing service role env vars", {
-      url: !!supabaseUrl,
-      serviceRole: !!serviceRoleKey,
-    })
-    throw new Error("Supabase admin client not configured")
+    throw new Error("Supabase admin client not configured - missing SUPABASE_SERVICE_ROLE_KEY")
   }
 
   adminClientCache = createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
-      debug: false,
     },
   })
 

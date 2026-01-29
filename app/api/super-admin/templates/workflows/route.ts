@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ templates })
   } catch (error: any) {
     console.error("[v0] Error fetching workflow templates:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    // Return empty array on error to prevent UI crashes
+    return NextResponse.json({ templates: [], error: error.message }, { status: 200 })
   }
 }
 

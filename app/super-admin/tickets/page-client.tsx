@@ -74,7 +74,7 @@ export default function SuperAdminTicketManager() {
       if (filterType !== "all") params.append("type", filterType)
       if (filterPriority !== "all") params.append("priority", filterPriority)
 
-      const response = await fetch(`/api/super-admin/tickets?${params.toString()}`)
+      const response = await fetch(`/api/tickets?${params.toString()}`)
       if (!response.ok) throw new Error("Failed to fetch tickets")
       const data = await response.json()
       setTickets(data.tickets || [])
@@ -105,7 +105,7 @@ export default function SuperAdminTicketManager() {
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/super-admin/tickets/${ticketId}`, {
+      const response = await fetch(`/api/tickets/${ticketId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -120,7 +120,7 @@ export default function SuperAdminTicketManager() {
 
   const handlePriorityChange = async (ticketId: string, newPriority: string) => {
     try {
-      const response = await fetch(`/api/super-admin/tickets/${ticketId}`, {
+      const response = await fetch(`/api/tickets/${ticketId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priority: newPriority }),
@@ -136,7 +136,7 @@ export default function SuperAdminTicketManager() {
   const handleDelete = async () => {
     if (!ticketToDelete) return
     try {
-      const response = await fetch(`/api/super-admin/tickets/${ticketToDelete}`, { method: "DELETE" })
+      const response = await fetch(`/api/tickets/${ticketToDelete}`, { method: "DELETE" })
       if (!response.ok) throw new Error("Failed to delete ticket")
       setTickets((prev) => prev.filter((t) => t.id !== ticketToDelete))
       toast({ title: "Erfolg", description: "Ticket wurde gelöscht" })

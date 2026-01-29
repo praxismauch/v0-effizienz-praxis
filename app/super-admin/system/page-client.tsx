@@ -8,7 +8,7 @@ import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
 
-const BackupManager = dynamic(() => import("@/components/backup-manager"), {
+const BackupManager = dynamic(() => import("@/components/backup-manager").then((mod) => ({ default: mod.BackupManager })), {
   loading: () => (
     <div className="flex items-center justify-center p-8">
       <Loader2 className="h-8 w-8 animate-spin" />

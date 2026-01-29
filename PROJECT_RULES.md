@@ -639,13 +639,18 @@ const handleSave = async (data) => {
 | 2.2 | Goals Race Condition | NO ISSUE | Uses fetchedRef pattern |
 | 2.3 | Calendar Race Condition | NO ISSUE | Combined loading state |
 
-### Batch 3: Hiring Pipeline (PENDING)
+### Batch 3: Hiring Pipeline (COMPLETED)
 
 | # | Issue | File | Status |
 |---|-------|------|--------|
-| 3.1 | Pipeline Drag-Drop | `components/hiring/hiring-pipeline.tsx` | PENDING |
-| 3.2 | Neuer Kandidat UI Update | `components/hiring/create-candidate-dialog.tsx` | PENDING |
-| 3.3 | Neue Stelle Feedback | `components/hiring/create-job-posting-dialog.tsx` | PENDING |
+| 3.1 | Pipeline Drag-Drop | `components/hiring/hiring-pipeline.tsx` | FIXED |
+| 3.2 | Neuer Kandidat UI Update | `components/hiring/create-candidate-dialog.tsx` | FIXED |
+| 3.3 | Neue Stelle Feedback | `components/hiring/create-job-posting-dialog.tsx` | FIXED |
+
+**Resolution Details:**
+- **3.1**: Added `movingQueue` state to prevent concurrent drag-drop operations on the same card, disabled dragging during moves, added queue-based synchronization
+- **3.2**: Added success state with green checkmark animation, 800ms delay before closing dialog, improved loading states with Loader2 icon
+- **3.3**: Added success state with green checkmark animation, 800ms delay before closing dialog, improved loading states with Loader2 icon
 
 ### Batch 4: Data Persistence (PENDING)
 

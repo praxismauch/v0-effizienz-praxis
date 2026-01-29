@@ -110,6 +110,7 @@ export function HiringPipeline() {
   const [candidateToArchive, setCandidateToArchive] = useState<{ id: string; name: string } | null>(null)
   const [showAIAnalysis, setShowAIAnalysis] = useState(false)
   const [isMoving, setIsMoving] = useState<string | null>(null)
+  const [movingQueue, setMovingQueue] = useState<Set<string>>(new Set())
 
   const practiceId = currentPractice?.id
 
@@ -200,9 +201,17 @@ export function HiringPipeline() {
 
   const handleMoveApplication = useCallback(
     async (applicationId: string, newStageId: string) => {
+      // Prevent concurrent moves of the same application
+      if (movingQueue.has(applicationId)) {
+        return
+      }
+
       const isCandidateId = applicationId.startsWith("candidate-")
 
       const previousApplications = applications ? [...applications] : []
+
+      // Add to moving queue
+      setMovingQueue((prev) => new Set(prev).add(applicationId))
 
       await mutateApplications(
         (currentData) => {
@@ -295,9 +304,15 @@ export function HiringPipeline() {
         })
       } finally {
         setIsMoving(null)
+        // Remove from moving queue
+        setMovingQueue((prev) => {
+          const next = new Set(prev)
+          next.delete(applicationId)
+          return next
+        })
       }
     },
-    [applications, mutateApplications, router, toast],
+    [applications, movingQueue, mutateApplications, router, toast],
   )
 
   const handleJobPostingSelected = async (jobPostingId: string) => {
@@ -390,7 +405,8 @@ export function HiringPipeline() {
     e.preventDefault()
     if (draggedApplicationId) {
       const currentApp = applications.find((app) => app.id === draggedApplicationId)
-      if (currentApp && currentApp.stage !== stageId) {
+      // Only move if stage is different and not already moving
+      if (currentApp && currentApp.stage !== stageId && !movingQueue.has(draggedApplicationId)) {
         handleMoveApplication(draggedApplicationId, stageId)
       }
     }
@@ -549,10 +565,10 @@ export function HiringPipeline() {
                   {stage.applications.map((application) => (
                     <Card
                       key={application.id}
-                      draggable
+                      draggable={!movingQueue.has(application.id)}
                       onDragStart={(e) => handleDragStart(e, application.id)}
                       onDragEnd={handleDragEnd}
-                      className={`cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                      className={`${movingQueue.has(application.id) ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"} transition-all duration-200 ${
                         draggedApplicationId === application.id ? "opacity-50 scale-95" : "hover:shadow-md"
                       } ${isMoving === application.id ? "animate-pulse" : ""}`}
                     >

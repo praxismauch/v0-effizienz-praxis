@@ -21,7 +21,7 @@ import { useTranslation } from "@/contexts/translation-context"
 import { CandidateImageUpload } from "./candidate-image-upload"
 import { CandidateDocumentsUpload } from "./candidate-documents-upload"
 import { useToast } from "@/hooks/use-toast"
-import { Sparkles, Upload, Loader2, FileText } from "lucide-react"
+import { Sparkles, Upload, Loader2, FileText, Check } from "lucide-react"
 import { Card } from "@/components/ui/card"
 
 interface CreateCandidateDialogProps {
@@ -37,6 +37,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
   const { currentUser } = useUser()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [aiExtracting, setAiExtracting] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [isDragging, setIsDragging] = useState(false)
@@ -166,16 +167,22 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
         }
       }
 
+      // Show success state briefly
+      setSuccess(true)
       toast({
         title: "Kandidat erstellt",
         description: "Der neue Kandidat wurde erfolgreich hinzugefügt.",
       })
 
-      onSuccess()
-      if (onNavigateToTab) {
-        onNavigateToTab()
-      }
-      onOpenChange(false)
+      // Wait for success animation before closing
+      setTimeout(() => {
+        onSuccess()
+        if (onNavigateToTab) {
+          onNavigateToTab()
+        }
+        onOpenChange(false)
+        setSuccess(false)
+      }, 800)
       setFormData({
         first_name: "",
         last_name: "",
@@ -720,11 +727,27 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading || success}>
               {t("common.cancel", "Abbrechen")}
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? t("common.creating", "Erstelle...") : t("common.create", "Erstellen")}
+            <Button
+              type="submit"
+              disabled={loading || success}
+              className={success ? "bg-green-600 hover:bg-green-600" : ""}
+            >
+              {success ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  {t("common.created", "Erstellt")}
+                </>
+              ) : loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t("common.creating", "Erstelle...")}
+                </>
+              ) : (
+                t("common.create", "Erstellen")
+              )}
             </Button>
           </DialogFooter>
         </form>

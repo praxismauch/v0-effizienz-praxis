@@ -7,13 +7,22 @@ export async function GET(
 ) {
   try {
     const { practiceId } = await params
+    const practiceIdNum = parseInt(practiceId, 10)
+    
+    if (isNaN(practiceIdNum)) {
+      return NextResponse.json(
+        { error: "Invalid practice ID" },
+        { status: 400 }
+      )
+    }
+    
     const supabase = await createAdminClient()
 
     // Get all team members for this practice
     const { data: teamMembers, error: teamError } = await supabase
       .from("team_members")
       .select("id, user_id, first_name, last_name, email, avatar_url")
-      .eq("practice_id", practiceId)
+      .eq("practice_id", practiceIdNum)
       .eq("status", "active")
 
     if (teamError) {
@@ -35,7 +44,7 @@ export async function GET(
       .from("time_blocks")
       .select("*")
       .in("user_id", userIds)
-      .eq("practice_id", practiceId)
+      .eq("practice_id", practiceIdNum)
       .is("end_time", null)
       .order("start_time", { ascending: false })
 

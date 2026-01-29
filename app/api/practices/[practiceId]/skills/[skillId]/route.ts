@@ -6,10 +6,10 @@ import { isRateLimitError } from "@/lib/supabase/safe-query"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { practiceId: string; skillId: string } },
+  { params }: { params: Promise<{ practiceId: string; skillId: string }> },
 ) {
   try {
-    const { practiceId, skillId } = params
+    const { practiceId, skillId } = await params
 
     let supabase
     try {
@@ -52,10 +52,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { practiceId: string; skillId: string } },
+  { params }: { params: Promise<{ practiceId: string; skillId: string }> },
 ) {
   try {
-    const { practiceId, skillId } = params
+    const { practiceId, skillId } = await params
     const body = await request.json()
 
     let supabase
@@ -112,10 +112,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { practiceId: string; skillId: string } },
+  { params }: { params: Promise<{ practiceId: string; skillId: string }> },
 ) {
   try {
-    const { practiceId, skillId } = params
+    const { practiceId, skillId } = await params
 
     let supabase
     try {

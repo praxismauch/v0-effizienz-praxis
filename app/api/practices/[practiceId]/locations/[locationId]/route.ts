@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch a single location
-export async function GET(request: NextRequest, { params }: { params: { practiceId: string; locationId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string; locationId: string }> }) {
   try {
     const { practiceId, locationId } = await params
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: { practice
 }
 
 // PUT - Update a location
-export async function PUT(request: NextRequest, { params }: { params: { practiceId: string; locationId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string; locationId: string }> }) {
   try {
     const { practiceId, locationId } = await params
     const body = await request.json()
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest, { params }: { params: { practice
 }
 
 // DELETE - Delete a location
-export async function DELETE(request: NextRequest, { params }: { params: { practiceId: string; locationId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ practiceId: string; locationId: string }> }) {
   try {
     const { practiceId, locationId } = await params
 
@@ -144,7 +144,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { pract
 }
 
 // PATCH - Set location as main
-export async function PATCH(request: NextRequest, { params }: { params: { practiceId: string; locationId: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string; locationId: string }> }) {
   try {
     const { practiceId, locationId } = await params
 

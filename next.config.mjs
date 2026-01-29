@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// Next.js 16 - TypeScript strict mode enabled
 const nextConfig = {
   images: {
     formats: ["image/webp"],

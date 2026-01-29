@@ -134,7 +134,7 @@ export default function NeueMitarbeitergespraechPage() {
         body: JSON.stringify({
           ...formData,
           employee_id: selectedMember.id,
-          appraiser_id: user?.teamMemberId,
+          appraiser_id: currentUser?.teamMemberId,
           appraisal_date: new Date().toISOString().split("T")[0],
           status: "completed",
         }),

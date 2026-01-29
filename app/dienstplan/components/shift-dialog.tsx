@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
 import type { Shift, ShiftType, TeamMember } from "../types"
 
 interface ShiftDialogProps {
@@ -50,6 +51,7 @@ export default function ShiftDialog({
   onSave,
 }: ShiftDialogProps) {
   const isEditing = !!shift
+  const { toast } = useToast()
 
   const [formData, setFormData] = useState({
     team_member_id: "",
@@ -63,33 +65,38 @@ export default function ShiftDialog({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (shift) {
-      console.log("[v0] ShiftDialog: Editing existing shift", { shift_date: shift.shift_date })
-      setFormData({
-        team_member_id: shift.team_member_id || "",
-        shift_type_id: shift.shift_type_id || "",
-        shift_date: shift.shift_date || shift.date || "",
-        start_time: shift.start_time || "08:00",
-        end_time: shift.end_time || "17:00",
-        notes: shift.notes || "",
-      })
-    } else {
-      const selectedShiftType = shiftTypes.find((st) => st.is_active)
+    if (open) {
+      // Reset submitting state when dialog opens
+      setIsSubmitting(false)
       
-      // Use defaultDate and defaultTeamMemberId if provided, otherwise use selectedDate and selectedMemberId
-      const dateStr = defaultDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")
-      const memberId = defaultTeamMemberId || selectedMemberId || ""
-      
-      console.log("[v0] ShiftDialog: Creating new shift", { dateStr, memberId, defaultDate, selectedDate })
-      
-      setFormData({
-        team_member_id: memberId,
-        shift_type_id: selectedShiftType?.id || "",
-        shift_date: dateStr,
-        start_time: selectedShiftType?.start_time || "08:00",
-        end_time: selectedShiftType?.end_time || "17:00",
-        notes: "",
-      })
+      if (shift) {
+        console.log("[v0] ShiftDialog: Editing existing shift", { shift_date: shift.shift_date })
+        setFormData({
+          team_member_id: shift.team_member_id || "",
+          shift_type_id: shift.shift_type_id || "",
+          shift_date: shift.shift_date || shift.date || "",
+          start_time: shift.start_time || "08:00",
+          end_time: shift.end_time || "17:00",
+          notes: shift.notes || "",
+        })
+      } else {
+        const selectedShiftType = shiftTypes.find((st) => st.is_active)
+        
+        // Use defaultDate and defaultTeamMemberId if provided, otherwise use selectedDate and selectedMemberId
+        const dateStr = defaultDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")
+        const memberId = defaultTeamMemberId || selectedMemberId || ""
+        
+        console.log("[v0] ShiftDialog: Creating new shift", { dateStr, memberId, defaultDate, selectedDate })
+        
+        setFormData({
+          team_member_id: memberId,
+          shift_type_id: selectedShiftType?.id || "",
+          shift_date: dateStr,
+          start_time: selectedShiftType?.start_time || "08:00",
+          end_time: selectedShiftType?.end_time || "17:00",
+          notes: "",
+        })
+      }
     }
   }, [shift, selectedDate, selectedMemberId, defaultDate, defaultTeamMemberId, shiftTypes, open])
 
@@ -119,12 +126,12 @@ export default function ShiftDialog({
         notes: formData.notes || undefined,
         status: "scheduled",
       })
-      console.log("[v0] Shift saved successfully, closing dialog")
-      onOpenChange(false)
+      console.log("[v0] Shift saved successfully")
+      // Don't close dialog or reset state here - let parent handle it after refresh
     } catch (error) {
       console.error("[v0] Error saving shift:", error)
-    } finally {
       setIsSubmitting(false)
+      toast({ title: "Fehler beim Speichern", variant: "destructive" })
     }
   }
 

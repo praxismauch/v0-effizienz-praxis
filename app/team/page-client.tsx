@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { usePractice } from "@/contexts/practice-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -44,7 +44,7 @@ export default function TeamPageClient() {
   const [activeTab, setActiveTab] = useState("members")
   const [isLoading, setIsLoading] = useState(true)
 
-  // Data states
+  // Data states - using useState with functional updates
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([])
@@ -54,60 +54,42 @@ export default function TeamPageClient() {
 
   const practiceId = currentPractice?.id?.toString()
 
-  // Fetch data
-  useEffect(() => {
+  // Fetch data function
+  const fetchData = useCallback(async () => {
     if (!practiceId) return
 
-    const fetchData = async () => {
-      setIsLoading(true)
-      try {
-        const [membersRes, teamsRes, responsibilitiesRes] = await Promise.all([
-          fetch(`/api/practices/${practiceId}/team-members`),
-          fetch(`/api/practices/${practiceId}/teams`),
-          fetch(`/api/practices/${practiceId}/responsibilities`),
-        ])
+    try {
+      const [membersRes, teamsRes, responsibilitiesRes] = await Promise.all([
+        fetch(`/api/practices/${practiceId}/team-members`),
+        fetch(`/api/practices/${practiceId}/teams`),
+        fetch(`/api/practices/${practiceId}/responsibilities`),
+      ])
 
-        if (membersRes.ok) {
-          const data = await membersRes.json()
-          setTeamMembers(data.teamMembers || [])
-        } else {
-          const errorData = await membersRes.json().catch(() => ({}))
-          console.error("Error fetching team members:", errorData)
-          toast.error(`Teammitglieder konnten nicht geladen werden: ${errorData.error || `HTTP ${membersRes.status}`}`)
-        }
-        
-        if (teamsRes.ok) {
-          const data = await teamsRes.json()
-          setTeams(data.teams || [])
-        } else {
-          const errorData = await teamsRes.json().catch(() => ({}))
-          console.error("Error fetching teams:", errorData)
-          toast.error(`Teams konnten nicht geladen werden: ${errorData.error || `HTTP ${teamsRes.status}`}`)
-        }
-        
-        if (responsibilitiesRes.ok) {
-          const data = await responsibilitiesRes.json()
-          setResponsibilities(data.responsibilities || [])
-        } else {
-          const errorData = await responsibilitiesRes.json().catch(() => ({}))
-          console.error("Error fetching responsibilities:", errorData)
-          toast.error(`Verantwortlichkeiten konnten nicht geladen werden: ${errorData.error || `HTTP ${responsibilitiesRes.status}`}`)
-        }
-      } catch (error) {
-        console.error("Error fetching team data:", error)
-        const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
-        if (error instanceof TypeError && errorMessage.includes("fetch")) {
-          toast.error("Netzwerkfehler: Verbindung zum Server fehlgeschlagen")
-        } else {
-          toast.error(`Fehler beim Laden der Teamdaten: ${errorMessage}`)
-        }
-      } finally {
-        setIsLoading(false)
+      if (membersRes.ok) {
+        const data = await membersRes.json()
+        setTeamMembers(() => data.teamMembers || [])
       }
+      if (teamsRes.ok) {
+        const data = await teamsRes.json()
+        setTeams(() => data.teams || [])
+      }
+      if (responsibilitiesRes.ok) {
+        const data = await responsibilitiesRes.json()
+        setResponsibilities(() => data.responsibilities || [])
+      }
+    } catch (error) {
+      console.error("Error fetching team data:", error)
+      toast.error("Fehler beim Laden der Teamdaten")
     }
-
-    fetchData()
   }, [practiceId])
+
+  // Initial load
+  useEffect(() => {
+    if (!practiceLoading && practiceId) {
+      setIsLoading(true)
+      fetchData().finally(() => setIsLoading(false))
+    }
+  }, [fetchData, practiceLoading, practiceId])
 
   // Handler stubs - implement as needed
   const handleAddMember = () => router.push("/team/add")
@@ -119,7 +101,8 @@ export default function TeamPageClient() {
         method: "DELETE",
       })
       if (res.ok) {
-        setTeamMembers((prev) => prev.filter((m) => m.id !== member.id))
+        // Instant update using functional state
+        setTeamMembers(prev => prev.filter(m => m.id !== member.id))
         toast.success("Mitarbeiter entfernt")
       }
     } catch {

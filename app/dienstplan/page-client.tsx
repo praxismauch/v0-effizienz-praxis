@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronLeft, ChevronRight, Calendar, Users, ArrowLeftRight, Clock, Settings, Sparkles } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Users, ArrowLeftRight, Clock, Settings } from "lucide-react"
 
 import ScheduleTab from "./components/schedule-tab"
 import AvailabilityTab from "./components/availability-tab"
@@ -28,7 +28,7 @@ export default function DienstplanPageClient() {
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [isLoading, setIsLoading] = useState(true)
 
-  // Data state
+  // Data state - using useState with functional updates
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([])
   const [schedules, setSchedules] = useState<Shift[]>([])
@@ -47,10 +47,10 @@ export default function DienstplanPageClient() {
 
   // Stats
   const stats: DienstplanStats = useMemo(() => {
-    const pendingSwaps = (swapRequests || []).filter((r) => r.status === "pending").length
-    const activeViolations = (violations || []).filter((v) => !v.resolved).length
-    const totalShifts = (schedules || []).length
-    const coveredShifts = (schedules || []).filter((s) => s.status === "approved" || s.status === "scheduled").length
+    const pendingSwaps = swapRequests.filter((r) => r.status === "pending").length
+    const activeViolations = violations.filter((v) => !v.resolved).length
+    const totalShifts = schedules.length
+    const coveredShifts = schedules.filter((s) => s.status === "approved" || s.status === "scheduled").length
 
     return {
       pendingSwaps,
@@ -61,20 +61,14 @@ export default function DienstplanPageClient() {
     }
   }, [swapRequests, violations, schedules])
 
-  // Fetch all data
+  // Fetch all data - returns a promise that resolves when data is loaded
   const fetchData = useCallback(async () => {
-    console.log("[v0] fetchData called, currentPractice:", currentPractice?.id)
-    if (!currentPractice) {
-      setIsLoading(false)
-      return
-    }
+    if (!currentPractice) return
 
-    setIsLoading(true)
+    const weekStart = format(currentWeek, "yyyy-MM-dd")
+    const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "yyyy-MM-dd")
+
     try {
-      const weekStart = format(currentWeek, "yyyy-MM-dd")
-      const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "yyyy-MM-dd")
-      console.log("[v0] Fetching schedules for week:", weekStart, "to", weekEnd)
-
       const [teamRes, shiftTypesRes, schedulesRes, availabilityRes, swapRes] = await Promise.all([
         fetch(`/api/practices/${currentPractice.id}/team-members`, { cache: "no-store" }),
         fetch(`/api/practices/${currentPractice.id}/dienstplan/shift-types`, { cache: "no-store" }),
@@ -83,47 +77,47 @@ export default function DienstplanPageClient() {
         fetch(`/api/practices/${currentPractice.id}/dienstplan/swap-requests?status=pending`, { cache: "no-store" }),
       ])
 
+      // Use functional updates to ensure state changes are detected
       if (teamRes.ok) {
         const data = await teamRes.json()
-        setTeamMembers(data.teamMembers || [])
+        setTeamMembers(() => data.teamMembers || [])
       }
       if (shiftTypesRes.ok) {
         const data = await shiftTypesRes.json()
-        setShiftTypes(data.shiftTypes || [])
+        setShiftTypes(() => data.shiftTypes || [])
       }
       if (schedulesRes.ok) {
         const data = await schedulesRes.json()
-        console.log("[v0] Fetched schedules:", data.schedules?.length || 0, "shifts")
-        setSchedules(data.schedules || [])
+        setSchedules(() => data.schedules || [])
       }
       if (availabilityRes.ok) {
         const data = await availabilityRes.json()
-        setAvailability(data.availability || [])
+        setAvailability(() => data.availability || [])
       }
       if (swapRes.ok) {
         const data = await swapRes.json()
-        setSwapRequests(data.swapRequests || [])
+        setSwapRequests(() => data.swapRequests || [])
       }
     } catch (error) {
       console.error("Error fetching dienstplan data:", error)
       toast({ title: "Fehler", description: "Daten konnten nicht geladen werden", variant: "destructive" })
-    } finally {
-      setIsLoading(false)
     }
   }, [currentPractice, currentWeek, toast])
 
+  // Initial load and week change
   useEffect(() => {
-    if (!practiceLoading) {
-      fetchData()
+    if (!practiceLoading && currentPractice) {
+      setIsLoading(true)
+      fetchData().finally(() => setIsLoading(false))
     }
-  }, [fetchData, practiceLoading])
+  }, [fetchData, practiceLoading, currentPractice])
 
   // Week navigation
   const goToPreviousWeek = () => setCurrentWeek((prev) => subWeeks(prev, 1))
   const goToNextWeek = () => setCurrentWeek((prev) => addWeeks(prev, 1))
   const goToCurrentWeek = () => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))
 
-  // Handlers
+  // Handlers - using functional state updates for instant UI updates
   const handleApproveSwap = async (id: string) => {
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/dienstplan/swap-requests/${id}`, {
@@ -132,8 +126,11 @@ export default function DienstplanPageClient() {
         body: JSON.stringify({ status: "approved" }),
       })
       if (res.ok) {
+        // Instant update using functional state
+        setSwapRequests(prev => prev.filter(r => r.id !== id))
         toast({ title: "Tausch genehmigt" })
-        fetchData()
+        // Refresh schedules to reflect the swap
+        await fetchData()
       }
     } catch {
       toast({ title: "Fehler", variant: "destructive" })
@@ -148,8 +145,9 @@ export default function DienstplanPageClient() {
         body: JSON.stringify({ status: "rejected" }),
       })
       if (res.ok) {
+        // Instant update using functional state
+        setSwapRequests(prev => prev.filter(r => r.id !== id))
         toast({ title: "Tausch abgelehnt" })
-        fetchData()
       }
     } catch {
       toast({ title: "Fehler", variant: "destructive" })
@@ -162,8 +160,9 @@ export default function DienstplanPageClient() {
         method: "DELETE",
       })
       if (res.ok) {
+        // Instant update using functional state
+        setShiftTypes(prev => prev.filter(st => st.id !== id))
         toast({ title: "Schichttyp gelöscht" })
-        fetchData()
       }
     } catch {
       toast({ title: "Fehler", variant: "destructive" })
@@ -194,8 +193,15 @@ export default function DienstplanPageClient() {
     })
 
     if (res.ok) {
+      const savedData = await res.json()
+      if (isEditing) {
+        // Instant update for edit
+        setShiftTypes(prev => prev.map(st => st.id === editingShiftType.id ? { ...st, ...savedData } : st))
+      } else {
+        // Instant update for create
+        setShiftTypes(prev => [...prev, savedData])
+      }
       toast({ title: isEditing ? "Schichttyp aktualisiert" : "Schichttyp erstellt" })
-      fetchData()
     } else {
       throw new Error("Failed to save shift type")
     }
@@ -324,6 +330,7 @@ export default function DienstplanPageClient() {
             weekDays={weekDays}
             practiceId={currentPractice.id}
             onRefresh={fetchData}
+            setSchedules={setSchedules}
           />
         </TabsContent>
 

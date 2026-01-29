@@ -44,7 +44,7 @@ export default function TrainingPageClient() {
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
 
-  // Data states
+  // Data states - using useState with functional updates
   const [courses, setCourses] = useState<TrainingCourse[]>([])
   const [events, setEvents] = useState<TrainingEvent[]>([])
   const [certifications, setCertifications] = useState<Certification[]>([])
@@ -60,48 +60,42 @@ export default function TrainingPageClient() {
 
   const practiceId = currentPractice?.id
 
+  // Fetch data function
   const fetchData = useCallback(async () => {
     if (!practiceId) return
-    setIsLoading(true)
 
     try {
       const coursesRes = await fetchWithRetry(`/api/practices/${practiceId}/training/courses`)
       const coursesData = await safeJsonParse(coursesRes)
-      setCourses(coursesData?.courses || [])
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      setCourses(() => coursesData?.courses || [])
 
       const eventsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/events`)
       const eventsData = await safeJsonParse(eventsRes)
-      setEvents(eventsData?.events || [])
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      setEvents(() => eventsData?.events || [])
 
       const certificationsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/certifications`)
       const certificationsData = await safeJsonParse(certificationsRes)
-      setCertifications(certificationsData?.certifications || [])
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      setCertifications(() => certificationsData?.certifications || [])
 
       const teamCertsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/team-member-certifications`)
       const teamCertsData = await safeJsonParse(teamCertsRes)
-      setTeamMemberCertifications(teamCertsData?.team_member_certifications || [])
-
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      setTeamMemberCertifications(() => teamCertsData?.team_member_certifications || [])
 
       const budgetsRes = await fetchWithRetry(`/api/practices/${practiceId}/training/budgets`)
       const budgetsData = await safeJsonParse(budgetsRes)
-      setBudgets(budgetsData?.budgets || [])
+      setBudgets(() => budgetsData?.budgets || [])
     } catch (error) {
       console.error("Error fetching training data:", error)
-    } finally {
-      setIsLoading(false)
     }
   }, [practiceId])
 
+  // Initial load
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (practiceId) {
+      setIsLoading(true)
+      fetchData().finally(() => setIsLoading(false))
+    }
+  }, [fetchData, practiceId])
 
   const handleDeleteItem = (type: "course" | "event" | "certification", id: string, name: string) => {
     setItemToDelete({ type, id, name })
@@ -112,18 +106,20 @@ export default function TrainingPageClient() {
 
     try {
       if (itemToDelete.type === "course") {
-        setCourses((prev) => prev.filter((c) => c.id !== itemToDelete.id))
         await fetch(`/api/practices/${practiceId}/training/courses/${itemToDelete.id}`, { method: "DELETE" })
+        // Instant update using functional state
+        setCourses(prev => prev.filter(c => c.id !== itemToDelete.id))
       } else if (itemToDelete.type === "event") {
-        setEvents((prev) => prev.filter((e) => e.id !== itemToDelete.id))
         await fetch(`/api/practices/${practiceId}/training/events/${itemToDelete.id}`, { method: "DELETE" })
+        // Instant update using functional state
+        setEvents(prev => prev.filter(e => e.id !== itemToDelete.id))
       } else if (itemToDelete.type === "certification") {
-        setCertifications((prev) => prev.filter((c) => c.id !== itemToDelete.id))
         await fetch(`/api/practices/${practiceId}/training/certifications/${itemToDelete.id}`, { method: "DELETE" })
+        // Instant update using functional state
+        setCertifications(prev => prev.filter(c => c.id !== itemToDelete.id))
       }
     } catch (error) {
       console.error("Error deleting item:", error)
-      fetchData()
     } finally {
       setItemToDelete(null)
     }

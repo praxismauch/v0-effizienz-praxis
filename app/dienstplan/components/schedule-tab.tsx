@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2 } from "lucide-react"

@@ -134,8 +134,48 @@ export default function UeberstundenTab({ practiceId, isLoading = false }: Ueber
   }
 
   const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log("Exporting overtime data...")
+    if (!sortedMembers || sortedMembers.length === 0) {
+      console.error("Keine Überstunden-Daten zum Exportieren vorhanden")
+      return
+    }
+
+    // Create CSV content
+    const headers = [
+      "Name",
+      "E-Mail",
+      "Gesamt Überstunden",
+      "Diese Woche",
+      "Dieser Monat",
+      "Soll Std/Woche",
+      "Ist Std diese Woche",
+      "Ist Std dieser Monat",
+    ]
+    
+    const rows = sortedMembers.map((member) => [
+      `${member.first_name} ${member.last_name}`,
+      member.email,
+      formatOvertimeMinutes(member.overtime_total_minutes),
+      formatOvertimeMinutes(member.overtime_this_week_minutes),
+      formatOvertimeMinutes(member.overtime_this_month_minutes),
+      member.planned_hours_per_week || "0",
+      formatHours(member.actual_hours_this_week),
+      formatHours(member.actual_hours_this_month),
+    ])
+
+    const csvContent = [headers.join(";"), ...rows.map((row) => row.join(";"))].join("\n")
+
+    // Create download
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `ueberstunden_${format(new Date(), "yyyy-MM-dd")}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    console.log(`CSV-Export erfolgreich (${sortedMembers.length} Mitarbeiter)`)
   }
 
   return (

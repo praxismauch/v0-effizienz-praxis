@@ -665,6 +665,19 @@ const handleSave = async (data) => {
 - **4.2**: Made `unit` and `target_value` required fields with validation feedback toast messages, reorganized layout to 3-column grid for better UX, added placeholders and `step="any"` for decimal support, prevents goals from being created without critical measurement parameters
 - **4.3**: Added proper form reset handlers to both create and edit dialogs `onOpenChange`, preventing previous workflow data from persisting when opening a new edit dialog
 
+### Batch 5: Form Reset & Exports (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 5.1 | Wunschpatient Dialog Form Persistence | `components/wunschpatient/create-wunschpatient-dialog.tsx` | FIXED |
+| 5.2 | Zeit Export Implementation | `app/zeiterfassung/page-client.tsx`, `app/zeiterfassung/components/ueberstunden-tab.tsx` | FIXED |
+| 5.3 | Tickets Error Handling | `app/tickets/page.tsx` | FIXED |
+
+**Resolution Details:**
+- **5.1**: Added `handleOpenChange` wrapper that resets all form fields to initial state when dialog closes, including clearing current tab and error state
+- **5.2**: Implemented CSV export for monthly time reports with proper German date/time formatting, UTF-8 BOM for Excel compatibility, and semicolon delimiters; also added CSV export for overtime report with formatted hours and comprehensive employee data
+- **5.3**: Enhanced `fetchTickets` error handling to parse error responses, display user-friendly toast notifications, and properly handle HTTP error status codes
+
 ### Data Quality Issues (from audit)
 
 | Table | Issue | Impact |

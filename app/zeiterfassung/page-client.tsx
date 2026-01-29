@@ -165,9 +165,44 @@ export default function ZeiterfassungPageClient() {
   }
 
   // Export monthly report
-  const exportMonthlyReport = (format: "csv" | "pdf") => {
-    toast.info(`Export als ${format.toUpperCase()} wird vorbereitet...`)
-    // TODO: Implement export functionality
+  const exportMonthlyReport = (exportFormat: "csv" | "pdf") => {
+    if (exportFormat === "csv") {
+      if (!timeBlocks || timeBlocks.length === 0) {
+        toast.error("Keine Daten zum Exportieren vorhanden")
+        return
+      }
+
+      // Create CSV content
+      const headers = ["Datum", "Start", "Ende", "Pause (Min)", "Arbeitszeit (Std)", "Typ", "Standort", "Kommentar"]
+      const rows = timeBlocks.map((block: any) => [
+        format(new Date(block.start_time), "dd.MM.yyyy"),
+        format(new Date(block.start_time), "HH:mm"),
+        block.end_time ? format(new Date(block.end_time), "HH:mm") : "Aktiv",
+        block.break_minutes || "0",
+        block.duration_minutes ? (block.duration_minutes / 60).toFixed(2) : "0",
+        block.entry_type || "normal",
+        block.location || "office",
+        block.comment || "",
+      ])
+
+      const csvContent = [headers.join(";"), ...rows.map((row) => row.join(";"))].join("\n")
+
+      // Create download
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
+      const link = document.createElement("a")
+      const url = URL.createObjectURL(blob)
+      link.setAttribute("href", url)
+      link.setAttribute("download", `zeiterfassung_${format(selectedMonth, "yyyy-MM")}.csv`)
+      link.style.visibility = "hidden"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast.success(`CSV-Export erfolgreich (${timeBlocks.length} Einträge)`)
+    } else {
+      toast.info("PDF-Export wird vorbereitet...")
+      // PDF export could be implemented later
+    }
   }
 
   if (isLoading) {

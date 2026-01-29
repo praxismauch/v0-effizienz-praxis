@@ -261,8 +261,42 @@ export function CreateWunschpatientDialog({
     }
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      // Reset form data when dialog closes
+      setFormData({
+        name: "",
+        age_range: "",
+        gender: "",
+        occupation: "",
+        family_status: "",
+        archetype: "",
+        health_concerns: [],
+        lifestyle: [],
+        values: [],
+        expectations: [],
+        health_consciousness: "",
+        prevention_vs_acute: "",
+        digital_affinity: "",
+        budget_sensitivity: "",
+        communication_preference: "",
+        decision_style: "",
+        booking_preference: "",
+        service_expectations: "",
+        location_area: "",
+        motivation: "",
+        pain_points: "",
+        goals: "",
+        notes: "",
+      })
+      setCurrentTab("demografie")
+      setError(null)
+    }
+    onOpenChange(isOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto relative">
         {(generatingProfile || generatingImage) && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">

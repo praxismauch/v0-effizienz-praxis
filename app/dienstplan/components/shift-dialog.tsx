@@ -63,6 +63,7 @@ export default function ShiftDialog({
 
   useEffect(() => {
     if (shift) {
+      console.log("[v0] ShiftDialog: Editing existing shift", { shift_date: shift.shift_date })
       setFormData({
         team_member_id: shift.team_member_id || "",
         shift_type_id: shift.shift_type_id || "",
@@ -77,6 +78,8 @@ export default function ShiftDialog({
       // Use defaultDate and defaultTeamMemberId if provided, otherwise use selectedDate and selectedMemberId
       const dateStr = defaultDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")
       const memberId = defaultTeamMemberId || selectedMemberId || ""
+      
+      console.log("[v0] ShiftDialog: Creating new shift", { dateStr, memberId, defaultDate, selectedDate })
       
       setFormData({
         team_member_id: memberId,

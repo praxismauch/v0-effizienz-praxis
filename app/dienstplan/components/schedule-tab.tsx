@@ -64,13 +64,22 @@ export default function ScheduleTab({
     }
   }, [schedules])
 
+  // Memoize shifts by date and member for efficient lookups
+  const shiftsByDateAndMember = React.useMemo(() => {
+    const map = new Map<string, Shift[]>()
+    ;(schedules || []).forEach((shift) => {
+      const shiftDate = shift.shift_date || shift.date
+      const key = `${shiftDate}-${shift.team_member_id}`
+      const existing = map.get(key) || []
+      map.set(key, [...existing, shift])
+    })
+    return map
+  }, [schedules])
+
   const getShiftsForCell = (date: Date, memberId: string) => {
     const dateStr = format(date, "yyyy-MM-dd")
-    const filtered = (schedules || []).filter((s) => s.team_member_id === memberId && (s.shift_date === dateStr || s.date === dateStr))
-    if (filtered.length > 0) {
-      console.log("[v0] Found shifts for", dateStr, memberId, ":", filtered.length)
-    }
-    return filtered
+    const key = `${dateStr}-${memberId}`
+    return shiftsByDateAndMember.get(key) || []
   }
 
   const getShiftType = (shiftTypeId: string) => {
@@ -119,29 +128,39 @@ export default function ScheduleTab({
 
     console.log("[v0] Saving shift to:", url, "Data:", data)
     
-    const res = await fetch(url, {
-      method: isEditing ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...data, practice_id: parseInt(practiceId) }),
-      cache: "no-store",
-    })
+    try {
+      const res = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, practice_id: parseInt(practiceId) }),
+        cache: "no-store",
+      })
 
-    if (res.ok) {
-      const savedData = await res.json()
-      console.log("[v0] Shift saved successfully:", savedData)
-      
-      // Refresh data first to ensure UI updates
-      console.log("[v0] Triggering refresh...")
-      await onRefresh()
-      
-      // Then close dialog and show toast
-      setDialogOpen(false)
-      setEditingShift(null)
-      toast({ title: isEditing ? "Schicht aktualisiert" : "Schicht erstellt" })
-    } else {
-      const error = await res.text()
-      console.error("[v0] Failed to save shift:", error)
-      throw new Error("Failed to save shift")
+      if (res.ok) {
+        const savedData = await res.json()
+        console.log("[v0] Shift saved successfully:", savedData)
+        
+        // Refresh data first to ensure UI updates
+        console.log("[v0] Triggering refresh...")
+        await onRefresh()
+        console.log("[v0] Refresh completed")
+        
+        // Close dialog after refresh
+        setDialogOpen(false)
+        setEditingShift(null)
+        
+        // Show toast
+        toast({ title: isEditing ? "Schicht aktualisiert" : "Schicht erstellt" })
+      } else {
+        const error = await res.text()
+        console.error("[v0] Failed to save shift:", error)
+        toast({ title: "Fehler beim Speichern", description: error, variant: "destructive" })
+        throw new Error("Failed to save shift")
+      }
+    } catch (error) {
+      console.error("[v0] Error in handleSaveShift:", error)
+      toast({ title: "Fehler beim Speichern", variant: "destructive" })
+      throw error
     }
   }
 

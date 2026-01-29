@@ -9,7 +9,6 @@ export async function POST(
   try {
     const { practiceId: practiceIdStr } = await params
     const practiceId = parseInt(practiceIdStr, 10)
-    console.log("[v0] Stamps API called with practiceId:", practiceId)
     
     if (isNaN(practiceId)) {
       return NextResponse.json(
@@ -19,11 +18,9 @@ export async function POST(
     }
     
     const supabase = await createAdminClient()
-    console.log("[v0] Admin client created successfully")
     
     const body = await request.json()
     const { user_id, action, location, comment } = body
-    console.log("[v0] Request body:", { user_id, action, location, hasComment: !!comment })
 
     if (!user_id) {
       return NextResponse.json(
@@ -41,14 +38,10 @@ export async function POST(
 
     const now = new Date()
     const today = format(now, "yyyy-MM-dd")
-    console.log("[v0] Timestamp:", now.toISOString(), "Date:", today)
 
     if (action === "clock_in") {
-      console.log("[v0] Processing clock_in action")
-      
       // Check if there's already an open block for today
-      console.log("[v0] Checking for existing open block with:", { practice_id: practiceId, user_id, date: today })
-      const { data: existingBlock, error: checkError } = await supabase
+      const { data: existingBlock } = await supabase
         .from("time_blocks")
         .select("*")
         .eq("practice_id", practiceId)
@@ -56,11 +49,6 @@ export async function POST(
         .eq("date", today)
         .eq("is_open", true)
         .maybeSingle()
-
-      if (checkError) {
-        console.error("[v0] Error checking for existing block:", checkError)
-      }
-      console.log("[v0] Existing block check result:", { found: !!existingBlock })
 
       if (existingBlock) {
         return NextResponse.json(
@@ -70,7 +58,6 @@ export async function POST(
       }
 
       // Create a start stamp
-      console.log("[v0] Creating start stamp with:", { user_id, practice_id: practiceId, stamp_type: "start", work_location: location || "office" })
       const { data: stamp, error: stampError } = await supabase
         .from("time_stamps")
         .insert({
@@ -86,13 +73,11 @@ export async function POST(
 
       if (stampError) {
         console.error("[v0] Error creating start stamp:", stampError)
-        console.error("[v0] Stamp error details:", JSON.stringify(stampError, null, 2))
         return NextResponse.json(
           { error: "Failed to create time stamp", details: stampError.message, success: false },
           { status: 500 }
         )
       }
-      console.log("[v0] Stamp created successfully:", stamp)
 
       // Create a new time block
       const { data: block, error: blockError } = await supabase

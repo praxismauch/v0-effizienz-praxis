@@ -107,7 +107,10 @@ export default function CreateProtocolRecordingDialog({
   }
 
   const transcribeLiveChunks = async () => {
-    if (audioChunksRef.current.length === 0) return
+    if (audioChunksRef.current.length === 0) {
+      console.log("[v0] No new audio chunks to transcribe, skipping this interval")
+      return
+    }
 
     const chunksToTranscribe = [...audioChunksRef.current]
     audioChunksRef.current = [] // Clear for next batch
@@ -116,7 +119,12 @@ export default function CreateProtocolRecordingDialog({
       setIsTranscribing(true)
       const audioBlob = new Blob(chunksToTranscribe, { type: "audio/webm" })
 
-      if (audioBlob.size < 1000) return // Skip very small chunks
+      if (audioBlob.size < 1000) {
+        console.log("[v0] Audio blob too small:", audioBlob.size, "bytes, skipping")
+        return // Skip very small chunks
+      }
+
+      console.log("[v0] Transcribing audio chunk:", audioBlob.size, "bytes")
 
       const formData = new FormData()
       formData.append("audio", audioBlob, "chunk.webm")
@@ -129,12 +137,17 @@ export default function CreateProtocolRecordingDialog({
 
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Transcription response received:", data.text?.substring(0, 50))
         if (data.text && data.text.trim()) {
           setLiveTranscript((prev) => {
             const newText = prev ? `${prev} ${data.text}` : data.text
+            console.log("[v0] Updated live transcript, length:", newText.length)
             return newText
           })
         }
+      } else {
+        const error = await response.json().catch(() => ({ error: "Unknown error" }))
+        console.error("[v0] Transcription API error:", response.status, error)
       }
     } catch (err) {
       console.error("[v0] Live transcription error:", err)
@@ -175,10 +188,12 @@ export default function CreateProtocolRecordingDialog({
       allAudioChunksRef.current = []
 
       mediaRecorder.ondataavailable = (event) => {
-        console.log("[v0] Dialog: Audio chunk received:", event.data.size, "bytes")
         if (event.data.size > 0) {
+          console.log("[v0] Audio chunk received:", event.data.size, "bytes, type:", event.data.type)
           audioChunksRef.current.push(event.data)
           allAudioChunksRef.current.push(event.data)
+        } else {
+          console.log("[v0] Empty audio chunk received (silence or no input)")
         }
       }
 

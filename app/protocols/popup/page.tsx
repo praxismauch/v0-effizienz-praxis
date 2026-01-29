@@ -43,7 +43,12 @@ export default function ProtocolPopupPage() {
   }, [liveTranscript, transcript])
 
   const transcribeLiveChunks = async () => {
-    if (audioChunksRef.current.length === 0 || isPaused) return
+    if (audioChunksRef.current.length === 0 || isPaused) {
+      if (audioChunksRef.current.length === 0) {
+        console.log("[v0] Popup: No new audio chunks to transcribe, skipping")
+      }
+      return
+    }
 
     const chunksToTranscribe = [...audioChunksRef.current]
     audioChunksRef.current = []
@@ -52,7 +57,12 @@ export default function ProtocolPopupPage() {
       setIsTranscribingLive(true)
       const audioBlob = new Blob(chunksToTranscribe, { type: "audio/webm" })
 
-      if (audioBlob.size < 1000) return
+      if (audioBlob.size < 1000) {
+        console.log("[v0] Popup: Audio blob too small:", audioBlob.size, "bytes, skipping")
+        return
+      }
+
+      console.log("[v0] Popup: Transcribing audio chunk:", audioBlob.size, "bytes")
 
       const formData = new FormData()
       formData.append("audio", audioBlob, "chunk.webm")
@@ -65,12 +75,17 @@ export default function ProtocolPopupPage() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Popup: Transcription response received:", data.text?.substring(0, 50))
         if (data.text && data.text.trim()) {
           setLiveTranscript((prev) => {
             const newText = prev ? `${prev} ${data.text}` : data.text
+            console.log("[v0] Popup: Updated live transcript, length:", newText.length)
             return newText
           })
         }
+      } else {
+        const error = await response.json().catch(() => ({ error: "Unknown error" }))
+        console.error("[v0] Popup: Transcription API error:", response.status, error)
       }
     } catch (err) {
       console.error("[v0] Popup: Live transcription error:", err)
@@ -98,10 +113,12 @@ export default function ProtocolPopupPage() {
       allAudioChunksRef.current = []
 
       mediaRecorder.ondataavailable = (event) => {
-        console.log("[v0] Popup: Audio chunk received:", event.data.size, "bytes")
         if (event.data.size > 0) {
+          console.log("[v0] Popup: Audio chunk received:", event.data.size, "bytes, type:", event.data.type)
           audioChunksRef.current.push(event.data)
           allAudioChunksRef.current.push(event.data)
+        } else {
+          console.log("[v0] Popup: Empty audio chunk received (silence or no input)")
         }
       }
 

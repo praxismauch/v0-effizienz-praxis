@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from "date-fns"
 import { de } from "date-fns/locale"
 import { useUser } from "@/contexts/user-context"
@@ -10,12 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight, Calendar, Users, ArrowLeftRight, Clock, Settings, Sparkles } from "lucide-react"
+import useSWR from "swr"
 
 import ScheduleTab from "./components/schedule-tab"
 import AvailabilityTab from "./components/availability-tab"
 import SwapRequestsTab from "./components/swap-requests-tab"
 import ShiftTypesTab from "./components/shift-types-tab"
 import ShiftTypeDialog from "./components/shift-type-dialog"
+import { useDienstplan } from "./hooks/use-dienstplan"
 import type { TeamMember, ShiftType, Shift, Availability, SwapRequest, Violation, DienstplanStats } from "./types"
 
 export default function DienstplanPageClient() {
@@ -26,19 +28,42 @@ export default function DienstplanPageClient() {
   // Core state
   const [activeTab, setActiveTab] = useState("schedule")
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Data state
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([])
-  const [schedules, setSchedules] = useState<Shift[]>([])
-  const [availability, setAvailability] = useState<Availability[]>([])
-  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>([])
-  const [violations, setViolations] = useState<Violation[]>([])
 
   // Dialog state for shift types
   const [shiftTypeDialogOpen, setShiftTypeDialogOpen] = useState(false)
   const [editingShiftType, setEditingShiftType] = useState<ShiftType | null>(null)
+
+  // Calculate week dates
+  const weekStart = format(currentWeek, "yyyy-MM-dd")
+  const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "yyyy-MM-dd")
+
+  // Use SWR hook for data fetching with automatic revalidation
+  const { data, isLoading, error, refreshSchedules, refresh } = useDienstplan(
+    currentPractice?.id?.toString(),
+    weekStart,
+    weekEnd
+  )
+
+  // Extract data
+  const { schedules, shiftTypes, teamMembers, availabilities: availability } = data
+
+  // Fetch swap requests with SWR
+  const swapRequestsUrl = currentPractice
+    ? `/api/practices/${currentPractice.id}/dienstplan/swap-requests?status=pending`
+    : null
+
+  const { data: swapData, mutate: mutateSwapRequests } = useSWR<{ swapRequests: SwapRequest[] }>(
+    swapRequestsUrl,
+    async (url) => {
+      const res = await fetch(url, { cache: "no-store" })
+      if (!res.ok) throw new Error("Failed to fetch swap requests")
+      return res.json()
+    },
+    { revalidateOnFocus: false, dedupingInterval: 2000 }
+  )
+
+  const swapRequests = swapData?.swapRequests || []
+  const [violations, setViolations] = useState<Violation[]>([])
 
   // Week days
   const weekDays = useMemo(() => {
@@ -61,69 +86,16 @@ export default function DienstplanPageClient() {
     }
   }, [swapRequests, violations, schedules])
 
-  // Fetch all data
-  const fetchData = useCallback(async () => {
-    console.log("[v0] fetchData called, currentPractice:", currentPractice?.id)
-    if (!currentPractice) {
-      setIsLoading(false)
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      const weekStart = format(currentWeek, "yyyy-MM-dd")
-      const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "yyyy-MM-dd")
-      console.log("[v0] Fetching schedules for week:", weekStart, "to", weekEnd)
-
-      const [teamRes, shiftTypesRes, schedulesRes, availabilityRes, swapRes] = await Promise.all([
-        fetch(`/api/practices/${currentPractice.id}/team-members`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/shift-types`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/schedules?start=${weekStart}&end=${weekEnd}`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/availability`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/swap-requests?status=pending`, { cache: "no-store" }),
-      ])
-
-      if (teamRes.ok) {
-        const data = await teamRes.json()
-        setTeamMembers(data.teamMembers || [])
-      }
-      if (shiftTypesRes.ok) {
-        const data = await shiftTypesRes.json()
-        setShiftTypes(data.shiftTypes || [])
-      }
-      if (schedulesRes.ok) {
-        const data = await schedulesRes.json()
-        console.log("[v0] Fetched schedules:", data.schedules?.length || 0, "shifts")
-        setSchedules(data.schedules || [])
-      }
-      if (availabilityRes.ok) {
-        const data = await availabilityRes.json()
-        setAvailability(data.availability || [])
-      }
-      if (swapRes.ok) {
-        const data = await swapRes.json()
-        setSwapRequests(data.swapRequests || [])
-      }
-    } catch (error) {
-      console.error("Error fetching dienstplan data:", error)
-      toast({ title: "Fehler", description: "Daten konnten nicht geladen werden", variant: "destructive" })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [currentPractice, currentWeek, toast])
-
-  useEffect(() => {
-    if (!practiceLoading) {
-      fetchData()
-    }
-  }, [fetchData, practiceLoading])
+  // fetchData is now handled automatically by SWR
+  // Just provide a manual refresh function that calls the SWR mutate
+  const fetchData = refresh
 
   // Week navigation
   const goToPreviousWeek = () => setCurrentWeek((prev) => subWeeks(prev, 1))
   const goToNextWeek = () => setCurrentWeek((prev) => addWeeks(prev, 1))
   const goToCurrentWeek = () => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))
 
-  // Handlers
+  // Handlers with instant updates via SWR mutate
   const handleApproveSwap = async (id: string) => {
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/dienstplan/swap-requests/${id}`, {
@@ -133,7 +105,8 @@ export default function DienstplanPageClient() {
       })
       if (res.ok) {
         toast({ title: "Tausch genehmigt" })
-        fetchData()
+        // Use SWR mutate for instant update
+        await Promise.all([mutateSwapRequests(), refreshSchedules()])
       }
     } catch {
       toast({ title: "Fehler", variant: "destructive" })
@@ -149,7 +122,8 @@ export default function DienstplanPageClient() {
       })
       if (res.ok) {
         toast({ title: "Tausch abgelehnt" })
-        fetchData()
+        // Use SWR mutate for instant update
+        await Promise.all([mutateSwapRequests(), refreshSchedules()])
       }
     } catch {
       toast({ title: "Fehler", variant: "destructive" })
@@ -323,7 +297,7 @@ export default function DienstplanPageClient() {
             shiftTypes={shiftTypes}
             weekDays={weekDays}
             practiceId={currentPractice.id}
-            onRefresh={fetchData}
+            onRefresh={refreshSchedules}
           />
         </TabsContent>
 
@@ -332,7 +306,7 @@ export default function DienstplanPageClient() {
             availability={availability}
             teamMembers={teamMembers}
             practiceId={currentPractice.id}
-            onRefresh={fetchData}
+            onRefresh={refresh}
           />
         </TabsContent>
 

@@ -99,9 +99,17 @@ export default function TicketsPage() {
       if (response.ok) {
         const data = await response.json()
         setTickets(data.tickets || [])
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
       }
     } catch (error) {
       console.error("[v0] Failed to fetch tickets:", error)
+      toast({
+        title: "Fehler beim Laden",
+        description: error instanceof Error ? error.message : "Tickets konnten nicht geladen werden.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }

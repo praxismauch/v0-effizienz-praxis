@@ -144,8 +144,38 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateCon
 
   const hasPractice = currentPractice?.id || currentUser?.practice_id
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen && !loading) {
+      // Reset form when dialog closes
+      setFormData({
+        salutation: "",
+        title: "",
+        first_name: "",
+        last_name: "",
+        company: "",
+        position: "",
+        email: "",
+        phone: "",
+        mobile: "",
+        fax: "",
+        website: "",
+        street: "",
+        house_number: "",
+        postal_code: "",
+        city: "",
+        country: "Deutschland",
+        category: "",
+        notes: "",
+        contact_person: "",
+        direct_phone: "",
+        availability: "",
+      })
+    }
+    onOpenChange(isOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Neuer Kontakt</DialogTitle>

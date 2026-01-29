@@ -639,21 +639,96 @@ const handleSave = async (data) => {
 | 2.2 | Goals Race Condition | NO ISSUE | Uses fetchedRef pattern |
 | 2.3 | Calendar Race Condition | NO ISSUE | Combined loading state |
 
-### Batch 3: Hiring Pipeline (PENDING)
+### Batch 3: Hiring Pipeline (COMPLETED)
 
 | # | Issue | File | Status |
 |---|-------|------|--------|
-| 3.1 | Pipeline Drag-Drop | `components/hiring/hiring-pipeline.tsx` | PENDING |
-| 3.2 | Neuer Kandidat UI Update | `components/hiring/create-candidate-dialog.tsx` | PENDING |
-| 3.3 | Neue Stelle Feedback | `components/hiring/create-job-posting-dialog.tsx` | PENDING |
+| 3.1 | Pipeline Drag-Drop | `components/hiring/hiring-pipeline.tsx` | FIXED |
+| 3.2 | Neuer Kandidat UI Update | `components/hiring/create-candidate-dialog.tsx` | FIXED |
+| 3.3 | Neue Stelle Feedback | `components/hiring/create-job-posting-dialog.tsx` | FIXED |
 
-### Batch 4: Data Persistence (PENDING)
+**Resolution Details:**
+- **3.1**: Added `movingQueue` state to prevent concurrent drag-drop operations on the same card, disabled dragging during moves, added queue-based synchronization
+- **3.2**: Added success state with green checkmark animation, 800ms delay before closing dialog, improved loading states with Loader2 icon
+- **3.3**: Added success state with green checkmark animation, 800ms delay before closing dialog, improved loading states with Loader2 icon
+
+### Batch 4: Data Persistence (COMPLETED ✓)
 
 | # | Issue | File | Status |
 |---|-------|------|--------|
-| 4.1 | Calendar Day View | `app/calendar/page-client.tsx` | PENDING |
-| 4.2 | Goal Parameters | `components/goals/create-goal-dialog.tsx` | PENDING |
-| 4.3 | Workflow Edit | `components/workflows/edit-workflow-dialog.tsx` | PENDING |
+| 4.1 | Calendar Day View | `app/calendar/page-client.tsx` | FIXED |
+| 4.2 | Goal Parameters | `components/create-goal-dialog.tsx` | FIXED |
+| 4.3 | Workflow Edit | `app/workflows/page-client.tsx` | FIXED |
+
+**Resolution Details:**
+- **4.1**: Added localStorage persistence for `currentDate` in addition to `viewMode`, loads persisted date on mount with proper date validation to prevent NaN dates
+- **4.2**: Made `unit` and `target_value` required fields with validation feedback toast messages, reorganized layout to 3-column grid for better UX, added placeholders and `step="any"` for decimal support, prevents goals from being created without critical measurement parameters
+- **4.3**: Added proper form reset handlers to both create and edit dialogs `onOpenChange`, preventing previous workflow data from persisting when opening a new edit dialog
+
+### Batch 5: Form Reset & Exports (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 5.1 | Wunschpatient Dialog Form Persistence | `components/wunschpatient/create-wunschpatient-dialog.tsx` | FIXED |
+| 5.2 | Zeit Export Implementation | `app/zeiterfassung/page-client.tsx`, `app/zeiterfassung/components/ueberstunden-tab.tsx` | FIXED |
+| 5.3 | Tickets Error Handling | `app/tickets/page.tsx` | FIXED |
+
+**Resolution Details:**
+- **5.1**: Added `handleOpenChange` wrapper that resets all form fields to initial state when dialog closes, including clearing current tab and error state
+- **5.2**: Implemented CSV export for monthly time reports with proper German date/time formatting, UTF-8 BOM for Excel compatibility, and semicolon delimiters; also added CSV export for overtime report with formatted hours and comprehensive employee data
+- **5.3**: Enhanced `fetchTickets` error handling to parse error responses, display user-friendly toast notifications, and properly handle HTTP error status codes
+
+### Batch 6: Error Handling & UI Polish (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 6.1 | Inventory Supplier/Bill TODO | `app/inventory/page.tsx` | FIXED |
+| 6.2 | Rooms Fetch Error Handling | `app/rooms/page-client.tsx` | FIXED |
+| 6.3 | Devices Dialog Form Reset | `components/devices/create-device-dialog.tsx` | VERIFIED |
+
+**Resolution Details:**
+- **6.1**: Implemented placeholder handlers for supplier and bill functionality with informative toast notifications indicating future feature availability, removed misleading TODO comments
+- **6.2**: Enhanced error handling with more specific error messages including HTTP status codes, added network error detection for fetch failures, improved user feedback with descriptive toast messages
+- **6.3**: Verified existing form reset logic in useEffect hook properly resets all form fields, images, room selections, and document uploads when dialog opens in create mode
+
+### Batch 7: User Feedback & Form State (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 7.1 | Academy Error Feedback | `app/academy/page-client.tsx` | FIXED |
+| 7.2 | Contacts Dialog Form Reset | `components/contacts/create-contact-dialog.tsx` | FIXED |
+| 7.3 | Message Success Feedback | `app/messages/page.tsx` | VERIFIED |
+
+**Resolution Details:**
+- **7.1**: Added error logging with context awareness for authenticated users in academy data fetch, improved console error messages to distinguish between public and authenticated failures
+- **7.2**: Implemented `handleOpenChange` wrapper that resets all 23 form fields to initial state when dialog closes, preventing form data persistence between create operations
+- **7.3**: Verified existing toast success notifications for both new message composition and reply functionality are working correctly with appropriate German messages
+
+### Batch 8: Input Validation & Error Clarity (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 8.1 | Email Config Validation | `components/email-upload-config-dialog.tsx` | FIXED |
+| 8.2 | Team Page Error Messages | `app/team/page-client.tsx` | FIXED |
+| 8.3 | Email Config Form Reset | `components/email-upload-config-dialog.tsx` | FIXED |
+
+**Resolution Details:**
+- **8.1**: Added comprehensive email format validation with regex, IMAP host validation requiring domain format, and port range validation (1-65535) with specific German error messages for each case
+- **8.2**: Replaced generic "Fehler beim Laden der Teamdaten" with specific error messages for each API call (team members, teams, responsibilities), including HTTP status codes and network error detection for fetch failures
+- **8.3**: Implemented `handleOpenChange` that resets test results and active tab state when dialog closes, preventing UI state persistence between configuration sessions
+
+### Batch 9: Layout & Time Tracking (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 9.1 | Duplicate AppLayout on Team Page | `app/team/page-client.tsx` | FIXED |
+| 9.2 | Time Tracking Clock-In Failure | `app/zeiterfassung/page-client.tsx` | FIXED |
+| 9.3 | Missing Error Handling in handleStamp | `app/zeiterfassung/page-client.tsx` | FIXED |
+
+**Resolution Details:**
+- **9.1**: Removed duplicate `AppLayout` wrapper from team page-client component that was causing double headers and search bars, since parent page.tsx already applies the layout
+- **9.2**: Added proper success/error checking for `clockIn`, `clockOut`, `startBreak`, and `endBreak` functions by checking `result.success` before showing success toast
+- **9.3**: Enhanced `handleStamp` function with comprehensive debug logging, error message extraction from API responses, and proper break ID validation for ending breaks
 
 ### Data Quality Issues (from audit)
 

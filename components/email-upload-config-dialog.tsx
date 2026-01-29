@@ -208,6 +208,25 @@ export function EmailUploadConfigDialog({
       return
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email_address)) {
+      toast.error("Bitte geben Sie eine gültige E-Mail-Adresse ein")
+      return
+    }
+
+    // Validate IMAP host format
+    if (formData.imap_host && !formData.imap_host.includes(".")) {
+      toast.error("Bitte geben Sie einen gültigen IMAP-Host ein (z.B. imap.gmail.com)")
+      return
+    }
+
+    // Validate port number
+    if (formData.imap_port < 1 || formData.imap_port > 65535) {
+      toast.error("IMAP-Port muss zwischen 1 und 65535 liegen")
+      return
+    }
+
     if (!config && !formData.imap_password) {
       toast.error("Bitte geben Sie ein Passwort ein")
       return
@@ -263,8 +282,17 @@ export function EmailUploadConfigDialog({
     }))
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen && !loading) {
+      // Reset test results and tab when closing
+      setTestResult(null)
+      setActiveTab("connection")
+    }
+    onOpenChange(isOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

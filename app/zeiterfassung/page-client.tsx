@@ -95,23 +95,45 @@ export default function ZeiterfassungPageClient() {
 
   // Handle stamp action
   const handleStamp = async () => {
+    console.log("[v0] handleStamp called with action:", stampAction, "location:", selectedLocation)
     setIsStamping(true)
     try {
+      let result
       switch (stampAction) {
         case "start":
-          await clockIn(selectedLocation, stampComment)
+          console.log("[v0] Calling clockIn with location:", selectedLocation)
+          result = await clockIn(selectedLocation, stampComment)
+          console.log("[v0] clockIn result:", result)
+          if (!result.success) {
+            throw new Error(result.error || "Clock in failed")
+          }
           toast.success("Erfolgreich eingestempelt")
           break
         case "stop":
-          await clockOut(stampComment)
+          console.log("[v0] Calling clockOut")
+          result = await clockOut(undefined, stampComment)
+          console.log("[v0] clockOut result:", result)
+          if (!result.success) {
+            throw new Error(result.error || "Clock out failed")
+          }
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
-          await startBreak(stampComment)
+          console.log("[v0] Calling startBreak")
+          result = await startBreak()
+          console.log("[v0] startBreak result:", result)
+          if (!result.success) {
+            throw new Error(result.error || "Start break failed")
+          }
           toast.success("Pause gestartet")
           break
         case "pause_end":
-          await endBreak(stampComment)
+          console.log("[v0] Calling endBreak")
+          result = await endBreak()
+          console.log("[v0] endBreak result:", result)
+          if (!result.success) {
+            throw new Error(result.error || "End break failed")
+          }
           toast.success("Pause beendet")
           break
       }
@@ -120,8 +142,9 @@ export default function ZeiterfassungPageClient() {
       // Refresh status to update UI immediately
       mutate()
     } catch (error) {
-      toast.error("Fehler beim Stempeln")
-      console.error(error)
+      console.error("[v0] Stamp error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Fehler beim Stempeln"
+      toast.error(errorMessage)
     } finally {
       setIsStamping(false)
     }
@@ -165,9 +188,44 @@ export default function ZeiterfassungPageClient() {
   }
 
   // Export monthly report
-  const exportMonthlyReport = (format: "csv" | "pdf") => {
-    toast.info(`Export als ${format.toUpperCase()} wird vorbereitet...`)
-    // TODO: Implement export functionality
+  const exportMonthlyReport = (exportFormat: "csv" | "pdf") => {
+    if (exportFormat === "csv") {
+      if (!timeBlocks || timeBlocks.length === 0) {
+        toast.error("Keine Daten zum Exportieren vorhanden")
+        return
+      }
+
+      // Create CSV content
+      const headers = ["Datum", "Start", "Ende", "Pause (Min)", "Arbeitszeit (Std)", "Typ", "Standort", "Kommentar"]
+      const rows = timeBlocks.map((block: any) => [
+        format(new Date(block.start_time), "dd.MM.yyyy"),
+        format(new Date(block.start_time), "HH:mm"),
+        block.end_time ? format(new Date(block.end_time), "HH:mm") : "Aktiv",
+        block.break_minutes || "0",
+        block.duration_minutes ? (block.duration_minutes / 60).toFixed(2) : "0",
+        block.entry_type || "normal",
+        block.location || "office",
+        block.comment || "",
+      ])
+
+      const csvContent = [headers.join(";"), ...rows.map((row) => row.join(";"))].join("\n")
+
+      // Create download
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
+      const link = document.createElement("a")
+      const url = URL.createObjectURL(blob)
+      link.setAttribute("href", url)
+      link.setAttribute("download", `zeiterfassung_${format(selectedMonth, "yyyy-MM")}.csv`)
+      link.style.visibility = "hidden"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast.success(`CSV-Export erfolgreich (${timeBlocks.length} Einträge)`)
+    } else {
+      toast.info("PDF-Export wird vorbereitet...")
+      // PDF export could be implemented later
+    }
   }
 
   if (isLoading) {

@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { AppLayout } from "@/components/app-layout"
 import {
   Users,
   UserPlus,
@@ -71,18 +70,37 @@ export default function TeamPageClient() {
         if (membersRes.ok) {
           const data = await membersRes.json()
           setTeamMembers(data.teamMembers || [])
+        } else {
+          const errorData = await membersRes.json().catch(() => ({}))
+          console.error("Error fetching team members:", errorData)
+          toast.error(`Teammitglieder konnten nicht geladen werden: ${errorData.error || `HTTP ${membersRes.status}`}`)
         }
+        
         if (teamsRes.ok) {
           const data = await teamsRes.json()
           setTeams(data.teams || [])
+        } else {
+          const errorData = await teamsRes.json().catch(() => ({}))
+          console.error("Error fetching teams:", errorData)
+          toast.error(`Teams konnten nicht geladen werden: ${errorData.error || `HTTP ${teamsRes.status}`}`)
         }
+        
         if (responsibilitiesRes.ok) {
           const data = await responsibilitiesRes.json()
           setResponsibilities(data.responsibilities || [])
+        } else {
+          const errorData = await responsibilitiesRes.json().catch(() => ({}))
+          console.error("Error fetching responsibilities:", errorData)
+          toast.error(`Verantwortlichkeiten konnten nicht geladen werden: ${errorData.error || `HTTP ${responsibilitiesRes.status}`}`)
         }
       } catch (error) {
         console.error("Error fetching team data:", error)
-        toast.error("Fehler beim Laden der Teamdaten")
+        const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
+        if (error instanceof TypeError && errorMessage.includes("fetch")) {
+          toast.error("Netzwerkfehler: Verbindung zum Server fehlgeschlagen")
+        } else {
+          toast.error(`Fehler beim Laden der Teamdaten: ${errorMessage}`)
+        }
       } finally {
         setIsLoading(false)
       }
@@ -143,8 +161,7 @@ export default function TeamPageClient() {
   }
 
   return (
-    <AppLayout>
-      <div className="container mx-auto p-6 max-w-7xl space-y-6">
+    <div className="container mx-auto p-6 max-w-7xl space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -287,7 +304,6 @@ export default function TeamPageClient() {
           />
         </TabsContent>
       </Tabs>
-      </div>
-    </AppLayout>
+    </div>
   )
 }

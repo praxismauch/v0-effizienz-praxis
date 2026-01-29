@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { defaultRecruitingFields, type FormField } from "@/lib/recruiting-defaults"
-import { Loader2 } from "lucide-react"
+import { Loader2, Check } from "lucide-react"
 
 interface CreateJobPostingDialogProps {
   open: boolean
@@ -37,6 +37,7 @@ function CreateJobPostingDialog({ open, onOpenChange, onSuccess }: CreateJobPost
   const { t } = useTranslation()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [fieldSettings, setFieldSettings] = useState<FormField[]>(defaultRecruitingFields)
   const [formData, setFormData] = useState({
     title: "",
@@ -111,13 +112,19 @@ function CreateJobPostingDialog({ open, onOpenChange, onSuccess }: CreateJobPost
         return
       }
 
+      // Show success state briefly
+      setSuccess(true)
       toast({
         title: "Stelle erstellt",
         description: `Die Stellenausschreibung "${formData.title}" wurde erfolgreich erstellt.`,
       })
 
-      onSuccess()
-      onOpenChange(false)
+      // Wait for success animation before closing
+      setTimeout(() => {
+        onSuccess()
+        onOpenChange(false)
+        setSuccess(false)
+      }, 800)
       setFormData({
         title: "",
         department: "",
@@ -464,11 +471,20 @@ function CreateJobPostingDialog({ open, onOpenChange, onSuccess }: CreateJobPost
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading || success}>
               {t("common.cancel", "Abbrechen")}
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
+            <Button
+              type="submit"
+              disabled={loading || success}
+              className={success ? "bg-green-600 hover:bg-green-600" : ""}
+            >
+              {success ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  {t("common.created", "Erstellt")}
+                </>
+              ) : loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {t("common.creating", "Erstelle...")}

@@ -37,7 +37,16 @@ export default function CalendarPageClient() {
     return "month"
   })
   const [activeTab, setActiveTab] = useState("calendar")
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("calendar-current-date")
+      if (saved) {
+        const parsedDate = new Date(saved)
+        if (!isNaN(parsedDate.getTime())) return parsedDate
+      }
+    }
+    return new Date()
+  })
 
   // Filter state
   const [searchTerm, setSearchTerm] = useState("")
@@ -51,10 +60,11 @@ export default function CalendarPageClient() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
-  // Persist view mode
+  // Persist view mode and current date
   useEffect(() => {
     localStorage.setItem("calendar-view-mode", viewMode)
-  }, [viewMode])
+    localStorage.setItem("calendar-current-date", currentDate.toISOString())
+  }, [viewMode, currentDate])
 
   // Fetch events
   const { data: eventsData, mutate: refreshEvents, isLoading } = useSWR(

@@ -58,7 +58,7 @@ export function AcademyComingSoon() {
           <div className="space-y-4">
             <h1 className="text-5xl md:text-6xl font-bold text-balance">
               Willkommen in der{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">
+              <span className="text-primary font-bold">
                 Effizienz-Academy
               </span>
             </h1>

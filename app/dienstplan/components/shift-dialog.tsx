@@ -31,6 +31,8 @@ interface ShiftDialogProps {
   teamMembers: TeamMember[]
   selectedDate?: Date | null
   selectedMemberId?: string | null
+  defaultDate?: string
+  defaultTeamMemberId?: string
   onSave: (data: Partial<Shift>) => Promise<void>
 }
 
@@ -42,6 +44,8 @@ export default function ShiftDialog({
   teamMembers,
   selectedDate,
   selectedMemberId,
+  defaultDate,
+  defaultTeamMemberId,
   onSave,
 }: ShiftDialogProps) {
   const isEditing = !!shift
@@ -69,16 +73,21 @@ export default function ShiftDialog({
       })
     } else {
       const selectedShiftType = shiftTypes.find((st) => st.is_active)
+      
+      // Use defaultDate and defaultTeamMemberId if provided, otherwise use selectedDate and selectedMemberId
+      const dateStr = defaultDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")
+      const memberId = defaultTeamMemberId || selectedMemberId || ""
+      
       setFormData({
-        team_member_id: selectedMemberId || "",
+        team_member_id: memberId,
         shift_type_id: selectedShiftType?.id || "",
-        shift_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+        shift_date: dateStr,
         start_time: selectedShiftType?.start_time || "08:00",
         end_time: selectedShiftType?.end_time || "17:00",
         notes: "",
       })
     }
-  }, [shift, selectedDate, selectedMemberId, shiftTypes, open])
+  }, [shift, selectedDate, selectedMemberId, defaultDate, defaultTeamMemberId, shiftTypes, open])
 
   // Update times when shift type changes
   const handleShiftTypeChange = (shiftTypeId: string) => {

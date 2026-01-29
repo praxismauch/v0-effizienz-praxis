@@ -251,12 +251,6 @@ export default function PageClient(_props: PageClientProps) {
       toast.error("Fehler beim Löschen des Raums")
     }
   }
-    } catch (error) {
-      await fetchRooms()
-      console.error("Error deleting room:", error)
-      toast.error("Fehler beim Löschen des Raums")
-    }
-  }
 
   const openEditDialog = (room: Room) => {
     setSelectedRoom(room)

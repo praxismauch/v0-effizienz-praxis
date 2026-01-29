@@ -130,14 +130,14 @@ export default function ScheduleTab({
       const savedData = await res.json()
       console.log("[v0] Shift saved successfully:", savedData)
       
-      // Close dialog first
-      setDialogOpen(false)
-      setEditingShift(null)
-      
-      // Then refresh and show toast
-      toast({ title: isEditing ? "Schicht aktualisiert" : "Schicht erstellt" })
+      // Refresh data first to ensure UI updates
       console.log("[v0] Triggering refresh...")
       await onRefresh()
+      
+      // Then close dialog and show toast
+      setDialogOpen(false)
+      setEditingShift(null)
+      toast({ title: isEditing ? "Schicht aktualisiert" : "Schicht erstellt" })
     } else {
       const error = await res.text()
       console.error("[v0] Failed to save shift:", error)

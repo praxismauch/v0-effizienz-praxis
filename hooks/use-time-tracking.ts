@@ -285,10 +285,16 @@ export function useTimeActions(practiceId: string | null, userId: string | undef
     }
     
     try {
+      const now = new Date().toISOString()
       const res = await fetch(`/api/practices/${practiceId}/time/breaks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, block_id: blockId }),
+        body: JSON.stringify({ 
+          userId, 
+          blockId, 
+          startTime: now,
+          endTime: null 
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -300,9 +306,13 @@ export function useTimeActions(practiceId: string | null, userId: string | undef
     }
   }
 
-  const endBreak = async (breakId: string) => {
+  const endBreak = async (breakId?: string) => {
     if (!practiceId || !userId) {
       return { success: false, error: "Missing practiceId or userId" }
+    }
+
+    if (!breakId) {
+      return { success: false, error: "Break ID is required" }
     }
     
     try {

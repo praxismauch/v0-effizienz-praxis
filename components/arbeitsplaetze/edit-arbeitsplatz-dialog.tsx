@@ -15,10 +15,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Settings, Monitor, X, ImageIcon, Loader2 } from "lucide-react"
+import { Settings, Monitor } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { useToast } from "@/hooks/use-toast"
 import { SimpleRichTextEditor } from "./simple-rich-text-editor"
+import { MultiImageUpload } from "@/components/ui/multi-image-upload"
 import { cn } from "@/lib/utils"
 
 interface Room {
@@ -32,7 +33,7 @@ interface Arbeitsplatz {
   beschreibung: string | null
   raum_id: string | null
   is_active: boolean
-  image_url?: string | null
+  image_urls?: string[] | null
   color?: string | null
 }
 
@@ -49,41 +50,53 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
   const [raumId, setRaumId] = useState(arbeitsplatz.raum_id || "none")
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(false)
-  const [imageUrl, setImageUrl] = useState<string>(arbeitsplatz.image_url || "")
-  const [imagePreview, setImagePreview] = useState<string>("")
-  const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
+  const [imageUrls, setImageUrls] = useState<string[]>(() => {
+    if (arbeitsplatz.image_urls) {
+      if (typeof arbeitsplatz.image_urls === "string") {
+        try {
+          return JSON.parse(arbeitsplatz.image_urls)
+        } catch {
+          return [arbeitsplatz.image_urls]
+        }
+      }
+      return Array.isArray(arbeitsplatz.image_urls) ? arbeitsplatz.image_urls : []
+    }
+    return []
+  })
   const [selectedColor, setSelectedColor] = useState<string>(arbeitsplatz.color || "green")
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const { currentUser } = useUser()
   const { toast } = useToast()
 
-  // Map color names to hex values for the color picker
-  const colorNameToHex: Record<string, string> = {
-    green: "#22c55e",
-    blue: "#3b82f6",
-    purple: "#a855f7",
-    orange: "#f97316",
-    red: "#ef4444",
-    teal: "#14b8a6",
-    pink: "#ec4899",
-    yellow: "#eab308",
-  }
-
-  // Convert the selected color to hex for the input (handles both named colors and hex)
-  const getHexColor = (color: string) => {
-    if (color.startsWith("#")) return color
-    return colorNameToHex[color] || "#22c55e"
-  }
+  const COLORS = [
+    { value: "green", label: "Grün", class: "bg-green-500" },
+    { value: "blue", label: "Blau", class: "bg-blue-500" },
+    { value: "purple", label: "Lila", class: "bg-purple-500" },
+    { value: "orange", label: "Orange", class: "bg-orange-500" },
+    { value: "red", label: "Rot", class: "bg-red-500" },
+    { value: "teal", label: "Türkis", class: "bg-teal-500" },
+    { value: "pink", label: "Pink", class: "bg-pink-500" },
+    { value: "yellow", label: "Gelb", class: "bg-yellow-500" },
+  ]
 
   useEffect(() => {
     if (open) {
       setName(arbeitsplatz.name)
       setBeschreibung(arbeitsplatz.beschreibung || "")
       setRaumId(arbeitsplatz.raum_id || "none")
-      setImageUrl(arbeitsplatz.image_url || "")
-      setImagePreview("")
       setSelectedColor(arbeitsplatz.color || "green")
+      if (arbeitsplatz.image_urls) {
+        if (typeof arbeitsplatz.image_urls === "string") {
+          try {
+            setImageUrls(JSON.parse(arbeitsplatz.image_urls))
+          } catch {
+            setImageUrls([arbeitsplatz.image_urls])
+          }
+        } else {
+          setImageUrls(Array.isArray(arbeitsplatz.image_urls) ? arbeitsplatz.image_urls : [])
+        }
+      } else {
+        setImageUrls([])
+      }
       fetchRooms()
     }
   }, [open, arbeitsplatz])
@@ -99,100 +112,6 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
       setRooms(data || [])
     } catch (error) {
       console.error("Error fetching rooms:", error)
-    }
-  }
-
-  const handleImageUpload = async (file: File) => {
-    if (!currentUser?.practice_id) return
-
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"]
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "Ungültiger Dateityp",
-        description: "Nur JPEG, PNG, WebP und GIF sind erlaubt.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    const maxSize = 5 * 1024 * 1024
-    if (file.size > maxSize) {
-      toast({
-        title: "Datei zu groß",
-        description: "Maximale Dateigröße ist 5MB.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsUploadingImage(true)
-    setImagePreview(URL.createObjectURL(file))
-
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-      if (imageUrl) {
-        formData.append("oldImageUrl", imageUrl)
-      }
-
-      const response = await fetch(`/api/practices/${currentUser.practice_id}/arbeitsplaetze/upload-image`, {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Upload fehlgeschlagen")
-      }
-
-      const { url } = await response.json()
-      setImageUrl(url)
-      setImagePreview("")
-      toast({ title: "Erfolg", description: "Bild wurde hochgeladen" })
-    } catch (error: any) {
-      console.error("Error uploading image:", error)
-      setImagePreview("")
-      toast({
-        title: "Fehler",
-        description: error.message || "Bild konnte nicht hochgeladen werden",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUploadingImage(false)
-    }
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file) {
-      handleImageUpload(file)
-    }
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handleImageUpload(file)
-    }
-  }
-
-  const removeImage = () => {
-    setImageUrl("")
-    setImagePreview("")
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
     }
   }
 
@@ -215,7 +134,7 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
         name,
         beschreibung: cleanBeschreibung,
         raum_id: raumId && raumId !== "none" ? raumId : null,
-        image_url: imageUrl || null,
+        image_urls: imageUrls.length > 0 ? imageUrls : null,
         color: selectedColor,
       }
 
@@ -313,87 +232,37 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
 
           <div className="space-y-2">
             <Label htmlFor="color">Farbe</Label>
-            <div className="flex items-center gap-3">
-              <input
-                id="color"
-                type="color"
-                value={getHexColor(selectedColor)}
-                onChange={(e) => setSelectedColor(e.target.value)}
-                className="w-12 h-10 rounded-lg border border-input cursor-pointer bg-transparent p-1"
-              />
-              <div className="flex-1">
-                <Input
-                  value={getHexColor(selectedColor)}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
-                      setSelectedColor(val)
-                    }
-                  }}
-                  placeholder="#22c55e"
-                  className="font-mono text-sm"
-                  maxLength={7}
-                />
-              </div>
+            <div className="grid grid-cols-4 gap-2">
+              {COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setSelectedColor(color.value)}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                    selectedColor === color.value
+                      ? "border-primary shadow-sm scale-105"
+                      : "border-border hover:border-primary/50",
+                  )}
+                >
+                  <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                  <span className="text-sm font-medium">{color.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Arbeitsplatz-Bild</Label>
+            <Label>Arbeitsplatz-Bilder</Label>
             <p className="text-xs text-muted-foreground mb-2">
-              Laden Sie ein Foto des Arbeitsplatzes hoch (max. 5MB, JPEG/PNG/WebP/GIF)
+              Laden Sie Fotos des Arbeitsplatzes hoch (max. 5MB pro Bild, JPEG/PNG/WebP/GIF)
             </p>
-
-            {imagePreview || imageUrl ? (
-              <div className="relative rounded-lg overflow-hidden border bg-muted/30">
-                <img src={imagePreview || imageUrl} alt="Arbeitsplatz Vorschau" className="w-full h-48 object-cover" />
-                {isUploadingImage && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 text-white animate-spin" />
-                  </div>
-                )}
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={removeImage}
-                  disabled={isUploadingImage}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30",
-                )}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <div className="p-3 rounded-full bg-muted">
-                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">Bild hochladen</p>
-                    <p className="text-xs text-muted-foreground">Drag & Drop oder klicken zum Auswählen</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleFileSelect}
-              className="hidden"
+            <MultiImageUpload
+              images={imageUrls}
+              onImagesChange={setImageUrls}
+              maxImages={10}
+              disabled={loading}
+              uploadEndpoint={`/api/practices/${currentUser?.practice_id}/arbeitsplaetze/upload-image`}
             />
           </div>
 
@@ -415,7 +284,7 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={loading || isUploadingImage}>
+            <Button type="submit" disabled={loading}>
               {loading ? "Wird gespeichert..." : "Speichern"}
             </Button>
           </DialogFooter>

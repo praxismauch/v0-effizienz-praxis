@@ -717,6 +717,19 @@ const handleSave = async (data) => {
 - **8.2**: Replaced generic "Fehler beim Laden der Teamdaten" with specific error messages for each API call (team members, teams, responsibilities), including HTTP status codes and network error detection for fetch failures
 - **8.3**: Implemented `handleOpenChange` that resets test results and active tab state when dialog closes, preventing UI state persistence between configuration sessions
 
+### Batch 9: Layout & Time Tracking (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 9.1 | Duplicate AppLayout on Team Page | `app/team/page-client.tsx` | FIXED |
+| 9.2 | Time Tracking Clock-In Failure | `app/zeiterfassung/page-client.tsx` | FIXED |
+| 9.3 | Missing Error Handling in handleStamp | `app/zeiterfassung/page-client.tsx` | FIXED |
+
+**Resolution Details:**
+- **9.1**: Removed duplicate `AppLayout` wrapper from team page-client component that was causing double headers and search bars, since parent page.tsx already applies the layout
+- **9.2**: Added proper success/error checking for `clockIn`, `clockOut`, `startBreak`, and `endBreak` functions by checking `result.success` before showing success toast
+- **9.3**: Enhanced `handleStamp` function with comprehensive debug logging, error message extraction from API responses, and proper break ID validation for ending breaks
+
 ### Data Quality Issues (from audit)
 
 | Table | Issue | Impact |

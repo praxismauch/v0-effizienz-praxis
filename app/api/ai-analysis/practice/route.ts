@@ -134,7 +134,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Forbidden - You do not have access to this practice's data" }, { status: 403 })
     }
 
-    const { enabled: aiEnabled, isSuper } = await checkAIEnabled(practiceId, userId)
+    const { enabled: aiEnabled, isSuperAdmin: isSuper } = await checkAIEnabled(practiceId, userId)
 
     if (!aiEnabled && !isSuper) {
       return Response.json(

@@ -129,11 +129,7 @@ export default function ZeiterfassungPageClient() {
           break
         case "pause_end":
           console.log("[v0] Calling endBreak")
-          // Need to get the active break ID from currentBlock
-          if (!activeBreak?.id) {
-            throw new Error("Keine aktive Pause gefunden")
-          }
-          result = await endBreak(activeBreak.id)
+          result = await endBreak()
           console.log("[v0] endBreak result:", result)
           if (!result.success) {
             throw new Error(result.error || "End break failed")

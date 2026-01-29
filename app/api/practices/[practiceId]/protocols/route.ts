@@ -46,7 +46,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
     }
 
-    const { data: protocol, error } = await supabase
+    const { data: protocols, error } = await supabase
       .from("practice_journals")
       .insert({
         practice_id: practiceId,
@@ -62,11 +62,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         updated_at: new Date().toISOString(),
       })
       .select()
-      .single()
 
     if (error) {
       console.error("[v0] Error creating protocol:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    const protocol = protocols?.[0]
+    if (!protocol) {
+      console.error("[v0] Protocol was not created - no data returned")
+      return NextResponse.json({ error: "Failed to create protocol" }, { status: 500 })
     }
 
     console.log("[v0] Protocol created successfully:", protocol?.id)

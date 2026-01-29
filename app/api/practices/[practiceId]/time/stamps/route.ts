@@ -8,6 +8,15 @@ export async function POST(
 ) {
   try {
     const { practiceId } = await params
+    const practiceIdNum = parseInt(practiceId, 10)
+    
+    if (isNaN(practiceIdNum)) {
+      return NextResponse.json(
+        { error: "Invalid practice ID" },
+        { status: 400 }
+      )
+    }
+    
     const supabase = await createAdminClient()
     
     const body = await request.json()
@@ -35,7 +44,7 @@ export async function POST(
       const { data: existingBlock } = await supabase
         .from("time_blocks")
         .select("*")
-        .eq("practice_id", practiceId)
+        .eq("practice_id", practiceIdNum)
         .eq("user_id", user_id)
         .eq("date", today)
         .eq("is_open", true)
@@ -53,7 +62,7 @@ export async function POST(
         .from("time_stamps")
         .insert({
           user_id,
-          practice_id: practiceId,
+          practice_id: practiceIdNum,
           stamp_type: "start",
           work_location: location || "office",
           timestamp: now.toISOString(),
@@ -75,7 +84,7 @@ export async function POST(
         .from("time_blocks")
         .insert({
           user_id,
-          practice_id: practiceId,
+          practice_id: practiceIdNum,
           date: today,
           start_time: now.toISOString(),
           start_stamp_id: stamp.id,
@@ -103,7 +112,7 @@ export async function POST(
       const { data: openBlock } = await supabase
         .from("time_blocks")
         .select("*")
-        .eq("practice_id", practiceId)
+        .eq("practice_id", practiceIdNum)
         .eq("user_id", user_id)
         .eq("date", today)
         .eq("is_open", true)
@@ -121,7 +130,7 @@ export async function POST(
         .from("time_stamps")
         .insert({
           user_id,
-          practice_id: practiceId,
+          practice_id: practiceIdNum,
           stamp_type: "stop",
           work_location: openBlock.work_location,
           timestamp: now.toISOString(),

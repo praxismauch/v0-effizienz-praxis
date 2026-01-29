@@ -12,8 +12,17 @@ interface AcademyStatsCardsProps {
 
 export function AcademyStatsCards({ userStats }: AcademyStatsCardsProps) {
   const displayStats = userStats || DEFAULT_STATS
-  const xpProgress =
-    displayStats.xp_for_next_level > 0 ? (displayStats.total_xp / displayStats.xp_for_next_level) * 100 : 0
+  
+  // Ensure all values are numbers
+  const total_xp = Number(displayStats.total_xp) || 0
+  const xp_for_next_level = Number(displayStats.xp_for_next_level) || 100
+  const current_level = Number(displayStats.current_level) || 1
+  const courses_completed = Number(displayStats.courses_completed) || 0
+  const lessons_completed = Number(displayStats.lessons_completed) || 0
+  const quizzes_passed = Number(displayStats.quizzes_passed) || 0
+  
+  const xpProgress = xp_for_next_level > 0 ? (total_xp / xp_for_next_level) * 100 : 0
+  const remaining_xp = Math.max(0, xp_for_next_level - total_xp)
 
   return (
     <div className="grid gap-4 md:grid-cols-4">
@@ -24,19 +33,19 @@ export function AcademyStatsCards({ userStats }: AcademyStatsCardsProps) {
               <Star className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{displayStats.total_xp.toLocaleString()}</p>
+              <p className="text-2xl font-bold">{total_xp.toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">Gesamte XP</p>
             </div>
           </div>
           <div className="mt-4">
             <div className="flex justify-between text-sm mb-1">
-              <span>Level {displayStats.current_level}</span>
-              <span>Level {displayStats.current_level + 1}</span>
+              <span>Level {current_level}</span>
+              <span>Level {current_level + 1}</span>
             </div>
-            <Progress value={xpProgress} className="h-2" />
+            <Progress value={Math.min(100, xpProgress)} className="h-2" />
             <p className="text-xs text-muted-foreground mt-1">
-              {displayStats.xp_for_next_level - displayStats.total_xp > 0
-                ? `Noch ${(displayStats.xp_for_next_level - displayStats.total_xp).toLocaleString()} XP bis zum nächsten Level`
+              {remaining_xp > 0
+                ? `Noch ${remaining_xp.toLocaleString()} XP bis zum nächsten Level`
                 : "Nächstes Level erreicht!"}
             </p>
           </div>
@@ -50,7 +59,7 @@ export function AcademyStatsCards({ userStats }: AcademyStatsCardsProps) {
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{displayStats.courses_completed}</p>
+              <p className="text-2xl font-bold">{courses_completed}</p>
               <p className="text-sm text-muted-foreground">Kurse abgeschlossen</p>
             </div>
           </div>
@@ -64,7 +73,7 @@ export function AcademyStatsCards({ userStats }: AcademyStatsCardsProps) {
               <BookOpen className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{displayStats.lessons_completed}</p>
+              <p className="text-2xl font-bold">{lessons_completed}</p>
               <p className="text-sm text-muted-foreground">Lektionen abgeschlossen</p>
             </div>
           </div>
@@ -78,7 +87,7 @@ export function AcademyStatsCards({ userStats }: AcademyStatsCardsProps) {
               <Target className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{displayStats.quizzes_passed}</p>
+              <p className="text-2xl font-bold">{quizzes_passed}</p>
               <p className="text-sm text-muted-foreground">Quizze bestanden</p>
             </div>
           </div>

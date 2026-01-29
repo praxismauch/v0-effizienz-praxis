@@ -45,6 +45,7 @@ export function SuperAdminTemplatesManager() {
       setWorkflowTemplates(data.templates || [])
     } catch (error) {
       console.error("Error fetching workflow templates:", error)
+      setWorkflowTemplates([])
     } finally {
       setLoading(false)
     }
@@ -145,6 +146,12 @@ export function SuperAdminTemplatesManager() {
 
           {loading ? (
             <div className="text-center py-8">Lade Vorlagen...</div>
+          ) : workflowTemplates.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Workflow className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Noch keine Workflow-Vorlagen vorhanden</p>
+              <p className="text-sm mt-2">Erstellen Sie Ihre erste Workflow-Vorlage</p>
+            </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {workflowTemplates.map((template) => (

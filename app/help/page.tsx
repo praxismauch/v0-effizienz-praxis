@@ -16,7 +16,7 @@ import { FAQTab } from "./components/faq-tab"
 import { AIAssistantTab } from "./components/ai-assistant-tab"
 
 // Import data and types
-import { helpCategories, helpArticles, videoTutorials, faqs, learningPaths } from "./data"
+import { helpCategories, helpArticles, videoTutorials, faqs, learningPaths, suggestedQuestions } from "./data"
 import type { HelpArticle, VideoTutorial, FAQ, LearningPath, HelpCategory } from "./types"
 
 export default function HelpPage() {
@@ -164,7 +164,7 @@ export default function HelpPage() {
 
             {/* AI Assistant Tab */}
             <TabsContent value="ai">
-              <AIAssistantTab />
+              <AIAssistantTab suggestedQuestions={suggestedQuestions} />
             </TabsContent>
           </Tabs>
         </div>

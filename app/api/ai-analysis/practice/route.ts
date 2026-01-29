@@ -467,13 +467,13 @@ export async function POST(request: Request) {
     const highPriorityValues = ticketPrioritiesConfig.filter((p) => p.urgency_level >= 3).map((p) => p.value)
 
     const totalTransactions = bankTransactions.data?.length || 0
-    const transactionAmounts = bankTransactions.data?.map((t) => Number(t.amount || 0)) || []
+    const transactionAmounts = bankTransactions.data?.map((t: any) => Number(t.amount || 0)) || []
     const totalRevenue = transactionAmounts.filter((a) => a > 0).reduce((sum, a) => sum + a, 0)
     const totalExpenses = Math.abs(transactionAmounts.filter((a) => a < 0).reduce((sum, a) => sum + a, 0))
     const netCashFlow = totalRevenue - totalExpenses
     const avgTransactionSize = totalTransactions > 0 ? (totalRevenue + totalExpenses) / totalTransactions : 0
     const categoriesCount = bankTransactionCategories.data?.length || 0
-    const categorizedTransactions = bankTransactions.data?.filter((t) => t.category)?.length || 0
+    const categorizedTransactions = bankTransactions.data?.filter((t: any) => t.category)?.length || 0
     const categorizationRate =
       totalTransactions > 0 ? ((categorizedTransactions / totalTransactions) * 100).toFixed(1) : 0
 

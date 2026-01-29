@@ -45,7 +45,7 @@ export async function GET(
     const { data: activeBreak, error: breakError } = await supabase
       .from("time_block_breaks")
       .select("*")
-      .eq("time_block_id", block.id)
+      .eq("block_id", block.id)
       .is("end_time", null)
       .maybeSingle()
 

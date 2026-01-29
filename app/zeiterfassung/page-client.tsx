@@ -125,8 +125,11 @@ export default function ZeiterfassungPageClient() {
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
-          console.log("[v0] Calling startBreak")
-          result = await startBreak()
+          console.log("[v0] Calling startBreak with blockId:", currentBlock?.id)
+          if (!currentBlock?.id) {
+            throw new Error("No active time block found")
+          }
+          result = await startBreak(currentBlock.id)
           console.log("[v0] startBreak result:", result)
           if (!result.success) {
             throw new Error(result.error || "Start break failed")
@@ -137,8 +140,11 @@ export default function ZeiterfassungPageClient() {
           toast.success("Pause gestartet")
           break
         case "pause_end":
-          console.log("[v0] Calling endBreak")
-          result = await endBreak()
+          console.log("[v0] Calling endBreak with breakId:", activeBreak?.id)
+          if (!activeBreak?.id) {
+            throw new Error("No active break found")
+          }
+          result = await endBreak(activeBreak.id)
           console.log("[v0] endBreak result:", result)
           if (!result.success) {
             throw new Error(result.error || "End break failed")

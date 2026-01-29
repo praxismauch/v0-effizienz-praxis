@@ -704,6 +704,19 @@ const handleSave = async (data) => {
 - **7.2**: Implemented `handleOpenChange` wrapper that resets all 23 form fields to initial state when dialog closes, preventing form data persistence between create operations
 - **7.3**: Verified existing toast success notifications for both new message composition and reply functionality are working correctly with appropriate German messages
 
+### Batch 8: Input Validation & Error Clarity (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 8.1 | Email Config Validation | `components/email-upload-config-dialog.tsx` | FIXED |
+| 8.2 | Team Page Error Messages | `app/team/page-client.tsx` | FIXED |
+| 8.3 | Email Config Form Reset | `components/email-upload-config-dialog.tsx` | FIXED |
+
+**Resolution Details:**
+- **8.1**: Added comprehensive email format validation with regex, IMAP host validation requiring domain format, and port range validation (1-65535) with specific German error messages for each case
+- **8.2**: Replaced generic "Fehler beim Laden der Teamdaten" with specific error messages for each API call (team members, teams, responsibilities), including HTTP status codes and network error detection for fetch failures
+- **8.3**: Implemented `handleOpenChange` that resets test results and active tab state when dialog closes, preventing UI state persistence between configuration sessions
+
 ### Data Quality Issues (from audit)
 
 | Table | Issue | Impact |

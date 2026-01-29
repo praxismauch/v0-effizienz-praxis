@@ -47,6 +47,7 @@ import {
   X,
 } from "lucide-react"
 import {
+  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -61,6 +62,7 @@ import {
   Legend,
   Area,
   AreaChart,
+  ComposedChart,
 } from "recharts"
 import { format, startOfWeek, endOfWeek, isWithinInterval, subWeeks, addWeeks } from "date-fns"
 import { de } from "date-fns/locale"
@@ -796,7 +798,7 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
               {historyChartData.length > 1 ? (
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={historyChartData}>
+                    <ComposedChart data={historyChartData}>
                       <defs>
                         <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -838,7 +840,7 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
                         strokeWidth={1.5}
                         dot={false}
                       />
-                    </AreaChart>
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               ) : (

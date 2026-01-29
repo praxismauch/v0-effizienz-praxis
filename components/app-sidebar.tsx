@@ -123,12 +123,14 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/todos",
         icon: ClipboardList,
         key: "tasks",
+        badge: "tasks",
       },
       {
         name: t("sidebar.goals", "Ziele"),
         href: "/goals",
         icon: Target,
         key: "goals",
+        badge: "goals",
       },
       {
         name: t("sidebar.workflows", "Workflows"),
@@ -155,6 +157,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/tickets",
         icon: AlertCircle,
         key: "tickets",
+        badge: "tickets",
       },
     ],
   },
@@ -344,6 +347,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/inventory",
         icon: Package,
         key: "inventory",
+        badge: "inventory",
       },
       {
         name: t("sidebar.devices", "Geräte"),

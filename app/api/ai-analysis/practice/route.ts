@@ -475,7 +475,7 @@ export async function POST(request: Request) {
     const categoriesCount = bankTransactionCategories.data?.length || 0
     const categorizedTransactions = bankTransactions.data?.filter((t: any) => t.category)?.length || 0
     const categorizationRate =
-      totalTransactions > 0 ? ((categorizedTransactions / totalTransactions) * 100).toFixed(1) : 0
+      totalTransactions > 0 ? ((categorizedTransactions / totalTransactions) * 100).toFixed(1) : "0"
 
     const kvAbrechnungCount = kvData.data?.length || 0
     const latestKV = kvData.data?.[0]

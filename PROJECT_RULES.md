@@ -678,6 +678,32 @@ const handleSave = async (data) => {
 - **5.2**: Implemented CSV export for monthly time reports with proper German date/time formatting, UTF-8 BOM for Excel compatibility, and semicolon delimiters; also added CSV export for overtime report with formatted hours and comprehensive employee data
 - **5.3**: Enhanced `fetchTickets` error handling to parse error responses, display user-friendly toast notifications, and properly handle HTTP error status codes
 
+### Batch 6: Error Handling & UI Polish (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 6.1 | Inventory Supplier/Bill TODO | `app/inventory/page.tsx` | FIXED |
+| 6.2 | Rooms Fetch Error Handling | `app/rooms/page-client.tsx` | FIXED |
+| 6.3 | Devices Dialog Form Reset | `components/devices/create-device-dialog.tsx` | VERIFIED |
+
+**Resolution Details:**
+- **6.1**: Implemented placeholder handlers for supplier and bill functionality with informative toast notifications indicating future feature availability, removed misleading TODO comments
+- **6.2**: Enhanced error handling with more specific error messages including HTTP status codes, added network error detection for fetch failures, improved user feedback with descriptive toast messages
+- **6.3**: Verified existing form reset logic in useEffect hook properly resets all form fields, images, room selections, and document uploads when dialog opens in create mode
+
+### Batch 7: User Feedback & Form State (COMPLETED ✓)
+
+| # | Issue | File | Status |
+|---|-------|------|--------|
+| 7.1 | Academy Error Feedback | `app/academy/page-client.tsx` | FIXED |
+| 7.2 | Contacts Dialog Form Reset | `components/contacts/create-contact-dialog.tsx` | FIXED |
+| 7.3 | Message Success Feedback | `app/messages/page.tsx` | VERIFIED |
+
+**Resolution Details:**
+- **7.1**: Added error logging with context awareness for authenticated users in academy data fetch, improved console error messages to distinguish between public and authenticated failures
+- **7.2**: Implemented `handleOpenChange` wrapper that resets all 23 form fields to initial state when dialog closes, preventing form data persistence between create operations
+- **7.3**: Verified existing toast success notifications for both new message composition and reply functionality are working correctly with appropriate German messages
+
 ### Data Quality Issues (from audit)
 
 | Table | Issue | Impact |

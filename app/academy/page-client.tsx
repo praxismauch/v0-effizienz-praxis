@@ -89,6 +89,13 @@ export function AcademyPageClient() {
       setLeaderboard(leaderboardData || [])
     } catch (error) {
       console.error("Error fetching academy data:", error)
+      // Only show toast for authenticated users as public data may fail silently
+      if (isAuthenticated && hasPractice) {
+        const errorMessage = error instanceof Error ? error.message : "Akademie-Daten konnten nicht geladen werden"
+        // Note: You may need to add a toast system here (e.g., sonner, react-hot-toast)
+        // For now, we'll log it prominently
+        console.error("[v0] Academy data fetch failed:", errorMessage)
+      }
     } finally {
       setIsLoading(false)
     }

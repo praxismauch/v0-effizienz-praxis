@@ -46,7 +46,7 @@ interface EditArbeitsplatzDialogProps {
 export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuccess }: EditArbeitsplatzDialogProps) {
   const [name, setName] = useState(arbeitsplatz.name)
   const [beschreibung, setBeschreibung] = useState(arbeitsplatz.beschreibung || "")
-  const [raumId, setRaumId] = useState(arbeitsplatz.raum_id || "")
+  const [raumId, setRaumId] = useState(arbeitsplatz.raum_id || "none")
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(false)
   const [imageUrl, setImageUrl] = useState<string>(arbeitsplatz.image_url || "")
@@ -73,7 +73,7 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
     if (open) {
       setName(arbeitsplatz.name)
       setBeschreibung(arbeitsplatz.beschreibung || "")
-      setRaumId(arbeitsplatz.raum_id || "")
+      setRaumId(arbeitsplatz.raum_id || "none")
       setImageUrl(arbeitsplatz.image_url || "")
       setImagePreview("")
       setSelectedColor(arbeitsplatz.color || "green")
@@ -262,29 +262,35 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-[1fr,auto]">
             <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <Input 
+                id="name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                required 
+                placeholder="z.B. Behandlungsplatz 1"
+              />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="space-y-2 sm:min-w-[200px]">
+              <div className="flex items-center justify-between gap-2">
                 <Label htmlFor="raum">Raum</Label>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => window.open("/rooms", "_blank")}
-                  className="h-auto py-1 px-2 text-xs"
+                  className="h-auto py-0.5 px-2 text-xs text-muted-foreground hover:text-foreground"
                 >
                   <Settings className="mr-1 h-3 w-3" />
                   Räume bearbeiten
                 </Button>
               </div>
               <Select value={raumId} onValueChange={setRaumId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Raum auswählen" />
+                <SelectTrigger id="raum">
+                  <SelectValue placeholder="Kein Raum" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Kein Raum</SelectItem>

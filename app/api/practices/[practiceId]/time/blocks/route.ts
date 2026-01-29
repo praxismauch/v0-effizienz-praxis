@@ -6,7 +6,16 @@ export async function GET(
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
   try {
-    const { practiceId } = await params
+    const { practiceId: practiceIdStr } = await params
+    const practiceId = parseInt(practiceIdStr, 10)
+    
+    if (isNaN(practiceId)) {
+      return NextResponse.json(
+        { error: "Invalid practice ID" },
+        { status: 400 }
+      )
+    }
+    
     const supabase = await createAdminClient()
     
     const { searchParams } = new URL(request.url)
@@ -60,7 +69,16 @@ export async function POST(
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
   try {
-    const { practiceId } = await params
+    const { practiceId: practiceIdStr } = await params
+    const practiceId = parseInt(practiceIdStr, 10)
+    
+    if (isNaN(practiceId)) {
+      return NextResponse.json(
+        { error: "Invalid practice ID" },
+        { status: 400 }
+      )
+    }
+    
     const supabase = await createAdminClient()
     
     const body = await request.json()

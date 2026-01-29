@@ -233,6 +233,24 @@ export function CreateGoalDialog({
       return
     }
 
+    if (formData.targetValue && !formData.unit) {
+      toast({
+        title: "Einheit fehlt",
+        description: "Bitte geben Sie eine Einheit für den Zielwert an (z.B. Stunden, %, kg).",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (formData.unit && !formData.targetValue) {
+      toast({
+        title: "Zielwert fehlt",
+        description: "Bitte geben Sie einen Zielwert an.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const finalProgress =
@@ -514,24 +532,40 @@ export function CreateGoalDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="currentValue">{t("goals.form.currentValue", "Aktueller Wert")}</Label>
                 <Input
                   id="currentValue"
                   type="number"
+                  step="any"
                   value={formData.currentValue}
                   onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
+                  placeholder="z.B. 5"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="targetValue">{t("goals.form.targetValue", "Zielwert")}</Label>
+                <Label htmlFor="targetValue">{t("goals.form.targetValue", "Zielwert")} *</Label>
                 <Input
                   id="targetValue"
                   type="number"
+                  step="any"
                   value={formData.targetValue}
                   onChange={(e) => setFormData({ ...formData, targetValue: e.target.value })}
+                  required
+                  placeholder="z.B. 10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="unit">{t("goals.form.unit", "Einheit")} *</Label>
+                <Input
+                  id="unit"
+                  value={formData.unit}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                  required
+                  placeholder="z.B. Stunden, %, kg"
                 />
               </div>
             </div>

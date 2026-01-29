@@ -207,6 +207,7 @@ export default function WorkflowsPageClient() {
         toast({ title: "Workflow aktualisiert", description: "Der Workflow wurde erfolgreich aktualisiert." })
         setIsEditDialogOpen(false)
         setSelectedWorkflow(null)
+        setFormData({ name: "", description: "", category: "other", status: "draft", priority: "medium" })
         loadWorkflows()
       } else {
         throw new Error("Failed to update workflow")
@@ -639,7 +640,15 @@ export default function WorkflowsPageClient() {
         )}
 
         {/* Create Dialog */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog
+          open={isCreateDialogOpen}
+          onOpenChange={(open) => {
+            setIsCreateDialogOpen(open)
+            if (!open) {
+              setFormData({ name: "", description: "", category: "other", status: "draft", priority: "medium" })
+            }
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Neuen Workflow erstellen</DialogTitle>
@@ -729,7 +738,16 @@ export default function WorkflowsPageClient() {
         </Dialog>
 
         {/* Edit Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <Dialog
+          open={isEditDialogOpen}
+          onOpenChange={(open) => {
+            setIsEditDialogOpen(open)
+            if (!open) {
+              setSelectedWorkflow(null)
+              setFormData({ name: "", description: "", category: "other", status: "draft", priority: "medium" })
+            }
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Workflow bearbeiten</DialogTitle>

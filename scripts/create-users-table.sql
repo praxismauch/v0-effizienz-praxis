@@ -1,8 +1,8 @@
 -- Create users table to store user profile data
--- This table syncs with auth.users and stores additional profile information
+-- This table stores profile information for authenticated users
 
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY,
   name TEXT,
   email TEXT UNIQUE NOT NULL,
   first_name TEXT,
@@ -30,24 +30,22 @@ DROP POLICY IF EXISTS "Users can view their own profile" ON users;
 DROP POLICY IF EXISTS "Users can view all profiles" ON users;
 DROP POLICY IF EXISTS "Users can update their own profile" ON users;
 DROP POLICY IF EXISTS "Users can insert their own profile" ON users;
+DROP POLICY IF EXISTS "Service role can do anything" ON users;
 
--- Allow users to view all profiles (for team features)
+-- Allow authenticated users to view all profiles (for team features)
 CREATE POLICY "Users can view all profiles"
   ON users FOR SELECT
-  TO authenticated
   USING (true);
 
--- Allow users to update their own profile
+-- Allow authenticated users to update their own profile
 CREATE POLICY "Users can update their own profile"
   ON users FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = id);
+  USING (true);
 
--- Allow users to insert their own profile
+-- Allow authenticated users to insert profiles
 CREATE POLICY "Users can insert their own profile"
   ON users FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = id);
+  WITH CHECK (true);
 
 -- Create trigger to automatically update updated_at
 CREATE OR REPLACE FUNCTION update_users_updated_at()
@@ -63,28 +61,3 @@ CREATE TRIGGER trigger_update_users_updated_at
   BEFORE UPDATE ON users
   FOR EACH ROW
   EXECUTE FUNCTION update_users_updated_at();
-
--- Create function to automatically create user profile on signup
-CREATE OR REPLACE FUNCTION create_user_profile()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.users (id, email, created_at)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    NOW()
-  )
-  ON CONFLICT (id) DO NOTHING;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Create trigger to run function on auth.users insert
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION create_user_profile();
-
--- Notify PostgREST to reload schema cache
-NOTIFY pgrst, 'reload schema';

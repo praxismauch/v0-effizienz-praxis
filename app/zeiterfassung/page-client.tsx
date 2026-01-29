@@ -107,6 +107,9 @@ export default function ZeiterfassungPageClient() {
           if (!result.success) {
             throw new Error(result.error || "Clock in failed")
           }
+          console.log("[v0] Clock in successful, calling mutate to refresh status")
+          await mutate()
+          console.log("[v0] Status refreshed after clock in")
           toast.success("Erfolgreich eingestempelt")
           break
         case "stop":
@@ -116,6 +119,9 @@ export default function ZeiterfassungPageClient() {
           if (!result.success) {
             throw new Error(result.error || "Clock out failed")
           }
+          console.log("[v0] Clock out successful, calling mutate to refresh status")
+          await mutate()
+          console.log("[v0] Status refreshed after clock out")
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
@@ -125,6 +131,9 @@ export default function ZeiterfassungPageClient() {
           if (!result.success) {
             throw new Error(result.error || "Start break failed")
           }
+          console.log("[v0] Break started, calling mutate to refresh status")
+          await mutate()
+          console.log("[v0] Status refreshed after starting break")
           toast.success("Pause gestartet")
           break
         case "pause_end":
@@ -134,13 +143,15 @@ export default function ZeiterfassungPageClient() {
           if (!result.success) {
             throw new Error(result.error || "End break failed")
           }
+          console.log("[v0] Break ended, calling mutate to refresh status")
+          await mutate()
+          console.log("[v0] Status refreshed after ending break")
           toast.success("Pause beendet")
           break
       }
       setShowStampDialog(false)
       setStampComment("")
-      // Refresh status to update UI immediately
-      mutate()
+      console.log("[v0] Stamp action completed successfully")
     } catch (error) {
       console.error("[v0] Stamp error:", error)
       const errorMessage = error instanceof Error ? error.message : "Fehler beim Stempeln"

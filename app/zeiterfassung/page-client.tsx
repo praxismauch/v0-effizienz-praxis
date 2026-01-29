@@ -95,23 +95,49 @@ export default function ZeiterfassungPageClient() {
 
   // Handle stamp action
   const handleStamp = async () => {
+    console.log("[v0] handleStamp called with action:", stampAction, "location:", selectedLocation)
     setIsStamping(true)
     try {
+      let result
       switch (stampAction) {
         case "start":
-          await clockIn(selectedLocation, stampComment)
+          console.log("[v0] Calling clockIn with location:", selectedLocation)
+          result = await clockIn(selectedLocation, stampComment)
+          console.log("[v0] clockIn result:", result)
+          if (!result.success) {
+            throw new Error(result.error || "Clock in failed")
+          }
           toast.success("Erfolgreich eingestempelt")
           break
         case "stop":
-          await clockOut(stampComment)
+          console.log("[v0] Calling clockOut")
+          result = await clockOut(undefined, stampComment)
+          console.log("[v0] clockOut result:", result)
+          if (!result.success) {
+            throw new Error(result.error || "Clock out failed")
+          }
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
-          await startBreak(stampComment)
+          console.log("[v0] Calling startBreak")
+          result = await startBreak()
+          console.log("[v0] startBreak result:", result)
+          if (!result.success) {
+            throw new Error(result.error || "Start break failed")
+          }
           toast.success("Pause gestartet")
           break
         case "pause_end":
-          await endBreak(stampComment)
+          console.log("[v0] Calling endBreak")
+          // Need to get the active break ID from currentBlock
+          if (!activeBreak?.id) {
+            throw new Error("Keine aktive Pause gefunden")
+          }
+          result = await endBreak(activeBreak.id)
+          console.log("[v0] endBreak result:", result)
+          if (!result.success) {
+            throw new Error(result.error || "End break failed")
+          }
           toast.success("Pause beendet")
           break
       }
@@ -120,8 +146,9 @@ export default function ZeiterfassungPageClient() {
       // Refresh status to update UI immediately
       mutate()
     } catch (error) {
-      toast.error("Fehler beim Stempeln")
-      console.error(error)
+      console.error("[v0] Stamp error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Fehler beim Stempeln"
+      toast.error(errorMessage)
     } finally {
       setIsStamping(false)
     }

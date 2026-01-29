@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -112,6 +113,11 @@ export default function ShiftTypeDialog({
           <DialogTitle>
             {isEditing ? "Schichttyp bearbeiten" : "Neuer Schichttyp"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing 
+              ? "Ändern Sie die Eigenschaften des Schichttyps." 
+              : "Erstellen Sie einen neuen Schichttyp für die Dienstplanung."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">

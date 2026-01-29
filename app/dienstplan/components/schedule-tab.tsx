@@ -102,16 +102,24 @@ export default function ScheduleTab({
       ? `/api/practices/${practiceId}/dienstplan/schedules/${editingShift.id}`
       : `/api/practices/${practiceId}/dienstplan/schedules`
 
+    console.log("[v0] Saving shift to:", url, "Data:", data)
+    
     const res = await fetch(url, {
       method: isEditing ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...data, practice_id: parseInt(practiceId) }),
+      cache: "no-store",
     })
 
     if (res.ok) {
+      const savedData = await res.json()
+      console.log("[v0] Shift saved successfully:", savedData)
       toast({ title: isEditing ? "Schicht aktualisiert" : "Schicht erstellt" })
+      console.log("[v0] Triggering refresh...")
       onRefresh()
     } else {
+      const error = await res.text()
+      console.error("[v0] Failed to save shift:", error)
       throw new Error("Failed to save shift")
     }
   }
@@ -233,8 +241,8 @@ export default function ScheduleTab({
         shift={editingShift}
         shiftTypes={shiftTypes || []}
         teamMembers={teamMembers || []}
-        defaultDate={selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined}
-        defaultTeamMemberId={selectedMemberId || undefined}
+        selectedDate={selectedDate}
+        selectedMemberId={selectedMemberId || undefined}
         onSave={handleSaveShift}
       />
     </Card>

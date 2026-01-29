@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -96,6 +97,7 @@ export default function ShiftDialog({
 
     setIsSubmitting(true)
     try {
+      console.log("[v0] Saving shift with data:", formData)
       await onSave({
         team_member_id: formData.team_member_id,
         shift_type_id: formData.shift_type_id,
@@ -105,9 +107,10 @@ export default function ShiftDialog({
         notes: formData.notes || undefined,
         status: "scheduled",
       })
+      console.log("[v0] Shift saved successfully, closing dialog")
       onOpenChange(false)
     } catch (error) {
-      console.error("Error saving shift:", error)
+      console.error("[v0] Error saving shift:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -122,6 +125,11 @@ export default function ShiftDialog({
           <DialogTitle>
             {isEditing ? "Schicht bearbeiten" : "Neue Schicht"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing 
+              ? "Ändern Sie die Details der Schicht." 
+              : "Erstellen Sie eine neue Schicht für einen Mitarbeiter."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">

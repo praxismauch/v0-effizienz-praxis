@@ -282,7 +282,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
       {
         name: t("sidebar.surveys", "Umfragen"),
         href: "/surveys",
-        icon: ClipboardList, // Updated icon
+        icon: ClipboardList,
         key: "surveys",
         badge: "surveys",
       },
@@ -316,6 +316,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: Stethoscope,
         key: "devices",
         badge: "devices",
+      },
+      {
+        name: t("sidebar.messages", "Nachrichten"),
+        href: "/messages",
+        icon: MessageSquare,
+        key: "messages",
       },
       {
         name: t("sidebar.settings", "Einstellungen"),

@@ -167,11 +167,7 @@ export function AcademyPageClient() {
       {/* Stats Cards for Authenticated Users */}
       {isAuthenticated && (
         <AcademyStatsCards 
-          displayStats={displayStats} 
-          coursesCount={courses.length}
-          enrollmentsCount={enrollments.length}
-          badgesCount={userBadges.length}
-          onSwitchTab={setActiveTab}
+          userStats={userStats}
         />
       )}
 

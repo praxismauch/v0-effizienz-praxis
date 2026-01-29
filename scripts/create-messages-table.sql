@@ -3,8 +3,8 @@
 
 CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  recipient_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL,
+  recipient_id UUID NOT NULL,
   subject TEXT NOT NULL,
   content TEXT NOT NULL,
   parent_message_id UUID REFERENCES messages(id) ON DELETE SET NULL,
@@ -60,43 +60,8 @@ CREATE TRIGGER messages_read_at_trigger
   FOR EACH ROW
   EXECUTE FUNCTION set_message_read_at();
 
--- Enable Row Level Security
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-
--- Create RLS policies
--- Users can read messages where they are sender or recipient
-CREATE POLICY "Users can read their own messages"
-  ON messages
-  FOR SELECT
-  USING (
-    auth.uid() = sender_id OR 
-    auth.uid() = recipient_id
-  );
-
--- Users can insert messages where they are the sender
-CREATE POLICY "Users can send messages"
-  ON messages
-  FOR INSERT
-  WITH CHECK (auth.uid() = sender_id);
-
--- Users can update their own sent messages or mark received messages as read
-CREATE POLICY "Users can update their messages"
-  ON messages
-  FOR UPDATE
-  USING (
-    auth.uid() = sender_id OR 
-    (auth.uid() = recipient_id AND deleted_at IS NULL)
-  );
-
--- Users can soft delete their own messages
-CREATE POLICY "Users can delete their messages"
-  ON messages
-  FOR UPDATE
-  USING (auth.uid() = sender_id OR auth.uid() = recipient_id);
-
--- Grant permissions
-GRANT SELECT, INSERT, UPDATE ON messages TO authenticated;
-GRANT USAGE ON SEQUENCE messages_id_seq TO authenticated;
+-- Note: Row Level Security and role-based permissions can be added later
+-- after proper authentication setup
 
 -- Add comment to table
 COMMENT ON TABLE messages IS 'Stores all messages exchanged between users in the practice management system';

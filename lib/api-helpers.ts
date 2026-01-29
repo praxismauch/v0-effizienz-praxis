@@ -34,7 +34,13 @@ export async function authenticateApiRequest(): Promise<ApiAuthResult> {
     error,
   } = await supabase.auth.getUser()
 
-  if (error || !user) {
+  if (error) {
+    console.log("[v0] authenticateApiRequest auth error:", error.message)
+    throw new Error("Nicht authentifiziert")
+  }
+  
+  if (!user) {
+    console.log("[v0] authenticateApiRequest: no user in session")
     throw new Error("Nicht authentifiziert")
   }
 

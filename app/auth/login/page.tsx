@@ -61,37 +61,35 @@ function LoginForm() {
   const redirectTo = searchParams.get("redirectTo") || "/dashboard"
 
   useEffect(() => {
-    const client = createClient()
-    if (client) {
+    try {
+      const client = createClient()
       setSupabase(client)
+    } catch {
+      // Supabase not configured - will show error on form submit
     }
   }, [])
 
-  // Check if already logged in on mount - completely skip if any error occurs
+  // Check if already logged in on mount
   useEffect(() => {
     if (!supabase) return
 
     let isMounted = true
 
-    // Wrap in setTimeout to avoid blocking the render and to catch any sync errors
-    const timeoutId = setTimeout(async () => {
+    const checkSession = async () => {
       try {
-        // Only check local storage session, don't make network calls
-        const storedSession = localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL?.split("//")[1]?.split(".")[0] || "default"}-auth-token`)
-        if (storedSession && isMounted) {
-          const parsed = JSON.parse(storedSession)
-          if (parsed?.user || parsed?.access_token) {
-            router.replace(redirectTo)
-          }
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && isMounted) {
+          router.replace(redirectTo)
         }
       } catch {
-        // Silently ignore - user can login fresh
+        // No session - user can login fresh
       }
-    }, 100)
+    }
+
+    checkSession()
     
     return () => {
       isMounted = false
-      clearTimeout(timeoutId)
     }
   }, [supabase, redirectTo, router])
 

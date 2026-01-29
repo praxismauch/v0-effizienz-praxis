@@ -54,55 +54,6 @@ function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
 }
 
-// Helper function to clear all Supabase auth cookies
-function clearAuthCookies(response: NextResponse): void {
-  const cookieOptions = {
-    path: "/",
-    maxAge: 0,
-    sameSite: "lax" as const,
-  }
-
-  // Only clear the essential auth cookies
-  response.cookies.set("sb-access-token", "", cookieOptions)
-  response.cookies.set("sb-refresh-token", "", cookieOptions)
-}
-
-const pendingRefreshes = new Map<string, Promise<void>>()
-const refreshTokenLock = new Map<string, number>()
-
-async function acquireLockWithQueue(key: string, operation: () => Promise<void>): Promise<void> {
-  const existingPromise = pendingRefreshes.get(key)
-  if (existingPromise) {
-    try {
-      await existingPromise
-    } catch {
-      // Ignore errors from existing promise - we'll try our own operation
-    }
-    return
-  }
-
-  const refreshPromise = (async () => {
-    try {
-      refreshTokenLock.set(key, Date.now())
-      await operation()
-    } catch (error: unknown) {
-      // Re-throw non-abort errors
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      const isAbortError = errorMessage.includes("abort") || (error instanceof Error && error.name === "AbortError")
-      if (!isAbortError) {
-        throw error
-      }
-      // Silently swallow abort errors
-    } finally {
-      refreshTokenLock.delete(key)
-      pendingRefreshes.delete(key)
-    }
-  })()
-
-  pendingRefreshes.set(key, refreshPromise)
-  await refreshPromise
-}
-
 // Rate limiting for middleware
 const ipRequestCounts = new Map<string, { count: number; resetTime: number }>()
 const MIDDLEWARE_RATE_LIMIT = 800
@@ -132,14 +83,6 @@ if (typeof setInterval !== "undefined") {
     for (const [key, entry] of ipRequestCounts.entries()) {
       if (entry.resetTime < now) {
         ipRequestCounts.delete(key)
-      }
-    }
-    // Clean up stale locks
-    const staleThreshold = 10000
-    for (const [key, timestamp] of refreshTokenLock.entries()) {
-      if (now - timestamp > staleThreshold) {
-        refreshTokenLock.delete(key)
-        pendingRefreshes.delete(key)
       }
     }
   }, 60000)
@@ -179,6 +122,8 @@ async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Create a fresh Supabase client for each request - this is important
+  // Do not cache or reuse this client
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
@@ -196,34 +141,11 @@ async function updateSession(request: NextRequest) {
     },
   })
 
-  // Get lock key from auth cookie
-  const projectRef = supabaseUrl.split("//")[1]?.split(".")[0] || "default"
-  const authTokenCookie = request.cookies.get(`sb-${projectRef}-auth-token`)
-  const lockKey = authTokenCookie?.value?.substring(0, 32) || `anon-${requestId}`
-
-  let user = null
-  // Track if token refresh failed
-  let refreshFailed = false
-
-  try {
-    await acquireLockWithQueue(lockKey, async () => {
-      const {
-        data: { user: refreshedUser },
-      } = await supabase.auth.getUser()
-      user = refreshedUser
-    })
-  } catch (error: unknown) {
-    // Silently handle AbortError and network errors - these are expected in v0 preview
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    const isAbortError = errorMessage.includes("abort") || errorMessage.includes("AbortError") || (error instanceof Error && error.name === "AbortError")
-    const isNetworkError = errorMessage.includes("fetch") || errorMessage.includes("network")
-    
-    if (!isAbortError && !isNetworkError) {
-      edgeLog.error("Token refresh lock error", error)
-    }
-    // Mark refresh as failed
-    refreshFailed = true
-  }
+  // IMPORTANT: Do not run code between createServerClient and supabase.auth.getUser()
+  // A simple mistake could make it very hard to debug issues with users being randomly logged out.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Redirect to login if accessing ANY protected route without auth
   const pathname = request.nextUrl.pathname
@@ -232,15 +154,8 @@ async function updateSession(request: NextRequest) {
     url.pathname = "/auth/login"
     url.searchParams.set("redirect", pathname)
 
-    const redirectResponse = NextResponse.redirect(url)
-
-    // Clear stale cookies on auth failure to prevent stuck state
-    if (refreshFailed) {
-      clearAuthCookies(redirectResponse)
-    }
-
-    edgeLog.debug(`Auth redirect: ${pathname} -> /auth/login (user: ${!!user}, refreshFailed: ${refreshFailed})`)
-    return redirectResponse
+    edgeLog.debug(`Auth redirect: ${pathname} -> /auth/login`)
+    return NextResponse.redirect(url)
   }
 
   // Add request ID header for tracing

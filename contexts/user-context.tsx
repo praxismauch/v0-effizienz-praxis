@@ -114,7 +114,11 @@ export function UserProvider({
   const getSupabase = useCallback(() => {
     if (typeof window === "undefined") return null
     if (!supabaseRef.current) {
-      supabaseRef.current = createClient()
+      try {
+        supabaseRef.current = createClient()
+      } catch {
+        return null
+      }
     }
     return supabaseRef.current
   }, [])

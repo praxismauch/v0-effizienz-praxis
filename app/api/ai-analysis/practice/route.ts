@@ -175,7 +175,7 @@ export async function POST(request: Request) {
       knowledgeCount = 0
     }
 
-    const safeQuery = async (query: Promise<any>, fallback: any = { data: [] }) => {
+    const safeQuery = async (query: Promise<any> | PromiseLike<any>, fallback: any = { data: [] }) => {
       try {
         const result = await query
         return result

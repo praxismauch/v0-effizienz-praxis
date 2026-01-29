@@ -10,11 +10,18 @@ export async function POST(
     const supabase = await createAdminClient()
     
     const body = await request.json()
-    const { blockId, startTime, endTime } = body
+    const { blockId, userId, startTime, endTime } = body
 
     if (!blockId || !startTime) {
       return NextResponse.json(
         { error: "blockId and startTime are required" },
+        { status: 400 }
+      )
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "userId is required" },
         { status: 400 }
       )
     }
@@ -24,6 +31,8 @@ export async function POST(
       .from("time_block_breaks")
       .insert({
         block_id: blockId,
+        user_id: userId,
+        practice_id: practiceId,
         start_time: startTime,
         end_time: endTime,
       })

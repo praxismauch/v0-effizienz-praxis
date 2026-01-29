@@ -33,7 +33,7 @@ export async function GET(
     
     const { data: activeBlocks, error: blocksError } = await supabase
       .from("time_blocks")
-      .select("*, time_block_breaks(*)")
+      .select("*")
       .in("user_id", userIds)
       .eq("practice_id", practiceId)
       .is("end_time", null)
@@ -47,12 +47,28 @@ export async function GET(
       )
     }
 
-    // Combine team members with their active blocks
+    // Get active breaks for these blocks
+    const blockIds = activeBlocks?.map((b) => b.id) || []
+    let activeBreaks: any[] = []
+    
+    if (blockIds.length > 0) {
+      const { data: breaks, error: breaksError } = await supabase
+        .from("time_block_breaks")
+        .select("*")
+        .in("block_id", blockIds)
+        .is("end_time", null)
+
+      if (breaksError) {
+        console.error("[v0] Error fetching active breaks:", breaksError)
+      } else {
+        activeBreaks = breaks || []
+      }
+    }
+
+    // Combine team members with their active blocks and breaks
     const teamStatus = teamMembers.map((member) => {
       const activeBlock = activeBlocks?.find((b) => b.user_id === member.user_id)
-      const activeBreak = activeBlock?.time_block_breaks?.find(
-        (br: any) => !br.end_time
-      )
+      const activeBreak = activeBlock ? activeBreaks.find((br) => br.block_id === activeBlock.id) : null
 
       return {
         ...member,

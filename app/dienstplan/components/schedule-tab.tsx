@@ -52,10 +52,25 @@ export default function ScheduleTab({
 
   // Use teamMembers directly (with fallback to empty array)
   const filteredTeamMembers = teamMembers || []
+  
+  // Debug: Log schedules when they change
+  React.useEffect(() => {
+    if (schedules && schedules.length > 0) {
+      console.log("[v0] ScheduleTab received", schedules.length, "schedules:", schedules.map(s => ({
+        id: s.id.substring(0, 8),
+        date: s.shift_date || s.date,
+        member: s.team_member_id.substring(0, 8)
+      })))
+    }
+  }, [schedules])
 
   const getShiftsForCell = (date: Date, memberId: string) => {
     const dateStr = format(date, "yyyy-MM-dd")
-    return (schedules || []).filter((s) => s.team_member_id === memberId && (s.shift_date === dateStr || s.date === dateStr))
+    const filtered = (schedules || []).filter((s) => s.team_member_id === memberId && (s.shift_date === dateStr || s.date === dateStr))
+    if (filtered.length > 0) {
+      console.log("[v0] Found shifts for", dateStr, memberId, ":", filtered.length)
+    }
+    return filtered
   }
 
   const getShiftType = (shiftTypeId: string) => {
@@ -114,9 +129,15 @@ export default function ScheduleTab({
     if (res.ok) {
       const savedData = await res.json()
       console.log("[v0] Shift saved successfully:", savedData)
+      
+      // Close dialog first
+      setDialogOpen(false)
+      setEditingShift(null)
+      
+      // Then refresh and show toast
       toast({ title: isEditing ? "Schicht aktualisiert" : "Schicht erstellt" })
       console.log("[v0] Triggering refresh...")
-      onRefresh()
+      await onRefresh()
     } else {
       const error = await res.text()
       console.error("[v0] Failed to save shift:", error)

@@ -7,7 +7,16 @@ export async function GET(
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
   try {
-    const { practiceId } = await params
+    const { practiceId: practiceIdStr } = await params
+    const practiceId = parseInt(practiceIdStr, 10)
+    
+    if (isNaN(practiceId)) {
+      return NextResponse.json(
+        { error: "Invalid practice ID" },
+        { status: 400 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
 

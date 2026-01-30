@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -73,31 +73,119 @@ const formatDate = (date: Date): string => {
 }
 
 export default function TeamMemberDetailPage() {
+  console.log("[v0] TeamMemberDetailPage component rendering - START")
+  
   const router = useRouter()
   const params = useParams()
   const memberId = params.id as string
+  
+  console.log("[v0] Params memberId:", memberId)
+  
   const { t } = useTranslation()
   const { roleColors } = useRoleColors()
 
   const { teamMembers, teams } = useTeam()
-  const { currentUser, isAdmin } = useUser()
+  const { currentUser, isAdmin, currentPractice } = useUser()
 
-  const member = teamMembers.find((m) => m.id === memberId)
+  console.log("[v0] Initial state - teamMembers.length:", teamMembers?.length || 0, "currentPractice:", currentPractice?.id)
+
+  const [member, setMember] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("overview")
+  const [mounted, setMounted] = useState(false)
+  
+  // Ensure client-side only
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Fetch member data
+  useEffect(() => {
+    console.log("[v0] Team member detail page useEffect triggered")
+    console.log("[v0] Member ID:", memberId)
+    console.log("[v0] Team members in context:", teamMembers.length)
+    console.log("[v0] Current practice ID:", currentPractice?.id)
+    
+    const fetchMember = async () => {
+      // First, try to find in context
+      const contextMember = teamMembers.find((m) => m.id === memberId)
+      
+      if (contextMember) {
+        console.log("[v0] ✓ Member found in context:", contextMember.first_name, contextMember.last_name)
+        setMember(contextMember)
+        setLoading(false)
+        return
+      }
+      
+      console.log("[v0] Member not in context, will fetch from API")
+      
+      // If not in context and we have a practice ID, fetch from API
+      if (!currentPractice?.id) {
+        console.log("[v0] ✗ No practice ID available, cannot fetch")
+        setLoading(false)
+        return
+      }
+      
+      try {
+        const apiUrl = `/api/practices/${currentPractice.id}/team-members`
+        console.log("[v0] Fetching from API:", apiUrl)
+        const response = await fetch(apiUrl)
+        
+        console.log("[v0] API response status:", response.status)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log("[v0] API returned", data.teamMembers?.length || 0, "team members")
+          
+          const fetchedMember = data.teamMembers?.find((m: any) => m.id === memberId)
+          
+          if (fetchedMember) {
+            console.log("[v0] ✓ Member found in API response:", fetchedMember.first_name, fetchedMember.last_name)
+            setMember(fetchedMember)
+          } else {
+            console.log("[v0] ✗ Member ID not found in API response")
+            console.log("[v0] Available IDs:", data.teamMembers?.map((m: any) => m.id).join(", "))
+          }
+        } else {
+          console.error("[v0] ✗ Failed to fetch members, status:", response.status)
+        }
+      } catch (error) {
+        console.error("[v0] ✗ Error fetching member:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchMember()
+  }, [memberId, teamMembers, currentPractice?.id])
 
   const canEdit = isAdmin || currentUser?.id === memberId
 
-  const [activeTab, setActiveTab] = useState("overview")
+  // Prevent SSR mismatch - only render on client
+  if (!mounted) {
+    return (
+      <AppLayout>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
+            <p className="text-muted-foreground">Lädt...</p>
+          </CardContent>
+        </Card>
+      </AppLayout>
+    )
+  }
 
-  const calculateAge = (dateOfBirth: string | null): number | null => {
-    if (!dateOfBirth) return null
-    const today = new Date()
-    const birthDate = new Date(dateOfBirth)
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--
-    }
-    return age
+  if (loading) {
+    return (
+      <AppLayout>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
+            <p className="text-muted-foreground">Lade Teammitglied...</p>
+          </CardContent>
+        </Card>
+      </AppLayout>
+    )
   }
 
   if (!member) {

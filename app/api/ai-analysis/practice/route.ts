@@ -728,7 +728,7 @@ PRAXISDATEN - UMFASSENDE VOLLSTÄNDIGE ANALYSE:
         .map(([type, count]) => `${type}: ${count}`)
         .join(", ") || "Keine"
     }
-- 💡 Support-Effizienz: ${Number.parseFloat(ticketResolutionRate) > 85 ? "Sehr gut" : Number.parseFloat(ticketResolutionRate) > 70 ? "Gut" : Number.parseFloat(ticketResolutionRate) > 50 ? "Mittel" : "Verbesserungsbedarf"}
+- 💡 Support-Effizienz: ${Number.parseFloat(String(ticketResolutionRate)) > 85 ? "Sehr gut" : Number.parseFloat(String(ticketResolutionRate)) > 70 ? "Gut" : Number.parseFloat(String(ticketResolutionRate)) > 50 ? "Mittel" : "Verbesserungsbedarf"}
 
 ⭐ PATIENTENFEEDBACK & BEWERTUNGEN:
 - Google-Bewertungen: ${totalGoogleRatings}
@@ -736,8 +736,8 @@ PRAXISDATEN - UMFASSENDE VOLLSTÄNDIGE ANALYSE:
 - Bewertungen mit Text: ${ratingsWithReviews}
 - Bewertungen mit Antwort: ${ratingsWithResponses} (${responseRateForGoogleRatings}% Antwortrate)
 - Aktuelle Bewertungen (30 Tage): ${recentRatings}
-- 💡 Patientenzufriedenheit: ${Number.parseFloat(avgGoogleRating) >= 4.5 ? "Exzellent" : Number.parseFloat(avgGoogleRating) >= 4.0 ? "Sehr gut" : Number.parseFloat(avgGoogleRating) >= 3.5 ? "Gut" : "Verbesserungsbedarf"}
-- 💡 Engagement: ${Number.parseFloat(responseRateForGoogleRatings) > 80 ? "Sehr aktiv" : Number.parseFloat(responseRateForGoogleRatings) > 50 ? "Aktiv" : "Ausbaufähig"}
+- 💡 Patientenzufriedenheit: ${Number.parseFloat(String(avgGoogleRating)) >= 4.5 ? "Exzellent" : Number.parseFloat(String(avgGoogleRating)) >= 4.0 ? "Sehr gut" : Number.parseFloat(String(avgGoogleRating)) >= 3.5 ? "Gut" : "Verbesserungsbedarf"}
+- 💡 Engagement: ${Number.parseFloat(String(responseRateForGoogleRatings)) > 80 ? "Sehr aktiv" : Number.parseFloat(String(responseRateForGoogleRatings)) > 50 ? "Aktiv" : "Ausbaufähig"}
 
 🔄 SYSTEMAKTIVITÄT & ÄNDERUNGEN:
 - Erfasste Systemänderungen (200 neueste): ${recentChanges}

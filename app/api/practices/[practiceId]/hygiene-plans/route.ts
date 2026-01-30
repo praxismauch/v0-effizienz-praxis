@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
+    console.log("[v0] GET hygiene-plans for practice:", practiceId)
     const supabase = await createClient()
 
     const { data: hygienePlans, error } = await supabase
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    console.log("[v0] Successfully fetched", hygienePlans?.length || 0, "hygiene plans")
     return NextResponse.json({ hygienePlans })
   } catch (error) {
     console.error("[v0] Error in hygiene plans GET:", error)

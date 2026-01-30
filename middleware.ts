@@ -185,7 +185,8 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
       error,
     } = await supabase.auth.getUser()
 
-    if (error) {
+    // Only log errors that aren't just "session missing" (which is expected for public routes)
+    if (error && error.message !== "Auth session missing!" && error.name !== "AuthSessionMissingError") {
       edgeLog.error("Supabase auth error:", error)
     }
 

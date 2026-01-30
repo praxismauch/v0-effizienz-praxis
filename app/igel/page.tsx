@@ -21,18 +21,9 @@ function LoadingSkeleton() {
 export default function IgelPage() {
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Selbstzahlerleistungen</h1>
-          <p className="text-muted-foreground">
-            Analysieren Sie Ihre Selbstzahlerleistungen auf Rentabilität und Optimierungspotenzial
-          </p>
-        </div>
-
-        <Suspense fallback={<LoadingSkeleton />}>
-          <IgelManagement />
-        </Suspense>
-      </div>
+      <Suspense fallback={<LoadingSkeleton />}>
+        <IgelManagement />
+      </Suspense>
     </AppLayout>
   )
 }

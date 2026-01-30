@@ -1094,13 +1094,13 @@ Sei konstruktiv, aber ehrlich. Hebe Stärken hervor UND identifiziere konkrete V
               blockedWorkflows > 0 ? ["Blockierte Workflows analysieren"] : ["Workflow-Effizienz beibehalten"],
           },
           documents: {
-            score: documents.data?.length > 10 ? 75 : 55,
-            findings: [`${documents.data?.length} Dokumente verwaltet`, `${totalFolders} Ordner strukturiert`],
+            score: (documents.data?.length ?? 0) > 10 ? 75 : 55,
+            findings: [`${documents.data?.length ?? 0} Dokumente verwaltet`, `${totalFolders} Ordner strukturiert`],
             recommendations: ["Dokumenten-Tagging verbessern", "Regelmäßige Archivierung durchführen"],
           },
           knowledge: {
-            score: knowledge.data?.length > 5 ? 70 : 50,
-            findings: [`${knowledge.data?.length} Wissensbeiträge veröffentlicht`],
+            score: (knowledge.data?.length ?? 0) > 5 ? 70 : 50,
+            findings: [`${knowledge.data?.length ?? 0} Wissensbeiträge veröffentlicht`],
             recommendations: ["Wissensdatenbank kontinuierlich erweitern"],
           },
         },

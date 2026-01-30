@@ -449,8 +449,24 @@ export function AppSidebar({ className }: AppSidebarProps) {
               setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
             }
 
+            // Try to load favorites from database first, fallback to localStorage
             if (data.preferences.favorites && Array.isArray(data.preferences.favorites)) {
               setFavorites(data.preferences.favorites)
+            } else {
+              // Fallback to localStorage if database doesn't have favorites
+              const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
+              try {
+                const localFavorites = localStorage.getItem(localStorageKey)
+                if (localFavorites) {
+                  const parsed = JSON.parse(localFavorites)
+                  if (Array.isArray(parsed)) {
+                    setFavorites(parsed)
+                    console.log("[v0] Loaded favorites from localStorage fallback")
+                  }
+                }
+              } catch (storageError) {
+                console.error("[v0] Failed to load from localStorage:", storageError)
+              }
             }
 
             if (data.preferences.expanded_items) {
@@ -557,6 +573,15 @@ export function AppSidebar({ className }: AppSidebarProps) {
     const saveFavorites = async () => {
       try {
         console.log("[v0] Saving favorites:", favorites)
+        
+        // Always save to localStorage as a fallback
+        const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
+        try {
+          localStorage.setItem(localStorageKey, JSON.stringify(favorites))
+        } catch (storageError) {
+          console.error("[v0] Failed to save to localStorage:", storageError)
+        }
+        
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -568,19 +593,18 @@ export function AppSidebar({ className }: AppSidebarProps) {
         
         if (!response.ok) {
           const errorText = await response.text()
-          console.error("[v0] Failed to save favorites:", {
+          console.error("[v0] Failed to save favorites to database (using localStorage):", {
             status: response.status,
-            statusText: response.statusText,
             error: errorText,
           })
           
-          // If it's a schema error, log helpful message
-          if (errorText.includes("favorites") && errorText.includes("column")) {
-            console.error("[v0] Database schema issue: 'favorites' column may not exist in user_sidebar_preferences table")
-            console.error("[v0] Please run: scripts/fix-user-sidebar-preferences-table.sql")
+          // If it's a schema error, show helpful message but don't fail
+          if (errorText.includes("favorites") && errorText.includes("PGRST204")) {
+            console.warn("[v0] Database schema cache issue - favorites saved to localStorage only")
+            console.warn("[v0] Run 'scripts/reload-schema-cache.sql' to fix")
           }
         } else {
-          console.log("[v0] Favorites saved successfully")
+          console.log("[v0] Favorites saved successfully to database")
         }
       } catch (error) {
         console.error("[v0] Error saving favorites:", error)

@@ -363,12 +363,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "messages",
       },
       {
-        name: t("sidebar.help", "Hilfe"),
-        href: "/help",
-        icon: HelpCircle,
-        key: "help",
-      },
-      {
         name: t("sidebar.settings", "Einstellungen"),
         href: "/settings",
         icon: Settings,

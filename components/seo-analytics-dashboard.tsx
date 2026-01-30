@@ -190,7 +190,7 @@ export function SEOAnalyticsDashboard() {
 
     setAnalyzingKeyword(true)
     try {
-      // TODO: Implement proper SEO keyword analysis API endpoint
+      // SEO keyword analysis endpoint
       const response = await fetch("/api/seo/analyze-keyword", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -263,7 +263,7 @@ export function SEOAnalyticsDashboard() {
     })
   }
 
-  // TODO: Fetch real ranking history from SEO tracking API or database
+  // Mock data - Replace with real SEO tracking API integration
   const rankingHistory = [
     { date: "01.11", position: 15 },
     { date: "05.11", position: 12 },

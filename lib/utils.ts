@@ -1,7 +1,11 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-export function cn(...inputs: ClassValue[]) {
+/**
+ * Merge Tailwind CSS classes with proper conflict resolution
+ * Combines clsx for conditional classes and tailwind-merge for deduplication
+ */
+export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs))
 }
 
@@ -171,4 +175,95 @@ export function formatCurrencyDE(amount: number): string {
   }
 }
 
-// Additional helper functions can be added here
+/**
+ * Formats a number with German locale (thousands separator)
+ * @param num - Number to format
+ * @param decimals - Number of decimal places (default: 0)
+ * @returns Formatted number string (e.g., "1.234,56")
+ */
+export function formatNumberDE(num: number, decimals = 0): string {
+  try {
+    return new Intl.NumberFormat("de-DE", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(num)
+  } catch (error) {
+    console.error("[v0] Error formatting number:", error)
+    return "0"
+  }
+}
+
+/**
+ * Formats a percentage in German format
+ * @param value - Percentage value (0-1 or 0-100)
+ * @param isDecimal - Whether value is decimal (0-1) or whole number (0-100)
+ * @returns Formatted percentage string (e.g., "12,5 %")
+ */
+export function formatPercentageDE(value: number, isDecimal = true): string {
+  try {
+    const percentage = isDecimal ? value * 100 : value
+    return `${formatNumberDE(percentage, 1)} %`
+  } catch (error) {
+    console.error("[v0] Error formatting percentage:", error)
+    return "0 %"
+  }
+}
+
+/**
+ * Truncate text with ellipsis
+ * @param text - Text to truncate
+ * @param maxLength - Maximum length before truncation
+ * @returns Truncated text with ellipsis if needed
+ */
+export function truncateText(text: string, maxLength: number): string {
+  if (!text || text.length <= maxLength) return text
+  return `${text.substring(0, maxLength).trim()}...`
+}
+
+/**
+ * Generate initials from name
+ * @param name - Full name
+ * @returns Initials (e.g., "John Doe" -> "JD")
+ */
+export function getInitials(name: string): string {
+  if (!name) return "?"
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
+  return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase()
+}
+
+/**
+ * Sleep/delay utility for async operations
+ * @param ms - Milliseconds to wait
+ */
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Debounce function calls
+ * @param func - Function to debounce
+ * @param wait - Wait time in milliseconds
+ * @returns Debounced function
+ */
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
+
+/**
+ * Check if value is empty (null, undefined, empty string, empty array, empty object)
+ */
+export function isEmpty(value: unknown): boolean {
+  if (value == null) return true
+  if (typeof value === "string") return value.trim().length === 0
+  if (Array.isArray(value)) return value.length === 0
+  if (typeof value === "object") return Object.keys(value).length === 0
+  return false
+}

@@ -1,7 +1,6 @@
 @import "tailwindcss";
-/* Removed tw-animate-css import - it has a bug with @utility fill-mode-* in v1.4.0 */
-/* Animation utilities are already defined below in this file */
 
+/* Tailwind CSS v4 - Modern custom variant syntax */
 @custom-variant dark (&:is(.dark *));
 
 :root {

@@ -9,7 +9,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const status = searchParams.get("status")
     const supabase = await createClient()
 
-    let query = supabase.from("shift_swap_requests").select("*").eq("practice_id", practiceId)
+    let query = supabase
+      .from("shift_swap_requests")
+      .select(
+        `
+        *,
+        requester:requester_id(id, first_name, last_name, avatar_url, role),
+        target:target_id(id, first_name, last_name, avatar_url, role),
+        requester_shift:requester_shift_id(id, shift_date, start_time, end_time, shift_type_id),
+        target_shift:target_shift_id(id, shift_date, start_time, end_time, shift_type_id)
+      `,
+      )
+      .eq("practice_id", practiceId)
 
     if (status) {
       query = query.eq("status", status)

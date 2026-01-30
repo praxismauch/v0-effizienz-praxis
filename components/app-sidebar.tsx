@@ -106,6 +106,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/calendar",
         icon: CalendarDays,
         key: "calendar",
+        badge: "calendar",
       },
       {
         name: t("sidebar.dienstplan", "Dienstplan"),
@@ -164,6 +165,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/documents",
         icon: FileText,
         key: "documents",
+        badge: "documents",
       },
       {
         name: t("sidebar.praxis_auswertung", "Praxis-Auswertung"),
@@ -194,6 +196,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/cirs",
         icon: Shield,
         key: "cirs",
+        badge: "cirs",
       },
     ],
   },
@@ -304,6 +307,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/contacts",
         icon: Contact,
         key: "contacts",
+        badge: "contacts",
       },
       {
         name: t("sidebar.surveys", "Umfragen"),
@@ -349,6 +353,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/hygiene",
         icon: Sparkles,
         key: "hygiene",
+        badge: "hygiene",
       },
       {
         name: t("sidebar.settings", "Einstellungen"),
@@ -392,6 +397,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
     surveys: number
     inventory: number
     devices: number
+    calendar: number
+    documents: number
+    cirs: number
+    contacts: number
+    hygiene: number
   }>({
     tasks: 0,
     goals: 0,
@@ -404,6 +414,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
     surveys: 0,
     inventory: 0,
     devices: 0,
+    calendar: 0,
+    documents: 0,
+    cirs: 0,
+    contacts: 0,
+    hygiene: 0,
   })
   const [badgeSettings, setBadgeSettings] = useState({ tasks: true, goals: true, workflows: true, candidates: true })
   const [mounted, setMounted] = useState(false)

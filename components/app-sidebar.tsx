@@ -410,7 +410,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [loadingMission, setLoadingMission] = useState(false)
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   const initialLoadDone = useRef(false)
-  const favoritesModifiedByUser = useRef(false)
 
   const isAdmin = isPracticeAdminRole(currentUser?.role) || currentUser?.role === "admin"
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true
@@ -533,32 +532,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
     return () => clearTimeout(timeoutId)
   }, [expandedGroups, currentUser?.id, currentPractice?.id, preferencesLoaded])
 
-  useEffect(() => {
-    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
-    // Only save if user explicitly modified favorites (not on initial load)
-    if (!currentUser?.id || !preferencesLoaded || !favoritesModifiedByUser.current) return
-
-    const saveFavorites = async () => {
-      try {
-        const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            practice_id: practiceId,
-            favorites: favorites,
-          }),
-        })
-        if (!response.ok) {
-          console.error("[v0] Failed to save favorites, status:", response.status)
-        }
-      } catch (error) {
-        console.error("[v0] Error saving favorites:", error)
-      }
-    }
-
-    const timeoutId = setTimeout(saveFavorites, 500)
-    return () => clearTimeout(timeoutId)
-  }, [favorites, currentUser?.id, currentPractice?.id, preferencesLoaded])
+  // Favorites are now saved immediately in toggleFavorite function
 
   useEffect(() => {
     const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
@@ -656,9 +630,32 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
     const newFavorites = favorites.includes(href) ? favorites.filter((f) => f !== href) : [...favorites, href]
 
-    // Mark that user explicitly modified favorites so the useEffect will save them
-    favoritesModifiedByUser.current = true
+    console.log("[v0] Toggling favorite:", href, "New favorites:", newFavorites)
+    
+    // Update state first
     setFavorites(newFavorites)
+    
+    // Save immediately to ensure it persists
+    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    if (currentUser?.id && preferencesLoaded) {
+      try {
+        const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            practice_id: practiceId,
+            favorites: newFavorites,
+          }),
+        })
+        if (!response.ok) {
+          console.error("[v0] Failed to save favorite, status:", response.status)
+        } else {
+          console.log("[v0] Favorite saved successfully")
+        }
+      } catch (error) {
+        console.error("[v0] Error saving favorite:", error)
+      }
+    }
   }
 
   const toggleGroup = (groupId: string) => {

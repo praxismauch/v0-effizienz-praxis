@@ -109,7 +109,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (expanded_groups !== undefined) updateData.expanded_groups = expanded_groups
       if (expanded_items !== undefined) updateData.expanded_items = expanded_items
       if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
-      if (favorites !== undefined) updateData.favorites = favorites
+      if (favorites !== undefined) {
+        console.log("[v0] Updating favorites for user", userId, "practice", effectivePracticeId, ":", favorites)
+        updateData.favorites = favorites
+      }
       
       result = await adminClient
         .from("user_sidebar_preferences")
@@ -118,7 +121,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .eq("practice_id", effectivePracticeId)
         .select()
         .single()
+        
+      console.log("[v0] Update result:", result.error ? `Error: ${result.error.message}` : "Success")
     } else {
+      console.log("[v0] Inserting new preferences for user", userId, "practice", effectivePracticeId, "favorites:", favorites)
+      
       result = await adminClient
         .from("user_sidebar_preferences")
         .insert({
@@ -140,6 +147,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         })
         .select()
         .single()
+        
+      console.log("[v0] Insert result:", result.error ? `Error: ${result.error.message}` : "Success")
     }
 
     if (result.error) {

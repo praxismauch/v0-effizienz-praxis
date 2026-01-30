@@ -187,6 +187,26 @@ export function IgelManagement() {
                 {analysis.recommendation && (
                   <Badge variant={getRecommendationColor(analysis.recommendation)}>{analysis.recommendation}</Badge>
                 )}
+                
+                {/* Profit per item - using realistic scenario (index 1) */}
+                {analysis.pricing_scenarios?.length > 1 && analysis.pricing_scenarios[1]?.monthlyProfit !== undefined && analysis.pricing_scenarios[1]?.expected_monthly_demand > 0 && (() => {
+                  const scenario = analysis.pricing_scenarios[1] // Realistic scenario
+                  const profitPerItem = scenario.monthlyProfit / scenario.expected_monthly_demand
+                  const isProfitable = profitPerItem > 0
+                  
+                  return (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className={`h-4 w-4 ${isProfitable ? "text-green-600" : "text-red-600"}`} />
+                        <span className="text-sm font-medium">Gewinn pro Leistung</span>
+                      </div>
+                      <span className={`text-lg font-bold ${isProfitable ? "text-green-600" : "text-red-600"}`}>
+                        {profitPerItem >= 0 ? "+" : ""}{profitPerItem.toFixed(2)} €
+                      </span>
+                    </div>
+                  )
+                })()}
+                
                 {analysis.break_even_point > 0 && (
                   <p className="text-sm">
                     Break-Even: <span className="font-medium">{analysis.break_even_point} Leistungen</span>

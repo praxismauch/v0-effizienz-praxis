@@ -73,14 +73,21 @@ const formatDate = (date: Date): string => {
 }
 
 export default function TeamMemberDetailPage() {
+  console.log("[v0] TeamMemberDetailPage component rendering - START")
+  
   const router = useRouter()
   const params = useParams()
   const memberId = params.id as string
+  
+  console.log("[v0] Params memberId:", memberId)
+  
   const { t } = useTranslation()
   const { roleColors } = useRoleColors()
 
   const { teamMembers, teams } = useTeam()
   const { currentUser, isAdmin, currentPractice } = useUser()
+
+  console.log("[v0] Initial state - teamMembers.length:", teamMembers?.length || 0, "currentPractice:", currentPractice?.id)
 
   const [member, setMember] = useState<any>(null)
   const [loading, setLoading] = useState(true)

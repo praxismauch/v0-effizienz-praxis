@@ -152,13 +152,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: MessageSquare,
         key: "communication",
       },
-      {
-        name: t("sidebar.tickets", "Tickets"),
-        href: "/tickets",
-        icon: AlertCircle,
-        key: "tickets",
-        badge: "tickets",
-      },
     ],
   },
   {

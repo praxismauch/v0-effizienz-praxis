@@ -288,7 +288,10 @@ export function UserProvider({
             }
 
             if (authError || !authUser) {
-              throw new Error(authError?.message || "No valid Supabase session")
+              // No session is a normal state, not an error - user is not logged in
+              console.log("[v0] No active session:", authError?.message || "User not authenticated")
+              setLoading(false)
+              return
             }
 
             const { data: profile, error: profileError } = await supabase

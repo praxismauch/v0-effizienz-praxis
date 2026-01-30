@@ -140,7 +140,7 @@
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": ">=18.17.0 <22"
+    "node": ">=18.17.0"
   },
   "pnpm": {
     "peerDependencyRules": {

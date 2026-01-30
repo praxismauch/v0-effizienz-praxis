@@ -1361,7 +1361,7 @@ export function DocumentsManager() {
                   return (
                     <Card
                       key={folder.id}
-                      className={`w-full bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/30 transition-all ${isDragOver ? "border-primary bg-primary/10 ring-2 ring-primary/20" : ""} ${isEditMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
+                      className={`group relative w-full border-2 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg hover:border-primary/40 transition-all duration-300 ${isDragOver ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-xl" : "hover:shadow-md"} ${isEditMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
                       onClick={() => !isEditMode && handleNavigateToFolder(folder)}
                       draggable={isEditMode}
                       onDragStart={(e) => {
@@ -1384,69 +1384,86 @@ export function DocumentsManager() {
                         }
                       }}
                     >
-                      <CardHeader className="flex flex-row items-center justify-between pb-3">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div
-                            className="flex items-center justify-center w-12 h-12 rounded-lg"
-                            style={{ backgroundColor: `${folder.color || "#3b82f6"}20` }}
-                          >
-                            <Folder className="h-7 w-7" style={{ color: folder.color || "#3b82f6" }} />
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div
+                              className="flex items-center justify-center w-14 h-14 rounded-xl shadow-sm ring-1 ring-black/5"
+                              style={{ backgroundColor: `${folder.color || "#3b82f6"}15` }}
+                            >
+                              <Folder className="h-8 w-8" style={{ color: folder.color || "#3b82f6" }} />
+                            </div>
+                            <div className="flex flex-col gap-1 flex-1 min-w-0">
+                              <h3 className="font-semibold text-base leading-tight truncate">{folder.name}</h3>
+                              {folder.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-1">{folder.description}</p>
+                              )}
+                            </div>
                           </div>
-                          <div className="truncate font-semibold text-base">{folder.name}</div>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="z-[999999]">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleNavigateToFolder(folder)
-                              }}
-                            >
-                              {t("documents.open", "Öffnen")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleEditFolder(folder)
-                              }}
-                            >
-                              {t("documents.edit", "Bearbeiten")}
-                            </DropdownMenuItem>
-                            {!folder.is_system_folder && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="z-[999999]">
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  handleDeleteFolder(folder.id)
+                                  handleNavigateToFolder(folder)
                                 }}
                               >
-                                {t("documents.delete", "Löschen")}
+                                {t("documents.open", "Öffnen")}
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleUploadToFolder(folder.id)
-                              }}
-                            >
-                              {t("documents.uploadToFolder", "In diesen Ordner hochladen")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditFolder(folder)
+                                }}
+                              >
+                                {t("documents.edit", "Bearbeiten")}
+                              </DropdownMenuItem>
+                              {!folder.is_system_folder && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteFolder(folder.id)
+                                  }}
+                                >
+                                  {t("documents.delete", "Löschen")}
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleUploadToFolder(folder.id)
+                                }}
+                              >
+                                {t("documents.uploadToFolder", "In diesen Ordner hochladen")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </CardHeader>
-                      <CardContent className="flex flex-col gap-3 pt-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
-                            <Folder className="h-3 w-3 mr-1" />
+                      <CardContent className="pt-0">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="bg-muted/50 text-foreground border-border text-xs font-medium"
+                          >
+                            <Folder className="h-3 w-3 mr-1.5" />
                             {getSubfolderCount(folder.id)} {t("documents.subfolders", "Unterordner")}
                           </Badge>
-                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
-                            <FileText className="h-3 w-3 mr-1" />
+                          <Badge
+                            variant="secondary"
+                            className="bg-muted/50 text-foreground border-border text-xs font-medium"
+                          >
+                            <FileText className="h-3 w-3 mr-1.5" />
                             {getRecursiveFileCount(folder.id)} {t("documents.files", "Dateien")}
                           </Badge>
                         </div>
@@ -1594,93 +1611,116 @@ export function DocumentsManager() {
                   return (
                     <Card
                       key={doc.id}
-                      className="w-full bg-background hover:bg-muted/50 transition-colors border-border cursor-pointer"
+                      className="group relative w-full bg-background hover:shadow-lg hover:border-primary/30 transition-all duration-300 border-2 cursor-pointer overflow-hidden"
                       onClick={() => handlePreviewDocument(doc)}
                     >
-                      <CardHeader className="flex flex-row items-center justify-between p-3 space-y-0">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <div className="flex items-center justify-center w-8 h-8 rounded bg-muted flex-shrink-0">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm ring-1 ring-primary/10 flex-shrink-0">
+                              <FileText className="h-6 w-6 text-primary" />
+                            </div>
+                            <div className="flex flex-col gap-1 flex-1 min-w-0">
+                              <h3 className="font-semibold text-sm leading-tight truncate">{doc.name}</h3>
+                              <p className="text-xs text-muted-foreground">{formatFileSize(doc.file_size)}</p>
+                            </div>
                           </div>
-                          <div className="truncate text-sm font-medium">{doc.name}</div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="z-[999999]">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handlePreviewDocument(doc)
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                {t("documents.preview", "Vorschau")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDownloadDocument(doc)
+                                }}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                {t("documents.download", "Herunterladen")}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleViewAIAnalysis(doc)
+                                }}
+                                disabled={!doc.ai_analysis}
+                              >
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                {t("documents.viewAIAnalysis", "KI-Analyse anzeigen")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleAnalyzeDocument(doc)
+                                }}
+                                disabled={!isAiEnabled}
+                              >
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                {t("documents.analyze", "Analyzieren")}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleManageDocumentPermissions(doc.id)
+                                }}
+                              >
+                                {t("documents.permissions", "Berechtigungen verwalten")}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleOpenMoveDialog(doc)
+                                }}
+                              >
+                                {t("documents.move", "Verschieben")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteDocument(doc.id)
+                                }}
+                                className="text-destructive"
+                              >
+                                {t("documents.delete", "Löschen")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                              <MoreVertical className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="z-[999999]">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handlePreviewDocument(doc)
-                              }}
-                            >
-                              {t("documents.preview", "Vorschau")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleViewAIAnalysis(doc)
-                              }}
-                            >
-                              {t("documents.viewAIAnalysis", "KI-Analyse anzeigen")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleAnalyzeDocument(doc)
-                              }}
-                              disabled={!isAiEnabled}
-                            >
-                              {t("documents.analyze", "Analyzieren")}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleManageDocumentPermissions(doc.id)
-                              }}
-                            >
-                              {t("documents.permissions", "Berechtigungen verwalten")}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleOpenMoveDialog(doc)
-                              }}
-                            >
-                              {t("documents.move", "Verschieben")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteDocument(doc.id)
-                              }}
-                            >
-                              {t("documents.delete", "Löschen")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </CardHeader>
-                      <CardContent className="flex items-center justify-between p-3 pt-0">
-                        <Badge variant="outline" className="text-xs">
-                          {formatFileSize(doc.file_size)}
-                        </Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs bg-transparent"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDownloadDocument(doc)
-                          }}
-                        >
-                          <Download className="mr-1 h-3 w-3" />
-                          {t("documents.download", "Herunterladen")}
-                        </Button>
+                      <CardContent className="pt-0">
+                        <div className="flex items-center gap-2">
+                          {doc.ai_analysis && (
+                            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              KI analysiert
+                            </Badge>
+                          )}
+                          {doc.tags && doc.tags.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {doc.tags[0]}
+                            </Badge>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   )

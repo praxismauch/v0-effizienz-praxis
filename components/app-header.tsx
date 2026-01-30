@@ -355,8 +355,8 @@ function AppHeader() {
 
         <Separator orientation="vertical" className="mr-2 h-4 md:hidden" />
 
-        {/* Breadcrumbs */}
-        <Breadcrumb className="hidden md:flex">
+        {/* Breadcrumbs - Hidden */}
+        <Breadcrumb className="hidden">
           <BreadcrumbList>
             {breadcrumbs.map((crumb, index) => (
               <Fragment key={crumb.path}>

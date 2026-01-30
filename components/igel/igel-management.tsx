@@ -195,16 +195,16 @@ export function IgelManagement() {
                   const isProfitable = profitPerItem > 0
                   
                   return (
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded ${isProfitable ? "bg-green-50" : "bg-red-50"}`}>
-                          <DollarSign className={`h-5 w-5 ${isProfitable ? "text-green-600" : "text-red-600"}`} />
-                        </div>
+                    <div className="rounded-lg bg-muted/30 border border-border p-4">
+                      <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-muted-foreground">Gewinn pro Leistung</span>
+                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded ${isProfitable ? "bg-green-50" : "bg-red-50"}`}>
+                          <DollarSign className={`h-4 w-4 ${isProfitable ? "text-green-600" : "text-red-600"}`} />
+                        </div>
                       </div>
-                      <span className={`text-2xl font-bold tabular-nums ${isProfitable ? "text-green-600" : "text-red-600"}`}>
+                      <div className={`text-3xl font-bold tabular-nums mt-2 ${isProfitable ? "text-green-600" : "text-red-600"}`}>
                         {profitPerItem >= 0 ? "+" : ""}{profitPerItem.toFixed(2)} €
-                      </span>
+                      </div>
                     </div>
                   )
                 })()}

@@ -14,7 +14,8 @@ import {
   LayoutGrid, 
   Users,
   MapPin,
-  Loader2 
+  Loader2,
+  Target
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/contexts/user-context"
@@ -33,6 +34,7 @@ import { SecurityTab } from "@/components/settings/security-tab"
 import { HomeofficeTab } from "@/components/settings/homeoffice-tab"
 import { OrgaCategoriesManager } from "@/components/settings/orga-categories-manager"
 import { TeamRoleOrderSettings } from "@/components/settings/team-role-order-settings"
+import { PracticeParameterManagement } from "@/components/practice-parameter-management"
 
 export default function SettingsPageClient() {
   const { currentUser } = useUser()
@@ -123,6 +125,12 @@ export default function SettingsPageClient() {
               <span>Orga-Kategorien</span>
             </TabsTrigger>
             {isAdmin && (
+              <TabsTrigger value="parameters" className="gap-2 whitespace-nowrap">
+                <Target className="h-4 w-4" />
+                <span>Kennzahlen</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="team-order" className="gap-2 whitespace-nowrap">
                 <Users className="h-4 w-4" />
                 <span>Team-Reihenfolge</span>
@@ -181,6 +189,13 @@ export default function SettingsPageClient() {
           <TabsContent value="orga-categories">
             <OrgaCategoriesManager />
           </TabsContent>
+
+          {/* Parameters Tab (Admin only) */}
+          {isAdmin && (
+            <TabsContent value="parameters">
+              <PracticeParameterManagement />
+            </TabsContent>
+          )}
 
           {/* Team Order Tab (Admin only) */}
           {isAdmin && (

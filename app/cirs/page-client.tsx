@@ -34,7 +34,7 @@ import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useUser } from "@/contexts/user-context"
-import { usePracticeContext } from "@/contexts/practice-context"
+import { usePractice } from "@/contexts/practice-context"
 
 export const dynamic = "force-dynamic"
 
@@ -59,7 +59,7 @@ interface CIRSIncident {
 export default function CIRSPageClient() {
   const { toast } = useToast()
   const { currentUser } = useUser()
-  const { currentPractice } = usePracticeContext()
+  const { currentPractice } = usePractice()
 
   const [incidents, setIncidents] = useState<CIRSIncident[]>([])
   const [loading, setLoading] = useState(true)

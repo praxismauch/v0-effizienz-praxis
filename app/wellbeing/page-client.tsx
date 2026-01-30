@@ -362,6 +362,7 @@ export default function WellbeingPageClient() {
           description: "Vielen Dank für Ihr anonymes Feedback!",
         })
         setHasSubmittedToday(true)
+        setShowSurveyDialog(false)
         // Reset form
         setPositiveFeedback("")
         setImprovementSuggestions("")
@@ -747,7 +748,7 @@ export default function WellbeingPageClient() {
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <Meh className="h-12 w-12 text-muted-foreground mb-4" />
                       <p className="text-muted-foreground">Noch keine Stimmungsdaten vorhanden</p>
-                      <Button variant="outline" className="mt-4 bg-transparent" onClick={() => setActiveTab("mood")}>
+                      <Button variant="outline" className="mt-4" onClick={() => setShowSurveyDialog(true)}>
                         Erste Umfrage starten
                       </Button>
                     </div>
@@ -1210,6 +1211,208 @@ export default function WellbeingPageClient() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Mood Survey Dialog */}
+        <Dialog open={showSurveyDialog} onOpenChange={setShowSurveyDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-blue-500" />
+                Stimmungsumfrage
+              </DialogTitle>
+              <DialogDescription>
+                Teilen Sie anonym Ihre Stimmung und Ihr Feedback. Ihre Antworten helfen uns, ein besseres Arbeitsumfeld zu schaffen.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Mood Response Sliders */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>Energie-Level</span>
+                    <span className="text-sm text-muted-foreground">{moodResponse.energy_level}/5</span>
+                  </Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={moodResponse.energy_level}
+                    onChange={(e) => setMoodResponse({ ...moodResponse, energy_level: parseInt(e.target.value) })}
+                    className="w-full mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>Stress-Level</span>
+                    <span className="text-sm text-muted-foreground">{moodResponse.stress_level}/5</span>
+                  </Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={moodResponse.stress_level}
+                    onChange={(e) => setMoodResponse({ ...moodResponse, stress_level: parseInt(e.target.value) })}
+                    className="w-full mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>Arbeitszufriedenheit</span>
+                    <span className="text-sm text-muted-foreground">{moodResponse.work_satisfaction}/5</span>
+                  </Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={moodResponse.work_satisfaction}
+                    onChange={(e) => setMoodResponse({ ...moodResponse, work_satisfaction: parseInt(e.target.value) })}
+                    className="w-full mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>Team-Harmonie</span>
+                    <span className="text-sm text-muted-foreground">{moodResponse.team_harmony}/5</span>
+                  </Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={moodResponse.team_harmony}
+                    onChange={(e) => setMoodResponse({ ...moodResponse, team_harmony: parseInt(e.target.value) })}
+                    className="w-full mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>Work-Life-Balance</span>
+                    <span className="text-sm text-muted-foreground">{moodResponse.work_life_balance}/5</span>
+                  </Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={moodResponse.work_life_balance}
+                    onChange={(e) => setMoodResponse({ ...moodResponse, work_life_balance: parseInt(e.target.value) })}
+                    className="w-full mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>Führungsunterstützung</span>
+                    <span className="text-sm text-muted-foreground">{moodResponse.leadership_support}/5</span>
+                  </Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={moodResponse.leadership_support}
+                    onChange={(e) => setMoodResponse({ ...moodResponse, leadership_support: parseInt(e.target.value) })}
+                    className="w-full mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>Wachstumschancen</span>
+                    <span className="text-sm text-muted-foreground">{moodResponse.growth_opportunities}/5</span>
+                  </Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={moodResponse.growth_opportunities}
+                    onChange={(e) => setMoodResponse({ ...moodResponse, growth_opportunities: parseInt(e.target.value) })}
+                    className="w-full mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>Arbeitsbelastung (Fairness)</span>
+                    <span className="text-sm text-muted-foreground">{moodResponse.workload_fairness}/5</span>
+                  </Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={moodResponse.workload_fairness}
+                    onChange={(e) => setMoodResponse({ ...moodResponse, workload_fairness: parseInt(e.target.value) })}
+                    className="w-full mt-2"
+                  />
+                </div>
+              </div>
+
+              {/* Text Feedback */}
+              <div>
+                <Label>Was läuft gut? (Optional)</Label>
+                <Textarea
+                  placeholder="Teilen Sie positive Aspekte..."
+                  value={positiveFeedback}
+                  onChange={(e) => setPositiveFeedback(e.target.value)}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label>Verbesserungsvorschläge (Optional)</Label>
+                <Textarea
+                  placeholder="Was könnte besser sein?"
+                  value={improvementSuggestions}
+                  onChange={(e) => setImprovementSuggestions(e.target.value)}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label>Anliegen/Sorgen (Optional & Vertraulich)</Label>
+                <Textarea
+                  placeholder="Gibt es etwas, das Sie beschäftigt?"
+                  value={concerns}
+                  onChange={(e) => setConcerns(e.target.value)}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertTitle>100% Anonym & Vertraulich</AlertTitle>
+                <AlertDescription>
+                  Ihre Antworten werden vollständig anonym erfasst und helfen uns, das Wohlbefinden im Team zu verbessern.
+                </AlertDescription>
+              </Alert>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSurveyDialog(false)}>
+                Abbrechen
+              </Button>
+              <Button onClick={handleSubmitMoodResponse} disabled={isSubmittingMood || hasSubmittedToday}>
+                {isSubmittingMood ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                {hasSubmittedToday ? "Bereits eingereicht" : "Feedback senden"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Kudos Dialog */}
         <Dialog open={showKudosDialog} onOpenChange={setShowKudosDialog}>

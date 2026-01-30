@@ -38,7 +38,11 @@ export default function MembersTab({ teamMembers, onAddMember, onEditMember, onD
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {filteredMembers.map((member) => (
-        <Card key={member.id} className="hover:shadow-md transition-shadow">
+        <Card 
+          key={member.id} 
+          className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02]"
+          onClick={() => onEditMember(member)}
+        >
           <CardHeader className="pb-2">
             <div className="flex items-start gap-4">
               <Avatar className="h-12 w-12">
@@ -58,8 +62,8 @@ export default function MembersTab({ teamMembers, onAddMember, onEditMember, onD
               {member.email && (
                 <p className="text-sm text-muted-foreground truncate">{member.email}</p>
               )}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => onEditMember(member)}>
+              <div className="flex justify-center">
+                <Button variant="outline" size="sm" className="pointer-events-none">
                   Profil ansehen
                 </Button>
               </div>

@@ -80,50 +80,64 @@ export function IgelManagement() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
-            Selbstzahlerleistungen mit KI
-          </CardTitle>
-          <CardDescription>
-            Analysieren Sie systematisch, welche Selbstzahlerleistungen sich für Ihre Praxis lohnen
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Header with title and action button */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold">Selbstzahler-Analyse</h1>
+          <p className="text-muted-foreground">
+            Analysieren Sie Ihre Selbstzahlerleistungen auf Rentabilität und Optimierungspotenzial
+          </p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)} size="lg" className="shrink-0">
+          <Plus className="mr-2 h-4 w-4" />
+          Neue Analyse
+        </Button>
+      </div>
+
+      {/* Professional info card */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="p-3 rounded-lg bg-primary/10">
+              <Lightbulb className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-1">KI-gestützte Rentabilitätsanalyse</h3>
+              <p className="text-sm text-muted-foreground">
+                Finden Sie heraus, welche Selbstzahlerleistungen sich für Ihre Praxis wirklich lohnen
+              </p>
+            </div>
+          </div>
+          
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 rounded bg-background">
+                <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">Vollständige Kostenanalyse</h4>
-                <p className="text-sm text-muted-foreground">Fixkosten, variable Kosten und versteckte Aufwände</p>
+                <h4 className="font-medium text-sm">Vollständige Kostenanalyse</h4>
+                <p className="text-xs text-muted-foreground">Fixkosten, variable Kosten und versteckte Aufwände</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <DollarSign className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 rounded bg-background">
+                <DollarSign className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">3 Preisszenarien</h4>
-                <p className="text-sm text-muted-foreground">Konservativ, realistisch und optimistisch</p>
+                <h4 className="font-medium text-sm">3 Preisszenarien</h4>
+                <p className="text-xs text-muted-foreground">Konservativ, realistisch und optimistisch</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <Lightbulb className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 rounded bg-background">
+                <ThumbsUp className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">KI-Empfehlungen</h4>
-                <p className="text-sm text-muted-foreground">Optimierungsvorschläge und Best Practices</p>
+                <h4 className="font-medium text-sm">Klare Empfehlungen</h4>
+                <p className="text-xs text-muted-foreground">Datenbasierte Optimierungsvorschläge</p>
               </div>
             </div>
           </div>
-          <Button onClick={() => setCreateOpen(true)} className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            Neue Selbstzahlerleistung analysieren
-          </Button>
         </CardContent>
       </Card>
 

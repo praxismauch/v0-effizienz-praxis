@@ -18,6 +18,7 @@ import { TeamMemberSkillsTab } from "@/components/team/team-member-skills-tab"
 import { AppLayout } from "@/components/app-layout"
 import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
 import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
+import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
 
 const roleLabels = {
   admin: "Praxis Admin",
@@ -173,15 +174,16 @@ export default function TeamMemberDetailPage() {
 
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto gap-1 mb-6">
-              <TabsTrigger value="overview">Übersicht</TabsTrigger>
-              <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
-              <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
-              <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
-              <TabsTrigger value="devices">Geräte</TabsTrigger>
-              <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
-              <TabsTrigger value="documents">Dokumente</TabsTrigger>
-            </TabsList>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto gap-1 mb-6">
+                <TabsTrigger value="overview">Übersicht</TabsTrigger>
+                <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
+                <TabsTrigger value="vaccinations">Impfstatus</TabsTrigger>
+                <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
+                <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
+                <TabsTrigger value="devices">Geräte</TabsTrigger>
+                <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
+                <TabsTrigger value="documents">Dokumente</TabsTrigger>
+              </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
               <Card>
@@ -329,18 +331,25 @@ export default function TeamMemberDetailPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="skills" className="space-y-4">
-              {member && (
-                <TeamMemberSkillsTab
-                  memberId={memberId}
-                  practiceId={member.practice_id || ""}
-                  memberName={member.name}
-                  memberTeamId={member.team_id}
-                  isAdmin={isAdmin}
-                  currentUserId={currentUser?.id}
-                />
-              )}
-            </TabsContent>
+              <TabsContent value="skills" className="space-y-4">
+                {member && (
+                  <TeamMemberSkillsTab
+                    memberId={memberId}
+                    practiceId={member.practice_id}
+                    firstName={member.first_name}
+                    lastName={member.last_name}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="vaccinations" className="space-y-4">
+                {member && (
+                  <TeamMemberVaccinationTab
+                    teamMemberId={memberId}
+                    practiceId={member.practice_id}
+                  />
+                )}
+              </TabsContent>
 
             <TabsContent value="zeiterfassung" className="space-y-4">
               {/* Zeiterfassung content here */}

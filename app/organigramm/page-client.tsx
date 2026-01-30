@@ -46,9 +46,22 @@ interface TreeNode {
   children: TreeNode[]
 }
 
+interface TeamMember {
+  id: string
+  first_name: string
+  last_name: string
+}
+
+interface Team {
+  id: string
+  name: string
+}
+
 export default function OrganigrammClient() {
   const [loading, setLoading] = useState(false) // Changed from true to false since SWR handles loading
   const [positions, setPositions] = useState<Position[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [teams, setTeams] = useState<Team[]>([])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingPosition, setEditingPosition] = useState<Position | null>(null)
   const [deletingPositionId, setDeletingPositionId] = useState<string | null>(null)
@@ -72,12 +85,34 @@ export default function OrganigrammClient() {
     swrFetcher,
   )
 
+  const { data: teamMembersData } = useSWR<{ teamMembers: TeamMember[] }>(
+    currentPractice?.id ? `/api/practices/${currentPractice.id}/team-members` : null,
+    swrFetcher,
+  )
+
+  const { data: teamsData } = useSWR<{ teams: Team[] }>(
+    currentPractice?.id ? `/api/practices/${currentPractice.id}/teams` : null,
+    swrFetcher,
+  )
+
   useEffect(() => {
     if (positionsData?.positions) {
       console.log("[v0] Organigramm: SWR data loaded, positions:", positionsData.positions.length)
       setPositions(positionsData.positions)
     }
   }, [positionsData])
+
+  useEffect(() => {
+    if (teamMembersData?.teamMembers) {
+      setTeamMembers(teamMembersData.teamMembers)
+    }
+  }, [teamMembersData])
+
+  useEffect(() => {
+    if (teamsData?.teams) {
+      setTeams(teamsData.teams)
+    }
+  }, [teamsData])
 
   useEffect(() => {
     if (positionsError) {
@@ -444,6 +479,8 @@ export default function OrganigrammClient() {
             <EditPositionForm
               position={editingPosition}
               positions={positions}
+              teamMembers={teamMembers}
+              teams={teams}
               onSubmit={(data) => handleUpdate(editingPosition.id, data)}
               onCancel={() => setEditingPosition(null)}
             />
@@ -576,17 +613,26 @@ function CreatePositionForm({
 function EditPositionForm({
   position,
   positions,
+  teamMembers,
+  teams,
   onSubmit,
   onCancel,
 }: {
   position: Position
   positions: Position[]
+  teamMembers: TeamMember[]
+  teams: Team[]
   onSubmit: (data: Partial<Position>) => void
   onCancel: () => void
 }) {
   const [title, setTitle] = useState(position.position_title)
   const [department, setDepartment] = useState(position.department || "")
   const [parentId, setParentId] = useState(position.reports_to_position_id || "")
+  const [assignmentType, setAssignmentType] = useState<'none' | 'member' | 'team'>(
+    position.user_id ? 'member' : 'none'
+  )
+  const [userId, setUserId] = useState(position.user_id || "")
+  const [teamId, setTeamId] = useState("")
   const [saving, setSaving] = useState(false)
 
   const getDescendantIds = (id: string): string[] => {
@@ -608,6 +654,8 @@ function EditPositionForm({
       position_title: title.trim(),
       department: department.trim() || null,
       reports_to_position_id: parentId || null,
+      user_id: assignmentType === 'member' ? userId : null,
+      team_id: assignmentType === 'team' ? teamId : null,
       level,
     })
     setSaving(false)
@@ -645,6 +693,66 @@ function EditPositionForm({
           </SelectContent>
         </Select>
       </div>
+
+      <div className="space-y-2">
+        <Label>Zuweisung (optional)</Label>
+        <Select 
+          value={assignmentType} 
+          onValueChange={(value: 'none' | 'member' | 'team') => {
+            setAssignmentType(value)
+            setUserId("")
+            setTeamId("")
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Auswählen..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Keine Zuweisung</SelectItem>
+            <SelectItem value="member">Einzelne Person</SelectItem>
+            <SelectItem value="team">Team/Gruppe</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {assignmentType === 'member' && (
+        <div className="space-y-2">
+          <Label>Person auswählen</Label>
+          <Select value={userId} onValueChange={setUserId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Keine Person zugewiesen" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Keine Person zugewiesen</SelectItem>
+              {teamMembers.map((member) => (
+                <SelectItem key={member.id} value={member.id}>
+                  {member.first_name} {member.last_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {assignmentType === 'team' && (
+        <div className="space-y-2">
+          <Label>Team/Gruppe auswählen</Label>
+          <Select value={teamId} onValueChange={setTeamId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Kein Team zugewiesen" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Kein Team zugewiesen</SelectItem>
+              {teams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>
+                  {team.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>
           Abbrechen

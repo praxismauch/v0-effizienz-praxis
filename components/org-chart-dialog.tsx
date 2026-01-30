@@ -33,10 +33,17 @@ interface TeamMember {
   last_name: string
 }
 
+interface Team {
+  id: string
+  name: string
+}
+
 interface FormData {
   position_title: string
   department: string
   user_id: string
+  team_id: string
+  assignment_type: 'none' | 'member' | 'team'
   reports_to_position_id: string
   level: number
   is_management: boolean
@@ -50,6 +57,7 @@ interface OrgChartDialogProps {
   position: Position | null
   positions: Position[]
   teamMembers: TeamMember[]
+  teams: Team[]
   formData: FormData
   setFormData: (data: FormData) => void
   onSuccess: () => void
@@ -61,6 +69,7 @@ export function OrgChartDialog({
   position,
   positions,
   teamMembers,
+  teams,
   formData,
   setFormData,
   onSuccess,
@@ -75,7 +84,8 @@ export function OrgChartDialog({
       const dataToSave = {
         position_title: formData.position_title,
         department: formData.department,
-        user_id: formData.user_id === "none" ? null : formData.user_id,
+        user_id: formData.assignment_type === 'member' ? formData.user_id : null,
+        team_id: formData.assignment_type === 'team' ? formData.team_id : null,
         reports_to_position_id: formData.reports_to_position_id === "none" ? null : formData.reports_to_position_id,
         level: formData.level,
         is_management: formData.is_management,
@@ -153,21 +163,61 @@ export function OrgChartDialog({
           </div>
 
           <div>
-            <Label>Person zuweisen (optional)</Label>
-            <Select value={formData.user_id} onValueChange={(value) => setFormData({ ...formData, user_id: value })}>
+            <Label>Zuweisung (optional)</Label>
+            <Select 
+              value={formData.assignment_type} 
+              onValueChange={(value: 'none' | 'member' | 'team') => 
+                setFormData({ ...formData, assignment_type: value, user_id: 'none', team_id: 'none' })
+              }
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Keine Person zugewiesen" />
+                <SelectValue placeholder="Auswählen..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Keine Person zugewiesen</SelectItem>
-                {teamMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.first_name} {member.last_name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="none">Keine Zuweisung</SelectItem>
+                <SelectItem value="member">Einzelne Person</SelectItem>
+                <SelectItem value="team">Team/Gruppe</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {formData.assignment_type === 'member' && (
+            <div>
+              <Label>Person auswählen</Label>
+              <Select value={formData.user_id} onValueChange={(value) => setFormData({ ...formData, user_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Keine Person zugewiesen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keine Person zugewiesen</SelectItem>
+                  {teamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.first_name} {member.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {formData.assignment_type === 'team' && (
+            <div>
+              <Label>Team/Gruppe auswählen</Label>
+              <Select value={formData.team_id} onValueChange={(value) => setFormData({ ...formData, team_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Kein Team zugewiesen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Kein Team zugewiesen</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label>Berichtet an</Label>

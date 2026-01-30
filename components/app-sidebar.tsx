@@ -58,6 +58,7 @@ import {
   TrendingUp,
   FileCheck,
   HelpCircle,
+  Shield,
 } from "lucide-react"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -111,6 +112,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/calendar",
         icon: CalendarDays,
         key: "calendar",
+        badge: "calendar",
       },
       {
         name: t("sidebar.dienstplan", "Dienstplan"),
@@ -152,12 +154,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "responsibilities",
         badge: "responsibilities",
       },
-      {
-        name: t("sidebar.communication", "Kommunikation"),
-        href: "/communication",
-        icon: MessageSquare,
-        key: "communication",
-      },
     ],
   },
   {
@@ -175,6 +171,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/documents",
         icon: FileText,
         key: "documents",
+        badge: "documents",
       },
       {
         name: t("sidebar.praxis_auswertung", "Praxis-Auswertung"),
@@ -199,6 +196,13 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/protocols",
         icon: FileCheck,
         key: "protocols",
+      },
+      {
+        name: t("sidebar.cirs", "Verbesserungsmeldung"),
+        href: "/cirs",
+        icon: Shield,
+        key: "cirs",
+        badge: "cirs",
       },
     ],
   },
@@ -321,6 +325,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/contacts",
         icon: Contact,
         key: "contacts",
+        badge: "contacts",
       },
       {
         name: t("sidebar.surveys", "Umfragen"),
@@ -362,10 +367,11 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         badge: "devices",
       },
       {
-        name: t("sidebar.messages", "Nachrichten"),
-        href: "/messages",
-        icon: MessageSquare,
-        key: "messages",
+        name: t("sidebar.hygiene", "Hygieneplan"),
+        href: "/hygiene",
+        icon: Sparkles,
+        key: "hygiene",
+        badge: "hygiene",
       },
       {
         name: t("sidebar.settings", "Einstellungen"),
@@ -409,6 +415,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
     surveys: number
     inventory: number
     devices: number
+    calendar: number
+    documents: number
+    cirs: number
+    contacts: number
+    hygiene: number
   }>({
     tasks: 0,
     goals: 0,
@@ -421,6 +432,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
     surveys: 0,
     inventory: 0,
     devices: 0,
+    calendar: 0,
+    documents: 0,
+    cirs: 0,
+    contacts: 0,
+    hygiene: 0,
   })
   const [badgeSettings, setBadgeSettings] = useState({ tasks: true, goals: true, workflows: true, candidates: true })
   const [mounted, setMounted] = useState(false)
@@ -450,8 +466,24 @@ export function AppSidebar({ className }: AppSidebarProps) {
               setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
             }
 
+            // Try to load favorites from database first, fallback to localStorage
             if (data.preferences.favorites && Array.isArray(data.preferences.favorites)) {
               setFavorites(data.preferences.favorites)
+            } else {
+              // Fallback to localStorage if database doesn't have favorites
+              const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
+              try {
+                const localFavorites = localStorage.getItem(localStorageKey)
+                if (localFavorites) {
+                  const parsed = JSON.parse(localFavorites)
+                  if (Array.isArray(parsed)) {
+                    setFavorites(parsed)
+                    console.log("[v0] Loaded favorites from localStorage fallback")
+                  }
+                }
+              } catch (storageError) {
+                console.error("[v0] Failed to load from localStorage:", storageError)
+              }
             }
 
             if (data.preferences.expanded_items) {

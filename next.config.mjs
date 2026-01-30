@@ -1,24 +1,51 @@
 /** @type {import('next').NextConfig} */
-// Next.js 16 - TypeScript errors temporarily ignored for deployment
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
+  // Image optimization
   images: {
-    formats: ["image/webp"],
+    formats: ["image/webp", "image/avif"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60,
   },
+  
+  // Performance optimizations
   compress: true,
   productionBrowserSourceMaps: false,
+  poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ["googleapis", "nodemailer", "bcryptjs"],
+  // Next.js 16: Experimental features
   experimental: {
     serverMinification: true,
-    optimizePackageImports: ['lucide-react'],
+    // Optimize package imports for faster builds and smaller bundles
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      'date-fns',
+      'recharts',
+    ],
+    reactCompiler: false, // Enable when ready for React Compiler
+    turbo: {
+      // Turbopack configuration
+      resolveAlias: {
+        '@': './',
+      },
+    },
   },
   async headers() {
     return [
+      // Static assets - aggressive caching
       {
-        source: "/:all*(svg|jpg|jpeg|png|gif|webp|ico|woff|woff2|ttf|eot)",
+        source: "/:all*(svg|jpg|jpeg|png|gif|webp|avif|ico|woff|woff2|ttf|eot)",
         headers: [
           {
             key: "Cache-Control",
@@ -26,12 +53,17 @@ const nextConfig = {
           },
         ],
       },
+      // API routes - short-lived cache with SWR
       {
         source: "/api/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=120" },
+          { 
+            key: "Cache-Control", 
+            value: "public, s-maxage=60, stale-while-revalidate=120" 
+          },
         ],
       },
+      // Global security headers
       {
         source: "/:path*",
         headers: [

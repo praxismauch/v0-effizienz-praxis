@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useUser } from "@/contexts/user-context" // Import useUser hook
 import { usePractice } from "@/contexts/practice-context" // Import usePractice hook
 import {
@@ -19,7 +20,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CreateIgelDialog } from "./create-igel-dialog"
-import { ViewIgelDialog } from "./view-igel-dialog"
 import { EditIgelDialog } from "./edit-igel-dialog"
 import { useIgelAnalyses } from "@/hooks/use-igel"
 
@@ -39,8 +39,8 @@ interface IgelAnalysis {
 }
 
 export function IgelManagement() {
+  const router = useRouter()
   const [createOpen, setCreateOpen] = useState(false)
-  const [viewAnalysis, setViewAnalysis] = useState<IgelAnalysis | null>(null)
   const [editAnalysis, setEditAnalysis] = useState<IgelAnalysis | null>(null)
   const { currentPractice } = usePractice()
 
@@ -145,11 +145,11 @@ export function IgelManagement() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {analyses.map((analysis) => (
-            <Card
-              key={analysis.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setViewAnalysis(analysis)}
-            >
+              <Card
+                key={analysis.id}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => router.push(`/igel/${analysis.id}`)}
+              >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -240,19 +240,6 @@ export function IgelManagement() {
           setCreateOpen(false)
         }}
       />
-
-      {viewAnalysis && (
-        <ViewIgelDialog
-          analysis={viewAnalysis}
-          open={!!viewAnalysis}
-          onOpenChange={(open) => !open && setViewAnalysis(null)}
-          onSuccess={() => mutateAnalyses()}
-          onEdit={(analysis) => {
-            setViewAnalysis(null)
-            setEditAnalysis(analysis)
-          }}
-        />
-      )}
 
       {editAnalysis && (
         <EditIgelDialog

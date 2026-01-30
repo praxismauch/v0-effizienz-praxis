@@ -35,6 +35,8 @@ export async function POST(
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
       system: RKI_SYSTEM_PROMPT,
+      maxOutputTokens: 1500,
+      temperature: 0.7,
       prompt: `Erstelle einen detaillierten Hygieneplan für eine medizinische Praxis mit folgenden Anforderungen:
 
 Typ: ${plan_type}

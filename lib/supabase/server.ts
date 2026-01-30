@@ -1,6 +1,5 @@
 import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
 import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
 
 // Cache for admin client (service role) - this is safe to cache as it doesn't use cookies
 let adminClientCache: SupabaseClient | null = null
@@ -10,6 +9,8 @@ let adminClientCache: SupabaseClient | null = null
  * IMPORTANT: Always create a fresh client for each request - do not cache.
  */
 export async function createClient() {
+  // Import cookies dynamically to avoid client component issues
+  const { cookies } = await import("next/headers")
   const cookieStore = await cookies()
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

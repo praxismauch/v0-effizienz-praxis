@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createAdminClient, isUsingMockAdminClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // Background logging is disabled to reduce database load
 // To re-enable, uncomment the database insert logic below
@@ -10,9 +10,6 @@ export async function POST(_request: Request) {
 
 export async function GET(request: Request) {
   try {
-    if (isUsingMockAdminClient()) {
-      return NextResponse.json([])
-    }
 
     const { searchParams } = new URL(request.url)
     const level = searchParams.get("level")
@@ -57,10 +54,6 @@ export async function GET(request: Request) {
 
 export async function DELETE() {
   try {
-    if (isUsingMockAdminClient()) {
-      return NextResponse.json({ success: true }, { status: 200 })
-    }
-
     const supabase = await createAdminClient()
 
     try {

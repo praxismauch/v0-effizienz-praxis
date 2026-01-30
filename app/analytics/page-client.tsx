@@ -92,7 +92,11 @@ export default function AnalyticsPageClient() {
           </TabsContent>
 
           <TabsContent value="reviews" className="space-y-4">
-            <ReviewsManager />
+            {currentUser?.practiceId ? (
+              <ReviewsManager practiceId={currentUser.practiceId.toString()} />
+            ) : (
+              <ReviewsManager />
+            )}
           </TabsContent>
 
           <TabsContent value="kv-abrechnung" className="space-y-4">

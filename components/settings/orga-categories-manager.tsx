@@ -164,29 +164,72 @@ export function OrgaCategoriesManager() {
   }
 
   return (
-    <div className="flex flex-col space-y-4">
-      {categories.map((category) => (
-        <Card key={category.id} className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-2">
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-            <div className="flex flex-col">
-              <h4 className="text-sm font-semibold">{category.name}</h4>
-              <p className="text-sm text-muted-foreground">{category.description}</p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-lg font-semibold">Organisationskategorien</h2>
+          <p className="text-sm text-muted-foreground">Verwalten Sie Ihre Aufgabenkategorien</p>
+        </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Neue Kategorie
+        </Button>
+      </div>
+
+      <div className="grid gap-4">
+        {categories.map((category) => (
+          <Card
+            key={category.id}
+            className="group relative overflow-hidden border-2 hover:shadow-md transition-all duration-200"
+            style={{ borderLeftWidth: "6px", borderLeftColor: category.color || "#3b82f6" }}
+          >
+            <div className="flex items-center justify-between p-5">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="cursor-grab active:cursor-grabbing">
+                  <GripVertical className="h-5 w-5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                </div>
+                <div
+                  className="flex items-center justify-center w-12 h-12 rounded-xl shrink-0"
+                  style={{ backgroundColor: `${category.color || "#3b82f6"}15` }}
+                >
+                  <div
+                    className="w-6 h-6 rounded-md"
+                    style={{ backgroundColor: category.color || "#3b82f6" }}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-base mb-1">{category.name}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-1">{category.description}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                {category.is_active ? (
+                  <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">
+                    Aktiv
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">Inaktiv</Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => setEditingCategory(category)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            {category.is_active && (
-              <Badge variant="secondary">Aktiv</Badge>
-            )}
-            <Button variant="ghost" size="icon">
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }

@@ -109,7 +109,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (expanded_groups !== undefined) updateData.expanded_groups = expanded_groups
       if (expanded_items !== undefined) updateData.expanded_items = expanded_items
       if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
-      if (favorites !== undefined) updateData.favorites = favorites
+      if (favorites !== undefined) {
+        console.log("[v0] Updating favorites for user", userId, "practice", effectivePracticeId, ":", favorites)
+        updateData.favorites = favorites
+      }
       
       result = await adminClient
         .from("user_sidebar_preferences")
@@ -118,60 +121,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .eq("practice_id", effectivePracticeId)
         .select()
         .single()
-      
-      // If schema cache error (PGRST204) for favorites column, treat as success
-      // The client will use localStorage fallback
-      if (result.error?.code === 'PGRST204' && result.error.message?.includes('favorites')) {
-        console.log("[v0] Schema cache issue with favorites - returning mock success for client localStorage")
-        result = {
-          data: existing,
-          error: null
-        }
-      }
+        
+      console.log("[v0] Update result:", result.error ? `Error: ${result.error.message}` : "Success")
     } else {
-      // Try insert without favorites to avoid schema cache issues
-      const insertData: Record<string, unknown> = {
-        user_id: userId,
-        practice_id: effectivePracticeId,
-        expanded_groups: expanded_groups || [
-          "overview",
-          "planning",
-          "data",
-          "strategy",
-          "team-personal",
-          "praxis-einstellungen",
-        ],
-        expanded_items: expanded_items || {},
-        is_collapsed: is_collapsed || false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
+      console.log("[v0] Inserting new preferences for user", userId, "practice", effectivePracticeId, "favorites:", favorites)
       
-      // Only include favorites if column exists (no PGRST204 errors previously)
-      // Otherwise client will use localStorage
       result = await adminClient
         .from("user_sidebar_preferences")
         .insert(insertData)
         .select()
         .single()
-      
-      // If insert succeeds, try to update with favorites separately
-      if (!result.error && favorites !== undefined) {
-        const updateResult = await adminClient
-          .from("user_sidebar_preferences")
-          .update({ favorites: favorites })
-          .eq("user_id", userId)
-          .eq("practice_id", effectivePracticeId)
-          .select()
-          .single()
         
-        // If favorites update fails due to schema cache, ignore it
-        if (!updateResult.error) {
-          result = updateResult
-        } else if (updateResult.error.code === 'PGRST204') {
-          console.log("[v0] Schema cache issue with favorites on insert - client will use localStorage")
-        }
-      }
+      console.log("[v0] Insert result:", result.error ? `Error: ${result.error.message}` : "Success")
     }
 
     if (result.error) {

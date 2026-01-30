@@ -1213,19 +1213,6 @@ export function ParameterDataEntry() {
               <CardContent>
                 <div className="flex flex-wrap gap-3 mb-6">
                   <Button
-                    onClick={() => setIsAddValueDialogOpen(true)}
-                    variant="default"
-                    style={{
-                      backgroundColor: intervalBadgeColors.monthly,
-                      color: "white",
-                    }}
-                    className="hover:opacity-90"
-                    disabled={isSaving}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t("kpi.add_value", "Monatsdaten")}
-                  </Button>
-                  <Button
                     onClick={() => setIsAddWeeklyValueDialogOpen(true)}
                     variant="default"
                     style={{
@@ -1237,6 +1224,19 @@ export function ParameterDataEntry() {
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     {t("kpi.add_weekly_value", "Wochendaten")}
+                  </Button>
+                  <Button
+                    onClick={() => setIsAddValueDialogOpen(true)}
+                    variant="default"
+                    style={{
+                      backgroundColor: intervalBadgeColors.monthly,
+                      color: "white",
+                    }}
+                    className="hover:opacity-90"
+                    disabled={isSaving}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t("kpi.add_value", "Monatsdaten")}
                   </Button>
                   <Button
                     onClick={() => setIsAddQuarterlyValueDialogOpen(true)}

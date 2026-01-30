@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
 import { useTicketConfig } from "@/lib/tickets/hooks"
 import { typesToOptions, prioritiesToOptions } from "@/lib/tickets/utils"
-import { BugDescriptionEditor } from "@/components/bug-description-editor-wrapper"
+
 
 // Helper function to upload file via API
 async function uploadFileToServer(file: File): Promise<string> {
@@ -437,11 +437,12 @@ function ReportBugDialog({
 
             <div className="space-y-2">
               <Label htmlFor="description">Beschreibung</Label>
-              <BugDescriptionEditor
-                content={description}
-                onChange={setDescription}
+              <Textarea
+                id="description"
                 placeholder="Beschreiben Sie das Problem im Detail..."
-                minHeight="200px"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={5}
               />
             </div>
 

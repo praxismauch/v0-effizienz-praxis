@@ -194,6 +194,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: FileCheck,
         key: "protocols",
       },
+      {
+        name: t("sidebar.hygieneplan", "Hygieneplan"),
+        href: "/hygieneplan",
+        icon: Shield,
+        key: "hygieneplan",
+      },
     ],
   },
   {

@@ -378,9 +378,6 @@ function AppHeader() {
         {/* Practice Name - Mobile */}
         <span className="text-sm font-medium md:hidden truncate">{currentPractice?.name || "Effizienz Praxis"}</span>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
         {isTrialActive && trialDaysLeft !== null && (
           <TooltipProvider>
             <Tooltip>

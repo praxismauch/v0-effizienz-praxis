@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
 import { useTicketConfig } from "@/lib/tickets/hooks"
 import { typesToOptions, prioritiesToOptions } from "@/lib/tickets/utils"
-import { BugDescriptionEditor } from "@/components/bug-description-editor"
+import { BugDescriptionEditor } from "@/components/bug-description-editor-wrapper"
 
 // Helper function to upload file via API
 async function uploadFileToServer(file: File): Promise<string> {

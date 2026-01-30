@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-
+import { useEffect, useState, useCallback } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import Image from "@tiptap/extension-image"
 import { Button } from "@/components/ui/button"
 import { Bold, Italic, List, ListOrdered, Heading2, Heading3, Undo, Redo, ImageIcon, Loader2 } from "lucide-react"
-import { useEffect, useState, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 

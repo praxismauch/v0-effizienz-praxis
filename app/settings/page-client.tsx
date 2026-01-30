@@ -79,53 +79,53 @@ export default function SettingsPageClient() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 h-auto p-1 gap-1">
-            <TabsTrigger value="practice" className="gap-2 flex-1">
+          <TabsList className="inline-flex h-auto flex-wrap justify-start gap-2 bg-muted p-1.5 rounded-lg">
+            <TabsTrigger value="practice" className="gap-2 whitespace-nowrap">
               <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Praxis</span>
+              <span>Praxis</span>
             </TabsTrigger>
-            <TabsTrigger value="locations" className="gap-2 flex-1">
+            <TabsTrigger value="locations" className="gap-2 whitespace-nowrap">
               <MapPin className="h-4 w-4" />
-              <span className="hidden sm:inline">Standorte</span>
+              <span>Standorte</span>
             </TabsTrigger>
-            <TabsTrigger value="hours" className="gap-2 flex-1">
+            <TabsTrigger value="hours" className="gap-2 whitespace-nowrap">
               <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Arbeitszeiten</span>
+              <span>Arbeitszeiten</span>
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="gap-2 flex-1">
+            <TabsTrigger value="calendar" className="gap-2 whitespace-nowrap">
               <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Kalender</span>
+              <span>Kalender</span>
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="gap-2 flex-1">
+            <TabsTrigger value="appearance" className="gap-2 whitespace-nowrap">
               <Monitor className="h-4 w-4" />
-              <span className="hidden sm:inline">Anzeige</span>
+              <span>Anzeige</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2 flex-1">
+            <TabsTrigger value="notifications" className="gap-2 whitespace-nowrap">
               <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Benachrichtigungen</span>
+              <span>Benachrichtigungen</span>
             </TabsTrigger>
-            <TabsTrigger value="weekly-summary" className="gap-2 flex-1">
+            <TabsTrigger value="weekly-summary" className="gap-2 whitespace-nowrap">
               <Mail className="h-4 w-4" />
-              <span className="hidden sm:inline">Wochen-Report</span>
+              <span>Wochen-Report</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="gap-2 flex-1">
+            <TabsTrigger value="security" className="gap-2 whitespace-nowrap">
               <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Sicherheit</span>
+              <span>Sicherheit</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="homeoffice" className="gap-2 flex-1">
+              <TabsTrigger value="homeoffice" className="gap-2 whitespace-nowrap">
                 <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Homeoffice</span>
+                <span>Homeoffice</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="orga-categories" className="gap-2 flex-1">
+            <TabsTrigger value="orga-categories" className="gap-2 whitespace-nowrap">
               <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline">Orga-Kategorien</span>
+              <span>Orga-Kategorien</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="team-order" className="gap-2 flex-1">
+              <TabsTrigger value="team-order" className="gap-2 whitespace-nowrap">
                 <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Team-Reihenfolge</span>
+                <span>Team-Reihenfolge</span>
               </TabsTrigger>
             )}
           </TabsList>

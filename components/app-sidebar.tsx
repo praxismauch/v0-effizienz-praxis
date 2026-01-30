@@ -196,7 +196,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "protocols",
       },
       {
-        name: t("sidebar.cirs", "CIRS"),
+        name: t("sidebar.cirs", "Verbesserungsmeldung"),
         href: "/cirs",
         icon: Shield,
         key: "cirs",

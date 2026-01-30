@@ -357,12 +357,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "hygiene",
       },
       {
-        name: t("sidebar.messages", "Nachrichten"),
-        href: "/messages",
-        icon: MessageSquare,
-        key: "messages",
-      },
-      {
         name: t("sidebar.settings", "Einstellungen"),
         href: "/settings",
         icon: Settings,

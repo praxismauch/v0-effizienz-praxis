@@ -52,6 +52,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import dynamic from "next/dynamic"
+
+const GlobalParameterManagement = dynamic(() => import("@/components/global-parameter-management"), {
+  loading: () => <div className="flex items-center justify-center h-96">Lädt Parameter-Management...</div>,
+  ssr: false,
+})
 
 interface CockpitCardSetting {
   id?: string
@@ -346,7 +352,7 @@ export default function SuperAdminSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
           <TabsTrigger value="system" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             System
@@ -354,6 +360,10 @@ export default function SuperAdminSettings() {
           <TabsTrigger value="cockpit" className="flex items-center gap-2">
             <LayoutDashboard className="h-4 w-4" />
             Cockpit-Karten
+          </TabsTrigger>
+          <TabsTrigger value="parameters" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Globale Kennzahlen
           </TabsTrigger>
         </TabsList>
 
@@ -440,6 +450,23 @@ export default function SuperAdminSettings() {
               {saving ? "Speichert..." : "Einstellungen speichern"}
             </Button>
           </div>
+        </TabsContent>
+
+        <TabsContent value="parameters" className="space-y-6 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Globale Kennzahlen-Verwaltung
+              </CardTitle>
+              <CardDescription>
+                Verwalten Sie globale Kennzahlen (KPIs) die allen Praxen zur Verfügung stehen
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GlobalParameterManagement />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="cockpit" className="space-y-6 mt-6">

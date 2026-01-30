@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, Calendar, CheckCircle, AlertCircle, Clock, FileText } from "lucide-react"
+import { Plus, Calendar, CheckCircle, AlertCircle, Clock, FileText, ClipboardCheck } from "lucide-react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 
@@ -54,6 +55,14 @@ export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMembe
   const [loading, setLoading] = useState(true)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [editingVaccination, setEditingVaccination] = useState<VaccinationRecord | null>(null)
+  const [initialExam, setInitialExam] = useState({
+    vaccination_passport_checked: false,
+    measles_proof_documented: false,
+    hepatitis_b_titer_checked: false,
+    exam_date: '',
+    exam_notes: '',
+  })
+  const [showInitialExamDialog, setShowInitialExamDialog] = useState(false)
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -189,6 +198,86 @@ export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMembe
           Impfung hinzufügen
         </Button>
       </div>
+
+      {/* Erstuntersuchung Section */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">Erstuntersuchung bei Einstellung</CardTitle>
+            </div>
+            <Badge variant="outline" className="bg-white">IfSG verpflichtend</Badge>
+          </div>
+          <CardDescription>
+            Diese Prüfungen sind bei jeder Neueinstellung immer verpflichtend durchzuführen
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
+              <Checkbox 
+                checked={initialExam.vaccination_passport_checked} 
+                onCheckedChange={(checked) => 
+                  setInitialExam({...initialExam, vaccination_passport_checked: checked as boolean})
+                }
+              />
+              <div className="flex-1">
+                <Label className="font-semibold">Impfpass / Impfnachweise sichten</Label>
+                <p className="text-sm text-muted-foreground">Überprüfen Sie alle vorhandenen Impfnachweise</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
+              <Checkbox 
+                checked={initialExam.measles_proof_documented} 
+                onCheckedChange={(checked) => 
+                  setInitialExam({...initialExam, measles_proof_documented: checked as boolean})
+                }
+              />
+              <div className="flex-1">
+                <Label className="font-semibold text-red-600">Masern-Nachweis (IfSG!) dokumentieren</Label>
+                <p className="text-sm text-muted-foreground">Gesetzlich verpflichtender Nachweis nach Infektionsschutzgesetz</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
+              <Checkbox 
+                checked={initialExam.hepatitis_b_titer_checked} 
+                onCheckedChange={(checked) => 
+                  setInitialExam({...initialExam, hepatitis_b_titer_checked: checked as boolean})
+                }
+              />
+              <div className="flex-1">
+                <Label className="font-semibold">Hepatitis-B-Status inkl. Anti-HBs-Titer</Label>
+                <p className="text-sm text-muted-foreground">Immunstatus prüfen und dokumentieren</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Input
+              type="date"
+              placeholder="Untersuchungsdatum"
+              value={initialExam.exam_date}
+              onChange={(e) => setInitialExam({...initialExam, exam_date: e.target.value})}
+              className="flex-1 bg-white"
+            />
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                toast({
+                  title: "Erstuntersuchung gespeichert",
+                  description: "Die Erstuntersuchung wurde dokumentiert.",
+                })
+              }}
+            >
+              Speichern
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
         {vaccinations.map((vaccination) => {

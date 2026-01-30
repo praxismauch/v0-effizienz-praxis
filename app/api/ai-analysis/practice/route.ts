@@ -638,7 +638,7 @@ export async function POST(request: Request) {
     const blockedSteps = workflowStepsData.filter((s: any) => s.status === "blocked").length
     const totalSteps = workflowStepsData.length
     const stepCompletionRate = totalSteps > 0 ? ((completedSteps / totalSteps) * 100).toFixed(1) : 0
-    const stepBlockageRate = totalSteps > 0 ? ((blockedSteps / totalSteps) * 100).toFixed(1) : 0
+    const stepBlockageRate = totalSteps > 0 ? ((blockedSteps / totalSteps) * 100).toFixed(1) : "0"
 
     const categoryCount = orgaCategories.data?.length || 0
     const activeCategoriesCount = orgaCategories.data?.filter((c: any) => c.is_active)?.length || 0

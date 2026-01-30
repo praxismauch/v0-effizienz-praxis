@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, AlertTriangle, TrendingUp } from "lucide-react"
+import { StatsGrid } from "@/components/shared/stats-card"
 import type { InventoryItem } from "../types"
 
 interface InventoryStatsCardsProps {
@@ -14,55 +14,36 @@ export function InventoryStatsCards({ items }: InventoryStatsCardsProps) {
   const criticalItems = items.filter((i) => i.current_stock <= i.minimum_stock).length
   const totalValue = items.reduce((sum, i) => sum + i.current_stock * (i.unit_cost || 0), 0)
 
-  return (
-    <div className="grid gap-4 md:grid-cols-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Artikel gesamt</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-blue-500" />
-            <span className="text-2xl font-bold">{totalItems}</span>
-          </div>
-        </CardContent>
-      </Card>
+  const stats = [
+    {
+      label: "Artikel gesamt",
+      value: totalItems,
+      icon: Package,
+      iconColor: "text-blue-600",
+      iconBgColor: "bg-blue-100",
+    },
+    {
+      label: "Niedriger Bestand",
+      value: lowStockItems,
+      icon: AlertTriangle,
+      iconColor: "text-amber-600",
+      iconBgColor: "bg-amber-100",
+    },
+    {
+      label: "Kritisch",
+      value: criticalItems,
+      icon: AlertTriangle,
+      iconColor: "text-red-600",
+      iconBgColor: "bg-red-100",
+    },
+    {
+      label: "Gesamtwert",
+      value: `${totalValue.toFixed(2)} €`,
+      icon: TrendingUp,
+      iconColor: "text-emerald-600",
+      iconBgColor: "bg-emerald-100",
+    },
+  ]
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Niedriger Bestand</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            <span className="text-2xl font-bold">{lowStockItems}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Kritisch</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-            <span className="text-2xl font-bold">{criticalItems}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Gesamtwert</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-emerald-500" />
-            <span className="text-2xl font-bold">{totalValue.toFixed(2)} €</span>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  return <StatsGrid stats={stats} columns={4} />
 }

@@ -150,9 +150,11 @@ export function HygienePage() {
 
   useEffect(() => {
     if (currentPractice?.id) {
-      loadPlans()
-      loadExecutions()
-    } else if (currentPractice !== undefined) {
+      setIsLoading(true)
+      Promise.all([loadPlans(), loadExecutions()]).finally(() => {
+        setIsLoading(false)
+      })
+    } else if (currentPractice !== undefined && !currentPractice?.id) {
       // Practice loaded but no ID - stop loading
       setIsLoading(false)
     }

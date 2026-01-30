@@ -33,7 +33,7 @@ export async function GET(
       throw error
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json({ analysis: data })
   } catch (error: any) {
     console.error("[v0] Error in IGEL GET [id]:", error)
     return NextResponse.json(

@@ -201,12 +201,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: Shield,
         key: "cirs",
       },
-      {
-        name: t("sidebar.hygiene", "Hygieneplan"),
-        href: "/hygiene",
-        icon: Shield,
-        key: "hygiene",
-      },
     ],
   },
   {
@@ -355,6 +349,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: Stethoscope,
         key: "devices",
         badge: "devices",
+      },
+      {
+        name: t("sidebar.hygiene", "Hygieneplan"),
+        href: "/hygiene",
+        icon: Shield,
+        key: "hygiene",
       },
       {
         name: t("sidebar.messages", "Nachrichten"),

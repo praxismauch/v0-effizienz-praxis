@@ -556,6 +556,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
     const saveFavorites = async () => {
       try {
+        console.log("[v0] Saving favorites:", favorites)
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -564,11 +565,25 @@ export function AppSidebar({ className }: AppSidebarProps) {
             favorites: favorites,
           }),
         })
+        
         if (!response.ok) {
-          console.error("Failed to save favorites, status:", response.status)
+          const errorText = await response.text()
+          console.error("[v0] Failed to save favorites:", {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+          })
+          
+          // If it's a schema error, log helpful message
+          if (errorText.includes("favorites") && errorText.includes("column")) {
+            console.error("[v0] Database schema issue: 'favorites' column may not exist in user_sidebar_preferences table")
+            console.error("[v0] Please run: scripts/fix-user-sidebar-preferences-table.sql")
+          }
+        } else {
+          console.log("[v0] Favorites saved successfully")
         }
       } catch (error) {
-        console.error("Error saving favorites:", error)
+        console.error("[v0] Error saving favorites:", error)
       }
     }
 

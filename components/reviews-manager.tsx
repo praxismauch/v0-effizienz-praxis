@@ -106,6 +106,8 @@ function ReviewsManager({ practiceId: propPracticeId }: { practiceId?: string } 
   useEffect(() => {
     if (practiceId) {
       loadReviews()
+    } else {
+      setIsLoading(false)
     }
   }, [practiceId])
 
@@ -239,6 +241,24 @@ function ReviewsManager({ practiceId: propPracticeId }: { practiceId?: string } 
 
   const fetchReviews = () => {
     loadReviews()
+  }
+
+  if (!practiceId) {
+    return (
+      <Card>
+        <CardContent className="py-12">
+          <div className="text-center space-y-4">
+            <Star className="h-16 w-16 mx-auto text-muted-foreground/20" />
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Keine Praxis-ID verfügbar</h3>
+              <p className="text-muted-foreground">
+                Bitte stellen Sie sicher, dass Sie einer Praxis zugeordnet sind.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   if (isLoading) {

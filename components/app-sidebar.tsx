@@ -593,18 +593,16 @@ export function AppSidebar({ className }: AppSidebarProps) {
         
         if (!response.ok) {
           const errorText = await response.text()
-          console.error("[v0] Failed to save favorites to database (using localStorage):", {
+          console.warn("[v0] Failed to save favorites to database (using localStorage fallback):", {
             status: response.status,
-            error: errorText,
           })
-          
-          // If it's a schema error, show helpful message but don't fail
-          if (errorText.includes("favorites") && errorText.includes("PGRST204")) {
-            console.warn("[v0] Database schema cache issue - favorites saved to localStorage only")
-            console.warn("[v0] Run 'scripts/reload-schema-cache.sql' to fix")
-          }
         } else {
-          console.log("[v0] Favorites saved successfully to database")
+          const data = await response.json()
+          if (data.warning) {
+            console.log("[v0] Favorites saved to localStorage (database schema pending)")
+          } else {
+            console.log("[v0] Favorites saved successfully")
+          }
         }
       } catch (error) {
         console.error("[v0] Error saving favorites:", error)

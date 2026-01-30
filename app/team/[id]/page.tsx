@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -80,19 +80,60 @@ export default function TeamMemberDetailPage() {
   const { roleColors } = useRoleColors()
 
   const { teamMembers, teams } = useTeam()
-  const { currentUser, isAdmin } = useUser()
+  const { currentUser, isAdmin, currentPractice } = useUser()
 
-  console.log("[v0] Team member detail page - memberId:", memberId)
-  console.log("[v0] Available team members:", teamMembers.length)
-  console.log("[v0] Team member IDs:", teamMembers.map(m => m.id))
+  const [member, setMember] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("overview")
 
-  const member = teamMembers.find((m) => m.id === memberId)
-  
-  console.log("[v0] Found member:", member ? "Yes" : "No")
+  // Fetch member data
+  useEffect(() => {
+    const fetchMember = async () => {
+      // First, try to find in context
+      const contextMember = teamMembers.find((m) => m.id === memberId)
+      
+      if (contextMember) {
+        console.log("[v0] Member found in context")
+        setMember(contextMember)
+        setLoading(false)
+        return
+      }
+      
+      // If not in context and we have a practice ID, fetch from API
+      if (!currentPractice?.id) {
+        console.log("[v0] No practice ID available")
+        setLoading(false)
+        return
+      }
+      
+      try {
+        console.log("[v0] Fetching member from API:", memberId)
+        const response = await fetch(`/api/practices/${currentPractice.id}/team-members`)
+        
+        if (response.ok) {
+          const data = await response.json()
+          const fetchedMember = data.teamMembers?.find((m: any) => m.id === memberId)
+          
+          if (fetchedMember) {
+            console.log("[v0] Member found in API response")
+            setMember(fetchedMember)
+          } else {
+            console.log("[v0] Member not found in API response")
+          }
+        } else {
+          console.error("[v0] Failed to fetch members:", response.status)
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching member:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchMember()
+  }, [memberId, teamMembers, currentPractice?.id])
 
   const canEdit = isAdmin || currentUser?.id === memberId
-
-  const [activeTab, setActiveTab] = useState("overview")
 
   const calculateAge = (dateOfBirth: string | null): number | null => {
     if (!dateOfBirth) return null
@@ -104,6 +145,19 @@ export default function TeamMemberDetailPage() {
       age--
     }
     return age
+  }
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
+            <p className="text-muted-foreground">Lade Teammitglied...</p>
+          </CardContent>
+        </Card>
+      </AppLayout>
+    )
   }
 
   if (!member) {

@@ -165,18 +165,18 @@ export function IgelManagement() {
                 onClick={() => router.push(`/igel/${analysis.id}`)}
               >
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{analysis.service_name}</CardTitle>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-xl font-bold truncate">{analysis.service_name}</CardTitle>
                     {analysis.category && (
-                      <Badge variant="outline" className="mt-2">
+                      <Badge variant="outline" className="mt-2 text-xs">
                         {analysis.category}
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {getScoreIcon(analysis.profitability_score || 0)}
-                    <span className="text-sm font-medium">{analysis.profitability_score || 0}</span>
+                    <span className="text-lg font-bold">{analysis.profitability_score || 0}</span>
                   </div>
                 </div>
               </CardHeader>
@@ -195,12 +195,14 @@ export function IgelManagement() {
                   const isProfitable = profitPerItem > 0
                   
                   return (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className={`h-4 w-4 ${isProfitable ? "text-green-600" : "text-red-600"}`} />
-                        <span className="text-sm font-medium">Gewinn pro Leistung</span>
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded ${isProfitable ? "bg-green-50" : "bg-red-50"}`}>
+                          <DollarSign className={`h-5 w-5 ${isProfitable ? "text-green-600" : "text-red-600"}`} />
+                        </div>
+                        <span className="text-sm font-medium text-muted-foreground">Gewinn pro Leistung</span>
                       </div>
-                      <span className={`text-lg font-bold ${isProfitable ? "text-green-600" : "text-red-600"}`}>
+                      <span className={`text-2xl font-bold tabular-nums ${isProfitable ? "text-green-600" : "text-red-600"}`}>
                         {profitPerItem >= 0 ? "+" : ""}{profitPerItem.toFixed(2)} €
                       </span>
                     </div>
@@ -208,8 +210,8 @@ export function IgelManagement() {
                 })()}
                 
                 {analysis.break_even_point > 0 && (
-                  <p className="text-sm">
-                    Break-Even: <span className="font-medium">{analysis.break_even_point} Leistungen</span>
+                  <p className="text-sm text-muted-foreground">
+                    Break-Even: <span className="font-semibold text-foreground">{analysis.break_even_point} Leistungen</span>
                   </p>
                 )}
                 {/* Honorarstundensatz-SZL: price * 60 / arzt_minutes */}

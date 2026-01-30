@@ -339,6 +339,45 @@ export default function WellbeingPageClient() {
     }
   }
 
+  const handleStartFirstSurvey = async () => {
+    if (!currentPractice?.id) return
+
+    console.log("[v0] Starting first survey...")
+    try {
+      const res = await fetch(`/api/practices/${currentPractice.id}/wellbeing/surveys`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Wöchentliche Stimmungsumfrage",
+          description: "Anonyme Umfrage zur Team-Stimmung",
+          survey_type: "weekly",
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        console.log("[v0] Survey created:", data.survey)
+        setActiveSurvey(data.survey)
+        setSurveys([data.survey, ...surveys])
+        setShowSurveyDialog(true)
+        toast({
+          title: "Umfrage erstellt",
+          description: "Die erste Stimmungsumfrage wurde gestartet.",
+        })
+      } else {
+        console.error("[v0] Failed to create survey:", res.status, res.statusText)
+        throw new Error("Failed to create survey")
+      }
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Umfrage konnte nicht erstellt werden.",
+        variant: "destructive",
+      })
+      console.error("[v0] Error creating survey:", error)
+    }
+  }
+
   const handleSubmitMoodResponse = async () => {
     if (!currentPractice?.id) return
 
@@ -748,7 +787,7 @@ export default function WellbeingPageClient() {
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <Meh className="h-12 w-12 text-muted-foreground mb-4" />
                       <p className="text-muted-foreground">Noch keine Stimmungsdaten vorhanden</p>
-                      <Button variant="outline" className="mt-4" onClick={() => setShowSurveyDialog(true)}>
+                      <Button variant="outline" className="mt-4" onClick={handleStartFirstSurvey}>
                         Erste Umfrage starten
                       </Button>
                     </div>

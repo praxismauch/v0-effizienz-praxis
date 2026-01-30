@@ -196,19 +196,16 @@ export default function PageClient({ practiceId }: PageClientProps) {
   return (
     <AppLayout>
       <div className="space-y-8">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white p-8 md:p-12">
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <Compass className="h-10 w-10" />
-              <h1 className="text-4xl font-bold tracking-tight">Strategie-Reise</h1>
-            </div>
-            <p className="text-xl text-blue-100 leading-relaxed max-w-3xl">
-              Entwickeln Sie systematisch eine zukunftsfähige Strategie für Ihre Praxis. Von der Vision bis zur
-              Umsetzung – Schritt für Schritt zum Erfolg.
-            </p>
+        {/* Header Section */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Compass className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold">Strategie-Reise</h1>
           </div>
-          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-blue-600/20 to-transparent"></div>
+          <p className="text-muted-foreground max-w-3xl">
+            Entwickeln Sie systematisch eine zukunftsfähige Strategie für Ihre Praxis. Von der Vision bis zur
+            Umsetzung – Schritt für Schritt zum Erfolg.
+          </p>
         </div>
 
         {/* Progress Overview */}

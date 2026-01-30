@@ -117,13 +117,19 @@ export default function CIRSPageClient() {
         const data = await response.json()
         setIncidents(data.incidents || [])
       } else {
-        throw new Error("Failed to fetch incidents")
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        throw new Error(errorData.error || "Failed to fetch incidents")
       }
     } catch (error) {
       console.error("Error fetching incidents:", error)
+      const errorMessage = error instanceof Error ? error.message : "Vorfälle konnten nicht geladen werden."
+      const isSchemaError = errorMessage.includes("schema cache") || errorMessage.includes("PGRST205")
+      
       toast({
         title: "Fehler beim Laden",
-        description: "Vorfälle konnten nicht geladen werden.",
+        description: isSchemaError 
+          ? "Die Datenbank wird aktualisiert. Bitte laden Sie die Seite in wenigen Sekunden neu." 
+          : errorMessage,
         variant: "destructive",
       })
     } finally {

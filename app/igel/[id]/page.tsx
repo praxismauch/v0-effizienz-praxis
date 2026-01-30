@@ -1,11 +1,11 @@
 import { Suspense } from "react"
-import { IgelManagement } from "@/components/igel/igel-management"
 import { AppLayout } from "@/components/app-layout"
 import { Skeleton } from "@/components/ui/skeleton"
+import { IgelAnalysisView } from "@/components/igel/igel-analysis-view"
 
 export const metadata = {
-  title: "Selbstzahlerleistungen | Effizienz Praxis",
-  description: "Analysieren Sie die Rentabilität Ihrer Selbstzahlerleistungen",
+  title: "Analyse Details | Effizienz Praxis",
+  description: "Detaillierte Analyse der Selbstzahlerleistung",
 }
 
 function LoadingSkeleton() {
@@ -18,11 +18,13 @@ function LoadingSkeleton() {
   )
 }
 
-export default function IgelPage() {
+export default async function IgelAnalysisPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  
   return (
     <AppLayout>
       <Suspense fallback={<LoadingSkeleton />}>
-        <IgelManagement />
+        <IgelAnalysisView analysisId={id} />
       </Suspense>
     </AppLayout>
   )

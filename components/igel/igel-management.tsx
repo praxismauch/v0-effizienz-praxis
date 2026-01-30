@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useUser } from "@/contexts/user-context" // Import useUser hook
 import { usePractice } from "@/contexts/practice-context" // Import usePractice hook
 import {
@@ -19,7 +20,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CreateIgelDialog } from "./create-igel-dialog"
-import { ViewIgelDialog } from "./view-igel-dialog"
 import { EditIgelDialog } from "./edit-igel-dialog"
 import { useIgelAnalyses } from "@/hooks/use-igel"
 
@@ -39,8 +39,8 @@ interface IgelAnalysis {
 }
 
 export function IgelManagement() {
+  const router = useRouter()
   const [createOpen, setCreateOpen] = useState(false)
-  const [viewAnalysis, setViewAnalysis] = useState<IgelAnalysis | null>(null)
   const [editAnalysis, setEditAnalysis] = useState<IgelAnalysis | null>(null)
   const { currentPractice } = usePractice()
 
@@ -80,50 +80,64 @@ export function IgelManagement() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
-            Selbstzahlerleistungen mit KI
-          </CardTitle>
-          <CardDescription>
-            Analysieren Sie systematisch, welche Selbstzahlerleistungen sich für Ihre Praxis lohnen
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Header with title and action button */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold">Selbstzahler-Analyse</h1>
+          <p className="text-muted-foreground">
+            Analysieren Sie Ihre Selbstzahlerleistungen auf Rentabilität und Optimierungspotenzial
+          </p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)} size="lg" className="shrink-0">
+          <Plus className="mr-2 h-4 w-4" />
+          Neue Analyse
+        </Button>
+      </div>
+
+      {/* Professional info card */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="p-3 rounded-lg bg-primary/10">
+              <Lightbulb className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-1">KI-gestützte Rentabilitätsanalyse</h3>
+              <p className="text-sm text-muted-foreground">
+                Finden Sie heraus, welche Selbstzahlerleistungen sich für Ihre Praxis wirklich lohnen
+              </p>
+            </div>
+          </div>
+          
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 rounded bg-background">
+                <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">Vollständige Kostenanalyse</h4>
-                <p className="text-sm text-muted-foreground">Fixkosten, variable Kosten und versteckte Aufwände</p>
+                <h4 className="font-medium text-sm">Vollständige Kostenanalyse</h4>
+                <p className="text-xs text-muted-foreground">Fixkosten, variable Kosten und versteckte Aufwände</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <DollarSign className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 rounded bg-background">
+                <DollarSign className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">3 Preisszenarien</h4>
-                <p className="text-sm text-muted-foreground">Konservativ, realistisch und optimistisch</p>
+                <h4 className="font-medium text-sm">3 Preisszenarien</h4>
+                <p className="text-xs text-muted-foreground">Konservativ, realistisch und optimistisch</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <Lightbulb className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 rounded bg-background">
+                <ThumbsUp className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">KI-Empfehlungen</h4>
-                <p className="text-sm text-muted-foreground">Optimierungsvorschläge und Best Practices</p>
+                <h4 className="font-medium text-sm">Klare Empfehlungen</h4>
+                <p className="text-xs text-muted-foreground">Datenbasierte Optimierungsvorschläge</p>
               </div>
             </div>
           </div>
-          <Button onClick={() => setCreateOpen(true)} className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            Neue Selbstzahlerleistung analysieren
-          </Button>
         </CardContent>
       </Card>
 
@@ -145,24 +159,24 @@ export function IgelManagement() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {analyses.map((analysis) => (
-            <Card
-              key={analysis.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setViewAnalysis(analysis)}
-            >
+              <Card
+                key={analysis.id}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => router.push(`/igel/${analysis.id}`)}
+              >
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{analysis.service_name}</CardTitle>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-xl font-bold truncate">{analysis.service_name}</CardTitle>
                     {analysis.category && (
-                      <Badge variant="outline" className="mt-2">
+                      <Badge variant="outline" className="mt-2 text-xs">
                         {analysis.category}
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {getScoreIcon(analysis.profitability_score || 0)}
-                    <span className="text-sm font-medium">{analysis.profitability_score || 0}</span>
+                    <span className="text-lg font-bold">{analysis.profitability_score || 0}</span>
                   </div>
                 </div>
               </CardHeader>
@@ -173,9 +187,31 @@ export function IgelManagement() {
                 {analysis.recommendation && (
                   <Badge variant={getRecommendationColor(analysis.recommendation)}>{analysis.recommendation}</Badge>
                 )}
+                
+                {/* Profit per item - using realistic scenario (index 1) */}
+                {analysis.pricing_scenarios?.length > 1 && analysis.pricing_scenarios[1]?.monthlyProfit !== undefined && analysis.pricing_scenarios[1]?.expected_monthly_demand > 0 && (() => {
+                  const scenario = analysis.pricing_scenarios[1] // Realistic scenario
+                  const profitPerItem = scenario.monthlyProfit / scenario.expected_monthly_demand
+                  const isProfitable = profitPerItem > 0
+                  
+                  return (
+                    <div className="rounded-lg bg-muted/30 border border-border p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Gewinn pro Leistung</span>
+                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded ${isProfitable ? "bg-green-50" : "bg-red-50"}`}>
+                          <DollarSign className={`h-4 w-4 ${isProfitable ? "text-green-600" : "text-red-600"}`} />
+                        </div>
+                      </div>
+                      <div className={`text-3xl font-bold tabular-nums mt-2 ${isProfitable ? "text-green-600" : "text-red-600"}`}>
+                        {profitPerItem >= 0 ? "+" : ""}{profitPerItem.toFixed(2)} €
+                      </div>
+                    </div>
+                  )
+                })()}
+                
                 {analysis.break_even_point > 0 && (
-                  <p className="text-sm">
-                    Break-Even: <span className="font-medium">{analysis.break_even_point} Leistungen</span>
+                  <p className="text-sm text-muted-foreground">
+                    Break-Even: <span className="font-semibold text-foreground">{analysis.break_even_point} Leistungen</span>
                   </p>
                 )}
                 {/* Honorarstundensatz-SZL: price * 60 / arzt_minutes */}
@@ -240,19 +276,6 @@ export function IgelManagement() {
           setCreateOpen(false)
         }}
       />
-
-      {viewAnalysis && (
-        <ViewIgelDialog
-          analysis={viewAnalysis}
-          open={!!viewAnalysis}
-          onOpenChange={(open) => !open && setViewAnalysis(null)}
-          onSuccess={() => mutateAnalyses()}
-          onEdit={(analysis) => {
-            setViewAnalysis(null)
-            setEditAnalysis(analysis)
-          }}
-        />
-      )}
 
       {editAnalysis && (
         <EditIgelDialog

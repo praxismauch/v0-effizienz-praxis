@@ -69,7 +69,7 @@ Antworte auf Deutsch, professionell und praxisorientiert.`
       const result = await generateText({
         model: "openai/gpt-4o-mini",
         prompt,
-        maxTokens: 1000,
+        maxOutputTokens: 1000,
       })
 
       const suggestions = result.text

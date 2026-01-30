@@ -109,43 +109,42 @@ export default function ZeiterfassungPageClient() {
       let result
       switch (stampAction) {
         case "start":
-          console.log("[v0] Calling clockIn with location:", selectedLocation)
           result = await clockIn(selectedLocation, stampComment)
-          console.log("[v0] clockIn result:", result)
           if (!result.success) {
-            throw new Error(result.error || "Clock in failed")
+            throw new Error(result.error || "Einstempeln fehlgeschlagen")
           }
-          console.log("[v0] Clock in successful, calling mutate to refresh status")
           await mutate()
-          console.log("[v0] Status refreshed after clock in")
           toast.success("Erfolgreich eingestempelt")
           break
         case "stop":
-          console.log("[v0] Calling clockOut")
           result = await clockOut(undefined, stampComment)
-          console.log("[v0] clockOut result:", result)
           if (!result.success) {
-            throw new Error(result.error || "Clock out failed")
+            throw new Error(result.error || "Ausstempeln fehlgeschlagen")
           }
-          console.log("[v0] Clock out successful, calling mutate to refresh status")
           await mutate()
-          console.log("[v0] Status refreshed after clock out")
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
-          console.log("[v0] Calling startBreak with blockId:", currentBlock?.id)
           if (!currentBlock?.id) {
             throw new Error("Kein aktiver Zeitblock gefunden. Bitte zuerst einstempeln.")
           }
           result = await startBreak(currentBlock.id)
-          console.log("[v0] startBreak result:", result)
           if (!result.success) {
-            throw new Error(result.error || "Start break failed")
+            throw new Error(result.error || "Pause starten fehlgeschlagen")
           }
-          console.log("[v0] Break started, calling mutate to refresh status")
           await mutate()
-          console.log("[v0] Status refreshed after starting break")
           toast.success("Pause gestartet")
+          break
+        case "pause_end":
+          if (!activeBreak?.id) {
+            throw new Error("Keine aktive Pause gefunden")
+          }
+          result = await endBreak(activeBreak.id)
+          if (!result.success) {
+            throw new Error(result.error || "Pause beenden fehlgeschlagen")
+          }
+          await mutate()
+          toast.success("Pause beendet")
           break
         case "pause_end":
           console.log("[v0] Calling endBreak with breakId:", activeBreak?.id)

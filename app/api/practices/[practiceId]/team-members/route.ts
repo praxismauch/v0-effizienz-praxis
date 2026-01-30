@@ -45,9 +45,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
-
-    console.log("[v0] team-members GET: Using practice ID:", practiceIdStr)
-
     const supabase = await createAdminClient()
 
     let customRoleOrder: string[] | undefined
@@ -162,13 +159,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     const sortedTeamMembers = sortTeamMembersByRole(teamMembers, customRoleOrder)
-
-    console.log("[v0] team-members GET: returning", sortedTeamMembers.length, "members")
-    console.log(
-      "[v0] team-members GET: Response sample:",
-      JSON.stringify(sortedTeamMembers.slice(0, 2)).substring(0, 300),
-    )
-
     return NextResponse.json({ teamMembers: sortedTeamMembers || [] })
   } catch (error: any) {
     if (isRateLimitError(error)) {

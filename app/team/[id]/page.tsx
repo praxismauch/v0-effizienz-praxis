@@ -96,46 +96,29 @@ export default function TeamMemberDetailPage() {
   // Fetch member data
   useEffect(() => {
     const fetchMember = async () => {
-      console.log("[v0] Looking for member ID:", memberId)
-      console.log("[v0] Team members in context:", teamMembers.length)
-      
       // First, try to find in context - check id, user_id, and team_member_id fields
       const contextMember = teamMembers.find((m: any) => 
         m.id === memberId || m.user_id === memberId || m.team_member_id === memberId
       )
       
       if (contextMember) {
-        console.log("[v0] Found member in context:", contextMember.name)
         setMember(contextMember)
         setLoading(false)
         return
       }
       
-      console.log("[v0] Member not in context, fetching from API")
-      
       // If not in context and we have a practice ID, fetch from API
       if (!currentPractice?.id) {
-        console.log("[v0] No practice ID available")
         setLoading(false)
         return
       }
       
       try {
         const apiUrl = `/api/practices/${currentPractice.id}/team-members`
-        console.log("[v0] Fetching from:", apiUrl)
         const response = await fetch(apiUrl)
         
         if (response.ok) {
           const data = await response.json()
-          console.log("[v0] API returned", data.teamMembers?.length || 0, "members")
-          
-          if (data.teamMembers && data.teamMembers.length > 0) {
-            console.log("[v0] Sample member IDs:", data.teamMembers.slice(0, 3).map((m: any) => ({
-              id: m.id,
-              user_id: m.user_id,
-              team_member_id: m.team_member_id
-            })))
-          }
           
           // Check id, user_id, and team_member_id fields when searching
           const fetchedMember = data.teamMembers?.find((m: any) => 
@@ -143,16 +126,11 @@ export default function TeamMemberDetailPage() {
           )
           
           if (fetchedMember) {
-            console.log("[v0] Found member in API response:", fetchedMember.name)
             setMember(fetchedMember)
-          } else {
-            console.log("[v0] Member not found in API response")
           }
-        } else {
-          console.log("[v0] API response not OK:", response.status)
         }
       } catch (error) {
-        console.error("[v0] Error fetching member:", error)
+        console.error("Error fetching member:", error)
       } finally {
         setLoading(false)
       }

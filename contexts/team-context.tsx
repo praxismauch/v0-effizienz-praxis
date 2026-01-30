@@ -101,6 +101,8 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     return rawMembers.map((m: Partial<TeamMember> & Record<string, unknown>) => ({
       ...m,
       id: (m.id || m.user_id) as string,
+      team_member_id: m.team_member_id as string | undefined,
+      user_id: m.user_id as string | undefined,
       name: m.name || `${m.first_name || ""} ${m.last_name || ""}`.trim() || "Unknown",
       practiceId: (m.practice_id as string)?.toString() || practiceId,
       teamIds: (m.team_ids as string[]) || m.teamIds || [],

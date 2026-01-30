@@ -61,6 +61,7 @@ export interface SwapRequest {
   target_shift_id: string
   status: "pending" | "approved" | "rejected"
   reason?: string
+  ai_recommendation?: string
   created_at?: string
   reviewed_at?: string
   reviewed_by?: string

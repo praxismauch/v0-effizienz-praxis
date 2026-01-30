@@ -17,8 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .select(
         `
         *,
-        parameter:analytics_parameters(id, name, category, unit, data_type),
-        user:users(id, name)
+        parameter:analytics_parameters(id, name, category, unit, data_type)
       `,
       )
       .eq("practice_id", practiceId)
@@ -26,7 +25,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (parameterId) {
       query = query.eq("parameter_id", parameterId)
-      console.log("[v0] Filtering by parameter ID:", parameterId)
     }
 
     if (month && year) {
@@ -42,9 +40,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       throw error
     }
 
-    console.log("[v0] Fetched parameter values:", data?.length || 0)
+    // Fetch user names from practice_members
+    const { data: members } = await supabase
+      .from("practice_members")
+      .select("user_id, first_name, last_name")
+      .eq("practice_id", practiceId)
 
-    return NextResponse.json(data || [])
+    const userMap: Record<string, string> = {}
+    members?.forEach((m) => {
+      if (m.user_id) {
+        userMap[m.user_id] = `${m.first_name || ""} ${m.last_name || ""}`.trim() || "Unbekannt"
+      }
+    })
+
+    // Enrich data with user names
+    const enrichedData = (data || []).map((item) => ({
+      ...item,
+      user: item.recorded_by ? { id: item.recorded_by, name: userMap[item.recorded_by] || "Unbekannt" } : null,
+    }))
+
+    return NextResponse.json(enrichedData)
   } catch (error) {
     console.error("[v0] Error fetching parameter values:", error)
     const errorMessage = error instanceof Error ? error.message : "Failed to fetch parameter values"
@@ -97,8 +112,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .select(
         `
         *,
-        parameter:analytics_parameters(id, name, category, unit, data_type),
-        user:users(id, name)
+        parameter:analytics_parameters(id, name, category, unit, data_type)
       `,
       )
       .single()
@@ -108,9 +122,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Parameter value created successfully:", data.id)
+    // Get user name from practice_members
+    const { data: member } = await supabase
+      .from("practice_members")
+      .select("first_name, last_name")
+      .eq("user_id", recordedBy)
+      .eq("practice_id", practiceId)
+      .single()
 
-    return NextResponse.json({ value: data })
+    const enrichedData = {
+      ...data,
+      user: {
+        id: recordedBy,
+        name: member ? `${member.first_name || ""} ${member.last_name || ""}`.trim() : "Unbekannt",
+      },
+    }
+
+    return NextResponse.json({ value: enrichedData })
   } catch (error) {
     console.error("[v0] Error creating parameter value:", error)
     const errorMessage = error instanceof Error ? error.message : "Failed to create parameter value"

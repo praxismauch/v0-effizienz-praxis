@@ -17,8 +17,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
         user_id,
         start_date,
         end_date,
-        status,
-        user:users!sick_leaves_user_id_fkey(id, name)
+        status
       `)
       .eq("practice_id", String(practiceId))
       .is("deleted_at", null)
@@ -29,6 +28,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       console.error("[v0] sick-leaves stats error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // Get team members for user names
+    const { data: teamMembers } = await supabase
+      .from("practice_members")
+      .select("user_id, first_name, last_name")
+      .eq("practice_id", String(practiceId))
+
+    const userNameMap: Record<string, string> = {}
+    teamMembers?.forEach((member) => {
+      if (member.user_id) {
+        userNameMap[member.user_id] = `${member.first_name || ""} ${member.last_name || ""}`.trim() || "Unbekannt"
+      }
+    })
 
     // Calculate statistics
     const monthlyStats: { [month: string]: number } = {}
@@ -53,7 +65,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       if (leave.user_id) {
         if (!userStats[leave.user_id]) {
           userStats[leave.user_id] = {
-            name: leave.user?.name || "Unbekannt",
+            name: userNameMap[leave.user_id] || "Unbekannt",
             days: 0,
           }
         }

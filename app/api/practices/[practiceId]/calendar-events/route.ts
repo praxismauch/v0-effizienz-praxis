@@ -7,9 +7,7 @@ const HARDCODED_PRACTICE_ID = "1"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    console.log("[v0] calendar-events GET: params object", params)
     const { practiceId } = await params
-    console.log("[v0] calendar-events GET: practiceId after await", practiceId, typeof practiceId)
 
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 

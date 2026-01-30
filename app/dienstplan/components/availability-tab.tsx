@@ -109,22 +109,38 @@ export default function AvailabilityTab({
   }
 
   const handleSaveAvailability = async (data: Partial<Availability>) => {
+    console.log("[v0] Saving availability with data:", data)
     const isEditing = !!editingAvailability
     const url = isEditing
       ? `/api/practices/${practiceId}/dienstplan/availability/${editingAvailability.id}`
       : `/api/practices/${practiceId}/dienstplan/availability`
 
-    const res = await fetch(url, {
-      method: isEditing ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
+    console.log("[v0] Request URL:", url, "Method:", isEditing ? "PUT" : "POST")
 
-    if (res.ok) {
-      toast({ title: isEditing ? "Verfügbarkeit aktualisiert" : "Verfügbarkeit erstellt" })
-      onRefresh()
-    } else {
-      throw new Error("Failed to save availability")
+    try {
+      const res = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+
+      console.log("[v0] Response status:", res.status)
+
+      if (res.ok) {
+        const result = await res.json()
+        console.log("[v0] Save successful:", result)
+        toast({ title: isEditing ? "Verfügbarkeit aktualisiert" : "Verfügbarkeit erstellt" })
+        onRefresh()
+      } else {
+        const error = await res.json()
+        console.error("[v0] Save failed with response:", error)
+        throw new Error(error.error || `Failed to save availability (${res.status})`)
+      }
+    } catch (error) {
+      console.error("[v0] Error in handleSaveAvailability:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to save availability"
+      toast({ title: "Fehler beim Speichern", description: errorMessage, variant: "destructive" })
+      throw error
     }
   }
 

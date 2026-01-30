@@ -58,6 +58,7 @@ import {
   TrendingUp,
   FileCheck,
   HelpCircle,
+  Shield,
 } from "lucide-react"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -152,13 +153,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: MessageSquare,
         key: "communication",
       },
-      {
-        name: t("sidebar.tickets", "Tickets"),
-        href: "/tickets",
-        icon: AlertCircle,
-        key: "tickets",
-        badge: "tickets",
-      },
     ],
   },
   {
@@ -178,22 +172,16 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "documents",
       },
       {
-        name: t("sidebar.journal", "Journal"),
-        href: "/journal",
-        icon: BookMarked,
-        key: "journal",
-      },
-      {
         name: t("sidebar.praxis_auswertung", "Praxis-Auswertung"),
         href: "/praxis-auswertung",
         icon: BarChart3,
         key: "praxis_auswertung",
       },
       {
-        name: t("sidebar.practice_insights", "Practice Insights"),
+        name: t("sidebar.journal", "Journal"),
         href: "/practice-insights",
         icon: TrendingUp,
-        key: "practice_insights",
+        key: "journal",
       },
       {
         name: t("sidebar.knowledge", "Wissen"),
@@ -206,6 +194,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/protocols",
         icon: FileCheck,
         key: "protocols",
+      },
+      {
+        name: t("sidebar.cirs", "Verbesserungsmeldung"),
+        href: "/cirs",
+        icon: Shield,
+        key: "cirs",
       },
     ],
   },
@@ -357,16 +351,10 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         badge: "devices",
       },
       {
-        name: t("sidebar.messages", "Nachrichten"),
-        href: "/messages",
-        icon: MessageSquare,
-        key: "messages",
-      },
-      {
-        name: t("sidebar.help", "Hilfe"),
-        href: "/help",
-        icon: HelpCircle,
-        key: "help",
+        name: t("sidebar.hygiene", "Hygieneplan"),
+        href: "/hygiene",
+        icon: Sparkles,
+        key: "hygiene",
       },
       {
         name: t("sidebar.settings", "Einstellungen"),

@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { Package, CheckCircle, Wrench, AlertTriangle } from "lucide-react"
+import { StatsGrid } from "@/components/shared/stats-card"
 import type { MedicalDevice } from "../types"
 
 interface DevicesStatsCardsProps {
@@ -15,60 +15,36 @@ export function DevicesStatsCards({
   devicesWithMaintenanceDue,
   devicesOverdue,
 }: DevicesStatsCardsProps) {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{devices.length}</p>
-              <p className="text-sm text-muted-foreground">Geräte gesamt</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{devices.filter((d) => d.status === "active").length}</p>
-              <p className="text-sm text-muted-foreground">Aktiv</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Wrench className="h-5 w-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{devicesWithMaintenanceDue.length}</p>
-              <p className="text-sm text-muted-foreground">Wartung fällig</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{devicesOverdue.length}</p>
-              <p className="text-sm text-muted-foreground">Überfällig</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  const stats = [
+    {
+      label: "Geräte gesamt",
+      value: devices.length,
+      icon: Package,
+      iconColor: "text-blue-600",
+      iconBgColor: "bg-blue-100",
+    },
+    {
+      label: "Aktiv",
+      value: devices.filter((d) => d.status === "active").length,
+      icon: CheckCircle,
+      iconColor: "text-green-600",
+      iconBgColor: "bg-green-100",
+    },
+    {
+      label: "Wartung fällig",
+      value: devicesWithMaintenanceDue.length,
+      icon: Wrench,
+      iconColor: "text-yellow-600",
+      iconBgColor: "bg-yellow-100",
+    },
+    {
+      label: "Überfällig",
+      value: devicesOverdue.length,
+      icon: AlertTriangle,
+      iconColor: "text-red-600",
+      iconBgColor: "bg-red-100",
+    },
+  ]
+
+  return <StatsGrid stats={stats} columns={4} />
 }

@@ -96,6 +96,14 @@ export default function ZeiterfassungPageClient() {
   // Handle stamp action
   const handleStamp = async () => {
     console.log("[v0] handleStamp called with action:", stampAction, "location:", selectedLocation)
+    console.log("[v0] practiceId:", practiceId, "userId:", user?.id)
+    
+    if (!practiceId || !user?.id) {
+      toast.error("Benutzerdaten fehlen. Bitte neu anmelden.")
+      console.error("[v0] Missing practiceId or userId")
+      return
+    }
+
     setIsStamping(true)
     try {
       let result
@@ -127,7 +135,7 @@ export default function ZeiterfassungPageClient() {
         case "pause_start":
           console.log("[v0] Calling startBreak with blockId:", currentBlock?.id)
           if (!currentBlock?.id) {
-            throw new Error("No active time block found")
+            throw new Error("Kein aktiver Zeitblock gefunden. Bitte zuerst einstempeln.")
           }
           result = await startBreak(currentBlock.id)
           console.log("[v0] startBreak result:", result)
@@ -142,7 +150,7 @@ export default function ZeiterfassungPageClient() {
         case "pause_end":
           console.log("[v0] Calling endBreak with breakId:", activeBreak?.id)
           if (!activeBreak?.id) {
-            throw new Error("No active break found")
+            throw new Error("Keine aktive Pause gefunden")
           }
           result = await endBreak(activeBreak.id)
           console.log("[v0] endBreak result:", result)

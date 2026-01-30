@@ -47,6 +47,9 @@ const PROTECTED_ROUTES = [
   "/knowledge",
   "/onboarding",
   "/tickets",
+  "/wellbeing",
+  "/cirs",
+  "/hygiene",
 ]
 
 // Helper function to check if path is protected
@@ -164,7 +167,7 @@ async function updateSession(request: NextRequest) {
   return supabaseResponse
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const supabaseResponse = await updateSession(request)
@@ -193,8 +196,6 @@ export async function proxy(request: NextRequest) {
 
   return addSecurityHeaders(supabaseResponse)
 }
-
-export default proxy
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],

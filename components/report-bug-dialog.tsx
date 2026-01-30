@@ -22,6 +22,7 @@ import { useUser } from "@/contexts/user-context"
 import { useTicketConfig } from "@/lib/tickets/hooks"
 import { typesToOptions, prioritiesToOptions } from "@/lib/tickets/utils"
 
+
 // Helper function to upload file via API
 async function uploadFileToServer(file: File): Promise<string> {
   const formData = new FormData()

@@ -3,23 +3,31 @@
 import { AppLayout } from "@/components/app-layout"
 import PageHeader from "@/components/page-header"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FileText, BarChart3, TrendingUp } from "lucide-react"
+import { FileText, BarChart3, TrendingUp, Layout } from "lucide-react"
 import KVAbrechnungManager from "@/components/kv-abrechnung-manager"
 import KVAbrechnungBericht from "@/components/kv-abrechnung-bericht"
+import { DiagrammeTab } from "./components/diagramme-tab"
 import { usePersistedTab } from "@/hooks/use-persisted-tab"
 
 export const dynamic = "force-dynamic"
 
 export default function PraxisAuswertungPage() {
-  const [activeTab, setActiveTab] = usePersistedTab("praxis-auswertung-page", "dateien")
+  const [activeTab, setActiveTab] = usePersistedTab("praxis-auswertung-page", "diagramme")
 
   return (
     <AppLayout>
-      <PageHeader title="Kennzahlen" subtitle="Umfassende Einblicke in Ihre Praxisleistung und Versorgungskennzahlen" />
+      <PageHeader
+        title="Kennzahlen"
+        subtitle="Umfassende Einblicke in Ihre Praxisleistung und Versorgungskennzahlen"
+      />
 
       <div className="mt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+            <TabsTrigger value="diagramme" className="gap-2">
+              <Layout className="h-4 w-4" />
+              Diagramme
+            </TabsTrigger>
             <TabsTrigger value="dateien" className="gap-2">
               <FileText className="h-4 w-4" />
               Dateien
@@ -33,6 +41,10 @@ export default function PraxisAuswertungPage() {
               Trends
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="diagramme">
+            <DiagrammeTab />
+          </TabsContent>
 
           <TabsContent value="dateien">
             <KVAbrechnungManager />

@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2, ArrowLeftRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -12,9 +12,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import ShiftDialog from "./shift-dialog"
+import SwapRequestDialog from "./swap-request-dialog"
 import type { TeamMember, Shift, ShiftType } from "../types"
 
 interface ScheduleTabProps {
@@ -51,6 +53,10 @@ export default function ScheduleTab({
   const [editingShift, setEditingShift] = useState<Shift | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
+  
+  // Swap dialog state
+  const [swapDialogOpen, setSwapDialogOpen] = useState(false)
+  const [swappingShift, setSwappingShift] = useState<Shift | null>(null)
 
   // Use teamMembers directly (with fallback to empty array)
   const filteredTeamMembers = teamMembers || []
@@ -91,6 +97,18 @@ export default function ScheduleTab({
     setSelectedDate(null)
     setSelectedMemberId(null)
     setDialogOpen(true)
+  }
+
+  // Swap shift handler
+  const onSwapShift = (shift: Shift) => {
+    setSwappingShift(shift)
+    setSwapDialogOpen(true)
+  }
+
+  // Swap success handler
+  const handleSwapSuccess = () => {
+    toast({ title: "Tausch-Anfrage gesendet", description: "Die Anfrage muss nun genehmigt werden." })
+    onRefresh()
   }
 
   // Delete shift handler - instant update using functional state
@@ -234,6 +252,11 @@ export default function ScheduleTab({
                                         </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => onSwapShift(shift)}>
+                                          <ArrowLeftRight className="h-4 w-4 mr-2" />
+                                          Tauschen
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => onEditShift(shift)}>
                                           <Edit className="h-4 w-4 mr-2" />
                                           Bearbeiten
@@ -275,6 +298,17 @@ export default function ScheduleTab({
         selectedDate={selectedDate}
         selectedMemberId={selectedMemberId || undefined}
         onSave={handleSaveShift}
+      />
+
+      <SwapRequestDialog
+        open={swapDialogOpen}
+        onOpenChange={setSwapDialogOpen}
+        currentShift={swappingShift}
+        allShifts={schedules || []}
+        shiftTypes={shiftTypes || []}
+        teamMembers={teamMembers || []}
+        practiceId={practiceId}
+        onSuccess={handleSwapSuccess}
       />
     </Card>
   )

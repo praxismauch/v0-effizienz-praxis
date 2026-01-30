@@ -48,6 +48,7 @@ const PROTECTED_ROUTES = [
   "/onboarding",
   "/tickets",
   "/wellbeing",
+  "/cirs",
 ]
 
 // Helper function to check if path is protected

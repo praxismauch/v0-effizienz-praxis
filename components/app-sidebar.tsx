@@ -58,6 +58,7 @@ import {
   TrendingUp,
   FileCheck,
   HelpCircle,
+  Shield,
 } from "lucide-react"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -193,6 +194,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/protocols",
         icon: FileCheck,
         key: "protocols",
+      },
+      {
+        name: t("sidebar.cirs", "CIRS"),
+        href: "/cirs",
+        icon: Shield,
+        key: "cirs",
       },
     ],
   },

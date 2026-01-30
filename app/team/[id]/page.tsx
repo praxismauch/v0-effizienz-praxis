@@ -85,6 +85,12 @@ export default function TeamMemberDetailPage() {
   const [member, setMember] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
+  const [mounted, setMounted] = useState(false)
+  
+  // Ensure client-side only
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Fetch member data
   useEffect(() => {
@@ -148,16 +154,18 @@ export default function TeamMemberDetailPage() {
 
   const canEdit = isAdmin || currentUser?.id === memberId
 
-  const calculateAge = (dateOfBirth: string | null): number | null => {
-    if (!dateOfBirth) return null
-    const today = new Date()
-    const birthDate = new Date(dateOfBirth)
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--
-    }
-    return age
+  // Prevent SSR mismatch - only render on client
+  if (!mounted) {
+    return (
+      <AppLayout>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
+            <p className="text-muted-foreground">Lädt...</p>
+          </CardContent>
+        </Card>
+      </AppLayout>
+    )
   }
 
   if (loading) {

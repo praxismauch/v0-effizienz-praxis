@@ -127,10 +127,18 @@ export default function HygienePlanClient() {
 
   const loadHygienePlans = async () => {
     try {
+      console.log("[v0] Loading hygiene plans for practice:", currentPractice?.id)
       const response = await fetch(`/api/practices/${currentPractice?.id}/hygiene-plans`)
+      console.log("[v0] Hygiene plans response status:", response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Hygiene plans loaded:", data.hygienePlans?.length || 0, "plans")
         setHygienePlans(data.hygienePlans || [])
+      } else {
+        const errorText = await response.text()
+        console.error("[v0] Error response:", errorText)
+        toast.error("Fehler beim Laden der Hygienepläne")
       }
     } catch (error) {
       console.error("[v0] Error loading hygiene plans:", error)

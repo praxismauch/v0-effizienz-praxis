@@ -280,7 +280,6 @@ export function UserProvider({
             } catch (fetchError: unknown) {
               // Handle network errors gracefully - user is not logged in
               const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError)
-              console.log("[v0] Auth getUser error (network):", errorMessage)
               if (errorMessage.includes("fetch") || errorMessage.includes("Failed") || errorMessage.includes("network")) {
                 throw new Error("Network error - no session available")
               }
@@ -289,7 +288,6 @@ export function UserProvider({
 
             if (authError || !authUser) {
               // No session is a normal state, not an error - user is not logged in
-              console.log("[v0] No active session:", authError?.message || "User not authenticated")
               setLoading(false)
               return
             }
@@ -303,12 +301,10 @@ export function UserProvider({
               .maybeSingle()
 
             if (profileError) {
-              console.log("[v0] Error fetching profile:", profileError.message)
               throw new Error(profileError.message || "Error fetching user profile")
             }
 
             if (!profile) {
-              console.log("[v0] No profile found, auto-creating for user:", authUser.id, authUser.email)
               // Auto-create profile via API
               try {
                 const createResponse = await fetch("/api/auth/ensure-profile", {
@@ -324,24 +320,16 @@ export function UserProvider({
                   }),
                 })
                 
-                console.log("[v0] ensure-profile response status:", createResponse.status)
-                
                 if (!createResponse.ok) {
                   const errorData = await createResponse.json().catch(() => ({ error: "Unknown error" }))
-                  console.log("[v0] Failed to auto-create profile - API error:", errorData)
                   throw new Error(`Failed to create user profile: ${errorData.error || createResponse.statusText}`)
                 }
                 
                 const responseData = await createResponse.json()
-                console.log("[v0] ensure-profile response data:", responseData)
-                
                 const createdProfile = responseData.user
                 if (!createdProfile) {
-                  console.log("[v0] No user in response:", responseData)
                   throw new Error("Profile creation returned no data")
                 }
-                
-                console.log("[v0] Profile created successfully:", createdProfile.email)
               } catch (fetchError) {
                 console.error("[v0] Error during profile creation fetch:", fetchError)
                 throw fetchError
@@ -362,12 +350,10 @@ export function UserProvider({
                   firstName: createdProfile.first_name,
                 }
 
-                console.log("[v0] Setting user state after profile creation:", user.email)
                 setCurrentUser(user)
                 await persistUserToStorage(user)
                 hasFetchedUser.current = true
                 dispatchAuthRecovered()
-                console.log("[v0] User context fully initialized after profile creation")
                 return
             }
 
@@ -385,7 +371,6 @@ export function UserProvider({
               firstName: profile.first_name,
             }
 
-            console.log("[v0] User loaded successfully:", user.email)
             setCurrentUser(user)
             await persistUserToStorage(user)
             hasFetchedUser.current = true
@@ -394,20 +379,16 @@ export function UserProvider({
           {
             maxAttempts: 3,
             initialDelay: 1000,
-            onRetry: (attempt, error) => {
-              console.log(`[v0] Retrying user fetch, attempt ${attempt}:`, error)
-            },
           },
         )
       } catch (error) {
-        console.error("[v0] Error fetching user after retries:", error)
+        console.error("Error fetching user after retries:", error)
         if (isAuthError(error)) {
           hasFetchedUser.current = true
         }
         setCurrentUser(null)
         await persistUserToStorage(null)
       } finally {
-        console.log("[v0] fetchUser complete, setting loading=false")
         setLoading(false)
       }
     }
@@ -462,7 +443,6 @@ export function UserProvider({
             }
 
             if (!profile) {
-              console.log("[v0] No profile in auth state change, auto-creating...")
               // Auto-create profile via API
               const createResponse = await fetch("/api/auth/ensure-profile", {
                 method: "POST",
@@ -478,13 +458,11 @@ export function UserProvider({
               })
               
               if (!createResponse.ok) {
-                console.error("[v0] Failed to auto-create profile in auth state change")
                 return
               }
               
               const { user: createdProfile } = await createResponse.json()
               if (!createdProfile) {
-                console.error("[v0] Profile creation returned no data")
                 return
               }
               

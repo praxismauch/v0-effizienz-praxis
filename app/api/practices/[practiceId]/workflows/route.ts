@@ -17,15 +17,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ workflows: [] }, { status: 200 })
     }
 
-    let supabase
-    try {
-      const access = await requirePracticeAccess(practiceId)
-      supabase = access.adminClient
-    } catch (error) {
-      // Auth failed during initial session - fallback to admin client
-      console.log("[v0] Workflows GET: Auth failed, using admin client fallback")
-      supabase = createAdminClient()
-    }
+    const access = await requirePracticeAccess(practiceId)
+    const supabase = access.adminClient
 
     let data: any[] = []
     try {
@@ -37,20 +30,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       if (error) {
         if (isRateLimitError(error)) {
-          console.warn("[v0] Workflows GET - Rate limited")
           return NextResponse.json({ workflows: [] }, { status: 200 })
         }
-        console.error("[v0] Workflows GET - Query error:", error.message || error)
+        console.error("Workflows query error:", error.message || error)
         return NextResponse.json({ workflows: [] }, { status: 200 })
       }
 
       data = result || []
     } catch (queryError) {
       if (isRateLimitError(queryError)) {
-        console.warn("[v0] Workflows GET - Rate limited, returning empty array")
         return NextResponse.json({ workflows: [] }, { status: 200 })
       }
-      console.error("[v0] Workflows GET - Query error:", queryError)
+      console.error("Workflows query error:", queryError)
       return NextResponse.json({ workflows: [] }, { status: 200 })
     }
 

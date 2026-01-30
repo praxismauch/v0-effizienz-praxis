@@ -12,14 +12,12 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 50
       lastError = error as Error
       const errorMessage = lastError?.message || String(error)
       if (errorMessage.includes("Too Many") || errorMessage.includes("rate") || errorMessage.includes("429")) {
-        console.log("[v0] Rate limit detected, retrying in", baseDelay * Math.pow(2, i), "ms")
         await new Promise((resolve) => setTimeout(resolve, baseDelay * Math.pow(2, i)))
         continue
       }
       throw error
     }
   }
-  console.log("[v0] Rate limit retries exhausted, returning null")
   return null
 }
 
@@ -30,14 +28,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const effectivePracticeId =
       practiceId && practiceId !== "0" && practiceId !== "undefined" ? String(practiceId) : "1"
 
-    let supabase
-    try {
-      const { adminClient } = await requirePracticeAccess(effectivePracticeId)
-      supabase = adminClient
-    } catch (error) {
-      console.log("[v0] todos GET: Auth failed, using admin client fallback")
-      supabase = createAdminClient()
-    }
+    const { adminClient } = await requirePracticeAccess(effectivePracticeId)
+    const supabase = adminClient
 
     const result = await withRetry(() =>
       supabase
@@ -49,7 +41,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     )
 
     if (result === null) {
-      console.log("[v0] Todos GET - Rate limited, returning empty array")
       return NextResponse.json([])
     }
 
@@ -58,7 +49,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (error) {
       const errorMessage = error.message || ""
       if (errorMessage.includes("Too Many") || errorMessage.includes("rate")) {
-        console.log("[v0] Todos GET - Rate limited via error, returning empty array")
         return NextResponse.json([])
       }
       console.error("Todos fetch error:", error)

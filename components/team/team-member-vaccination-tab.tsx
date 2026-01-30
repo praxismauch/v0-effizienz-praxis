@@ -62,8 +62,32 @@ export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMembe
     exam_date: '',
     exam_notes: '',
   })
+  const [followUpExams, setFollowUpExams] = useState<Array<{
+    id: string
+    exam_date: string
+    next_due_date: string
+    completed: boolean
+    notes: string
+  }>>([])
   const [showInitialExamDialog, setShowInitialExamDialog] = useState(false)
   const { toast } = useToast()
+
+  // Calculate next follow-up date (3 years from last exam)
+  const calculateNextFollowUp = (lastExamDate: string) => {
+    if (!lastExamDate) return null
+    const date = new Date(lastExamDate)
+    date.setFullYear(date.getFullYear() + 3)
+    return date.toISOString().split('T')[0]
+  }
+
+  // Check if follow-up is due
+  const isFollowUpDue = (nextDueDate: string) => {
+    if (!nextDueDate) return false
+    const today = new Date()
+    const dueDate = new Date(nextDueDate)
+    const diffDays = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    return diffDays <= 30 // Due within 30 days
+  }
 
   const [formData, setFormData] = useState({
     vaccination_type: '',
@@ -276,6 +300,106 @@ export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMembe
               Speichern
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Follow-up Examinations Section */}
+      <Card className="border-amber-200 bg-amber-50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-amber-600" />
+              <CardTitle className="text-lg">Nachuntersuchungen (alle 3 Jahre)</CardTitle>
+            </div>
+            <Badge variant="outline" className="bg-white">Zyklisch fällig</Badge>
+          </div>
+          <CardDescription>
+            Regelmäßige Kontrolle des Impfstatus alle 3 Jahre nach Erstuntersuchung
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {initialExam.exam_date && (
+            <div className="p-3 bg-white rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">Erstuntersuchung</p>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(initialExam.exam_date), 'dd.MM.yyyy', { locale: de })}
+                  </p>
+                </div>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Abgeschlossen
+                </Badge>
+              </div>
+              <div className="pt-2 border-t">
+                <p className="text-sm font-medium">Nächste Nachuntersuchung fällig:</p>
+                <p className="text-lg font-bold text-amber-700">
+                  {format(new Date(calculateNextFollowUp(initialExam.exam_date) || ''), 'dd.MM.yyyy', { locale: de })}
+                </p>
+                {isFollowUpDue(calculateNextFollowUp(initialExam.exam_date) || '') && (
+                  <Badge variant="destructive" className="mt-2">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Bald fällig
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!initialExam.exam_date && (
+            <div className="p-4 text-center text-muted-foreground bg-white rounded-lg">
+              <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">
+                Bitte zuerst eine Erstuntersuchung durchführen und dokumentieren
+              </p>
+            </div>
+          )}
+
+          {followUpExams.map((exam) => (
+            <div key={exam.id} className="p-3 bg-white rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">Nachuntersuchung</p>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(exam.exam_date), 'dd.MM.yyyy', { locale: de })}
+                  </p>
+                </div>
+                <Badge variant="outline" className={exam.completed ? "bg-green-50 text-green-700 border-green-200" : "bg-amber-50 text-amber-700 border-amber-200"}>
+                  {exam.completed ? 'Abgeschlossen' : 'Ausstehend'}
+                </Badge>
+              </div>
+              {exam.notes && (
+                <p className="text-sm text-muted-foreground">{exam.notes}</p>
+              )}
+            </div>
+          ))}
+
+          {initialExam.exam_date && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-2"
+              onClick={() => {
+                const nextDate = calculateNextFollowUp(initialExam.exam_date)
+                if (nextDate) {
+                  setFollowUpExams([...followUpExams, {
+                    id: Date.now().toString(),
+                    exam_date: new Date().toISOString().split('T')[0],
+                    next_due_date: calculateNextFollowUp(new Date().toISOString().split('T')[0]) || '',
+                    completed: true,
+                    notes: ''
+                  }])
+                  toast({
+                    title: "Nachuntersuchung dokumentiert",
+                    description: `Nächste Untersuchung fällig: ${format(new Date(calculateNextFollowUp(new Date().toISOString().split('T')[0]) || ''), 'dd.MM.yyyy', { locale: de })}`,
+                  })
+                }
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nachuntersuchung dokumentieren
+            </Button>
+          )}
         </CardContent>
       </Card>
 

@@ -7,10 +7,13 @@ import { Separator } from "@/components/ui/separator"
 const LEITBILD_CACHE_KEY = "effizienz-praxis-leitbild-cache"
 
 export function AppFooter() {
-  const currentYear = new Date().getFullYear()
+  const [currentYear, setCurrentYear] = useState<number>(2026)
   const [leitbild, setLeitbild] = useState<string | null>(null)
 
   useEffect(() => {
+    // Set current year on client side only
+    setCurrentYear(new Date().getFullYear())
+    
     // Read cached leitbild from localStorage
     try {
       const cached = localStorage.getItem(LEITBILD_CACHE_KEY)

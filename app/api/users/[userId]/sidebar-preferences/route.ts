@@ -126,6 +126,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     } else {
       console.log("[v0] Inserting new preferences for user", userId, "practice", effectivePracticeId, "favorites:", favorites)
       
+      const insertData: Record<string, unknown> = {
+        user_id: userId,
+        practice_id: effectivePracticeId,
+        expanded_groups: expanded_groups || ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
+        expanded_items: expanded_items || {},
+        is_collapsed: is_collapsed || false,
+        favorites: favorites || [],
+        collapsed_sections: [],
+      }
+      
       result = await adminClient
         .from("user_sidebar_preferences")
         .insert(insertData)

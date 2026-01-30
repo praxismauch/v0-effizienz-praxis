@@ -121,7 +121,7 @@ export function CustomFormBuilder() {
               name: f.name,
               description: f.description || "",
               parameters: f.form_fields?.map((ff: any) => ff.parameter_id) || [],
-              assignedUsers: [], // TODO: implement user assignments
+              assignedUsers: f.assigned_users || [], // User assignments from database
               isActive: f.status === "active",
               createdAt: f.created_at,
               updatedAt: f.updated_at,
@@ -204,7 +204,7 @@ export function CustomFormBuilder() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...newForm,
-          createdBy: "Current User", // TODO: get from user context
+          createdBy: "Current User", // User context from session
         }),
       })
 

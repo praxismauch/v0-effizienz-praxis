@@ -1,19 +1,22 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-// Do NOT import from lib/supabase/server.ts which uses next/headers
 import { createServerClient } from "@supabase/ssr"
 
+/**
+ * Edge-compatible logging utilities
+ * Optimized for middleware performance in Next.js 16
+ */
 const edgeLog = {
-  debug: (msg: string, data?: any) => {
+  debug: (msg: string, data?: unknown) => {
     if (process.env.NODE_ENV !== "production") {
-      console.log(`[proxy] ${msg}`, data || "")
+      console.log(`[middleware] ${msg}`, data ?? "")
     }
   },
-  error: (msg: string, error?: any) => {
-    console.error(`[proxy] ${msg}`, error || "")
+  error: (msg: string, error?: unknown) => {
+    console.error(`[middleware] ${msg}`, error ?? "")
   },
-  generateRequestId: () => `${Date.now()}-${Math.random().toString(36).substring(7)}`,
-}
+  generateRequestId: (): string => `${Date.now()}-${Math.random().toString(36).substring(7)}`,
+} as const
 
 // Expanded list of protected routes
 const PROTECTED_ROUTES = [
@@ -57,8 +60,16 @@ function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
 }
 
-// Rate limiting for middleware
-const ipRequestCounts = new Map<string, { count: number; resetTime: number }>()
+/**
+ * In-memory rate limiting for middleware
+ * Production apps should use Redis (Upstash) for distributed rate limiting
+ */
+interface RateLimitEntry {
+  count: number
+  resetTime: number
+}
+
+const ipRequestCounts = new Map<string, RateLimitEntry>()
 const MIDDLEWARE_RATE_LIMIT = 800
 const RATE_LIMIT_WINDOW = 60 * 1000
 
@@ -72,6 +83,7 @@ function checkMiddlewareRateLimit(ip: string): boolean {
   }
 
   if (entry.count >= MIDDLEWARE_RATE_LIMIT) {
+    edgeLog.debug(`Rate limit exceeded for IP: ${ip}`)
     return false
   }
 
@@ -79,7 +91,7 @@ function checkMiddlewareRateLimit(ip: string): boolean {
   return true
 }
 
-// Cleanup stale entries periodically
+// Cleanup stale entries periodically (Edge runtime compatible)
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now()
@@ -91,31 +103,52 @@ if (typeof setInterval !== "undefined") {
   }, 60000)
 }
 
+/**
+ * Apply security headers to all responses
+ * Next.js 16 compatible with enhanced security policies
+ */
 function addSecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set("X-Frame-Options", "DENY")
-  response.headers.set("X-Content-Type-Options", "nosniff")
-  response.headers.set("X-XSS-Protection", "1; mode=block")
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(self), geolocation=(), interest-cohort=()")
-  response.headers.set("X-DNS-Prefetch-Control", "on")
-  response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+  const headers = [
+    ["X-Frame-Options", "DENY"],
+    ["X-Content-Type-Options", "nosniff"],
+    ["X-XSS-Protection", "1; mode=block"],
+    ["Referrer-Policy", "strict-origin-when-cross-origin"],
+    ["Permissions-Policy", "camera=(), microphone=(self), geolocation=(), interest-cohort=()"],
+    ["X-DNS-Prefetch-Control", "on"],
+  ] as const
 
+  headers.forEach(([key, value]) => response.headers.set(key, value))
+
+  // HSTS only in production
   if (process.env.NODE_ENV === "production") {
-    response.headers.set(
-      "Content-Security-Policy",
-      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.vercel-insights.com wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.groq.com https://generativelanguage.googleapis.com https://gateway.ai.cloudflare.com https://*.vercel.ai; frame-ancestors 'none';",
-    )
+    response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+    
+    // Enhanced CSP for production
+    const cspDirectives = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.supabase.co https://*.vercel-insights.com wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.groq.com https://generativelanguage.googleapis.com https://gateway.ai.cloudflare.com https://*.vercel.ai",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ]
+    response.headers.set("Content-Security-Policy", cspDirectives.join("; "))
   }
 
   return response
 }
 
-async function updateSession(request: NextRequest) {
+/**
+ * Update and validate user session
+ * Next.js 16 optimized with proper error handling
+ */
+async function updateSession(request: NextRequest): Promise<NextResponse> {
   const requestId = edgeLog.generateRequestId()
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  let supabaseResponse = NextResponse.next({ request })
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -125,46 +158,59 @@ async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Create a fresh Supabase client for each request - this is important
-  // Do not cache or reuse this client
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
+  try {
+    // Create fresh Supabase client for each request
+    // IMPORTANT: Never cache or reuse this client
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+
+          supabaseResponse = NextResponse.next({ request })
+
+          cookiesToSet.forEach(({ name, value, options }) => 
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+    })
 
-        supabaseResponse = NextResponse.next({
-          request,
-        })
+    // CRITICAL: Do not run code between createServerClient and getUser()
+    // This prevents random logout issues
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
 
-        cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
-      },
-    },
-  })
+    if (error) {
+      edgeLog.error("Supabase auth error:", error)
+    }
 
-  // IMPORTANT: Do not run code between createServerClient and supabase.auth.getUser()
-  // A simple mistake could make it very hard to debug issues with users being randomly logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    // Redirect to login if accessing protected route without auth
+    const pathname = request.nextUrl.pathname
+    if (isProtectedRoute(pathname) && !user) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/auth/login"
+      url.searchParams.set("redirect", pathname)
 
-  // Redirect to login if accessing ANY protected route without auth
-  const pathname = request.nextUrl.pathname
-  if (isProtectedRoute(pathname) && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/auth/login"
-    url.searchParams.set("redirect", pathname)
+      edgeLog.debug(`Auth redirect: ${pathname} -> /auth/login`)
+      return NextResponse.redirect(url)
+    }
 
-    edgeLog.debug(`Auth redirect: ${pathname} -> /auth/login`)
-    return NextResponse.redirect(url)
+    // Add tracing headers
+    supabaseResponse.headers.set("x-request-id", requestId)
+    if (user) {
+      supabaseResponse.headers.set("x-user-id", user.id)
+    }
+
+    return supabaseResponse
+  } catch (error) {
+    edgeLog.error("Session update failed:", error)
+    return supabaseResponse
   }
-
-  // Add request ID header for tracing
-  supabaseResponse.headers.set("x-request-id", requestId)
-
-  return supabaseResponse
 }
 
 export async function middleware(request: NextRequest) {

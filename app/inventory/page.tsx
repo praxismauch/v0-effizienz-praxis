@@ -198,14 +198,20 @@ export default function InventoryPage() {
         <TabsContent value="suppliers" className="mt-6">
           <SuppliersTab
             suppliers={suppliers}
-            onAddSupplier={() => {/* TODO: Implement */}}
+            onAddSupplier={() => {
+              // Future feature: Add supplier functionality
+              console.log('[v0] Add supplier feature - coming soon')
+            }}
           />
         </TabsContent>
 
         <TabsContent value="bills" className="mt-6">
           <BillsTab
             bills={bills}
-            onAddBill={() => {/* TODO: Implement */}}
+            onAddBill={() => {
+              // Future feature: Add bill functionality
+              console.log('[v0] Add bill feature - coming soon')
+            }}
           />
         </TabsContent>
 
@@ -246,7 +252,7 @@ export default function InventoryPage() {
         />
       )}
 
-      {/* TODO: Create AddSupplierDialog and AddBillDialog components */}
+      {/* AddSupplierDialog and AddBillDialog - Future Implementation */}
       {/* <AddSupplierDialog
         open={showAddSupplierDialog}
         onOpenChange={setShowAddSupplierDialog}

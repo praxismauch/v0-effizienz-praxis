@@ -77,12 +77,17 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Next.js 16: headers() and cookies() must be awaited
   const headersList = await headers()
   const pathname = headersList.get("x-pathname") || headersList.get("x-invoke-path") || "/"
 
   let initialUser = null
   if (!isPublicRoute(pathname)) {
-    initialUser = await getCurrentUserProfile()
+    try {
+      initialUser = await getCurrentUserProfile()
+    } catch (error) {
+      console.error('[v0] Failed to get user profile:', error)
+    }
   }
 
   const cookieStore = await cookies()

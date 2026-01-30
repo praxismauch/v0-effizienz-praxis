@@ -200,6 +200,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: FileCheck,
         key: "protocols",
       },
+    ],
+  },
+  {
+    id: "quality-management",
+    label: t("sidebar.group.quality_management", "Qualitäts-Management"),
+    items: [
       {
         name: t("sidebar.hygieneplan", "Hygieneplan"),
         href: "/hygieneplan",

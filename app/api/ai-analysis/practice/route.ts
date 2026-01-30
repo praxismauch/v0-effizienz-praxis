@@ -1041,25 +1041,25 @@ Sei konstruktiv, aber ehrlich. Hebe Stärken hervor UND identifiziere konkrete V
             description: `Es sind ${totalWorkflows} Workflows in Ihrer Praxis aktiv, die Prozesse strukturieren.`,
             metric: `${totalWorkflows} Workflows`,
           },
-          ...(documents.data?.length > 0
+          ...((documents.data?.length ?? 0) > 0
             ? [
                 {
                   type: "success" as const,
                   category: "Dokumentation",
-                  title: `${documents.data?.length} Dokumente verwaltet`,
+                  title: `${documents.data?.length ?? 0} Dokumente verwaltet`,
                   description: "Eine gute Dokumentationsbasis ist vorhanden.",
-                  metric: `${documents.data?.length} Dokumente`,
+                  metric: `${documents.data?.length ?? 0} Dokumente`,
                 },
               ]
             : []),
-          ...(knowledge.data?.length > 0
+          ...((knowledge.data?.length ?? 0) > 0
             ? [
                 {
                   type: "success" as const,
                   category: "Wissensmanagement",
-                  title: `${knowledge.data?.length} Wissensbeiträge`,
+                  title: `${knowledge.data?.length ?? 0} Wissensbeiträge`,
                   description: "Ihre Wissensdatenbank enthält wertvolle Inhalte für das Team.",
-                  metric: `${knowledge.data?.length} Beiträge`,
+                  metric: `${knowledge.data?.length ?? 0} Beiträge`,
                 },
               ]
             : []),

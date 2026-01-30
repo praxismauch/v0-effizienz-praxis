@@ -8,7 +8,7 @@ interface InventoryStatsCardsProps {
   items: InventoryItem[]
 }
 
-export function InventoryStatsCards({ items }: InventoryStatsCardsProps) {
+export function InventoryStatsCards({ items = [] }: InventoryStatsCardsProps) {
   const totalItems = items.length
   const lowStockItems = items.filter((i) => i.current_stock <= i.reorder_point).length
   const criticalItems = items.filter((i) => i.current_stock <= i.minimum_stock).length

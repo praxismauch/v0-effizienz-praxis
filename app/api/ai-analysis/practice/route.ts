@@ -728,7 +728,7 @@ PRAXISDATEN - UMFASSENDE VOLLSTÄNDIGE ANALYSE:
         .map(([type, count]) => `${type}: ${count}`)
         .join(", ") || "Keine"
     }
-- 💡 Support-Effizienz: ${Number.parseFloat(ticketResolutionRate) > 85 ? "Sehr gut" : Number.parseFloat(ticketResolutionRate) > 70 ? "Gut" : Number.parseFloat(ticketResolutionRate) > 50 ? "Mittel" : "Verbesserungsbedarf"}
+- 💡 Support-Effizienz: ${Number.parseFloat(String(ticketResolutionRate)) > 85 ? "Sehr gut" : Number.parseFloat(String(ticketResolutionRate)) > 70 ? "Gut" : Number.parseFloat(String(ticketResolutionRate)) > 50 ? "Mittel" : "Verbesserungsbedarf"}
 
 ⭐ PATIENTENFEEDBACK & BEWERTUNGEN:
 - Google-Bewertungen: ${totalGoogleRatings}

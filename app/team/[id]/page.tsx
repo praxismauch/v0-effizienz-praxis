@@ -82,7 +82,13 @@ export default function TeamMemberDetailPage() {
   const { teamMembers, teams } = useTeam()
   const { currentUser, isAdmin } = useUser()
 
+  console.log("[v0] Team member detail page - memberId:", memberId)
+  console.log("[v0] Available team members:", teamMembers.length)
+  console.log("[v0] Team member IDs:", teamMembers.map(m => m.id))
+
   const member = teamMembers.find((m) => m.id === memberId)
+  
+  console.log("[v0] Found member:", member ? "Yes" : "No")
 
   const canEdit = isAdmin || currentUser?.id === memberId
 

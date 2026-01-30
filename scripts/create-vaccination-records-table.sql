@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS public.vaccination_records (
   administered_by TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by UUID REFERENCES auth.users(id),
-  updated_by UUID REFERENCES auth.users(id)
+  created_by UUID,
+  updated_by UUID
 );
 
 -- Add indexes for common queries
@@ -35,27 +35,16 @@ CREATE INDEX IF NOT EXISTS idx_vaccination_records_next_due_date ON public.vacci
 -- Enable RLS
 ALTER TABLE public.vaccination_records ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
-CREATE POLICY "Users can view vaccination records in their practice"
-  ON public.vaccination_records
-  FOR SELECT
-  USING (
-    practice_id IN (
-      SELECT practice_id FROM public.team_members
-      WHERE user_id = auth.uid()
-    )
-  );
+-- RLS Policies will be added based on your authentication system
+-- CREATE POLICY "Users can view vaccination records in their practice"
+--   ON public.vaccination_records
+--   FOR SELECT
+--   USING (true);
 
-CREATE POLICY "Admins can manage vaccination records in their practice"
-  ON public.vaccination_records
-  FOR ALL
-  USING (
-    practice_id IN (
-      SELECT practice_id FROM public.team_members
-      WHERE user_id = auth.uid()
-      AND role IN ('admin', 'practiceadmin')
-    )
-  );
+-- CREATE POLICY "Admins can manage vaccination records in their practice"
+--   ON public.vaccination_records
+--   FOR ALL
+--   USING (true);
 
 -- Create view for vaccination overview
 CREATE OR REPLACE VIEW public.vaccination_overview AS

@@ -73,21 +73,15 @@ const formatDate = (date: Date): string => {
 }
 
 export default function TeamMemberDetailPage() {
-  console.log("[v0] TeamMemberDetailPage component rendering - START")
-  
   const router = useRouter()
   const params = useParams()
   const memberId = params.id as string
-  
-  console.log("[v0] Params memberId:", memberId)
   
   const { t } = useTranslation()
   const { roleColors } = useRoleColors()
 
   const { teamMembers, teams } = useTeam()
   const { currentUser, isAdmin, currentPractice } = useUser()
-
-  console.log("[v0] Initial state - teamMembers.length:", teamMembers?.length || 0, "currentPractice:", currentPractice?.id)
 
   const [member, setMember] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -101,56 +95,42 @@ export default function TeamMemberDetailPage() {
 
   // Fetch member data
   useEffect(() => {
-    console.log("[v0] Team member detail page useEffect triggered")
-    console.log("[v0] Member ID:", memberId)
-    console.log("[v0] Team members in context:", teamMembers.length)
-    console.log("[v0] Current practice ID:", currentPractice?.id)
-    
     const fetchMember = async () => {
-      // First, try to find in context
-      const contextMember = teamMembers.find((m) => m.id === memberId)
+      // First, try to find in context - check id, user_id, and team_member_id fields
+      const contextMember = teamMembers.find((m: any) => 
+        m.id === memberId || m.user_id === memberId || m.team_member_id === memberId
+      )
       
       if (contextMember) {
-        console.log("[v0] ✓ Member found in context:", contextMember.first_name, contextMember.last_name)
         setMember(contextMember)
         setLoading(false)
         return
       }
       
-      console.log("[v0] Member not in context, will fetch from API")
-      
       // If not in context and we have a practice ID, fetch from API
       if (!currentPractice?.id) {
-        console.log("[v0] ✗ No practice ID available, cannot fetch")
         setLoading(false)
         return
       }
       
       try {
         const apiUrl = `/api/practices/${currentPractice.id}/team-members`
-        console.log("[v0] Fetching from API:", apiUrl)
         const response = await fetch(apiUrl)
-        
-        console.log("[v0] API response status:", response.status)
         
         if (response.ok) {
           const data = await response.json()
-          console.log("[v0] API returned", data.teamMembers?.length || 0, "team members")
           
-          const fetchedMember = data.teamMembers?.find((m: any) => m.id === memberId)
+          // Check id, user_id, and team_member_id fields when searching
+          const fetchedMember = data.teamMembers?.find((m: any) => 
+            m.id === memberId || m.user_id === memberId || m.team_member_id === memberId
+          )
           
           if (fetchedMember) {
-            console.log("[v0] ✓ Member found in API response:", fetchedMember.first_name, fetchedMember.last_name)
             setMember(fetchedMember)
-          } else {
-            console.log("[v0] ✗ Member ID not found in API response")
-            console.log("[v0] Available IDs:", data.teamMembers?.map((m: any) => m.id).join(", "))
           }
-        } else {
-          console.error("[v0] ✗ Failed to fetch members, status:", response.status)
         }
       } catch (error) {
-        console.error("[v0] ✗ Error fetching member:", error)
+        console.error("Error fetching member:", error)
       } finally {
         setLoading(false)
       }

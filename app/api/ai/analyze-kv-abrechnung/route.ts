@@ -126,13 +126,13 @@ Bitte generiere realistische Beispielwerte für diese KV Abrechnung.`,
       successful_analyses: fileAnalyses.filter((a) => !a.error).length,
       aggregated: {
         total_amount: fileAnalyses
-          .filter((a) => !a.error && a.total_amount)
+          .filter((a): a is Exclude<typeof a, { error: string }> => !a.error && 'total_amount' in a)
           .reduce((sum, a) => sum + (a.total_amount || 0), 0),
         total_patients: fileAnalyses
-          .filter((a) => !a.error && a.patient_count)
+          .filter((a): a is Exclude<typeof a, { error: string }> => !a.error && 'patient_count' in a)
           .reduce((sum, a) => sum + (a.patient_count || 0), 0),
         total_cases: fileAnalyses
-          .filter((a) => !a.error && a.case_count)
+          .filter((a): a is Exclude<typeof a, { error: string }> => !a.error && 'case_count' in a)
           .reduce((sum, a) => sum + (a.case_count || 0), 0),
       },
       analyzed_at: new Date().toISOString(),

@@ -129,6 +129,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       return {
         id: memberId,
+        team_member_id: member.id, // Always include the team_members table ID
         user_id: member.user_id,
         first_name: firstName,
         last_name: lastName,

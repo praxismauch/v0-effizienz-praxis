@@ -171,22 +171,16 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "documents",
       },
       {
-        name: t("sidebar.journal", "Journal"),
-        href: "/journal",
-        icon: BookMarked,
-        key: "journal",
-      },
-      {
         name: t("sidebar.praxis_auswertung", "Praxis-Auswertung"),
         href: "/praxis-auswertung",
         icon: BarChart3,
         key: "praxis_auswertung",
       },
       {
-        name: t("sidebar.practice_insights", "Practice Insights"),
+        name: t("sidebar.journal", "Journal"),
         href: "/practice-insights",
         icon: TrendingUp,
-        key: "practice_insights",
+        key: "journal",
       },
       {
         name: t("sidebar.knowledge", "Wissen"),

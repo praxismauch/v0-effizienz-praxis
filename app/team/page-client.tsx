@@ -59,10 +59,13 @@ export default function TeamPageClient() {
     if (!practiceId) return
 
     try {
-      const [membersRes, teamsRes, responsibilitiesRes] = await Promise.all([
+      const [membersRes, teamsRes, responsibilitiesRes, staffingRes, holidaysRes, sickLeavesRes] = await Promise.all([
         fetch(`/api/practices/${practiceId}/team-members`),
         fetch(`/api/practices/${practiceId}/teams`),
         fetch(`/api/practices/${practiceId}/responsibilities`),
+        fetch(`/api/practices/${practiceId}/staffing-plans`),
+        fetch(`/api/practices/${practiceId}/holiday-requests`),
+        fetch(`/api/practices/${practiceId}/sick-leaves`),
       ])
 
       if (membersRes.ok) {
@@ -76,6 +79,18 @@ export default function TeamPageClient() {
       if (responsibilitiesRes.ok) {
         const data = await responsibilitiesRes.json()
         setResponsibilities(() => data.responsibilities || [])
+      }
+      if (staffingRes.ok) {
+        const data = await staffingRes.json()
+        setStaffingPlans(() => data.staffingPlans || [])
+      }
+      if (holidaysRes.ok) {
+        const data = await holidaysRes.json()
+        setHolidayRequests(() => data.holidayRequests || [])
+      }
+      if (sickLeavesRes.ok) {
+        const data = await sickLeavesRes.json()
+        setSickLeaves(() => data.sickLeaves || [])
       }
     } catch (error) {
       console.error("Error fetching team data:", error)

@@ -353,7 +353,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
       {
         name: t("sidebar.hygiene", "Hygieneplan"),
         href: "/hygiene",
-        icon: Shield,
+        icon: Sparkles,
         key: "hygiene",
       },
       {

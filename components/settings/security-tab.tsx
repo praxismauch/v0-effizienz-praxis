@@ -1,12 +1,14 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Key, Loader2, Save, Shield } from "lucide-react"
+import { useUser } from "@/contexts/user-context"
+import { toast } from "sonner"
 
 interface PasswordSettings {
   currentPassword: string
@@ -14,23 +16,56 @@ interface PasswordSettings {
   confirmPassword: string
 }
 
-interface SecurityTabProps {
-  passwordSettings: PasswordSettings
-  onPasswordChange: (settings: PasswordSettings) => void
-  onChangePassword: () => void
-  saving: boolean
-  isAdmin: boolean
-  children?: React.ReactNode // For admin-only sections
-}
+export function SecurityTab() {
+  const { currentUser } = useUser()
+  const [passwordSettings, setPasswordSettings] = useState<PasswordSettings>({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  })
+  const [saving, setSaving] = useState(false)
+  
+  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "practice_owner"
 
-export function SecurityTab({
-  passwordSettings,
-  onPasswordChange,
-  onChangePassword,
-  saving,
-  isAdmin,
-  children,
-}: SecurityTabProps) {
+  const handleChangePassword = async () => {
+    if (passwordSettings.newPassword !== passwordSettings.confirmPassword) {
+      toast.error("Die Passwörter stimmen nicht überein")
+      return
+    }
+    
+    if (passwordSettings.newPassword.length < 8) {
+      toast.error("Das Passwort muss mindestens 8 Zeichen lang sein")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordSettings.currentPassword,
+          newPassword: passwordSettings.newPassword,
+        }),
+      })
+
+      if (response.ok) {
+        toast.success("Passwort erfolgreich geändert")
+        setPasswordSettings({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        })
+      } else {
+        const data = await response.json()
+        toast.error(data.error || "Fehler beim Ändern des Passworts")
+      }
+    } catch (error) {
+      toast.error("Fehler beim Ändern des Passworts")
+    } finally {
+      setSaving(false)
+    }
+  }
   return (
     <div className="space-y-4">
       <Card>
@@ -48,7 +83,7 @@ export function SecurityTab({
               id="current-password"
               type="password"
               value={passwordSettings.currentPassword}
-              onChange={(e) => onPasswordChange({ ...passwordSettings, currentPassword: e.target.value })}
+              onChange={(e) => setPasswordSettings({ ...passwordSettings, currentPassword: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -57,7 +92,7 @@ export function SecurityTab({
               id="new-password"
               type="password"
               value={passwordSettings.newPassword}
-              onChange={(e) => onPasswordChange({ ...passwordSettings, newPassword: e.target.value })}
+              onChange={(e) => setPasswordSettings({ ...passwordSettings, newPassword: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -66,11 +101,11 @@ export function SecurityTab({
               id="confirm-password"
               type="password"
               value={passwordSettings.confirmPassword}
-              onChange={(e) => onPasswordChange({ ...passwordSettings, confirmPassword: e.target.value })}
+              onChange={(e) => setPasswordSettings({ ...passwordSettings, confirmPassword: e.target.value })}
             />
           </div>
           <Button
-            onClick={onChangePassword}
+            onClick={handleChangePassword}
             disabled={!passwordSettings.currentPassword || !passwordSettings.newPassword || saving}
           >
             {saving ? (
@@ -87,8 +122,6 @@ export function SecurityTab({
           </Button>
         </CardContent>
       </Card>
-
-      {isAdmin && children}
     </div>
   )
 }

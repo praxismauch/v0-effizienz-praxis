@@ -152,6 +152,9 @@ export function HygienePage() {
     if (currentPractice?.id) {
       loadPlans()
       loadExecutions()
+    } else if (currentPractice !== undefined) {
+      // Practice loaded but no ID - stop loading
+      setIsLoading(false)
     }
   }, [currentPractice?.id])
 

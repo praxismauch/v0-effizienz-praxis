@@ -565,10 +565,10 @@ export function AppSidebar({ className }: AppSidebarProps) {
           }),
         })
         if (!response.ok) {
-          console.error("[v0] Failed to save favorites, status:", response.status)
+          console.error("Failed to save favorites, status:", response.status)
         }
       } catch (error) {
-        console.error("[v0] Error saving favorites:", error)
+        console.error("Error saving favorites:", error)
       }
     }
 

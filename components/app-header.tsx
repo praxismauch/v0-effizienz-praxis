@@ -549,12 +549,12 @@ function AppHeader() {
 
             {/* Bug Report Button */}
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger asChild suppressHydrationWarning>
                 <ReportBugDialog
                   open={isBugReportOpen}
                   onOpenChange={setIsBugReportOpen}
                   trigger={
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Button variant="ghost" size="icon" className="h-9 w-9" suppressHydrationWarning>
                       <Bug className="h-4 w-4" />
                     </Button>
                   }
@@ -624,8 +624,8 @@ function AppHeader() {
 
             {/* User Menu */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+              <DropdownMenuTrigger asChild suppressHydrationWarning>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full" suppressHydrationWarning>
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary/10 text-xs">{userInitials}</AvatarFallback>
                   </Avatar>

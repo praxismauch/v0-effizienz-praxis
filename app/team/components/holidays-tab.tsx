@@ -1,16 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Plus, Calendar, Check, X, Clock } from "lucide-react"
 import type { HolidayRequest, TeamMember } from "../types"
+import CreateHolidayRequestDialog from "./create-holiday-request-dialog"
 
 interface HolidaysTabProps {
   holidayRequests: HolidayRequest[]
   teamMembers: TeamMember[]
-  onCreateRequest: () => void
+  onRequestCreated: (request: HolidayRequest) => void
   onApproveRequest: (request: HolidayRequest) => void
   onRejectRequest: (request: HolidayRequest) => void
 }
@@ -18,10 +20,12 @@ interface HolidaysTabProps {
 export default function HolidaysTab({
   holidayRequests,
   teamMembers,
-  onCreateRequest,
+  onRequestCreated,
   onApproveRequest,
   onRejectRequest,
 }: HolidaysTabProps) {
+  const [dialogOpen, setDialogOpen] = useState(false)
+
   const getMember = (memberId: string) => {
     return teamMembers.find((m) => m.id === memberId)
   }
@@ -41,11 +45,21 @@ export default function HolidaysTab({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Urlaubsanträge</h3>
-        <Button onClick={onCreateRequest}>
+        <Button onClick={() => setDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Neuer Antrag
         </Button>
       </div>
+
+      <CreateHolidayRequestDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        teamMembers={teamMembers}
+        onRequestCreated={(request) => {
+          onRequestCreated(request)
+          setDialogOpen(false)
+        }}
+      />
 
       {holidayRequests.length === 0 ? (
         <Card>

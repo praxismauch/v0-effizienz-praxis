@@ -71,8 +71,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
+  console.log("[v0] POST /api/users/[userId]/sidebar-preferences - Request received")
   try {
     const { userId } = await params
+    console.log("[v0] POST - userId from params:", userId)
 
     const supabase = await createClient()
 
@@ -81,16 +83,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       error: authError,
     } = await supabase.auth.getUser()
 
+    console.log("[v0] POST - Auth check:", authError ? `Error: ${authError.message}` : `User: ${user?.id}`)
+
     if (authError || !user) {
+      console.log("[v0] POST - Unauthorized: no user")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     if (user.id !== userId) {
+      console.log("[v0] POST - Unauthorized: user ID mismatch")
       return NextResponse.json({ error: "Unauthorized - User ID mismatch" }, { status: 403 })
     }
 
     const body = await request.json()
     const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites } = body
+    console.log("[v0] POST - Body received:", { practice_id, favorites_count: favorites?.length })
 
     const effectivePracticeId = String(practice_id || "1")
 

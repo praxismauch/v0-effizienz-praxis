@@ -8,7 +8,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { data, error } = await supabase
       .from("user_favorites")
-      .select("item_path")
+      .select("favorite_path")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ favorites: [] })
     }
 
-    const favorites = data?.map((row) => row.item_path) || []
+    const favorites = data?.map((row) => row.favorite_path) || []
     return NextResponse.json({ favorites })
   } catch (error) {
     console.error("[v0] Error in GET favorites:", error)
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (action === "add") {
       const { error } = await supabase.from("user_favorites").upsert(
-        { user_id: userId, item_path },
-        { onConflict: "user_id,item_path" }
+        { user_id: userId, favorite_path: item_path },
+        { onConflict: "user_id,practice_id,favorite_path" }
       )
 
       if (error) {
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .from("user_favorites")
         .delete()
         .eq("user_id", userId)
-        .eq("item_path", item_path)
+        .eq("favorite_path", item_path)
 
       if (error) {
         console.error("[v0] Error removing favorite:", error)

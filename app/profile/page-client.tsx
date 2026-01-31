@@ -572,34 +572,6 @@ export default function ProfilePageClient() {
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Regionale Einstellungen
-                </CardTitle>
-                <CardDescription>Passen Sie regionale Präferenzen an</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Zeitzone</Label>
-                  <Select defaultValue="europe-berlin">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="europe-berlin">Europe/Berlin (CET)</SelectItem>
-                      <SelectItem value="europe-zurich">Europe/Zurich (CET)</SelectItem>
-                      <SelectItem value="europe-vienna">Europe/Vienna (CET)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Datums- und Zeitformat: DD.MM.YYYY, HH:mm (Deutsches Format)
-                </p>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Display Tab */}

@@ -19,7 +19,9 @@ import { useTranslation } from "@/contexts/translation-context"
 import { toast } from "sonner"
 import { useRoleColors } from "@/lib/use-role-colors"
 import { ContractsManager } from "@/components/team/contracts-manager"
-import { ArrowLeft, Clipboard, Trash2 } from "lucide-react"
+import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
+import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
+import { ArrowLeft, Clipboard, Trash2, Syringe, FileText, Cake } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -108,6 +110,7 @@ export default function EditTeamMemberPage() {
     teamIds: [] as string[],
     avatar: "",
     status: "active",
+    dateOfBirth: "",
   })
 
   const [activeTab, setActiveTab] = useState("profile")
@@ -142,6 +145,7 @@ export default function EditTeamMemberPage() {
         teamIds: member.teamIds,
         avatar: member.avatar || "",
         status: member.isActive ? "active" : "inactive",
+        dateOfBirth: member.date_of_birth || "",
       })
     }
   }, [member])
@@ -158,6 +162,7 @@ export default function EditTeamMemberPage() {
         permissions: canEditPermissions ? formData.permissions : member.permissions,
         avatar: formData.avatar,
         isActive: formData.status === "active",
+        date_of_birth: formData.dateOfBirth || null,
       })
 
       // Handle team assignments
@@ -468,11 +473,19 @@ export default function EditTeamMemberPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto gap-1">
             <TabsTrigger value="profile">Profil</TabsTrigger>
             {canEditPermissions && <TabsTrigger value="permissions">Berechtigungen</TabsTrigger>}
             <TabsTrigger value="contracts">Verträge</TabsTrigger>
             <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
+            <TabsTrigger value="vaccinations" className="gap-1">
+              <Syringe className="h-3 w-3" />
+              Impfstatus
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-1">
+              <FileText className="h-3 w-3" />
+              Dokumente
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
@@ -555,6 +568,18 @@ export default function EditTeamMemberPage() {
                       onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                       placeholder={formData.email.includes("@placeholder.local") ? "Keine E-Mail-Adresse" : ""}
                       className={formData.email.includes("@placeholder.local") ? "text-muted-foreground" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dateOfBirth" className="flex items-center gap-2">
+                      <Cake className="h-4 w-4" />
+                      Geburtsdatum
+                    </Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -710,6 +735,24 @@ export default function EditTeamMemberPage() {
                 teamMemberId={memberId}
                 practiceId={member.practice_id || ""}
                 isAdmin={isAdmin}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="vaccinations" className="space-y-4">
+            {member && (
+              <TeamMemberVaccinationTab
+                teamMemberId={memberId}
+                practiceId={Number(member.practice_id) || 1}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-4">
+            {member && (
+              <TeamMemberDocumentsTab
+                teamMemberId={memberId}
+                practiceId={member.practice_id || "1"}
               />
             )}
           </TabsContent>

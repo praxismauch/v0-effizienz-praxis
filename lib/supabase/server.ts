@@ -17,7 +17,23 @@ export async function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase not configured - missing environment variables")
+    console.warn("Supabase not configured - missing environment variables. Using placeholder client.")
+    // Return a mock client that will fail gracefully
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        getSession: async () => ({ data: { session: null }, error: null }),
+        signOut: async () => ({ error: null }),
+        signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
+        signUp: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
+      },
+      from: () => ({
+        select: () => ({ data: null, error: { message: "Supabase not configured" } }),
+        insert: () => ({ data: null, error: { message: "Supabase not configured" } }),
+        update: () => ({ data: null, error: { message: "Supabase not configured" } }),
+        delete: () => ({ data: null, error: { message: "Supabase not configured" } }),
+      }),
+    } as unknown as ReturnType<typeof supabaseCreateServerClient>
   }
 
   return supabaseCreateServerClient(supabaseUrl, supabaseAnonKey, {
@@ -58,7 +74,8 @@ export async function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Supabase admin client not configured - missing SUPABASE_SERVICE_ROLE_KEY")
+    console.warn("Supabase admin client not configured - missing SUPABASE_SERVICE_ROLE_KEY")
+    return null as unknown as SupabaseClient
   }
 
   adminClientCache = createSupabaseClient(supabaseUrl, serviceRoleKey, {

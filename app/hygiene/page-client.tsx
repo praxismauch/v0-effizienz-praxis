@@ -120,6 +120,10 @@ const STATUS_OPTIONS = [
 export function HygienePage() {
   const { currentPractice } = useUser()
   const { toast } = useToast()
+  
+  // Use fallback practice ID if currentPractice is not available
+  const practiceId = currentPractice?.id || "1"
+  
   const [plans, setPlans] = useState<HygienePlan[]>([])
   const [executions, setExecutions] = useState<HygienePlanExecution[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -149,22 +153,15 @@ export function HygienePage() {
   const [executionNotes, setExecutionNotes] = useState("")
 
   useEffect(() => {
-    if (currentPractice?.id) {
-      setIsLoading(true)
-      Promise.all([loadPlans(), loadExecutions()]).finally(() => {
-        setIsLoading(false)
-      })
-    } else if (currentPractice !== undefined && !currentPractice?.id) {
-      // Practice loaded but no ID - stop loading
+    setIsLoading(true)
+    Promise.all([loadPlans(), loadExecutions()]).finally(() => {
       setIsLoading(false)
-    }
-  }, [currentPractice?.id])
+    })
+  }, [practiceId])
 
   const loadPlans = async () => {
-    if (!currentPractice?.id) return
-
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/hygiene`)
+      const res = await fetch(`/api/practices/${practiceId}/hygiene`)
       if (res.ok) {
         const data = await res.json()
         setPlans(data.plans || [])
@@ -177,10 +174,8 @@ export function HygienePage() {
   }
 
   const loadExecutions = async () => {
-    if (!currentPractice?.id) return
-
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/hygiene/executions`)
+      const res = await fetch(`/api/practices/${practiceId}/hygiene/executions`)
       if (res.ok) {
         const data = await res.json()
         setExecutions(data.executions || [])
@@ -191,10 +186,8 @@ export function HygienePage() {
   }
 
   const handleCreatePlan = async () => {
-    if (!currentPractice?.id) return
-
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/hygiene`, {
+      const res = await fetch(`/api/practices/${practiceId}/hygiene`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -225,11 +218,9 @@ export function HygienePage() {
   }
 
   const handleGenerateWithAI = async () => {
-    if (!currentPractice?.id) return
-
     setIsGenerating(true)
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/hygiene/generate-rki`, {
+      const res = await fetch(`/api/practices/${practiceId}/hygiene/generate-rki`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -264,11 +255,11 @@ export function HygienePage() {
   }
 
   const handleExecutePlan = async () => {
-    if (!currentPractice?.id || !selectedPlan) return
+    if (!selectedPlan) return
 
     try {
       const res = await fetch(
-        `/api/practices/${currentPractice.id}/hygiene/${selectedPlan.id}/execute`,
+        `/api/practices/${practiceId}/hygiene/${selectedPlan.id}/execute`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -298,11 +289,9 @@ export function HygienePage() {
   }
 
   const handleAddToKnowledge = async (plan: HygienePlan) => {
-    if (!currentPractice?.id) return
-
     try {
       const res = await fetch(
-        `/api/practices/${currentPractice.id}/hygiene/${plan.id}/add-to-knowledge`,
+        `/api/practices/${practiceId}/hygiene/${plan.id}/add-to-knowledge`,
         {
           method: "POST",
         },

@@ -740,7 +740,6 @@ export default function EditTeamMemberPage() {
               <ArbeitsmittelAssignments
                 teamMemberId={memberId}
                 practiceId={member.practice_id || ""}
-                isAdmin={isAdmin}
               />
             )}
           </TabsContent>

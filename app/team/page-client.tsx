@@ -125,19 +125,19 @@ export default function TeamPageClient() {
     }
   }
 
-  const handleCreateTeam = () => toast.info("Team erstellen - Coming soon")
+  const handleCreateTeam = () => router.push("/teams/new")
   const handleEditTeam = (team: Team) => toast.info(`Team bearbeiten: ${team.name}`)
   const handleDeleteTeam = (team: Team) => toast.info(`Team löschen: ${team.name}`)
 
-  const handleCreateStaffingPlan = () => toast.info("Stellenplan erstellen - Coming soon")
+  const handleCreateStaffingPlan = () => router.push("/staffing-plans/new")
   const handleEditStaffingPlan = (plan: StaffingPlan) => toast.info(`Stellenplan: ${plan.name}`)
 
-  const handleCreateHolidayRequest = () => toast.info("Urlaubsantrag - Coming soon")
+  const handleCreateHolidayRequest = () => router.push("/holidays/new")
   const handleApproveHolidayRequest = (request: HolidayRequest) =>
     toast.success("Antrag genehmigt")
   const handleRejectHolidayRequest = (request: HolidayRequest) => toast.error("Antrag abgelehnt")
 
-  const handleCreateSickLeave = () => toast.info("Krankmeldung erfassen - Coming soon")
+  const handleCreateSickLeave = () => router.push("/sick-leaves/new")
 
   if (practiceLoading || isLoading) {
     return (
@@ -260,8 +260,7 @@ export default function TeamPageClient() {
         <TabsContent value="responsibilities" className="mt-6">
           <ResponsibilitiesTab
             responsibilities={responsibilities}
-            teamMembers={teamMembers}
-            onCreateResponsibility={() => router.push("/responsibilities")}
+            isAdmin={!!user}
           />
         </TabsContent>
 

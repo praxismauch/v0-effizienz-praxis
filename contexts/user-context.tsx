@@ -30,9 +30,15 @@ export interface User {
   firstName?: string
 }
 
+interface Practice {
+  id: string
+  name?: string
+}
+
 interface UserContextType {
   currentUser: User | null
   setCurrentUser: (user: User) => void
+  currentPractice: Practice | null
   isAdmin: boolean
   isSuperAdmin: boolean
   loading: boolean
@@ -613,6 +619,14 @@ export function UserProvider({
     setSuperAdmins((prev) => prev.map((admin) => (admin.id === id ? { ...admin, isActive: !admin.isActive } : admin)))
   }, [])
 
+  const currentPractice = useMemo(() => {
+    if (!currentUser || !currentUser.practiceId) return null
+    return {
+      id: currentUser.practiceId || currentUser.practice_id || "1",
+      name: undefined,
+    }
+  }, [currentUser])
+
   const contextValue = useMemo(
     () => ({
       currentUser,
@@ -622,6 +636,7 @@ export function UserProvider({
           Logger.error("context", "Error persisting user in setCurrentUser", error)
         })
       },
+      currentPractice,
       isAdmin,
       isSuperAdmin,
       loading,
@@ -635,6 +650,7 @@ export function UserProvider({
     }),
     [
       currentUser,
+      currentPractice,
       isAdmin,
       isSuperAdmin,
       loading,

@@ -570,6 +570,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           body: JSON.stringify({
             practice_id: practiceId,
             expanded_groups: expandedGroups,
+            favorites: favorites, // Include favorites to prevent overwriting
           }),
         })
       } catch (error) {
@@ -579,7 +580,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
     const timeoutId = setTimeout(saveExpandedGroups, 500)
     return () => clearTimeout(timeoutId)
-  }, [expandedGroups, currentUser?.id, currentPractice?.id, preferencesLoaded])
+  }, [expandedGroups, currentUser?.id, currentPractice?.id, preferencesLoaded, favorites])
 
   // Favorites are now saved immediately in toggleFavorite function
 
@@ -606,10 +607,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
                 scrollPosition,
                 selectedItem: pathname,
               },
+              favorites: favorites, // Include favorites to prevent overwriting
             }),
           })
         } catch (error) {
-          // Silently fail - scroll position is not critical
+          // Silently fail
         }
       }, 500)
     }
@@ -641,6 +643,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
               scrollPosition,
               selectedItem: pathname,
             },
+            favorites: favorites, // Include favorites to prevent overwriting
           }),
         })
       } catch (error) {
@@ -650,7 +653,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
     const timeoutId = setTimeout(saveSelectedItem, 300)
     return () => clearTimeout(timeoutId)
-  }, [pathname, currentUser?.id, currentPractice?.id, preferencesLoaded])
+  }, [pathname, currentUser?.id, currentPractice?.id, preferencesLoaded, favorites])
 
   const getAllNavItems = () => {
     const items: Array<{ name: string; href: string; icon: any; key?: string; badge?: string }> = []
@@ -687,8 +690,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
     
     if (currentUser?.id && preferencesLoaded) {
       try {
-        // Use simpler /api/user/sidebar-preferences endpoint which gets user from session
-        const response = await fetch("/api/user/sidebar-preferences", {
+        const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -696,6 +698,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           body: JSON.stringify({
             practice_id: practiceId,
             favorites: newFavorites,
+            expanded_groups: expandedGroups, // Include to prevent overwriting
           }),
         })
         if (!response.ok) {

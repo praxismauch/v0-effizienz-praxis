@@ -726,7 +726,13 @@ export default function EditTeamMemberPage() {
           )}
 
           <TabsContent value="contracts" className="space-y-4">
-            {member && <ContractsManager teamMemberId={memberId} isAdmin={isAdmin} />}
+            {member && (
+              <ContractsManager 
+                memberId={memberId} 
+                memberName={member.name}
+                practiceId={member.practice_id || ""}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="arbeitsmittel" className="space-y-4">

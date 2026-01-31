@@ -69,6 +69,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { isSuperAdminRole, isPracticeAdminRole } from "@/lib/auth-utils"
+import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 
 const HARDCODED_PRACTICE_ID = "1"
 
@@ -389,6 +390,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const { currentUser } = useUser()
   const { currentPractice } = usePractice()
   const { onboardingComplete } = useOnboarding()
+  const { singleGroupMode } = useSidebarSettings()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const hasRestoredScroll = useRef(false)
   const pendingScrollPosition = useRef<number | null>(null)
@@ -699,9 +701,21 @@ export function AppSidebar({ className }: AppSidebarProps) {
   }
 
   const toggleGroup = (groupId: string) => {
-    setExpandedGroups((prevGroups) =>
-      prevGroups.includes(groupId) ? prevGroups.filter((group) => group !== groupId) : [...prevGroups, groupId],
-    )
+    setExpandedGroups((prevGroups) => {
+      if (prevGroups.includes(groupId)) {
+        // Closing the group
+        return prevGroups.filter((group) => group !== groupId)
+      } else {
+        // Opening the group
+        if (singleGroupMode) {
+          // In single group mode, close all other groups and only open this one
+          return [groupId]
+        } else {
+          // Normal mode, just add to the list
+          return [...prevGroups, groupId]
+        }
+      }
+    })
   }
 
   function TourButton({ sidebarOpen }: { sidebarOpen: boolean }) {

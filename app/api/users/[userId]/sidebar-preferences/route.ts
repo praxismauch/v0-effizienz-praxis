@@ -144,8 +144,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         
       console.log("[v0] Insert result:", result.error ? `Error: ${result.error.message}` : "Success")
     }
-
-    console.log("[v0] Final saved data in database:", result.data)
     
     if (result.error) {
       console.error("[v0] Error saving sidebar preferences:", result.error)

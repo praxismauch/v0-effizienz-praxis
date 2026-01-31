@@ -26,6 +26,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const practiceId = searchParams.get("practice_id")
 
     const adminClient = await createAdminClient()
+    
+    // If Supabase isn't configured, return defaults (localStorage handles the actual data)
+    if (!adminClient) {
+      return NextResponse.json({
+        preferences: {
+          expanded_groups: ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
+          expanded_items: {},
+          is_collapsed: false,
+          favorites: [],
+          collapsed_sections: [],
+        },
+      })
+    }
 
     const effectivePracticeId = practiceId || "1"
 
@@ -118,6 +131,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const effectivePracticeId = String(practice_id || "1")
 
     const adminClient = await createAdminClient()
+    
+    // If Supabase isn't configured, return success (localStorage is handling the data)
+    if (!adminClient) {
+      console.log("[v0] Supabase not configured - sidebar preferences handled by localStorage")
+      return NextResponse.json({ 
+        preferences: { 
+          expanded_groups: expanded_groups || [],
+          expanded_items: expanded_items || {},
+          is_collapsed: is_collapsed || false,
+          favorites: favorites || [],
+          collapsed_sections: []
+        } 
+      })
+    }
 
     // Use RPC to bypass PostgREST schema cache issues with favorites column
     const { data: rpcResult, error: rpcError } = await adminClient.rpc("upsert_sidebar_preferences", {

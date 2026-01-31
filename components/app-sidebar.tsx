@@ -643,6 +643,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
               scrollPosition,
               selectedItem: pathname,
             },
+            favorites: favorites, // Include favorites to prevent overwriting
           }),
         })
       } catch (error) {
@@ -652,7 +653,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
     const timeoutId = setTimeout(saveSelectedItem, 300)
     return () => clearTimeout(timeoutId)
-  }, [pathname, currentUser?.id, currentPractice?.id, preferencesLoaded])
+  }, [pathname, currentUser?.id, currentPractice?.id, preferencesLoaded, favorites])
 
   const getAllNavItems = () => {
     const items: Array<{ name: string; href: string; icon: any; key?: string; badge?: string }> = []

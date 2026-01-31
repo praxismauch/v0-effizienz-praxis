@@ -466,17 +466,18 @@ export function AppSidebar({ className }: AppSidebarProps) {
               setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
             }
 
-            // Load favorites from the new dedicated favorites table
+            // Load favorites from localStorage (client-side storage)
+            const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
             try {
-              const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites`)
-              if (favoritesResponse.ok) {
-                const favoritesData = await favoritesResponse.json()
-                if (favoritesData.favorites && Array.isArray(favoritesData.favorites)) {
-                  setFavorites(favoritesData.favorites)
+              const storedFavorites = localStorage.getItem(localStorageKey)
+              if (storedFavorites) {
+                const parsed = JSON.parse(storedFavorites)
+                if (Array.isArray(parsed)) {
+                  setFavorites(parsed)
                 }
               }
             } catch (error) {
-              console.error("[v0] Error loading favorites:", error)
+              console.error("[v0] Error loading favorites from localStorage:", error)
             }
 
             if (data.preferences.expanded_items) {
@@ -680,25 +681,14 @@ export function AppSidebar({ className }: AppSidebarProps) {
     // Update state immediately for responsive UI
     setFavorites(newFavorites)
     
-    // Save to database
+    // Save to localStorage
     if (currentUser?.id) {
+      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+      const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
       try {
-        const response = await fetch(`/api/users/${currentUser.id}/favorites`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            item_path: href,
-            action: isAdding ? "add" : "remove",
-          }),
-        })
-
-        if (!response.ok) {
-          console.error("[v0] Failed to save favorite:", await response.text())
-          // Revert state on error
-          setFavorites(favorites)
-        }
+        localStorage.setItem(localStorageKey, JSON.stringify(newFavorites))
       } catch (error) {
-        console.error("[v0] Error saving favorite:", error)
+        console.error("[v0] Error saving favorites to localStorage:", error)
         // Revert state on error
         setFavorites(favorites)
       }

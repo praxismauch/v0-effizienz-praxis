@@ -72,6 +72,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
+  // IMMEDIATE LOG - if this doesn't appear, the POST handler isn't being called at all
+  console.log("[v0] >>>>>>>>>> POST /api/users/[userId]/sidebar-preferences ENTERED <<<<<<<<<<")
+  
+  // Try reading the body first to see if that's causing issues
+  let body;
+  try {
+    body = await request.json()
+    console.log("[v0] Body parsed successfully:", JSON.stringify(body))
+  } catch (bodyError) {
+    console.error("[v0] Body parse error:", bodyError)
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+  }
+
   console.log("[v0] ========= POST HANDLER STARTED =========")
   console.log("[v0] Timestamp:", new Date().toISOString())
   console.log("[v0] Request URL:", request.url)
@@ -98,7 +111,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Unauthorized - User ID mismatch" }, { status: 403 })
     }
 
-    const body = await request.json()
+    // body already parsed above
     const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites } = body
     console.log("[v0] POST - Body received:", { practice_id, favorites_count: favorites?.length })
 

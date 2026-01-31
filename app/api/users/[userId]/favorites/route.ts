@@ -38,15 +38,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = await createClient()
 
     if (action === "add") {
-      // Add favorite (using upsert to avoid duplicates)
       const { error } = await supabase.from("user_favorites").upsert(
-        {
-          user_id: userId,
-          item_path,
-        },
-        {
-          onConflict: "user_id,item_path",
-        }
+        { user_id: userId, item_path },
+        { onConflict: "user_id,item_path" }
       )
 
       if (error) {
@@ -56,7 +50,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       return NextResponse.json({ success: true, action: "added" })
     } else if (action === "remove") {
-      // Remove favorite
       const { error } = await supabase
         .from("user_favorites")
         .delete()

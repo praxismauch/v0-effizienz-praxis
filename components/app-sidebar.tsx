@@ -466,7 +466,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
               setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
             }
 
-            // Load favorites from the new dedicated favorites table
+            // Load favorites from database
             try {
               const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites`)
               if (favoritesResponse.ok) {
@@ -694,12 +694,10 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
         if (!response.ok) {
           console.error("[v0] Failed to save favorite:", await response.text())
-          // Revert state on error
           setFavorites(favorites)
         }
       } catch (error) {
         console.error("[v0] Error saving favorite:", error)
-        // Revert state on error
         setFavorites(favorites)
       }
     }

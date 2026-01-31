@@ -694,19 +694,27 @@ export function AppSidebar({ className }: AppSidebarProps) {
     if (currentUser?.id && preferencesLoaded) {
       console.log("[v0] Saving to database...")
       try {
-        const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
+        const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?_=${Date.now()}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          },
+          cache: "no-store",
           body: JSON.stringify({
             practice_id: practiceId,
             favorites: newFavorites,
           }),
         })
         console.log("[v0] Response status:", response.status)
+        const responseData = await response.json()
+        console.log("[v0] Response data:", responseData)
         if (!response.ok) {
-          console.error("[v0] Failed to save favorite, status:", response.status)
+          console.error("[v0] Failed to save favorite, status:", response.status, responseData)
         } else {
-          console.log("[v0] Favorite saved successfully!")
+          console.log("[v0] Favorite saved successfully!", responseData)
         }
       } catch (error) {
         console.error("[v0] Error saving favorite:", error)

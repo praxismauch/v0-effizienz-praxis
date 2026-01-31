@@ -459,7 +459,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=${practiceId}`)
         if (response.ok) {
           const data = await response.json()
-          console.log("[v0] Loaded sidebar preferences from API:", data.preferences)
           if (data.preferences) {
             if (data.preferences.expanded_groups && Array.isArray(data.preferences.expanded_groups)) {
               setExpandedGroups(data.preferences.expanded_groups)
@@ -469,10 +468,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
             // Try to load favorites from database first, fallback to localStorage
             if (data.preferences.favorites && Array.isArray(data.preferences.favorites)) {
-              console.log("[v0] Setting favorites from database:", data.preferences.favorites)
               setFavorites(data.preferences.favorites)
             } else {
-              console.log("[v0] No favorites in database, checking localStorage")
               // Fallback to localStorage if database doesn't have favorites
               const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
               try {
@@ -481,7 +478,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
                   const parsed = JSON.parse(localFavorites)
                   if (Array.isArray(parsed)) {
                     setFavorites(parsed)
-                    console.log("[v0] Loaded favorites from localStorage fallback")
                   }
                 }
               } catch (storageError) {
@@ -682,20 +678,15 @@ export function AppSidebar({ className }: AppSidebarProps) {
     }
 
     const newFavorites = favorites.includes(href) ? favorites.filter((f) => f !== href) : [...favorites, href]
-
-    console.log("[v0] Toggling favorite:", href, "New favorites:", newFavorites)
-    console.log("[v0] Current user ID:", currentUser?.id, "Preferences loaded:", preferencesLoaded)
     
     // Update state first
     setFavorites(newFavorites)
     
     // Save immediately to ensure it persists
     const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
-    console.log("[v0] Practice ID for save:", practiceId)
     
     if (currentUser?.id && preferencesLoaded) {
       try {
-        console.log("[v0] Calling API to save favorites...")
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -704,20 +695,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
             favorites: newFavorites,
           }),
         })
-        console.log("[v0] API response status:", response.status)
         if (!response.ok) {
-          console.error("[v0] Failed to save favorite, status:", response.status)
-          const errorText = await response.text()
-          console.error("[v0] Error response:", errorText)
-        } else {
-          const responseData = await response.json()
-          console.log("[v0] Favorite saved successfully:", responseData)
+          console.error("Failed to save favorite, status:", response.status)
         }
       } catch (error) {
-        console.error("[v0] Error saving favorite:", error)
+        console.error("Error saving favorite:", error)
       }
-    } else {
-      console.log("[v0] Cannot save - missing user ID or preferences not loaded")
     }
   }
 

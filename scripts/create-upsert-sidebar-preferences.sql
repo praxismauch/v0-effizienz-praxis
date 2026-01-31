@@ -61,6 +61,5 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users
-GRANT EXECUTE ON FUNCTION upsert_sidebar_preferences TO authenticated;
-GRANT EXECUTE ON FUNCTION upsert_sidebar_preferences TO service_role;
+-- Grant execute permission (using public for broader compatibility)
+GRANT EXECUTE ON FUNCTION upsert_sidebar_preferences TO public;

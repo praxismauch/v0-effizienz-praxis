@@ -22,29 +22,18 @@ export async function POST(request: NextRequest) {
 
     const adminClient = await createAdminClient()
 
-    const dataToUpsert: Record<string, any> = {
-      user_id: user.id,
-      practice_id: practice_id || "default",
-      updated_at: new Date().toISOString(),
-    }
-
-    if (sidebar_collapsed !== undefined) {
-      dataToUpsert.sidebar_collapsed = sidebar_collapsed
-    }
-    if (expanded_groups !== undefined) {
-      dataToUpsert.expanded_groups = expanded_groups
-    }
-    if (expanded_items !== undefined) {
-      dataToUpsert.expanded_items = expanded_items
-    }
-    if (favorites !== undefined) {
-      console.log("[v0] Saving favorites:", favorites)
-      dataToUpsert.favorites = favorites
-    }
-
-    const { error } = await adminClient.from("user_sidebar_preferences").upsert(dataToUpsert, {
-      onConflict: "user_id,practice_id",
+    // Use the stored procedure to bypass PostgREST schema cache issues
+    const { data, error } = await adminClient.rpc("upsert_sidebar_preferences", {
+      p_user_id: user.id,
+      p_practice_id: practice_id || "default",
+      p_expanded_groups: expanded_groups !== undefined ? expanded_groups : null,
+      p_expanded_items: expanded_items !== undefined ? expanded_items : null,
+      p_is_collapsed: sidebar_collapsed !== undefined ? sidebar_collapsed : null,
+      p_favorites: favorites !== undefined ? favorites : null,
+      p_collapsed_sections: null,
     })
+
+    console.log("[v0] RPC result:", { data, error })
 
     if (error) {
       console.error("[v0] Error saving sidebar preferences:", error)

@@ -410,13 +410,13 @@ function AppHeader() {
         )}
 
         {/* Search */}
-        <div className="hidden md:flex max-w-sm" ref={searchRef}>
-          <div className="relative">
+        <div className="hidden md:flex flex-1 max-w-md" ref={searchRef}>
+          <div className="relative w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               type="search"
               placeholder="Suchen..."
-              className="w-64 pl-8 pr-8 bg-muted/50 h-9"
+              className="w-full pl-8 pr-8 bg-muted/50 h-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
@@ -463,7 +463,7 @@ function AppHeader() {
 
         {/* Right Side Actions */}
         <TooltipProvider>
-          <div className="flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1">
             {/* Search - Mobile */}
             <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden">
               <Search className="h-4 w-4" />

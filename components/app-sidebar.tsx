@@ -459,6 +459,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=${practiceId}`)
         if (response.ok) {
           const data = await response.json()
+          console.log("[v0] Loaded sidebar preferences from API:", data.preferences)
           if (data.preferences) {
             if (data.preferences.expanded_groups && Array.isArray(data.preferences.expanded_groups)) {
               setExpandedGroups(data.preferences.expanded_groups)
@@ -468,8 +469,10 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
             // Try to load favorites from database first, fallback to localStorage
             if (data.preferences.favorites && Array.isArray(data.preferences.favorites)) {
+              console.log("[v0] Setting favorites from database:", data.preferences.favorites)
               setFavorites(data.preferences.favorites)
             } else {
+              console.log("[v0] No favorites in database, checking localStorage")
               // Fallback to localStorage if database doesn't have favorites
               const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
               try {

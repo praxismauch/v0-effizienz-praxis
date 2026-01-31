@@ -80,8 +80,11 @@ export default function TeamMemberDetailPage() {
   const { t } = useTranslation()
   const { roleColors } = useRoleColors()
 
-  const { teamMembers, teams } = useTeam()
-  const { currentUser, isAdmin, currentPractice } = useUser()
+  const { teamMembers, teams, practiceId: teamPracticeId } = useTeam()
+  const { currentUser, isAdmin } = useUser()
+  
+  // Use team context practice ID as fallback
+  const practiceId = teamPracticeId || "1"
 
   const [member, setMember] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -119,16 +122,10 @@ export default function TeamMemberDetailPage() {
       }
       
       console.log("[v0] Member not in context, checking API")
-      
-      // If not in context and we have a practice ID, fetch from API
-      if (!currentPractice?.id) {
-        console.log("[v0] No practice ID available")
-        setLoading(false)
-        return
-      }
+      console.log("[v0] Using practice ID:", practiceId)
       
       try {
-        const apiUrl = `/api/practices/${currentPractice.id}/team-members`
+        const apiUrl = `/api/practices/${practiceId}/team-members`
         console.log("[v0] Fetching from:", apiUrl)
         const response = await fetch(apiUrl)
         
@@ -166,7 +163,7 @@ export default function TeamMemberDetailPage() {
     }
     
     fetchMember()
-  }, [memberId, teamMembers, currentPractice?.id])
+  }, [memberId, teamMembers, practiceId])
 
   const canEdit = isAdmin || currentUser?.id === memberId
 

@@ -277,7 +277,7 @@ const features = [
     color: "bg-emerald-500/10 text-emerald-600",
     image: "/analytics-charts-dashboard-green-medical-practice.jpg",
     category: "analyse",
-    link: "/features/praxis-auswertung",
+    link: "/analytics",
   },
   {
     icon: BarChart3,

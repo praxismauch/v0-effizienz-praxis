@@ -4,7 +4,7 @@ import PageHeader from "@/components/page-header"
 import CustomizableAnalytics from "@/components/customizable-analytics"
 import ReportsGenerator from "@/components/reports-generator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, FileText, Receipt, Star, Building2, Table2, BarChart3 } from "lucide-react"
+import { TrendingUp, FileText, Receipt, Star, Building2, Table2, BarChart3, Layout, PieChart } from "lucide-react"
 import ExcelUploadAnalyzer from "@/components/excel-upload-analyzer"
 import AnalyticsDataManager from "@/components/analytics-data-manager"
 import { usePersistedTab } from "@/hooks/use-persisted-tab"
@@ -13,6 +13,8 @@ import AIAnalyticsInsightsDialog from "@/components/ai-analytics-insights-dialog
 import KVAbrechnungManager from "@/components/kv-abrechnung-manager"
 import { BankAccountManager } from "@/components/bank-account-manager"
 import ReviewsManager from "@/components/reviews-manager"
+import { DiagrammeTab } from "@/components/analytics/diagramme-tab"
+import KVAbrechnungBericht from "@/components/kv-abrechnung-bericht"
 import { useUser } from "@/contexts/user-context"
 
 export default function AnalyticsPageClient() {
@@ -31,7 +33,7 @@ export default function AnalyticsPageClient() {
       </div>
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto gap-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:grid-cols-9 h-auto gap-1">
             <TabsTrigger
               value="analytics"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
@@ -81,6 +83,20 @@ export default function AnalyticsPageClient() {
               <Table2 className="h-4 w-4" />
               {t("analytics.tabs.excel", "Excel")}
             </TabsTrigger>
+            <TabsTrigger
+              value="widgets"
+              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+            >
+              <Layout className="h-4 w-4" />
+              {t("analytics.tabs.widgets", "Widgets")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="kv-bericht"
+              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+            >
+              <PieChart className="h-4 w-4" />
+              {t("analytics.tabs.kvBericht", "KV-Bericht")}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-4">
@@ -118,6 +134,14 @@ export default function AnalyticsPageClient() {
 
           <TabsContent value="excel" className="space-y-4">
             <ExcelUploadAnalyzer />
+          </TabsContent>
+
+          <TabsContent value="widgets" className="space-y-4">
+            <DiagrammeTab />
+          </TabsContent>
+
+          <TabsContent value="kv-bericht" className="space-y-4">
+            <KVAbrechnungBericht />
           </TabsContent>
         </Tabs>
       </div>

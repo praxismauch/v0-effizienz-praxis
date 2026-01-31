@@ -173,12 +173,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         key: "documents",
         badge: "documents",
       },
-      {
-        name: t("sidebar.praxis_auswertung", "Praxis-Auswertung"),
-        href: "/praxis-auswertung",
-        icon: BarChart3,
-        key: "praxis_auswertung",
-      },
+      
       {
         name: t("sidebar.journal", "Journal"),
         href: "/practice-insights",

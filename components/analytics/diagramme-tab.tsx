@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { WidgetLibrary, type WidgetItem } from "./widget-library"
-import { CreateWidgetDialog } from "./create-widget-dialog"
+import { WidgetLibrary, type WidgetItem } from "@/components/analytics/widget-library"
+import { CreateWidgetDialog } from "@/components/analytics/create-widget-dialog"
 import { toast } from "sonner"
 import { usePractice } from "@/contexts/practice-context"
 

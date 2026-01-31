@@ -132,7 +132,9 @@ export default function TeamPageClient() {
   const handleCreateStaffingPlan = () => router.push("/staffing-plans/new")
   const handleEditStaffingPlan = (plan: StaffingPlan) => toast.info(`Stellenplan: ${plan.name}`)
 
-  const handleCreateHolidayRequest = () => router.push("/holidays/new")
+  const handleHolidayRequestCreated = (request: HolidayRequest) => {
+    setHolidayRequests(prev => [request, ...prev])
+  }
   const handleApproveHolidayRequest = (request: HolidayRequest) =>
     toast.success("Antrag genehmigt")
   const handleRejectHolidayRequest = (request: HolidayRequest) => toast.error("Antrag abgelehnt")
@@ -287,7 +289,7 @@ export default function TeamPageClient() {
           <HolidaysTab
             holidayRequests={holidayRequests}
             teamMembers={teamMembers}
-            onCreateRequest={handleCreateHolidayRequest}
+            onRequestCreated={handleHolidayRequestCreated}
             onApproveRequest={handleApproveHolidayRequest}
             onRejectRequest={handleRejectHolidayRequest}
           />

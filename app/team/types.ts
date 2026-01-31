@@ -66,3 +66,33 @@ export const getCardStyles = (color: string) => {
     borderLeftColor: color,
   }
 }
+
+export interface HolidayRequest {
+  id: string
+  practice_id: string
+  team_member_id: string
+  user_id?: string
+  start_date: string
+  end_date: string
+  days_count?: number
+  status: "pending" | "approved" | "rejected" | "cancelled"
+  reason?: string
+  notes?: string
+  created_at?: string
+}
+
+export interface StaffingPlan {
+  id: string
+  name: string
+  description?: string
+  practice_id?: string
+}
+
+export interface SickLeave {
+  id: string
+  team_member_id: string
+  start_date: string
+  end_date?: string
+  reason?: string
+  notes?: string
+}

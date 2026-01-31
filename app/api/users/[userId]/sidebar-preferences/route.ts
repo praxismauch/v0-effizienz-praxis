@@ -147,25 +147,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     
     if (result.error) {
       console.error("[v0] Error saving sidebar preferences:", result.error)
-      
-      // Don't fail the request if it's just a schema cache issue with favorites
-      if (result.error.code === 'PGRST204') {
-        console.log("[v0] Returning success despite schema cache issue - favorites saved to local state")
-        return NextResponse.json({ 
-          preferences: {
-            user_id: userId,
-            practice_id: effectivePracticeId,
-            expanded_groups: expanded_groups,
-            expanded_items: expanded_items,
-            is_collapsed: is_collapsed,
-            favorites: favorites || [],
-            collapsed_sections: [],
-          },
-          warning: "Favorites saved locally but not persisted to database due to schema cache issue"
-        })
-      }
-      
-      return NextResponse.json({ error: result.error.message }, { status: 500 })
+      console.error("[v0] Full error details:", JSON.stringify(result.error, null, 2))
+      return NextResponse.json({ 
+        error: result.error.message,
+        errorCode: result.error.code,
+        errorDetails: result.error
+      }, { status: 500 })
     }
 
     const responseData = result.data

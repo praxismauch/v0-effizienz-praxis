@@ -53,13 +53,13 @@ const nextConfig = {
           },
         ],
       },
-      // API routes - short-lived cache with SWR
+      // API routes - no cache for mutations, short cache for reads
       {
         source: "/api/:path*",
         headers: [
           { 
             key: "Cache-Control", 
-            value: "public, s-maxage=60, stale-while-revalidate=120" 
+            value: "no-store, no-cache, must-revalidate" 
           },
         ],
       },

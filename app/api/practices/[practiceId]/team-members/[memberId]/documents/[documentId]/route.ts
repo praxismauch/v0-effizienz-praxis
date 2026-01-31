@@ -3,9 +3,9 @@ import { NextResponse } from "next/server"
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ practiceId: string; teamMemberId: string; documentId: string }> }
+  { params }: { params: Promise<{ practiceId: string; memberId: string; documentId: string }> }
 ) {
-  const { practiceId, teamMemberId, documentId } = await params
+  const { practiceId, memberId, documentId } = await params
 
   try {
     const body = await request.json()
@@ -25,7 +25,7 @@ export async function PATCH(
       .update(updateData)
       .eq("id", documentId)
       .eq("practice_id", practiceId)
-      .eq("team_member_id", teamMemberId)
+      .eq("team_member_id", memberId)
       .select()
       .single()
 
@@ -43,9 +43,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ practiceId: string; teamMemberId: string; documentId: string }> }
+  { params }: { params: Promise<{ practiceId: string; memberId: string; documentId: string }> }
 ) {
-  const { practiceId, teamMemberId, documentId } = await params
+  const { practiceId, memberId, documentId } = await params
 
   try {
     const adminClient = createAdminClient()
@@ -55,7 +55,7 @@ export async function DELETE(
       .delete()
       .eq("id", documentId)
       .eq("practice_id", practiceId)
-      .eq("team_member_id", teamMemberId)
+      .eq("team_member_id", memberId)
 
     if (error) {
       console.error("Error deleting document:", error)

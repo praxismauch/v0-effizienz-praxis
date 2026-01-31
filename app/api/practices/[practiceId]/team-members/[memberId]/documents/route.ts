@@ -3,9 +3,9 @@ import { NextResponse } from "next/server"
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ practiceId: string; teamMemberId: string }> }
+  { params }: { params: Promise<{ practiceId: string; memberId: string }> }
 ) {
-  const { practiceId, teamMemberId } = await params
+  const { practiceId, memberId } = await params
 
   try {
     const adminClient = createAdminClient()
@@ -14,7 +14,7 @@ export async function GET(
       .from("team_member_documents")
       .select("*")
       .eq("practice_id", practiceId)
-      .eq("team_member_id", teamMemberId)
+      .eq("team_member_id", memberId)
       .order("uploaded_at", { ascending: false })
 
     if (error) {
@@ -31,9 +31,9 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ practiceId: string; teamMemberId: string }> }
+  { params }: { params: Promise<{ practiceId: string; memberId: string }> }
 ) {
-  const { practiceId, teamMemberId } = await params
+  const { practiceId, memberId } = await params
 
   try {
     const body = await request.json()
@@ -43,7 +43,7 @@ export async function POST(
       .from("team_member_documents")
       .insert({
         practice_id: practiceId,
-        team_member_id: teamMemberId,
+        team_member_id: memberId,
         name: body.name,
         type: body.type || "unknown",
         category: body.category || "other",

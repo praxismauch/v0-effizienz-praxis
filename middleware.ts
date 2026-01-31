@@ -216,8 +216,19 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const method = request.method
+
+  // Log all requests to sidebar-preferences for debugging
+  if (pathname.includes("sidebar-preferences")) {
+    console.log(`[v0-middleware] ${method} ${pathname} received at ${new Date().toISOString()}`)
+  }
 
   const supabaseResponse = await updateSession(request)
+
+  // Log POST requests to sidebar-preferences after session update
+  if (pathname.includes("sidebar-preferences") && method === "POST") {
+    console.log(`[v0-middleware] POST sidebar-preferences - session updated, continuing to handler`)
+  }
 
   if (pathname.startsWith("/api/")) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "unknown"

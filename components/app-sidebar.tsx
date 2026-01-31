@@ -679,13 +679,20 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
     const newFavorites = favorites.includes(href) ? favorites.filter((f) => f !== href) : [...favorites, href]
     
+    console.log("[v0] toggleFavorite called - href:", href)
+    console.log("[v0] newFavorites:", newFavorites)
+    console.log("[v0] currentUser?.id:", currentUser?.id)
+    console.log("[v0] preferencesLoaded:", preferencesLoaded)
+    
     // Update state first
     setFavorites(newFavorites)
     
     // Save immediately to ensure it persists
     const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    console.log("[v0] practiceId:", practiceId)
     
     if (currentUser?.id && preferencesLoaded) {
+      console.log("[v0] Saving to database...")
       try {
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
@@ -695,12 +702,17 @@ export function AppSidebar({ className }: AppSidebarProps) {
             favorites: newFavorites,
           }),
         })
+        console.log("[v0] Response status:", response.status)
         if (!response.ok) {
-          console.error("Failed to save favorite, status:", response.status)
+          console.error("[v0] Failed to save favorite, status:", response.status)
+        } else {
+          console.log("[v0] Favorite saved successfully!")
         }
       } catch (error) {
-        console.error("Error saving favorite:", error)
+        console.error("[v0] Error saving favorite:", error)
       }
+    } else {
+      console.log("[v0] NOT saving - currentUser?.id:", currentUser?.id, "preferencesLoaded:", preferencesLoaded)
     }
   }
 

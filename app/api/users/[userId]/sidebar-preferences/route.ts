@@ -119,71 +119,42 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const adminClient = await createAdminClient()
 
-    const { data: existing } = await adminClient
+    // Use RPC to bypass PostgREST schema cache issues with favorites column
+    const { data: rpcResult, error: rpcError } = await adminClient.rpc("upsert_sidebar_preferences", {
+      p_user_id: userId,
+      p_practice_id: effectivePracticeId,
+      p_expanded_groups: expanded_groups !== undefined ? expanded_groups : null,
+      p_expanded_items: expanded_items !== undefined ? expanded_items : null,
+      p_is_collapsed: is_collapsed !== undefined ? is_collapsed : null,
+      p_favorites: favorites !== undefined ? favorites : null,
+      p_collapsed_sections: null,
+    })
+
+    console.log("[v0] RPC upsert result:", rpcError ? `Error: ${rpcError.message}` : "Success", rpcResult)
+
+    if (rpcError) {
+      console.error("[v0] Error saving sidebar preferences:", rpcError)
+      return NextResponse.json({ 
+        error: rpcError.message,
+        errorCode: rpcError.code,
+        errorDetails: rpcError
+      }, { status: 500 })
+    }
+
+    // Fetch the updated preferences to return
+    const { data: updatedData } = await adminClient
       .from("user_sidebar_preferences")
-      .select("id")
+      .select("*")
       .eq("user_id", userId)
       .eq("practice_id", effectivePracticeId)
       .maybeSingle()
 
-    let result
-    if (existing) {
-      const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
-      if (expanded_groups !== undefined) updateData.expanded_groups = expanded_groups
-      if (expanded_items !== undefined) updateData.expanded_items = expanded_items
-      if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
-      if (favorites !== undefined) {
-        console.log("[v0] Updating favorites for user", userId, "practice", effectivePracticeId, ":", favorites)
-        updateData.favorites = favorites
-      }
-      
-      result = await adminClient
-        .from("user_sidebar_preferences")
-        .update(updateData)
-        .eq("user_id", userId)
-        .eq("practice_id", effectivePracticeId)
-        .select()
-        .single()
-        
-      console.log("[v0] Update result:", result.error ? `Error: ${result.error.message}` : "Success")
-    } else {
-      console.log("[v0] Inserting new preferences for user", userId, "practice", effectivePracticeId, "favorites:", favorites)
-      
-      const insertData: Record<string, unknown> = {
-        user_id: userId,
-        practice_id: effectivePracticeId,
-        expanded_groups: expanded_groups || ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
-        expanded_items: expanded_items || {},
-        is_collapsed: is_collapsed || false,
-        favorites: favorites || [],
-        collapsed_sections: [],
-      }
-      
-      result = await adminClient
-        .from("user_sidebar_preferences")
-        .insert(insertData)
-        .select()
-        .single()
-        
-      console.log("[v0] Insert result:", result.error ? `Error: ${result.error.message}` : "Success")
-    }
-    
-    if (result.error) {
-      console.error("[v0] Error saving sidebar preferences:", result.error)
-      console.error("[v0] Full error details:", JSON.stringify(result.error, null, 2))
-      return NextResponse.json({ 
-        error: result.error.message,
-        errorCode: result.error.code,
-        errorDetails: result.error
-      }, { status: 500 })
-    }
-
-    const responseData = result.data
+    const responseData = updatedData
       ? {
-          ...result.data,
-          is_collapsed: result.data.is_collapsed || false,
-          favorites: result.data.favorites || [],
-          collapsed_sections: [],
+          ...updatedData,
+          is_collapsed: updatedData.is_collapsed || false,
+          favorites: updatedData.favorites || [],
+          collapsed_sections: updatedData.collapsed_sections || [],
         }
       : null
 

@@ -1,23 +1,26 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Plus, Stethoscope, Clock } from "lucide-react"
 import type { SickLeave, TeamMember } from "../types"
+import CreateSickLeaveDialog from "./create-sick-leave-dialog"
 
 interface SickLeavesTabProps {
   sickLeaves: SickLeave[]
   teamMembers: TeamMember[]
-  onCreateSickLeave: () => void
+  onSickLeaveCreated: (sickLeave: SickLeave) => void
 }
 
 export default function SickLeavesTab({
   sickLeaves,
   teamMembers,
-  onCreateSickLeave,
+  onSickLeaveCreated,
 }: SickLeavesTabProps) {
+  const [dialogOpen, setDialogOpen] = useState(false)
   const getMember = (memberId: string) => {
     return teamMembers.find((m) => m.id === memberId)
   }
@@ -31,11 +34,21 @@ export default function SickLeavesTab({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Krankmeldungen</h3>
-        <Button onClick={onCreateSickLeave}>
+        <Button onClick={() => setDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Krankmeldung erfassen
         </Button>
       </div>
+
+      <CreateSickLeaveDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        teamMembers={teamMembers}
+        onSickLeaveCreated={(sickLeave) => {
+          onSickLeaveCreated(sickLeave)
+          setDialogOpen(false)
+        }}
+      />
 
       {sickLeaves.length === 0 ? (
         <Card>

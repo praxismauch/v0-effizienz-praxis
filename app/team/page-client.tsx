@@ -125,21 +125,31 @@ export default function TeamPageClient() {
     }
   }
 
-  const handleCreateTeam = () => router.push("/teams/new")
+  const handleTeamCreated = (team: Team) => {
+    setTeams(prev => [team, ...prev])
+    toast.success("Team erstellt")
+  }
   const handleEditTeam = (team: Team) => toast.info(`Team bearbeiten: ${team.name}`)
   const handleDeleteTeam = (team: Team) => toast.info(`Team löschen: ${team.name}`)
 
-  const handleCreateStaffingPlan = () => router.push("/staffing-plans/new")
+  const handleStaffingPlanCreated = (plan: StaffingPlan) => {
+    setStaffingPlans(prev => [plan, ...prev])
+    toast.success("Stellenplan erstellt")
+  }
   const handleEditStaffingPlan = (plan: StaffingPlan) => toast.info(`Stellenplan: ${plan.name}`)
 
   const handleHolidayRequestCreated = (request: HolidayRequest) => {
     setHolidayRequests(prev => [request, ...prev])
+    toast.success("Urlaubsantrag erstellt")
   }
   const handleApproveHolidayRequest = (request: HolidayRequest) =>
     toast.success("Antrag genehmigt")
   const handleRejectHolidayRequest = (request: HolidayRequest) => toast.error("Antrag abgelehnt")
 
-  const handleCreateSickLeave = () => router.push("/sick-leaves/new")
+  const handleSickLeaveCreated = (sickLeave: SickLeave) => {
+    setSickLeaves(prev => [sickLeave, ...prev])
+    toast.success("Krankmeldung erfasst")
+  }
 
   if (practiceLoading || isLoading) {
     return (
@@ -270,7 +280,7 @@ export default function TeamPageClient() {
           <StaffingTab
             staffingPlans={staffingPlans}
             teamMembers={teamMembers}
-            onCreatePlan={handleCreateStaffingPlan}
+            onPlanCreated={handleStaffingPlanCreated}
             onEditPlan={handleEditStaffingPlan}
           />
         </TabsContent>
@@ -279,7 +289,7 @@ export default function TeamPageClient() {
           <TeamsTab
             teams={teams}
             teamMembers={teamMembers}
-            onCreateTeam={handleCreateTeam}
+            onTeamCreated={handleTeamCreated}
             onEditTeam={handleEditTeam}
             onDeleteTeam={handleDeleteTeam}
           />
@@ -299,7 +309,7 @@ export default function TeamPageClient() {
           <SickLeavesTab
             sickLeaves={sickLeaves}
             teamMembers={teamMembers}
-            onCreateSickLeave={handleCreateSickLeave}
+            onSickLeaveCreated={handleSickLeaveCreated}
           />
         </TabsContent>
       </Tabs>

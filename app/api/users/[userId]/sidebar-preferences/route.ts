@@ -72,7 +72,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
-  console.log("[v0] POST /api/users/[userId]/sidebar-preferences - Request received")
+  console.log("[v0] ========= POST HANDLER STARTED =========")
+  console.log("[v0] Timestamp:", new Date().toISOString())
+  console.log("[v0] Request URL:", request.url)
   try {
     const { userId } = await params
     console.log("[v0] POST - userId from params:", userId)
@@ -174,7 +176,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ preferences: responseData })
   } catch (error) {
-    console.error("[v0] Error in sidebar preferences POST:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[v0] ========= POST HANDLER ERROR =========")
+    console.error("[v0] Error type:", typeof error)
+    console.error("[v0] Error name:", error instanceof Error ? error.name : "unknown")
+    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
+    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "no stack")
+    console.error("[v0] Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error || {}), 2))
+    return NextResponse.json({ error: "Internal server error", details: String(error) }, { status: 500 })
   }
 }

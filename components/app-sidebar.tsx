@@ -466,33 +466,18 @@ export function AppSidebar({ className }: AppSidebarProps) {
               setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
             }
 
-            // Load favorites from localStorage first (primary storage), then check database
-            const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
-            let loadedFavorites: string[] = []
-            
+            // Load favorites from the new dedicated favorites table
             try {
-              const localFavorites = localStorage.getItem(localStorageKey)
-              if (localFavorites) {
-                const parsed = JSON.parse(localFavorites)
-                if (Array.isArray(parsed)) {
-                  loadedFavorites = parsed
+              const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites`)
+              if (favoritesResponse.ok) {
+                const favoritesData = await favoritesResponse.json()
+                if (favoritesData.favorites && Array.isArray(favoritesData.favorites)) {
+                  setFavorites(favoritesData.favorites)
                 }
               }
-            } catch (storageError) {
-              // localStorage not available, continue
+            } catch (error) {
+              console.error("[v0] Error loading favorites:", error)
             }
-            
-            // If localStorage is empty but database has favorites, use database and sync to localStorage
-            if (loadedFavorites.length === 0 && data.preferences.favorites && Array.isArray(data.preferences.favorites) && data.preferences.favorites.length > 0) {
-              loadedFavorites = data.preferences.favorites
-              try {
-                localStorage.setItem(localStorageKey, JSON.stringify(loadedFavorites))
-              } catch (e) {
-                // Ignore
-              }
-            }
-            
-            setFavorites(loadedFavorites)
 
             if (data.preferences.expanded_items) {
               if (data.preferences.expanded_items.lastPath) {
@@ -689,36 +674,34 @@ export function AppSidebar({ className }: AppSidebarProps) {
       e.stopPropagation()
     }
 
-    const newFavorites = favorites.includes(href) ? favorites.filter((f) => f !== href) : [...favorites, href]
+    const isAdding = !favorites.includes(href)
+    const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
     
-    // Update state first
+    // Update state immediately for responsive UI
     setFavorites(newFavorites)
     
-    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
-    
-    // Always save to localStorage as primary storage (reliable, works offline)
+    // Save to database
     if (currentUser?.id) {
-      const localStorageKey = `sidebar_favorites_${currentUser.id}_${practiceId}`
       try {
-        localStorage.setItem(localStorageKey, JSON.stringify(newFavorites))
-      } catch (storageError) {
-        console.warn("Could not save favorites to localStorage:", storageError)
+        const response = await fetch(`/api/users/${currentUser.id}/favorites`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            item_path: href,
+            action: isAdding ? "add" : "remove",
+          }),
+        })
+
+        if (!response.ok) {
+          console.error("[v0] Failed to save favorite:", await response.text())
+          // Revert state on error
+          setFavorites(favorites)
+        }
+      } catch (error) {
+        console.error("[v0] Error saving favorite:", error)
+        // Revert state on error
+        setFavorites(favorites)
       }
-    }
-    
-    // Try to sync to server in background (optional, may fail if Supabase not configured)
-    if (currentUser?.id && preferencesLoaded) {
-      fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          practice_id: practiceId,
-          favorites: newFavorites,
-          expanded_groups: expandedGroups,
-        }),
-      }).catch(() => {
-        // Silently fail - localStorage is the source of truth
-      })
     }
   }
 

@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
 console.log("[v0] sidebar-preferences route module loaded at", new Date().toISOString())

@@ -582,7 +582,7 @@ function CreatePositionForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="parent">Berichtet an</Label>
-        <Select value={parentId} onValueChange={setParentId}>
+        <Select value={parentId || "none"} onValueChange={(v) => setParentId(v === "none" ? "" : v)}>
           <SelectTrigger>
             <SelectValue placeholder="Keine (oberste Ebene)" />
           </SelectTrigger>
@@ -678,7 +678,7 @@ function EditPositionForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="edit-parent">Berichtet an</Label>
-        <Select value={parentId} onValueChange={setParentId}>
+        <Select value={parentId || "none"} onValueChange={(v) => setParentId(v === "none" ? "" : v)}>
           <SelectTrigger>
             <SelectValue placeholder="Keine (oberste Ebene)" />
           </SelectTrigger>
@@ -718,12 +718,12 @@ function EditPositionForm({
       {assignmentType === 'member' && (
         <div className="space-y-2">
           <Label>Person auswählen</Label>
-          <Select value={userId} onValueChange={setUserId}>
+          <Select value={userId || "none"} onValueChange={(v) => setUserId(v === "none" ? "" : v)}>
             <SelectTrigger>
               <SelectValue placeholder="Keine Person zugewiesen" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Keine Person zugewiesen</SelectItem>
+              <SelectItem value="none">Keine Person zugewiesen</SelectItem>
               {teamMembers.map((member) => (
                 <SelectItem key={member.id} value={member.id}>
                   {member.first_name} {member.last_name}
@@ -737,12 +737,12 @@ function EditPositionForm({
       {assignmentType === 'team' && (
         <div className="space-y-2">
           <Label>Team/Gruppe auswählen</Label>
-          <Select value={teamId} onValueChange={setTeamId}>
+          <Select value={teamId || "none"} onValueChange={(v) => setTeamId(v === "none" ? "" : v)}>
             <SelectTrigger>
               <SelectValue placeholder="Kein Team zugewiesen" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Kein Team zugewiesen</SelectItem>
+              <SelectItem value="none">Kein Team zugewiesen</SelectItem>
               {teams.map((team) => (
                 <SelectItem key={team.id} value={team.id}>
                   {team.name}

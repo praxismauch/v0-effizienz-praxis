@@ -96,12 +96,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         icon: GraduationCap,
         key: "academy",
       },
-      {
-        name: t("sidebar.training", "Fortbildung"),
-        href: "/training",
-        icon: Award,
-        key: "training",
-      },
     ],
   },
   {
@@ -309,6 +303,12 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/organigramm",
         icon: FolderKanban,
         key: "organigramm",
+      },
+      {
+        name: t("sidebar.training", "Fortbildung"),
+        href: "/training",
+        icon: Award,
+        key: "training",
       },
     ],
   },

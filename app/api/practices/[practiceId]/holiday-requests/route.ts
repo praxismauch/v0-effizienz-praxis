@@ -56,7 +56,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     ])
 
     if (requestsResult.error && requestsResult.error.code !== "RATE_LIMITED") {
-      console.error("[v0] Error fetching holiday requests:", requestsResult.error)
+      console.error("Error fetching holiday requests:", requestsResult.error)
       return NextResponse.json({ error: "Failed to fetch holiday requests" }, { status: 500 })
     }
 
@@ -66,7 +66,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       bankHolidays: bankHolidaysResult.data || [],
     })
   } catch (error) {
-    console.error("[v0] Error in holiday requests GET:", error)
+    console.error("Error in holiday requests GET:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -126,13 +126,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .single()
 
     if (error) {
-      console.error("[v0] Error creating holiday request:", error)
+      console.error("Error creating holiday request:", error)
       return NextResponse.json({ error: "Failed to create holiday request" }, { status: 500 })
     }
 
     return NextResponse.json({ request: data })
   } catch (error) {
-    console.error("[v0] Error in holiday request POST:", error)
+    console.error("Error in holiday request POST:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

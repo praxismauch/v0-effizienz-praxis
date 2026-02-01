@@ -1,9 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
 
-export async function GET() {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params
     const supabase = await createClient()
 
     const {
@@ -20,83 +24,33 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { data: templates, error } = await supabase
+    const { data: template, error } = await supabase
       .from("team_group_templates")
-      .select(
-        `
+      .select(`
         *,
         team_group_template_specialties(
           specialty_group_id,
           specialty_groups(id, name)
         )
-      `,
-      )
-      .order("sort_order", { ascending: true })
+      `)
+      .eq("id", id)
+      .single()
 
     if (error) throw error
 
-    return NextResponse.json({ templates: templates || [] })
-  } catch (error) {
-    console.error("Error fetching team group templates:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
-
-    if (!isSuperAdminRole(userData?.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const { name, description, color, icon, specialty_group_ids } = body
-
-    const { data: template, error: templateError } = await supabase
-      .from("team_group_templates")
-      .insert({
-        name,
-        description,
-        color: color || "#3b82f6",
-        icon: icon || "users",
-        created_by: user.id,
-      })
-      .select()
-      .single()
-
-    if (templateError) throw templateError
-
-    if (specialty_group_ids && specialty_group_ids.length > 0) {
-      const specialtyLinks = specialty_group_ids.map((sgId: string) => ({
-        team_group_template_id: template.id,
-        specialty_group_id: sgId,
-      }))
-
-      const { error: linkError } = await supabase.from("team_group_template_specialties").insert(specialtyLinks)
-
-      if (linkError) throw linkError
-    }
-
     return NextResponse.json({ template })
   } catch (error) {
-    console.error("Error creating team group template:", error)
+    console.error("Error fetching team group template:", error)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params
     const supabase = await createClient()
 
     const {
@@ -114,54 +68,44 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { id, name, description, color, icon, specialty_group_ids, sort_order } = body
+    const { name, description, color, icon, specialty_group_ids, display_order } = body
 
-    // Handle reorder operation
-    if (sort_order !== undefined && Array.isArray(sort_order)) {
-      for (let i = 0; i < sort_order.length; i++) {
-        await supabase
-          .from("team_group_templates")
-          .update({ sort_order: i })
-          .eq("id", sort_order[i])
-      }
-      return NextResponse.json({ success: true })
-    }
-
-    if (!id) {
-      return NextResponse.json({ error: "Template ID required" }, { status: 400 })
-    }
+    // Update the template
+    const updateData: Record<string, unknown> = {}
+    if (name !== undefined) updateData.name = name
+    if (description !== undefined) updateData.description = description
+    if (color !== undefined) updateData.color = color
+    if (icon !== undefined) updateData.icon = icon
+    if (display_order !== undefined) updateData.display_order = display_order
 
     const { data: template, error: templateError } = await supabase
       .from("team_group_templates")
-      .update({
-        name,
-        description,
-        color: color || "#3b82f6",
-        icon: icon || "users",
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", id)
       .select()
       .single()
 
     if (templateError) throw templateError
 
-    // Update specialty links
+    // Update specialty associations if provided
     if (specialty_group_ids !== undefined) {
-      // Delete existing links
+      // Remove existing associations
       await supabase
         .from("team_group_template_specialties")
         .delete()
         .eq("team_group_template_id", id)
 
-      // Insert new links
+      // Add new associations
       if (specialty_group_ids.length > 0) {
         const specialtyLinks = specialty_group_ids.map((sgId: string) => ({
           team_group_template_id: id,
           specialty_group_id: sgId,
         }))
 
-        const { error: linkError } = await supabase.from("team_group_template_specialties").insert(specialtyLinks)
+        const { error: linkError } = await supabase
+          .from("team_group_template_specialties")
+          .insert(specialtyLinks)
+
         if (linkError) throw linkError
       }
     }
@@ -173,8 +117,12 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params
     const supabase = await createClient()
 
     const {
@@ -191,20 +139,13 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get("id")
-
-    if (!id) {
-      return NextResponse.json({ error: "Template ID required" }, { status: 400 })
-    }
-
-    // Delete specialty links first
+    // Delete specialty associations first
     await supabase
       .from("team_group_template_specialties")
       .delete()
       .eq("team_group_template_id", id)
 
-    // Delete template
+    // Delete the template
     const { error } = await supabase
       .from("team_group_templates")
       .delete()

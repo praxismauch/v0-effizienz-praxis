@@ -17,8 +17,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .from("sick_leaves")
       .select(`
         *,
-        user:users!sick_leaves_user_id_fkey(id, name, email, avatar),
-        approved_by_user:users!sick_leaves_approved_by_fkey(id, name, email),
         team_member:team_members(id, first_name, last_name)
       `)
       .eq("practice_id", String(practiceId))
@@ -49,7 +47,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     const { data, error } = await safeSupabaseQuery(() => query, [])
 
     if (error && error.code !== "RATE_LIMITED") {
-      console.error("[v0] sick-leaves GET error:", error)
+      console.error("sick-leaves GET error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -64,7 +62,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     return NextResponse.json({ sickLeaves: sickLeavesWithDays })
   } catch (error) {
-    console.error("[v0] sick-leaves GET exception:", error)
+    console.error("sick-leaves GET exception:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -108,19 +106,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .insert(sickLeaveData)
       .select(`
         *,
-        user:users!sick_leaves_user_id_fkey(id, name, email, avatar),
         team_member:team_members(id, first_name, last_name)
       `)
       .single()
 
     if (error) {
-      console.error("[v0] sick-leaves POST error:", error)
+      console.error("sick-leaves POST error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ sickLeave: data })
   } catch (error) {
-    console.error("[v0] sick-leaves POST exception:", error)
+    console.error("sick-leaves POST exception:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -3,14 +3,14 @@
 import { useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TestTube, FolderCheck, Tags, Monitor } from "lucide-react"
-import SuperAdminTesting from "@/components/super-admin-testing"
+import UnitTestsPanel from "@/components/testing/unit-tests-panel"
 import TestChecklistManager from "@/components/test-checklist-manager"
 import TestingCategoriesManager from "@/components/testing-categories-manager"
 import UIItemsTestManager from "@/components/super-admin/ui-items-test-manager"
 
 export default function TestingPageClient() {
   const searchParams = useSearchParams()
-  const initialTab = searchParams.get("tab") || "overview"
+  const initialTab = searchParams.get("tab") || "unit-tests"
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -23,9 +23,9 @@ export default function TestingPageClient() {
 
       <Tabs defaultValue={initialTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsTrigger value="unit-tests" className="flex items-center gap-2">
             <TestTube className="h-4 w-4" />
-            <span className="hidden sm:inline">Übersicht</span>
+            <span className="hidden sm:inline">Unit Tests</span>
           </TabsTrigger>
           <TabsTrigger value="ui-items" className="flex items-center gap-2">
             <Monitor className="h-4 w-4" />
@@ -41,8 +41,8 @@ export default function TestingPageClient() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <SuperAdminTesting />
+        <TabsContent value="unit-tests" className="space-y-6">
+          <UnitTestsPanel />
         </TabsContent>
 
         <TabsContent value="ui-items" className="space-y-6">

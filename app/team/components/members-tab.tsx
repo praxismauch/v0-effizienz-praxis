@@ -46,8 +46,12 @@ export default function MembersTab({ teamMembers, onAddMember, onEditMember, onD
           <CardHeader className="pb-2">
             <div className="flex items-start gap-4">
               <Avatar className="h-12 w-12">
-                <AvatarImage src={member.avatar_url || "/placeholder.svg"} alt={`${member.first_name} ${member.last_name}`} />
-                <AvatarFallback>{getInitials(member.first_name, member.last_name)}</AvatarFallback>
+                {member.avatar_url && (
+                  <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} />
+                )}
+                <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                  {getInitials(member.first_name, member.last_name)}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-base truncate">

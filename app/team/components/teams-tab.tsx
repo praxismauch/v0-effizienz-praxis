@@ -106,8 +106,8 @@ export default function TeamsTab({
                 <div className="flex -space-x-2">
                   {members.slice(0, 5).map((member) => (
                     <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
-                      <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
-                      <AvatarFallback>
+                      {member.avatar_url && <AvatarImage src={member.avatar_url} />}
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                         {member.first_name?.[0]}
                         {member.last_name?.[0]}
                       </AvatarFallback>

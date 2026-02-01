@@ -19,6 +19,8 @@ import { AppLayout } from "@/components/app-layout"
 import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
 import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
+import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiterfassung-tab"
+import { ContractsManager } from "@/components/team/contracts-manager"
 
 const roleLabels = {
   admin: "Praxis Admin",
@@ -111,47 +113,23 @@ export default function TeamMemberDetailPage() {
   // Fetch member data
   useEffect(() => {
     const fetchMember = async () => {
-      console.log("[v0] Team member lookup - memberId:", memberId)
-      console.log("[v0] Team members in context:", teamMembers.length)
-      if (teamMembers.length > 0) {
-        console.log("[v0] Sample IDs from context:", teamMembers.slice(0, 3).map((m: any) => ({
-          id: m.id,
-          user_id: m.user_id,
-          team_member_id: m.team_member_id
-        })))
-      }
-      
       // First, try to find in context - check id, user_id, and team_member_id fields
       const contextMember = teamMembers.find((m: any) => 
         m.id === memberId || m.user_id === memberId || m.team_member_id === memberId
       )
       
       if (contextMember) {
-        console.log("[v0] Found member in context:", contextMember.name)
         setMember(contextMember)
         setLoading(false)
         return
       }
       
-      console.log("[v0] Member not in context, checking API")
-      console.log("[v0] Using practice ID:", practiceId)
-      
       try {
         const apiUrl = `/api/practices/${practiceId}/team-members`
-        console.log("[v0] Fetching from:", apiUrl)
         const response = await fetch(apiUrl)
         
         if (response.ok) {
           const data = await response.json()
-          console.log("[v0] API returned", data.teamMembers?.length || 0, "members")
-          
-          if (data.teamMembers && data.teamMembers.length > 0) {
-            console.log("[v0] Sample IDs from API:", data.teamMembers.slice(0, 3).map((m: any) => ({
-              id: m.id,
-              user_id: m.user_id,
-              team_member_id: m.team_member_id
-            })))
-          }
           
           // Check id, user_id, and team_member_id fields when searching
           const fetchedMember = data.teamMembers?.find((m: any) => 
@@ -159,16 +137,11 @@ export default function TeamMemberDetailPage() {
           )
           
           if (fetchedMember) {
-            console.log("[v0] Found member in API:", fetchedMember.name)
             setMember(fetchedMember)
-          } else {
-            console.log("[v0] Member not found in API results")
           }
-        } else {
-          console.log("[v0] API response not OK:", response.status)
         }
       } catch (error) {
-        console.error("[v0] Error fetching member:", error)
+        console.error("Error fetching member:", error)
       } finally {
         setLoading(false)
       }
@@ -256,8 +229,8 @@ export default function TeamMemberDetailPage() {
 
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={member.avatar || ""} alt={member.name} />
-            <AvatarFallback>
+            {member.avatar && <AvatarImage src={member.avatar} alt={member.name} />}
+            <AvatarFallback className="bg-primary/10 text-primary font-medium">
               {member.name
                 .split(" ")
                 .map((n) => n[0])
@@ -280,8 +253,9 @@ export default function TeamMemberDetailPage() {
 
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto gap-1 mb-6">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:grid-cols-9 h-auto gap-1 mb-6">
                 <TabsTrigger value="overview">Übersicht</TabsTrigger>
+                <TabsTrigger value="contracts">Verträge</TabsTrigger>
                 <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
                 <TabsTrigger value="vaccinations">Impfstatus</TabsTrigger>
                 <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
@@ -300,8 +274,8 @@ export default function TeamMemberDetailPage() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={member.avatar || ""} alt={member.name} />
-                      <AvatarFallback className="text-2xl">
+                      {member.avatar && <AvatarImage src={member.avatar} alt={member.name} />}
+                      <AvatarFallback className="text-2xl bg-primary/10 text-primary font-semibold">
                         {member.name
                           .split(" ")
                           .map((n) => n[0])
@@ -437,6 +411,16 @@ export default function TeamMemberDetailPage() {
               </Card>
             </TabsContent>
 
+            <TabsContent value="contracts" className="space-y-4">
+              {member && (
+                <ContractsManager
+                  memberId={memberId}
+                  memberName={member.name}
+                  practiceId={member.practice_id || practiceId}
+                />
+              )}
+            </TabsContent>
+
               <TabsContent value="skills" className="space-y-4">
                 {member && (
                   <TeamMemberSkillsTab
@@ -458,7 +442,13 @@ export default function TeamMemberDetailPage() {
               </TabsContent>
 
             <TabsContent value="zeiterfassung" className="space-y-4">
-              {/* Zeiterfassung content here */}
+              {member && (
+                <TeamMemberZeiterfassungTab
+                  memberId={member.user_id || memberId}
+                  practiceId={member.practice_id || practiceId}
+                  memberName={member.name}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="arbeitsmittel" className="space-y-4">

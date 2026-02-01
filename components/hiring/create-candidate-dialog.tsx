@@ -669,42 +669,49 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
                 : "border-purple-200 dark:border-purple-800"
             } ${aiExtracting || isUploadingImages ? "pointer-events-none opacity-75" : ""}`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                <h3 className="font-semibold text-purple-900 dark:text-purple-100">KI-Dokumentenanalyse & Medien-Upload</h3>
-              </div>
-              {(uploadedFiles.length > 0 || uploadedImages.length > 0) && (
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  onClick={() => extractAllInformation()}
-                  disabled={aiExtracting || isUploadingImages}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  {aiExtracting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Extrahiere...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Alle Informationen extrahieren
-                    </>
-                  )}
-                </Button>
-              )}
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <h3 className="font-semibold text-purple-900 dark:text-purple-100">KI-Dokumentenanalyse & Medien-Upload</h3>
             </div>
             <p className="text-sm text-purple-700 dark:text-purple-300 mb-4">
               Laden Sie Dokumente zur automatischen KI-Analyse hoch oder fügen Sie Bilder zum Kandidatenprofil hinzu.
-              {(uploadedFiles.length > 0 || uploadedImages.length > 0) && (
-                <span className="block mt-1 text-purple-600 dark:text-purple-400 font-medium">
-                  Klicken Sie auf "Alle Informationen extrahieren", um die Formularfelder automatisch auszufüllen.
-                </span>
-              )}
             </p>
+
+            {/* Extraction Button - Always visible when files are uploaded */}
+            {(uploadedFiles.length > 0 || uploadedImages.length > 0) && (
+              <div className="mb-4 p-3 bg-purple-100 dark:bg-purple-900/40 rounded-lg border border-purple-300 dark:border-purple-700">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                      {uploadedFiles.length + uploadedImages.length} Datei(en) bereit zur Analyse
+                    </p>
+                    <p className="text-xs text-purple-600 dark:text-purple-400">
+                      Klicken Sie auf den Button, um alle Informationen zu extrahieren und das Formular auszufüllen.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="default"
+                    onClick={() => extractAllInformation()}
+                    disabled={aiExtracting || isUploadingImages}
+                    className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
+                  >
+                    {aiExtracting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Extrahiere...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Alle Informationen extrahieren
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <Tabs value={activeUploadTab} onValueChange={setActiveUploadTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">

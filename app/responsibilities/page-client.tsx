@@ -81,7 +81,18 @@ export default function ResponsibilitiesPageClient() {
     handleCreateTodo,
   } = useResponsibilities()
 
-  const { teamMembers } = useTeam()
+  const { teamMembers, teams } = useTeam()
+
+  // Helper function to get the primary team color for a team member
+  const getMemberTeamColor = (member: { teamIds?: string[] }) => {
+    if (!member.teamIds || member.teamIds.length === 0) return null
+    const primaryTeam = teams.find((t) => member.teamIds?.includes(t.id))
+    return primaryTeam?.color || null
+  }
+
+  // Get the currently selected team member and their color
+  const selectedMember = teamMembers.find((m) => m.id === teamMemberFilter)
+  const selectedMemberColor = selectedMember ? getMemberTeamColor(selectedMember) : null
 
   const handlePrint = () => {
     window.print()
@@ -145,18 +156,52 @@ export default function ResponsibilitiesPageClient() {
               />
             </div>
             <Select value={teamMemberFilter} onValueChange={setTeamMemberFilter}>
-              <SelectTrigger className="w-[200px]">
-                <User className="h-4 w-4 mr-2" />
+              <SelectTrigger 
+                className="w-[220px] transition-all duration-200"
+                style={{
+                  borderColor: selectedMemberColor || undefined,
+                  backgroundColor: selectedMemberColor ? `${selectedMemberColor}15` : undefined,
+                }}
+              >
+                {selectedMemberColor && (
+                  <div 
+                    className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                    style={{ backgroundColor: selectedMemberColor }}
+                  />
+                )}
+                {!selectedMemberColor && <User className="h-4 w-4 mr-2 flex-shrink-0" />}
                 <SelectValue placeholder="Alle Mitarbeiter" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alle Mitarbeiter</SelectItem>
-                <SelectItem value="unassigned">Nicht zugewiesen</SelectItem>
-                {teamMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.first_name} {member.last_name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span>Alle Mitarbeiter</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="unassigned">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-muted border border-dashed border-muted-foreground/50" />
+                    <span>Nicht zugewiesen</span>
+                  </div>
+                </SelectItem>
+                {teamMembers.map((member) => {
+                  const memberColor = getMemberTeamColor(member)
+                  return (
+                    <SelectItem key={member.id} value={member.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="h-3 w-3 rounded-full flex-shrink-0" 
+                          style={{ 
+                            backgroundColor: memberColor || '#9CA3AF',
+                            border: memberColor ? 'none' : '1px solid #D1D5DB'
+                          }}
+                        />
+                        <span>{member.first_name} {member.last_name}</span>
+                      </div>
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>

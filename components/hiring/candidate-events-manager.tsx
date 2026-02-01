@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, Calendar, Clock, CheckCircle2, Circle } from "lucide-react"
+import { Plus, Trash2, Calendar, Clock, CheckCircle2, Circle, CalendarPlus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useCalendar } from "@/contexts/calendar-context"
+import { toast } from "sonner"
 
 export interface CandidateEvent {
   id: string
@@ -33,9 +35,10 @@ const EVENT_TYPES = [
 interface CandidateEventsManagerProps {
   events: CandidateEvent[]
   onChange: (events: CandidateEvent[]) => void
+  candidateName?: string
 }
 
-export function CandidateEventsManager({ events, onChange }: CandidateEventsManagerProps) {
+export function CandidateEventsManager({ events, onChange, candidateName }: CandidateEventsManagerProps) {
   const [isAdding, setIsAdding] = useState(false)
   const [newEvent, setNewEvent] = useState<Partial<CandidateEvent>>({
     type: 'interview_1',
@@ -44,6 +47,7 @@ export function CandidateEventsManager({ events, onChange }: CandidateEventsMana
     notes: '',
     completed: false,
   })
+  const { addEvent: addCalendarEvent } = useCalendar()
 
   const handleAddEvent = () => {
     if (!newEvent.date || !newEvent.type) return
@@ -71,6 +75,34 @@ export function CandidateEventsManager({ events, onChange }: CandidateEventsMana
 
   const handleRemoveEvent = (eventId: string) => {
     onChange(events.filter(e => e.id !== eventId))
+  }
+
+  const handleAddToCalendar = async (event: CandidateEvent) => {
+    try {
+      const typeLabel = getEventTypeLabel(event.type)
+      const title = candidateName 
+        ? `${typeLabel}: ${candidateName}`
+        : typeLabel
+
+      await addCalendarEvent({
+        title,
+        description: event.notes || `Kandidaten-Termin: ${typeLabel}`,
+        startDate: event.date,
+        endDate: event.date,
+        startTime: event.time || '09:00',
+        endTime: event.time 
+          ? `${String(parseInt(event.time.split(':')[0]) + 1).padStart(2, '0')}:${event.time.split(':')[1]}`
+          : '10:00',
+        type: event.type.includes('interview') ? 'interview' : 'meeting',
+        priority: 'medium',
+        visibility: 'private',
+        isAllDay: false,
+      })
+      
+      toast.success('Termin zum Kalender hinzugefügt')
+    } catch (error) {
+      toast.error('Fehler beim Hinzufügen zum Kalender')
+    }
   }
 
   const handleToggleCompleted = (eventId: string) => {
@@ -186,15 +218,29 @@ export function CandidateEventsManager({ events, onChange }: CandidateEventsMana
                       )}
                     </div>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleRemoveEvent(event.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {!event.completed && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 h-8 w-8 text-muted-foreground hover:text-blue-600"
+                        onClick={() => handleAddToCalendar(event)}
+                        title="Zum Kalender hinzufügen"
+                      >
+                        <CalendarPlus className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleRemoveEvent(event.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

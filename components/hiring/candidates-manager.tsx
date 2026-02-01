@@ -46,6 +46,16 @@ import { defaultPipelineStages } from "@/lib/recruiting-defaults"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
 
+interface CandidateEvent {
+  id: string
+  type: 'interview_1' | 'interview_2' | 'trial_day_1' | 'trial_day_2' | 'other'
+  date: string
+  time?: string
+  notes?: string
+  completed: boolean
+  created_at: string
+}
+
 interface Candidate {
   id: string
   first_name: string
@@ -62,6 +72,7 @@ interface Candidate {
   converted_to_team_member?: boolean
   notes?: string
   first_contact_date?: string
+  events?: CandidateEvent[]
   applications?: Array<{
     id: string
     job_posting_id: string
@@ -292,6 +303,27 @@ const CandidatesManager = ({
     const annualSalary = salaryExpectation * 12
     const annualHours = weeklyHours * 52
     return annualSalary / annualHours
+  }
+
+  const getEventTypeShortLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      interview_1: '1. Gespräch',
+      interview_2: '2. Gespräch',
+      trial_day_1: '1. Probearbeit',
+      trial_day_2: '2. Probearbeit',
+      other: 'Termin',
+    }
+    return labels[type] || type
+  }
+
+  const getUpcomingEvents = (events: CandidateEvent[] | undefined) => {
+    if (!events || events.length === 0) return []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return events
+      .filter(e => !e.completed && new Date(e.date) >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 2)
   }
 
   // Client-side filtering for search (SWR handles status/jobPosting filtering on server)
@@ -531,6 +563,24 @@ const CandidatesManager = ({
                         <div className="flex items-start gap-1.5 text-xs bg-muted/50 rounded p-2">
                           <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0 text-muted-foreground" />
                           <span className="text-muted-foreground line-clamp-2">{candidate.notes}</span>
+                        </div>
+                      )}
+
+                      {/* Upcoming Events */}
+                      {getUpcomingEvents(candidate.events).length > 0 && (
+                        <div className="space-y-1">
+                          {getUpcomingEvents(candidate.events).map((event) => (
+                            <div key={event.id} className="flex items-center gap-1.5 text-xs bg-blue-50 dark:bg-blue-950/30 rounded px-2 py-1">
+                              <Calendar className="h-3 w-3 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                              <span className="font-medium text-blue-700 dark:text-blue-300">
+                                {getEventTypeShortLabel(event.type)}:
+                              </span>
+                              <span className="text-blue-600 dark:text-blue-400">
+                                {new Date(event.date).toLocaleDateString("de-DE")}
+                                {event.time && ` ${event.time}`}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       )}
 

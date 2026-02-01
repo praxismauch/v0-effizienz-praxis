@@ -530,6 +530,127 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     window.open(previewUrl, "_blank")
   }
 
+  const extractAllInformation = async () => {
+    // Collect all files (documents and images)
+    const allFiles: File[] = []
+    
+    // Add document files
+    if (uploadedFiles.length > 0) {
+      allFiles.push(...uploadedFiles)
+    }
+    
+    // Add image files
+    if (uploadedImages.length > 0) {
+      uploadedImages.forEach((img) => {
+        if (img.file) {
+          allFiles.push(img.file)
+        }
+      })
+    }
+
+    if (allFiles.length === 0) {
+      toast({
+        title: "Keine Dateien vorhanden",
+        description: "Bitte laden Sie zuerst Dokumente oder Bilder hoch.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setAiExtracting(true)
+
+    try {
+      const formDataUpload = new FormData()
+      allFiles.forEach((file) => {
+        formDataUpload.append("files", file)
+      })
+      formDataUpload.append("practiceId", currentPractice?.id || "")
+
+      const response = await fetch("/api/hiring/ai-extract-candidate", {
+        method: "POST",
+        body: formDataUpload,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        toast({
+          title: "Fehler bei der KI-Analyse",
+          description: errorData.error || "Unbekannter Fehler",
+          variant: "destructive",
+        })
+        setAiExtracting(false)
+        return
+      }
+
+      const extracted = await response.json()
+
+      if (extracted.error) {
+        toast({
+          title: "KI-Analyse Fehler",
+          description: extracted.error,
+          variant: "destructive",
+        })
+        setAiExtracting(false)
+        return
+      }
+
+      const getValidValue = (value: any, fallback: string): string => {
+        if (value === null || value === undefined || value === "null" || value === "NULL" || value === "") {
+          return fallback
+        }
+        return String(value)
+      }
+
+      setFormData({
+        first_name: getValidValue(extracted.first_name, formData.first_name),
+        last_name: getValidValue(extracted.last_name, formData.last_name),
+        email: getValidValue(extracted.email, formData.email),
+        phone: getValidValue(extracted.phone, formData.phone),
+        mobile: getValidValue(extracted.mobile, formData.mobile),
+        address: getValidValue(extracted.address, formData.address),
+        city: getValidValue(extracted.city, formData.city),
+        postal_code: getValidValue(extracted.postal_code, formData.postal_code),
+        date_of_birth: getValidValue(extracted.date_of_birth, formData.date_of_birth),
+        first_contact_date: formData.first_contact_date,
+        current_position: getValidValue(extracted.current_position, formData.current_position),
+        current_company: getValidValue(extracted.current_company, formData.current_company),
+        years_of_experience: getValidValue(extracted.years_of_experience, formData.years_of_experience),
+        education: getValidValue(extracted.education, formData.education),
+        portfolio_url: getValidValue(extracted.portfolio_url, formData.portfolio_url),
+        salary_expectation: getValidValue(extracted.salary_expectation, formData.salary_expectation),
+        weekly_hours: getValidValue(extracted.weekly_hours, formData.weekly_hours),
+        source: getValidValue(extracted.source, formData.source),
+        notes: getValidValue(extracted.notes, formData.notes),
+        status: "new",
+      })
+
+      if (extracted.documents) {
+        setDocuments((prev: any) => ({
+          ...prev,
+          ...extracted.documents,
+        }))
+      }
+
+      const docCount = uploadedFiles.length
+      const imgCount = uploadedImages.length
+      const totalCount = docCount + imgCount
+
+      toast({
+        title: "KI-Analyse abgeschlossen",
+        description: `${totalCount} Datei(en) erfolgreich analysiert (${docCount} Dokumente, ${imgCount} Bilder). Formular wurde ausgefüllt.`,
+      })
+    } catch (error) {
+      console.error("Error extracting with AI:", error)
+      toast({
+        title: "Fehler",
+        description: "Ein Fehler ist bei der KI-Extraktion aufgetreten.",
+        variant: "destructive",
+      })
+    } finally {
+      setAiExtracting(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -548,12 +669,41 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
                 : "border-purple-200 dark:border-purple-800"
             } ${aiExtracting || isUploadingImages ? "pointer-events-none opacity-75" : ""}`}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              <h3 className="font-semibold text-purple-900 dark:text-purple-100">KI-Dokumentenanalyse & Medien-Upload</h3>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <h3 className="font-semibold text-purple-900 dark:text-purple-100">KI-Dokumentenanalyse & Medien-Upload</h3>
+              </div>
+              {(uploadedFiles.length > 0 || uploadedImages.length > 0) && (
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={() => extractAllInformation()}
+                  disabled={aiExtracting || isUploadingImages}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {aiExtracting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Extrahiere...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Alle Informationen extrahieren
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
             <p className="text-sm text-purple-700 dark:text-purple-300 mb-4">
               Laden Sie Dokumente zur automatischen KI-Analyse hoch oder fügen Sie Bilder zum Kandidatenprofil hinzu.
+              {(uploadedFiles.length > 0 || uploadedImages.length > 0) && (
+                <span className="block mt-1 text-purple-600 dark:text-purple-400 font-medium">
+                  Klicken Sie auf "Alle Informationen extrahieren", um die Formularfelder automatisch auszufüllen.
+                </span>
+              )}
             </p>
 
             <Tabs value={activeUploadTab} onValueChange={setActiveUploadTab} className="w-full">

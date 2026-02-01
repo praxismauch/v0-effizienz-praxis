@@ -71,8 +71,8 @@ export default function SickLeavesTab({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={member?.avatar_url || "/placeholder.svg"} />
-                        <AvatarFallback>
+                        {member?.avatar_url && <AvatarImage src={member.avatar_url} />}
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
                           {member?.first_name?.[0]}
                           {member?.last_name?.[0]}
                         </AvatarFallback>

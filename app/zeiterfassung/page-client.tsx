@@ -100,7 +100,6 @@ export default function ZeiterfassungPageClient() {
     
     if (!practiceId || !user?.id) {
       toast.error("Benutzerdaten fehlen. Bitte neu anmelden.")
-      console.error("[v0] Missing practiceId or userId")
       return
     }
 
@@ -146,27 +145,11 @@ export default function ZeiterfassungPageClient() {
           await mutate()
           toast.success("Pause beendet")
           break
-        case "pause_end":
-          console.log("[v0] Calling endBreak with breakId:", activeBreak?.id)
-          if (!activeBreak?.id) {
-            throw new Error("Keine aktive Pause gefunden")
-          }
-          result = await endBreak(activeBreak.id)
-          console.log("[v0] endBreak result:", result)
-          if (!result.success) {
-            throw new Error(result.error || "End break failed")
-          }
-          console.log("[v0] Break ended, calling mutate to refresh status")
-          await mutate()
-          console.log("[v0] Status refreshed after ending break")
-          toast.success("Pause beendet")
-          break
       }
       setShowStampDialog(false)
       setStampComment("")
-      console.log("[v0] Stamp action completed successfully")
     } catch (error) {
-      console.error("[v0] Stamp error:", error)
+      console.error("Stamp error:", error)
       const errorMessage = error instanceof Error ? error.message : "Fehler beim Stempeln"
       toast.error(errorMessage)
     } finally {

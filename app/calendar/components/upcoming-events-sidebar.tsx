@@ -104,23 +104,15 @@ function DaySection({
   isToday?: boolean
 }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className={cn(
-          "flex items-center justify-center w-10 h-10 rounded-lg",
-          isTodaySection ? "bg-primary text-primary-foreground" : "bg-muted"
+    <div className="space-y-2">
+      <div>
+        <h3 className={cn(
+          "font-semibold text-sm",
+          isTodaySection && "text-primary"
         )}>
-          <Calendar className="h-5 w-5" />
-        </div>
-        <div>
-          <h3 className={cn(
-            "font-semibold text-sm",
-            isTodaySection && "text-primary"
-          )}>
-            {title}
-          </h3>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
-        </div>
+          {title}
+        </h3>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
       
       {events.length > 0 ? (
@@ -170,7 +162,7 @@ export function UpcomingEventsSidebar({ events, onEventClick }: UpcomingEventsSi
   const totalEvents = todayEvents.length + tomorrowEvents.length
 
   return (
-    <div className="w-80 flex-shrink-0 border-l bg-muted/30 p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+    <div className="w-64 flex-shrink-0 border-l bg-muted/30 p-4 space-y-5 overflow-y-auto max-h-[calc(100vh-200px)]">
       {/* Header */}
       <div className="space-y-1">
         <h2 className="font-semibold text-lg">Nächste Termine</h2>

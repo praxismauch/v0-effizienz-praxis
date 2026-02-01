@@ -1,14 +1,8 @@
--- Add events column to candidates table if it doesn't exist
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'candidates' AND column_name = 'events'
-  ) THEN
-    ALTER TABLE candidates ADD COLUMN events JSONB DEFAULT '[]'::jsonb;
-    COMMENT ON COLUMN candidates.events IS 'Array of candidate events: interviews, trial work days, etc.';
-  END IF;
-END $$;
+-- Add events column to candidates table
+-- This stores interview dates and trial work day dates as a JSON array
 
--- Create an index on the events column for better query performance
-CREATE INDEX IF NOT EXISTS idx_candidates_events ON candidates USING GIN (events) WHERE deleted_at IS NULL;
+ALTER TABLE candidates 
+ADD COLUMN IF NOT EXISTS events JSONB DEFAULT '[]'::jsonb;
+
+-- Add comment for documentation
+COMMENT ON COLUMN candidates.events IS 'Array of candidate events: interviews (1. Bewerbungsgespräch, 2. Bewerbungsgespräch), trial work days (1. Probearbeitstag, 2. Probearbeitstag), etc.';

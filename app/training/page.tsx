@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1463,18 +1463,22 @@ export default function TrainingPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="practice-wide">Praxisweites Budget</SelectItem>
-                      <SelectLabel>Mitarbeiter</SelectLabel>
-                      {teamMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.first_name} {member.last_name}
-                        </SelectItem>
-                      ))}
-                      <SelectLabel>Teams</SelectLabel>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        <SelectLabel>Mitarbeiter</SelectLabel>
+                        {teamMembers.map((member) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.first_name} {member.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Teams</SelectLabel>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                   <Input type="hidden" id="team_member_id" name="team_member_id" />

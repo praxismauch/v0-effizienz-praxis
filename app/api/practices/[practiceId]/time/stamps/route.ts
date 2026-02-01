@@ -72,7 +72,7 @@ export async function POST(
         .single()
 
       if (stampError) {
-        console.error("[v0] Error creating start stamp:", stampError)
+        console.error("Error creating start stamp:", stampError)
         return NextResponse.json(
           { error: "Failed to create time stamp", details: stampError.message, success: false },
           { status: 500 }
@@ -98,7 +98,7 @@ export async function POST(
         .single()
 
       if (blockError) {
-        console.error("[v0] Error creating time block:", blockError)
+        console.error("Error creating time block:", blockError)
         return NextResponse.json(
           { error: "Failed to create time block", details: blockError.message, success: false },
           { status: 500 }
@@ -140,7 +140,7 @@ export async function POST(
         .single()
 
       if (stampError) {
-        console.error("[v0] Error creating end stamp:", stampError)
+        console.error("Error creating end stamp:", stampError)
         return NextResponse.json(
           { error: "Failed to create time stamp", details: stampError.message, success: false },
           { status: 500 }
@@ -168,7 +168,7 @@ export async function POST(
         .single()
 
       if (blockError) {
-        console.error("[v0] Error updating time block:", blockError)
+        console.error("Error updating time block:", blockError)
         return NextResponse.json(
           { error: "Failed to update time block", details: blockError.message, success: false },
           { status: 500 }
@@ -180,7 +180,7 @@ export async function POST(
 
     return NextResponse.json({ error: "Invalid action", success: false }, { status: 400 })
   } catch (error) {
-    console.error("[v0] Error in time stamps API:", error)
+    console.error("Error in time stamps API:", error)
     return NextResponse.json(
       { error: "Internal server error", success: false },
       { status: 500 }

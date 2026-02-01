@@ -129,24 +129,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
     }
 
-    // Use RPC to bypass PostgREST schema cache issues with favorites column
-    const { data: rpcResult, error: rpcError } = await adminClient.rpc("upsert_sidebar_preferences", {
-      p_user_id: userId,
-      p_practice_id: effectivePracticeId,
-      p_expanded_groups: expanded_groups !== undefined ? expanded_groups : null,
-      p_expanded_items: expanded_items !== undefined ? expanded_items : null,
-      p_is_collapsed: is_collapsed !== undefined ? is_collapsed : null,
-      p_favorites: favorites !== undefined ? favorites : null,
-      p_collapsed_sections: null,
-      p_single_group_mode: single_group_mode !== undefined ? single_group_mode : null,
-    })
+    // Build update object with only defined values
+    const updateData: Record<string, any> = {}
+    if (expanded_groups !== undefined) updateData.expanded_groups = expanded_groups
+    if (expanded_items !== undefined) updateData.expanded_items = expanded_items
+    if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
+    if (favorites !== undefined) updateData.favorites = favorites
+    if (single_group_mode !== undefined) updateData.single_group_mode = single_group_mode
 
-    if (rpcError) {
-      console.error("Error saving sidebar preferences:", rpcError)
+    // Use upsert to handle both insert and update cases
+    const { error: upsertError } = await adminClient
+      .from("user_sidebar_preferences")
+      .upsert({
+        user_id: userId,
+        practice_id: effectivePracticeId,
+        ...updateData,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: "user_id,practice_id"
+      })
+
+    if (upsertError) {
+      console.error("Error saving sidebar preferences:", upsertError)
       return NextResponse.json({ 
-        error: rpcError.message,
-        errorCode: rpcError.code,
-        errorDetails: rpcError
+        error: upsertError.message,
+        errorCode: upsertError.code,
+        errorDetails: upsertError
       }, { status: 500 })
     }
 

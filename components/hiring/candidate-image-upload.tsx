@@ -90,7 +90,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
   const [showEditor, setShowEditor] = useState(false)
   const [tempImageUrl, setTempImageUrl] = useState<string | null>(null)
   const [cropSettings, setCropSettings] = useState({
-    zoom: 1,
+    zoom: 10,
     panX: 0,
     panY: 0,
   })
@@ -157,7 +157,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
       reader.onloadend = () => {
         setTempImageUrl(reader.result as string)
         setShowEditor(true)
-        setCropSettings({ zoom: 1, panX: 0, panY: 0 })
+        setCropSettings({ zoom: 10, panX: 0, panY: 0 })
       }
       reader.readAsDataURL(processedFile)
 
@@ -279,7 +279,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
     if (previewUrl) {
       setTempImageUrl(previewUrl)
       setShowEditor(true)
-      setCropSettings({ zoom: 1, panX: 0, panY: 0 })
+      setCropSettings({ zoom: 10, panX: 0, panY: 0 })
     }
   }
 
@@ -491,9 +491,9 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
                     <Slider
                       value={[cropSettings.zoom]}
                       onValueChange={([value]) => setCropSettings((prev) => ({ ...prev, zoom: value }))}
-                      min={0.5}
-                      max={3}
-                      step={0.1}
+                      min={1}
+                      max={15}
+                      step={0.5}
                       className="w-full"
                     />
                   </div>
@@ -501,7 +501,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCropSettings({ zoom: 1, panX: 0, panY: 0 })}
+                    onClick={() => setCropSettings({ zoom: 10, panX: 0, panY: 0 })}
                     className="w-full"
                   >
                     {t("common.reset", "Zurücksetzen")}

@@ -34,6 +34,7 @@ import {
   TestTube,
   MessageSquare,
   Share2,
+  BarChart3,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -539,6 +540,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           label: "Benutzerrechte",
           icon: Shield,
           href: "/super-admin/user-rights",
+        },
+        {
+          id: "kpi-kategorien",
+          label: "KPI-Kategorien",
+          icon: BarChart3,
+          href: "/super-admin/kpi-kategorien",
         },
         {
           id: "vorlagen",

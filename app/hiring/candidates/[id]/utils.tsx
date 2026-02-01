@@ -57,6 +57,29 @@ export const formatCurrency = (amount: number | null) => {
   }).format(amount)
 }
 
+export const calculateAge = (dateOfBirth: string | null): number | null => {
+  if (!dateOfBirth) return null
+  const today = new Date()
+  const birthDate = new Date(dateOfBirth)
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  return age
+}
+
+export const calculateHourlyRate = (
+  salaryExpectation: number | null,
+  weeklyHours: number | null
+): number | null => {
+  if (!salaryExpectation || !weeklyHours || weeklyHours <= 0) return null
+  // Assuming monthly salary and ~4.33 weeks per month
+  const weeksPerMonth = 4.33
+  const monthlyHours = weeklyHours * weeksPerMonth
+  return salaryExpectation / monthlyHours
+}
+
 export const statusVariants: Record<string, { variant: "secondary" | "default" | "destructive" | "outline"; label: string }> = {
   new: { variant: "secondary", label: "Neu" },
   screening: { variant: "default", label: "Screening" },

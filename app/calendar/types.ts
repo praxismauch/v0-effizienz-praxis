@@ -69,5 +69,36 @@ export const EVENT_TYPE_LABELS: Record<string, { label: string; bgColor: string;
 
 export const HOURS = Array.from({ length: 24 }, (_, i) => i)
 
+export const PRIORITY_CONFIG: Record<string, { 
+  label: string
+  color: string
+  bgColor: string
+  borderColor: string
+  icon: string
+}> = {
+  high: { 
+    label: "Hoch", 
+    color: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-500",
+    borderColor: "border-l-red-500",
+    icon: "!!",
+  },
+  medium: { 
+    label: "Mittel", 
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-500",
+    borderColor: "border-l-amber-500",
+    icon: "!",
+  },
+  low: { 
+    label: "Niedrig", 
+    color: "text-green-600 dark:text-green-400",
+    bgColor: "bg-green-500",
+    borderColor: "border-l-green-500",
+    icon: "",
+  },
+}
+
 export const getEventTypeColor = (type: string) => EVENT_TYPE_COLORS[type] || EVENT_TYPE_COLORS.other
 export const getEventTypeLabel = (type: string) => EVENT_TYPE_LABELS[type] || EVENT_TYPE_LABELS.other
+export const getPriorityConfig = (priority: string) => PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.low

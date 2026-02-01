@@ -3,9 +3,10 @@
 import { useMemo } from "react"
 import { format, isToday, isTomorrow, addDays } from "date-fns"
 import { de } from "date-fns/locale"
-import { Calendar, Clock, MapPin, ChevronRight, CalendarDays } from "lucide-react"
+import { Calendar, Clock, MapPin, ChevronRight, CalendarDays, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CalendarEvent } from "../types"
+import { getPriorityConfig } from "../types"
 
 interface UpcomingEventsSidebarProps {
   events: CalendarEvent[]
@@ -29,19 +30,37 @@ const typeColors: Record<string, string> = {
 
 function EventCard({ event, onEventClick }: { event: CalendarEvent; onEventClick: (e: CalendarEvent) => void }) {
   const typeColor = typeColors[event.type] || typeColors.other
+  const priorityConfig = getPriorityConfig(event.priority)
 
   return (
     <button
       onClick={() => onEventClick(event)}
-      className="w-full text-left p-3 rounded-lg border bg-card hover:bg-accent/50 transition-all duration-200 group"
+      className={cn(
+        "w-full text-left p-3 rounded-lg border bg-card hover:bg-accent/50 transition-all duration-200 group relative",
+        event.priority === "high" && "border-l-4 border-l-red-500",
+        event.priority === "medium" && "border-l-4 border-l-amber-500"
+      )}
     >
       <div className="flex items-start gap-3">
         <div className={cn("w-1 h-full min-h-[40px] rounded-full flex-shrink-0", typeColor)} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h4 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-              {event.title}
-            </h4>
+            <div className="flex items-center gap-2 min-w-0">
+              {event.priority === "high" && (
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 flex-shrink-0">
+                  <AlertCircle className="h-3 w-3" />
+                  Hoch
+                </span>
+              )}
+              {event.priority === "medium" && (
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex-shrink-0">
+                  Mittel
+                </span>
+              )}
+              <h4 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                {event.title}
+              </h4>
+            </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
           </div>
           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">

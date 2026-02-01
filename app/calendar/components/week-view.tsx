@@ -4,8 +4,9 @@ import { format, isToday } from "date-fns"
 import { de } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { AlertCircle } from "lucide-react"
 import type { CalendarEvent } from "../types"
-import { getEventTypeColor, HOURS } from "../types"
+import { getEventTypeColor, getPriorityConfig, HOURS } from "../types"
 
 interface WeekViewProps {
   weekDays: Date[]
@@ -58,19 +59,25 @@ export function WeekView({
           const allDayEvents = getAllDayEventsForDay(day) || []
           return (
             <div key={dayIndex} className="p-1 border-r last:border-r-0 flex flex-wrap gap-1 min-w-0">
-              {allDayEvents.filter(e => e && e.title).map((event) => (
-                <div
-                  key={event.id}
-                  className={cn(
-                    "text-xs p-1 rounded text-white cursor-pointer hover:opacity-80 truncate max-w-full",
-                    getEventTypeColor(event.type)
-                  )}
-                  onClick={() => onEventClick(event)}
-                  title={event.title}
-                >
-                  {event.title}
-                </div>
-              ))}
+              {allDayEvents.filter(e => e && e.title).map((event) => {
+                const priorityConfig = getPriorityConfig(event.priority)
+                return (
+                  <div
+                    key={event.id}
+                    className={cn(
+                      "text-xs p-1 rounded text-white cursor-pointer hover:opacity-80 truncate max-w-full flex items-center gap-1",
+                      getEventTypeColor(event.type),
+                      event.priority === "high" && "ring-2 ring-red-400 ring-offset-1 ring-offset-background"
+                    )}
+                    onClick={() => onEventClick(event)}
+                    title={`${event.title} (Priorität: ${priorityConfig.label})`}
+                  >
+                    {event.priority === "high" && <AlertCircle className="h-3 w-3 flex-shrink-0" />}
+                    {event.priority === "medium" && <span className="w-1.5 h-1.5 rounded-full bg-amber-300 flex-shrink-0" />}
+                    <span className="truncate">{event.title}</span>
+                  </div>
+                )
+              })}
             </div>
           )
         })}
@@ -94,19 +101,25 @@ export function WeekView({
                       isToday(day) && "bg-primary/5"
                     )}
                   >
-                    {hourEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "text-xs p-1 rounded text-white cursor-pointer hover:opacity-80 truncate",
-                          getEventTypeColor(event.type)
-                        )}
-                        onClick={() => onEventClick(event)}
-                        title={event.title}
-                      >
-                        {event.startTime} - {event.title}
-                      </div>
-                    ))}
+                    {hourEvents.map((event) => {
+                      const priorityConfig = getPriorityConfig(event.priority)
+                      return (
+                        <div
+                          key={event.id}
+                          className={cn(
+                            "text-xs p-1 rounded text-white cursor-pointer hover:opacity-80 truncate flex items-center gap-1",
+                            getEventTypeColor(event.type),
+                            event.priority === "high" && "ring-2 ring-red-400 ring-offset-1 ring-offset-background"
+                          )}
+                          onClick={() => onEventClick(event)}
+                          title={`${event.title} (Priorität: ${priorityConfig.label})`}
+                        >
+                          {event.priority === "high" && <AlertCircle className="h-3 w-3 flex-shrink-0" />}
+                          {event.priority === "medium" && <span className="w-1.5 h-1.5 rounded-full bg-amber-300 flex-shrink-0" />}
+                          <span className="truncate">{event.startTime} - {event.title}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 )
               })}

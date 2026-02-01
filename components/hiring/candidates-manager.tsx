@@ -21,7 +21,17 @@ import {
   Sparkles,
   UserPlus,
   FileText,
+  MoreVertical,
+  Calendar,
+  MessageSquare,
 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { CreateCandidateDialog } from "./create-candidate-dialog"
 import EditCandidateDialog from "./edit-candidate-dialog"
@@ -50,6 +60,8 @@ interface Candidate {
   created_at: string
   image_url?: string
   converted_to_team_member?: boolean
+  notes?: string
+  first_contact_date?: string
   applications?: Array<{
     id: string
     job_posting_id: string
@@ -403,12 +415,73 @@ const CandidatesManager = ({
                         </Avatar>
 
                         <div className="flex-1 min-w-0">
-                          <Link
-                            href={`/hiring/candidates/${candidate.id}`}
-                            className="text-base font-semibold text-primary hover:underline cursor-pointer block"
-                          >
-                            {candidate.first_name} {candidate.last_name}
-                          </Link>
+                          <div className="flex items-start justify-between">
+                            <Link
+                              href={`/hiring/candidates/${candidate.id}`}
+                              className="text-base font-semibold text-primary hover:underline cursor-pointer block"
+                            >
+                              {candidate.first_name} {candidate.last_name}
+                            </Link>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {!showArchived && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setSendQuestionnaireCandidate({
+                                        id: candidate.id,
+                                        name: `${candidate.first_name} ${candidate.last_name}`,
+                                      })
+                                    }
+                                  >
+                                    <Mail className="h-4 w-4 mr-2" />
+                                    Fragebogen senden
+                                  </DropdownMenuItem>
+                                )}
+                                {!showArchived && (
+                                  <DropdownMenuItem onClick={() => setInterviewCandidate(candidate)}>
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    Interview generieren
+                                  </DropdownMenuItem>
+                                )}
+                                {!showArchived && !candidate.converted_to_team_member && (
+                                  <DropdownMenuItem onClick={() => setConvertingCandidate(candidate)}>
+                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    Als Team-Mitglied hinzufügen
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={() => setEditingCandidate(candidate)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Bearbeiten
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleArchive(candidate.id, showArchived)}>
+                                  {showArchived ? (
+                                    <>
+                                      <ArchiveRestore className="h-4 w-4 mr-2" />
+                                      Wiederherstellen
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Archive className="h-4 w-4 mr-2" />
+                                      Archivieren
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteCandidate(candidate)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Löschen
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                           {candidate.date_of_birth && (
                             <p className="text-xs text-muted-foreground">
                               {calculateAge(candidate.date_of_birth)} Jahre
@@ -445,75 +518,27 @@ const CandidatesManager = ({
                         </div>
                       </div>
 
-                      {!showArchived && (
-                        <div className="w-full flex items-center justify-between gap-2">
-                          <div className="flex-1" />
-                          <div className="flex-shrink-0">{renderRating(candidate.rating)}</div>
+                      {/* First Contact Date */}
+                      {candidate.first_contact_date && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>Erstkontakt: {new Date(candidate.first_contact_date).toLocaleDateString("de-DE")}</span>
                         </div>
                       )}
 
-                      <div className="w-full flex items-center justify-center gap-2 pt-1.5 border-t">
-                        {!showArchived && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              setSendQuestionnaireCandidate({
-                                id: candidate.id,
-                                name: `${candidate.first_name} ${candidate.last_name}`,
-                              })
-                            }
-                            title="Fragebogen senden"
-                          >
-                            <Mail className="h-6 w-6" />
-                          </Button>
-                        )}
-                        {!showArchived && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setInterviewCandidate(candidate)}
-                            title="Interview generieren"
-                          >
-                            <FileText className="h-6 w-6" />
-                          </Button>
-                        )}
-                        {!showArchived && !candidate.converted_to_team_member && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setConvertingCandidate(candidate)}
-                            title="Als Team-Mitglied hinzufügen"
-                          >
-                            <UserPlus className="h-6 w-6" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingCandidate(candidate)}
-                          title="Bearbeiten"
-                        >
-                          <Edit className="h-6 w-6" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleArchive(candidate.id, showArchived)}
-                          title={showArchived ? "Wiederherstellen" : "Archivieren"}
-                        >
-                          {showArchived ? <ArchiveRestore className="h-6 w-6" /> : <Archive className="h-6 w-6" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteCandidate(candidate)}
-                          title="Löschen"
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-6 w-6" />
-                        </Button>
-                      </div>
+                      {/* Internal Notes */}
+                      {candidate.notes && (
+                        <div className="flex items-start gap-1.5 text-xs bg-muted/50 rounded p-2">
+                          <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                          <span className="text-muted-foreground line-clamp-2">{candidate.notes}</span>
+                        </div>
+                      )}
+
+                      {!showArchived && (
+                        <div className="w-full flex items-center justify-end gap-2 pt-1.5 border-t">
+                          <div className="flex-shrink-0">{renderRating(candidate.rating)}</div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

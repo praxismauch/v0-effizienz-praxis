@@ -5,7 +5,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Target, ClipboardCheck, Workflow, Star, Users } from "lucide-react"
+import { Plus, Target, ClipboardCheck, Workflow, Star, Users, Pencil, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { CreateGoalTemplateDialog } from "@/components/create-goal-template-dialog"
 import { CreateResponsibilityTemplateDialog } from "@/components/create-responsibility-template-dialog"
 import { CreateTeamGroupTemplateDialog } from "@/components/create-team-group-template-dialog"
@@ -22,6 +33,9 @@ export function SuperAdminTemplatesManager() {
   const [showCreateGoalDialog, setShowCreateGoalDialog] = useState(false)
   const [showCreateResponsibilityDialog, setShowCreateResponsibilityDialog] = useState(false)
   const [showCreateTeamGroupDialog, setShowCreateTeamGroupDialog] = useState(false)
+  const [editingTeamGroup, setEditingTeamGroup] = useState<any>(null)
+  const [deletingTeamGroup, setDeletingTeamGroup] = useState<any>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (activeTab === "workflows") {
@@ -100,6 +114,46 @@ export function SuperAdminTemplatesManager() {
       console.error("Error fetching team group templates:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteTeamGroup = async () => {
+    if (!deletingTeamGroup) return
+    try {
+      const response = await fetch(`/api/super-admin/templates/team-groups?id=${deletingTeamGroup.id}`, {
+        method: "DELETE",
+      })
+      if (!response.ok) throw new Error("Failed to delete")
+      toast({ title: "Erfolg", description: "Teamgruppen-Vorlage wurde gelöscht" })
+      fetchTeamGroupTemplates()
+    } catch (error) {
+      toast({ title: "Fehler", description: "Löschen fehlgeschlagen", variant: "destructive" })
+    } finally {
+      setDeletingTeamGroup(null)
+    }
+  }
+
+  const handleMoveTeamGroup = async (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= teamGroupTemplates.length) return
+
+    const newOrder = [...teamGroupTemplates]
+    const [moved] = newOrder.splice(index, 1)
+    newOrder.splice(newIndex, 0, moved)
+    
+    setTeamGroupTemplates(newOrder)
+
+    try {
+      const response = await fetch("/api/super-admin/templates/team-groups", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sort_order: newOrder.map((t) => t.id) }),
+      })
+      if (!response.ok) throw new Error("Failed to reorder")
+      toast({ title: "Erfolg", description: "Reihenfolge wurde aktualisiert" })
+    } catch (error) {
+      toast({ title: "Fehler", description: "Reihenfolge konnte nicht gespeichert werden", variant: "destructive" })
+      fetchTeamGroupTemplates()
     }
   }
 
@@ -316,27 +370,75 @@ export function SuperAdminTemplatesManager() {
 
           {loading ? (
             <div className="text-center py-8">Lade Vorlagen...</div>
+          ) : teamGroupTemplates.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Noch keine Teamgruppen-Vorlagen vorhanden</p>
+              <p className="text-sm mt-2">Erstellen Sie Ihre erste Teamgruppen-Vorlage</p>
+            </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {teamGroupTemplates.map((template) => (
+            <div className="space-y-3">
+              {teamGroupTemplates.map((template, index) => (
                 <Card key={template.id}>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: template.color || "#3b82f6" }} />
-                      <CardTitle className="text-lg">{template.name}</CardTitle>
-                    </div>
-                    <CardDescription>{template.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-1">
-                        {template.team_group_template_specialties?.map((tgts: any) => (
-                          <Badge key={tgts.specialty_group_id} variant="secondary" className="text-xs">
-                            {tgts.specialty_groups?.name}
-                          </Badge>
-                        ))}
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleMoveTeamGroup(index, "up")}
+                          disabled={index === 0}
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleMoveTeamGroup(index, "down")}
+                          disabled={index === teamGroupTemplates.length - 1}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
                       </div>
-                      {template.icon && <div className="text-xs text-muted-foreground">Icon: {template.icon}</div>}
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <GripVertical className="h-5 w-5" />
+                      </div>
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: template.color || "#3b82f6" }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{template.name}</div>
+                        {template.description && (
+                          <div className="text-sm text-muted-foreground truncate">{template.description}</div>
+                        )}
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {template.team_group_template_specialties?.map((tgts: any) => (
+                            <Badge key={tgts.specialty_group_id} variant="secondary" className="text-xs">
+                              {tgts.specialty_groups?.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditingTeamGroup(template)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeletingTeamGroup(template)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -365,13 +467,40 @@ export function SuperAdminTemplatesManager() {
       />
 
       <CreateTeamGroupTemplateDialog
-        open={showCreateTeamGroupDialog}
-        onOpenChange={setShowCreateTeamGroupDialog}
+        open={showCreateTeamGroupDialog || !!editingTeamGroup}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowCreateTeamGroupDialog(false)
+            setEditingTeamGroup(null)
+          } else {
+            setShowCreateTeamGroupDialog(true)
+          }
+        }}
+        editingTemplate={editingTeamGroup}
         onSuccess={() => {
           fetchTeamGroupTemplates()
           setShowCreateTeamGroupDialog(false)
+          setEditingTeamGroup(null)
         }}
       />
+
+      <AlertDialog open={!!deletingTeamGroup} onOpenChange={(open) => !open && setDeletingTeamGroup(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Teamgruppen-Vorlage löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie die Vorlage &quot;{deletingTeamGroup?.name}&quot; wirklich löschen? Diese Aktion kann nicht
+              rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTeamGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

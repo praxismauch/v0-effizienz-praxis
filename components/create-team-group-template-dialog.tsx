@@ -15,9 +15,10 @@ interface CreateTeamGroupTemplateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  editingTemplate?: any
 }
 
-export function CreateTeamGroupTemplateDialog({ open, onOpenChange, onSuccess }: CreateTeamGroupTemplateDialogProps) {
+export function CreateTeamGroupTemplateDialog({ open, onOpenChange, onSuccess, editingTemplate }: CreateTeamGroupTemplateDialogProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [specialtyGroups, setSpecialtyGroups] = useState<any[]>([])
@@ -32,8 +33,25 @@ export function CreateTeamGroupTemplateDialog({ open, onOpenChange, onSuccess }:
   useEffect(() => {
     if (open) {
       fetchSpecialtyGroups()
+      if (editingTemplate) {
+        setFormData({
+          name: editingTemplate.name || "",
+          description: editingTemplate.description || "",
+          color: editingTemplate.color || "#3b82f6",
+          icon: editingTemplate.icon || "users",
+          specialty_group_ids: editingTemplate.team_group_template_specialties?.map((s: any) => s.specialty_group_id) || [],
+        })
+      } else {
+        setFormData({
+          name: "",
+          description: "",
+          color: "#3b82f6",
+          icon: "users",
+          specialty_group_ids: [],
+        })
+      }
     }
-  }, [open])
+  }, [open, editingTemplate])
 
   const fetchSpecialtyGroups = async () => {
     try {
@@ -50,17 +68,18 @@ export function CreateTeamGroupTemplateDialog({ open, onOpenChange, onSuccess }:
     setLoading(true)
 
     try {
+      const isEditing = !!editingTemplate
       const response = await fetch("/api/super-admin/templates/team-groups", {
-        method: "POST",
+        method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(isEditing ? { ...formData, id: editingTemplate.id } : formData),
       })
 
-      if (!response.ok) throw new Error("Failed to create template")
+      if (!response.ok) throw new Error(isEditing ? "Failed to update template" : "Failed to create template")
 
       toast({
         title: "Erfolg",
-        description: "Teamgruppen-Vorlage wurde erstellt",
+        description: isEditing ? "Teamgruppen-Vorlage wurde aktualisiert" : "Teamgruppen-Vorlage wurde erstellt",
       })
 
       setFormData({
@@ -75,7 +94,7 @@ export function CreateTeamGroupTemplateDialog({ open, onOpenChange, onSuccess }:
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Teamgruppen-Vorlage konnte nicht erstellt werden",
+        description: editingTemplate ? "Teamgruppen-Vorlage konnte nicht aktualisiert werden" : "Teamgruppen-Vorlage konnte nicht erstellt werden",
         variant: "destructive",
       })
     } finally {
@@ -96,7 +115,7 @@ export function CreateTeamGroupTemplateDialog({ open, onOpenChange, onSuccess }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Teamgruppen-Vorlage erstellen</DialogTitle>
+          <DialogTitle>{editingTemplate ? "Teamgruppen-Vorlage bearbeiten" : "Teamgruppen-Vorlage erstellen"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -167,7 +186,7 @@ export function CreateTeamGroupTemplateDialog({ open, onOpenChange, onSuccess }:
               Abbrechen
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Erstelle..." : "Erstellen"}
+              {loading ? (editingTemplate ? "Speichern..." : "Erstelle...") : (editingTemplate ? "Speichern" : "Erstellen")}
             </Button>
           </DialogFooter>
         </form>

@@ -2,9 +2,8 @@
 
 import { useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TestTube, FolderCheck, Tags, Monitor, ImageIcon } from "lucide-react"
+import { TestTube, FolderCheck, Tags, Monitor } from "lucide-react"
 import UnitTestsPanel from "@/components/testing/unit-tests-panel"
-import HeaderImagesPanel from "@/components/testing/header-images-panel"
 import TestChecklistManager from "@/components/test-checklist-manager"
 import TestingCategoriesManager from "@/components/testing-categories-manager"
 import UIItemsTestManager from "@/components/super-admin/ui-items-test-manager"
@@ -23,7 +22,7 @@ export default function TestingPageClient() {
       </div>
 
       <Tabs defaultValue={initialTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:w-[750px]">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
           <TabsTrigger value="unit-tests" className="flex items-center gap-2">
             <TestTube className="h-4 w-4" />
             <span className="hidden sm:inline">Unit Tests</span>
@@ -39,10 +38,6 @@ export default function TestingPageClient() {
           <TabsTrigger value="categories" className="flex items-center gap-2">
             <Tags className="h-4 w-4" />
             <span className="hidden sm:inline">Kategorien</span>
-          </TabsTrigger>
-          <TabsTrigger value="header-images" className="flex items-center gap-2">
-            <ImageIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Header-Bilder</span>
           </TabsTrigger>
         </TabsList>
 
@@ -60,10 +55,6 @@ export default function TestingPageClient() {
 
         <TabsContent value="categories" className="space-y-6">
           <TestingCategoriesManager />
-        </TabsContent>
-
-        <TabsContent value="header-images" className="space-y-6">
-          <HeaderImagesPanel />
         </TabsContent>
       </Tabs>
     </div>

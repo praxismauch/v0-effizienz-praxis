@@ -398,17 +398,17 @@ export function EditCandidateDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="address">{t("hiring.editCandidateDialog.address", "Straße und Hausnummer")}</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="z.B. Hauptstraße 123"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="address">{t("hiring.editCandidateDialog.address", "Straße und Hausnummer")}</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="z.B. Hauptstraße 123"
+            />
+          </div>
 
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="postal_code">{t("hiring.editCandidateDialog.postalCode", "PLZ")}</Label>
               <Input
@@ -418,10 +418,8 @@ export function EditCandidateDialog({
                 placeholder="z.B. 12345"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2 col-span-2">
               <Label htmlFor="city">{t("hiring.editCandidateDialog.city", "Ort")}</Label>
               <Input
                 id="city"

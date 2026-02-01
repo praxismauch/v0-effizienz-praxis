@@ -75,6 +75,7 @@ interface CandidatesManagerProps {
   onShowArchivedChange?: (show: boolean) => void
   onUpdate?: () => void
   onNavigateToTab?: () => void
+  initialJobPostingFilter?: string
 }
 
 const CandidatesManager = ({
@@ -83,11 +84,12 @@ const CandidatesManager = ({
   onShowArchivedChange,
   onUpdate,
   onNavigateToTab,
+  initialJobPostingFilter,
 }: CandidatesManagerProps) => {
   const { currentPractice } = usePractice()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [jobPostingFilter, setJobPostingFilter] = useState<string>("all")
+  const [jobPostingFilter, setJobPostingFilter] = useState<string>(initialJobPostingFilter || "all")
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null)
   const [sendQuestionnaireCandidate, setSendQuestionnaireCandidate] = useState<{

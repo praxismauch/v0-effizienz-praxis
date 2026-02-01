@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
@@ -34,9 +35,30 @@ export default function HiringPageClient() {
   const { t } = useTranslation()
   const { currentPractice } = usePractice()
   const { currentUser, loading: userLoading } = useUser()
-  const [activeTab, setActiveTab] = useState("postings")
+  const searchParams = useSearchParams()
+  
+  // Read URL parameters
+  const urlTab = searchParams.get("tab")
+  const urlJobId = searchParams.get("jobId")
+  
+  const [activeTab, setActiveTab] = useState(urlTab || "postings")
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(urlJobId)
   const [showAIAnalysis, setShowAIAnalysis] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
+
+  // Update state when URL params change
+  useEffect(() => {
+    if (urlTab) {
+      setActiveTab(urlTab)
+    }
+    if (urlJobId) {
+      setSelectedJobId(urlJobId)
+      // Auto-switch to candidates tab when jobId is provided
+      if (!urlTab) {
+        setActiveTab("candidates")
+      }
+    }
+  }, [urlTab, urlJobId])
 
   const { data: counts } = useSWR<HiringCounts>(
     currentPractice?.id ? `/api/hiring/counts?practiceId=${currentPractice.id}` : null,
@@ -140,6 +162,7 @@ export default function HiringPageClient() {
               onTabChange={setActiveTab}
               showArchived={showArchived}
               onShowArchivedChange={setShowArchived}
+              initialJobPostingFilter={selectedJobId || undefined}
             />
           </TabsContent>
 

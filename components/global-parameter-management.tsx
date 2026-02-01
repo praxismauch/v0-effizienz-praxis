@@ -79,6 +79,26 @@ interface GlobalParameterGroup {
   usageCount: number
 }
 
+// Map Tailwind bg colors to hex colors for border
+const COLOR_MAP: Record<string, string> = {
+  "bg-blue-500": "#3b82f6",
+  "bg-green-500": "#22c55e",
+  "bg-purple-500": "#a855f7",
+  "bg-orange-500": "#f97316",
+  "bg-red-500": "#ef4444",
+  "bg-pink-500": "#ec4899",
+  "bg-yellow-500": "#eab308",
+  "bg-indigo-500": "#6366f1",
+  "bg-teal-500": "#14b8a6",
+  "bg-cyan-500": "#06b6d4",
+  "bg-lime-500": "#84cc16",
+  "bg-amber-500": "#f59e0b",
+  "bg-rose-500": "#f43f5e",
+  "bg-violet-500": "#8b5cf6",
+  "bg-emerald-500": "#10b981",
+  "bg-gray-500": "#6b7280",
+}
+
 const GroupCard = memo(
   ({
     group,
@@ -93,11 +113,13 @@ const GroupCard = memo(
     onDelete: (id: string) => void
     isDeletingGroup: boolean
   }) => {
+    const borderColor = COLOR_MAP[group.color || "bg-blue-500"] || "#3b82f6"
+    
     return (
       <Card
         key={group.id}
         className="relative border-l-4"
-        style={{ borderLeftColor: group.color?.replace("bg-", "") || "#3b82f6" }}
+        style={{ borderLeftColor: borderColor }}
       >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -133,20 +155,20 @@ const GroupCard = memo(
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <CardTitle className="text-lg">{group.name || "Unnamed Category"}</CardTitle>
-          <CardDescription>{group.description || "No description"}</CardDescription>
+          <CardTitle className="text-lg">{group.name || "Unbenannte Kategorie"}</CardTitle>
+          <CardDescription>{group.description || "Keine Beschreibung"}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Parameters:</span>
+              <span className="text-muted-foreground">Parameter:</span>
               <Badge variant="outline">{group.parameters?.length || 0}</Badge>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Used by:</span>
+              <span className="text-muted-foreground">Verwendet von:</span>
               <div className="flex items-center gap-1">
                 <Users className="h-3 w-3 text-muted-foreground" />
-                <span>{group.usageCount || 0} practices</span>
+                <span>{group.usageCount || 0} Praxen</span>
               </div>
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -321,22 +343,22 @@ export function GlobalParameterManagement() {
       const response = await fetch("/api/global-parameter-groups")
 
       if (!response.ok) {
-        console.error("[v0] Failed to fetch groups:", response.status)
         setGroups([])
         return
       }
 
       const contentType = response.headers.get("content-type")
       if (!contentType || !contentType.includes("application/json")) {
-        console.error("[v0] Invalid response content type")
         setGroups([])
         return
       }
 
       const data = await response.json()
+      
       const transformedGroups = (data.categories || [])
         .map(transformGroupFromAPI)
         .filter((group): group is GlobalParameterGroup => group !== null)
+      
       setGroups(transformedGroups)
     } catch (error) {
       console.error("[v0] Error fetching groups:", error)
@@ -854,9 +876,9 @@ export function GlobalParameterManagement() {
             <Database className="h-4 w-4" />
             {t("kpi.global_kpis", "Global KPIs")}
           </TabsTrigger>
-          <TabsTrigger value="groups" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            {t("kpi.categories", "KPI Categories")}
+        <TabsTrigger value="groups" className="gap-2">
+          <BarChart3 className="h-4 w-4" />
+          {t("kpi.categories", "Kategorien")}
           </TabsTrigger>
         </TabsList>
 

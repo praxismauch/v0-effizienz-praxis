@@ -1,8 +1,6 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-console.log("[v0] sidebar-preferences route module loaded at", new Date().toISOString())
-
 export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const { userId } = await params
@@ -51,7 +49,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .maybeSingle()
 
     if (error) {
-      console.error("[v0] Error fetching sidebar preferences:", error)
+      console.error("Error fetching sidebar preferences:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -81,31 +79,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           },
     })
   } catch (error) {
-    console.error("[v0] Error in sidebar preferences GET:", error)
+    console.error("Error in sidebar preferences GET:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
-  // IMMEDIATE LOG - if this doesn't appear, the POST handler isn't being called at all
-  console.log("[v0] >>>>>>>>>> POST /api/users/[userId]/sidebar-preferences ENTERED <<<<<<<<<<")
-  
-  // Try reading the body first to see if that's causing issues
   let body;
   try {
     body = await request.json()
-    console.log("[v0] Body parsed successfully:", JSON.stringify(body))
   } catch (bodyError) {
-    console.error("[v0] Body parse error:", bodyError)
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
 
-  console.log("[v0] ========= POST HANDLER STARTED =========")
-  console.log("[v0] Timestamp:", new Date().toISOString())
-  console.log("[v0] Request URL:", request.url)
   try {
     const { userId } = await params
-    console.log("[v0] POST - userId from params:", userId)
 
     const supabase = await createClient()
 
@@ -114,21 +102,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       error: authError,
     } = await supabase.auth.getUser()
 
-    console.log("[v0] POST - Auth check:", authError ? `Error: ${authError.message}` : `User: ${user?.id}`)
-
     if (authError || !user) {
-      console.log("[v0] POST - Unauthorized: no user")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     if (user.id !== userId) {
-      console.log("[v0] POST - Unauthorized: user ID mismatch")
       return NextResponse.json({ error: "Unauthorized - User ID mismatch" }, { status: 403 })
     }
 
-    // body already parsed above
     const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites, single_group_mode } = body
-    console.log("[v0] POST - Body received:", { practice_id, favorites_count: favorites?.length, single_group_mode })
 
     const effectivePracticeId = String(practice_id || "1")
 
@@ -136,7 +118,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     
     // If Supabase isn't configured, return success (localStorage is handling the data)
     if (!adminClient) {
-      console.log("[v0] Supabase not configured - sidebar preferences handled by localStorage")
       return NextResponse.json({ 
         preferences: { 
           expanded_groups: expanded_groups || [],
@@ -160,10 +141,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       p_single_group_mode: single_group_mode !== undefined ? single_group_mode : null,
     })
 
-    console.log("[v0] RPC upsert result:", rpcError ? `Error: ${rpcError.message}` : "Success", rpcResult)
-
     if (rpcError) {
-      console.error("[v0] Error saving sidebar preferences:", rpcError)
+      console.error("Error saving sidebar preferences:", rpcError)
       return NextResponse.json({ 
         error: rpcError.message,
         errorCode: rpcError.code,
@@ -191,12 +170,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ preferences: responseData })
   } catch (error) {
-    console.error("[v0] ========= POST HANDLER ERROR =========")
-    console.error("[v0] Error type:", typeof error)
-    console.error("[v0] Error name:", error instanceof Error ? error.name : "unknown")
-    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
-    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "no stack")
-    console.error("[v0] Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error || {}), 2))
+    console.error("Error in sidebar preferences POST:", error)
     return NextResponse.json({ error: "Internal server error", details: String(error) }, { status: 500 })
   }
 }

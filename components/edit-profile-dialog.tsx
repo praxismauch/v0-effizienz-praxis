@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,8 +21,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTeam } from "@/contexts/team-context"
 import { useUser, type User } from "@/contexts/user-context"
-import { Shield, UserIcon, Settings, Camera } from "lucide-react"
+import { Shield, UserIcon, Settings, Camera, Star } from "lucide-react"
 import { useRoleColors } from "@/lib/use-role-colors"
+import { FavoritesManager } from "@/components/favorites-manager"
 
 interface TeamMember extends User {
   permissions: string[]
@@ -93,6 +94,34 @@ function EditProfileDialog({ member, open, onOpenChange }: EditProfileDialogProp
   })
 
   const [activeTab, setActiveTab] = useState("profile")
+  const [favorites, setFavorites] = useState<string[]>([])
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false)
+
+  // Load favorites when dialog opens
+  useEffect(() => {
+    const loadFavorites = async () => {
+      if (!open || favoritesLoaded) return
+      try {
+        const response = await fetch(`/api/users/${member.id}/favorites`)
+        if (response.ok) {
+          const data = await response.json()
+          setFavorites(data.favorites || [])
+        }
+      } catch (error) {
+        console.error("[v0] Error loading favorites:", error)
+      } finally {
+        setFavoritesLoaded(true)
+      }
+    }
+    loadFavorites()
+  }, [open, member.id, favoritesLoaded])
+
+  // Reset favoritesLoaded when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setFavoritesLoaded(false)
+    }
+  }, [open])
 
   const handleSave = () => {
     try {
@@ -191,8 +220,12 @@ function EditProfileDialog({ member, open, onOpenChange }: EditProfileDialogProp
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${2 + (canEditRole ? 1 : 0) + (canEditPermissions ? 1 : 0) + (canEditTeams ? 1 : 0)}, minmax(0, 1fr))` }}>
             <TabsTrigger value="profile">Profil</TabsTrigger>
+            <TabsTrigger value="favorites">
+              <Star className="h-4 w-4 mr-1" />
+              Favoriten
+            </TabsTrigger>
             {canEditRole && <TabsTrigger value="role">Rolle</TabsTrigger>}
             {canEditPermissions && <TabsTrigger value="permissions">Berechtigungen</TabsTrigger>}
             {canEditTeams && <TabsTrigger value="teams">Teams</TabsTrigger>}
@@ -265,6 +298,13 @@ function EditProfileDialog({ member, open, onOpenChange }: EditProfileDialogProp
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="favorites" className="space-y-4">
+            <FavoritesManager 
+              favorites={favorites} 
+              onFavoritesChange={setFavorites}
+            />
           </TabsContent>
 
           {canEditRole && (

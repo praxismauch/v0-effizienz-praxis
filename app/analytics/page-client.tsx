@@ -33,13 +33,13 @@ export default function AnalyticsPageClient() {
       </div>
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:grid-cols-9 h-auto gap-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto gap-1">
             <TabsTrigger
               value="analytics"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
             >
-              <TrendingUp className="h-4 w-4" />
-              {t("analytics.tabs.analytics", "Auswertung")}
+              <Layout className="h-4 w-4" />
+              {t("analytics.tabs.analytics", "Diagramme")}
             </TabsTrigger>
             <TabsTrigger
               value="data"
@@ -49,11 +49,25 @@ export default function AnalyticsPageClient() {
               {t("analytics.tabs.data", "Kennzahlen")}
             </TabsTrigger>
             <TabsTrigger
-              value="reviews"
+              value="excel"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
             >
-              <Star className="h-4 w-4" />
-              {t("analytics.tabs.reviews", "Bewertungen")}
+              <Table2 className="h-4 w-4" />
+              {t("analytics.tabs.excel", "Dateien")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="reports"
+              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+            >
+              <FileText className="h-4 w-4" />
+              {t("analytics.tabs.reports", "Bericht")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="trends"
+              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+            >
+              <TrendingUp className="h-4 w-4" />
+              {t("analytics.tabs.trends", "Trends")}
             </TabsTrigger>
             <TabsTrigger
               value="kv-abrechnung"
@@ -63,39 +77,11 @@ export default function AnalyticsPageClient() {
               {t("analytics.tabs.kv", "KV-Abrechnung")}
             </TabsTrigger>
             <TabsTrigger
-              value="reports"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <FileText className="h-4 w-4" />
-              {t("analytics.tabs.reports", "Berichte")}
-            </TabsTrigger>
-            <TabsTrigger
               value="bank"
               className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
             >
               <Building2 className="h-4 w-4" />
-              {t("analytics.tabs.bank", "Bankkonten")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="excel"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <Table2 className="h-4 w-4" />
-              {t("analytics.tabs.excel", "Excel")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="widgets"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <Layout className="h-4 w-4" />
-              {t("analytics.tabs.widgets", "Widgets")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="kv-bericht"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <PieChart className="h-4 w-4" />
-              {t("analytics.tabs.kvBericht", "KV-Bericht")}
+              {t("analytics.tabs.bank", "Finanzen")}
             </TabsTrigger>
           </TabsList>
 

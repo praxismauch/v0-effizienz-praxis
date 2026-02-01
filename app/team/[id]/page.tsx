@@ -20,6 +20,7 @@ import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
 import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
 import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiterfassung-tab"
+import { ContractsManager } from "@/components/team/contracts-manager"
 
 const roleLabels = {
   admin: "Praxis Admin",
@@ -252,8 +253,9 @@ export default function TeamMemberDetailPage() {
 
         <div className="flex items-center justify-between">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto gap-1 mb-6">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:grid-cols-9 h-auto gap-1 mb-6">
                 <TabsTrigger value="overview">Übersicht</TabsTrigger>
+                <TabsTrigger value="contracts">Verträge</TabsTrigger>
                 <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
                 <TabsTrigger value="vaccinations">Impfstatus</TabsTrigger>
                 <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
@@ -407,6 +409,16 @@ export default function TeamMemberDetailPage() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="contracts" className="space-y-4">
+              {member && (
+                <ContractsManager
+                  memberId={memberId}
+                  memberName={member.name}
+                  practiceId={member.practice_id || practiceId}
+                />
+              )}
             </TabsContent>
 
               <TabsContent value="skills" className="space-y-4">

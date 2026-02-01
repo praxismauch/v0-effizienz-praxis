@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { 
+import {
   Settings, 
   Building2, 
   Clock, 
@@ -15,7 +15,9 @@ import {
   Users,
   MapPin,
   Loader2,
-  Target
+  Target,
+  Link2,
+  Cog
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/contexts/user-context"
@@ -35,6 +37,8 @@ import { HomeofficeTab } from "@/components/settings/homeoffice-tab"
 import { OrgaCategoriesManager } from "@/components/settings/orga-categories-manager"
 import { TeamRoleOrderSettings } from "@/components/settings/team-role-order-settings"
 import { PracticeParameterManagement } from "@/components/practice-parameter-management"
+import { InterfacesTab } from "@/components/settings/interfaces-tab"
+import { SystemSettingsTab } from "@/components/settings/system-settings-tab"
 
 export default function SettingsPageClient() {
   const { currentUser } = useUser()
@@ -136,6 +140,16 @@ export default function SettingsPageClient() {
                 <span>Team-Reihenfolge</span>
               </TabsTrigger>
             )}
+            {isAdmin && (
+              <TabsTrigger value="interfaces" className="gap-2 whitespace-nowrap">
+                <Link2 className="h-4 w-4" />
+                <span>Schnittstellen</span>
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="system" className="gap-2 whitespace-nowrap">
+              <Cog className="h-4 w-4" />
+              <span>System</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Practice Settings Tab */}
@@ -203,6 +217,18 @@ export default function SettingsPageClient() {
               <TeamRoleOrderSettings />
             </TabsContent>
           )}
+
+          {/* Interfaces Tab (Admin only) */}
+          {isAdmin && (
+            <TabsContent value="interfaces">
+              <InterfacesTab />
+            </TabsContent>
+          )}
+
+          {/* System Settings Tab */}
+          <TabsContent value="system">
+            <SystemSettingsTab />
+          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>

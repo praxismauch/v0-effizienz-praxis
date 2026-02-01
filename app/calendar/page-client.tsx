@@ -18,6 +18,7 @@ import { WeekView } from "./components/week-view"
 import { DayView } from "./components/day-view"
 import { EventList } from "./components/event-list"
 import { EventDialog } from "./components/event-dialog"
+import { UpcomingEventsSidebar } from "./components/upcoming-events-sidebar"
 import { CalendarMenuBar } from "@/components/calendar-menu-bar"
 import { AICalendarDialog } from "@/components/ai-calendar-dialog"
 
@@ -280,33 +281,46 @@ export default function CalendarPageClient() {
             </div>
           </div>
 
-          {/* Calendar Views */}
-          {viewMode === "month" && (
-            <MonthView
-              monthDays={monthDays}
-              currentDate={currentDate}
-              getEventsForDay={getEventsForDay}
-              onDayClick={handleDayClick}
-              onEventClick={handleEventClick}
-            />
-          )}
-          {viewMode === "week" && (
-            <WeekView
-              weekDays={weekDays}
-              getEventsForHour={getEventsForHour}
-              getAllDayEventsForDay={getAllDayEventsForDay}
-              onDayClick={handleDayClick}
-              onEventClick={handleEventClick}
-            />
-          )}
-          {viewMode === "day" && (
-            <DayView
-              currentDate={currentDate}
-              getEventsForHour={getEventsForHour}
-              getAllDayEventsForDay={getAllDayEventsForDay}
-              onEventClick={handleEventClick}
-            />
-          )}
+          {/* Calendar with Sidebar */}
+          <div className="flex gap-0 rounded-lg border overflow-hidden">
+            {/* Main Calendar */}
+            <div className="flex-1 min-w-0">
+              {viewMode === "month" && (
+                <MonthView
+                  monthDays={monthDays}
+                  currentDate={currentDate}
+                  getEventsForDay={getEventsForDay}
+                  onDayClick={handleDayClick}
+                  onEventClick={handleEventClick}
+                />
+              )}
+              {viewMode === "week" && (
+                <WeekView
+                  weekDays={weekDays}
+                  getEventsForHour={getEventsForHour}
+                  getAllDayEventsForDay={getAllDayEventsForDay}
+                  onDayClick={handleDayClick}
+                  onEventClick={handleEventClick}
+                />
+              )}
+              {viewMode === "day" && (
+                <DayView
+                  currentDate={currentDate}
+                  getEventsForHour={getEventsForHour}
+                  getAllDayEventsForDay={getAllDayEventsForDay}
+                  onEventClick={handleEventClick}
+                />
+              )}
+            </div>
+
+            {/* Upcoming Events Sidebar - hidden on smaller screens */}
+            <div className="hidden lg:block">
+              <UpcomingEventsSidebar
+                events={events}
+                onEventClick={handleEventClick}
+              />
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="upcoming">

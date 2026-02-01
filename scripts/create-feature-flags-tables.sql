@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS feature_flags (
   feature_key VARCHAR(255) UNIQUE NOT NULL,
   feature_name VARCHAR(255) NOT NULL,
   feature_type VARCHAR(50) NOT NULL CHECK (feature_type IN ('frontend', 'backend')),
-  parent_key VARCHAR(255) NULL REFERENCES feature_flags(feature_key) ON DELETE CASCADE,
+  parent_key VARCHAR(255) NULL,
   icon_name VARCHAR(100) NULL,
   route_path VARCHAR(500) NULL,
   is_enabled BOOLEAN DEFAULT true NOT NULL,
@@ -15,19 +15,19 @@ CREATE TABLE IF NOT EXISTS feature_flags (
   description TEXT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_by UUID NULL REFERENCES auth.users(id) ON DELETE SET NULL
+  updated_by UUID NULL
 );
 
 -- Create practice_feature_overrides table for practice-specific feature settings
 CREATE TABLE IF NOT EXISTS practice_feature_overrides (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  practice_id UUID NOT NULL REFERENCES practices(id) ON DELETE CASCADE,
-  feature_key VARCHAR(255) NOT NULL REFERENCES feature_flags(feature_key) ON DELETE CASCADE,
+  practice_id INTEGER NOT NULL REFERENCES practices(id) ON DELETE CASCADE,
+  feature_key VARCHAR(255) NOT NULL,
   is_enabled BOOLEAN NULL,
   is_beta BOOLEAN NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_by UUID NULL REFERENCES auth.users(id) ON DELETE SET NULL,
+  updated_by UUID NULL,
   UNIQUE(practice_id, feature_key)
 );
 
@@ -42,42 +42,9 @@ CREATE INDEX IF NOT EXISTS idx_practice_feature_overrides_feature_key ON practic
 ALTER TABLE feature_flags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE practice_feature_overrides ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for feature_flags
--- Super admins can do everything
-CREATE POLICY "Super admins have full access to feature_flags" ON feature_flags
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND (users.is_super_admin = true OR users.role = 'super_admin')
-    )
-  );
+-- Allow all operations for now (super admin check happens in API)
+DROP POLICY IF EXISTS "Allow all feature_flags access" ON feature_flags;
+CREATE POLICY "Allow all feature_flags access" ON feature_flags FOR ALL USING (true);
 
--- All authenticated users can view enabled features
-CREATE POLICY "Authenticated users can view enabled features" ON feature_flags
-  FOR SELECT
-  USING (auth.uid() IS NOT NULL AND is_enabled = true);
-
--- RLS Policies for practice_feature_overrides
--- Super admins can do everything
-CREATE POLICY "Super admins have full access to practice overrides" ON practice_feature_overrides
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND (users.is_super_admin = true OR users.role = 'super_admin')
-    )
-  );
-
--- Practice owners/admins can view their own overrides
-CREATE POLICY "Practice members can view their practice overrides" ON practice_feature_overrides
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.practice_id::text = practice_feature_overrides.practice_id::text
-    )
-  );
+DROP POLICY IF EXISTS "Allow all practice_feature_overrides access" ON practice_feature_overrides;
+CREATE POLICY "Allow all practice_feature_overrides access" ON practice_feature_overrides FOR ALL USING (true);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
+import { Lock, Globe, Users, User } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { useTeams, useTeamMembers } from "@/hooks/use-teams"
 import type { CalendarEvent, FormData } from "../types"
 
 const defaultFormData: FormData = {
@@ -29,6 +32,8 @@ const defaultFormData: FormData = {
   type: "meeting",
   priority: "medium",
   visibility: "private",
+  visibleToTeams: [],
+  visibleToMembers: [],
   location: "",
   isAllDay: false,
   recurrence: "none",
@@ -59,6 +64,8 @@ export function EventDialog({
   onSaved,
 }: EventDialogProps) {
   const { toast } = useToast()
+  const { teams } = useTeams()
+  const { members } = useTeamMembers()
   const [formData, setFormData] = useState<FormData>(defaultFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -79,6 +86,8 @@ export function EventDialog({
           type: event.type || "meeting",
           priority: event.priority || "medium",
           visibility: event.visibility || "private",
+          visibleToTeams: event.visibleToTeams || [],
+          visibleToMembers: event.visibleToMembers || [],
           location: event.location || "",
           isAllDay: event.isAllDay || false,
           recurrence: event.recurrence || "none",
@@ -226,16 +235,111 @@ export function EventDialog({
 
             <div className="grid gap-2">
               <Label htmlFor="visibility">Sichtbarkeit</Label>
-              <Select value={formData.visibility} onValueChange={(v) => updateField("visibility", v as FormData["visibility"])}>
+              <Select 
+                value={formData.visibility} 
+                onValueChange={(v) => {
+                  updateField("visibility", v as FormData["visibility"])
+                  if (v === "private" || v === "public") {
+                    updateField("visibleToTeams", [])
+                    updateField("visibleToMembers", [])
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="private">Privat (nur für mich)</SelectItem>
-                  <SelectItem value="public">Öffentlich (für alle sichtbar)</SelectItem>
+                  <SelectItem value="private">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      <span>Privat (nur für mich)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="public">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span>Öffentlich (für alle sichtbar)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="team">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>Bestimmte Teams</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="members">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span>Bestimmte Mitarbeiter</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Team selection when visibility is "team" */}
+            {formData.visibility === "team" && (
+              <div className="grid gap-2">
+                <Label>Sichtbar für Teams</Label>
+                <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]">
+                  {teams.map((team) => {
+                    const isSelected = formData.visibleToTeams.includes(team.id)
+                    return (
+                      <Badge
+                        key={team.id}
+                        variant={isSelected ? "default" : "outline"}
+                        className="cursor-pointer"
+                        style={isSelected ? { backgroundColor: team.color } : undefined}
+                        onClick={() => {
+                          if (isSelected) {
+                            updateField("visibleToTeams", formData.visibleToTeams.filter(id => id !== team.id))
+                          } else {
+                            updateField("visibleToTeams", [...formData.visibleToTeams, team.id])
+                          }
+                        }}
+                      >
+                        {team.name}
+                      </Badge>
+                    )
+                  })}
+                  {teams.length === 0 && (
+                    <span className="text-sm text-muted-foreground">Keine Teams verfügbar</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Member selection when visibility is "members" */}
+            {formData.visibility === "members" && (
+              <div className="grid gap-2">
+                <Label>Sichtbar für Mitarbeiter</Label>
+                <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px] max-h-[120px] overflow-y-auto">
+                  {members.map((member) => {
+                    const isSelected = formData.visibleToMembers.includes(member.id)
+                    const displayName = member.user?.name || member.user?.email || "Unbekannt"
+                    return (
+                      <Badge
+                        key={member.id}
+                        variant={isSelected ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (isSelected) {
+                            updateField("visibleToMembers", formData.visibleToMembers.filter(id => id !== member.id))
+                          } else {
+                            updateField("visibleToMembers", [...formData.visibleToMembers, member.id])
+                          }
+                        }}
+                      >
+                        {displayName}
+                      </Badge>
+                    )
+                  })}
+                  {members.length === 0 && (
+                    <span className="text-sm text-muted-foreground">Keine Mitarbeiter verfügbar</span>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center space-x-2">
               <Checkbox

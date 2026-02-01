@@ -1,7 +1,7 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Workflow, CheckSquare, FileText, UsersRound } from "lucide-react"
+import { Workflow, CheckSquare, FileText, UsersRound, Calendar } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
@@ -43,6 +43,15 @@ const TestChecklistManager = dynamic(() => import("@/components/test-checklist-m
   ssr: false,
 })
 
+const EventTypesManager = dynamic(() => import("@/components/event-types-manager"), {
+  loading: () => (
+    <div className="flex items-center justify-center p-8">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  ),
+  ssr: false,
+})
+
 function ContentManagementContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -62,7 +71,7 @@ function ContentManagementContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
           <TabsTrigger value="workflows" className="gap-2">
             <Workflow className="h-4 w-4" />
             Workflows
@@ -78,6 +87,10 @@ function ContentManagementContent() {
           <TabsTrigger value="teams" className="gap-2">
             <UsersRound className="h-4 w-4" />
             Team-Vorlagen
+          </TabsTrigger>
+          <TabsTrigger value="event-types" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            Event-Typen
           </TabsTrigger>
         </TabsList>
 
@@ -95,6 +108,10 @@ function ContentManagementContent() {
 
         <TabsContent value="teams" className="mt-6 space-y-4">
           <DefaultTeamsManager />
+        </TabsContent>
+
+        <TabsContent value="event-types" className="mt-6 space-y-4">
+          <EventTypesManager />
         </TabsContent>
       </Tabs>
     </div>

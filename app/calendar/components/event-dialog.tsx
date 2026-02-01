@@ -28,6 +28,7 @@ const defaultFormData: FormData = {
   endTime: "10:00",
   type: "meeting",
   priority: "medium",
+  visibility: "private",
   location: "",
   isAllDay: false,
   recurrence: "none",
@@ -77,6 +78,7 @@ export function EventDialog({
           endTime: event.endTime || "10:00",
           type: event.type || "meeting",
           priority: event.priority || "medium",
+          visibility: event.visibility || "private",
           location: event.location || "",
           isAllDay: event.isAllDay || false,
           recurrence: event.recurrence || "none",
@@ -220,6 +222,19 @@ export function EventDialog({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="visibility">Sichtbarkeit</Label>
+              <Select value={formData.visibility} onValueChange={(v) => updateField("visibility", v as FormData["visibility"])}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">Privat (nur für mich)</SelectItem>
+                  <SelectItem value="public">Öffentlich (für alle sichtbar)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center space-x-2">

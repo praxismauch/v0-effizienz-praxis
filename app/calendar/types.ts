@@ -8,6 +8,7 @@ export type CalendarEvent = {
   endTime: string
   type: "meeting" | "training" | "maintenance" | "holiday" | "announcement" | "task" | "event" | "interview" | "other"
   priority: "low" | "medium" | "high"
+  visibility: "private" | "public"
   location?: string
   isAllDay: boolean
   recurrence?: string
@@ -30,6 +31,7 @@ export type FormData = {
   endTime: string
   type: CalendarEvent["type"]
   priority: CalendarEvent["priority"]
+  visibility: CalendarEvent["visibility"]
   location: string
   isAllDay: boolean
   recurrence: string

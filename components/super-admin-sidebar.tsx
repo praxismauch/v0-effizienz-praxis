@@ -575,6 +575,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
               icon: Users,
               href: "/super-admin/content?tab=teams",
             },
+            {
+              id: "event-types",
+              label: "Event-Typen",
+              icon: ClipboardCheck,
+              href: "/super-admin/content?tab=event-types",
+            },
           ],
         },
       ],

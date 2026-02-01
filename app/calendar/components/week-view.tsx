@@ -4,9 +4,20 @@ import { format, isToday } from "date-fns"
 import { de } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Lock, Globe, Users, User } from "lucide-react"
 import type { CalendarEvent } from "../types"
 import { getEventTypeColor, getPriorityConfig, HOURS } from "../types"
+
+const VisibilityIcon = ({ visibility }: { visibility?: string }) => {
+  if (!visibility || visibility === "public") return null
+  const iconClass = "h-3 w-3 flex-shrink-0 opacity-80"
+  switch (visibility) {
+    case "private": return <Lock className={iconClass} />
+    case "team": return <Users className={iconClass} />
+    case "members": return <User className={iconClass} />
+    default: return null
+  }
+}
 
 interface WeekViewProps {
   weekDays: Date[]
@@ -74,6 +85,7 @@ export function WeekView({
                   >
                     {event.priority === "high" && <AlertCircle className="h-3 w-3 flex-shrink-0" />}
                     {event.priority === "medium" && <span className="w-1.5 h-1.5 rounded-full bg-amber-300 flex-shrink-0" />}
+                    <VisibilityIcon visibility={event.visibility} />
                     <span className="truncate">{event.title}</span>
                   </div>
                 )
@@ -116,6 +128,7 @@ export function WeekView({
                         >
                           {event.priority === "high" && <AlertCircle className="h-3 w-3 flex-shrink-0" />}
                           {event.priority === "medium" && <span className="w-1.5 h-1.5 rounded-full bg-amber-300 flex-shrink-0" />}
+                          <VisibilityIcon visibility={event.visibility} />
                           <span className="truncate">{event.startTime} - {event.title}</span>
                         </div>
                       )

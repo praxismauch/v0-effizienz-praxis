@@ -8,6 +8,9 @@ export type CalendarEvent = {
   endTime: string
   type: "meeting" | "training" | "maintenance" | "holiday" | "announcement" | "task" | "event" | "interview" | "other"
   priority: "low" | "medium" | "high"
+  visibility: "private" | "public" | "team" | "members"
+  visibleToTeams?: string[]
+  visibleToMembers?: string[]
   location?: string
   isAllDay: boolean
   recurrence?: string
@@ -30,6 +33,9 @@ export type FormData = {
   endTime: string
   type: CalendarEvent["type"]
   priority: CalendarEvent["priority"]
+  visibility: CalendarEvent["visibility"]
+  visibleToTeams: string[]
+  visibleToMembers: string[]
   location: string
   isAllDay: boolean
   recurrence: string
@@ -99,6 +105,44 @@ export const PRIORITY_CONFIG: Record<string, {
   },
 }
 
+export const VISIBILITY_CONFIG: Record<string, {
+  label: string
+  shortLabel: string
+  bgColor: string
+  textColor: string
+  icon: string
+}> = {
+  private: {
+    label: "Privat",
+    shortLabel: "Privat",
+    bgColor: "bg-gray-100",
+    textColor: "text-gray-700",
+    icon: "lock",
+  },
+  public: {
+    label: "Öffentlich",
+    shortLabel: "Alle",
+    bgColor: "bg-green-100",
+    textColor: "text-green-700",
+    icon: "globe",
+  },
+  team: {
+    label: "Team",
+    shortLabel: "Team",
+    bgColor: "bg-blue-100",
+    textColor: "text-blue-700",
+    icon: "users",
+  },
+  members: {
+    label: "Bestimmte Mitarbeiter",
+    shortLabel: "Mitarbeiter",
+    bgColor: "bg-purple-100",
+    textColor: "text-purple-700",
+    icon: "user",
+  },
+}
+
 export const getEventTypeColor = (type: string) => EVENT_TYPE_COLORS[type] || EVENT_TYPE_COLORS.other
 export const getEventTypeLabel = (type: string) => EVENT_TYPE_LABELS[type] || EVENT_TYPE_LABELS.other
 export const getPriorityConfig = (priority: string) => PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.low
+export const getVisibilityConfig = (visibility: string) => VISIBILITY_CONFIG[visibility] || VISIBILITY_CONFIG.private

@@ -4,9 +4,23 @@ import { format, isSameDay, parseISO } from "date-fns"
 import { de } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Clock, MapPin, Repeat } from "lucide-react"
+import { Clock, MapPin, Repeat, Lock, Globe, Users, User } from "lucide-react"
 import type { CalendarEvent } from "../types"
-import { getEventTypeColor, getEventTypeLabel, HOURS } from "../types"
+import { getEventTypeColor, getEventTypeLabel, getVisibilityConfig, HOURS } from "../types"
+
+const VisibilityBadge = ({ visibility }: { visibility?: string }) => {
+  if (!visibility) return null
+  const config = getVisibilityConfig(visibility)
+  return (
+    <span className="flex items-center gap-1 text-xs bg-white/20 px-1.5 py-0.5 rounded">
+      {visibility === "private" && <Lock className="h-3 w-3" />}
+      {visibility === "public" && <Globe className="h-3 w-3" />}
+      {visibility === "team" && <Users className="h-3 w-3" />}
+      {visibility === "members" && <User className="h-3 w-3" />}
+      {config.shortLabel}
+    </span>
+  )
+}
 
 interface DayViewProps {
   currentDate: Date
@@ -83,6 +97,7 @@ export function DayView({ currentDate, getEventsForHour, getAllDayEventsForDay, 
                             <div className="flex items-center gap-2">
                               {event.isRecurringInstance && <Repeat className="h-3 w-3" />}
                               <span className="font-medium">{event.title}</span>
+                              <VisibilityBadge visibility={event.visibility} />
                             </div>
                             <div className="flex items-center gap-3 mt-1 text-sm opacity-90">
                               <span className="flex items-center gap-1">

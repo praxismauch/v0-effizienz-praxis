@@ -4,10 +4,10 @@ import { format, parseISO } from "date-fns"
 import { de } from "date-fns/locale"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock, MapPin, Repeat, CalendarIcon } from "lucide-react"
+import { Clock, MapPin, Repeat, CalendarIcon, Lock, Globe, Users, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CalendarEvent } from "../types"
-import { getEventTypeColor, getEventTypeLabel } from "../types"
+import { getEventTypeColor, getEventTypeLabel, getVisibilityConfig } from "../types"
 
 interface EventListProps {
   events: CalendarEvent[]
@@ -80,6 +80,20 @@ export function EventList({ events, onEventClick, title, emptyMessage = "Keine T
                                   <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
                                 )}
                                 <h4 className="font-medium truncate">{event.title}</h4>
+                                {/* Visibility indicator */}
+                                {event.visibility && (
+                                  <span className={cn(
+                                    "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs",
+                                    getVisibilityConfig(event.visibility).bgColor,
+                                    getVisibilityConfig(event.visibility).textColor
+                                  )}>
+                                    {event.visibility === "private" && <Lock className="h-3 w-3" />}
+                                    {event.visibility === "public" && <Globe className="h-3 w-3" />}
+                                    {event.visibility === "team" && <Users className="h-3 w-3" />}
+                                    {event.visibility === "members" && <User className="h-3 w-3" />}
+                                    {getVisibilityConfig(event.visibility).shortLabel}
+                                  </span>
+                                )}
                               </div>
                               {event.description && (
                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">

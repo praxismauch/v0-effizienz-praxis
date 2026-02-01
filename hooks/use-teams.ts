@@ -47,6 +47,7 @@ interface TeamsResponse {
 
 interface TeamMembersResponse {
   members?: TeamMember[]
+  teamMembers?: TeamMember[]
   data?: TeamMember[]
 }
 
@@ -83,8 +84,8 @@ export function useTeamMembers(practiceId = DEFAULT_PRACTICE_ID) {
     SWR_CONFIG,
   )
 
-  // Handle both array and object responses
-  const members = Array.isArray(data) ? data : data?.members || data?.data || []
+  // Handle different response formats: { teamMembers: [...] }, { members: [...] }, { data: [...] }, or direct array
+  const members = Array.isArray(data) ? data : data?.teamMembers || data?.members || data?.data || []
 
   return {
     members,

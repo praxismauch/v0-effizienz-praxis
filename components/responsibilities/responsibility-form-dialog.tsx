@@ -127,11 +127,12 @@ export function ResponsibilityFormDialog({
         const response = await fetch(`/api/practices/${currentPractice.id}/team-members`)
         if (response.ok) {
           const data = await response.json()
-          const members = Array.isArray(data) ? data : data?.members || []
+          // Handle different response formats: { teamMembers: [...] }, { members: [...] }, or direct array
+          const members = Array.isArray(data) ? data : data?.teamMembers || data?.members || []
           setTeamMembers(members.filter((m: TeamMember) => m.id && isActiveMember(m)))
         }
       } catch (error) {
-        console.error("[v0] Error fetching team members:", error)
+        console.error("Error fetching team members:", error)
       } finally {
         setLoadingTeamMembers(false)
       }
@@ -144,7 +145,7 @@ export function ResponsibilityFormDialog({
           setTeams(Array.isArray(data) ? data.filter((t: Team) => t.isActive !== false) : [])
         }
       } catch (error) {
-        console.error("[v0] Error fetching teams:", error)
+        console.error("Error fetching teams:", error)
       } finally {
         setLoadingTeams(false)
       }
@@ -170,7 +171,7 @@ export function ResponsibilityFormDialog({
           setOrgaCategories(uniqueCategories)
         }
       } catch (error) {
-        console.error("[v0] Error fetching orga categories:", error)
+        console.error("Error fetching orga categories:", error)
       } finally {
         setLoadingCategories(false)
       }
@@ -184,7 +185,7 @@ export function ResponsibilityFormDialog({
           setArbeitsplaetze(workplaces)
         }
       } catch (error) {
-        console.error("[v0] Error fetching arbeitsplaetze:", error)
+        console.error("Error fetching arbeitsplaetze:", error)
       } finally {
         setLoadingArbeitsplaetze(false)
       }
@@ -198,7 +199,7 @@ export function ResponsibilityFormDialog({
           setShiftTypes(shifts)
         }
       } catch (error) {
-        console.error("[v0] Error fetching shift types:", error)
+        console.error("Error fetching shift types:", error)
       } finally {
         setLoadingShiftTypes(false)
       }
@@ -287,7 +288,7 @@ export function ResponsibilityFormDialog({
         optimization_suggestions: data.suggestions,
       })
     } catch (error) {
-      console.error("[v0] Error generating optimization:", error)
+      console.error("Error generating optimization:", error)
       const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
       alert(`Fehler beim Generieren der Optimierungsvorschläge:\n${errorMessage}`)
     } finally {

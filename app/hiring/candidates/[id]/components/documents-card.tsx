@@ -193,16 +193,10 @@ export function DocumentsCard({ candidate, onViewDocument }: DocumentsCardProps)
                         </a>
                       </Button>
                     </div>
-)}
-                      </div>
-                    </div>
-                  ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {filesArray.map((file, idx) => renderDocumentFile(file, idx))}
-                        </div>
-                      )}
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Categorized Documents */}
             {hasCategorizedDocs && categorizedDocs && (

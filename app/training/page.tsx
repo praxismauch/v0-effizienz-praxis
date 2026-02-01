@@ -501,43 +501,6 @@ export default function TrainingPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          <Button
-            variant={selectedTeamId === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedTeamId("all")}
-            className="whitespace-nowrap"
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Alle ({getTeamCounts.all || 0})
-          </Button>
-          <Button
-            variant={selectedTeamId === "practice-wide" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedTeamId("practice-wide")}
-            className="whitespace-nowrap"
-          >
-            Praxisweit ({getTeamCounts["practice-wide"] || 0})
-          </Button>
-          {teams.map((team) => (
-            <Button
-              key={team.id}
-              variant={selectedTeamId === team.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedTeamId(team.id)}
-              className="whitespace-nowrap"
-              style={{
-                borderColor: selectedTeamId === team.id ? undefined : team.color,
-                backgroundColor: selectedTeamId === team.id ? team.color : undefined,
-                color: selectedTeamId === team.id ? "#ffffff" : undefined,
-              }}
-            >
-              <div className="h-3 w-3 rounded-full mr-2" style={{ backgroundColor: team.color || "#6B7280" }} />
-              {team.name} ({getTeamCounts[team.id] || 0})
-            </Button>
-          ))}
-        </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard

@@ -228,8 +228,8 @@ export default function TeamMemberDetailPage() {
 
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={member.avatar || ""} alt={member.name} />
-            <AvatarFallback>
+            {member.avatar && <AvatarImage src={member.avatar} alt={member.name} />}
+            <AvatarFallback className="bg-primary/10 text-primary font-medium">
               {member.name
                 .split(" ")
                 .map((n) => n[0])
@@ -272,8 +272,8 @@ export default function TeamMemberDetailPage() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={member.avatar || ""} alt={member.name} />
-                      <AvatarFallback className="text-2xl">
+                      {member.avatar && <AvatarImage src={member.avatar} alt={member.name} />}
+                      <AvatarFallback className="text-2xl bg-primary/10 text-primary font-semibold">
                         {member.name
                           .split(" ")
                           .map((n) => n[0])

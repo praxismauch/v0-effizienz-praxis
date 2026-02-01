@@ -69,6 +69,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             is_collapsed: data.is_collapsed || false,
             favorites: data.favorites || [],
             collapsed_sections: data.collapsed_sections || [],
+            single_group_mode: data.single_group_mode ?? true,
           }
         : {
             expanded_groups: ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             is_collapsed: false,
             favorites: [],
             collapsed_sections: [],
+            single_group_mode: true,
           },
     })
   } catch (error) {
@@ -125,8 +127,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // body already parsed above
-    const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites } = body
-    console.log("[v0] POST - Body received:", { practice_id, favorites_count: favorites?.length })
+    const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites, single_group_mode } = body
+    console.log("[v0] POST - Body received:", { practice_id, favorites_count: favorites?.length, single_group_mode })
 
     const effectivePracticeId = String(practice_id || "1")
 
@@ -155,6 +157,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       p_is_collapsed: is_collapsed !== undefined ? is_collapsed : null,
       p_favorites: favorites !== undefined ? favorites : null,
       p_collapsed_sections: null,
+      p_single_group_mode: single_group_mode !== undefined ? single_group_mode : null,
     })
 
     console.log("[v0] RPC upsert result:", rpcError ? `Error: ${rpcError.message}` : "Success", rpcResult)
@@ -182,6 +185,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           is_collapsed: updatedData.is_collapsed || false,
           favorites: updatedData.favorites || [],
           collapsed_sections: updatedData.collapsed_sections || [],
+          single_group_mode: updatedData.single_group_mode ?? true,
         }
       : null
 

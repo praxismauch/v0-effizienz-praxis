@@ -48,7 +48,7 @@ export function JournalPreferencesDialog({ open, onOpenChange, preferences, prac
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState<Partial<JournalPreferences>>({
     enabled: true,
-    frequency: "monthly",
+    frequency: "weekly",
     auto_generate: false,
     remind_admin: true,
     reminder_days_before: 3,

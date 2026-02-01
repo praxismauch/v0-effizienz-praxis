@@ -10,6 +10,7 @@ import { WorkflowProvider } from "@/contexts/workflow-context"
 import { AnalyticsDataProvider } from "@/contexts/analytics-data-context"
 import { TranslationProvider } from "@/contexts/translation-context"
 import { OnboardingProvider } from "@/contexts/onboarding-context"
+import { SidebarSettingsProvider } from "@/contexts/sidebar-settings-context"
 import RoutePersistence from "@/components/route-persistence"
 import GlobalDragPrevention from "@/components/global-drag-prevention"
 import { SWRConfig } from "swr"
@@ -88,8 +89,9 @@ export function Providers({
       <UserProvider initialUser={initialUser}>
         <TranslationProvider>
           <PracticeProvider>
-            <OnboardingProvider>
-              <TeamProvider>
+            <SidebarSettingsProvider>
+              <OnboardingProvider>
+                <TeamProvider>
                 <TodoProvider>
                   <CalendarProvider>
                     <WorkflowProvider>
@@ -102,7 +104,8 @@ export function Providers({
                   </CalendarProvider>
                 </TodoProvider>
               </TeamProvider>
-            </OnboardingProvider>
+              </OnboardingProvider>
+            </SidebarSettingsProvider>
           </PracticeProvider>
         </TranslationProvider>
       </UserProvider>

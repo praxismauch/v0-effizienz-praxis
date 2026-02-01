@@ -1,11 +1,18 @@
 -- Create time tracking tables for Zeiterfassung (Time Tracking) system
 -- This script creates the necessary tables for clock-in/clock-out functionality
 
+-- Drop existing tables to recreate with correct types
+DROP TABLE IF EXISTS plausibility_checks CASCADE;
+DROP TABLE IF EXISTS time_corrections CASCADE;
+DROP TABLE IF EXISTS time_block_breaks CASCADE;
+DROP TABLE IF EXISTS time_blocks CASCADE;
+DROP TABLE IF EXISTS time_stamps CASCADE;
+
 -- 1. Time Stamps Table (for clock in/out events)
-CREATE TABLE IF NOT EXISTS time_stamps (
+CREATE TABLE time_stamps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  practice_id UUID NOT NULL,
+  practice_id INTEGER NOT NULL REFERENCES practices(id) ON DELETE CASCADE,
   stamp_type TEXT NOT NULL CHECK (stamp_type IN ('start', 'stop', 'pause_start', 'pause_end')),
   work_location TEXT NOT NULL CHECK (work_location IN ('office', 'homeoffice', 'external', 'mobile')),
   timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -15,15 +22,15 @@ CREATE TABLE IF NOT EXISTS time_stamps (
 );
 
 -- 2. Time Blocks Table (for work sessions)
-CREATE TABLE IF NOT EXISTS time_blocks (
+CREATE TABLE time_blocks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  practice_id UUID NOT NULL,
+  practice_id INTEGER NOT NULL REFERENCES practices(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ,
-  start_stamp_id UUID,
-  end_stamp_id UUID,
+  start_stamp_id UUID REFERENCES time_stamps(id),
+  end_stamp_id UUID REFERENCES time_stamps(id),
   work_location TEXT NOT NULL,
   is_open BOOLEAN DEFAULT true,
   break_minutes INTEGER DEFAULT 0,
@@ -36,11 +43,11 @@ CREATE TABLE IF NOT EXISTS time_blocks (
 );
 
 -- 3. Time Block Breaks Table (for break periods within work blocks)
-CREATE TABLE IF NOT EXISTS time_block_breaks (
+CREATE TABLE time_block_breaks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  block_id UUID NOT NULL,
+  block_id UUID NOT NULL REFERENCES time_blocks(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
-  practice_id UUID NOT NULL,
+  practice_id INTEGER NOT NULL REFERENCES practices(id) ON DELETE CASCADE,
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ,
   break_minutes INTEGER,
@@ -50,11 +57,11 @@ CREATE TABLE IF NOT EXISTS time_block_breaks (
 );
 
 -- 4. Time Corrections Table (for correction requests)
-CREATE TABLE IF NOT EXISTS time_corrections (
+CREATE TABLE time_corrections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  practice_id UUID NOT NULL,
-  block_id UUID,
+  practice_id INTEGER NOT NULL REFERENCES practices(id) ON DELETE CASCADE,
+  block_id UUID REFERENCES time_blocks(id) ON DELETE CASCADE,
   requested_start TIMESTAMPTZ NOT NULL,
   requested_end TIMESTAMPTZ NOT NULL,
   original_start TIMESTAMPTZ,
@@ -69,11 +76,11 @@ CREATE TABLE IF NOT EXISTS time_corrections (
 );
 
 -- 5. Plausibility Checks Table (for validation issues)
-CREATE TABLE IF NOT EXISTS plausibility_checks (
+CREATE TABLE plausibility_checks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  practice_id UUID NOT NULL,
-  block_id UUID,
+  practice_id INTEGER NOT NULL REFERENCES practices(id) ON DELETE CASCADE,
+  block_id UUID REFERENCES time_blocks(id) ON DELETE CASCADE,
   check_type TEXT NOT NULL,
   severity TEXT NOT NULL CHECK (severity IN ('info', 'warning', 'error')),
   description TEXT NOT NULL,
@@ -124,5 +131,20 @@ CREATE TRIGGER update_time_blocks_updated_at BEFORE UPDATE ON time_blocks
 CREATE TRIGGER update_time_block_breaks_updated_at BEFORE UPDATE ON time_block_breaks
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_time_corrections_updated_at ON time_corrections;
 CREATE TRIGGER update_time_corrections_updated_at BEFORE UPDATE ON time_corrections
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable RLS on all tables
+ALTER TABLE time_stamps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE time_blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE time_block_breaks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE time_corrections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plausibility_checks ENABLE ROW LEVEL SECURITY;
+
+-- Allow all access for now (API handles authorization)
+CREATE POLICY "Allow all time_stamps access" ON time_stamps FOR ALL USING (true);
+CREATE POLICY "Allow all time_blocks access" ON time_blocks FOR ALL USING (true);
+CREATE POLICY "Allow all time_block_breaks access" ON time_block_breaks FOR ALL USING (true);
+CREATE POLICY "Allow all time_corrections access" ON time_corrections FOR ALL USING (true);
+CREATE POLICY "Allow all plausibility_checks access" ON plausibility_checks FOR ALL USING (true);

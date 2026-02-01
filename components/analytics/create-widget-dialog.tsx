@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Loader2, BarChart3, LineChart, PieChart, TrendingUp, Activity } from "lucide-react"
-import type { WidgetItem } from "./widget-library"
+import type { WidgetItem } from "@/components/analytics/widget-library"
 
 interface CreateWidgetDialogProps {
   open: boolean

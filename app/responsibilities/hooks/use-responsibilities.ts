@@ -148,10 +148,7 @@ export function useResponsibilities() {
       toast({ title: "Fehler", description: "Keine Praxis ausgewählt", variant: "destructive" })
       return
     }
-    if (!user?.id) {
-      toast({ title: "Fehler", description: "Benutzer nicht authentifiziert", variant: "destructive" })
-      return
-    }
+    // Note: user?.id is optional - API handles fallback for created_by
 
     const url = selectedResponsibility
       ? `/api/practices/${currentPractice.id}/responsibilities/${selectedResponsibility.id}`
@@ -206,7 +203,7 @@ export function useResponsibilities() {
           ...formData,
           responsible_user_id: formData.responsible_user_id || null,
           suggested_hours_per_week: parsedHours,
-          ...(!selectedResponsibility && user.id ? { created_by: user.id } : {}),
+          ...(!selectedResponsibility && user?.id ? { created_by: user.id } : {}),
         }),
       })
 

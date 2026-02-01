@@ -5,9 +5,9 @@ import { de } from "date-fns/locale"
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Repeat } from "lucide-react"
+import { Repeat, AlertCircle } from "lucide-react"
 import type { CalendarEvent } from "../types"
-import { getEventTypeColor } from "../types"
+import { getEventTypeColor, getPriorityConfig } from "../types"
 
 interface MonthViewProps {
   monthDays: Date[]
@@ -26,9 +26,6 @@ export function MonthView({
 }: MonthViewProps) {
   // Use provided monthDays instead of calculating
   const calendarDays = monthDays
-  
-  console.log("[v0] MonthView rendering with", calendarDays.length, "days")
-  console.log("[v0] Days:", calendarDays.map((d, i) => `${i}: ${format(d, "d MMM")}`))
 
   return (
     <div className="bg-card rounded-lg border">
@@ -71,25 +68,35 @@ export function MonthView({
 
               {/* Events for this day */}
               <div className="mt-1 space-y-1">
-                {dayEvents.slice(0, 3).map((event) => (
-                  <div
-                    key={event.id}
-                    className={cn(
-                      "text-xs p-1 rounded truncate text-white cursor-pointer hover:opacity-80",
-                      getEventTypeColor(event.type)
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEventClick(event)
-                    }}
-                    title={event.title}
-                  >
-                    <div className="flex items-center gap-1">
-                      {event.isRecurringInstance && <Repeat className="h-2.5 w-2.5 flex-shrink-0" />}
-                      <span className="truncate">{event.title}</span>
+                {dayEvents.slice(0, 3).map((event) => {
+                  const priorityConfig = getPriorityConfig(event.priority)
+                  return (
+                    <div
+                      key={event.id}
+                      className={cn(
+                        "text-xs p-1 rounded truncate text-white cursor-pointer hover:opacity-80 relative group",
+                        getEventTypeColor(event.type),
+                        event.priority === "high" && "ring-2 ring-red-400 ring-offset-1 ring-offset-background"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onEventClick(event)
+                      }}
+                      title={`${event.title} (Priorität: ${priorityConfig.label})`}
+                    >
+                      <div className="flex items-center gap-1">
+                        {event.priority === "high" && (
+                          <AlertCircle className="h-3 w-3 flex-shrink-0 text-white" />
+                        )}
+                        {event.priority === "medium" && (
+                          <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber-300" />
+                        )}
+                        {event.isRecurringInstance && <Repeat className="h-2.5 w-2.5 flex-shrink-0" />}
+                        <span className="truncate">{event.title}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
                 {dayEvents.length > 3 && (
                   <Badge variant="secondary" className="text-xs">
                     +{dayEvents.length - 3} weitere

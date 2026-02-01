@@ -61,30 +61,33 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
   const [previewFile, setPreviewFile] = useState<any | null>(null)
   const [contractToDelete, setContractToDelete] = useState<{ id: string; type: string } | null>(null)
 
-  useEffect(() => {
-    if (currentPractice?.id) {
-      loadContracts()
-    }
-  }, [currentPractice?.id, memberId])
+  // Use prop practiceId or fall back to context
+  const effectivePracticeId = practiceId || currentPractice?.id
 
   useEffect(() => {
-    if (contracts.length > 0 && currentPractice?.id) {
+    if (effectivePracticeId) {
+      loadContracts()
+    }
+  }, [effectivePracticeId, memberId])
+
+  useEffect(() => {
+    if (contracts.length > 0 && effectivePracticeId) {
       contracts.forEach(async (contract) => {
-        const res = await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}/files`)
+        const res = await fetch(`/api/practices/${effectivePracticeId}/contracts/${contract.id}/files`)
         if (res.ok) {
           const files = await res.json()
           setContractFiles((prev) => ({ ...prev, [contract.id]: files }))
         }
       })
     }
-  }, [contracts, currentPractice?.id])
+  }, [contracts, effectivePracticeId])
 
   const loadContracts = async () => {
-    if (!currentPractice?.id) return
+    if (!effectivePracticeId) return
 
     try {
       setLoading(true)
-      const res = await fetch(`/api/practices/${currentPractice.id}/contracts?teamMemberId=${memberId}`)
+      const res = await fetch(`/api/practices/${effectivePracticeId}/contracts?teamMemberId=${memberId}`)
       if (res.ok) {
         const data = await res.json()
         setContracts(data)
@@ -97,10 +100,10 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
   }
 
   const handleDeleteContract = async (contractId: string) => {
-    if (!currentPractice?.id) return
+    if (!effectivePracticeId) return
 
     try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/contracts/${contractId}`, {
+      const res = await fetch(`/api/practices/${effectivePracticeId}/contracts/${contractId}`, {
         method: "DELETE",
       })
 

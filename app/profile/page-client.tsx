@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
+import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -52,6 +53,8 @@ import {
   ShieldOff,
   Copy,
   Check,
+  Monitor,
+  PanelLeft,
 } from "lucide-react"
 
 export default function ProfilePageClient() {
@@ -59,6 +62,7 @@ export default function ProfilePageClient() {
   const { currentPractice } = usePractice()
   const { toast } = useToast()
   const { roleColors } = useRoleColors()
+  const { singleGroupMode, setSingleGroupMode } = useSidebarSettings()
 
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("profile") // Changed default tab from "selfcheck" to "profile"
@@ -395,7 +399,7 @@ export default function ProfilePageClient() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto gap-1">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profil</span>
@@ -403,6 +407,10 @@ export default function ProfilePageClient() {
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Einstellungen</span>
+            </TabsTrigger>
+            <TabsTrigger value="display" className="gap-2">
+              <Monitor className="h-4 w-4" />
+              <span className="hidden sm:inline">Anzeige</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-2">
               <Lock className="h-4 w-4" />
@@ -564,32 +572,31 @@ export default function ProfilePageClient() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
+          {/* Display Tab */}
+          <TabsContent value="display" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Regionale Einstellungen
+                  <PanelLeft className="h-5 w-5" />
+                  Seitenleiste
                 </CardTitle>
-                <CardDescription>Passen Sie regionale Präferenzen an</CardDescription>
+                <CardDescription>Passen Sie das Verhalten der linken Navigation an</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Zeitzone</Label>
-                  <Select defaultValue="europe-berlin">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="europe-berlin">Europe/Berlin (CET)</SelectItem>
-                      <SelectItem value="europe-zurich">Europe/Zurich (CET)</SelectItem>
-                      <SelectItem value="europe-vienna">Europe/Vienna (CET)</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Einzelne Gruppe öffnen</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Wenn aktiviert, wird beim Öffnen einer Menügruppe die vorherige automatisch geschlossen
+                    </p>
+                  </div>
+                  <Switch
+                    checked={singleGroupMode}
+                    onCheckedChange={setSingleGroupMode}
+                  />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Datums- und Zeitformat: DD.MM.YYYY, HH:mm (Deutsches Format)
-                </p>
               </CardContent>
             </Card>
           </TabsContent>

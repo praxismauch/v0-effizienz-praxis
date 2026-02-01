@@ -4,18 +4,17 @@ import PageHeader from "@/components/page-header"
 import CustomizableAnalytics from "@/components/customizable-analytics"
 import ReportsGenerator from "@/components/reports-generator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, FileText, Receipt, Star, Building2, Table2, BarChart3, Layout, PieChart } from "lucide-react"
+import { TrendingUp, FileText, Receipt, Building2, Table2, BarChart3, Layout } from "lucide-react"
 import ExcelUploadAnalyzer from "@/components/excel-upload-analyzer"
 import AnalyticsDataManager from "@/components/analytics-data-manager"
 import { usePersistedTab } from "@/hooks/use-persisted-tab"
 import { useTranslation } from "@/contexts/translation-context"
 import AIAnalyticsInsightsDialog from "@/components/ai-analytics-insights-dialog"
-import KVAbrechnungManager from "@/components/kv-abrechnung-manager"
+import { KVAbrechnungUnified } from "@/components/kv-abrechnung-unified"
 import { BankAccountManager } from "@/components/bank-account-manager"
-import ReviewsManager from "@/components/reviews-manager"
-import { DiagrammeTab } from "@/components/analytics/diagramme-tab"
-import KVAbrechnungBericht from "@/components/kv-abrechnung-bericht"
 import { useUser } from "@/contexts/user-context"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { TrendingUp as TrendingUpIcon, AlertCircle } from "lucide-react"
 
 export default function AnalyticsPageClient() {
   const [activeTab, setActiveTab] = usePersistedTab("analytics-page", "analytics")
@@ -93,16 +92,38 @@ export default function AnalyticsPageClient() {
             <AnalyticsDataManager />
           </TabsContent>
 
-          <TabsContent value="reviews" className="space-y-4">
-            {currentUser?.practiceId ? (
-              <ReviewsManager practiceId={currentUser.practiceId.toString()} />
-            ) : (
-              <ReviewsManager />
-            )}
+          <TabsContent value="trends" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUpIcon className="h-5 w-5 text-primary" />
+                  Trend-Analyse
+                </CardTitle>
+                <CardDescription>
+                  Langfristige Entwicklungen und Prognosen für Ihre Praxis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="p-4 rounded-full bg-primary/10 mb-4">
+                    <TrendingUpIcon className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Trend-Analyse kommt bald</h3>
+                  <p className="text-muted-foreground max-w-md">
+                    Die Trend-Analyse wird automatisch Muster in Ihren Kennzahlen erkennen und 
+                    Ihnen helfen, zukünftige Entwicklungen vorherzusagen.
+                  </p>
+                  <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    Verfügbar sobald genügend historische Daten vorliegen
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="kv-abrechnung" className="space-y-4">
-            <KVAbrechnungManager />
+            <KVAbrechnungUnified />
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-4">
@@ -122,13 +143,7 @@ export default function AnalyticsPageClient() {
             <ExcelUploadAnalyzer />
           </TabsContent>
 
-          <TabsContent value="widgets" className="space-y-4">
-            <DiagrammeTab />
-          </TabsContent>
 
-          <TabsContent value="kv-bericht" className="space-y-4">
-            <KVAbrechnungBericht />
-          </TabsContent>
         </Tabs>
       </div>
     </>

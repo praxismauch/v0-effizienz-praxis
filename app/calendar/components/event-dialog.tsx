@@ -355,18 +355,25 @@ export function EventDialog({
               </>
             )}
           </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-4">
           {isEdit && (
-            <Button variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
-              Löschen
-            </Button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+              className="text-sm text-destructive hover:text-destructive/80 hover:underline disabled:opacity-50 sm:mr-auto"
+            >
+              Termin löschen
+            </button>
           )}
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            Abbrechen
-          </Button>
-          <Button onClick={handleSubmit} disabled={!formData.title.trim() || isSubmitting}>
-            {isSubmitting ? "Wird gespeichert..." : isEdit ? "Speichern" : "Erstellen"}
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSubmit} disabled={!formData.title.trim() || isSubmitting}>
+              {isSubmitting ? "Wird gespeichert..." : isEdit ? "Speichern" : "Erstellen"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

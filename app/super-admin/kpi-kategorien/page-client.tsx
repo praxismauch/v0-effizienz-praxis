@@ -1,10 +1,11 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useState, useEffect, useCallback, useRef } from "react"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart3, FolderOpen, Database, Info, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { BarChart3, FolderOpen, Database, Info, Loader2, RefreshCw, TrendingUp, CheckCircle2, Building2 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const GlobalParameterManagement = dynamic(
@@ -22,7 +23,75 @@ const GlobalParameterManagement = dynamic(
   }
 )
 
+interface KpiStats {
+  categoriesCount: number
+  parametersCount: number
+  activeParametersCount: number
+  totalUsageCount: number
+}
+
 function KpiKategorienContent() {
+  const [stats, setStats] = useState<KpiStats>({
+    categoriesCount: 0,
+    parametersCount: 0,
+    activeParametersCount: 0,
+    totalUsageCount: 0,
+  })
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const hasFetched = useRef(false)
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const [categoriesRes, parametersRes] = await Promise.all([
+        fetch("/api/global-parameter-groups"),
+        fetch("/api/global-parameters"),
+      ])
+
+      let categoriesCount = 0
+      let parametersCount = 0
+      let activeParametersCount = 0
+      let totalUsageCount = 0
+
+      if (categoriesRes.ok) {
+        const categoriesData = await categoriesRes.json()
+        const categories = categoriesData.categories || []
+        categoriesCount = categories.length
+        totalUsageCount = categories.reduce((sum: number, cat: any) => sum + (cat.usage_count || 0), 0)
+      }
+
+      if (parametersRes.ok) {
+        const parametersData = await parametersRes.json()
+        const parameters = parametersData.parameters || []
+        parametersCount = parameters.length
+        activeParametersCount = parameters.filter((p: any) => p.is_active !== false).length
+      }
+
+      setStats({
+        categoriesCount,
+        parametersCount,
+        activeParametersCount,
+        totalUsageCount,
+      })
+    } catch (error) {
+      console.error("Error fetching KPI stats:", error)
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+    fetchStats()
+  }, [fetchStats])
+
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    fetchStats()
+  }
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -33,6 +102,16 @@ function KpiKategorienContent() {
             Verwalten Sie globale Kennzahlen (KPIs) und Kategorien, die allen Praxen zur Verfügung stehen
           </p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          {isRefreshing ? "Aktualisieren..." : "Aktualisieren"}
+        </Button>
       </div>
 
       {/* Info Alert */}
@@ -47,15 +126,18 @@ function KpiKategorienContent() {
       </Alert>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">KPI-Kategorien</CardTitle>
             <FolderOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Organisieren Sie Kennzahlen in thematische Gruppen
+            <div className="text-2xl font-bold">
+              {isLoading ? "..." : stats.categoriesCount}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Thematische Gruppen für Kennzahlen
             </p>
           </CardContent>
         </Card>
@@ -66,52 +148,72 @@ function KpiKategorienContent() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Definieren Sie standardisierte Kennzahlen für alle Praxen
+            <div className="text-2xl font-bold">
+              {isLoading ? "..." : stats.parametersCount}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Definierte Kennzahlen-Vorlagen
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Datenerfassung</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Aktive KPIs</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Verwalten Sie Erfassungsintervalle und Werte
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold text-green-600">
+                {isLoading ? "..." : stats.activeParametersCount}
+              </div>
+              {!isLoading && stats.parametersCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {Math.round((stats.activeParametersCount / stats.parametersCount) * 100)}%
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Verfügbar für Praxen
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Nutzung</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold">
+                {isLoading ? "..." : stats.totalUsageCount}
+              </div>
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Praxis-Verwendungen gesamt
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs defaultValue="management" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="management" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            KPI-Verwaltung
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="management" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Globale Kennzahlen & Kategorien
-              </CardTitle>
-              <CardDescription>
-                Erstellen und verwalten Sie KPI-Kategorien und die dazugehörigen Kennzahlen. Diese Vorlagen können von
-                Praxen importiert und verwendet werden.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 md:p-6">
-              <GlobalParameterManagement />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Main Content - Full Width Management Component */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Globale Kennzahlen & Kategorien
+          </CardTitle>
+          <CardDescription>
+            Erstellen und verwalten Sie KPI-Kategorien und die dazugehörigen Kennzahlen. Diese Vorlagen können von
+            Praxen importiert und verwendet werden.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 md:p-6">
+          <GlobalParameterManagement />
+        </CardContent>
+      </Card>
     </div>
   )
 }

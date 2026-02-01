@@ -24,13 +24,30 @@ CREATE TABLE IF NOT EXISTS global_parameter_groups (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
-  color TEXT DEFAULT '#3B82F6',
+  color TEXT DEFAULT 'bg-blue-500',
   icon TEXT,
   display_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true NOT NULL,
+  is_template BOOLEAN DEFAULT true NOT NULL,
+  practice_id TEXT,
+  parameters TEXT[] DEFAULT '{}',
+  usage_count INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
+
+-- Add missing columns if table already exists
+ALTER TABLE global_parameter_groups ADD COLUMN IF NOT EXISTS is_template BOOLEAN DEFAULT true NOT NULL;
+ALTER TABLE global_parameter_groups ADD COLUMN IF NOT EXISTS practice_id TEXT;
+ALTER TABLE global_parameter_groups ADD COLUMN IF NOT EXISTS parameters TEXT[] DEFAULT '{}';
+ALTER TABLE global_parameter_groups ADD COLUMN IF NOT EXISTS usage_count INTEGER DEFAULT 0;
+
+-- Update color format to use Tailwind classes
+UPDATE global_parameter_groups SET color = 'bg-emerald-500' WHERE color = '#10B981';
+UPDATE global_parameter_groups SET color = 'bg-blue-500' WHERE color = '#3B82F6';
+UPDATE global_parameter_groups SET color = 'bg-violet-500' WHERE color = '#8B5CF6';
+UPDATE global_parameter_groups SET color = 'bg-amber-500' WHERE color = '#F59E0B';
+UPDATE global_parameter_groups SET color = 'bg-pink-500' WHERE color = '#EC4899';
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_global_parameter_templates_category ON global_parameter_templates(category);
@@ -50,13 +67,21 @@ DROP POLICY IF EXISTS "Allow all global_parameter_groups access" ON global_param
 CREATE POLICY "Allow all global_parameter_groups access" ON global_parameter_groups FOR ALL USING (true);
 
 -- Seed default parameter groups
-INSERT INTO global_parameter_groups (id, name, description, color, icon, display_order) VALUES
-  ('group-finanzen', 'Finanzen', 'Finanzielle Kennzahlen und Umsatzmetriken', '#10B981', 'euro', 1),
-  ('group-patienten', 'Patienten', 'Patientenbezogene Metriken und Zufriedenheit', '#3B82F6', 'users', 2),
-  ('group-personal', 'Personal', 'Mitarbeiter- und Teamkennzahlen', '#8B5CF6', 'user-check', 3),
-  ('group-qualitaet', 'Qualität', 'Qualitätsindikatoren und Standards', '#F59E0B', 'award', 4),
-  ('group-effizienz', 'Effizienz', 'Prozess- und Arbeitsablaufmetriken', '#EC4899', 'zap', 5)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO global_parameter_groups (id, name, description, color, icon, display_order, is_template, practice_id, parameters, usage_count) VALUES
+  ('group-finanzen', 'Finanzen', 'Finanzielle Kennzahlen und Umsatzmetriken', 'bg-emerald-500', 'euro', 1, true, NULL, ARRAY['kpi-umsatz-monat', 'kpi-umsatz-pro-patient', 'kpi-privatanteil', 'kpi-igel-quote'], 0),
+  ('group-patienten', 'Patienten', 'Patientenbezogene Metriken und Zufriedenheit', 'bg-blue-500', 'users', 2, true, NULL, ARRAY['kpi-patienten-tag', 'kpi-neupatient-quote', 'kpi-wartezeit', 'kpi-zufriedenheit', 'kpi-terminauslastung'], 0),
+  ('group-personal', 'Personal', 'Mitarbeiter- und Teamkennzahlen', 'bg-violet-500', 'user-check', 3, true, NULL, ARRAY['kpi-krankenstand', 'kpi-fortbildungsstunden', 'kpi-mitarbeiter-zufriedenheit', 'kpi-fluktuation'], 0),
+  ('group-qualitaet', 'Qualität', 'Qualitätsindikatoren und Standards', 'bg-amber-500', 'award', 4, true, NULL, ARRAY['kpi-hygienekontrollen', 'kpi-dokumentation-vollstaendig', 'kpi-beschwerden', 'kpi-qm-massnahmen'], 0),
+  ('group-effizienz', 'Effizienz', 'Prozess- und Arbeitsablaufmetriken', 'bg-pink-500', 'zap', 5, true, NULL, ARRAY['kpi-behandlungsdauer', 'kpi-no-show-rate', 'kpi-digitalisierungsgrad', 'kpi-verwaltungszeit'], 0)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  color = EXCLUDED.color,
+  icon = EXCLUDED.icon,
+  display_order = EXCLUDED.display_order,
+  is_template = EXCLUDED.is_template,
+  parameters = EXCLUDED.parameters,
+  updated_at = NOW();
 
 -- Seed default global KPI templates
 INSERT INTO global_parameter_templates (id, name, description, type, category, unit, interval, default_value, is_active, is_template, group_ids) VALUES

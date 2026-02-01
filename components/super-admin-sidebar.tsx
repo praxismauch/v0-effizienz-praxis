@@ -58,6 +58,7 @@ interface MenuItem {
     | "criticalLogs"
     | "recommendations"
     | "totalUsers"
+    | "kpiCategories"
   subitems?: MenuItem[]
 }
 
@@ -85,6 +86,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
   const [activePracticesCount, setActivePracticesCount] = useState(0)
   const [recommendationsCount, setRecommendationsCount] = useState(0)
   const [totalUsersCount, setTotalUsersCount] = useState(0)
+  const [kpiCategoriesCount, setKpiCategoriesCount] = useState(0)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -374,6 +376,19 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       }
     }
 
+    const loadKpiCategoriesCount = async () => {
+      try {
+        const response = await fetch("/api/global-parameter-groups")
+        if (response.ok) {
+          const data = await response.json()
+          setKpiCategoriesCount(data.categories?.length || 0)
+        }
+      } catch (error) {
+        console.debug("Error loading KPI categories count:", error)
+        setKpiCategoriesCount(0)
+      }
+    }
+
     loadWaitlistCount()
     loadTicketCount()
     loadBackupCount()
@@ -384,6 +399,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
     loadCriticalLogsCount()
     loadActivePracticesCount()
     loadRecommendationsCount()
+    loadKpiCategoriesCount()
 
     const interval = setInterval(() => {
       loadWaitlistCount()
@@ -396,6 +412,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       loadCriticalLogsCount()
       loadActivePracticesCount()
       loadRecommendationsCount()
+      loadKpiCategoriesCount()
     }, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -483,6 +500,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       criticalLogs: criticalLogsCount,
       recommendations: recommendationsCount,
       totalUsers: totalUsersCount,
+      kpiCategories: kpiCategoriesCount,
     }
     return counts[badgeType] || 0
   }
@@ -546,6 +564,8 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           label: "KPI-Kategorien",
           icon: BarChart3,
           href: "/super-admin/kpi-kategorien",
+          badge: true,
+          badgeType: "kpiCategories" as const,
         },
         {
           id: "vorlagen",

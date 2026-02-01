@@ -138,7 +138,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       p_is_collapsed: is_collapsed !== undefined ? is_collapsed : null,
       p_favorites: favorites !== undefined ? favorites : null,
       p_collapsed_sections: null,
-      p_single_group_mode: single_group_mode !== undefined ? single_group_mode : null,
     })
 
     if (rpcError) {

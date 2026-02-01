@@ -363,13 +363,6 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         badge: "devices",
       },
       {
-        name: t("sidebar.hygiene", "Hygieneplan"),
-        href: "/hygiene",
-        icon: Sparkles,
-        key: "hygiene",
-        badge: "hygiene",
-      },
-      {
         name: t("sidebar.settings", "Einstellungen"),
         href: "/settings",
         icon: Settings,

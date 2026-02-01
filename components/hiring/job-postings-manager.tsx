@@ -285,23 +285,42 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
   const statusCounts = getStatusCounts()
   const filteredPostings = getFilteredPostings()
 
-  const JobPostingCard = ({ posting }: { posting: JobPosting }) => {
+  // Define distinct colors for job posting cards to differentiate them visually
+  const cardColors = [
+    { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-300" },
+    { bg: "bg-emerald-100", text: "text-emerald-600", border: "border-emerald-300" },
+    { bg: "bg-violet-100", text: "text-violet-600", border: "border-violet-300" },
+    { bg: "bg-amber-100", text: "text-amber-600", border: "border-amber-300" },
+    { bg: "bg-rose-100", text: "text-rose-600", border: "border-rose-300" },
+    { bg: "bg-cyan-100", text: "text-cyan-600", border: "border-cyan-300" },
+    { bg: "bg-indigo-100", text: "text-indigo-600", border: "border-indigo-300" },
+    { bg: "bg-teal-100", text: "text-teal-600", border: "border-teal-300" },
+    { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-300" },
+    { bg: "bg-pink-100", text: "text-pink-600", border: "border-pink-300" },
+  ]
+
+  const getCardColor = (index: number) => {
+    return cardColors[index % cardColors.length]
+  }
+
+  const JobPostingCard = ({ posting, index }: { posting: JobPosting; index: number }) => {
     const statusConfig = getStatusConfig(posting.status)
     const employmentConfig = getEmploymentTypeConfig(posting.employment_type)
     const StatusIcon = statusConfig.icon
     const startDate = formatStartDate(posting.start_month, posting.start_year)
     const publishedDate = formatPublishedDate(posting.published_at)
+    const cardColor = getCardColor(index)
 
     return (
       <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30">
-        <div className={cn("absolute top-0 left-0 right-0 h-1", statusConfig.bgColor)} />
+        <div className={cn("absolute top-0 left-0 right-0 h-1", cardColor.bg)} />
 
         <CardContent className="p-5 pt-6">
           <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0 flex-1">
-                <div className={cn("rounded-lg p-2.5 shrink-0", statusConfig.bgColor)}>
-                  <Briefcase className={cn("h-5 w-5", statusConfig.color)} />
+                <div className={cn("rounded-lg p-2.5 shrink-0", cardColor.bg)}>
+                  <Briefcase className={cn("h-5 w-5", cardColor.text)} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-base leading-tight truncate">{posting.title}</h3>
@@ -504,8 +523,8 @@ export function JobPostingsManager({ onUpdate, initialTab }: { onUpdate?: () => 
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredPostings.map((posting) => (
-                    <JobPostingCard key={posting.id} posting={posting} />
+                  {filteredPostings.map((posting, index) => (
+                    <JobPostingCard key={posting.id} posting={posting} index={index} />
                   ))}
                 </div>
               )}

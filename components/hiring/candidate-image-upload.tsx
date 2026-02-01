@@ -97,13 +97,46 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [isCompressing, setIsCompressing] = useState(false)
+  const [isPasteFocused, setIsPasteFocused] = useState(false)
   const imageRef = useRef<HTMLDivElement>(null)
   const pasteInputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
     setImageError(false)
     setPreviewUrl(imageUrl)
   }, [imageUrl])
+
+  // Global paste event listener for Ctrl+V support
+  React.useEffect(() => {
+    const handleGlobalPaste = async (e: ClipboardEvent) => {
+      // Only handle paste if the container is visible and not uploading
+      if (uploading || isCompressing || showEditor) return
+      
+      // Check if we're inside this component's container or the paste input is focused
+      const isContainerFocused = containerRef.current?.contains(document.activeElement)
+      const isPasteInputFocused = document.activeElement === pasteInputRef.current
+      
+      if (!isContainerFocused && !isPasteInputFocused && !isPasteFocused) return
+
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          e.preventDefault()
+          const blob = items[i].getAsFile()
+          if (blob) {
+            await processImageFile(blob)
+            return
+          }
+        }
+      }
+    }
+
+    document.addEventListener("paste", handleGlobalPaste)
+    return () => document.removeEventListener("paste", handleGlobalPaste)
+  }, [uploading, isCompressing, showEditor, isPasteFocused])
 
   const processImageFile = async (file: File): Promise<void> => {
     if (file.size > MAX_FILE_SIZE) {
@@ -287,48 +320,58 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
     setPreviewUrl(null)
   }
 
-  const handlePasteFromClipboard = () => {
-    console.log("[v0] handlePasteFromClipboard called")
-    if (pasteInputRef.current) {
-      console.log("[v0] pasteInputRef.current exists, focusing...")
-      pasteInputRef.current.style.pointerEvents = "auto"
-      pasteInputRef.current.style.opacity = "0.01"
-      pasteInputRef.current.style.position = "fixed"
-      pasteInputRef.current.style.left = "-9999px"
-      pasteInputRef.current.focus()
-      console.log("[v0] Focus set, document.activeElement:", document.activeElement === pasteInputRef.current)
-      toast.info("Drücken Sie Strg+V (oder Cmd+V) um ein Bild einzufügen")
-    } else {
-      console.log("[v0] pasteInputRef.current is null")
+  const handlePasteFromClipboard = async () => {
+    // Try to read from clipboard directly using the Clipboard API
+    try {
+      const clipboardItems = await navigator.clipboard.read()
+      for (const item of clipboardItems) {
+        for (const type of item.types) {
+          if (type.startsWith("image/")) {
+            const blob = await item.getType(type)
+            const file = new File([blob], "pasted-image.png", { type })
+            await processImageFile(file)
+            return
+          }
+        }
+      }
+      toast.error("Kein Bild in der Zwischenablage gefunden")
+    } catch {
+      // Fallback: focus the hidden input and prompt for Ctrl+V
+      setIsPasteFocused(true)
+      if (pasteInputRef.current) {
+        pasteInputRef.current.focus()
+        toast.info("Drücken Sie Strg+V (oder Cmd+V) um ein Bild einzufügen")
+      }
     }
   }
 
   const handlePaste = async (e: React.ClipboardEvent) => {
-    console.log("[v0] handlePaste triggered", e)
     const items = e.clipboardData?.items
-    console.log("[v0] Clipboard items:", items?.length)
-    if (!items) {
-      console.log("[v0] No items in clipboard")
-      return
-    }
+    if (!items) return
 
     for (let i = 0; i < items.length; i++) {
-      console.log("[v0] Item", i, "type:", items[i].type)
       if (items[i].type.startsWith("image/")) {
         const blob = items[i].getAsFile()
-        console.log("[v0] Got image blob:", blob)
         if (blob) {
           await processImageFile(blob)
+          setIsPasteFocused(false)
           return
         }
       }
     }
     toast.error("Kein Bild in der Zwischenablage gefunden")
+    setIsPasteFocused(false)
   }
 
   return (
     <>
-      <div className="flex items-center gap-4">
+      <div 
+        ref={containerRef}
+        className="flex items-center gap-4"
+        tabIndex={0}
+        onFocus={() => setIsPasteFocused(true)}
+        onBlur={() => setIsPasteFocused(false)}
+      >
         <Avatar className="h-20 w-20">
           {!imageError && previewUrl && (
             <AvatarImage

@@ -308,7 +308,16 @@ export default function ContactsPage() {
                           </TableCell>
                           <TableCell>
                             {(contact.street || contact.city) && (
-                              <div className="text-sm">
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                  [contact.street, contact.house_number, contact.postal_code, contact.city]
+                                    .filter(Boolean)
+                                    .join(" ")
+                                )}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:underline block"
+                              >
                                 {contact.street && (
                                   <div className="whitespace-nowrap">
                                     {contact.street} {contact.house_number}
@@ -319,7 +328,7 @@ export default function ContactsPage() {
                                     {contact.postal_code} {contact.city}
                                   </div>
                                 )}
-                              </div>
+                              </a>
                             )}
                           </TableCell>
                           <TableCell>

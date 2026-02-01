@@ -601,7 +601,11 @@ export function EditCandidateDialog({
 
           {/* Candidate Events Section */}
           <div className="border-t pt-4 mt-4">
-            <CandidateEventsManager events={events} onChange={setEvents} />
+            <CandidateEventsManager 
+              events={events} 
+              onChange={setEvents} 
+              candidateName={`${formData.first_name} ${formData.last_name}`}
+            />
           </div>
 
           <div className="space-y-2">

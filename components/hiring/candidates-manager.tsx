@@ -21,7 +21,17 @@ import {
   Sparkles,
   UserPlus,
   FileText,
+  MoreVertical,
+  Calendar,
+  MessageSquare,
 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { CreateCandidateDialog } from "./create-candidate-dialog"
 import EditCandidateDialog from "./edit-candidate-dialog"
@@ -35,6 +45,16 @@ import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { defaultPipelineStages } from "@/lib/recruiting-defaults"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
+
+interface CandidateEvent {
+  id: string
+  type: 'interview_1' | 'interview_2' | 'trial_day_1' | 'trial_day_2' | 'other'
+  date: string
+  time?: string
+  notes?: string
+  completed: boolean
+  created_at: string
+}
 
 interface Candidate {
   id: string
@@ -50,6 +70,9 @@ interface Candidate {
   created_at: string
   image_url?: string
   converted_to_team_member?: boolean
+  notes?: string
+  first_contact_date?: string
+  events?: CandidateEvent[]
   applications?: Array<{
     id: string
     job_posting_id: string
@@ -282,6 +305,27 @@ const CandidatesManager = ({
     return annualSalary / annualHours
   }
 
+  const getEventTypeShortLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      interview_1: '1. Gespräch',
+      interview_2: '2. Gespräch',
+      trial_day_1: '1. Probearbeit',
+      trial_day_2: '2. Probearbeit',
+      other: 'Termin',
+    }
+    return labels[type] || type
+  }
+
+  const getUpcomingEvents = (events: CandidateEvent[] | undefined) => {
+    if (!events || events.length === 0) return []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return events
+      .filter(e => !e.completed && new Date(e.date) >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 2)
+  }
+
   // Client-side filtering for search (SWR handles status/jobPosting filtering on server)
   const displayedCandidates = candidates.filter((candidate) => {
     if (
@@ -386,135 +430,213 @@ const CandidatesManager = ({
                   : "Keine Kandidaten vorhanden. Fügen Sie Ihren ersten Kandidaten hinzu."}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {displayedCandidates.map((candidate) => (
-                <Card key={candidate.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex flex-col space-y-2">
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-16 w-16 flex-shrink-0">
-                          <AvatarImage
-                            src={candidate.image_url || undefined}
-                            alt={`${candidate.first_name} ${candidate.last_name}`}
-                          />
-                          <AvatarFallback className="text-lg">
-                            {getInitials(candidate.first_name, candidate.last_name)}
-                          </AvatarFallback>
-                        </Avatar>
+                <Card 
+                  key={candidate.id} 
+                  className="group relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/80 shadow-sm hover:shadow-lg transition-all duration-300"
+                >
+                  {/* Top accent bar based on pipeline stage */}
+                  <div 
+                    className="absolute top-0 left-0 right-0 h-1"
+                    style={{ 
+                      backgroundColor: defaultPipelineStages.find(
+                        s => s.name === (candidate.applications?.[0]?.stage || candidate.applications?.[0]?.status || "Bewerbung eingegangen")
+                      )?.color || "#3b82f6"
+                    }}
+                  />
+                  
+                  <CardContent className="p-4 pt-5">
+                    {/* Header with avatar, name, and menu */}
+                    <div className="flex items-start gap-4 mb-4">
+                      <Avatar className="h-14 w-14 flex-shrink-0 ring-2 ring-background shadow-md">
+                        <AvatarImage
+                          src={candidate.image_url || undefined}
+                          alt={`${candidate.first_name} ${candidate.last_name}`}
+                        />
+                        <AvatarFallback className="text-base font-semibold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
+                          {getInitials(candidate.first_name, candidate.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
 
-                        <div className="flex-1 min-w-0">
-                          <Link
-                            href={`/hiring/candidates/${candidate.id}`}
-                            className="text-base font-semibold text-primary hover:underline cursor-pointer block"
-                          >
-                            {candidate.first_name} {candidate.last_name}
-                          </Link>
-                          {candidate.date_of_birth && (
-                            <p className="text-xs text-muted-foreground">
-                              {calculateAge(candidate.date_of_birth)} Jahre
-                            </p>
-                          )}
-                          <div className="mt-1">{getPipelineStageBadge(candidate)}</div>
-                          {candidate.applications &&
-                            candidate.applications.length > 0 &&
-                            candidate.applications[0].job_postings && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {candidate.applications[0].job_postings.title}
-                                </Badge>
-                              </div>
-                            )}
-                          {candidate.salary_expectation && candidate.weekly_hours && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {new Intl.NumberFormat("de-DE", {
-                                style: "currency",
-                                currency: "EUR",
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }).format(
-                                calculateHourlyRate(candidate.salary_expectation, Number(candidate.weekly_hours)) || 0,
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <Link
+                              href={`/hiring/candidates/${candidate.id}`}
+                              className="text-base font-semibold text-foreground hover:text-primary transition-colors block truncate"
+                            >
+                              {candidate.first_name} {candidate.last_name}
+                            </Link>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {candidate.date_of_birth && (
+                                <span className="text-sm text-muted-foreground">
+                                  {calculateAge(candidate.date_of_birth)} Jahre
+                                </span>
                               )}
-                              /Std
+                              {candidate.converted_to_team_member && (
+                                <Badge variant="default" className="bg-emerald-500/90 text-white text-[10px] px-1.5 py-0">
+                                  Team
+                                </Badge>
+                              )}
                             </div>
-                          )}
-                          {candidate.converted_to_team_member && (
-                            <Badge variant="default" className="mt-1 bg-green-500 text-white">
-                              Team-Mitglied
-                            </Badge>
-                          )}
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              {!showArchived && (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setSendQuestionnaireCandidate({
+                                      id: candidate.id,
+                                      name: `${candidate.first_name} ${candidate.last_name}`,
+                                    })
+                                  }
+                                >
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  Fragebogen senden
+                                </DropdownMenuItem>
+                              )}
+                              {!showArchived && (
+                                <DropdownMenuItem onClick={() => setInterviewCandidate(candidate)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Interview generieren
+                                </DropdownMenuItem>
+                              )}
+                              {!showArchived && !candidate.converted_to_team_member && (
+                                <DropdownMenuItem onClick={() => setConvertingCandidate(candidate)}>
+                                  <UserPlus className="h-4 w-4 mr-2" />
+                                  Als Team-Mitglied
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => setEditingCandidate(candidate)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Bearbeiten
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleArchive(candidate.id, showArchived)}>
+                                {showArchived ? (
+                                  <>
+                                    <ArchiveRestore className="h-4 w-4 mr-2" />
+                                    Wiederherstellen
+                                  </>
+                                ) : (
+                                  <>
+                                    <Archive className="h-4 w-4 mr-2" />
+                                    Archivieren
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setDeleteCandidate(candidate)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Löschen
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
+                    </div>
 
-                      {!showArchived && (
-                        <div className="w-full flex items-center justify-between gap-2">
-                          <div className="flex-1" />
-                          <div className="flex-shrink-0">{renderRating(candidate.rating)}</div>
+                    {/* Status badges row */}
+                    <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                      {getPipelineStageBadge(candidate)}
+                      {candidate.applications?.[0]?.job_postings && (
+                        <Badge variant="secondary" className="text-[11px] font-normal">
+                          {candidate.applications[0].job_postings.title}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Info section */}
+                    <div className="space-y-2.5">
+                      {/* First Contact & Salary in a row */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        {candidate.first_contact_date && (
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>{new Date(candidate.first_contact_date).toLocaleDateString("de-DE")}</span>
+                          </div>
+                        )}
+                        {candidate.salary_expectation && candidate.weekly_hours && (
+                          <div className="text-xs font-medium text-foreground/70">
+                            {new Intl.NumberFormat("de-DE", {
+                              style: "currency",
+                              currency: "EUR",
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            }).format(
+                              calculateHourlyRate(candidate.salary_expectation, Number(candidate.weekly_hours)) || 0,
+                            )}
+                            /Std
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Internal Notes */}
+                      {candidate.notes && (
+                        <div className="flex items-start gap-2 text-xs bg-muted/40 rounded-lg p-2.5">
+                          <MessageSquare className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                          <p className="text-muted-foreground line-clamp-2 leading-relaxed">{candidate.notes}</p>
                         </div>
                       )}
 
-                      <div className="w-full flex items-center justify-center gap-2 pt-1.5 border-t">
-                        {!showArchived && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              setSendQuestionnaireCandidate({
-                                id: candidate.id,
-                                name: `${candidate.first_name} ${candidate.last_name}`,
-                              })
-                            }
-                            title="Fragebogen senden"
-                          >
-                            <Mail className="h-6 w-6" />
-                          </Button>
-                        )}
-                        {!showArchived && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setInterviewCandidate(candidate)}
-                            title="Interview generieren"
-                          >
-                            <FileText className="h-6 w-6" />
-                          </Button>
-                        )}
-                        {!showArchived && !candidate.converted_to_team_member && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setConvertingCandidate(candidate)}
-                            title="Als Team-Mitglied hinzufügen"
-                          >
-                            <UserPlus className="h-6 w-6" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingCandidate(candidate)}
-                          title="Bearbeiten"
-                        >
-                          <Edit className="h-6 w-6" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleArchive(candidate.id, showArchived)}
-                          title={showArchived ? "Wiederherstellen" : "Archivieren"}
-                        >
-                          {showArchived ? <ArchiveRestore className="h-6 w-6" /> : <Archive className="h-6 w-6" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteCandidate(candidate)}
-                          title="Löschen"
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-6 w-6" />
-                        </Button>
-                      </div>
+                      {/* Upcoming Events */}
+                      {getUpcomingEvents(candidate.events).length > 0 && (
+                        <div className="space-y-1.5">
+                          {getUpcomingEvents(candidate.events).map((event) => (
+                            <div 
+                              key={event.id} 
+                              className="flex items-center gap-2 text-xs bg-primary/5 dark:bg-primary/10 rounded-lg px-2.5 py-2 border border-primary/10"
+                            >
+                              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Calendar className="h-3 w-3 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium text-foreground">
+                                  {getEventTypeShortLabel(event.type)}
+                                </span>
+                                <span className="text-muted-foreground ml-1.5">
+                                  {new Date(event.date).toLocaleDateString("de-DE", { 
+                                    day: "numeric", 
+                                    month: "short" 
+                                  })}
+                                  {event.time && ` - ${event.time}`}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Footer with rating */}
+                    {!showArchived && candidate.rating > 0 && (
+                      <div className="flex items-center justify-end pt-3 mt-3 border-t border-border/50">
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`h-3.5 w-3.5 ${
+                                i < candidate.rating 
+                                  ? "fill-amber-400 text-amber-400" 
+                                  : "text-muted-foreground/30"
+                              }`} 
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { LayoutDashboard, Mail, Archive, Sparkles, MoreVertical, Eye } from "lucide-react"
+import { LayoutDashboard, Mail, Archive, Sparkles, MoreVertical, Eye, Calendar, MessageSquare } from "lucide-react"
 import { defaultPipelineStages } from "@/lib/recruiting-defaults"
 import { useToast } from "@/hooks/use-toast"
 import { AICandidateAnalysisDialog } from "./ai-candidate-analysis-dialog"
@@ -55,6 +55,14 @@ interface Application {
     notes?: string
     salary_expectation?: number
     weekly_hours?: number
+    first_contact_date?: string
+    events?: Array<{
+      id: string
+      type: string
+      date: string
+      time?: string
+      completed: boolean
+    }>
   }
   job_posting: {
     id: string
@@ -162,6 +170,8 @@ export function HiringPipeline() {
             notes: candidate.notes,
             salary_expectation: candidate.salary_expectation,
             weekly_hours: candidate.weekly_hours,
+            first_contact_date: candidate.first_contact_date,
+            events: candidate.events,
           },
           job_posting: {
             id: candidate.job_posting_id || "",
@@ -417,6 +427,26 @@ export function HiringPipeline() {
     setDragOverStageId(null)
   }
 
+  const getEventTypeShortLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      interview_1: '1. Gespräch',
+      interview_2: '2. Gespräch',
+      trial_day_1: '1. Probearbeit',
+      trial_day_2: '2. Probearbeit',
+      other: 'Termin',
+    }
+    return labels[type] || type
+  }
+
+  const getNextEvent = (events: Application['candidate']['events']) => {
+    if (!events || events.length === 0) return null
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return events
+      .filter(e => !e.completed && new Date(e.date) >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
+  }
+
   const calculateAge = (dateOfBirth: string | undefined) => {
     if (!dateOfBirth) return null
     const today = new Date()
@@ -597,6 +627,31 @@ export function HiringPipeline() {
                               <Badge variant="outline" className="text-xs mt-1 max-w-full truncate">
                                 {application.job_posting.title}
                               </Badge>
+                            )}
+                            {application.candidate.first_contact_date && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>
+                                  {new Date(application.candidate.first_contact_date).toLocaleDateString("de-DE")}
+                                </span>
+                              </div>
+                            )}
+                            {application.candidate.notes && (
+                              <div className="flex items-start gap-1 text-xs text-muted-foreground mt-1">
+                                <MessageSquare className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                <span className="line-clamp-2">{application.candidate.notes}</span>
+                              </div>
+                            )}
+                            {getNextEvent(application.candidate.events) && (
+                              <div className="flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-950/30 rounded px-1.5 py-0.5 mt-1">
+                                <Calendar className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                <span className="font-medium text-blue-700 dark:text-blue-300">
+                                  {getEventTypeShortLabel(getNextEvent(application.candidate.events)!.type)}:
+                                </span>
+                                <span className="text-blue-600 dark:text-blue-400">
+                                  {new Date(getNextEvent(application.candidate.events)!.date).toLocaleDateString("de-DE")}
+                                </span>
+                              </div>
                             )}
                             {application.candidate.salary_expectation && application.candidate.weekly_hours && (
                               <p className="text-xs text-muted-foreground mt-1">

@@ -51,7 +51,16 @@ export function ContactCard({ candidate }: ContactCardProps) {
             <MapPin className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-sm text-muted-foreground">Adresse</p>
-              <p>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  [candidate.address, candidate.postal_code, candidate.city, candidate.country]
+                    .filter(Boolean)
+                    .join(", ")
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
                 {candidate.address && (
                   <span>
                     {candidate.address}
@@ -60,7 +69,7 @@ export function ContactCard({ candidate }: ContactCardProps) {
                 )}
                 {candidate.postal_code} {candidate.city}
                 {candidate.country && <span>, {candidate.country}</span>}
-              </p>
+              </a>
             </div>
           </div>
         )}

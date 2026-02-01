@@ -90,20 +90,53 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
   const [showEditor, setShowEditor] = useState(false)
   const [tempImageUrl, setTempImageUrl] = useState<string | null>(null)
   const [cropSettings, setCropSettings] = useState({
-    zoom: 1,
+    zoom: 10,
     panX: 0,
     panY: 0,
   })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [isCompressing, setIsCompressing] = useState(false)
+  const [isPasteFocused, setIsPasteFocused] = useState(false)
   const imageRef = useRef<HTMLDivElement>(null)
   const pasteInputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
     setImageError(false)
     setPreviewUrl(imageUrl)
   }, [imageUrl])
+
+  // Global paste event listener for Ctrl+V support
+  React.useEffect(() => {
+    const handleGlobalPaste = async (e: ClipboardEvent) => {
+      // Only handle paste if the container is visible and not uploading
+      if (uploading || isCompressing || showEditor) return
+      
+      // Check if we're inside this component's container or the paste input is focused
+      const isContainerFocused = containerRef.current?.contains(document.activeElement)
+      const isPasteInputFocused = document.activeElement === pasteInputRef.current
+      
+      if (!isContainerFocused && !isPasteInputFocused && !isPasteFocused) return
+
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          e.preventDefault()
+          const blob = items[i].getAsFile()
+          if (blob) {
+            await processImageFile(blob)
+            return
+          }
+        }
+      }
+    }
+
+    document.addEventListener("paste", handleGlobalPaste)
+    return () => document.removeEventListener("paste", handleGlobalPaste)
+  }, [uploading, isCompressing, showEditor, isPasteFocused])
 
   const processImageFile = async (file: File): Promise<void> => {
     if (file.size > MAX_FILE_SIZE) {
@@ -124,7 +157,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
       reader.onloadend = () => {
         setTempImageUrl(reader.result as string)
         setShowEditor(true)
-        setCropSettings({ zoom: 1, panX: 0, panY: 0 })
+        setCropSettings({ zoom: 10, panX: 0, panY: 0 })
       }
       reader.readAsDataURL(processedFile)
 
@@ -193,8 +226,72 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
     setShowEditor(false)
 
     try {
-      const response = await fetch(tempImageUrl)
-      const blob = await response.blob()
+      // Create a canvas to render the cropped image
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
+      if (!ctx) {
+        toast.error("Canvas konnte nicht erstellt werden")
+        return
+      }
+
+      // Output size (circular avatar is 192px in the editor, we'll use 384px for quality)
+      const outputSize = 384
+      canvas.width = outputSize
+      canvas.height = outputSize
+
+      // Load the image
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error("Image loading failed"))
+        img.src = tempImageUrl
+      })
+
+      // Calculate the crop based on zoom and pan settings
+      // The preview div is 192x192 (w-48 h-48)
+      const previewSize = 192
+      const zoom = cropSettings.zoom
+      const panX = cropSettings.panX
+      const panY = cropSettings.panY
+
+      // Clear canvas
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(0, 0, outputSize, outputSize)
+
+      // Save context state
+      ctx.save()
+
+      // Translate to center
+      ctx.translate(outputSize / 2, outputSize / 2)
+
+      // Apply zoom
+      ctx.scale(zoom, zoom)
+
+      // Apply pan (scaled by zoom as in the CSS transform)
+      ctx.translate(panX / zoom, panY / zoom)
+
+      // Draw image centered
+      const scale = outputSize / Math.min(img.width, img.height)
+      const drawWidth = img.width * scale / zoom
+      const drawHeight = img.height * scale / zoom
+      ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
+
+      // Restore context
+      ctx.restore()
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => {
+            if (b) resolve(b)
+            else reject(new Error("Canvas to blob failed"))
+          },
+          "image/jpeg",
+          0.9
+        )
+      })
 
       const file = new File([blob], "candidate-image.jpg", { type: "image/jpeg" })
 
@@ -203,9 +300,6 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
       if (imageUrl) {
         formData.append("oldImageUrl", imageUrl)
       }
-      formData.append("zoom", cropSettings.zoom.toString())
-      formData.append("panX", cropSettings.panX.toString())
-      formData.append("panY", cropSettings.panY.toString())
 
       const uploadResponse = await fetch("/api/hiring/candidates/upload-image", {
         method: "POST",
@@ -218,6 +312,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
           const data = await uploadResponse.json()
           setPreviewUrl(data.url)
           onImageChange(data.url)
+          toast.success("Bild erfolgreich gespeichert")
         } else {
           toast.error("Upload fehlgeschlagen: Ungültige Serverantwort")
         }
@@ -235,6 +330,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
         toast.error(errorMessage)
       }
     } catch (error) {
+      console.error("[v0] Error saving cropped image:", error)
       toast.error("Upload fehlgeschlagen")
     } finally {
       setUploading(false)
@@ -246,7 +342,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
     if (previewUrl) {
       setTempImageUrl(previewUrl)
       setShowEditor(true)
-      setCropSettings({ zoom: 1, panX: 0, panY: 0 })
+      setCropSettings({ zoom: 10, panX: 0, panY: 0 })
     }
   }
 
@@ -287,48 +383,58 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
     setPreviewUrl(null)
   }
 
-  const handlePasteFromClipboard = () => {
-    console.log("[v0] handlePasteFromClipboard called")
-    if (pasteInputRef.current) {
-      console.log("[v0] pasteInputRef.current exists, focusing...")
-      pasteInputRef.current.style.pointerEvents = "auto"
-      pasteInputRef.current.style.opacity = "0.01"
-      pasteInputRef.current.style.position = "fixed"
-      pasteInputRef.current.style.left = "-9999px"
-      pasteInputRef.current.focus()
-      console.log("[v0] Focus set, document.activeElement:", document.activeElement === pasteInputRef.current)
-      toast.info("Drücken Sie Strg+V (oder Cmd+V) um ein Bild einzufügen")
-    } else {
-      console.log("[v0] pasteInputRef.current is null")
+  const handlePasteFromClipboard = async () => {
+    // Try to read from clipboard directly using the Clipboard API
+    try {
+      const clipboardItems = await navigator.clipboard.read()
+      for (const item of clipboardItems) {
+        for (const type of item.types) {
+          if (type.startsWith("image/")) {
+            const blob = await item.getType(type)
+            const file = new File([blob], "pasted-image.png", { type })
+            await processImageFile(file)
+            return
+          }
+        }
+      }
+      toast.error("Kein Bild in der Zwischenablage gefunden")
+    } catch {
+      // Fallback: focus the hidden input and prompt for Ctrl+V
+      setIsPasteFocused(true)
+      if (pasteInputRef.current) {
+        pasteInputRef.current.focus()
+        toast.info("Drücken Sie Strg+V (oder Cmd+V) um ein Bild einzufügen")
+      }
     }
   }
 
   const handlePaste = async (e: React.ClipboardEvent) => {
-    console.log("[v0] handlePaste triggered", e)
     const items = e.clipboardData?.items
-    console.log("[v0] Clipboard items:", items?.length)
-    if (!items) {
-      console.log("[v0] No items in clipboard")
-      return
-    }
+    if (!items) return
 
     for (let i = 0; i < items.length; i++) {
-      console.log("[v0] Item", i, "type:", items[i].type)
       if (items[i].type.startsWith("image/")) {
         const blob = items[i].getAsFile()
-        console.log("[v0] Got image blob:", blob)
         if (blob) {
           await processImageFile(blob)
+          setIsPasteFocused(false)
           return
         }
       }
     }
     toast.error("Kein Bild in der Zwischenablage gefunden")
+    setIsPasteFocused(false)
   }
 
   return (
     <>
-      <div className="flex items-center gap-4">
+      <div 
+        ref={containerRef}
+        className="flex items-center gap-4"
+        tabIndex={0}
+        onFocus={() => setIsPasteFocused(true)}
+        onBlur={() => setIsPasteFocused(false)}
+      >
         <Avatar className="h-20 w-20">
           {!imageError && previewUrl && (
             <AvatarImage
@@ -448,9 +554,9 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
                     <Slider
                       value={[cropSettings.zoom]}
                       onValueChange={([value]) => setCropSettings((prev) => ({ ...prev, zoom: value }))}
-                      min={0.5}
-                      max={3}
-                      step={0.1}
+                      min={1}
+                      max={15}
+                      step={0.5}
                       className="w-full"
                     />
                   </div>
@@ -458,7 +564,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCropSettings({ zoom: 1, panX: 0, panY: 0 })}
+                    onClick={() => setCropSettings({ zoom: 10, panX: 0, panY: 0 })}
                     className="w-full"
                   >
                     {t("common.reset", "Zurücksetzen")}

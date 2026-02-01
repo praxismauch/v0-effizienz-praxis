@@ -314,10 +314,17 @@ export function PracticeLocationsTab() {
                         </div>
 
                         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                              [location.street, location.zip_code, location.city].filter(Boolean).join(", ")
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-blue-600 hover:underline"
+                          >
                             <MapPin className="h-4 w-4" />
                             {formatAddress(location)}
-                          </div>
+                          </a>
                           {location.phone && (
                             <div className="flex items-center gap-1">
                               <Phone className="h-4 w-4" />

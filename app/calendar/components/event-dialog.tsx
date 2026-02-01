@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { Lock, Globe, Users, User } from "lucide-react"
+import useSWR from "swr"
 import {
   Dialog,
   DialogContent,
@@ -19,8 +20,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { useTeams, useTeamMembers } from "@/hooks/use-teams"
+import { useTeams } from "@/hooks/use-teams"
 import type { CalendarEvent, FormData } from "../types"
+
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 const defaultFormData: FormData = {
   title: "",
@@ -65,7 +68,14 @@ export function EventDialog({
 }: EventDialogProps) {
   const { toast } = useToast()
   const { teams } = useTeams()
-  const { members } = useTeamMembers()
+  
+  // Fetch team members directly with correct response structure
+  const { data: membersData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/team-members` : null,
+    fetcher
+  )
+  const members = membersData?.teamMembers || []
+  
   const [formData, setFormData] = useState<FormData>(defaultFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -314,9 +324,11 @@ export function EventDialog({
               <div className="grid gap-2">
                 <Label>Sichtbar für Mitarbeiter</Label>
                 <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px] max-h-[120px] overflow-y-auto">
-                  {members.map((member) => {
+                  {members.map((member: any) => {
                     const isSelected = formData.visibleToMembers.includes(member.id)
-                    const displayName = member.user?.name || member.user?.email || "Unbekannt"
+                    const displayName = member.name || member.firstName && member.lastName 
+                      ? `${member.firstName || ''} ${member.lastName || ''}`.trim() 
+                      : member.email || "Unbekannt"
                     return (
                       <Badge
                         key={member.id}

@@ -45,6 +45,33 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const { stage, ...validFields } = body
 
+    // Check for duplicate if name is being changed
+    const firstName = validFields.first_name
+    const lastName = validFields.last_name
+    const practiceId = validFields.practice_id
+
+    if (firstName && lastName && practiceId) {
+      const { data: existingCandidates, error: checkError } = await supabase
+        .from("candidates")
+        .select("id, first_name, last_name")
+        .eq("practice_id", practiceId)
+        .ilike("first_name", firstName.trim())
+        .ilike("last_name", lastName.trim())
+        .is("deleted_at", null)
+        .neq("id", id) // Exclude current candidate
+        .limit(1)
+
+      if (!checkError && existingCandidates && existingCandidates.length > 0) {
+        return NextResponse.json(
+          { 
+            error: `Ein Kandidat mit dem Namen "${firstName} ${lastName}" existiert bereits.`,
+            code: "DUPLICATE_CANDIDATE"
+          }, 
+          { status: 409 }
+        )
+      }
+    }
+
     const sanitizedFields = Object.keys(validFields).reduce((acc: any, key) => {
       const value = validFields[key]
       if ((key.includes("_date") || key.includes("_time") || key === "birthday") && value === "") {
@@ -88,6 +115,44 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const body = await request.json()
 
     const { stage, ...validFields } = body
+
+    // Check for duplicate if name is being changed
+    const firstName = validFields.first_name
+    const lastName = validFields.last_name
+    
+    if (firstName || lastName) {
+      // Get current candidate to check practice_id and fill in missing name parts
+      const { data: currentCandidate } = await supabase
+        .from("candidates")
+        .select("practice_id, first_name, last_name")
+        .eq("id", id)
+        .maybeSingle()
+
+      if (currentCandidate) {
+        const checkFirstName = firstName || currentCandidate.first_name
+        const checkLastName = lastName || currentCandidate.last_name
+
+        const { data: existingCandidates, error: checkError } = await supabase
+          .from("candidates")
+          .select("id, first_name, last_name")
+          .eq("practice_id", currentCandidate.practice_id)
+          .ilike("first_name", checkFirstName.trim())
+          .ilike("last_name", checkLastName.trim())
+          .is("deleted_at", null)
+          .neq("id", id)
+          .limit(1)
+
+        if (!checkError && existingCandidates && existingCandidates.length > 0) {
+          return NextResponse.json(
+            { 
+              error: `Ein Kandidat mit dem Namen "${checkFirstName} ${checkLastName}" existiert bereits.`,
+              code: "DUPLICATE_CANDIDATE"
+            }, 
+            { status: 409 }
+          )
+        }
+      }
+    }
 
     const sanitizedFields = Object.keys(validFields).reduce((acc: any, key) => {
       const value = validFields[key]

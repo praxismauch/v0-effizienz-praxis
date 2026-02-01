@@ -19,6 +19,7 @@ import { AppLayout } from "@/components/app-layout"
 import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
 import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
+import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiterfassung-tab"
 
 const roleLabels = {
   admin: "Praxis Admin",
@@ -111,47 +112,23 @@ export default function TeamMemberDetailPage() {
   // Fetch member data
   useEffect(() => {
     const fetchMember = async () => {
-      console.log("[v0] Team member lookup - memberId:", memberId)
-      console.log("[v0] Team members in context:", teamMembers.length)
-      if (teamMembers.length > 0) {
-        console.log("[v0] Sample IDs from context:", teamMembers.slice(0, 3).map((m: any) => ({
-          id: m.id,
-          user_id: m.user_id,
-          team_member_id: m.team_member_id
-        })))
-      }
-      
       // First, try to find in context - check id, user_id, and team_member_id fields
       const contextMember = teamMembers.find((m: any) => 
         m.id === memberId || m.user_id === memberId || m.team_member_id === memberId
       )
       
       if (contextMember) {
-        console.log("[v0] Found member in context:", contextMember.name)
         setMember(contextMember)
         setLoading(false)
         return
       }
       
-      console.log("[v0] Member not in context, checking API")
-      console.log("[v0] Using practice ID:", practiceId)
-      
       try {
         const apiUrl = `/api/practices/${practiceId}/team-members`
-        console.log("[v0] Fetching from:", apiUrl)
         const response = await fetch(apiUrl)
         
         if (response.ok) {
           const data = await response.json()
-          console.log("[v0] API returned", data.teamMembers?.length || 0, "members")
-          
-          if (data.teamMembers && data.teamMembers.length > 0) {
-            console.log("[v0] Sample IDs from API:", data.teamMembers.slice(0, 3).map((m: any) => ({
-              id: m.id,
-              user_id: m.user_id,
-              team_member_id: m.team_member_id
-            })))
-          }
           
           // Check id, user_id, and team_member_id fields when searching
           const fetchedMember = data.teamMembers?.find((m: any) => 
@@ -159,16 +136,11 @@ export default function TeamMemberDetailPage() {
           )
           
           if (fetchedMember) {
-            console.log("[v0] Found member in API:", fetchedMember.name)
             setMember(fetchedMember)
-          } else {
-            console.log("[v0] Member not found in API results")
           }
-        } else {
-          console.log("[v0] API response not OK:", response.status)
         }
       } catch (error) {
-        console.error("[v0] Error fetching member:", error)
+        console.error("Error fetching member:", error)
       } finally {
         setLoading(false)
       }
@@ -458,7 +430,13 @@ export default function TeamMemberDetailPage() {
               </TabsContent>
 
             <TabsContent value="zeiterfassung" className="space-y-4">
-              {/* Zeiterfassung content here */}
+              {member && (
+                <TeamMemberZeiterfassungTab
+                  memberId={member.user_id || memberId}
+                  practiceId={member.practice_id || practiceId}
+                  memberName={member.name}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="arbeitsmittel" className="space-y-4">

@@ -679,13 +679,13 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
 
             {/* Extraction Button - Always visible when files are uploaded */}
             {(uploadedFiles.length > 0 || uploadedImages.length > 0) && (
-              <div className="mb-4 p-3 bg-purple-100 dark:bg-purple-900/40 rounded-lg border border-purple-300 dark:border-purple-700">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex-1">
+              <div className="mb-4 p-4 bg-purple-100 dark:bg-purple-900/40 rounded-lg border border-purple-300 dark:border-purple-700">
+                <div className="flex flex-col gap-3">
+                  <div>
                     <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
                       {uploadedFiles.length + uploadedImages.length} Datei(en) bereit zur Analyse
                     </p>
-                    <p className="text-xs text-purple-600 dark:text-purple-400">
+                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
                       Klicken Sie auf den Button, um alle Informationen zu extrahieren und das Formular auszufüllen.
                     </p>
                   </div>
@@ -695,7 +695,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
                     size="default"
                     onClick={() => extractAllInformation()}
                     disabled={aiExtracting || isUploadingImages}
-                    className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
+                    className="bg-purple-600 hover:bg-purple-700 text-white w-full"
                   >
                     {aiExtracting ? (
                       <>

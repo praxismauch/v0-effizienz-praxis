@@ -17,7 +17,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .from("sick_leaves")
       .select(`
         *,
-        team_member:team_members(id, first_name, last_name, avatar_url)
+        team_member:team_members(id, first_name, last_name)
       `)
       .eq("practice_id", String(practiceId))
       .is("deleted_at", null)
@@ -106,7 +106,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .insert(sickLeaveData)
       .select(`
         *,
-        team_member:team_members(id, first_name, last_name, avatar_url)
+        team_member:team_members(id, first_name, last_name)
       `)
       .single()
 

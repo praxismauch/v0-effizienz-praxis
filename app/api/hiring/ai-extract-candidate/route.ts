@@ -39,8 +39,10 @@ export async function POST(req: NextRequest) {
 
         let fileText = ""
 
-        if (file.type === "application/pdf" || file.type.startsWith("image/")) {
+        if (file.type === "application/pdf") {
+          // For PDFs, use the file type with data URL
           try {
+            const dataUrl = `data:${mimeType};base64,${base64}`
             const visionResponse = await generateText({
               model: "anthropic/claude-sonnet-4-20250514",
               messages: [
@@ -49,15 +51,15 @@ export async function POST(req: NextRequest) {
                   content: [
                     {
                       type: "text",
-                      text: `Extrahiere den gesamten lesbaren Text aus diesem Dokument. 
+                      text: `Extrahiere den gesamten lesbaren Text aus diesem PDF-Dokument. 
 Es handelt sich um einen Lebenslauf oder Bewerbungsunterlagen.
 Gib NUR den extrahierten Text zurück, keine Kommentare oder Erklärungen.
 Wenn du persönliche Daten wie Name, Adresse, Telefon, E-Mail, Geburtsdatum, Berufserfahrung findest, achte besonders darauf diese korrekt zu extrahieren.`,
                     },
                     {
                       type: "file",
-                      data: base64,
-                      mimeType: mimeType,
+                      data: dataUrl,
+                      mediaType: mimeType,
                     },
                   ],
                 },
@@ -66,8 +68,40 @@ Wenn du persönliche Daten wie Name, Adresse, Telefon, E-Mail, Geburtsdatum, Ber
 
             fileText = visionResponse.text
           } catch (visionError) {
-            console.error("[v0] AI Extract: Vision extraction failed for", file.name, ":", visionError)
-            fileText = `Dateiname: ${file.name}\nFehler: Konnte Text nicht aus dem Dokument extrahieren.`
+            console.error("[v0] AI Extract: PDF extraction failed for", file.name, ":", visionError)
+            fileText = `Dateiname: ${file.name}\nFehler: Konnte Text nicht aus dem PDF extrahieren.`
+          }
+        } else if (file.type.startsWith("image/")) {
+          // For images, use the image type with base64 data URL
+          try {
+            const dataUrl = `data:${mimeType};base64,${base64}`
+            const visionResponse = await generateText({
+              model: "anthropic/claude-sonnet-4-20250514",
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "text",
+                      text: `Extrahiere den gesamten lesbaren Text aus diesem Bild. 
+Es handelt sich um einen Lebenslauf, eine Bewerbung oder andere Bewerbungsunterlagen.
+Gib NUR den extrahierten Text zurück, keine Kommentare oder Erklärungen.
+Wenn du persönliche Daten wie Name, Adresse, Telefon, E-Mail, Geburtsdatum, Berufserfahrung findest, achte besonders darauf diese korrekt zu extrahieren.
+Lies den Text auf dem Bild sorgfältig und vollständig aus.`,
+                    },
+                    {
+                      type: "image",
+                      image: dataUrl,
+                    },
+                  ],
+                },
+              ],
+            })
+
+            fileText = visionResponse.text
+          } catch (visionError) {
+            console.error("[v0] AI Extract: Image extraction failed for", file.name, ":", visionError)
+            fileText = `Dateiname: ${file.name}\nFehler: Konnte Text nicht aus dem Bild extrahieren.`
           }
         } else if (file.type === "text/plain") {
           fileText = await file.text()

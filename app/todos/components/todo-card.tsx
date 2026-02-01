@@ -197,7 +197,7 @@ export function TodoCard({
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        "p-4 cursor-move transition-all duration-200 bg-white dark:bg-slate-900",
+        "group p-4 cursor-move transition-all duration-200 bg-white dark:bg-slate-900",
         isDragging ? "opacity-50 scale-95 rotate-2 shadow-2xl" : "hover:shadow-md hover:scale-[1.02]"
       )}
     >
@@ -225,6 +225,33 @@ export function TodoCard({
                 </p>
               )}
             </div>
+            {/* Edit/Delete icons visible on hover */}
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 hover:bg-muted"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit(todo)
+                }}
+                title="Bearbeiten"
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete(todo.id)
+                }}
+                title="Löschen"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-1 pl-6">
@@ -242,22 +269,6 @@ export function TodoCard({
                 <SelectItem value="abgebrochen">Abgebrochen</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => onEdit(todo)}
-            >
-              <Edit className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
-              onClick={() => onDelete(todo.id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
           </div>
 
           <TodoMetadata

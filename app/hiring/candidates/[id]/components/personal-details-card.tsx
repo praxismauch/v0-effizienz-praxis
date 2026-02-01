@@ -5,6 +5,25 @@ import { User, Calendar, Clock, DollarSign, Globe } from "lucide-react"
 import type { Candidate } from "../types"
 import { formatDate, formatCurrency } from "../utils"
 
+const sourceTranslations: Record<string, string> = {
+  direct: "Direkt",
+  referral: "Empfehlung",
+  website: "Webseite",
+  linkedin: "LinkedIn",
+  indeed: "Indeed",
+  stepstone: "StepStone",
+  xing: "XING",
+  job_board: "Jobbörse",
+  social_media: "Soziale Medien",
+  agency: "Agentur",
+  other: "Sonstiges",
+}
+
+const translateSource = (source: string): string => {
+  const lowerSource = source.toLowerCase()
+  return sourceTranslations[lowerSource] || source
+}
+
 interface PersonalDetailsCardProps {
   candidate: Candidate
 }
@@ -72,7 +91,7 @@ export function PersonalDetailsCard({ candidate }: PersonalDetailsCardProps) {
                 <Globe className="h-4 w-4" />
                 Quelle
               </p>
-              <p className="font-medium capitalize">{candidate.source}</p>
+              <p className="font-medium">{translateSource(candidate.source)}</p>
             </div>
           )}
           {candidate.first_contact_date && (

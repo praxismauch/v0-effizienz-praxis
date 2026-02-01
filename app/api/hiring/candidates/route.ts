@@ -169,6 +169,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "practice_id is required" }, { status: 400 })
     }
 
+    const firstName = body.first_name || body.firstName
+    const lastName = body.last_name || body.lastName
+
+    if (!firstName || !lastName) {
+      return NextResponse.json({ error: "first_name and last_name are required" }, { status: 400 })
+    }
+
+    // Check for duplicate candidate with same name in the same practice
+    const { data: existingCandidates, error: checkError } = await supabase
+      .from("candidates")
+      .select("id, first_name, last_name")
+      .eq("practice_id", practiceId)
+      .ilike("first_name", firstName.trim())
+      .ilike("last_name", lastName.trim())
+      .is("deleted_at", null)
+      .limit(1)
+
+    if (checkError) {
+      console.error("[v0] Error checking for duplicate candidate:", checkError)
+    }
+
+    if (existingCandidates && existingCandidates.length > 0) {
+      return NextResponse.json(
+        { 
+          error: `Ein Kandidat mit dem Namen "${firstName} ${lastName}" existiert bereits.`,
+          code: "DUPLICATE_CANDIDATE"
+        }, 
+        { status: 409 }
+      )
+    }
+
     const candidateData: any = {
       first_name: body.first_name || body.firstName,
       last_name: body.last_name || body.lastName,

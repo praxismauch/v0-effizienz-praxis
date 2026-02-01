@@ -29,6 +29,7 @@ import { SendQuestionnaireDialog } from "./send-questionnaire-dialog"
 import { AICandidateAnalysisDialog } from "./ai-candidate-analysis-dialog"
 import { ConvertToTeamMemberDialog } from "./convert-to-team-member-dialog"
 import { GenerateInterviewDialog } from "@/components/hiring/generate-interview-dialog"
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { defaultPipelineStages } from "@/lib/recruiting-defaults"
@@ -75,6 +76,7 @@ interface CandidatesManagerProps {
   onShowArchivedChange?: (show: boolean) => void
   onUpdate?: () => void
   onNavigateToTab?: () => void
+  initialJobPostingFilter?: string
 }
 
 const CandidatesManager = ({
@@ -83,11 +85,12 @@ const CandidatesManager = ({
   onShowArchivedChange,
   onUpdate,
   onNavigateToTab,
+  initialJobPostingFilter,
 }: CandidatesManagerProps) => {
   const { currentPractice } = usePractice()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [jobPostingFilter, setJobPostingFilter] = useState<string>("all")
+  const [jobPostingFilter, setJobPostingFilter] = useState<string>(initialJobPostingFilter || "all")
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null)
   const [sendQuestionnaireCandidate, setSendQuestionnaireCandidate] = useState<{
@@ -97,6 +100,7 @@ const CandidatesManager = ({
   const [showAIAnalysis, setShowAIAnalysis] = useState(false)
   const [convertingCandidate, setConvertingCandidate] = useState<Candidate | null>(null)
   const [interviewCandidate, setInterviewCandidate] = useState<Candidate | null>(null)
+  const [deleteCandidate, setDeleteCandidate] = useState<Candidate | null>(null)
   const { toast } = useToast()
   const { isAiEnabled } = useAiEnabled()
 
@@ -173,10 +177,6 @@ const CandidatesManager = ({
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Möchten Sie diesen Kandidaten wirklich löschen?")) {
-      return
-    }
-
     const previousCandidates = [...candidates]
     await mutateCandidates(
       candidates.filter((c) => c.id !== id),
@@ -507,7 +507,7 @@ const CandidatesManager = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(candidate.id)}
+                          onClick={() => setDeleteCandidate(candidate)}
                           title="Löschen"
                           className="text-destructive hover:text-destructive"
                         >
@@ -586,6 +586,20 @@ const CandidatesManager = ({
           candidate={interviewCandidate}
         />
       )}
+
+      <ConfirmDeleteDialog
+        open={!!deleteCandidate}
+        onOpenChange={(open) => !open && setDeleteCandidate(null)}
+        onConfirm={() => {
+          if (deleteCandidate) {
+            handleDelete(deleteCandidate.id)
+            setDeleteCandidate(null)
+          }
+        }}
+        title="Kandidat löschen"
+        description="Diese Aktion kann nicht rückgängig gemacht werden. Der Kandidat und alle zugehörigen Daten werden dauerhaft gelöscht."
+        itemName={deleteCandidate ? `${deleteCandidate.first_name} ${deleteCandidate.last_name}` : undefined}
+      />
     </div>
   )
 }

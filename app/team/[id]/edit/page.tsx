@@ -132,20 +132,27 @@ export default function EditTeamMemberPage() {
 
   useEffect(() => {
     if (member) {
-      const nameParts = member.name.split(" ")
-      const firstName = nameParts[0] || ""
-      const lastName = nameParts.slice(1).join(" ") || ""
+      // Use first_name/last_name directly if available, otherwise split from name
+      let firstName = member.first_name || ""
+      let lastName = member.last_name || ""
+      
+      // Fallback: if first_name/last_name not available, try to split from name
+      if (!firstName && !lastName && member.name) {
+        const nameParts = member.name.split(" ")
+        firstName = nameParts[0] || ""
+        lastName = nameParts.slice(1).join(" ") || ""
+      }
 
       setFormData({
         firstName,
         lastName,
-        email: member.email,
-        role: member.role,
-        permissions: member.permissions,
-        teamIds: member.teamIds,
+        email: member.email || "",
+        role: member.role || "user",
+        permissions: member.permissions || [],
+        teamIds: member.teamIds || [],
         avatar: member.avatar || "",
         status: member.isActive ? "active" : "inactive",
-        dateOfBirth: member.date_of_birth || "",
+        dateOfBirth: member.date_of_birth || member.dateOfBirth || "",
       })
     }
   }, [member])

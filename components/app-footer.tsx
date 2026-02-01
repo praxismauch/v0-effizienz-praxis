@@ -4,41 +4,12 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 
-const LEITBILD_CACHE_KEY = "effizienz-praxis-leitbild-cache"
-
 export function AppFooter() {
   const [currentYear, setCurrentYear] = useState<number>(2026)
-  const [leitbild, setLeitbild] = useState<string | null>(null)
 
   useEffect(() => {
     // Set current year on client side only
     setCurrentYear(new Date().getFullYear())
-    
-    // Read cached leitbild from localStorage
-    try {
-      const cached = localStorage.getItem(LEITBILD_CACHE_KEY)
-      if (cached) {
-        const parsed = JSON.parse(cached)
-        setLeitbild(parsed.leitbildOneSentence || null)
-      }
-    } catch {
-      // Ignore errors
-    }
-
-    // Listen for updates from leitbild page
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === LEITBILD_CACHE_KEY && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue)
-          setLeitbild(parsed.leitbildOneSentence || null)
-        } catch {
-          // Ignore errors
-        }
-      }
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
   }, [])
 
   return (
@@ -67,12 +38,6 @@ export function AppFooter() {
           <Separator orientation="vertical" className="h-3" />
           <span>© {currentYear} Effizienz Praxis</span>
         </div>
-        {/* Cached leitbild display */}
-        {leitbild && (
-          <div className="mt-1 text-center">
-            <p className="text-[10px] text-muted-foreground/60 italic max-w-4xl mx-auto truncate">{leitbild}</p>
-          </div>
-        )}
       </div>
     </footer>
   )

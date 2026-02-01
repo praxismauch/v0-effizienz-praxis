@@ -8,6 +8,8 @@ import { formatGermanNumber } from "@/lib/utils/number-format"
 import type { Responsibility, ResponsibilityFormData, ResponsibilityStats } from "../types"
 import { INITIAL_FORM_DATA } from "../types"
 
+import { useTeam } from "@/contexts/team-context"
+
 export function useResponsibilities() {
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,6 +22,7 @@ export function useResponsibilities() {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [teamMemberFilter, setTeamMemberFilter] = useState("all")
+  const [teamGroupFilter, setTeamGroupFilter] = useState("all")
   const [createTodoDialogOpen, setCreateTodoDialogOpen] = useState(false)
   const [responsibilityForTodo, setResponsibilityForTodo] = useState<Responsibility | null>(null)
 
@@ -29,6 +32,7 @@ export function useResponsibilities() {
   const { user } = useAuth()
   const { currentPractice } = usePractice()
   const { toast } = useToast()
+  const { teamMembers } = useTeam()
 
   const fetchResponsibilities = useCallback(async () => {
     if (!currentPractice?.id) {
@@ -263,7 +267,17 @@ export function useResponsibilities() {
       matchesTeamMember = r.responsible_user_id === teamMemberFilter
     }
 
-    return matchesSearch && matchesCategory && matchesTeamMember
+    // Filter by team group - check if the responsible user belongs to the selected team group
+    let matchesTeamGroup = true
+    if (teamGroupFilter !== "all" && r.responsible_user_id) {
+      const responsibleMember = teamMembers.find((m) => m.id === r.responsible_user_id)
+      matchesTeamGroup = responsibleMember?.teamIds?.includes(teamGroupFilter) || false
+    } else if (teamGroupFilter !== "all" && !r.responsible_user_id) {
+      // If filtering by team group and responsibility is unassigned, don't show it
+      matchesTeamGroup = false
+    }
+
+    return matchesSearch && matchesCategory && matchesTeamMember && matchesTeamGroup
   })
 
   const groupedResponsibilities = filteredResponsibilities.reduce(
@@ -312,6 +326,8 @@ export function useResponsibilities() {
     setCategoryFilter,
     teamMemberFilter,
     setTeamMemberFilter,
+    teamGroupFilter,
+    setTeamGroupFilter,
     createTodoDialogOpen,
     setCreateTodoDialogOpen,
     responsibilityForTodo,

@@ -19,6 +19,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         color: color || "bg-blue-500",
         is_active: isActive ?? true,
         is_template: isTemplate ?? true,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", id)
       .select()
@@ -33,10 +34,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "KPI Kategorie nicht gefunden" }, { status: 404 })
     }
 
+    // Transform to match frontend expected format
     return NextResponse.json({
       category: {
-        ...data,
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        color: data.color || "bg-blue-500",
+        is_active: data.is_active ?? true,
+        isActive: data.is_active ?? true,
+        is_template: data.is_template ?? true,
+        isTemplate: data.is_template ?? true,
         parameters: data.parameters || [],
+        usage_count: data.usage_count || 0,
+        usageCount: data.usage_count || 0,
+        created_at: data.created_at,
+        createdAt: data.created_at,
       },
     })
   } catch (error) {

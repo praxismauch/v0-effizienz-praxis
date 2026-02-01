@@ -1,3 +1,13 @@
+export interface CandidateEvent {
+  id: string
+  type: 'interview_1' | 'interview_2' | 'trial_day_1' | 'trial_day_2' | 'other'
+  date: string
+  time?: string
+  notes?: string
+  completed: boolean
+  created_at: string
+}
+
 export interface CandidateDetails {
   candidate: Candidate
   applications: Application[]
@@ -38,6 +48,7 @@ export interface Candidate {
   linkedin_url?: string
   documents?: Document[]
   notes?: string
+  events?: CandidateEvent[]
 }
 
 export interface Document {

@@ -6,6 +6,7 @@ import {
   Search,
   Filter,
   Users,
+  UsersRound,
   AlertCircle,
   Clock,
   User,
@@ -59,6 +60,8 @@ export default function ResponsibilitiesPageClient() {
     setCategoryFilter,
     teamMemberFilter,
     setTeamMemberFilter,
+    teamGroupFilter,
+    setTeamGroupFilter,
     createTodoDialogOpen,
     setCreateTodoDialogOpen,
     responsibilityForTodo,
@@ -204,6 +207,44 @@ export default function ResponsibilitiesPageClient() {
                 })}
               </SelectContent>
             </Select>
+            <Select value={teamGroupFilter} onValueChange={setTeamGroupFilter}>
+              <SelectTrigger 
+                className="w-[200px] transition-all duration-200"
+                style={{
+                  borderColor: teamGroupFilter !== "all" ? teams.find(t => t.id === teamGroupFilter)?.color : undefined,
+                  backgroundColor: teamGroupFilter !== "all" ? `${teams.find(t => t.id === teamGroupFilter)?.color}15` : undefined,
+                }}
+              >
+                {teamGroupFilter !== "all" && teams.find(t => t.id === teamGroupFilter)?.color ? (
+                  <div 
+                    className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                    style={{ backgroundColor: teams.find(t => t.id === teamGroupFilter)?.color }}
+                  />
+                ) : (
+                  <UsersRound className="h-4 w-4 mr-2 flex-shrink-0" />
+                )}
+                <SelectValue placeholder="Alle Gruppen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2">
+                    <UsersRound className="h-4 w-4 text-muted-foreground" />
+                    <span>Alle Gruppen</span>
+                  </div>
+                </SelectItem>
+                {teams.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="h-3 w-3 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: team.color || '#9CA3AF' }}
+                      />
+                      <span>{team.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[200px]">
                 <Filter className="h-4 w-4 mr-2" />
@@ -251,12 +292,12 @@ export default function ResponsibilitiesPageClient() {
               <div className="text-center">
                 <h3 className="font-semibold">Keine Zuständigkeiten gefunden</h3>
                 <p className="text-sm text-muted-foreground">
-                  {searchTerm || categoryFilter !== "all" || teamMemberFilter !== "all"
+                  {searchTerm || categoryFilter !== "all" || teamMemberFilter !== "all" || teamGroupFilter !== "all"
                     ? "Versuchen Sie andere Filteroptionen"
                     : "Erstellen Sie Ihre erste Zuständigkeit oder nutzen Sie die KI-Vorschläge"}
                 </p>
               </div>
-              {!searchTerm && categoryFilter === "all" && teamMemberFilter === "all" && (
+              {!searchTerm && categoryFilter === "all" && teamMemberFilter === "all" && teamGroupFilter === "all" && (
                 <div className="flex gap-2">
                   <Button
                     onClick={() => setAiDialogOpen(true)}

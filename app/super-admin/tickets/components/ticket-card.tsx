@@ -24,6 +24,7 @@ import {
   PlayCircle,
   Archive,
   Trash2,
+  ImageIcon,
 } from "lucide-react"
 import {
   getStatusColor,
@@ -76,6 +77,39 @@ export function TicketCard({ ticket, onViewDetails, onStatusChange, onDelete }: 
             </h3>
 
             <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{ticket.description}</p>
+
+            {/* Screenshot Thumbnails */}
+            {ticket.screenshot_urls && ticket.screenshot_urls.length > 0 && (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-1.5">
+                  {ticket.screenshot_urls.slice(0, 3).map((url, index) => (
+                    <div
+                      key={index}
+                      className="relative w-16 h-12 rounded-md overflow-hidden border border-border bg-muted cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => onViewDetails(ticket)}
+                    >
+                      <img
+                        src={url || "/placeholder.svg"}
+                        alt={`Screenshot ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                  {ticket.screenshot_urls.length > 3 && (
+                    <div
+                      className="flex items-center justify-center w-16 h-12 rounded-md border border-border bg-muted text-xs text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
+                      onClick={() => onViewDetails(ticket)}
+                    >
+                      +{ticket.screenshot_urls.length - 3}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" />
+                  {ticket.screenshot_urls.length} {ticket.screenshot_urls.length === 1 ? "Screenshot" : "Screenshots"}
+                </span>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               {ticket.user_name && (

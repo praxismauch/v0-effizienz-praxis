@@ -181,16 +181,6 @@ export function HiringPipeline() {
   // Filter out applications with missing candidate data
   const validApplications = applications.filter((app) => app.candidate && app.candidate.id)
 
-  console.log("[v0] Pipeline - Total applications:", applications.length)
-  console.log("[v0] Pipeline - Valid applications:", validApplications.length)
-  console.log("[v0] Pipeline - Valid applications data:", validApplications.map(app => ({
-    id: app.id,
-    stage: app.stage,
-    status: app.status,
-    candidateName: `${app.candidate?.first_name} ${app.candidate?.last_name}`
-  })))
-  console.log("[v0] Pipeline - Selected job posting:", selectedJobPostingId)
-
   // Compute stages with applications
   const stagesWithApplications =
     selectedJobPostingId === "alle"
@@ -198,7 +188,6 @@ export function HiringPipeline() {
           .filter((stage) => stage.name !== "Abgelehnt")
           .map((stage, index) => {
             const stageApplications = validApplications.filter((app) => app.stage === stage.name)
-            console.log(`[v0] Pipeline - Stage "${stage.name}" has ${stageApplications.length} applications`)
             return {
               id: stage.name,
               name: stage.name,

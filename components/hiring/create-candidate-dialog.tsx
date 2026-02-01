@@ -21,7 +21,9 @@ import { useTranslation } from "@/contexts/translation-context"
 import { CandidateImageUpload } from "./candidate-image-upload"
 import { CandidateDocumentsUpload } from "./candidate-documents-upload"
 import { useToast } from "@/hooks/use-toast"
-import { Sparkles, Upload, Loader2, FileText, Check } from "lucide-react"
+import { Sparkles, Upload, Loader2, FileText, Check, ImageIcon, X, Eye, File } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
 import { Card } from "@/components/ui/card"
 
 interface CreateCandidateDialogProps {
@@ -41,6 +43,10 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
   const [aiExtracting, setAiExtracting] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const [uploadedImages, setUploadedImages] = useState<Array<{ file: File; previewUrl: string; uploadedUrl?: string }>>([])
+  const [imageUploadProgress, setImageUploadProgress] = useState<number>(0)
+  const [isUploadingImages, setIsUploadingImages] = useState(false)
+  const [activeUploadTab, setActiveUploadTab] = useState<string>("documents")
   const [documents, setDocuments] = useState<any>({})
   const [candidateId, setCandidateId] = useState<string | null>(null)
   const [jobPostings, setJobPostings] = useState<any[]>([])
@@ -209,6 +215,11 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
       setCandidateId(null)
       setSelectedJobPostingId("none")
       setImageUrl(null)
+      // Clean up image previews and reset state
+      uploadedImages.forEach((img) => URL.revokeObjectURL(img.previewUrl))
+      setUploadedImages([])
+      setUploadedFiles([])
+      setActiveUploadTab("documents")
     } catch (error) {
       console.error("Error creating candidate:", error)
       toast({
@@ -355,6 +366,291 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     await processFilesForAI(files)
   }
 
+  // Image upload handling
+  const validateImageFile = (file: File): boolean => {
+    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/jpg"]
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Ungültiges Bildformat",
+        description: `${file.name}: Nur JPEG, PNG und GIF werden unterstützt.`,
+        variant: "destructive",
+      })
+      return false
+    }
+    
+    if (file.size > maxSize) {
+      toast({
+        title: "Datei zu groß",
+        description: `${file.name}: Maximale Dateigröße ist 10MB.`,
+        variant: "destructive",
+      })
+      return false
+    }
+    
+    return true
+  }
+
+  const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    await processImageFiles(files)
+    // Reset the input so the same file can be selected again
+    e.target.value = ""
+  }
+
+  const processImageFiles = async (files: File[]) => {
+    const validFiles = files.filter(validateImageFile)
+    if (validFiles.length === 0) return
+
+    // Create preview URLs and add to state
+    const newImages = validFiles.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      uploadedUrl: undefined,
+    }))
+
+    setUploadedImages((prev) => [...prev, ...newImages])
+    
+    // Upload each image
+    setIsUploadingImages(true)
+    setImageUploadProgress(0)
+    
+    for (let i = 0; i < validFiles.length; i++) {
+      try {
+        const formData = new FormData()
+        formData.append("file", validFiles[i])
+        
+        const response = await fetch("/api/hiring/candidates/upload-document", {
+          method: "POST",
+          body: formData,
+        })
+        
+        if (response.ok) {
+          const { url } = await response.json()
+          
+          // Update the uploaded URL for this image
+          setUploadedImages((prev) =>
+            prev.map((img) =>
+              img.file === validFiles[i] ? { ...img, uploadedUrl: url } : img
+            )
+          )
+          
+          // Add to documents under a new "bilder" category
+          setDocuments((prev: any) => ({
+            ...prev,
+            bilder: [
+              ...(prev.bilder || []),
+              {
+                name: validFiles[i].name,
+                url,
+                size: validFiles[i].size,
+                type: validFiles[i].type,
+              },
+            ],
+          }))
+        }
+        
+        setImageUploadProgress(Math.round(((i + 1) / validFiles.length) * 100))
+      } catch (error) {
+        console.error("Error uploading image:", error)
+        toast({
+          title: "Upload fehlgeschlagen",
+          description: `${validFiles[i].name} konnte nicht hochgeladen werden.`,
+          variant: "destructive",
+        })
+      }
+    }
+    
+    setIsUploadingImages(false)
+    setImageUploadProgress(0)
+    
+    if (validFiles.length > 0) {
+      toast({
+        title: "Bilder hochgeladen",
+        description: `${validFiles.length} Bild(er) erfolgreich hochgeladen.`,
+      })
+    }
+  }
+
+  const handleImageDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleImageDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleImageDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const files = Array.from(e.dataTransfer.files).filter((file) =>
+      file.type.startsWith("image/")
+    )
+
+    if (files.length === 0) {
+      toast({
+        title: "Keine Bilder gefunden",
+        description: "Bitte laden Sie Bilddateien hoch (JPEG, PNG, GIF).",
+        variant: "destructive",
+      })
+      return
+    }
+
+    await processImageFiles(files)
+  }
+
+  const removeImage = (index: number) => {
+    const imageToRemove = uploadedImages[index]
+    
+    // Revoke the preview URL to free memory
+    URL.revokeObjectURL(imageToRemove.previewUrl)
+    
+    // Remove from uploadedImages
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index))
+    
+    // Remove from documents if it was uploaded
+    if (imageToRemove.uploadedUrl) {
+      setDocuments((prev: any) => ({
+        ...prev,
+        bilder: (prev.bilder || []).filter(
+          (img: any) => img.url !== imageToRemove.uploadedUrl
+        ),
+      }))
+    }
+  }
+
+  const openImagePreview = (previewUrl: string) => {
+    window.open(previewUrl, "_blank")
+  }
+
+  const extractAllInformation = async () => {
+    // Collect all files (documents and images)
+    const allFiles: File[] = []
+    
+    // Add document files
+    if (uploadedFiles.length > 0) {
+      allFiles.push(...uploadedFiles)
+    }
+    
+    // Add image files
+    if (uploadedImages.length > 0) {
+      uploadedImages.forEach((img) => {
+        if (img.file) {
+          allFiles.push(img.file)
+        }
+      })
+    }
+
+    if (allFiles.length === 0) {
+      toast({
+        title: "Keine Dateien vorhanden",
+        description: "Bitte laden Sie zuerst Dokumente oder Bilder hoch.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setAiExtracting(true)
+
+    try {
+      const formDataUpload = new FormData()
+      allFiles.forEach((file) => {
+        formDataUpload.append("files", file)
+      })
+      formDataUpload.append("practiceId", currentPractice?.id || "")
+
+      const response = await fetch("/api/hiring/ai-extract-candidate", {
+        method: "POST",
+        body: formDataUpload,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        toast({
+          title: "Fehler bei der KI-Analyse",
+          description: errorData.error || "Unbekannter Fehler",
+          variant: "destructive",
+        })
+        setAiExtracting(false)
+        return
+      }
+
+      const extracted = await response.json()
+
+      if (extracted.error) {
+        toast({
+          title: "KI-Analyse Fehler",
+          description: extracted.error,
+          variant: "destructive",
+        })
+        setAiExtracting(false)
+        return
+      }
+
+      const getValidValue = (value: any, fallback: string): string => {
+        if (value === null || value === undefined || value === "null" || value === "NULL" || value === "") {
+          return fallback
+        }
+        return String(value)
+      }
+
+      setFormData({
+        first_name: getValidValue(extracted.first_name, formData.first_name),
+        last_name: getValidValue(extracted.last_name, formData.last_name),
+        email: getValidValue(extracted.email, formData.email),
+        phone: getValidValue(extracted.phone, formData.phone),
+        mobile: getValidValue(extracted.mobile, formData.mobile),
+        address: getValidValue(extracted.address, formData.address),
+        city: getValidValue(extracted.city, formData.city),
+        postal_code: getValidValue(extracted.postal_code, formData.postal_code),
+        date_of_birth: getValidValue(extracted.date_of_birth, formData.date_of_birth),
+        first_contact_date: formData.first_contact_date,
+        current_position: getValidValue(extracted.current_position, formData.current_position),
+        current_company: getValidValue(extracted.current_company, formData.current_company),
+        years_of_experience: getValidValue(extracted.years_of_experience, formData.years_of_experience),
+        education: getValidValue(extracted.education, formData.education),
+        portfolio_url: getValidValue(extracted.portfolio_url, formData.portfolio_url),
+        salary_expectation: getValidValue(extracted.salary_expectation, formData.salary_expectation),
+        weekly_hours: getValidValue(extracted.weekly_hours, formData.weekly_hours),
+        source: getValidValue(extracted.source, formData.source),
+        notes: getValidValue(extracted.notes, formData.notes),
+        status: "new",
+      })
+
+      if (extracted.documents) {
+        setDocuments((prev: any) => ({
+          ...prev,
+          ...extracted.documents,
+        }))
+      }
+
+      const docCount = uploadedFiles.length
+      const imgCount = uploadedImages.length
+      const totalCount = docCount + imgCount
+
+      toast({
+        title: "KI-Analyse abgeschlossen",
+        description: `${totalCount} Datei(en) erfolgreich analysiert (${docCount} Dokumente, ${imgCount} Bilder). Formular wurde ausgefüllt.`,
+      })
+    } catch (error) {
+      console.error("Error extracting with AI:", error)
+      toast({
+        title: "Fehler",
+        description: "Ein Fehler ist bei der KI-Extraktion aufgetreten.",
+        variant: "destructive",
+      })
+    } finally {
+      setAiExtracting(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -371,89 +667,291 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
               isDragging
                 ? "border-purple-500 bg-purple-100/50 dark:bg-purple-900/30 scale-[1.01]"
                 : "border-purple-200 dark:border-purple-800"
-            } ${aiExtracting ? "pointer-events-none opacity-75" : ""}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+            } ${aiExtracting || isUploadingImages ? "pointer-events-none opacity-75" : ""}`}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  <h3 className="font-semibold text-purple-900 dark:text-purple-100">KI-Dokumentenanalyse</h3>
-                </div>
-                <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
-                  Laden Sie Lebensläufe, Anschreiben oder andere Dokumente hoch. Die KI extrahiert automatisch alle
-                  Informationen und füllt das Formular aus.
-                </p>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <h3 className="font-semibold text-purple-900 dark:text-purple-100">KI-Dokumentenanalyse & Medien-Upload</h3>
+            </div>
+            <p className="text-sm text-purple-700 dark:text-purple-300 mb-4">
+              Laden Sie Dokumente zur automatischen KI-Analyse hoch oder fügen Sie Bilder zum Kandidatenprofil hinzu.
+            </p>
 
+            {/* Extraction Button - Always visible when files are uploaded */}
+            {(uploadedFiles.length > 0 || uploadedImages.length > 0) && (
+              <div className="mb-4 p-4 bg-purple-100 dark:bg-purple-900/40 rounded-lg border border-purple-300 dark:border-purple-700">
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                      {uploadedFiles.length + uploadedImages.length} Datei(en) bereit zur Analyse
+                    </p>
+                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                      Klicken Sie auf den Button, um alle Informationen zu extrahieren und das Formular auszufüllen.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="default"
+                    onClick={() => extractAllInformation()}
+                    disabled={aiExtracting || isUploadingImages}
+                    className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+                  >
+                    {aiExtracting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Extrahiere...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Alle Informationen extrahieren
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <Tabs value={activeUploadTab} onValueChange={setActiveUploadTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="documents" className="flex items-center gap-2">
+                  <File className="h-4 w-4" />
+                  Dokumente
+                  {uploadedFiles.length > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-purple-200 dark:bg-purple-800 rounded-full">
+                      {uploadedFiles.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="images" className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Bilder
+                  {uploadedImages.length > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-purple-200 dark:bg-purple-800 rounded-full">
+                      {uploadedImages.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="documents" className="mt-0">
                 <div
-                  className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${
-                    isDragging
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
+                    isDragging && activeUploadTab === "documents"
                       ? "border-purple-500 bg-purple-100 dark:bg-purple-900/40"
                       : "border-purple-300 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-600"
                   }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                 >
                   {aiExtracting ? (
-                    <div className="flex flex-col items-center gap-2 py-2">
-                      <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
-                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                        KI analysiert Dokumente...
-                      </span>
+                    <div className="flex flex-col items-center gap-3 py-4">
+                      <div className="relative">
+                        <Loader2 className="h-10 w-10 text-purple-600 animate-spin" />
+                        <Sparkles className="h-4 w-4 text-purple-400 absolute -top-1 -right-1 animate-pulse" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                          KI analysiert Dokumente...
+                        </span>
+                        <p className="text-xs text-purple-500 dark:text-purple-400">
+                          Kandidatendaten werden extrahiert
+                        </p>
+                      </div>
                     </div>
                   ) : (
-                    <>
-                      <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/40">
                         <Upload className={`h-8 w-8 ${isDragging ? "text-purple-600" : "text-purple-400"}`} />
-                        <div className="text-sm text-purple-700 dark:text-purple-300">
-                          <span className="font-medium">Dateien hierher ziehen</span>
-                          <span className="text-purple-500 dark:text-purple-400"> oder </span>
-                        </div>
-                        <Input
-                          type="file"
-                          multiple
-                          accept=".pdf,.doc,.docx,.txt"
-                          onChange={handleAIFileUpload}
-                          disabled={aiExtracting}
-                          className="hidden"
-                          id="ai-file-upload"
-                        />
-                        <Label htmlFor="ai-file-upload" className="cursor-pointer">
-                          <Button type="button" variant="secondary" size="sm" disabled={aiExtracting} asChild>
-                            <span>
-                              <Upload className="h-4 w-4 mr-2" />
-                              Dokumente auswählen
-                            </span>
-                          </Button>
-                        </Label>
-                        <span className="text-xs text-purple-500 dark:text-purple-400">
-                          PDF, DOC, DOCX oder TXT (mehrere Dateien möglich)
-                        </span>
                       </div>
-                    </>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                          Dateien hierher ziehen
+                        </p>
+                        <p className="text-xs text-purple-500 dark:text-purple-400">
+                          oder klicken zum Auswählen
+                        </p>
+                      </div>
+                      <Input
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.txt"
+                        onChange={handleAIFileUpload}
+                        disabled={aiExtracting}
+                        className="hidden"
+                        id="ai-file-upload"
+                      />
+                      <Label htmlFor="ai-file-upload" className="cursor-pointer">
+                        <Button type="button" variant="secondary" size="sm" disabled={aiExtracting} asChild>
+                          <span>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Dokumente auswählen
+                          </span>
+                        </Button>
+                      </Label>
+                      <span className="text-xs text-purple-500 dark:text-purple-400">
+                        PDF, DOC, DOCX oder TXT (mehrere Dateien möglich)
+                      </span>
+                    </div>
                   )}
                 </div>
 
                 {uploadedFiles.length > 0 && (
-                  <div className="mt-3 space-y-1">
+                  <div className="mt-4 space-y-2">
                     <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                      Hochgeladene Dateien ({uploadedFiles.length}):
+                      Analysierte Dokumente ({uploadedFiles.length}):
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {uploadedFiles.map((file, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded text-xs"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-md text-xs border border-purple-200 dark:border-purple-800"
                         >
-                          <FileText className="h-3 w-3" />
-                          {file.name}
+                          <FileText className="h-3.5 w-3.5" />
+                          <span className="max-w-[120px] truncate">{file.name}</span>
+                          <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="images" className="mt-0">
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
+                    isDragging && activeUploadTab === "images"
+                      ? "border-purple-500 bg-purple-100 dark:bg-purple-900/40"
+                      : "border-purple-300 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-600"
+                  }`}
+                  onDragOver={handleImageDragOver}
+                  onDragLeave={handleImageDragLeave}
+                  onDrop={handleImageDrop}
+                >
+                  {isUploadingImages ? (
+                    <div className="flex flex-col items-center gap-3 py-4">
+                      <Loader2 className="h-10 w-10 text-purple-600 animate-spin" />
+                      <div className="space-y-2 w-full max-w-xs">
+                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                          Bilder werden hochgeladen...
+                        </span>
+                        <Progress value={imageUploadProgress} className="h-2" />
+                        <span className="text-xs text-purple-500 dark:text-purple-400">
+                          {imageUploadProgress}% abgeschlossen
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/40">
+                        <ImageIcon className={`h-8 w-8 ${isDragging ? "text-purple-600" : "text-purple-400"}`} />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                          Bilder hierher ziehen
+                        </p>
+                        <p className="text-xs text-purple-500 dark:text-purple-400">
+                          oder klicken zum Auswählen
+                        </p>
+                      </div>
+                      <Input
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/png,image/gif,image/jpg"
+                        onChange={handleImageFileSelect}
+                        disabled={isUploadingImages}
+                        className="hidden"
+                        id="image-file-upload"
+                      />
+                      <Label htmlFor="image-file-upload" className="cursor-pointer">
+                        <Button type="button" variant="secondary" size="sm" disabled={isUploadingImages} asChild>
+                          <span>
+                            <ImageIcon className="h-4 w-4 mr-2" />
+                            Bilder auswählen
+                          </span>
+                        </Button>
+                      </Label>
+                      <span className="text-xs text-purple-500 dark:text-purple-400">
+                        JPEG, PNG oder GIF (max. 10MB pro Bild)
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {uploadedImages.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                      Hochgeladene Bilder ({uploadedImages.length}):
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {uploadedImages.map((image, index) => (
+                        <div
+                          key={index}
+                          className="relative group rounded-lg overflow-hidden border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20"
+                        >
+                          <div className="aspect-square">
+                            <img
+                              src={image.previewUrl}
+                              alt={image.file.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          
+                          {/* Upload status indicator */}
+                          <div className="absolute top-2 left-2">
+                            {image.uploadedUrl ? (
+                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white">
+                                <Check className="h-3 w-3" />
+                              </span>
+                            ) : (
+                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-purple-500">
+                                <Loader2 className="h-3 w-3 text-white animate-spin" />
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Overlay with actions */}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openImagePreview(image.previewUrl)}
+                              title="Vorschau"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => removeImage(index)}
+                              title="Entfernen"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
+                          {/* File name */}
+                          <div className="absolute bottom-0 left-0 right-0 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                            <p className="text-xs text-white truncate" title={image.file.name}>
+                              {image.file.name}
+                            </p>
+                            <p className="text-[10px] text-white/70">
+                              {(image.file.size / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </Card>
 
           <div className="space-y-2">

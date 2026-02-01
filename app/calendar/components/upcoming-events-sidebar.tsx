@@ -162,7 +162,7 @@ export function UpcomingEventsSidebar({ events, onEventClick }: UpcomingEventsSi
   const totalEvents = todayEvents.length + tomorrowEvents.length
 
   return (
-    <div className="w-64 flex-shrink-0 border-l bg-muted/30 p-4 space-y-5 overflow-y-auto max-h-[calc(100vh-200px)]">
+    <div className="w-56 flex-shrink-0 border-l bg-muted/30 p-3 space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
       {/* Header */}
       <div className="space-y-1">
         <h2 className="font-semibold text-lg">Nächste Termine</h2>

@@ -226,8 +226,72 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
     setShowEditor(false)
 
     try {
-      const response = await fetch(tempImageUrl)
-      const blob = await response.blob()
+      // Create a canvas to render the cropped image
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
+      if (!ctx) {
+        toast.error("Canvas konnte nicht erstellt werden")
+        return
+      }
+
+      // Output size (circular avatar is 192px in the editor, we'll use 384px for quality)
+      const outputSize = 384
+      canvas.width = outputSize
+      canvas.height = outputSize
+
+      // Load the image
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error("Image loading failed"))
+        img.src = tempImageUrl
+      })
+
+      // Calculate the crop based on zoom and pan settings
+      // The preview div is 192x192 (w-48 h-48)
+      const previewSize = 192
+      const zoom = cropSettings.zoom
+      const panX = cropSettings.panX
+      const panY = cropSettings.panY
+
+      // Clear canvas
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(0, 0, outputSize, outputSize)
+
+      // Save context state
+      ctx.save()
+
+      // Translate to center
+      ctx.translate(outputSize / 2, outputSize / 2)
+
+      // Apply zoom
+      ctx.scale(zoom, zoom)
+
+      // Apply pan (scaled by zoom as in the CSS transform)
+      ctx.translate(panX / zoom, panY / zoom)
+
+      // Draw image centered
+      const scale = outputSize / Math.min(img.width, img.height)
+      const drawWidth = img.width * scale / zoom
+      const drawHeight = img.height * scale / zoom
+      ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
+
+      // Restore context
+      ctx.restore()
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => {
+            if (b) resolve(b)
+            else reject(new Error("Canvas to blob failed"))
+          },
+          "image/jpeg",
+          0.9
+        )
+      })
 
       const file = new File([blob], "candidate-image.jpg", { type: "image/jpeg" })
 
@@ -236,9 +300,6 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
       if (imageUrl) {
         formData.append("oldImageUrl", imageUrl)
       }
-      formData.append("zoom", cropSettings.zoom.toString())
-      formData.append("panX", cropSettings.panX.toString())
-      formData.append("panY", cropSettings.panY.toString())
 
       const uploadResponse = await fetch("/api/hiring/candidates/upload-image", {
         method: "POST",
@@ -251,6 +312,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
           const data = await uploadResponse.json()
           setPreviewUrl(data.url)
           onImageChange(data.url)
+          toast.success("Bild erfolgreich gespeichert")
         } else {
           toast.error("Upload fehlgeschlagen: Ungültige Serverantwort")
         }
@@ -268,6 +330,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
         toast.error(errorMessage)
       }
     } catch (error) {
+      console.error("[v0] Error saving cropped image:", error)
       toast.error("Upload fehlgeschlagen")
     } finally {
       setUploading(false)

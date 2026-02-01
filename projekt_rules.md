@@ -188,10 +188,24 @@ notes               | text                        | YES
 source              | text                        | YES
 status              | text                        | YES
 rating              | integer                     | YES
+events              | jsonb                       | YES
 created_by          | text                        | YES
 created_at          | timestamp with time zone    | YES
 updated_at          | timestamp with time zone    | YES
 deleted_at          | timestamp with time zone    | YES
+\`\`\`
+
+**Events field structure (JSONB array):**
+\`\`\`json
+[{
+  "id": "uuid",
+  "type": "interview_1" | "interview_2" | "trial_day_1" | "trial_day_2" | "other",
+  "date": "YYYY-MM-DD",
+  "time": "HH:MM" (optional),
+  "notes": "string" (optional),
+  "completed": boolean,
+  "created_at": "ISO timestamp"
+}]
 \`\`\`
 
 ### applications table

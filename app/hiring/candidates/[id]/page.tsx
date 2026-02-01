@@ -35,14 +35,17 @@ import {
   TrendingUp,
   ClipboardList,
   StickyNote,
-  RefreshCw
+  RefreshCw,
+  CalendarCheck,
+  CheckCircle2,
+  Circle
 } from "lucide-react"
 import { DocumentViewerDialog } from "@/components/hiring/document-viewer-dialog"
 import EditCandidateDialog from "@/components/hiring/edit-candidate-dialog"
 
 import { DocumentsCard } from "./components/documents-card"
 import { ApplicationsCard } from "./components/applications-card"
-import type { CandidateDetails, Document, Candidate } from "./types"
+import type { CandidateDetails, Document, Candidate, CandidateEvent } from "./types"
 import { getStatusBadge, getInitials, formatDate, formatCurrency, calculateAge, calculateHourlyRate } from "./utils"
 
 export default function CandidateDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -422,6 +425,79 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Events / Appointments */}
+                {candidate.events && candidate.events.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <CalendarCheck className="h-4 w-4" />
+                        Termine & Ereignisse
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {[...candidate.events]
+                          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                          .map((event) => {
+                            const getEventTypeLabel = (type: string) => {
+                              const labels: Record<string, string> = {
+                                'interview_1': '1. Bewerbungsgespräch',
+                                'interview_2': '2. Bewerbungsgespräch',
+                                'trial_day_1': '1. Tag Probearbeiten',
+                                'trial_day_2': '2. Tag Probearbeiten',
+                                'other': 'Sonstiges'
+                              }
+                              return labels[type] || type
+                            }
+                            const getEventTypeBadgeColor = (type: string) => {
+                              if (type.startsWith('interview')) return 'bg-blue-100 text-blue-700 border-blue-200'
+                              if (type.startsWith('trial')) return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                              return 'bg-gray-100 text-gray-700 border-gray-200'
+                            }
+                            return (
+                              <div 
+                                key={event.id} 
+                                className={`flex items-start gap-3 p-3 rounded-lg border ${event.completed ? 'bg-muted/50' : 'bg-background'}`}
+                              >
+                                {event.completed ? (
+                                  <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+                                ) : (
+                                  <Circle className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className={getEventTypeBadgeColor(event.type)}>
+                                      {getEventTypeLabel(event.type)}
+                                    </Badge>
+                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                      <Calendar className="h-3.5 w-3.5" />
+                                      <span className={event.completed ? 'line-through' : ''}>
+                                        {formatDate(event.date)}
+                                      </span>
+                                    </div>
+                                    {event.time && (
+                                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        <span className={event.completed ? 'line-through' : ''}>
+                                          {event.time} Uhr
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {event.notes && (
+                                    <p className={`text-sm text-muted-foreground mt-1 ${event.completed ? 'line-through' : ''}`}>
+                                      {event.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Cover Letter */}
                 {candidate.cover_letter && (

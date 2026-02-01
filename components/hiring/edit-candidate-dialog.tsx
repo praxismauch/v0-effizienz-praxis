@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CandidateImageUpload } from "./candidate-image-upload"
 import { CandidateDocumentsUpload } from "./candidate-documents-upload"
+import { CandidateEventsManager, type CandidateEvent } from "./candidate-events-manager"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context" // Added useUser import
 import { useTranslation } from "@/contexts/translation-context"
@@ -52,6 +53,7 @@ interface Candidate {
   image_url?: string
   first_contact_date?: string
   availability_date?: string
+  events?: CandidateEvent[]
 }
 
 interface EditCandidateDialogProps {
@@ -104,6 +106,7 @@ export function EditCandidateDialog({
     availability_date: "",
   })
   const [documents, setDocuments] = useState<any>({})
+  const [events, setEvents] = useState<CandidateEvent[]>([])
   const [showInterviewGenerator, setShowInterviewGenerator] = useState(false)
 
   const formatDepartment = (department: string) => {
@@ -194,6 +197,7 @@ export function EditCandidateDialog({
       })
       setDocuments(candidate.documents || {})
       setImageUrl(candidate.image_url || null)
+      setEvents(candidate.events || [])
     }
   }, [candidate])
 
@@ -222,6 +226,7 @@ export function EditCandidateDialog({
         rating: formData.rating ? Number.parseInt(formData.rating) : null,
         documents: documents,
         image_url: imageUrl,
+        events: events,
       }
 
       console.log("[v0] Payload to send:", payload)
@@ -594,6 +599,11 @@ export function EditCandidateDialog({
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
             />
+          </div>
+
+          {/* Candidate Events Section */}
+          <div className="border-t pt-4 mt-4">
+            <CandidateEventsManager events={events} onChange={setEvents} />
           </div>
 
           <div className="space-y-2">

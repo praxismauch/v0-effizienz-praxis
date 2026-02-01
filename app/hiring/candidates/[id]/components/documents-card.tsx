@@ -193,16 +193,24 @@ export function DocumentsCard({ candidate, onViewDocument }: DocumentsCardProps)
                         </a>
                       </Button>
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
+)}
+                      </div>
+                    </div>
+                  ))}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {filesArray.map((file, idx) => renderDocumentFile(file, idx))}
+                        </div>
+                      )}
 
             {/* Categorized Documents */}
             {hasCategorizedDocs && categorizedDocs && (
               <>
                 {Object.entries(categorizedDocs).map(([category, files]) => {
-                  if (!files || files.length === 0) return null
+                  // Ensure files is an array before processing
+                  const filesArray = Array.isArray(files) ? files : []
+                  if (filesArray.length === 0) return null
 
                   const isImageCategory = category === 'bilder'
 
@@ -212,14 +220,14 @@ export function DocumentsCard({ candidate, onViewDocument }: DocumentsCardProps)
                         {isImageCategory ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                         {categoryLabels[category] || category}
                         <span className="text-xs px-1.5 py-0.5 bg-muted rounded-full">
-                          {files.length}
+                          {filesArray.length}
                         </span>
                       </p>
 
                       {/* Image Grid for bilder category */}
                       {isImageCategory ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {files.map((file, idx) => (
+                          {filesArray.map((file, idx) => (
                             <div
                               key={idx}
                               className="relative group rounded-lg overflow-hidden border border-border bg-muted/50 aspect-square cursor-pointer"

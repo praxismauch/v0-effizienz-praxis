@@ -99,10 +99,16 @@ export default function StaffingTab({
       const res = await fetch(`/api/practices/${practiceId}/staffing-plan?planId=${selectedPlanId}`)
       if (res.ok) {
         const data = await res.json()
-        setEntries(data.entries || [])
+        // Handle both structured response { entries: [] } and raw array []
+        const entriesData = Array.isArray(data) ? data : (data?.entries || [])
+        setEntries(entriesData)
+      } else {
+        console.error("Error loading staffing entries: HTTP", res.status)
+        setEntries([])
       }
     } catch (error) {
       console.error("Error loading staffing entries:", error)
+      setEntries([])
     } finally {
       setIsLoadingEntries(false)
     }

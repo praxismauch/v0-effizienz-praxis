@@ -6,22 +6,39 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { userId } = await params
     const supabase = await createClient()
 
-    const { data, error } = await supabase
+    // Try to get favorites with sort_order, fall back to just favorite_path if column doesn't exist
+    let data, error
+    
+    const result = await supabase
       .from("user_favorites")
       .select("favorite_path, sort_order")
       .eq("user_id", userId)
       .order("sort_order", { ascending: true })
 
+    if (result.error && result.error.code === 'PGRST204' && result.error.message.includes('sort_order')) {
+      // sort_order column doesn't exist, try without it
+      const fallbackResult = await supabase
+        .from("user_favorites")
+        .select("favorite_path")
+        .eq("user_id", userId)
+      
+      data = fallbackResult.data
+      error = fallbackResult.error
+    } else {
+      data = result.data
+      error = result.error
+    }
+
     if (error) {
       console.error("[v0] Error loading favorites:", error)
-      return NextResponse.json({ favorites: [] })
+      return NextResponse.json({ favorites: [], useLocalStorage: true })
     }
 
     const favorites = data?.map((row) => row.favorite_path) || []
     return NextResponse.json({ favorites })
   } catch (error) {
     console.error("[v0] Error in GET favorites:", error)
-    return NextResponse.json({ favorites: [] })
+    return NextResponse.json({ favorites: [], useLocalStorage: true })
   }
 }
 
@@ -35,7 +52,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Handle reorder action - update all favorites with new sort order
     if (action === "reorder" && Array.isArray(favorites)) {
-      // Update each favorite with its new sort_order
+      // Try to update each favorite with its new sort_order
+      let hasError = false
       for (let i = 0; i < favorites.length; i++) {
         const { error } = await supabase
           .from("user_favorites")
@@ -43,13 +61,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           .eq("user_id", userId)
           .eq("favorite_path", favorites[i])
 
+        // If sort_order column doesn't exist, just skip reordering
+        if (error && error.code === 'PGRST204') {
+          console.log("[v0] sort_order column not found, skipping reorder")
+          return NextResponse.json({ success: true, action: "reordered", useLocalStorage: true })
+        }
+        
         if (error) {
           console.error("[v0] Error reordering favorite:", error)
-          return NextResponse.json({ error: error.message }, { status: 500 })
+          hasError = true
         }
       }
 
-      return NextResponse.json({ success: true, action: "reordered" })
+      return NextResponse.json({ success: !hasError, action: "reordered" })
     }
 
     if (!item_path) {
@@ -57,24 +81,44 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     if (action === "add") {
-      // Get the highest sort_order for this user
-      const { data: existingFavorites } = await supabase
+      // Try to add favorite, handling missing sort_order column
+      let upsertData: any = { user_id: userId, favorite_path: item_path }
+      
+      // Try to get the highest sort_order for this user
+      const { data: existingFavorites, error: selectError } = await supabase
         .from("user_favorites")
         .select("sort_order")
         .eq("user_id", userId)
         .order("sort_order", { ascending: false })
         .limit(1)
 
-      const nextSortOrder = (existingFavorites?.[0]?.sort_order ?? -1) + 1
+      // If sort_order column exists, include it in the upsert
+      if (!selectError || selectError.code !== 'PGRST204') {
+        const nextSortOrder = (existingFavorites?.[0]?.sort_order ?? -1) + 1
+        upsertData.sort_order = nextSortOrder
+      }
 
       const { error } = await supabase.from("user_favorites").upsert(
-        { user_id: userId, favorite_path: item_path, sort_order: nextSortOrder },
-        { onConflict: "user_id,practice_id,favorite_path" }
+        upsertData,
+        { onConflict: "user_id,favorite_path" }
       )
 
       if (error) {
-        console.error("[v0] Error adding favorite:", error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        // If upsert fails due to missing sort_order, try without it
+        if (error.code === 'PGRST204' && error.message.includes('sort_order')) {
+          const { error: fallbackError } = await supabase.from("user_favorites").upsert(
+            { user_id: userId, favorite_path: item_path },
+            { onConflict: "user_id,favorite_path" }
+          )
+          
+          if (fallbackError) {
+            console.error("[v0] Error adding favorite (fallback):", fallbackError)
+            return NextResponse.json({ success: false, error: fallbackError.message, useLocalStorage: true })
+          }
+        } else {
+          console.error("[v0] Error adding favorite:", error)
+          return NextResponse.json({ success: false, error: error.message, useLocalStorage: true })
+        }
       }
 
       return NextResponse.json({ success: true, action: "added" })
@@ -87,7 +131,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       if (error) {
         console.error("[v0] Error removing favorite:", error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ success: false, error: error.message, useLocalStorage: true })
       }
 
       return NextResponse.json({ success: true, action: "removed" })
@@ -96,6 +140,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
   } catch (error) {
     console.error("[v0] Error in POST favorites:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Internal server error", useLocalStorage: true })
   }
 }

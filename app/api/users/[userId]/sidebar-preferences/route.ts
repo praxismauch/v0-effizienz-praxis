@@ -129,25 +129,61 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
     }
 
-    // Build update object with only defined values
+    // Build update object with only defined values - exclude potentially missing columns
     const updateData: Record<string, any> = {}
     if (expanded_groups !== undefined) updateData.expanded_groups = expanded_groups
     if (expanded_items !== undefined) updateData.expanded_items = expanded_items
     if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
-    if (favorites !== undefined) updateData.favorites = favorites
     if (single_group_mode !== undefined) updateData.single_group_mode = single_group_mode
 
-    // Use upsert to handle both insert and update cases
-    const { error: upsertError } = await adminClient
-      .from("user_sidebar_preferences")
-      .upsert({
-        user_id: userId,
-        practice_id: effectivePracticeId,
-        ...updateData,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: "user_id,practice_id"
-      })
+    // Try upsert without favorites first (in case column doesn't exist)
+    let upsertError = null
+    
+    // First try with favorites if it was provided
+    if (favorites !== undefined) {
+      const { error } = await adminClient
+        .from("user_sidebar_preferences")
+        .upsert({
+          user_id: userId,
+          practice_id: effectivePracticeId,
+          ...updateData,
+          favorites: favorites,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: "user_id,practice_id"
+        })
+      
+      // If favorites column doesn't exist (PGRST204), try without it
+      if (error && error.code === 'PGRST204' && error.message.includes('favorites')) {
+        console.log("favorites column not found, saving without it")
+        const { error: fallbackError } = await adminClient
+          .from("user_sidebar_preferences")
+          .upsert({
+            user_id: userId,
+            practice_id: effectivePracticeId,
+            ...updateData,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: "user_id,practice_id"
+          })
+        upsertError = fallbackError
+      } else {
+        upsertError = error
+      }
+    } else {
+      // No favorites to save, just save other preferences
+      const { error } = await adminClient
+        .from("user_sidebar_preferences")
+        .upsert({
+          user_id: userId,
+          practice_id: effectivePracticeId,
+          ...updateData,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: "user_id,practice_id"
+        })
+      upsertError = error
+    }
 
     if (upsertError) {
       console.error("Error saving sidebar preferences:", upsertError)

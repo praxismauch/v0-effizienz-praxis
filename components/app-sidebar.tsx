@@ -573,18 +573,53 @@ export function AppSidebar({ className }: AppSidebarProps) {
               setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
             }
 
-            // Load favorites from database
-            try {
-              const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites`)
-              if (favoritesResponse.ok) {
-                const favoritesData = await favoritesResponse.json()
-                if (favoritesData.favorites && Array.isArray(favoritesData.favorites)) {
-                  setFavorites(favoritesData.favorites)
-                }
-              }
-            } catch (error) {
-              console.error("[v0] Error loading favorites:", error)
-            }
+  // Load favorites from database with localStorage fallback
+  try {
+  const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites`)
+  if (favoritesResponse.ok) {
+  const favoritesData = await favoritesResponse.json()
+  if (favoritesData.favorites && Array.isArray(favoritesData.favorites) && favoritesData.favorites.length > 0) {
+  setFavorites(favoritesData.favorites)
+  // Sync to localStorage
+  try {
+    localStorage.setItem(`sidebar_favorites_${currentUser.id}`, JSON.stringify(favoritesData.favorites))
+  } catch (e) {}
+  } else if (favoritesData.useLocalStorage) {
+  // API indicated to use localStorage, try to load from there
+  try {
+    const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser.id}`)
+    if (localFavorites) {
+      setFavorites(JSON.parse(localFavorites))
+    }
+  } catch (e) {}
+  } else {
+    // Try localStorage as fallback
+    try {
+      const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser.id}`)
+      if (localFavorites) {
+        setFavorites(JSON.parse(localFavorites))
+      }
+    } catch (e) {}
+  }
+  } else {
+    // API failed, try localStorage
+    try {
+      const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser.id}`)
+      if (localFavorites) {
+        setFavorites(JSON.parse(localFavorites))
+      }
+    } catch (e) {}
+  }
+  } catch (error) {
+  console.error("[v0] Error loading favorites:", error)
+  // Try localStorage as fallback
+  try {
+    const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser?.id || 'guest'}`)
+    if (localFavorites) {
+      setFavorites(JSON.parse(localFavorites))
+    }
+  } catch (e) {}
+  }
 
             if (data.preferences.expanded_items) {
               if (data.preferences.expanded_items.lastPath) {
@@ -775,27 +810,34 @@ export function AppSidebar({ className }: AppSidebarProps) {
     router.push(href)
   }
 
-  const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-
-    const isAdding = !favorites.includes(href)
-    const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
-    
-    // Update state immediately for responsive UI
-    setFavorites(newFavorites)
-    
-    // Save to database
-    if (currentUser?.id) {
-      try {
-        const response = await fetch(`/api/users/${currentUser.id}/favorites`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            item_path: href,
-            action: isAdding ? "add" : "remove",
+const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
+  if (e) {
+  e.preventDefault()
+  e.stopPropagation()
+  }
+  
+  const isAdding = !favorites.includes(href)
+  const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
+  
+  // Update state immediately for responsive UI
+  setFavorites(newFavorites)
+  
+  // Always save to localStorage as backup
+  try {
+    localStorage.setItem(`sidebar_favorites_${currentUser?.id || 'guest'}`, JSON.stringify(newFavorites))
+  } catch (e) {
+    // localStorage not available
+  }
+  
+  // Save to database
+  if (currentUser?.id) {
+  try {
+  const response = await fetch(`/api/users/${currentUser.id}/favorites`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+  item_path: href,
+  action: isAdding ? "add" : "remove",
           }),
         })
 

@@ -159,6 +159,14 @@ export default function TeamPageClient() {
     )
   }
 
+  console.log("[v0] TeamPageClient render:", {
+    practiceId,
+    staffingPlansCount: staffingPlans?.length,
+    teamsCount: teams?.length,
+    responsibilitiesCount: responsibilities?.length,
+    activeTab,
+  })
+
   // Stats
   const stats = {
     totalMembers: (teamMembers || []).length,

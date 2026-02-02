@@ -57,6 +57,15 @@ export default function StaffingTab({
   const practiceId = currentPractice?.id?.toString()
   const isAdmin = user?.role === "admin" || user?.role === "superadmin" || user?.is_practice_admin
 
+  console.log("[v0] StaffingTab render:", {
+    staffingPlansCount: staffingPlans?.length,
+    selectedPlanId,
+    practiceId,
+    entriesCount: entries?.length,
+    teamsCount: teams?.length,
+    isLoadingEntries,
+  })
+
   // Auto-select first plan if none selected
   useEffect(() => {
     if (staffingPlans.length > 0 && !selectedPlanId) {

@@ -1016,7 +1016,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
                 <Link
                   href="/super-admin/roadmap"
                   className={cn(
-                    "flex items-center gap-2 pl-5 pr-2 py-1.5 text-sm transition-colors rounded-md",
+                    "flex items-center gap-2 pl-8 pr-2 py-1.5 text-sm transition-colors rounded-md",
                     pathname === "/super-admin/roadmap"
                       ? "bg-sidebar-primary text-sidebar-primary-foreground"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -1127,7 +1127,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
                                   href={item.href}
                                   onClick={() => handleNavigation(item.href)}
                                   className={cn(
-                                    "flex items-center gap-3 rounded-md pl-8 pr-3 py-2 text-sm transition-all hover:translate-x-0.5",
+                                    "flex items-center gap-3 rounded-md pl-6 pr-3 py-2 text-sm transition-all hover:translate-x-0.5",
                                     isActive
                                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

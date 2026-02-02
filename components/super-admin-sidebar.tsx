@@ -930,7 +930,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
                             size="sm"
                             onClick={() => toggleExpandedItem(item.id)}
                             className={cn(
-                              "w-full justify-start gap-2 text-slate-300 hover:text-white hover:bg-slate-800/50 h-9 pl-6 pr-3",
+                              "w-full justify-start gap-2 text-slate-300 hover:text-white hover:bg-slate-800/50 h-9 pl-8 pr-3",
                               collapsed && "justify-center px-2",
                             )}
                           >
@@ -980,7 +980,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
                           variant={active ? "secondary" : "ghost"}
                           size="sm"
                           className={cn(
-                            "w-full justify-start gap-2 relative h-9 pl-6 pr-3",
+                            "w-full justify-start gap-2 relative h-9 pl-8 pr-3",
                             active
                               ? "bg-blue-600 text-white hover:bg-blue-700"
                               : "text-slate-300 hover:text-white hover:bg-slate-800/50",

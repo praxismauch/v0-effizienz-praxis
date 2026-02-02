@@ -439,6 +439,33 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true
   const sidebarGroups = getNavigationGroups(isAdmin, isSuperAdmin, t)
 
+  // Fetch sidebar badge counts
+  useEffect(() => {
+    const loadBadgeCounts = async () => {
+      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+      if (!practiceId) return
+
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/sidebar-badges`)
+        if (response.ok) {
+          const data = await response.json()
+          setBadgeCounts((prev) => ({
+            ...prev,
+            ...data,
+          }))
+        }
+      } catch (error) {
+        console.error("[v0] Error loading badge counts:", error)
+      }
+    }
+
+    loadBadgeCounts()
+    
+    // Refresh badge counts every 2 minutes
+    const interval = setInterval(loadBadgeCounts, 120000)
+    return () => clearInterval(interval)
+  }, [currentPractice?.id])
+
   useEffect(() => {
     const loadSidebarPreferences = async () => {
       const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID

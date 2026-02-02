@@ -14,12 +14,15 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      console.log("[v0] Features API GET - Auth error or no user:", { authError })
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Check if user is super admin
     const adminClient = await createAdminClient()
-    const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
+    const { data: userData, error: userError } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
+
+    console.log("[v0] Features API GET - User check:", { userId: user.id, is_super_admin: userData?.is_super_admin, role: userData?.role, userError })
 
     if (!userData?.is_super_admin && userData?.role !== "superadmin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })

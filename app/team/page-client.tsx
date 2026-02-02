@@ -244,7 +244,7 @@ export default function TeamPageClient() {
           </TabsTrigger>
           <TabsTrigger value="staffing" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Stellenpläne</span>
+            <span className="hidden sm:inline">Bedarfsplanung</span>
           </TabsTrigger>
           <TabsTrigger value="teams" className="flex items-center gap-2">
             <Users className="h-4 w-4" />

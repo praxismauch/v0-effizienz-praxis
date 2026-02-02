@@ -128,12 +128,10 @@ export default function SettingsPageClient() {
               <LayoutGrid className="h-4 w-4" />
               <span>Orga-Kategorien</span>
             </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="parameters" className="gap-2 whitespace-nowrap">
-                <Target className="h-4 w-4" />
-                <span>Kennzahlen</span>
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="parameters" className="gap-2 whitespace-nowrap">
+              <Target className="h-4 w-4" />
+              <span>Kennzahlen</span>
+            </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="team-order" className="gap-2 whitespace-nowrap">
                 <Users className="h-4 w-4" />
@@ -204,12 +202,10 @@ export default function SettingsPageClient() {
             <OrgaCategoriesManager />
           </TabsContent>
 
-          {/* Parameters Tab (Admin only) */}
-          {isAdmin && (
-            <TabsContent value="parameters">
-              <PracticeParameterManagement />
-            </TabsContent>
-          )}
+          {/* Parameters Tab */}
+          <TabsContent value="parameters">
+            <PracticeParameterManagement />
+          </TabsContent>
 
           {/* Team Order Tab (Admin only) */}
           {isAdmin && (

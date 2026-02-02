@@ -423,12 +423,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        await fetch("/api/user/sidebar-preferences", {
+        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             practice_id: "super-admin",
-            sidebar_collapsed: newCollapsed,
+            is_collapsed: newCollapsed,
           }),
         })
       } catch (error) {
@@ -447,7 +447,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        await fetch("/api/user/sidebar-preferences", {
+        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -471,7 +471,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        await fetch("/api/user/sidebar-preferences", {
+        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

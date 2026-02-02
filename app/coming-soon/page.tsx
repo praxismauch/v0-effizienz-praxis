@@ -60,7 +60,7 @@ export default function ComingSoonPage() {
     setError("")
 
     try {
-      const response = await fetch("/api/waitlist/submit", {
+      const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -72,6 +72,7 @@ export default function ComingSoonPage() {
           practice_type: practiceType || null,
           phone: phone || null,
           message: message || null,
+          source: "coming_soon_page",
         }),
       })
 

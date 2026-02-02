@@ -184,8 +184,9 @@ export function AIPracticeChatDialog({
       setUploadingImage(true)
       const formData = new FormData()
       formData.append("file", file)
+      formData.append("type", "chatImage")
 
-      const response = await fetch("/api/ai-analysis/chat-upload", {
+      const response = await fetch("/api/upload/unified", {
         method: "POST",
         body: formData,
       })

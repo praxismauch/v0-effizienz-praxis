@@ -319,8 +319,9 @@ export default function EditTeamMemberPage() {
           // Upload to blob storage
           const formDataUpload = new FormData()
           formDataUpload.append("file", file)
+          formDataUpload.append("type", "avatar")
 
-          const response = await fetch("/api/upload", {
+          const response = await fetch("/api/upload/unified", {
             method: "POST",
             body: formDataUpload,
           })
@@ -365,9 +366,10 @@ export default function EditTeamMemberPage() {
           // Upload to blob storage
           const formDataUpload = new FormData()
           formDataUpload.append("file", file)
+          formDataUpload.append("type", "avatar")
 
           try {
-            const response = await fetch("/api/upload", {
+            const response = await fetch("/api/upload/unified", {
               method: "POST",
               body: formDataUpload,
             })

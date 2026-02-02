@@ -35,6 +35,7 @@ import {
   MessageSquare,
   Share2,
   BarChart3,
+  Camera,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -801,18 +802,24 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
         },
       ],
     },
-    {
-      id: "testing",
-      label: "Testing",
-      items: [
-        {
-          id: "testing",
-          label: "Testing",
-          icon: TestTube,
-          href: "/super-admin/testing",
-        },
-      ],
-    },
+  {
+  id: "testing",
+  label: "Testing",
+  items: [
+  {
+  id: "testing",
+  label: "UI-Tests",
+  icon: TestTube,
+  href: "/super-admin/testing",
+  },
+  {
+  id: "screenshots",
+  label: "Screenshots",
+  icon: Camera,
+  href: "/super-admin/screenshots",
+  },
+  ],
+  },
     {
       id: "system",
       label: "System",

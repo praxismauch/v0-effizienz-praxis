@@ -88,7 +88,7 @@ export function StaffingPlanGrid({
   const [duplicateTargetDay, setDuplicateTargetDay] = useState<number | null>(null)
   const [isDuplicating, setIsDuplicating] = useState(false)
 
-  const [setEntries] = useState(() => entries) // Declare setEntries variable
+  // Note: entries are managed by parent component via onRefresh
 
   useEffect(() => {
     if (useTimeCalculation && startTime && endTime) {
@@ -372,10 +372,10 @@ export function StaffingPlanGrid({
         throw new Error(errorData.error || "Failed to move entry")
       }
 
-      const updatedEntry = await response.json()
+      await response.json()
 
-      // Update local state
-      setEntries((prev) => prev.map((entry) => (entry.id === updatedEntry.id ? updatedEntry : entry)))
+      // Refresh entries from parent
+      onRefresh()
 
       toast({
         title: "Eintrag verschoben",

@@ -280,8 +280,11 @@ export default function TeamPageClient() {
           <StaffingTab
             staffingPlans={staffingPlans}
             teamMembers={teamMembers}
+            teams={teams}
+            responsibilities={responsibilities}
             onPlanCreated={handleStaffingPlanCreated}
             onEditPlan={handleEditStaffingPlan}
+            onRefresh={fetchData}
           />
         </TabsContent>
 

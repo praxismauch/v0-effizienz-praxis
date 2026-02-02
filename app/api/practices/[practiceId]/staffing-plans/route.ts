@@ -33,7 +33,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ practic
     } catch (queryError: any) {
       if (isRateLimitError(queryError)) {
         console.log("[API] staffing-plans GET - Rate limited, returning empty array")
-        return NextResponse.json([])
+        return NextResponse.json({ staffingPlans: [] })
       }
       throw queryError
     }
@@ -41,15 +41,15 @@ export async function GET(req: NextRequest, context: { params: Promise<{ practic
     if (error) {
       if (isRateLimitError(error)) {
         console.log("[API] staffing-plans GET - Rate limited (error object), returning empty array")
-        return NextResponse.json([])
+        return NextResponse.json({ staffingPlans: [] })
       }
       throw error
     }
 
-    return NextResponse.json(data || [])
+    return NextResponse.json({ staffingPlans: data || [] })
   } catch (error: any) {
     console.error("[API] Error fetching staffing plans:", error)
-    return NextResponse.json([])
+    return NextResponse.json({ staffingPlans: [] })
   }
 }
 

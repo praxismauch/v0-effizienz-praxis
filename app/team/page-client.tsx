@@ -134,9 +134,9 @@ export default function TeamPageClient() {
 
   const handleStaffingPlanCreated = (plan: StaffingPlan) => {
     setStaffingPlans(prev => [plan, ...prev])
-    toast.success("Stellenplan erstellt")
+    toast.success("Bedarfsplan erstellt")
   }
-  const handleEditStaffingPlan = (plan: StaffingPlan) => toast.info(`Stellenplan: ${plan.name}`)
+  const handleEditStaffingPlan = (plan: StaffingPlan) => toast.info(`Bedarfsplan: ${plan.name}`)
 
   const handleHolidayRequestCreated = (request: HolidayRequest) => {
     setHolidayRequests(prev => [request, ...prev])
@@ -244,7 +244,7 @@ export default function TeamPageClient() {
           </TabsTrigger>
           <TabsTrigger value="staffing" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Stellenpläne</span>
+            <span className="hidden sm:inline">Bedarfsplanung</span>
           </TabsTrigger>
           <TabsTrigger value="teams" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -280,8 +280,11 @@ export default function TeamPageClient() {
           <StaffingTab
             staffingPlans={staffingPlans}
             teamMembers={teamMembers}
+            teams={teams}
+            responsibilities={responsibilities}
             onPlanCreated={handleStaffingPlanCreated}
             onEditPlan={handleEditStaffingPlan}
+            onRefresh={fetchData}
           />
         </TabsContent>
 

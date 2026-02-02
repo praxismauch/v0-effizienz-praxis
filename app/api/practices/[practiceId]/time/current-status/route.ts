@@ -27,8 +27,11 @@ export async function GET(
     const supabase = await createAdminClient()
     const today = format(new Date(), "yyyy-MM-dd")
 
-    // Get today's open time block
-    const { data: block, error: blockError } = await supabase
+    // Get today's open time block - try with is_open, fallback to checking end_time is null
+    let block = null
+    let blockError = null
+    
+    const result = await supabase
       .from("time_blocks")
       .select("*")
       .eq("practice_id", practiceId)
@@ -36,6 +39,25 @@ export async function GET(
       .eq("date", today)
       .eq("is_open", true)
       .maybeSingle()
+    
+    // If is_open column doesn't exist, try alternative query
+    if (result.error && (result.error.code === '42703' || result.error.code === 'PGRST204') && 
+        result.error.message.includes('is_open')) {
+      console.log("[v0] is_open column not found, using end_time fallback")
+      const fallbackResult = await supabase
+        .from("time_blocks")
+        .select("*")
+        .eq("practice_id", practiceId)
+        .eq("user_id", userId)
+        .eq("date", today)
+        .is("end_time", null)
+        .maybeSingle()
+      block = fallbackResult.data
+      blockError = fallbackResult.error
+    } else {
+      block = result.data
+      blockError = result.error
+    }
 
     if (blockError) {
       console.error("[v0] Error fetching time block:", blockError)

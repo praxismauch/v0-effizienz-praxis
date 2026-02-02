@@ -57,6 +57,8 @@ export default function StaffingTab({
   const practiceId = currentPractice?.id?.toString()
   const isAdmin = user?.role === "admin" || user?.role === "superadmin" || user?.is_practice_admin
 
+
+
   // Auto-select first plan if none selected
   useEffect(() => {
     if (staffingPlans.length > 0 && !selectedPlanId) {
@@ -97,10 +99,16 @@ export default function StaffingTab({
       const res = await fetch(`/api/practices/${practiceId}/staffing-plan?planId=${selectedPlanId}`)
       if (res.ok) {
         const data = await res.json()
-        setEntries(data.entries || [])
+        // Handle both structured response { entries: [] } and raw array []
+        const entriesData = Array.isArray(data) ? data : (data?.entries || [])
+        setEntries(entriesData)
+      } else {
+        console.error("Error loading staffing entries: HTTP", res.status)
+        setEntries([])
       }
     } catch (error) {
       console.error("Error loading staffing entries:", error)
+      setEntries([])
     } finally {
       setIsLoadingEntries(false)
     }
@@ -121,13 +129,13 @@ export default function StaffingTab({
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Keine Stellenpläne</h3>
+            <h3 className="text-lg font-medium mb-2">Keine Bedarfspläne</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              Erstellen Sie Ihren ersten Stellenplan, um die Personalplanung zu optimieren.
+              Erstellen Sie Ihren ersten Bedarfsplan, um die Personalplanung zu optimieren.
             </p>
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Stellenplan erstellen
+              Bedarfsplan erstellen
             </Button>
           </CardContent>
         </Card>

@@ -59,6 +59,7 @@ import {
   FileCheck,
   HelpCircle,
   Shield,
+  Map,
 } from "lucide-react"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -999,13 +1000,32 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
         {sidebarOpen && (
           <div className="px-3 py-2 border-b border-sidebar-border/30 shrink-0">
             {isSuperAdmin && (
-              <Link
-                href="/super-admin"
-                className="flex items-center gap-2 px-2 py-1.5 mb-2 text-sm font-medium text-sidebar-primary hover:text-sidebar-primary/80 transition-colors"
-              >
-                <Star className="h-4 w-4 fill-amber-500" />
-                <span>Super Admin</span>
-              </Link>
+              <div className="space-y-0.5 mb-2">
+                <Link
+                  href="/super-admin"
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1.5 text-sm font-medium transition-colors rounded-md",
+                    pathname === "/super-admin" 
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground" 
+                      : "text-sidebar-primary hover:text-sidebar-primary/80 hover:bg-sidebar-accent"
+                  )}
+                >
+                  <Star className="h-4 w-4 fill-amber-500" />
+                  <span>Super Admin</span>
+                </Link>
+                <Link
+                  href="/super-admin/roadmap"
+                  className={cn(
+                    "flex items-center gap-2 pl-8 pr-2 py-1.5 text-sm transition-colors rounded-md",
+                    pathname === "/super-admin/roadmap"
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <Map className="h-4 w-4" />
+                  <span>Roadmap & Ideen</span>
+                </Link>
+              </div>
             )}
             <PracticeSelector />
           </div>
@@ -1107,7 +1127,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
                                   href={item.href}
                                   onClick={() => handleNavigation(item.href)}
                                   className={cn(
-                                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all hover:translate-x-0.5",
+                                    "flex items-center gap-3 rounded-md pl-6 pr-3 py-2 text-sm transition-all hover:translate-x-0.5",
                                     isActive
                                       ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

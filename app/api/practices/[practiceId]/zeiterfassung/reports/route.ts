@@ -27,8 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         team_members:user_id (
           first_name,
           last_name,
-          email,
-          avatar_url
+          email
         )
       `)
       .eq("practice_id", practiceId)

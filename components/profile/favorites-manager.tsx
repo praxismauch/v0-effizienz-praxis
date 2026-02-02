@@ -70,7 +70,7 @@ const ALL_MENU_ITEMS: { href: string; name: string; icon: LucideIcon; group: str
   { href: "/workflows", name: "Workflows", icon: Workflow, group: "Planung" },
   { href: "/responsibilities", name: "Zuständigkeiten", icon: ClipboardCheck, group: "Planung" },
   // Daten & Dokumente
-  { href: "/analytics", name: "Kennzahlen", icon: LineChart, group: "Daten" },
+  { href: "/analytics", name: "Auswertung", icon: LineChart, group: "Daten" },
   { href: "/documents", name: "Dokumente", icon: FileText, group: "Daten" },
   { href: "/practice-insights", name: "Journal", icon: TrendingUp, group: "Daten" },
   { href: "/knowledge", name: "Wissen", icon: BookOpen, group: "Daten" },

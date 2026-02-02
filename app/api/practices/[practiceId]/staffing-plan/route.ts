@@ -67,9 +67,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (error) throw error
 
-    return NextResponse.json(data || [])
+    // Return structured response with entries array
+    return NextResponse.json({ entries: data || [] })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("[v0] Staffing plan GET error:", error)
+    return NextResponse.json({ entries: [], error: error.message }, { status: 500 })
   }
 }
 

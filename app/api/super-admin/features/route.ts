@@ -14,14 +14,37 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      console.log("[v0] Features API GET - Auth error or no user:", { authError })
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user is super admin
+    // Check if user is super admin - handle case where is_super_admin column might not exist yet
     const adminClient = await createAdminClient()
-    const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
+    let isSuperAdmin = false
+    
+    // First try with is_super_admin column
+    const { data: userData, error: userError } = await adminClient
+      .from("users")
+      .select("is_super_admin, role")
+      .eq("id", user.id)
+      .single()
 
-    if (!userData?.is_super_admin && userData?.role !== "superadmin") {
+    // If column doesn't exist (42703 error), fall back to role check only
+    if (userError && userError.code === "42703") {
+      const { data: userRoleData } = await adminClient
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+      
+      isSuperAdmin = userRoleData?.role === "superadmin" || userRoleData?.role === "super_admin"
+    } else {
+      isSuperAdmin = userData?.is_super_admin === true || 
+                     userData?.role === "superadmin" || 
+                     userData?.role === "super_admin"
+    }
+
+    if (!isSuperAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

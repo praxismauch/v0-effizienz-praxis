@@ -1,13 +1,25 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 
-// Cache pricing data for 5 minutes - prices don't change often
-export const revalidate = 300
+// Force dynamic rendering since we're reading from database
+export const dynamic = "force-dynamic"
+
+// Create a simple Supabase client without cookies for public endpoints
+function createPublicClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Supabase environment variables not configured")
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey)
+}
 
 // Public endpoint to fetch pricing for landing page
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
 
     // Fetch active subscription plans - only query existing columns
     const { data: plans, error } = await supabase

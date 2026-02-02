@@ -21,7 +21,7 @@ export async function GET(
     // Get all team members for this practice
     const { data: teamMembers, error: teamError } = await supabase
       .from("team_members")
-      .select("id, user_id, first_name, last_name, email, avatar_url")
+      .select("id, user_id, first_name, last_name, email")
       .eq("practice_id", practiceId)
       .eq("status", "active")
 

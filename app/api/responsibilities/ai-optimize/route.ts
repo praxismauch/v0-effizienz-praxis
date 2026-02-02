@@ -40,15 +40,31 @@ export async function POST(request: Request) {
     if (practice_id) {
       console.log("[v0] Fetching practice context for:", practice_id)
       const supabase = await createServerClient()
-      const { data: practice, error: practiceError } = await supabase
+      
+      // Try to get practice with description, fallback without if column doesn't exist
+      let practice: any = null
+      const result = await supabase
         .from("practices")
         .select("name, description, specialty")
         .eq("id", practice_id)
         .single()
+      
+      if (result.error && (result.error.code === '42703' || result.error.code === 'PGRST204') && 
+          result.error.message.includes('description')) {
+        // Fallback: get practice without description column
+        const fallbackResult = await supabase
+          .from("practices")
+          .select("name, specialty")
+          .eq("id", practice_id)
+          .single()
+        practice = fallbackResult.data
+      } else if (result.error) {
+        console.log("[v0] Practice fetch error:", result.error)
+      } else {
+        practice = result.data
+      }
 
-      if (practiceError) {
-        console.log("[v0] Practice fetch error:", practiceError)
-      } else if (practice) {
+      if (practice) {
         console.log("[v0] Practice found:", practice.name)
         practiceContext = `
 Praxiskontext:

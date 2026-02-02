@@ -88,7 +88,7 @@ export function StaffingPlanGrid({
   const [duplicateTargetDay, setDuplicateTargetDay] = useState<number | null>(null)
   const [isDuplicating, setIsDuplicating] = useState(false)
 
-  const [setEntries] = useState(() => entries) // Declare setEntries variable
+  // Note: entries are managed by parent component via onRefresh
 
   useEffect(() => {
     if (useTimeCalculation && startTime && endTime) {
@@ -372,10 +372,10 @@ export function StaffingPlanGrid({
         throw new Error(errorData.error || "Failed to move entry")
       }
 
-      const updatedEntry = await response.json()
+      await response.json()
 
-      // Update local state
-      setEntries((prev) => prev.map((entry) => (entry.id === updatedEntry.id ? updatedEntry : entry)))
+      // Refresh entries from parent
+      onRefresh()
 
       toast({
         title: "Eintrag verschoben",
@@ -529,10 +529,14 @@ export function StaffingPlanGrid({
             </div>
           ))}
 
-          {(["am", "pm"] as const).map((slot) => (
-            <Fragment key={slot}>
-              {/* Add spacing before Nachmittag row */}
-              {slot === "pm" && <div className="col-span-6 h-4" />}
+  {(["am", "pm"] as const).map((slot) => (
+  <Fragment key={slot}>
+  {/* Add visual divider and spacing before Nachmittag row */}
+  {slot === "pm" && (
+    <div className="col-span-6 py-4">
+      <div className="border-t-2 border-dashed border-muted-foreground/30 w-full" />
+    </div>
+  )}
               <div
                 className={`font-bold text-sm flex items-center justify-center py-2 w-8 ${
                   slot === "am" ? "text-blue-600" : "text-orange-600"

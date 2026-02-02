@@ -405,7 +405,11 @@ export function KVAbrechnungUnified() {
                     {Object.entries(extractedData).slice(0, 9).map(([key, value]) => (
                       <div key={key} className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs text-muted-foreground uppercase tracking-wide">{key}</p>
-                        <p className="text-lg font-semibold mt-1">{String(value)}</p>
+                        <p className="text-lg font-semibold mt-1">
+                          {typeof value === 'object' && value !== null 
+                            ? JSON.stringify(value, null, 2)
+                            : String(value ?? '—')}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -594,7 +598,11 @@ export function KVAbrechnungUnified() {
                       {Object.entries(extractedData).map(([key, value]) => (
                         <div key={key} className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/50">
                           <span className="text-sm font-medium text-muted-foreground min-w-[200px]">{key}</span>
-                          <span className="text-sm font-medium flex-1">{String(value)}</span>
+                          <span className="text-sm font-medium flex-1">
+                            {typeof value === 'object' && value !== null 
+                              ? <pre className="text-xs bg-muted p-2 rounded overflow-auto">{JSON.stringify(value, null, 2)}</pre>
+                              : String(value ?? '—')}
+                          </span>
                         </div>
                       ))}
                     </div>

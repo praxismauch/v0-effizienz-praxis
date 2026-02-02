@@ -62,9 +62,9 @@ export default function CreateStaffingPlanDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Neuer Stellenplan</DialogTitle>
+          <DialogTitle>Neuer Bedarfsplan</DialogTitle>
           <DialogDescription>
-            Erstellen Sie einen neuen Stellenplan für die Personalplanung.
+            Erstellen Sie einen neuen Bedarfsplan für die Personalplanung.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -85,7 +85,7 @@ export default function CreateStaffingPlanDialog({
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Beschreibung des Stellenplans..."
+                placeholder="Beschreibung des Bedarfsplans..."
                 rows={3}
               />
             </div>
@@ -100,7 +100,7 @@ export default function CreateStaffingPlanDialog({
             </Button>
             <Button type="submit" disabled={isSubmitting || !name.trim()}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Stellenplan erstellen
+              Bedarfsplan erstellen
             </Button>
           </DialogFooter>
         </form>

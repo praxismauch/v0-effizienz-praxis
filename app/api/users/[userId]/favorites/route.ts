@@ -15,7 +15,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .eq("user_id", userId)
       .order("sort_order", { ascending: true })
 
-    if (result.error && result.error.code === 'PGRST204' && result.error.message.includes('sort_order')) {
+    // Check for column not found errors (42703 = undefined_column, PGRST204 = schema cache miss)
+    const isColumnMissing = result.error && 
+      (result.error.code === '42703' || result.error.code === 'PGRST204') && 
+      result.error.message.includes('sort_order')
+    
+    if (isColumnMissing) {
       // sort_order column doesn't exist, try without it
       const fallbackResult = await supabase
         .from("user_favorites")
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           .eq("favorite_path", favorites[i])
 
         // If sort_order column doesn't exist, just skip reordering
-        if (error && error.code === 'PGRST204') {
+        if (error && (error.code === 'PGRST204' || error.code === '42703')) {
           console.log("[v0] sort_order column not found, skipping reorder")
           return NextResponse.json({ success: true, action: "reordered", useLocalStorage: true })
         }
@@ -93,7 +98,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .limit(1)
 
       // If sort_order column exists, include it in the upsert
-      if (!selectError || selectError.code !== 'PGRST204') {
+      if (!selectError || (selectError.code !== 'PGRST204' && selectError.code !== '42703')) {
         const nextSortOrder = (existingFavorites?.[0]?.sort_order ?? -1) + 1
         upsertData.sort_order = nextSortOrder
       }
@@ -105,7 +110,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       if (error) {
         // If upsert fails due to missing sort_order, try without it
-        if (error.code === 'PGRST204' && error.message.includes('sort_order')) {
+        if ((error.code === 'PGRST204' || error.code === '42703') && error.message.includes('sort_order')) {
           const { error: fallbackError } = await supabase.from("user_favorites").upsert(
             { user_id: userId, favorite_path: item_path },
             { onConflict: "user_id,favorite_path" }

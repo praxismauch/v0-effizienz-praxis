@@ -134,9 +134,9 @@ export default function TeamPageClient() {
 
   const handleStaffingPlanCreated = (plan: StaffingPlan) => {
     setStaffingPlans(prev => [plan, ...prev])
-    toast.success("Stellenplan erstellt")
+    toast.success("Bedarfsplan erstellt")
   }
-  const handleEditStaffingPlan = (plan: StaffingPlan) => toast.info(`Stellenplan: ${plan.name}`)
+  const handleEditStaffingPlan = (plan: StaffingPlan) => toast.info(`Bedarfsplan: ${plan.name}`)
 
   const handleHolidayRequestCreated = (request: HolidayRequest) => {
     setHolidayRequests(prev => [request, ...prev])

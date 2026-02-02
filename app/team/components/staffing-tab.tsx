@@ -123,13 +123,13 @@ export default function StaffingTab({
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Keine Stellenpläne</h3>
+            <h3 className="text-lg font-medium mb-2">Keine Bedarfspläne</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              Erstellen Sie Ihren ersten Stellenplan, um die Personalplanung zu optimieren.
+              Erstellen Sie Ihren ersten Bedarfsplan, um die Personalplanung zu optimieren.
             </p>
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Stellenplan erstellen
+              Bedarfsplan erstellen
             </Button>
           </CardContent>
         </Card>

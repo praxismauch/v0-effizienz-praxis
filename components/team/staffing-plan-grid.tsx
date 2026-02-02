@@ -529,10 +529,14 @@ export function StaffingPlanGrid({
             </div>
           ))}
 
-          {(["am", "pm"] as const).map((slot) => (
-            <Fragment key={slot}>
-              {/* Add spacing before Nachmittag row */}
-              {slot === "pm" && <div className="col-span-6 h-4" />}
+  {(["am", "pm"] as const).map((slot) => (
+  <Fragment key={slot}>
+  {/* Add visual divider and spacing before Nachmittag row */}
+  {slot === "pm" && (
+    <div className="col-span-6 py-4">
+      <div className="border-t-2 border-dashed border-muted-foreground/30 w-full" />
+    </div>
+  )}
               <div
                 className={`font-bold text-sm flex items-center justify-center py-2 w-8 ${
                   slot === "am" ? "text-blue-600" : "text-orange-600"

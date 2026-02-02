@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ProfileImageEditor } from "@/components/profile-image-editor"
 import { DataManagementSection } from "@/components/profile/data-management-section"
 import { BadgeVisibilitySettings } from "@/components/profile/badge-visibility-settings"
+import { FavoritesManager } from "@/components/profile/favorites-manager"
 import { useToast } from "@/hooks/use-toast"
 import { useRoleColors } from "@/lib/use-role-colors"
 import {
@@ -600,6 +601,9 @@ export default function ProfilePageClient() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Favorites Manager */}
+            <FavoritesManager />
 
             {/* Badge Visibility Settings */}
             <BadgeVisibilitySettings />

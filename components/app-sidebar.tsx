@@ -591,8 +591,16 @@ export function AppSidebar({ className }: AppSidebarProps) {
     }
 
     window.addEventListener("badge-visibility-changed", handleBadgeVisibilityChange as EventListener)
+
+    // Listen for favorites updates from profile settings
+    const handleFavoritesUpdated = (event: CustomEvent<string[]>) => {
+      setFavorites(event.detail)
+    }
+    window.addEventListener("favorites-updated", handleFavoritesUpdated as EventListener)
+
     return () => {
       window.removeEventListener("badge-visibility-changed", handleBadgeVisibilityChange as EventListener)
+      window.removeEventListener("favorites-updated", handleFavoritesUpdated as EventListener)
     }
   }, [currentUser?.id])
 

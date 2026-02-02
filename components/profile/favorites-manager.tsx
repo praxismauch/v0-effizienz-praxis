@@ -42,6 +42,7 @@ import {
   Stethoscope,
   Settings,
   HelpCircle,
+  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -57,6 +58,9 @@ import { Input } from "@/components/ui/input"
 
 // All available menu items for favorites
 const ALL_MENU_ITEMS: { href: string; name: string; icon: LucideIcon; group: string }[] = [
+  // Übersicht
+  { href: "/cockpit", name: "Cockpit", icon: LayoutDashboard, group: "Übersicht" },
+  { href: "/ki-analyse", name: "KI-Analyse", icon: LineChart, group: "Übersicht" },
   // Planung & Organisation
   { href: "/calendar", name: "Kalender", icon: CalendarDays, group: "Planung" },
   { href: "/dienstplan", name: "Dienstplan", icon: CalendarClock, group: "Planung" },

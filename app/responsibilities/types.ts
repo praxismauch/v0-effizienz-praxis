@@ -3,6 +3,7 @@ export interface Responsibility {
   name: string
   description?: string
   category?: string
+  group_name?: string
   responsible_user_id?: string
   responsible_user_name?: string
   suggested_hours_per_week?: number
@@ -44,13 +45,13 @@ export interface ResponsibilityFormData {
   attachments: File[]
   link_url: string
   link_title: string
-  category: string | null
+  group_name: string
   estimated_time_minutes: number | null
   arbeitsplatz_ids?: string[]
   joint_execution?: boolean
   joint_execution_type?: "team_member" | "team_group"
-  joint_execution_user_id?: string
-  joint_execution_team_id?: string
+  joint_execution_user_id?: string | null
+  joint_execution_team_group?: string | null
 }
 
 export interface ResponsibilityStats {
@@ -97,6 +98,6 @@ export const INITIAL_FORM_DATA: ResponsibilityFormData = {
   attachments: [],
   link_url: "",
   link_title: "",
-  category: null,
+  group_name: "",
   estimated_time_minutes: null,
 }

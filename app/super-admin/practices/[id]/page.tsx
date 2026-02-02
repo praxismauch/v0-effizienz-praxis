@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Building2, Users, Calendar, Activity } from "lucide-react"
-import { SuperAdminLayout } from "@/components/super-admin-layout"
 
 interface Practice {
   id: number
@@ -59,7 +58,7 @@ export default function PracticeDetailPage() {
   }
 
   return (
-    <SuperAdminLayout initialTab="practices">
+    <>
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -235,6 +234,6 @@ export default function PracticeDetailPage() {
           </Tabs>
         </div>
       )}
-    </SuperAdminLayout>
+    </>
   )
 }

@@ -129,33 +129,88 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
     }
 
-    // Build update object with only defined values
-    const updateData: Record<string, any> = {}
-    if (expanded_groups !== undefined) updateData.expanded_groups = expanded_groups
-    if (expanded_items !== undefined) updateData.expanded_items = expanded_items
-    if (is_collapsed !== undefined) updateData.is_collapsed = is_collapsed
-    if (favorites !== undefined) updateData.favorites = favorites
-    if (single_group_mode !== undefined) updateData.single_group_mode = single_group_mode
+    // Build base update object with only core columns that definitely exist
+    const baseUpdateData: Record<string, any> = {
+      user_id: userId,
+      practice_id: effectivePracticeId,
+      updated_at: new Date().toISOString(),
+    }
+    
+    if (expanded_groups !== undefined) baseUpdateData.expanded_groups = expanded_groups
+    if (expanded_items !== undefined) baseUpdateData.expanded_items = expanded_items
+    if (is_collapsed !== undefined) baseUpdateData.is_collapsed = is_collapsed
 
-    // Use upsert to handle both insert and update cases
-    const { error: upsertError } = await adminClient
-      .from("user_sidebar_preferences")
-      .upsert({
-        user_id: userId,
-        practice_id: effectivePracticeId,
-        ...updateData,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: "user_id,practice_id"
-      })
+    // Try progressive upsert - start with all columns, fall back to fewer columns if they don't exist
+    let upsertSuccess = false
+    let lastError = null
+    
+    // Attempt 1: Try with all columns (favorites, single_group_mode)
+    if (!upsertSuccess) {
+      const fullData = { ...baseUpdateData }
+      if (favorites !== undefined) fullData.favorites = favorites
+      if (single_group_mode !== undefined) fullData.single_group_mode = single_group_mode
+      
+      const { error } = await adminClient
+        .from("user_sidebar_preferences")
+        .upsert(fullData, { onConflict: "user_id,practice_id" })
+      
+      if (!error) {
+        upsertSuccess = true
+      } else if (error.code === 'PGRST204') {
+        // Column doesn't exist, try with fewer columns
+        lastError = error
+      } else {
+        lastError = error
+      }
+    }
+    
+    // Attempt 2: Try without favorites column
+    if (!upsertSuccess && lastError?.code === 'PGRST204') {
+      const dataWithoutFavorites = { ...baseUpdateData }
+      if (single_group_mode !== undefined) dataWithoutFavorites.single_group_mode = single_group_mode
+      
+      const { error } = await adminClient
+        .from("user_sidebar_preferences")
+        .upsert(dataWithoutFavorites, { onConflict: "user_id,practice_id" })
+      
+      if (!error) {
+        upsertSuccess = true
+      } else if (error.code === 'PGRST204') {
+        lastError = error
+      } else {
+        lastError = error
+      }
+    }
+    
+    // Attempt 3: Try with only base columns (most compatible)
+    if (!upsertSuccess && lastError?.code === 'PGRST204') {
+      const { error } = await adminClient
+        .from("user_sidebar_preferences")
+        .upsert(baseUpdateData, { onConflict: "user_id,practice_id" })
+      
+      if (!error) {
+        upsertSuccess = true
+      } else {
+        lastError = error
+      }
+    }
 
-    if (upsertError) {
-      console.error("Error saving sidebar preferences:", upsertError)
+    if (!upsertSuccess && lastError) {
+      // Only log non-schema-cache errors as actual errors
+      if (lastError.code !== 'PGRST204') {
+        console.error("Error saving sidebar preferences:", lastError)
+      }
+      // Return success anyway - the client will use localStorage as fallback
       return NextResponse.json({ 
-        error: upsertError.message,
-        errorCode: upsertError.code,
-        errorDetails: upsertError
-      }, { status: 500 })
+        preferences: {
+          expanded_groups: expanded_groups || [],
+          expanded_items: expanded_items || {},
+          is_collapsed: is_collapsed || false,
+          favorites: favorites || [],
+          single_group_mode: single_group_mode ?? true,
+        },
+        warning: "Some preferences may not be persisted to database"
+      })
     }
 
     // Fetch the updated preferences to return

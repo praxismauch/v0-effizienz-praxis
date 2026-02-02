@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation"
+import { isPracticeAdminRole, isSuperAdminRole } from "@/lib/auth-utils"
 import React from "react" // Added for React.useState
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar" // Import Avatar components
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip" // Import Tooltip components
@@ -71,7 +72,7 @@ export default function TodosPage() {
   const searchParams = useSearchParams()
   // Use practice context for practiceId (supports practice switching for super admins)
   const practiceId = currentPractice?.id?.toString() || ""
-  const isAdmin = currentUser?.role === "admin" // Added isAdmin check
+  const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
 
   // Menu bar state
   const [searchQuery, setSearchQuery] = useState("")

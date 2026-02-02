@@ -106,8 +106,9 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
       if (formData.file) {
         const uploadFormData = new FormData()
         uploadFormData.append("file", formData.file)
+        uploadFormData.append("type", "general")
 
-        const uploadRes = await fetch("/api/upload", {
+        const uploadRes = await fetch("/api/upload/unified", {
           method: "POST",
           body: uploadFormData,
         })

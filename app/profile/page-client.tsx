@@ -21,6 +21,8 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProfileImageEditor } from "@/components/profile-image-editor"
 import { DataManagementSection } from "@/components/profile/data-management-section"
+import { BadgeVisibilitySettings } from "@/components/profile/badge-visibility-settings"
+import { FavoritesManager } from "@/components/profile/favorites-manager"
 import { useToast } from "@/hooks/use-toast"
 import { useRoleColors } from "@/lib/use-role-colors"
 import {
@@ -599,6 +601,12 @@ export default function ProfilePageClient() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Favorites Manager */}
+            <FavoritesManager />
+
+            {/* Badge Visibility Settings */}
+            <BadgeVisibilitySettings />
           </TabsContent>
 
           {/* Security Tab */}
@@ -623,7 +631,7 @@ export default function ProfilePageClient() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Passwort bestätigen</Label>
-                    <Input id="confirm-password" type="password" placeholder="••••••••" />
+                    <Input id="confirm-password" type="password" placeholder="��•••••••" />
                   </div>
                 </div>
                 <div className="flex justify-end">

@@ -114,12 +114,14 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/dienstplan",
         icon: CalendarClock,
         key: "dienstplan",
+        badge: "dienstplan",
       },
       {
         name: t("sidebar.zeiterfassung", "Zeiterfassung"),
         href: "/zeiterfassung",
         icon: Clock,
         key: "zeiterfassung",
+        badge: "zeiterfassung",
       },
       {
         name: t("sidebar.tasks", "Aufgaben"),
@@ -160,6 +162,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/analytics",
         icon: LineChart,
         key: "analytics",
+        badge: "analytics",
       },
       {
         name: t("sidebar.documents", "Dokumente"),
@@ -174,18 +177,21 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/practice-insights",
         icon: TrendingUp,
         key: "journal",
+        badge: "journal",
       },
       {
         name: t("sidebar.knowledge", "Wissen"),
         href: "/knowledge",
         icon: BookOpen,
         key: "knowledge",
+        badge: "knowledge",
       },
       {
         name: t("sidebar.protocols", "Protokolle"),
         href: "/protocols",
         icon: FileCheck,
         key: "protocols",
+        badge: "protocols",
       },
       {
         name: t("sidebar.cirs", "Verbesserungsmeldung"),
@@ -205,6 +211,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/hygieneplan",
         icon: Shield,
         key: "hygieneplan",
+        badge: "hygiene",
       },
     ],
   },
@@ -217,24 +224,28 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/strategy-journey",
         icon: Compass,
         key: "strategy_journey",
+        badge: "strategy",
       },
       {
         name: "Leadership",
         href: "/leadership",
         icon: Crown,
         key: "leadership",
+        badge: "leadership",
       },
       {
         name: t("sidebar.wellbeing", "Mitarbeiter-Wellbeing"),
         href: "/wellbeing",
         icon: Heart,
         key: "wellbeing",
+        badge: "wellbeing",
       },
       {
         name: t("sidebar.leitbild", "Leitbild"),
         href: "/leitbild",
         icon: Sparkles,
         key: "leitbild",
+        badge: "leitbild",
       },
       {
         name: t("sidebar.roi_analysis", "Lohnt-es-sich-Analyse"),
@@ -285,30 +296,35 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/mitarbeitergespraeche",
         icon: MessageCircle,
         key: "mitarbeitergespraeche",
+        badge: "appraisals",
       },
       {
         name: t("sidebar.selbst_check", "Selbst-Check"),
         href: "/selbst-check",
         icon: Heart,
         key: "selbst_check",
+        badge: "selfcheck",
       },
       {
         name: t("sidebar.skills", "Kompetenzen"),
         href: "/skills",
         icon: Award,
         key: "skills",
+        badge: "skills",
       },
       {
         name: t("sidebar.organigramm", "Organigramm"),
         href: "/organigramm",
         icon: FolderKanban,
         key: "organigramm",
+        badge: "organigramm",
       },
       {
         name: t("sidebar.training", "Fortbildung"),
         href: "/training",
         icon: Award,
         key: "training",
+        badge: "training",
       },
     ],
   },
@@ -335,18 +351,21 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/arbeitsplaetze",
         icon: BriefcaseBusiness,
         key: "arbeitsplaetze",
+        badge: "workplaces",
       },
       {
         name: t("sidebar.rooms", "Räume"),
         href: "/rooms",
         icon: Pin,
         key: "rooms",
+        badge: "rooms",
       },
       {
         name: t("sidebar.arbeitsmittel", "Arbeitsmittel"),
         href: "/arbeitsmittel",
         icon: Wrench,
         key: "arbeitsmittel",
+        badge: "equipment",
       },
       {
         name: t("sidebar.inventory", "Material"),
@@ -410,6 +429,24 @@ export function AppSidebar({ className }: AppSidebarProps) {
     cirs: number
     contacts: number
     hygiene: number
+    training: number
+    protocols: number
+    journal: number
+    appraisals: number
+    skills: number
+    workplaces: number
+    rooms: number
+    equipment: number
+    dienstplan: number
+    zeiterfassung: number
+    analytics: number
+    knowledge: number
+    strategy: number
+    leadership: number
+    wellbeing: number
+    leitbild: number
+    selfcheck: number
+    organigramm: number
   }>({
     tasks: 0,
     goals: 0,
@@ -427,6 +464,62 @@ export function AppSidebar({ className }: AppSidebarProps) {
     cirs: 0,
     contacts: 0,
     hygiene: 0,
+    training: 0,
+    protocols: 0,
+    journal: 0,
+    appraisals: 0,
+    skills: 0,
+    workplaces: 0,
+    rooms: 0,
+    equipment: 0,
+    dienstplan: 0,
+    zeiterfassung: 0,
+    analytics: 0,
+    knowledge: 0,
+    strategy: 0,
+    leadership: 0,
+    wellbeing: 0,
+    leitbild: 0,
+    selfcheck: 0,
+    organigramm: 0,
+  })
+
+  // Badge visibility preferences (default all visible)
+  const [badgeVisibility, setBadgeVisibility] = useState<Record<string, boolean>>({
+    tasks: true,
+    goals: true,
+    workflows: true,
+    candidates: true,
+    tickets: true,
+    waitlist: true,
+    teamMembers: true,
+    responsibilities: true,
+    surveys: true,
+    inventory: true,
+    devices: true,
+    calendar: true,
+    documents: true,
+    cirs: true,
+    contacts: true,
+    hygiene: true,
+    training: true,
+    protocols: true,
+    journal: true,
+    appraisals: true,
+    skills: true,
+    workplaces: true,
+    rooms: true,
+    equipment: true,
+    dienstplan: true,
+    zeiterfassung: true,
+    analytics: true,
+    knowledge: true,
+    strategy: true,
+    leadership: true,
+    wellbeing: true,
+    leitbild: true,
+    selfcheck: true,
+    organigramm: true,
   })
   const [badgeSettings, setBadgeSettings] = useState({ tasks: true, goals: true, workflows: true, candidates: true })
   const [mounted, setMounted] = useState(false)
@@ -435,9 +528,81 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   const initialLoadDone = useRef(false)
 
-  const isAdmin = isPracticeAdminRole(currentUser?.role) || currentUser?.role === "admin"
+  const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true
   const sidebarGroups = getNavigationGroups(isAdmin, isSuperAdmin, t)
+
+  // Fetch sidebar badge counts
+  useEffect(() => {
+    const loadBadgeCounts = async () => {
+      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+      if (!practiceId) return
+
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/sidebar-badges`)
+        if (response.ok) {
+          const data = await response.json()
+          setBadgeCounts((prev) => ({
+            ...prev,
+            ...data,
+          }))
+        }
+      } catch (error) {
+        console.error("[v0] Error loading badge counts:", error)
+      }
+    }
+
+    loadBadgeCounts()
+    
+    // Refresh badge counts every 2 minutes
+    const interval = setInterval(loadBadgeCounts, 120000)
+    return () => clearInterval(interval)
+  }, [currentPractice?.id])
+
+  // Load badge visibility preferences
+  useEffect(() => {
+    const loadBadgeVisibility = async () => {
+      if (!currentUser?.id) return
+
+      try {
+        const response = await fetch(`/api/user/preferences?userId=${currentUser.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.preferences?.badge_visibility) {
+            setBadgeVisibility((prev) => ({
+              ...prev,
+              ...data.preferences.badge_visibility,
+            }))
+          }
+        }
+      } catch (error) {
+        console.error("[v0] Error loading badge visibility preferences:", error)
+      }
+    }
+
+    loadBadgeVisibility()
+
+    // Listen for badge visibility changes from profile settings
+    const handleBadgeVisibilityChange = (event: CustomEvent<Record<string, boolean>>) => {
+      setBadgeVisibility((prev) => ({
+        ...prev,
+        ...event.detail,
+      }))
+    }
+
+    window.addEventListener("badge-visibility-changed", handleBadgeVisibilityChange as EventListener)
+
+    // Listen for favorites updates from profile settings
+    const handleFavoritesUpdated = (event: CustomEvent<string[]>) => {
+      setFavorites(event.detail)
+    }
+    window.addEventListener("favorites-updated", handleFavoritesUpdated as EventListener)
+
+    return () => {
+      window.removeEventListener("badge-visibility-changed", handleBadgeVisibilityChange as EventListener)
+      window.removeEventListener("favorites-updated", handleFavoritesUpdated as EventListener)
+    }
+  }, [currentUser?.id])
 
   useEffect(() => {
     const loadSidebarPreferences = async () => {
@@ -456,18 +621,53 @@ export function AppSidebar({ className }: AppSidebarProps) {
               setExpandedGroups(["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"])
             }
 
-            // Load favorites from database
-            try {
-              const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites`)
-              if (favoritesResponse.ok) {
-                const favoritesData = await favoritesResponse.json()
-                if (favoritesData.favorites && Array.isArray(favoritesData.favorites)) {
-                  setFavorites(favoritesData.favorites)
-                }
-              }
-            } catch (error) {
-              console.error("[v0] Error loading favorites:", error)
-            }
+  // Load favorites from database with localStorage fallback
+  try {
+  const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites`)
+  if (favoritesResponse.ok) {
+  const favoritesData = await favoritesResponse.json()
+  if (favoritesData.favorites && Array.isArray(favoritesData.favorites) && favoritesData.favorites.length > 0) {
+  setFavorites(favoritesData.favorites)
+  // Sync to localStorage
+  try {
+    localStorage.setItem(`sidebar_favorites_${currentUser.id}`, JSON.stringify(favoritesData.favorites))
+  } catch (e) {}
+  } else if (favoritesData.useLocalStorage) {
+  // API indicated to use localStorage, try to load from there
+  try {
+    const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser.id}`)
+    if (localFavorites) {
+      setFavorites(JSON.parse(localFavorites))
+    }
+  } catch (e) {}
+  } else {
+    // Try localStorage as fallback
+    try {
+      const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser.id}`)
+      if (localFavorites) {
+        setFavorites(JSON.parse(localFavorites))
+      }
+    } catch (e) {}
+  }
+  } else {
+    // API failed, try localStorage
+    try {
+      const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser.id}`)
+      if (localFavorites) {
+        setFavorites(JSON.parse(localFavorites))
+      }
+    } catch (e) {}
+  }
+  } catch (error) {
+  console.error("[v0] Error loading favorites:", error)
+  // Try localStorage as fallback
+  try {
+    const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser?.id || 'guest'}`)
+    if (localFavorites) {
+      setFavorites(JSON.parse(localFavorites))
+    }
+  } catch (e) {}
+  }
 
             if (data.preferences.expanded_items) {
               if (data.preferences.expanded_items.lastPath) {
@@ -658,27 +858,34 @@ export function AppSidebar({ className }: AppSidebarProps) {
     router.push(href)
   }
 
-  const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-
-    const isAdding = !favorites.includes(href)
-    const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
-    
-    // Update state immediately for responsive UI
-    setFavorites(newFavorites)
-    
-    // Save to database
-    if (currentUser?.id) {
-      try {
-        const response = await fetch(`/api/users/${currentUser.id}/favorites`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            item_path: href,
-            action: isAdding ? "add" : "remove",
+const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
+  if (e) {
+  e.preventDefault()
+  e.stopPropagation()
+  }
+  
+  const isAdding = !favorites.includes(href)
+  const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
+  
+  // Update state immediately for responsive UI
+  setFavorites(newFavorites)
+  
+  // Always save to localStorage as backup
+  try {
+    localStorage.setItem(`sidebar_favorites_${currentUser?.id || 'guest'}`, JSON.stringify(newFavorites))
+  } catch (e) {
+    // localStorage not available
+  }
+  
+  // Save to database
+  if (currentUser?.id) {
+  try {
+  const response = await fetch(`/api/users/${currentUser.id}/favorites`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+  item_path: href,
+  action: isAdding ? "add" : "remove",
           }),
         })
 
@@ -818,7 +1025,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
                   {favoriteItems.map((item) => {
                     const Icon = item.icon
                     const isActive = pathname === item.href
-                    const badgeCount = badgeCounts[item.badge || item.key || ""]
+                    const badgeKey = item.badge || item.key || ""
+                    const badgeCount = badgeVisibility[badgeKey] !== false ? badgeCounts[badgeKey] : 0
 
                     return (
                       <ContextMenu key={`fav-${item.href}`}>
@@ -887,7 +1095,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
                         const Icon = item.icon
                         const isActive = pathname === item.href
-                        const badgeCount = badgeCounts[item.badge || item.key || ""]
+                        const badgeKey = item.badge || item.key || ""
+                        const badgeCount = badgeVisibility[badgeKey] !== false ? badgeCounts[badgeKey] : 0
                         const isFavorite = favorites.includes(item.href)
 
                         return (

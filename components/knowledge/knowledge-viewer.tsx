@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
+import { isPracticeAdminRole, isSuperAdminRole } from "@/lib/auth-utils"
 import {
   Dialog,
   DialogContent,
@@ -137,7 +138,7 @@ export function KnowledgeViewer({ open, onOpenChange, article, onEdit, onDelete 
             </div>
           )}
 
-          {article.requires_confirmation && currentUser?.role === "admin" && (
+          {article.requires_confirmation && (isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)) && (
             <div className="border-t pt-4">
               <h4 className="font-semibold text-sm mb-3">Bestätigungen ({confirmations.length})</h4>
               {loadingConfirmations ? (

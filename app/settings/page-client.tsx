@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { AppLayout } from "@/components/app-layout"
+import { isPracticeAdminRole, isSuperAdminRole } from "@/lib/auth-utils"
 
 // Import all extracted tab components
 import { PracticeSettingsTab } from "@/components/settings/practice-settings-tab"
@@ -50,7 +51,7 @@ export default function SettingsPageClient() {
     setMounted(true)
   }, [])
 
-  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "practice_owner"
+  const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
 
   if (!mounted || practiceLoading) {
     return <AppLayout loading loadingMessage="Einstellungen werden geladen..." />
@@ -128,12 +129,10 @@ export default function SettingsPageClient() {
               <LayoutGrid className="h-4 w-4" />
               <span>Orga-Kategorien</span>
             </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="parameters" className="gap-2 whitespace-nowrap">
-                <Target className="h-4 w-4" />
-                <span>Kennzahlen</span>
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="parameters" className="gap-2 whitespace-nowrap">
+              <Target className="h-4 w-4" />
+              <span>Kennzahlen</span>
+            </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="team-order" className="gap-2 whitespace-nowrap">
                 <Users className="h-4 w-4" />
@@ -204,12 +203,10 @@ export default function SettingsPageClient() {
             <OrgaCategoriesManager />
           </TabsContent>
 
-          {/* Parameters Tab (Admin only) */}
-          {isAdmin && (
-            <TabsContent value="parameters">
-              <PracticeParameterManagement />
-            </TabsContent>
-          )}
+          {/* Parameters Tab */}
+          <TabsContent value="parameters">
+            <PracticeParameterManagement />
+          </TabsContent>
 
           {/* Team Order Tab (Admin only) */}
           {isAdmin && (

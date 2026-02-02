@@ -59,6 +59,16 @@ interface MenuItem {
     | "recommendations"
     | "totalUsers"
     | "kpiCategories"
+    | "features"
+    | "chatLogs"
+    | "landingpages"
+    | "academy"
+    | "skills"
+    | "workflows"
+    | "checklists"
+    | "documents"
+    | "teams"
+    | "eventTypes"
   subitems?: MenuItem[]
 }
 
@@ -87,6 +97,16 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
   const [recommendationsCount, setRecommendationsCount] = useState(0)
   const [totalUsersCount, setTotalUsersCount] = useState(0)
   const [kpiCategoriesCount, setKpiCategoriesCount] = useState(0)
+  const [featuresCount, setFeaturesCount] = useState(0)
+  const [chatLogsCount, setChatLogsCount] = useState(0)
+  const [landingpagesCount, setLandingpagesCount] = useState(0)
+  const [academyCount, setAcademyCount] = useState(0)
+  const [skillsCount, setSkillsCount] = useState(0)
+  const [workflowsCount, setWorkflowsCount] = useState(0)
+  const [checklistsCount, setChecklistsCount] = useState(0)
+  const [documentsCount, setDocumentsCount] = useState(0)
+  const [teamsCount, setTeamsCount] = useState(0)
+  const [eventTypesCount, setEventTypesCount] = useState(0)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -389,6 +409,75 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       }
     }
 
+    const loadFeaturesCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/features")
+        if (response.ok) {
+          const data = await response.json()
+          setFeaturesCount(data.features?.length || 0)
+        }
+      } catch (error) {
+        console.debug("Error loading features count:", error)
+        setFeaturesCount(0)
+      }
+    }
+
+    const loadChatLogsCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/chat-logs/count")
+        if (response.ok) {
+          const data = await response.json()
+          setChatLogsCount(data.count || 0)
+        }
+      } catch (error) {
+        console.debug("Error loading chat logs count:", error)
+        setChatLogsCount(0)
+      }
+    }
+
+    const loadLandingpagesCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/landingpages/count")
+        if (response.ok) {
+          const data = await response.json()
+          setLandingpagesCount(data.count || 0)
+        }
+      } catch (error) {
+        console.debug("Error loading landingpages count:", error)
+        setLandingpagesCount(0)
+      }
+    }
+
+    const loadAcademyCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/academy/count")
+        if (response.ok) {
+          const data = await response.json()
+          setAcademyCount(data.count || 0)
+        }
+      } catch (error) {
+        console.debug("Error loading academy count:", error)
+        setAcademyCount(0)
+      }
+    }
+
+    const loadTemplatesCount = async () => {
+      try {
+        const response = await fetch("/api/super-admin/content/counts")
+        if (response.ok) {
+          const data = await response.json()
+          setSkillsCount(data.skills || 0)
+          setWorkflowsCount(data.workflows || 0)
+          setChecklistsCount(data.checklists || 0)
+          setDocumentsCount(data.documents || 0)
+          setTeamsCount(data.teams || 0)
+          setEventTypesCount(data.eventTypes || 0)
+        }
+      } catch (error) {
+        console.debug("Error loading templates count:", error)
+      }
+    }
+
     loadWaitlistCount()
     loadTicketCount()
     loadBackupCount()
@@ -400,6 +489,11 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
     loadActivePracticesCount()
     loadRecommendationsCount()
     loadKpiCategoriesCount()
+    loadFeaturesCount()
+    loadChatLogsCount()
+    loadLandingpagesCount()
+    loadAcademyCount()
+    loadTemplatesCount()
 
     const interval = setInterval(() => {
       loadWaitlistCount()
@@ -413,6 +507,11 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       loadActivePracticesCount()
       loadRecommendationsCount()
       loadKpiCategoriesCount()
+      loadFeaturesCount()
+      loadChatLogsCount()
+      loadLandingpagesCount()
+      loadAcademyCount()
+      loadTemplatesCount()
     }, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -423,12 +522,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        await fetch("/api/user/sidebar-preferences", {
+        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             practice_id: "super-admin",
-            sidebar_collapsed: newCollapsed,
+            is_collapsed: newCollapsed,
           }),
         })
       } catch (error) {
@@ -447,7 +546,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        await fetch("/api/user/sidebar-preferences", {
+        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -471,7 +570,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
 
     if (currentUser?.id) {
       try {
-        await fetch("/api/user/sidebar-preferences", {
+        await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -501,6 +600,16 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       recommendations: recommendationsCount,
       totalUsers: totalUsersCount,
       kpiCategories: kpiCategoriesCount,
+      features: featuresCount,
+      chatLogs: chatLogsCount,
+      landingpages: landingpagesCount,
+      academy: academyCount,
+      skills: skillsCount,
+      workflows: workflowsCount,
+      checklists: checklistsCount,
+      documents: documentsCount,
+      teams: teamsCount,
+      eventTypes: eventTypesCount,
     }
     return counts[badgeType] || 0
   }
@@ -577,36 +686,48 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
               label: "Skills",
               icon: Award,
               href: "/super-admin/content?tab=skills",
+              badge: true,
+              badgeType: "skills" as const,
             },
             {
               id: "workflows",
               label: "Workflows",
               icon: Workflow,
               href: "/super-admin/content?tab=workflows",
+              badge: true,
+              badgeType: "workflows" as const,
             },
             {
               id: "checklisten",
               label: "Checklisten",
               icon: ClipboardCheck,
               href: "/super-admin/content?tab=checklisten",
+              badge: true,
+              badgeType: "checklists" as const,
             },
             {
               id: "dokumente",
               label: "Dokumente",
               icon: FileText,
               href: "/super-admin/content?tab=dokumente",
+              badge: true,
+              badgeType: "documents" as const,
             },
             {
               id: "teams",
               label: "Teams / Gruppen",
               icon: Users,
               href: "/super-admin/content?tab=teams",
+              badge: true,
+              badgeType: "teams" as const,
             },
             {
               id: "event-types",
               label: "Event-Typen",
               icon: ClipboardCheck,
               href: "/super-admin/content?tab=event-types",
+              badge: true,
+              badgeType: "eventTypes" as const,
             },
           ],
         },
@@ -621,6 +742,8 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           label: "Academy",
           icon: GraduationCap,
           href: "/super-admin/academy",
+          badge: true,
+          badgeType: "academy" as const,
         },
         {
           id: "waitlist",
@@ -673,6 +796,8 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           label: "Landingpages",
           icon: LayoutPanelLeft,
           href: "/super-admin/landingpages",
+          badge: true,
+          badgeType: "landingpages" as const,
         },
       ],
     },
@@ -705,12 +830,16 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           label: "Feature-Verwaltung",
           icon: ToggleLeft,
           href: "/super-admin/features",
+          badge: true,
+          badgeType: "features" as const,
         },
         {
           id: "chat-logs",
           label: "Chat-Protokolle",
           icon: MessageSquare,
           href: "/super-admin/chat-logs",
+          badge: true,
+          badgeType: "chatLogs" as const,
         },
         {
           id: "admin-settings",

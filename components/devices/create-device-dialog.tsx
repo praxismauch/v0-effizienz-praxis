@@ -698,9 +698,10 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
 
         const formData = new FormData()
         formData.append("file", file)
-        formData.append("folder", `devices/instructions/${currentPractice.id}`)
+        formData.append("type", "general")
+        formData.append("practiceId", currentPractice.id)
 
-        const response = await fetch("/api/upload", {
+        const response = await fetch("/api/upload/unified", {
           method: "POST",
           body: formData,
         })

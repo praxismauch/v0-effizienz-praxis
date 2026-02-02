@@ -870,17 +870,27 @@ export function GlobalParameterManagement() {
         </Badge>
       </div>
 
-      <Tabs defaultValue="parameters" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="parameters" className="gap-2">
-            <Database className="h-4 w-4" />
-            {t("kpi.global_kpis", "Global KPIs")}
-          </TabsTrigger>
-        <TabsTrigger value="groups" className="gap-2">
-          <BarChart3 className="h-4 w-4" />
-          {t("kpi.categories", "Kategorien")}
-          </TabsTrigger>
-        </TabsList>
+  <Tabs defaultValue="parameters" className="space-y-6">
+  <TabsList className="grid w-full grid-cols-2">
+  <TabsTrigger value="parameters" className="gap-2">
+  <Database className="h-4 w-4" />
+  {t("kpi.global_kpis", "Globale KPIs")}
+  {parameters.length > 0 && (
+    <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 text-xs">
+      {parameters.length}
+    </Badge>
+  )}
+  </TabsTrigger>
+  <TabsTrigger value="groups" className="gap-2">
+  <BarChart3 className="h-4 w-4" />
+  {t("kpi.categories", "Kategorien")}
+  {groups.length > 0 && (
+    <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 text-xs">
+      {groups.length}
+    </Badge>
+  )}
+  </TabsTrigger>
+  </TabsList>
 
         <TabsContent value="parameters" className="space-y-6">
           <Card>

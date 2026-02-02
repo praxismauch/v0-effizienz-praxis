@@ -61,6 +61,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
+import { isPracticeAdminRole, isSuperAdminRole } from "@/lib/auth-utils"
 
 interface HolidayRequest {
   id: string
@@ -197,7 +198,7 @@ export function HolidayPlanner() {
     console.log("[v0] filtered active members:", teamMembers?.filter(isActiveMember))
   }, [teamMembers, contextTeamMembers, localTeamMembers, teamLoading])
 
-  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "owner" || currentUser?.role === "super_admin"
+  const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
 
   // Find current user's team member ID
   const currentTeamMember = teamMembers?.find((m) => m.user_id === currentUser?.id)

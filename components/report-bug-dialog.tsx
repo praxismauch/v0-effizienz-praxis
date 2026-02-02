@@ -27,8 +27,9 @@ import { typesToOptions, prioritiesToOptions } from "@/lib/tickets/utils"
 async function uploadFileToServer(file: File): Promise<string> {
   const formData = new FormData()
   formData.append("file", file)
+  formData.append("type", "general")
 
-  const response = await fetch("/api/upload", {
+  const response = await fetch("/api/upload/unified", {
     method: "POST",
     body: formData,
   })

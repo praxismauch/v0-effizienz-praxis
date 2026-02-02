@@ -20,12 +20,12 @@ export function AcademyComingSoon() {
     setError("")
 
     try {
-      const response = await fetch("/api/academy-waitlist", {
+      const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, source: "academy_coming_soon" }),
       })
 
       const data = await response.json()

@@ -43,6 +43,7 @@ import { useUser } from "@/contexts/user-context"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
+import { isPracticeAdminRole, isSuperAdminRole } from "@/lib/auth-utils"
 
 interface SickLeave {
   id: string
@@ -101,7 +102,7 @@ function SickLeavesManager({ teamMembers = [] }: SickLeavesManagerProps) {
   const [formNotes, setFormNotes] = useState("")
   const [formUserId, setFormUserId] = useState("")
 
-  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "practice_admin" || currentUser?.is_super_admin
+  const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin
 
   useEffect(() => {
     fetchSickLeaves()

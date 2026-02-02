@@ -174,6 +174,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/practice-insights",
         icon: TrendingUp,
         key: "journal",
+        badge: "journal",
       },
       {
         name: t("sidebar.knowledge", "Wissen"),
@@ -287,6 +288,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/mitarbeitergespraeche",
         icon: MessageCircle,
         key: "mitarbeitergespraeche",
+        badge: "appraisals",
       },
       {
         name: t("sidebar.selbst_check", "Selbst-Check"),
@@ -299,6 +301,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/skills",
         icon: Award,
         key: "skills",
+        badge: "skills",
       },
       {
         name: t("sidebar.organigramm", "Organigramm"),
@@ -338,18 +341,21 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/arbeitsplaetze",
         icon: BriefcaseBusiness,
         key: "arbeitsplaetze",
+        badge: "workplaces",
       },
       {
         name: t("sidebar.rooms", "Räume"),
         href: "/rooms",
         icon: Pin,
         key: "rooms",
+        badge: "rooms",
       },
       {
         name: t("sidebar.arbeitsmittel", "Arbeitsmittel"),
         href: "/arbeitsmittel",
         icon: Wrench,
         key: "arbeitsmittel",
+        badge: "equipment",
       },
       {
         name: t("sidebar.inventory", "Material"),
@@ -415,6 +421,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
     hygiene: number
     training: number
     protocols: number
+    journal: number
+    appraisals: number
+    skills: number
+    workplaces: number
+    rooms: number
+    equipment: number
   }>({
     tasks: 0,
     goals: 0,
@@ -434,6 +446,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
     hygiene: 0,
     training: 0,
     protocols: 0,
+    journal: 0,
+    appraisals: 0,
+    skills: 0,
+    workplaces: 0,
+    rooms: 0,
+    equipment: 0,
   })
   const [badgeSettings, setBadgeSettings] = useState({ tasks: true, goals: true, workflows: true, candidates: true })
   const [mounted, setMounted] = useState(false)

@@ -49,6 +49,12 @@ export async function getSidebarBadges(practiceId: string) {
     hygiene: 0,
     training: 0,
     protocols: 0,
+    journal: 0,
+    appraisals: 0,
+    skills: 0,
+    workplaces: 0,
+    rooms: 0,
+    equipment: 0,
   }
 
   try {
@@ -174,6 +180,42 @@ export async function getSidebarBadges(practiceId: string) {
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
+      // Journal entries
+      supabase
+        .from("practice_insights")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null),
+      // Appraisals (scheduled/pending)
+      supabase
+        .from("team_member_appraisals")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .in("status", ["scheduled", "pending", "in_progress"]),
+      // Skills/Competencies
+      supabase
+        .from("skills")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null),
+      // Workplaces
+      supabase
+        .from("workplaces")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null),
+      // Rooms
+      supabase
+        .from("rooms")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null),
+      // Equipment/Arbeitsmittel
+      supabase
+        .from("equipment")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null),
     ])
 
     const [
@@ -194,6 +236,12 @@ export async function getSidebarBadges(practiceId: string) {
       hygieneResult,
       trainingResult,
       protocolsResult,
+      journalResult,
+      appraisalsResult,
+      skillsResult,
+      workplacesResult,
+      roomsResult,
+      equipmentResult,
     ] = results
 
     const badges = {
@@ -214,6 +262,12 @@ export async function getSidebarBadges(practiceId: string) {
       hygiene: Number(hygieneResult.count) || 0,
       training: Number(trainingResult.count) || 0,
       protocols: Number(protocolsResult.count) || 0,
+      journal: Number(journalResult.count) || 0,
+      appraisals: Number(appraisalsResult.count) || 0,
+      skills: Number(skillsResult.count) || 0,
+      workplaces: Number(workplacesResult.count) || 0,
+      rooms: Number(roomsResult.count) || 0,
+      equipment: Number(equipmentResult.count) || 0,
     }
 
     return {

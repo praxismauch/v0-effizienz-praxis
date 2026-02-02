@@ -20,6 +20,12 @@ const defaultBadges = {
   hygiene: 0,
   training: 0,
   protocols: 0,
+  journal: 0,
+  appraisals: 0,
+  skills: 0,
+  workplaces: 0,
+  rooms: 0,
+  equipment: 0,
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {

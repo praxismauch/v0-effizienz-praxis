@@ -186,6 +186,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/protocols",
         icon: FileCheck,
         key: "protocols",
+        badge: "protocols",
       },
       {
         name: t("sidebar.cirs", "Verbesserungsmeldung"),
@@ -205,6 +206,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/hygieneplan",
         icon: Shield,
         key: "hygieneplan",
+        badge: "hygiene",
       },
     ],
   },
@@ -309,6 +311,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/training",
         icon: Award,
         key: "training",
+        badge: "training",
       },
     ],
   },
@@ -410,6 +413,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
     cirs: number
     contacts: number
     hygiene: number
+    training: number
+    protocols: number
   }>({
     tasks: 0,
     goals: 0,
@@ -427,6 +432,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
     cirs: 0,
     contacts: 0,
     hygiene: 0,
+    training: 0,
+    protocols: 0,
   })
   const [badgeSettings, setBadgeSettings] = useState({ tasks: true, goals: true, workflows: true, candidates: true })
   const [mounted, setMounted] = useState(false)

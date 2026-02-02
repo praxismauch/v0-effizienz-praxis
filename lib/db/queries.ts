@@ -42,6 +42,13 @@ export async function getSidebarBadges(practiceId: string) {
     surveys: 0,
     inventory: 0,
     devices: 0,
+    calendar: 0,
+    documents: 0,
+    cirs: 0,
+    contacts: 0,
+    hygiene: 0,
+    training: 0,
+    protocols: 0,
   }
 
   try {
@@ -55,56 +62,115 @@ export async function getSidebarBadges(practiceId: string) {
       throw clientError
     }
 
+    // Get today's date for calendar events
+    const today = new Date().toISOString().split("T")[0]
+    const endOfDay = new Date()
+    endOfDay.setHours(23, 59, 59, 999)
+
     const results = await Promise.all([
+      // Tasks (incomplete)
       supabase
         .from("todos")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .eq("completed", false),
+      // Goals (active)
       supabase
         .from("goals")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .not("status", "in", "(completed,cancelled)"),
+      // Workflows (active)
       supabase
         .from("workflows")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .eq("status", "active"),
+      // Candidates (not archived)
       supabase
         .from("candidates")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .neq("status", "Archiv"),
+      // Tickets (open)
       supabase
         .from("tickets")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .neq("status", "resolved")
         .neq("status", "closed"),
+      // Team members (active)
       supabase
         .from("team_members")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .eq("status", "active"),
+      // Responsibilities
       supabase
         .from("responsibilities")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
+      // Survey responses (completed)
       supabase
         .from("survey_responses")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .eq("status", "completed")
         .is("deleted_at", null),
+      // Inventory items
       supabase
         .from("inventory_items")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
+      // Medical devices
       supabase
         .from("medical_devices")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null),
+      // Calendar events (today)
+      supabase
+        .from("calendar_events")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .gte("start_time", today)
+        .lte("start_time", endOfDay.toISOString()),
+      // Documents
+      supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null),
+      // CIRS reports (open/pending)
+      supabase
+        .from("cirs_reports")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .in("status", ["new", "in_progress", "pending"]),
+      // Contacts
+      supabase
+        .from("contacts")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null),
+      // Hygiene tasks (due/overdue)
+      supabase
+        .from("hygiene_tasks")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .eq("status", "pending")
+        .lte("due_date", today),
+      // Training records (upcoming/required)
+      supabase
+        .from("training_records")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .eq("status", "required"),
+      // Protocols (recent)
+      supabase
+        .from("protocols")
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
@@ -121,6 +187,13 @@ export async function getSidebarBadges(practiceId: string) {
       surveysResult,
       inventoryResult,
       devicesResult,
+      calendarResult,
+      documentsResult,
+      cirsResult,
+      contactsResult,
+      hygieneResult,
+      trainingResult,
+      protocolsResult,
     ] = results
 
     const badges = {
@@ -134,6 +207,13 @@ export async function getSidebarBadges(practiceId: string) {
       surveys: Number(surveysResult.count) || 0,
       inventory: Number(inventoryResult.count) || 0,
       devices: Number(devicesResult.count) || 0,
+      calendar: Number(calendarResult.count) || 0,
+      documents: Number(documentsResult.count) || 0,
+      cirs: Number(cirsResult.count) || 0,
+      contacts: Number(contactsResult.count) || 0,
+      hygiene: Number(hygieneResult.count) || 0,
+      training: Number(trainingResult.count) || 0,
+      protocols: Number(protocolsResult.count) || 0,
     }
 
     return {

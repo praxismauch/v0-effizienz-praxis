@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { cn } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -215,9 +216,18 @@ interface UIItemsData {
   categories: UICategory[]
 }
 
+interface TestCriteria {
+  functionality: "pass" | "fail" | "untested"
+  responsiveness: "pass" | "fail" | "untested" | "na"
+  accessibility: "pass" | "fail" | "untested" | "na"
+}
+
 interface TestItemStatus {
   status: "working" | "not_working" | "untested"
+  criteria: TestCriteria
   notes: string
+  severity?: "critical" | "major" | "minor"
+  screenshot?: string
 }
 
 interface TestRun {
@@ -286,7 +296,15 @@ export default function UIItemsTestManager() {
     data.categories.forEach((category) => {
       category.sections.forEach((section) => {
         section.items.forEach((item) => {
-          initialItems[item.id] = { status: "untested", notes: "" }
+          initialItems[item.id] = {
+            status: "untested",
+            criteria: {
+              functionality: "untested",
+              responsiveness: "untested",
+              accessibility: "untested",
+            },
+            notes: "",
+          }
         })
       })
     })
@@ -388,6 +406,37 @@ export default function UIItemsTestManager() {
     }))
   }
 
+  const setItemCriteria = (itemId: string, criteriaType: keyof TestCriteria, value: TestCriteria[keyof TestCriteria]) => {
+    setTestItems((prev) => {
+      const item = prev[itemId]
+      const newCriteria = { ...item.criteria, [criteriaType]: value }
+      
+      // Auto-calculate overall status based on criteria
+      const criteriaValues = Object.values(newCriteria).filter(v => v !== "na")
+      let newStatus: "working" | "not_working" | "untested" = "untested"
+      
+      if (criteriaValues.some(v => v === "fail")) {
+        newStatus = "not_working"
+      } else if (criteriaValues.every(v => v === "pass")) {
+        newStatus = "working"
+      } else if (criteriaValues.some(v => v === "pass")) {
+        newStatus = "untested" // Partially tested
+      }
+      
+      return {
+        ...prev,
+        [itemId]: { ...item, criteria: newCriteria, status: newStatus },
+      }
+    })
+  }
+
+  const setItemSeverity = (itemId: string, severity: "critical" | "major" | "minor" | undefined) => {
+    setTestItems((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], severity },
+    }))
+  }
+
   const markAllAs = (status: "working" | "not_working" | "untested") => {
     const updated = { ...testItems }
     Object.keys(updated).forEach((key) => {
@@ -398,11 +447,21 @@ export default function UIItemsTestManager() {
 
   const getSummary = () => {
     const items = Object.values(testItems)
+    const criticalIssues = items.filter((i) => i.status === "not_working" && i.severity === "critical").length
+    const majorIssues = items.filter((i) => i.status === "not_working" && i.severity === "major").length
+    const minorIssues = items.filter((i) => i.status === "not_working" && i.severity === "minor").length
+    
     return {
       total: items.length,
       working: items.filter((i) => i.status === "working").length,
       not_working: items.filter((i) => i.status === "not_working").length,
       untested: items.filter((i) => i.status === "untested").length,
+      criticalIssues,
+      majorIssues,
+      minorIssues,
+      functionalityPassed: items.filter((i) => i.criteria?.functionality === "pass").length,
+      responsivenessPassed: items.filter((i) => i.criteria?.responsiveness === "pass").length,
+      accessibilityPassed: items.filter((i) => i.criteria?.accessibility === "pass").length,
     }
   }
 
@@ -554,7 +613,7 @@ export default function UIItemsTestManager() {
                 )}
               </CardTitle>
               <CardDescription>
-                Testen Sie alle UI-Elemente der Anwendung
+                Systematischer End-to-End Test aller UI-Elemente: Funktionalitaet, Responsiveness und Barrierefreiheit
                 {uiItemsData && <span className="text-xs ml-2">(Version: {uiItemsData.version})</span>}
               </CardDescription>
             </div>
@@ -583,7 +642,7 @@ export default function UIItemsTestManager() {
             </div>
             <div className="text-center p-3 bg-green-500/10 rounded-lg">
               <div className="text-2xl font-bold text-green-600">{summary.working}</div>
-              <div className="text-xs text-muted-foreground">Funktioniert</div>
+              <div className="text-xs text-muted-foreground">Bestanden</div>
             </div>
             <div className="text-center p-3 bg-red-500/10 rounded-lg">
               <div className="text-2xl font-bold text-red-600">{summary.not_working}</div>
@@ -591,9 +650,38 @@ export default function UIItemsTestManager() {
             </div>
             <div className="text-center p-3 bg-yellow-500/10 rounded-lg">
               <div className="text-2xl font-bold text-yellow-600">{summary.untested}</div>
-              <div className="text-xs text-muted-foreground">Ungetestet</div>
+              <div className="text-xs text-muted-foreground">Offen</div>
             </div>
           </div>
+          
+          {/* Criteria Breakdown */}
+          <div className="grid grid-cols-3 gap-3 mb-4 p-3 bg-muted/50 rounded-lg">
+            <div className="text-center">
+              <div className="text-sm font-medium text-muted-foreground">Funktionalitaet</div>
+              <div className="text-lg font-semibold">{summary.functionalityPassed}/{summary.total}</div>
+            </div>
+            <div className="text-center border-x border-border">
+              <div className="text-sm font-medium text-muted-foreground">Responsiveness</div>
+              <div className="text-lg font-semibold">{summary.responsivenessPassed}/{summary.total}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-muted-foreground">Barrierefreiheit</div>
+              <div className="text-lg font-semibold">{summary.accessibilityPassed}/{summary.total}</div>
+            </div>
+          </div>
+          
+          {/* Issue Severity */}
+          {summary.not_working > 0 && (
+            <div className="flex items-center gap-3 mb-4 p-2 bg-red-500/5 rounded-lg border border-red-500/20">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <span className="text-sm">
+                Probleme: 
+                {summary.criticalIssues > 0 && <Badge variant="destructive" className="ml-2">{summary.criticalIssues} Kritisch</Badge>}
+                {summary.majorIssues > 0 && <Badge variant="outline" className="ml-1 border-orange-500 text-orange-600">{summary.majorIssues} Hoch</Badge>}
+                {summary.minorIssues > 0 && <Badge variant="outline" className="ml-1">{summary.minorIssues} Gering</Badge>}
+              </span>
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div className="flex flex-wrap gap-2 mb-4">
@@ -678,52 +766,128 @@ export default function UIItemsTestManager() {
                               {section.items.map((item) => {
                                 const ItemIcon = getIcon(item.icon)
                                 const itemStatus = testItems[item.id]
+                                const criteria = itemStatus?.criteria || { functionality: "untested", responsiveness: "untested", accessibility: "untested" }
+                                
+                                const getCriteriaButtonClass = (value: string) => {
+                                  if (value === "pass") return "bg-green-600 hover:bg-green-700 text-white"
+                                  if (value === "fail") return "bg-red-600 hover:bg-red-700 text-white"
+                                  if (value === "na") return "bg-gray-400 hover:bg-gray-500 text-white"
+                                  return ""
+                                }
+                                
                                 return (
                                   <div
                                     key={item.id}
-                                    className="flex items-center justify-between p-2 rounded border bg-card"
+                                    className={cn(
+                                      "p-3 rounded border bg-card",
+                                      itemStatus?.status === "working" && "border-green-500/50",
+                                      itemStatus?.status === "not_working" && "border-red-500/50",
+                                    )}
                                   >
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      <ItemIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                      <div className="min-w-0">
-                                        <div className="text-sm font-medium truncate">{item.name}</div>
-                                        {item.path && (
-                                          <div className="text-xs text-muted-foreground truncate">{item.path}</div>
-                                        )}
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <ItemIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                        <div className="min-w-0">
+                                          <div className="text-sm font-medium truncate">{item.name}</div>
+                                          {item.path && (
+                                            <div className="text-xs text-muted-foreground truncate">{item.path}</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {itemStatus?.status === "not_working" && (
+                                        <select
+                                          value={itemStatus.severity || ""}
+                                          onChange={(e) => setItemSeverity(item.id, e.target.value as "critical" | "major" | "minor" || undefined)}
+                                          className="h-7 text-xs rounded border bg-background px-2"
+                                        >
+                                          <option value="">Schweregrad</option>
+                                          <option value="critical">Kritisch</option>
+                                          <option value="major">Hoch</option>
+                                          <option value="minor">Gering</option>
+                                        </select>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Test Criteria Grid */}
+                                    <div className="grid grid-cols-3 gap-2 mb-2">
+                                      <div className="text-center">
+                                        <div className="text-xs text-muted-foreground mb-1">Funktion</div>
+                                        <div className="flex gap-0.5 justify-center">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn("h-6 w-6 p-0", criteria.functionality === "pass" && getCriteriaButtonClass("pass"))}
+                                            onClick={() => setItemCriteria(item.id, "functionality", "pass")}
+                                            title="Funktioniert"
+                                          >
+                                            <Check className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn("h-6 w-6 p-0", criteria.functionality === "fail" && getCriteriaButtonClass("fail"))}
+                                            onClick={() => setItemCriteria(item.id, "functionality", "fail")}
+                                            title="Fehlerhaft"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-xs text-muted-foreground mb-1">Responsiv</div>
+                                        <div className="flex gap-0.5 justify-center">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn("h-6 w-6 p-0", criteria.responsiveness === "pass" && getCriteriaButtonClass("pass"))}
+                                            onClick={() => setItemCriteria(item.id, "responsiveness", "pass")}
+                                            title="Responsiv OK"
+                                          >
+                                            <Check className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn("h-6 w-6 p-0", criteria.responsiveness === "fail" && getCriteriaButtonClass("fail"))}
+                                            onClick={() => setItemCriteria(item.id, "responsiveness", "fail")}
+                                            title="Responsiv Fehler"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-xs text-muted-foreground mb-1">A11y</div>
+                                        <div className="flex gap-0.5 justify-center">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn("h-6 w-6 p-0", criteria.accessibility === "pass" && getCriteriaButtonClass("pass"))}
+                                            onClick={() => setItemCriteria(item.id, "accessibility", "pass")}
+                                            title="Barrierefrei OK"
+                                          >
+                                            <Check className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn("h-6 w-6 p-0", criteria.accessibility === "fail" && getCriteriaButtonClass("fail"))}
+                                            onClick={() => setItemCriteria(item.id, "accessibility", "fail")}
+                                            title="Barrierefrei Fehler"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0">
-                                      <Button
-                                        variant={itemStatus?.status === "working" ? "default" : "outline"}
-                                        size="sm"
-                                        className={
-                                          itemStatus?.status === "working"
-                                            ? "bg-green-600 hover:bg-green-700 h-7 w-7 p-0"
-                                            : "h-7 w-7 p-0"
-                                        }
-                                        onClick={() => setItemStatus(item.id, "working")}
-                                      >
-                                        <Check className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        variant={itemStatus?.status === "not_working" ? "default" : "outline"}
-                                        size="sm"
-                                        className={
-                                          itemStatus?.status === "not_working"
-                                            ? "bg-red-600 hover:bg-red-700 h-7 w-7 p-0"
-                                            : "h-7 w-7 p-0"
-                                        }
-                                        onClick={() => setItemStatus(item.id, "not_working")}
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </Button>
-                                      <Input
-                                        placeholder="Notiz..."
-                                        value={itemStatus?.notes || ""}
-                                        onChange={(e) => setItemNotes(item.id, e.target.value)}
-                                        className="h-7 w-32 text-xs"
-                                      />
-                                    </div>
+                                    
+                                    {/* Notes Input */}
+                                    <Input
+                                      placeholder="Notizen, gefundene Probleme..."
+                                      value={itemStatus?.notes || ""}
+                                      onChange={(e) => setItemNotes(item.id, e.target.value)}
+                                      className="h-7 text-xs"
+                                    />
                                   </div>
                                 )
                               })}

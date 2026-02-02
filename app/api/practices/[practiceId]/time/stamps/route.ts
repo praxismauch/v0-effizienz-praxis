@@ -10,7 +10,10 @@ export async function POST(
     const { practiceId: practiceIdStr } = await params
     const practiceId = parseInt(practiceIdStr, 10)
     
+    console.log("[v0] Time stamps API called with practiceId:", practiceIdStr)
+    
     if (isNaN(practiceId)) {
+      console.log("[v0] Invalid practice ID")
       return NextResponse.json(
         { error: "Invalid practice ID" },
         { status: 400 }
@@ -21,8 +24,11 @@ export async function POST(
     
     const body = await request.json()
     const { user_id, action, location, comment } = body
+    
+    console.log("[v0] Time stamps request body:", { user_id, action, location, comment: comment?.substring(0, 50) })
 
     if (!user_id) {
+      console.log("[v0] Missing user_id")
       return NextResponse.json(
         { error: "user_id is required" },
         { status: 400 }
@@ -40,6 +46,7 @@ export async function POST(
     const today = format(now, "yyyy-MM-dd")
 
     if (action === "clock_in") {
+      console.log("[v0] Processing clock_in action for user:", user_id)
       // Check if there's already an open block for today
       const { data: existingBlock } = await supabase
         .from("time_blocks")
@@ -105,6 +112,7 @@ export async function POST(
         )
       }
 
+      console.log("[v0] Clock in successful, block created:", block.id)
       return NextResponse.json({ success: true, stamp, block, status: "working" })
 
     } else if (action === "clock_out") {

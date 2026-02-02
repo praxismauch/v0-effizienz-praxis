@@ -26,6 +26,16 @@ const defaultBadges = {
   workplaces: 0,
   rooms: 0,
   equipment: 0,
+  dienstplan: 0,
+  zeiterfassung: 0,
+  analytics: 0,
+  knowledge: 0,
+  strategy: 0,
+  leadership: 0,
+  wellbeing: 0,
+  leitbild: 0,
+  selfcheck: 0,
+  organigramm: 0,
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {

@@ -114,12 +114,14 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/dienstplan",
         icon: CalendarClock,
         key: "dienstplan",
+        badge: "dienstplan",
       },
       {
         name: t("sidebar.zeiterfassung", "Zeiterfassung"),
         href: "/zeiterfassung",
         icon: Clock,
         key: "zeiterfassung",
+        badge: "zeiterfassung",
       },
       {
         name: t("sidebar.tasks", "Aufgaben"),
@@ -160,6 +162,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/analytics",
         icon: LineChart,
         key: "analytics",
+        badge: "analytics",
       },
       {
         name: t("sidebar.documents", "Dokumente"),
@@ -181,6 +184,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/knowledge",
         icon: BookOpen,
         key: "knowledge",
+        badge: "knowledge",
       },
       {
         name: t("sidebar.protocols", "Protokolle"),
@@ -220,24 +224,28 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/strategy-journey",
         icon: Compass,
         key: "strategy_journey",
+        badge: "strategy",
       },
       {
         name: "Leadership",
         href: "/leadership",
         icon: Crown,
         key: "leadership",
+        badge: "leadership",
       },
       {
         name: t("sidebar.wellbeing", "Mitarbeiter-Wellbeing"),
         href: "/wellbeing",
         icon: Heart,
         key: "wellbeing",
+        badge: "wellbeing",
       },
       {
         name: t("sidebar.leitbild", "Leitbild"),
         href: "/leitbild",
         icon: Sparkles,
         key: "leitbild",
+        badge: "leitbild",
       },
       {
         name: t("sidebar.roi_analysis", "Lohnt-es-sich-Analyse"),
@@ -295,6 +303,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/selbst-check",
         icon: Heart,
         key: "selbst_check",
+        badge: "selfcheck",
       },
       {
         name: t("sidebar.skills", "Kompetenzen"),
@@ -308,6 +317,7 @@ const getNavigationGroups = (isAdmin: boolean, isSuperAdmin: boolean, t: (key: s
         href: "/organigramm",
         icon: FolderKanban,
         key: "organigramm",
+        badge: "organigramm",
       },
       {
         name: t("sidebar.training", "Fortbildung"),
@@ -427,6 +437,16 @@ export function AppSidebar({ className }: AppSidebarProps) {
     workplaces: number
     rooms: number
     equipment: number
+    dienstplan: number
+    zeiterfassung: number
+    analytics: number
+    knowledge: number
+    strategy: number
+    leadership: number
+    wellbeing: number
+    leitbild: number
+    selfcheck: number
+    organigramm: number
   }>({
     tasks: 0,
     goals: 0,
@@ -452,6 +472,16 @@ export function AppSidebar({ className }: AppSidebarProps) {
     workplaces: 0,
     rooms: 0,
     equipment: 0,
+    dienstplan: 0,
+    zeiterfassung: 0,
+    analytics: 0,
+    knowledge: 0,
+    strategy: 0,
+    leadership: 0,
+    wellbeing: 0,
+    leitbild: 0,
+    selfcheck: 0,
+    organigramm: 0,
   })
 
   // Badge visibility preferences (default all visible)
@@ -480,6 +510,16 @@ export function AppSidebar({ className }: AppSidebarProps) {
     workplaces: true,
     rooms: true,
     equipment: true,
+    dienstplan: true,
+    zeiterfassung: true,
+    analytics: true,
+    knowledge: true,
+    strategy: true,
+    leadership: true,
+    wellbeing: true,
+    leitbild: true,
+    selfcheck: true,
+    organigramm: true,
   })
   const [badgeSettings, setBadgeSettings] = useState({ tasks: true, goals: true, workflows: true, candidates: true })
   const [mounted, setMounted] = useState(false)

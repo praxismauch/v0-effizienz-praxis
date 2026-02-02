@@ -55,6 +55,16 @@ export async function getSidebarBadges(practiceId: string) {
     workplaces: 0,
     rooms: 0,
     equipment: 0,
+    dienstplan: 0,
+    zeiterfassung: 0,
+    analytics: 0,
+    knowledge: 0,
+    strategy: 0,
+    leadership: 0,
+    wellbeing: 0,
+    leitbild: 0,
+    selfcheck: 0,
+    organigramm: 0,
   }
 
   try {
@@ -216,6 +226,61 @@ export async function getSidebarBadges(practiceId: string) {
         .select("*", { count: "exact", head: true })
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
+      // Dienstplan (shift plans for today/this week)
+      supabase
+        .from("shift_plans")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .gte("date", today),
+      // Zeiterfassung (time entries for today)
+      supabase
+        .from("time_entries")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .gte("date", today),
+      // Analytics/KPIs
+      supabase
+        .from("practice_parameters")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId),
+      // Knowledge articles
+      supabase
+        .from("knowledge_articles")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .eq("status", "published"),
+      // Strategy milestones (active)
+      supabase
+        .from("strategy_milestones")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .neq("status", "completed"),
+      // Leadership items
+      supabase
+        .from("leadership_items")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId),
+      // Wellbeing entries
+      supabase
+        .from("wellbeing_entries")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId),
+      // Leitbild elements
+      supabase
+        .from("leitbild_elements")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId),
+      // Self-check entries (pending)
+      supabase
+        .from("self_check_entries")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId)
+        .eq("status", "pending"),
+      // Organigramm nodes
+      supabase
+        .from("organigramm_nodes")
+        .select("*", { count: "exact", head: true })
+        .eq("practice_id", practiceId),
     ])
 
     const [
@@ -242,6 +307,16 @@ export async function getSidebarBadges(practiceId: string) {
       workplacesResult,
       roomsResult,
       equipmentResult,
+      dienstplanResult,
+      zeiterfassungResult,
+      analyticsResult,
+      knowledgeResult,
+      strategyResult,
+      leadershipResult,
+      wellbeingResult,
+      leitbildResult,
+      selfcheckResult,
+      organigrammResult,
     ] = results
 
     const badges = {
@@ -268,6 +343,16 @@ export async function getSidebarBadges(practiceId: string) {
       workplaces: Number(workplacesResult.count) || 0,
       rooms: Number(roomsResult.count) || 0,
       equipment: Number(equipmentResult.count) || 0,
+      dienstplan: Number(dienstplanResult.count) || 0,
+      zeiterfassung: Number(zeiterfassungResult.count) || 0,
+      analytics: Number(analyticsResult.count) || 0,
+      knowledge: Number(knowledgeResult.count) || 0,
+      strategy: Number(strategyResult.count) || 0,
+      leadership: Number(leadershipResult.count) || 0,
+      wellbeing: Number(wellbeingResult.count) || 0,
+      leitbild: Number(leitbildResult.count) || 0,
+      selfcheck: Number(selfcheckResult.count) || 0,
+      organigramm: Number(organigrammResult.count) || 0,
     }
 
     return {

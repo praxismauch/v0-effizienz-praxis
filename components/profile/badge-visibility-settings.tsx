@@ -16,6 +16,8 @@ const BADGE_OPTIONS = [
   { key: "goals", label: "Ziele", group: "Planung" },
   { key: "workflows", label: "Workflows", group: "Planung" },
   { key: "calendar", label: "Kalender", group: "Planung" },
+  { key: "dienstplan", label: "Dienstplan", group: "Planung" },
+  { key: "zeiterfassung", label: "Zeiterfassung", group: "Planung" },
   { key: "teamMembers", label: "Team", group: "Team & Personal" },
   { key: "candidates", label: "Bewerber", group: "Team & Personal" },
   { key: "responsibilities", label: "Zuständigkeiten", group: "Team & Personal" },
@@ -23,10 +25,14 @@ const BADGE_OPTIONS = [
   { key: "skills", label: "Kompetenzen", group: "Team & Personal" },
   { key: "training", label: "Fortbildung", group: "Team & Personal" },
   { key: "surveys", label: "Umfragen", group: "Team & Personal" },
+  { key: "selfcheck", label: "Selbst-Check", group: "Team & Personal" },
+  { key: "organigramm", label: "Organigramm", group: "Team & Personal" },
   { key: "documents", label: "Dokumente", group: "Daten" },
   { key: "protocols", label: "Protokolle", group: "Daten" },
   { key: "contacts", label: "Kontakte", group: "Daten" },
   { key: "journal", label: "Journal", group: "Daten" },
+  { key: "analytics", label: "Kennzahlen", group: "Daten" },
+  { key: "knowledge", label: "Wissen", group: "Daten" },
   { key: "cirs", label: "CIRS", group: "Qualität" },
   { key: "hygiene", label: "Hygieneplan", group: "Qualität" },
   { key: "workplaces", label: "Arbeitsplätze", group: "Infrastruktur" },
@@ -34,6 +40,10 @@ const BADGE_OPTIONS = [
   { key: "equipment", label: "Arbeitsmittel", group: "Infrastruktur" },
   { key: "inventory", label: "Inventar", group: "Infrastruktur" },
   { key: "devices", label: "Medizingeräte", group: "Infrastruktur" },
+  { key: "strategy", label: "Strategiepfad", group: "Strategie" },
+  { key: "leadership", label: "Leadership", group: "Strategie" },
+  { key: "wellbeing", label: "Wellbeing", group: "Strategie" },
+  { key: "leitbild", label: "Leitbild", group: "Strategie" },
   { key: "tickets", label: "Support-Tickets", group: "System" },
 ] as const
 
@@ -51,7 +61,7 @@ const groupedBadges = BADGE_OPTIONS.reduce(
   {} as Record<string, typeof BADGE_OPTIONS[number][]>
 )
 
-const GROUP_ORDER = ["Planung", "Team & Personal", "Daten", "Qualität", "Infrastruktur", "System"]
+const GROUP_ORDER = ["Planung", "Team & Personal", "Daten", "Qualität", "Infrastruktur", "Strategie", "System"]
 
 export function BadgeVisibilitySettings() {
   const { currentUser } = useUser()

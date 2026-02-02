@@ -453,6 +453,34 @@ export function AppSidebar({ className }: AppSidebarProps) {
     rooms: 0,
     equipment: 0,
   })
+
+  // Badge visibility preferences (default all visible)
+  const [badgeVisibility, setBadgeVisibility] = useState<Record<string, boolean>>({
+    tasks: true,
+    goals: true,
+    workflows: true,
+    candidates: true,
+    tickets: true,
+    waitlist: true,
+    teamMembers: true,
+    responsibilities: true,
+    surveys: true,
+    inventory: true,
+    devices: true,
+    calendar: true,
+    documents: true,
+    cirs: true,
+    contacts: true,
+    hygiene: true,
+    training: true,
+    protocols: true,
+    journal: true,
+    appraisals: true,
+    skills: true,
+    workplaces: true,
+    rooms: true,
+    equipment: true,
+  })
   const [badgeSettings, setBadgeSettings] = useState({ tasks: true, goals: true, workflows: true, candidates: true })
   const [mounted, setMounted] = useState(false)
   const [missionStatement, setMissionStatement] = useState<string | null>(null)
@@ -490,6 +518,43 @@ export function AppSidebar({ className }: AppSidebarProps) {
     const interval = setInterval(loadBadgeCounts, 120000)
     return () => clearInterval(interval)
   }, [currentPractice?.id])
+
+  // Load badge visibility preferences
+  useEffect(() => {
+    const loadBadgeVisibility = async () => {
+      if (!currentUser?.id) return
+
+      try {
+        const response = await fetch(`/api/user/preferences?userId=${currentUser.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.preferences?.badge_visibility) {
+            setBadgeVisibility((prev) => ({
+              ...prev,
+              ...data.preferences.badge_visibility,
+            }))
+          }
+        }
+      } catch (error) {
+        console.error("[v0] Error loading badge visibility preferences:", error)
+      }
+    }
+
+    loadBadgeVisibility()
+
+    // Listen for badge visibility changes from profile settings
+    const handleBadgeVisibilityChange = (event: CustomEvent<Record<string, boolean>>) => {
+      setBadgeVisibility((prev) => ({
+        ...prev,
+        ...event.detail,
+      }))
+    }
+
+    window.addEventListener("badge-visibility-changed", handleBadgeVisibilityChange as EventListener)
+    return () => {
+      window.removeEventListener("badge-visibility-changed", handleBadgeVisibilityChange as EventListener)
+    }
+  }, [currentUser?.id])
 
   useEffect(() => {
     const loadSidebarPreferences = async () => {
@@ -870,7 +935,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
                   {favoriteItems.map((item) => {
                     const Icon = item.icon
                     const isActive = pathname === item.href
-                    const badgeCount = badgeCounts[item.badge || item.key || ""]
+                    const badgeKey = item.badge || item.key || ""
+                    const badgeCount = badgeVisibility[badgeKey] !== false ? badgeCounts[badgeKey] : 0
 
                     return (
                       <ContextMenu key={`fav-${item.href}`}>
@@ -939,7 +1005,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
                         const Icon = item.icon
                         const isActive = pathname === item.href
-                        const badgeCount = badgeCounts[item.badge || item.key || ""]
+                        const badgeKey = item.badge || item.key || ""
+                        const badgeCount = badgeVisibility[badgeKey] !== false ? badgeCounts[badgeKey] : 0
                         const isFavorite = favorites.includes(item.href)
 
                         return (

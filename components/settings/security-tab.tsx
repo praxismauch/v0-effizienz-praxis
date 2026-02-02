@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Key, Loader2, Save, Shield } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "sonner"
+import { isPracticeAdminRole, isSuperAdminRole } from "@/lib/auth-utils"
 
 interface PasswordSettings {
   currentPassword: string
@@ -25,7 +26,7 @@ export function SecurityTab() {
   })
   const [saving, setSaving] = useState(false)
   
-  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "practice_owner"
+  const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
 
   const handleChangePassword = async () => {
     if (passwordSettings.newPassword !== passwordSettings.confirmPassword) {

@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { AppLayout } from "@/components/app-layout"
+import { isPracticeAdminRole, isSuperAdminRole } from "@/lib/auth-utils"
 
 // Import all extracted tab components
 import { PracticeSettingsTab } from "@/components/settings/practice-settings-tab"
@@ -50,7 +51,7 @@ export default function SettingsPageClient() {
     setMounted(true)
   }, [])
 
-  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "practice_owner"
+  const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
 
   if (!mounted || practiceLoading) {
     return <AppLayout loading loadingMessage="Einstellungen werden geladen..." />

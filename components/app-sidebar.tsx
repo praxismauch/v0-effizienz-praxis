@@ -435,7 +435,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   const initialLoadDone = useRef(false)
 
-  const isAdmin = isPracticeAdminRole(currentUser?.role) || currentUser?.role === "admin"
+  const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true
   const sidebarGroups = getNavigationGroups(isAdmin, isSuperAdmin, t)
 

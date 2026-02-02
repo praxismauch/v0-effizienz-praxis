@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
+import { isPracticeAdminRole, isSuperAdminRole } from "@/lib/auth-utils"
 import { AppLayout } from "@/components/app-layout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -202,11 +203,7 @@ export default function TrainingPage() {
   const [newCourseTeamId, setNewCourseTeamId] = useState<string>("practice-wide")
   const [newEventTeamId, setNewEventTeamId] = useState<string>("practice-wide")
 
-  const isAdmin =
-    user?.role === "admin" ||
-    user?.role === "praxis_admin" ||
-    user?.role === "super_admin" ||
-    user?.role === "superadmin"
+  const isAdmin = isPracticeAdminRole(user?.role) || isSuperAdminRole(user?.role)
 
   const fetchTeams = useCallback(async () => {
     if (!practice?.id) return

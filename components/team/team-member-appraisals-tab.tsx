@@ -500,15 +500,8 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
           </Button>
         )}
       </div>
-    </CardHeader>
+      </CardHeader>
   </Card>
-        {isAdmin && (
-          <Button onClick={openNewDialog}>
-            <Plus className="w-4 h-4 mr-2" />
-            Neues Gespräch
-          </Button>
-        )}
-      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
+import Logger from "@/lib/logger"
 
 export async function PUT(
   request: NextRequest,
@@ -11,8 +12,6 @@ export async function PUT(
     const memberIdText = String(memberId)
     const supabase = await createAdminClient()
     const body = await request.json()
-
-    console.log("[v0] PUT team member API called:", { practiceId: practiceIdText, memberId: memberIdText, body })
 
     let teamMember = null
 
@@ -39,11 +38,8 @@ export async function PUT(
     }
 
     if (!teamMember) {
-      console.error("[v0] Team member not found for id:", memberIdText)
       return NextResponse.json({ error: "Team member not found" }, { status: 404 })
     }
-
-    console.log("[v0] Found team member:", teamMember)
 
     const actualUserId = teamMember.user_id
 
@@ -68,8 +64,6 @@ export async function PUT(
     if (body.isActive !== undefined) teamMemberUpdates.status = body.isActive ? "active" : "inactive"
     if (body.status !== undefined) teamMemberUpdates.status = body.status
 
-    console.log("[v0] Updating team_members with:", teamMemberUpdates)
-
     const { error: memberUpdateError } = await supabase
       .from("team_members")
       .update(teamMemberUpdates)
@@ -77,7 +71,7 @@ export async function PUT(
       .eq("practice_id", practiceIdText)
 
     if (memberUpdateError) {
-      console.error("[v0] Error updating team_members:", memberUpdateError)
+      Logger.error("api", "Error updating team_members", memberUpdateError)
       return NextResponse.json({ error: memberUpdateError.message }, { status: 500 })
     }
 
@@ -95,13 +89,10 @@ export async function PUT(
       if (body.avatar !== undefined) userUpdates.avatar = body.avatar
       if (body.isActive !== undefined) userUpdates.is_active = body.isActive
 
-      console.log("[v0] Updating users with:", userUpdates)
-
       const { error: userUpdateError } = await supabase.from("users").update(userUpdates).eq("id", actualUserId)
 
       if (userUpdateError) {
-        console.error("[v0] Error updating users (non-fatal):", userUpdateError)
-        // Don't fail - team_members update succeeded
+        Logger.warn("api", "Error updating users (non-fatal)", { error: userUpdateError.message })
       }
     }
 
@@ -120,14 +111,12 @@ export async function PUT(
       }
     }
 
-    console.log("[v0] Team member updated successfully")
-
     return NextResponse.json({
       success: true,
       message: "Teammitglied erfolgreich aktualisiert",
     })
   } catch (error) {
-    console.error("[v0] Error updating team member:", error)
+    Logger.error("api", "Error updating team member", error)
     return NextResponse.json(
       {
         error: "Failed to update team member",
@@ -146,8 +135,6 @@ export async function DELETE(
     const { practiceId, memberId } = await params
     const practiceIdText = String(practiceId) || "1"
     const memberIdText = String(memberId)
-
-    console.log("[v0] DELETE team member API called:", { practiceId: practiceIdText, memberId: memberIdText })
 
     const supabase = await createAdminClient()
 
@@ -174,11 +161,8 @@ export async function DELETE(
     }
 
     if (!checkMember) {
-      console.error("[v0] Member not found for id:", memberIdText)
       return NextResponse.json({ error: "Team member not found" }, { status: 404 })
     }
-
-    console.log("[v0] Found member to delete:", checkMember)
 
     // Delete team assignments
     if (checkMember.user_id) {
@@ -188,7 +172,7 @@ export async function DELETE(
         .eq("user_id", checkMember.user_id)
 
       if (assignmentsError) {
-        console.error("[v0] Error deleting team assignments:", assignmentsError)
+        Logger.warn("api", "Error deleting team assignments", { error: assignmentsError.message })
       }
     }
 
@@ -204,11 +188,9 @@ export async function DELETE(
       .eq("practice_id", practiceIdText)
 
     if (memberError) {
-      console.error("[v0] Error updating team member status:", memberError)
+      Logger.error("api", "Error updating team member status", memberError)
       throw memberError
     }
-
-    console.log("[v0] Team member status updated to inactive")
 
     // Deactivate user account if exists
     if (checkMember.user_id) {
@@ -221,20 +203,16 @@ export async function DELETE(
         .eq("id", checkMember.user_id)
 
       if (userError) {
-        console.error("[v0] Error deactivating user:", userError)
-      } else {
-        console.log("[v0] User account deactivated")
+        Logger.warn("api", "Error deactivating user (non-fatal)", { error: userError.message })
       }
     }
-
-    console.log("[v0] Team member deactivated successfully")
 
     return NextResponse.json({
       success: true,
       message: "Teammitglied erfolgreich entfernt",
     })
   } catch (error) {
-    console.error("[v0] Error deleting team member:", error)
+    Logger.error("api", "Error deleting team member", error)
     return NextResponse.json(
       {
         error: "Failed to delete team member",

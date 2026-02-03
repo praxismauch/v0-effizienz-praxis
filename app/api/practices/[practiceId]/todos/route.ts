@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
-import { createAdminClient } from "@/lib/supabase/admin"
+import Logger from "@/lib/logger"
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 500): Promise<T | null> {
   let lastError: Error | null = null
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       if (errorMessage.includes("Too Many") || errorMessage.includes("rate")) {
         return NextResponse.json([])
       }
-      console.error("Todos fetch error:", error)
+      Logger.warn("api", "Todos fetch error", { error: errorMessage })
       return NextResponse.json([])
     }
 

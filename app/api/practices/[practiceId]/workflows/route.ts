@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
-import { createAdminClient } from "@/lib/supabase/admin"
+import Logger from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (isRateLimitError(error)) {
           return NextResponse.json({ workflows: [] }, { status: 200 })
         }
-        console.error("Workflows query error:", error.message || error)
+        Logger.warn("api", "Workflows query error", { error: error.message })
         return NextResponse.json({ workflows: [] }, { status: 200 })
       }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       if (isRateLimitError(queryError)) {
         return NextResponse.json({ workflows: [] }, { status: 200 })
       }
-      console.error("Workflows query error:", queryError)
+      Logger.warn("api", "Workflows query exception", { error: queryError })
       return NextResponse.json({ workflows: [] }, { status: 200 })
     }
 

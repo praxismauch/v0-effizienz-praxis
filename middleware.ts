@@ -154,20 +154,10 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   const supabaseUrl = getSupabaseUrl()
   const supabaseAnonKey = getSupabaseAnonKey()
 
-  // Debug logging to verify env vars are working
-  console.log("[v0] Middleware Supabase check:", {
-    hasConfig: hasSupabaseConfig(),
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseAnonKey,
-    urlPreview: supabaseUrl ? `${supabaseUrl.slice(0, 30)}...` : "missing",
-  })
-
   if (!hasSupabaseConfig()) {
-    console.log("[v0] Supabase not configured - skipping auth. Add credentials to lib/supabase/config.ts")
+    edgeLog.debug("Supabase not configured - skipping auth")
     return addSecurityHeaders(supabaseResponse)
   }
-  
-  console.log("[v0] Supabase IS configured - running auth checks")
 
   try {
     // Create fresh Supabase client for each request
@@ -227,19 +217,8 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const method = request.method
-
-  // Log all requests to sidebar-preferences for debugging
-  if (pathname.includes("sidebar-preferences")) {
-    console.log(`[v0-middleware] ${method} ${pathname} received at ${new Date().toISOString()}`)
-  }
 
   const supabaseResponse = await updateSession(request)
-
-  // Log POST requests to sidebar-preferences after session update
-  if (pathname.includes("sidebar-preferences") && method === "POST") {
-    console.log(`[v0-middleware] POST sidebar-preferences - session updated, continuing to handler`)
-  }
 
   if (pathname.startsWith("/api/")) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "unknown"

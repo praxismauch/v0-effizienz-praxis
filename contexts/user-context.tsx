@@ -312,55 +312,49 @@ export function UserProvider({
 
             if (!profile) {
               // Auto-create profile via API
-              try {
-                const createResponse = await fetch("/api/auth/ensure-profile", {
-                  method: "POST",
-                  credentials: "include",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    userId: authUser.id,
-                    email: authUser.email,
-                    name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || null,
-                    firstName: authUser.user_metadata?.first_name || null,
-                    lastName: authUser.user_metadata?.last_name || null,
-                  }),
-                })
-                
-                if (!createResponse.ok) {
-                  const errorData = await createResponse.json().catch(() => ({ error: "Unknown error" }))
-                  throw new Error(`Failed to create user profile: ${errorData.error || createResponse.statusText}`)
-                }
-                
-                const responseData = await createResponse.json()
-                const createdProfile = responseData.user
-                if (!createdProfile) {
-                  throw new Error("Profile creation returned no data")
-                }
-              } catch (fetchError) {
-                console.error("[v0] Error during profile creation fetch:", fetchError)
-                throw fetchError
+              const createResponse = await fetch("/api/auth/ensure-profile", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: authUser.id,
+                  email: authUser.email,
+                  name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || null,
+                  firstName: authUser.user_metadata?.first_name || null,
+                  lastName: authUser.user_metadata?.last_name || null,
+                }),
+              })
+              
+              if (!createResponse.ok) {
+                const errorData = await createResponse.json().catch(() => ({ error: "Unknown error" }))
+                throw new Error(`Failed to create user profile: ${errorData.error || createResponse.statusText}`)
               }
               
+              const responseData = await createResponse.json()
+              const createdProfile = responseData.user
+              if (!createdProfile) {
+                throw new Error("Profile creation returned no data")
+              }
               
-                const user: User = {
-                  id: createdProfile.id,
-                  name: createdProfile.name || `${createdProfile.first_name || ""} ${createdProfile.last_name || ""}`.trim() || "User",
-                  email: createdProfile.email || authUser.email || "",
-                  role: normalizeRole(createdProfile.role) as User["role"],
-                  avatar: createdProfile.avatar,
-                  practiceId: createdProfile.practice_id?.toString() || "1",
-                  practice_id: createdProfile.practice_id?.toString() || "1",
-                  isActive: createdProfile.is_active ?? true,
-                  joinedAt: createdProfile.created_at || new Date().toISOString(),
-                  preferred_language: createdProfile.preferred_language,
-                  firstName: createdProfile.first_name,
-                }
+              const user: User = {
+                id: createdProfile.id,
+                name: createdProfile.name || `${createdProfile.first_name || ""} ${createdProfile.last_name || ""}`.trim() || "User",
+                email: createdProfile.email || authUser.email || "",
+                role: normalizeRole(createdProfile.role) as User["role"],
+                avatar: createdProfile.avatar,
+                practiceId: createdProfile.practice_id?.toString() || "1",
+                practice_id: createdProfile.practice_id?.toString() || "1",
+                isActive: createdProfile.is_active ?? true,
+                joinedAt: createdProfile.created_at || new Date().toISOString(),
+                preferred_language: createdProfile.preferred_language,
+                firstName: createdProfile.first_name,
+              }
 
-                setCurrentUser(user)
-                await persistUserToStorage(user)
-                hasFetchedUser.current = true
-                dispatchAuthRecovered()
-                return
+              setCurrentUser(user)
+              await persistUserToStorage(user)
+              hasFetchedUser.current = true
+              dispatchAuthRecovered()
+              return
             }
 
             const user: User = {
@@ -388,7 +382,7 @@ export function UserProvider({
           },
         )
       } catch (error) {
-        console.error("Error fetching user after retries:", error)
+        Logger.error("context", "Error fetching user after retries", error)
         if (isAuthError(error)) {
           hasFetchedUser.current = true
         }
@@ -444,7 +438,7 @@ export function UserProvider({
               .maybeSingle()
 
             if (profileError) {
-              console.error("Error fetching user profile:", profileError.message)
+              Logger.error("context", "Error fetching user profile", profileError.message)
               return
             }
 
@@ -510,7 +504,7 @@ export function UserProvider({
             hasFetchedUser.current = true
             dispatchAuthRecovered()
           } catch (error) {
-            console.error("Error fetching user profile:", error)
+            Logger.error("context", "Error fetching user profile in auth state change", error)
           }
         }
       }

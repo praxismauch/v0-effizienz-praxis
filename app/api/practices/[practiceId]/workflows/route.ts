@@ -72,7 +72,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ workflows: transformedWorkflows }, { status: 200 })
   } catch (error) {
     if (isRateLimitError(error)) {
-      console.warn("[v0] Workflows GET - Rate limited at outer level")
       return NextResponse.json({ workflows: [] }, { status: 200 })
     }
     return handleApiError(error)
@@ -85,7 +84,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0") {
-      console.error("[v0] Workflows POST - Invalid practice ID:", practiceId)
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
     }
 
@@ -95,13 +93,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let body
     try {
       body = await request.json()
-    } catch (parseError) {
-      console.error("[v0] Workflows POST - Failed to parse request body:", parseError)
+    } catch {
       return NextResponse.json({ error: "Ungültige Anfrage" }, { status: 400 })
     }
 
     if (!body.title && !body.name) {
-      console.error("[v0] Workflows POST - Missing title/name")
       return NextResponse.json({ error: "Titel ist erforderlich" }, { status: 400 })
     }
 
@@ -125,8 +121,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       priority: body.priority || "medium",
     }
 
-    console.log("[v0] Workflows POST - Inserting workflow:", workflowData)
-
     const { data: workflow, error: workflowError } = await supabase
       .from("workflows")
       .insert(workflowData)
@@ -134,7 +128,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single()
 
     if (workflowError) {
-      console.error("[v0] Workflows POST - Insert error:", workflowError)
       return NextResponse.json(
         { error: "Workflow konnte nicht erstellt werden", details: workflowError.message },
         { status: 500 },
@@ -162,7 +155,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error("[v0] Workflows POST - Unexpected error:", error)
     return handleApiError(error)
   }
 }
@@ -173,7 +165,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
 
     if (!practiceId || practiceId === "0") {
-      console.error("[v0] Workflows PATCH - Invalid practice ID:", practiceId)
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
     }
 
@@ -182,15 +173,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     let body
     try {
       body = await request.json()
-    } catch (parseError) {
-      console.error("[v0] Workflows PATCH - Failed to parse request body:", parseError)
+    } catch {
       return NextResponse.json({ error: "Ungültige Anfrage" }, { status: 400 })
     }
 
     const { id, ...updates } = body
 
     if (!id) {
-      console.error("[v0] Workflows PATCH - Missing workflow ID")
       return NextResponse.json({ error: "Workflow-ID ist erforderlich" }, { status: 400 })
     }
 
@@ -216,7 +205,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .maybeSingle()
 
     if (updateError) {
-      console.error("[v0] Workflows PATCH - Update error:", updateError)
       return NextResponse.json(
         { error: "Workflow konnte nicht aktualisiert werden", details: updateError.message },
         { status: 500 },
@@ -224,7 +212,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     if (!workflow) {
-      console.error("[v0] Workflows PATCH - Workflow not found:", id)
       return NextResponse.json({ error: "Workflow nicht gefunden" }, { status: 404 })
     }
 
@@ -248,7 +235,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error("[v0] Workflows PATCH - Unexpected error:", error)
     return handleApiError(error)
   }
 }

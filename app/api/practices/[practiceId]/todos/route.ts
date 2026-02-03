@@ -115,12 +115,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       newTodo.recurrence_end_date = body.recurrence_end_date
     }
 
-    console.log("[v0] Creating todo with data:", JSON.stringify(newTodo, null, 2))
-
     const { data, error } = await supabase.from("todos").insert(newTodo).select().single()
 
     if (error) {
-      console.error("[v0] Error creating todo:", error)
       return NextResponse.json(
         {
           error: error.message,
@@ -132,7 +129,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
-    console.log("[v0] Todo created successfully:", data?.id)
     return NextResponse.json(data)
   } catch (error: unknown) {
     return handleApiError(error)

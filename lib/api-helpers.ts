@@ -34,14 +34,18 @@ export async function authenticateApiRequest(): Promise<ApiAuthResult> {
     error,
   } = await supabase.auth.getUser()
 
+  // Handle auth errors - distinguish between "no session" and actual errors
   if (error) {
-    console.log("[v0] authenticateApiRequest auth error:", error.message)
-    throw new Error("Auth session missing!")
+    // AuthSessionMissingError is expected for unauthenticated requests
+    if (error.message === "Auth session missing!" || error.name === "AuthSessionMissingError") {
+      throw new ApiError("Nicht authentifiziert", 401)
+    }
+    // Other auth errors should be logged and treated as server errors
+    throw new ApiError("Authentifizierungsfehler", 500)
   }
   
   if (!user) {
-    console.log("[v0] authenticateApiRequest: no user in session")
-    throw new Error("Auth session missing!")
+    throw new ApiError("Nicht authentifiziert", 401)
   }
 
   // Get user data using admin client (bypasses RLS)
@@ -52,7 +56,7 @@ export async function authenticateApiRequest(): Promise<ApiAuthResult> {
     .single()
 
   if (userError || !userData) {
-    throw new Error("Benutzerdaten nicht gefunden")
+    throw new ApiError("Benutzerdaten nicht gefunden", 404)
   }
 
   return {
@@ -192,6 +196,11 @@ export async function requireManagerAccess(practiceId: string): Promise<Practice
  * Handle API errors with consistent format
  */
 export function handleApiError(error: unknown): NextResponse {
+  // Handle ApiError with explicit status codes first
+  if (error instanceof ApiError) {
+    return createErrorResponse(error.message, error.status)
+  }
+  
   if (error instanceof Error) {
     const message = error.message
 

@@ -2,9 +2,11 @@
 
 import React from "react"
 import { Button } from "@/components/ui/button"
+import Logger from "@/lib/logger"
 
 interface ErrorBoundaryProps {
   children: React.ReactNode
+  fallback?: React.ReactNode
 }
 
 interface ErrorBoundaryState {
@@ -19,30 +21,39 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    console.error("[v0] ErrorBoundary caught error:", error)
     return { hasError: true, error }
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("[v0] ErrorBoundary error details:", error, errorInfo)
+    Logger.error("ui", "ErrorBoundary caught error", error, { componentStack: errorInfo.componentStack })
+  }
+
+  handleReset = () => {
+    this.setState({ hasError: false, error: null })
   }
 
   render() {
     if (this.state.hasError) {
+      // Use custom fallback if provided
+      if (this.props.fallback) {
+        return this.props.fallback
+      }
+
       return (
         <div className="flex min-h-screen items-center justify-center p-4">
           <div className="max-w-md space-y-4 text-center">
             <h1 className="text-2xl font-bold text-destructive">Anwendungsfehler</h1>
             <p className="text-muted-foreground">
-              Ein clientseitiger Fehler ist aufgetreten. Bitte überprüfen Sie die Browser-Konsole für weitere
-              Informationen.
+              Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.
             </p>
-            {this.state.error && (
-              <pre className="rounded-md bg-muted p-4 text-left text-sm overflow-auto">{this.state.error.message}</pre>
+            {this.state.error && process.env.NODE_ENV === "development" && (
+              <pre className="rounded-md bg-muted p-4 text-left text-sm overflow-auto max-h-32">
+                {this.state.error.message}
+              </pre>
             )}
             <Button
               onClick={() => {
-                this.setState({ hasError: false, error: null })
+                this.handleReset()
                 window.location.reload()
               }}
             >

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
-import { createAdminClient } from "@/lib/supabase/admin"
+import Logger from "@/lib/logger"
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 500): Promise<T | null> {
   let lastError: Error | null = null
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       if (errorMessage.includes("Too Many") || errorMessage.includes("rate")) {
         return NextResponse.json([])
       }
-      console.error("Todos fetch error:", error)
+      Logger.warn("api", "Todos fetch error", { error: errorMessage })
       return NextResponse.json([])
     }
 
@@ -115,12 +115,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       newTodo.recurrence_end_date = body.recurrence_end_date
     }
 
-    console.log("[v0] Creating todo with data:", JSON.stringify(newTodo, null, 2))
-
     const { data, error } = await supabase.from("todos").insert(newTodo).select().single()
 
     if (error) {
-      console.error("[v0] Error creating todo:", error)
       return NextResponse.json(
         {
           error: error.message,
@@ -132,7 +129,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
-    console.log("[v0] Todo created successfully:", data?.id)
     return NextResponse.json(data)
   } catch (error: unknown) {
     return handleApiError(error)

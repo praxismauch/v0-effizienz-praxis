@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
 import { useUser } from "./user-context"
 import { usePractice } from "./practice-context"
+import Logger from "@/lib/logger"
 
 interface OnboardingStep {
   id: string
@@ -186,10 +187,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           }
         } else {
           // No progress found - check localStorage for migration
-          const storageKey = `onboarding_${practiceId}`
-          const stored = localStorage.getItem(storageKey)
-          if (stored) {
-            try {
+          try {
+            const storageKey = `onboarding_${practiceId}`
+            const stored = localStorage.getItem(storageKey)
+            if (stored) {
               const localData = JSON.parse(stored)
               setHasCompletedOnboarding(localData.completed || false)
               setSteps(localData.steps || ONBOARDING_STEPS)
@@ -205,14 +206,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 isCompleted: localData.completed || false,
                 painPoints: localData.painPoints || [],
               })
-            } catch {
-              // Ignore parse errors
             }
+          } catch {
+            // localStorage may not be available or parse failed
           }
         }
       }
     } catch (error) {
-      console.error("Error loading onboarding progress:", error)
+      Logger.warn("context", "Error loading onboarding progress", { error })
     } finally {
       setIsLoading(false)
     }
@@ -239,21 +240,25 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         })
 
         // Also save to localStorage as backup
-        const storageKey = `onboarding_${practiceId}`
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            completed: hasCompletedOnboarding,
-            steps,
-            currentStep,
-            painPoints,
-            teamSize,
-            practiceGoals,
-            practiceType,
-          }),
-        )
+        try {
+          const storageKey = `onboarding_${practiceId}`
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              completed: hasCompletedOnboarding,
+              steps,
+              currentStep,
+              painPoints,
+              teamSize,
+              practiceGoals,
+              practiceType,
+            }),
+          )
+        } catch {
+          // localStorage may not be available
+        }
       } catch (error) {
-        console.error("Error saving onboarding progress:", error)
+        Logger.warn("context", "Error saving onboarding progress", { error })
       }
     },
     [practiceId, currentStep, steps, hasCompletedOnboarding, teamSize, practiceGoals, practiceType, painPoints],
@@ -291,7 +296,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error) {
-      console.error("Error loading pain points:", error)
+      Logger.warn("context", "Error loading pain points", { error })
     }
   }, [practiceId])
 
@@ -318,7 +323,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
         return { goalsCreated: result.goalsCreated || 0 }
       } catch (error) {
-        console.error("Error saving pain points:", error)
+        Logger.error("context", "Error saving pain points", error)
         return null
       }
     },

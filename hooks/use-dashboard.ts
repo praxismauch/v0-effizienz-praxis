@@ -3,6 +3,7 @@
 import useSWR from "swr"
 import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
+import { REALTIME_SWR_CONFIG, SHARED_SWR_CONFIG } from "@/lib/swr-config"
 
 // Types
 export interface DashboardStats {
@@ -14,20 +15,14 @@ export interface DashboardStats {
   recentActivity: unknown[]
 }
 
-const SWR_CONFIG = {
-  revalidateOnFocus: false,
-  dedupingInterval: 300,
-  refreshInterval: 60000, // Refresh every minute
-}
-
 /**
- * Hook for fetching dashboard stats
+ * Hook for fetching dashboard stats with real-time refresh
  */
 export function useDashboardStats(practiceId = DEFAULT_PRACTICE_ID) {
   const { data, error, isLoading, mutate } = useSWR<DashboardStats>(
     SWR_KEYS.dashboardStats(practiceId),
     swrFetcher,
-    SWR_CONFIG,
+    { ...REALTIME_SWR_CONFIG, refreshInterval: 60000 }
   )
 
   return {
@@ -56,7 +51,7 @@ export function useSuperAdminStats() {
     teams: number
     tickets: number
     revenue: number
-  }>(SWR_KEYS.superAdminStats(), swrFetcher, SWR_CONFIG)
+  }>(SWR_KEYS.superAdminStats(), swrFetcher, SHARED_SWR_CONFIG)
 
   return {
     stats: data || {

@@ -3,6 +3,7 @@
 import useSWR from "swr"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
+import { SHARED_SWR_CONFIG } from "@/lib/swr-config"
 
 // Types
 export interface User {
@@ -28,20 +29,15 @@ export interface UserPreferences {
   sidebar_collapsed: boolean
 }
 
-const SWR_CONFIG = {
-  revalidateOnFocus: false,
-  dedupingInterval: 300,
-  // Don't retry on 401/403 - user is not authenticated
-  shouldRetryOnError: (error: { status?: number }) => {
-    return error?.status !== 401 && error?.status !== 403
-  },
-}
-
 /**
  * Hook for fetching current user data
  */
 export function useCurrentUser() {
-  const { data, error, isLoading, mutate } = useSWR<User>(SWR_KEYS.currentUser(), swrFetcher, SWR_CONFIG)
+  const { data, error, isLoading, mutate } = useSWR<User>(
+    SWR_KEYS.currentUser(),
+    swrFetcher,
+    SHARED_SWR_CONFIG
+  )
 
   return {
     user: data || null,
@@ -57,7 +53,11 @@ export function useCurrentUser() {
  * Hook for fetching user preferences
  */
 export function useUserPreferences() {
-  const { data, error, isLoading, mutate } = useSWR<UserPreferences>(SWR_KEYS.userPreferences(), swrFetcher, SWR_CONFIG)
+  const { data, error, isLoading, mutate } = useSWR<UserPreferences>(
+    SWR_KEYS.userPreferences(),
+    swrFetcher,
+    SHARED_SWR_CONFIG
+  )
 
   const updatePreferences = async (preferences: Partial<UserPreferences>) => {
     const result = await mutationFetcher<UserPreferences>(SWR_KEYS.userPreferences(), {

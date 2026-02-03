@@ -85,8 +85,8 @@ export default async function RootLayout({
   if (!isPublicRoute(pathname)) {
     try {
       initialUser = await getCurrentUserProfile()
-    } catch (error) {
-      console.error('[v0] Failed to get user profile:', error)
+    } catch {
+      // Silently fail - user will be redirected to login if needed
     }
   }
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
 import { SidebarHeader as UISidebarHeader } from "@/components/ui/sidebar"
 import { PracticeSelector } from "@/components/practice-selector"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface AppSidebarHeaderProps {
   sidebarOpen: boolean
@@ -64,7 +65,7 @@ export function AppSidebarHeader({
                 href="/super-admin"
                 className={cn(
                   "flex items-center gap-2 px-2 py-1.5 text-sm font-medium transition-colors rounded-md",
-                  pathname === "/super-admin"
+                  pathname === "/super-admin" || pathname.startsWith("/super-admin/")
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
                     : "text-sidebar-primary hover:text-sidebar-primary/80 hover:bg-sidebar-accent"
                 )}
@@ -75,6 +76,30 @@ export function AppSidebarHeader({
             </div>
           )}
           <PracticeSelector />
+        </div>
+      )}
+
+      {/* Collapsed state: show Super Admin icon with tooltip */}
+      {!sidebarOpen && isSuperAdmin && (
+        <div className="px-2 py-2 border-b border-sidebar-border/30">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/super-admin"
+                className={cn(
+                  "flex items-center justify-center h-10 w-10 rounded-md transition-colors",
+                  pathname === "/super-admin" || pathname.startsWith("/super-admin/")
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "text-sidebar-primary hover:text-sidebar-primary/80 hover:bg-sidebar-accent"
+                )}
+              >
+                <Star className="h-5 w-5 fill-amber-500" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <span>Super Admin</span>
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
     </>

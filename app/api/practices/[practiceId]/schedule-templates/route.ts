@@ -9,6 +9,14 @@ export async function GET(
     const { practiceId } = await params
     const supabase = await createClient()
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { data, error } = await supabase
       .from("schedule_templates")
       .select("*")
@@ -38,6 +46,14 @@ export async function POST(
     const { practiceId } = await params
     const body = await request.json()
     const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const { data, error } = await supabase
       .from("schedule_templates")

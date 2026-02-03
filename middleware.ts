@@ -153,11 +153,19 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 
+  // Temporary debug logging
+  console.log("[v0] Middleware env vars:", {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey,
+    url: supabaseUrl ? `${supabaseUrl.slice(0, 30)}...` : "missing",
+  })
+
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Supabase not configured - this is expected in v0 preview
-    // Environment variables will be available after deploying to Vercel
+    console.log("[v0] Supabase not configured - skipping auth")
     return addSecurityHeaders(supabaseResponse)
   }
+  
+  console.log("[v0] Supabase IS configured - running auth checks")
 
   try {
     // Create fresh Supabase client for each request

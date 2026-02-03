@@ -82,9 +82,16 @@ export default function ScheduleTemplateDialog({
       if (res.ok) {
         const data = await res.json()
         setTemplates(data.templates || [])
+      } else {
+        throw new Error("Failed to load templates")
       }
     } catch (error) {
       console.error("Error loading templates:", error)
+      toast({
+        title: "Fehler",
+        description: "Vorlagen konnten nicht geladen werden.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -183,6 +190,8 @@ export default function ScheduleTemplateDialog({
       if (res.ok) {
         toast({ title: "Erfolg", description: "Vorlage gelöscht" })
         await loadTemplates()
+      } else {
+        throw new Error("Failed to delete template")
       }
     } catch (error) {
       toast({

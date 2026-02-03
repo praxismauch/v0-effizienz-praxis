@@ -102,6 +102,9 @@ export default function DatenschutzPage() {
                       <br />
                       USA
                     </p>
+                    <p className="text-sm text-muted-foreground mt-3">
+                      <span className="font-medium">Server Standort:</span> Frankfurt
+                    </p>
                   </div>
                 </div>
               </div>

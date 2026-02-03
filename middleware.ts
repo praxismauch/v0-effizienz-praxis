@@ -154,8 +154,8 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    edgeLog.debug("Supabase environment variables not configured - skipping auth check")
-    // Continue without auth check if Supabase is not configured
+    // Supabase not configured - this is expected in v0 preview
+    // Environment variables will be available after deploying to Vercel
     return addSecurityHeaders(supabaseResponse)
   }
 

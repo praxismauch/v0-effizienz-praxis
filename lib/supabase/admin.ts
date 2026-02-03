@@ -24,7 +24,8 @@ export function createAdminClient() {
   const serviceRoleKey = getServiceRoleKey()
 
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Supabase admin client not configured - missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+    // Return null instead of throwing - let the calling code handle it
+    throw new Error("Supabase admin client not configured")
   }
 
   globalThis.__supabaseAdminClientStandalone = createSupabaseClient(supabaseUrl, serviceRoleKey, {

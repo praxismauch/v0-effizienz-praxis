@@ -1,25 +1,26 @@
 /**
  * Supabase configuration
  * 
- * INSTRUCTIONS FOR V0 PREVIEW:
- * The environment variables you set in the Vars section should work automatically.
- * If they don't appear in the preview, you can hardcode them here as fallbacks:
+ * ⚠️ ACTION REQUIRED FOR V0 PREVIEW ⚠️
  * 
- * 1. Go to your Supabase dashboard: https://supabase.com/dashboard
- * 2. Select your project
- * 3. Go to Settings > API
- * 4. Copy the values and paste them below:
- *    - Project URL -> SUPABASE_URL_FALLBACK
- *    - anon/public key -> SUPABASE_ANON_KEY_FALLBACK
- *    - service_role key -> SUPABASE_SERVICE_ROLE_KEY_FALLBACK
+ * The environment variables in your Vars section are not being picked up in the preview.
+ * To make the app work, paste your Supabase credentials directly below:
  * 
- * For production deployment, these will automatically use environment variables from Vercel.
+ * 1. Get from Supabase dashboard (https://supabase.com/dashboard > Settings > API):
+ *    - Project URL (looks like: https://xxxxx.supabase.co)
+ *    - anon/public key (starts with: eyJ...)
+ *    - service_role key (starts with: eyJ...)
+ * 
+ * 2. Paste them in the three constants below (in quotes)
+ * 
+ * These values will ONLY be used in v0 preview. When deployed to Vercel,
+ * the environment variables from your Vars section will be used instead.
  */
 
-// Fallback values for v0 preview (optional - only if env vars don't work)
-const SUPABASE_URL_FALLBACK = ""
-const SUPABASE_ANON_KEY_FALLBACK = ""
-const SUPABASE_SERVICE_ROLE_KEY_FALLBACK = ""
+// 🔽 PASTE YOUR SUPABASE CREDENTIALS HERE 🔽
+const SUPABASE_URL_FALLBACK = "" // Example: "https://abcdefgh.supabase.co"
+const SUPABASE_ANON_KEY_FALLBACK = "" // Example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+const SUPABASE_SERVICE_ROLE_KEY_FALLBACK = "" // Example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 // Get environment variables with fallbacks for v0 preview
 export const getSupabaseUrl = () => {

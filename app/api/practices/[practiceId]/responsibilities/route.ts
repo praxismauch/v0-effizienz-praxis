@@ -167,6 +167,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       body.cannot_complete_during_consultation || body.cannotCompleteDuringConsultation
     const calculateTimeAutomatically = body.calculate_time_automatically || body.calculateTimeAutomatically
     const optimizationSuggestions = body.optimization_suggestions || body.optimizationSuggestions
+    const jointExecution = body.joint_execution || body.jointExecution || false
+    const jointExecutionUserId = body.joint_execution_user_id || body.jointExecutionUserId
+    const jointExecutionTeamGroup = body.joint_execution_team_group || body.jointExecutionTeamGroup
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 })
@@ -199,6 +202,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       cannot_complete_during_consultation: cannotCompleteDuringConsultation || false,
       calculate_time_automatically: calculateTimeAutomatically || false,
       optimization_suggestions: optimizationSuggestions || null,
+      joint_execution: jointExecution,
+      joint_execution_user_id: jointExecutionUserId || null,
+      joint_execution_team_group: jointExecutionTeamGroup || null,
     }
 
     const { data, error } = await supabase.from("responsibilities").insert(insertData).select().single()

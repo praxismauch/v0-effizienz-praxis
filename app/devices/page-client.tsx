@@ -53,6 +53,10 @@ export default function DevicesPageClient() {
   } = useSWR<{ devices: MedicalDevice[] }>(
     currentPractice?.id ? SWR_KEYS.devices(currentPractice.id) : null,
     swrFetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+    }
   )
 
   const devices = devicesData?.devices || []

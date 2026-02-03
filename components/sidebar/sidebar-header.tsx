@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Star, Map, ChevronRight } from "lucide-react"
+import { Star, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
@@ -71,18 +71,6 @@ export function AppSidebarHeader({
               >
                 <Star className="h-4 w-4 fill-amber-500" />
                 <span>Super Admin</span>
-              </Link>
-              <Link
-                href="/super-admin/roadmap"
-                className={cn(
-                  "flex items-center gap-2 pl-8 pr-2 py-1.5 text-sm transition-colors rounded-md",
-                  pathname === "/super-admin/roadmap"
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Map className="h-4 w-4" />
-                <span>Roadmap & Ideen</span>
               </Link>
             </div>
           )}

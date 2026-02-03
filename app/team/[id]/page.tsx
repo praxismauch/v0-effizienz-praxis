@@ -258,8 +258,8 @@ export default function TeamMemberDetailPage() {
                 <TabsTrigger value="overview">Übersicht</TabsTrigger>
                 <TabsTrigger value="contracts">Verträge</TabsTrigger>
                 <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
-                <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
                 <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
+                <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
                 <TabsTrigger value="documents">Dokumente</TabsTrigger>
                 <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
                 <TabsTrigger value="devices">Geräte</TabsTrigger>
@@ -384,9 +384,9 @@ export default function TeamMemberDetailPage() {
 
               <TabsContent value="skills" className="space-y-4">
                 {member && (
-                  <TeamMemberSkillsTab
-                    memberId={memberId}
-                    practiceId={member.practice_id}
+<TeamMemberSkillsTab
+  memberId={memberId}
+  practiceId={practiceId}
                     firstName={member.first_name}
                     lastName={member.last_name}
                   />
@@ -395,10 +395,10 @@ export default function TeamMemberDetailPage() {
 
               <TabsContent value="vaccinations" className="space-y-4">
                 {member && (
-                  <TeamMemberVaccinationTab
-                    teamMemberId={memberId}
-                    practiceId={member.practice_id}
-                  />
+<TeamMemberVaccinationTab
+  teamMemberId={memberId}
+  practiceId={practiceId}
+  />
                 )}
               </TabsContent>
 
@@ -414,9 +414,9 @@ export default function TeamMemberDetailPage() {
 
             <TabsContent value="arbeitsmittel" className="space-y-4">
               {member && (
-                <ArbeitsmittelAssignments
-                  teamMemberId={memberId}
-                  practiceId={member.practice_id || ""}
+<ArbeitsmittelAssignments
+  teamMemberId={memberId}
+  practiceId={practiceId}
                   isAdmin={isAdmin}
                 />
               )}
@@ -424,9 +424,9 @@ export default function TeamMemberDetailPage() {
 
             <TabsContent value="devices" className="space-y-4">
               {member && (
-                <TeamMemberDevicesTab
-                  memberId={memberId}
-                  practiceId={member.practice_id || ""}
+<TeamMemberDevicesTab
+  memberId={memberId}
+  practiceId={practiceId}
                   memberName={member.name}
                 />
               )}
@@ -434,19 +434,19 @@ export default function TeamMemberDetailPage() {
 
             <TabsContent value="responsibilities" className="space-y-4">
               {member && (
-                <TeamMemberResponsibilitiesTab
-                  memberId={memberId}
-                  practiceId={member.practice_id || ""}
-                  memberName={member.name}
-                />
+<TeamMemberResponsibilitiesTab
+  memberId={memberId}
+  practiceId={practiceId}
+  memberName={member.name}
+  />
               )}
             </TabsContent>
 
             <TabsContent value="documents" className="space-y-4">
               {member && (
-                <TeamMemberDocumentsTab
-                  teamMemberId={memberId}
-                  practiceId={member.practice_id || practiceId || "1"}
+<TeamMemberDocumentsTab
+  teamMemberId={memberId}
+  practiceId={practiceId}
                   isAdmin={isAdmin}
                   currentUserId={currentUser?.id}
                   memberUserId={member.user_id}

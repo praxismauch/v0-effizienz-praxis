@@ -1,5 +1,8 @@
 "use client"
-
+/**
+ * AppSidebar - Main application sidebar navigation
+ * Last updated: 2026-02-03 - Removed Dialog, simplified favorites editing
+ */
 import { Sidebar } from "@/components/ui/sidebar"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useState, useEffect, useRef } from "react"
@@ -9,15 +12,7 @@ import { useUser } from "@/contexts/user-context"
 import { useTranslation } from "@/contexts/translation-context"
 import { usePractice } from "@/contexts/practice-context"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Star, GripVertical, Trash2 } from "lucide-react"
+import { Star } from "lucide-react"
 import { isSuperAdminRole, isPracticeAdminRole } from "@/lib/auth-utils"
 import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 import Logger from "@/lib/logger"
@@ -65,10 +60,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const initialLoadDone = useRef(false)
   
   // Favorites edit dialog state
-  const [showFavoritesEditDialog, setShowFavoritesEditDialog] = useState(false)
-  const [editingFavorites, setEditingFavorites] = useState<string[]>([])
-  const [draggedFavoriteIndex, setDraggedFavoriteIndex] = useState<number | null>(null)
-  const [isSavingFavorites, setIsSavingFavorites] = useState(false)
+
+
 
   const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true
@@ -442,81 +435,6 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
     }
   }
 
-  // Favorites editing functions
-  const openFavoritesEditDialog = () => {
-    setEditingFavorites([...favorites])
-    setShowFavoritesEditDialog(true)
-  }
-
-  const handleFavoriteDragStart = (index: number) => {
-    setDraggedFavoriteIndex(index)
-  }
-
-  const handleFavoriteDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault()
-    if (draggedFavoriteIndex === null || draggedFavoriteIndex === index) return
-
-    const newFavorites = [...editingFavorites]
-    const draggedItem = newFavorites[draggedFavoriteIndex]
-    newFavorites.splice(draggedFavoriteIndex, 1)
-    newFavorites.splice(index, 0, draggedItem)
-    setEditingFavorites(newFavorites)
-    setDraggedFavoriteIndex(index)
-  }
-
-  const handleFavoriteDragEnd = () => {
-    setDraggedFavoriteIndex(null)
-  }
-
-  const moveFavoriteUp = (index: number) => {
-    if (index === 0) return
-    const newFavorites = [...editingFavorites]
-    ;[newFavorites[index - 1], newFavorites[index]] = [newFavorites[index], newFavorites[index - 1]]
-    setEditingFavorites(newFavorites)
-  }
-
-  const moveFavoriteDown = (index: number) => {
-    if (index === editingFavorites.length - 1) return
-    const newFavorites = [...editingFavorites]
-    ;[newFavorites[index], newFavorites[index + 1]] = [newFavorites[index + 1], newFavorites[index]]
-    setEditingFavorites(newFavorites)
-  }
-
-  const removeEditingFavorite = (href: string) => {
-    setEditingFavorites(editingFavorites.filter((f) => f !== href))
-  }
-
-  const saveFavoritesOrder = async () => {
-    setIsSavingFavorites(true)
-    
-    // Update state immediately
-    setFavorites(editingFavorites)
-    
-    // Save to localStorage
-    try {
-      localStorage.setItem(`sidebar_favorites_${currentUser?.id || 'guest'}`, JSON.stringify(editingFavorites))
-    } catch (e) {}
-
-    // Dispatch event to update other components
-    window.dispatchEvent(new CustomEvent("favorites-updated", { detail: editingFavorites }))
-
-    // Save to database
-    if (currentUser?.id) {
-      try {
-        await fetch(`/api/users/${currentUser.id}/favorites`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "reorder", favorites: editingFavorites }),
-        })
-      } catch (error) {
-        console.error("[v0] Error saving favorites order:", error)
-      }
-    }
-
-    setIsSavingFavorites(false)
-    setShowFavoritesEditDialog(false)
-  }
-
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prevGroups) => {
       if (prevGroups.includes(groupId)) {
@@ -579,104 +497,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
           </div>
         </div>
 
-        {/* Favorites Edit Dialog */}
-        <Dialog open={showFavoritesEditDialog} onOpenChange={setShowFavoritesEditDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
-                {t("favorites.edit", "Favoriten bearbeiten")}
-              </DialogTitle>
-              <DialogDescription>
-                {t("favorites.edit_desc", "Ordnen Sie Ihre Favoriten per Drag & Drop neu an oder entfernen Sie sie")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {editingFavorites.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                  <Star className="h-12 w-12 mb-4 opacity-30" />
-                  <p className="font-medium">{t("favorites.empty", "Keine Favoriten vorhanden")}</p>
-                  <p className="text-sm mt-1">
-                    {t("favorites.empty_hint", "Klicken Sie mit der rechten Maustaste auf einen Menüpunkt, um ihn als Favorit hinzuzufügen")}
-                  </p>
-                </div>
-              ) : (
-                editingFavorites.map((href, index) => {
-                  const item = allNavItems.find((i) => i.href === href)
-                  if (!item) return null
-                  const Icon = item.icon
 
-                  return (
-                    <div
-                      key={href}
-                      draggable
-                      onDragStart={() => handleFavoriteDragStart(index)}
-                      onDragOver={(e) => handleFavoriteDragOver(e, index)}
-                      onDragEnd={handleFavoriteDragEnd}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg border bg-card transition-all cursor-move",
-                        draggedFavoriteIndex === index && "opacity-50 border-primary"
-                      )}
-                    >
-                      <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="p-1.5 rounded-md bg-amber-500/10">
-                          <Icon className="h-4 w-4 text-amber-600" />
-                        </div>
-                        <span className="font-medium truncate">{item.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => moveFavoriteUp(index)}
-                          disabled={index === 0}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m18 15-6-6-6 6"/>
-                          </svg>
-                          <span className="sr-only">Nach oben</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => moveFavoriteDown(index)}
-                          disabled={index === editingFavorites.length - 1}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m6 9 6 6 6-6"/>
-                          </svg>
-                          <span className="sr-only">Nach unten</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => removeEditingFavorite(href)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Entfernen</span>
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-            {editingFavorites.length > 0 && (
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowFavoritesEditDialog(false)}>
-                  {t("common.cancel", "Abbrechen")}
-                </Button>
-                <Button onClick={saveFavoritesOrder} disabled={isSavingFavorites}>
-                  {isSavingFavorites ? t("common.saving", "Speichern...") : t("common.save", "Speichern")}
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </Sidebar>
     </TooltipProvider>
   )

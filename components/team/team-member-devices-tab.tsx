@@ -143,7 +143,7 @@ export function TeamMemberDevicesTab({ memberId, practiceId, memberName }: TeamM
           {devices.length} Gerät{devices.length !== 1 ? "e" : ""} zugewiesen
         </CardDescription>
       </div>
-      <Button variant="outline" size="sm" onClick={() => router.push("/devices")}>
+      <Button size="sm" onClick={() => router.push("/devices")}>
         <Settings className="h-4 w-4 mr-2" />
         Zur Geräteverwaltung
       </Button>
@@ -155,7 +155,7 @@ export function TeamMemberDevicesTab({ memberId, practiceId, memberName }: TeamM
             <Monitor className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="font-medium">Keine Geräte zugewiesen</p>
             <p className="text-sm mt-1">Diesem Teammitglied sind keine Geräte als Verantwortliche/r zugewiesen.</p>
-            <Button variant="outline" className="mt-4 bg-transparent" onClick={() => router.push("/devices")}>
+            <Button className="mt-4" onClick={() => router.push("/devices")}>
               <Settings className="mr-2 h-4 w-4" />
               Zur Geräteverwaltung
             </Button>

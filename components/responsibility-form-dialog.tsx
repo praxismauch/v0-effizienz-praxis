@@ -147,8 +147,8 @@ function ResponsibilityFormDialog({
           return res.json()
         })
         .then((data) => {
-          // Data is an array directly, not wrapped in an object
-          const members = Array.isArray(data) ? data : []
+          // API returns { teamMembers: [...] } or direct array
+          const members = Array.isArray(data) ? data : (data?.teamMembers || [])
           setTeamMembers(members)
         })
         .catch((error) => {
@@ -211,7 +211,8 @@ function ResponsibilityFormDialog({
           return res.json()
         })
         .then((data) => {
-          const teamsArray = data?.teams || []
+          // API returns { teams: [...] } or direct array
+          const teamsArray = Array.isArray(data) ? data : (data?.teams || [])
           setTeams(teamsArray)
         })
         .catch((error) => {

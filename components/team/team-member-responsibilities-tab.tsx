@@ -28,12 +28,6 @@ interface Responsibility {
   assignment_team_name?: string
 }
 
-interface Team {
-  id: string
-  name: string
-  color: string
-}
-
 interface TeamMemberResponsibilitiesTabProps {
   memberId: string
   practiceId: string
@@ -53,7 +47,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
 
 const DEFAULT_COLOR = { bg: "bg-gray-50", text: "text-gray-700", border: "border-gray-200" }
 
-export function TeamMemberResponsibilitiesTab({
+export default function TeamMemberResponsibilitiesTab({
   memberId,
   practiceId,
   memberName,
@@ -104,12 +98,12 @@ export function TeamMemberResponsibilitiesTab({
     }
   }
 
-  const totalHours = responsibilities.reduce((sum, r) => sum + (r.suggested_hours_per_week || 0), 0)
+  const totalHours = responsibilities.reduce((sum: number, r: Responsibility) => sum + (r.suggested_hours_per_week || 0), 0)
 
-  const directCount = responsibilities.filter((r) => r.assignment_type === "direct").length
-  const deputyCount = responsibilities.filter((r) => r.assignment_type === "deputy").length
+  const directCount = responsibilities.filter((r: Responsibility) => r.assignment_type === "direct").length
+  const deputyCount = responsibilities.filter((r: Responsibility) => r.assignment_type === "deputy").length
   const teamCount = responsibilities.filter(
-    (r) => r.assignment_type === "team" || r.assignment_type === "team_member",
+    (r: Responsibility) => r.assignment_type === "team" || r.assignment_type === "team_member",
   ).length
 
   if (loading) {
@@ -192,69 +186,131 @@ export function TeamMemberResponsibilitiesTab({
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {responsibilities.map((responsibility) => {
-              const categoryColor = getCategoryColor(responsibility.category || responsibility.group_name)
-
-              return (
-                <div
-                  key={responsibility.id}
-                  className={`group relative rounded-lg border p-4 transition-all hover:shadow-md cursor-pointer ${categoryColor.border} ${categoryColor.bg}`}
-                  onClick={() => router.push("/responsibilities")}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm line-clamp-2">{responsibility.name}</h4>
-
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {getAssignmentBadge(responsibility)}
-                        {(responsibility.category || responsibility.group_name) && (
-                          <Badge variant="outline" className={`text-xs ${categoryColor.text} ${categoryColor.border}`}>
-                            {responsibility.category || responsibility.group_name}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {responsibility.description && (
-                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{responsibility.description}</p>
-                      )}
-                    </div>
-
-                    {responsibility.suggested_hours_per_week !== undefined &&
-                      responsibility.suggested_hours_per_week > 0 && (
-                        <Badge variant="secondary" className="flex items-center gap-1 shrink-0">
-                          <Clock className="h-3 w-3" />
-                          {responsibility.suggested_hours_per_week}h/W
-                        </Badge>
-                      )}
-                  </div>
-
-                  {responsibility.priority && (
-                    <div className="mt-3 pt-3 border-t border-dashed">
-                      <Badge
-                        variant={
-                          responsibility.priority === "high"
-                            ? "destructive"
-                            : responsibility.priority === "medium"
-                              ? "default"
-                              : "secondary"
-                        }
-                        className="text-xs"
-                      >
-                        {responsibility.priority === "high"
-                          ? "Hohe Priorität"
-                          : responsibility.priority === "medium"
-                            ? "Mittlere Priorität"
-                            : "Niedrige Priorität"}
-                      </Badge>
-                    </div>
-                  )}
+          <div className="space-y-6">
+            {/* Hauptverantwortlich Section */}
+            {responsibilities.filter((r: Responsibility) => r.assignment_type === "direct" || r.assignment_type === "team_member").length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Hauptverantwortlich
+                  <Badge variant="secondary" className="ml-1">
+                    {responsibilities.filter((r: Responsibility) => r.assignment_type === "direct" || r.assignment_type === "team_member").length}
+                  </Badge>
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {responsibilities
+                    .filter((r: Responsibility) => r.assignment_type === "direct" || r.assignment_type === "team_member")
+                    .map((responsibility: Responsibility) => {
+                      const categoryColor = getCategoryColor(responsibility.category || responsibility.group_name)
+                      return (
+                        <div
+                          key={responsibility.id}
+                          className={`group relative rounded-lg border p-4 transition-all hover:shadow-md cursor-pointer ${categoryColor.border} ${categoryColor.bg}`}
+                          onClick={() => router.push("/responsibilities")}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm line-clamp-2">{responsibility.name}</h4>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {getAssignmentBadge(responsibility)}
+                                {(responsibility.category || responsibility.group_name) && (
+                                  <Badge variant="outline" className={`text-xs ${categoryColor.text} ${categoryColor.border}`}>
+                                    {responsibility.category || responsibility.group_name}
+                                  </Badge>
+                                )}
+                              </div>
+                              {responsibility.description && (
+                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{responsibility.description}</p>
+                              )}
+                            </div>
+                            {responsibility.suggested_hours_per_week !== undefined && responsibility.suggested_hours_per_week > 0 && (
+                              <Badge variant="secondary" className="flex items-center gap-1 shrink-0">
+                                <Clock className="h-3 w-3" />
+                                {responsibility.suggested_hours_per_week}h/W
+                              </Badge>
+                            )}
+                          </div>
+                          {responsibility.priority && (
+                            <div className="mt-3 pt-3 border-t border-dashed">
+                              <Badge
+                                variant={responsibility.priority === "high" ? "destructive" : responsibility.priority === "medium" ? "default" : "secondary"}
+                                className="text-xs"
+                              >
+                                {responsibility.priority === "high" ? "Hohe Priorität" : responsibility.priority === "medium" ? "Mittlere Priorität" : "Niedrige Priorität"}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                 </div>
-              )
-            })}
+              </div>
+            )}
+
+            {/* Stellvertreter Section */}
+            {responsibilities.filter((r: Responsibility) => r.assignment_type === "deputy" || r.assignment_type === "team").length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  Stellvertreter
+                  <Badge variant="outline" className="ml-1">
+                    {responsibilities.filter((r: Responsibility) => r.assignment_type === "deputy" || r.assignment_type === "team").length}
+                  </Badge>
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {responsibilities
+                    .filter((r: Responsibility) => r.assignment_type === "deputy" || r.assignment_type === "team")
+                    .map((responsibility: Responsibility) => {
+                      const categoryColor = getCategoryColor(responsibility.category || responsibility.group_name)
+                      return (
+                        <div
+                          key={responsibility.id}
+                          className={`group relative rounded-lg border p-4 transition-all hover:shadow-md cursor-pointer ${categoryColor.border} ${categoryColor.bg}`}
+                          onClick={() => router.push("/responsibilities")}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm line-clamp-2">{responsibility.name}</h4>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {getAssignmentBadge(responsibility)}
+                                {(responsibility.category || responsibility.group_name) && (
+                                  <Badge variant="outline" className={`text-xs ${categoryColor.text} ${categoryColor.border}`}>
+                                    {responsibility.category || responsibility.group_name}
+                                  </Badge>
+                                )}
+                              </div>
+                              {responsibility.description && (
+                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{responsibility.description}</p>
+                              )}
+                            </div>
+                            {responsibility.suggested_hours_per_week !== undefined && responsibility.suggested_hours_per_week > 0 && (
+                              <Badge variant="secondary" className="flex items-center gap-1 shrink-0">
+                                <Clock className="h-3 w-3" />
+                                {responsibility.suggested_hours_per_week}h/W
+                              </Badge>
+                            )}
+                          </div>
+                          {responsibility.priority && (
+                            <div className="mt-3 pt-3 border-t border-dashed">
+                              <Badge
+                                variant={responsibility.priority === "high" ? "destructive" : responsibility.priority === "medium" ? "default" : "secondary"}
+                                className="text-xs"
+                              >
+                                {responsibility.priority === "high" ? "Hohe Priorität" : responsibility.priority === "medium" ? "Mittlere Priorität" : "Niedrige Priorität"}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
     </Card>
   )
 }
+
+export { TeamMemberResponsibilitiesTab }

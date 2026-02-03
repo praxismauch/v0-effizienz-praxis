@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -48,6 +49,7 @@ interface ArbeitsmittelAssignmentsProps {
 }
 
 export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: ArbeitsmittelAssignmentsProps) {
+  const router = useRouter()
   const { toast } = useToast()
   const { assignments, isLoading, mutate } = useTeamMemberArbeitsmittel(practiceId, teamMemberId)
   
@@ -343,9 +345,9 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
               </CardTitle>
               <CardDescription>Arbeitsmittel, die diesem Mitarbeiter zugewiesen wurden</CardDescription>
             </div>
-            <Button onClick={() => handleOpenDialog()}>
+            <Button onClick={() => router.push("/arbeitsmittel")}>
               <Plus className="mr-2 h-4 w-4" />
-              Arbeitsmittel zuweisen
+              Arbeitsmittel Verwaltung
             </Button>
           </div>
         </CardHeader>

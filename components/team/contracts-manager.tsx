@@ -223,7 +223,7 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
             const holidayDays = calculateHolidayDays(contract)
 
             return (
-              <Card key={contract.id} className={active ? "border-primary" : ""}>
+              <Card key={contract.id} className={`group ${active ? "border-primary" : ""}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -242,7 +242,7 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="sm" onClick={() => setEditingContract(contract)}>
                         <Edit className="h-4 w-4" />
                       </Button>

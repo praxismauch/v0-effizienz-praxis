@@ -93,3 +93,20 @@ export interface DienstplanStats {
 }
 
 export const DAYS_OF_WEEK = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+
+export interface ScheduleTemplateShift {
+  day_of_week: number // 0-6 (Monday-Sunday)
+  shift_type_id: string
+  role_filter?: string // Optional: only assign to members with this role
+}
+
+export interface ScheduleTemplate {
+  id: string
+  practice_id: string
+  name: string
+  description?: string
+  shifts: ScheduleTemplateShift[]
+  is_default: boolean
+  created_at?: string
+  updated_at?: string
+}

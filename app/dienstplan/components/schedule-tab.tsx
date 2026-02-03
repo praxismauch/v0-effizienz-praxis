@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2, ArrowLeftRight, Search, Users } from "lucide-react"
+import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2, ArrowLeftRight, Search, Users, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,7 +25,8 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import ShiftDialog from "./shift-dialog"
 import SwapRequestDialog from "./swap-request-dialog"
-import type { TeamMember, Shift, ShiftType } from "../types"
+import ScheduleTemplateDialog from "./schedule-template-dialog"
+import type { TeamMember, Shift, ShiftType, ScheduleTemplate } from "../types"
 
 interface ScheduleTabProps {
   weekDays: Date[]
@@ -69,6 +70,70 @@ export default function ScheduleTab({
   // Swap dialog state
   const [swapDialogOpen, setSwapDialogOpen] = useState(false)
   const [swappingShift, setSwappingShift] = useState<Shift | null>(null)
+  
+  // Template dialog state
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false)
+
+  // Apply template to current week
+  const handleApplyTemplate = async (template: ScheduleTemplate) => {
+    if (!template.shifts || template.shifts.length === 0) {
+      toast({
+        title: "Keine Schichten",
+        description: "Diese Vorlage enthält keine Schichten.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Create shifts for each day in the current week based on the template
+      const newShifts: any[] = []
+      
+      for (const templateShift of template.shifts) {
+        const dayDate = weekDays[templateShift.day_of_week]
+        if (!dayDate) continue
+
+        const shiftType = shiftTypes.find((st) => st.id === templateShift.shift_type_id)
+        if (!shiftType) continue
+
+        // Find matching team members based on role filter
+        const eligibleMembers = templateShift.role_filter
+          ? teamMembers.filter((m) => m.role === templateShift.role_filter)
+          : teamMembers
+
+        // For now, create one shift per template entry (can be expanded later)
+        if (eligibleMembers.length > 0) {
+          newShifts.push({
+            practice_id: practiceId,
+            team_member_id: eligibleMembers[0].id, // Assign to first eligible member
+            shift_type_id: templateShift.shift_type_id,
+            shift_date: format(dayDate, "yyyy-MM-dd"),
+            start_time: shiftType.start_time,
+            end_time: shiftType.end_time,
+            status: "scheduled",
+          })
+        }
+      }
+
+      // Save all shifts
+      for (const shift of newShifts) {
+        await handleSaveShift(shift)
+      }
+
+      toast({
+        title: "Vorlage angewendet",
+        description: `${newShifts.length} Schichten wurden erstellt.`,
+      })
+      
+      await onRefresh()
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Vorlage konnte nicht angewendet werden.",
+        variant: "destructive",
+      })
+    }
+  }
 
   // Get unique roles from team members for the filter dropdown
   const availableRoles = useMemo(() => {
@@ -203,10 +268,16 @@ export default function ScheduleTab({
 
   return (
     <Card>
-      <CardHeader className="pb-4">
-        <div className="flex flex-col gap-4">
-          <CardTitle>Wochenplan</CardTitle>
-          <div className="flex flex-col sm:flex-row gap-3">
+  <CardHeader className="pb-4">
+  <div className="flex flex-col gap-4">
+  <div className="flex items-center justify-between">
+    <CardTitle>Wochenplan</CardTitle>
+    <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)}>
+      <FileText className="h-4 w-4 mr-2" />
+      Vorlagen
+    </Button>
+  </div>
+  <div className="flex flex-col sm:flex-row gap-3">
             {/* Search filter */}
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -363,16 +434,25 @@ export default function ScheduleTab({
         onSave={handleSaveShift}
       />
 
-      <SwapRequestDialog
-        open={swapDialogOpen}
-        onOpenChange={setSwapDialogOpen}
-        currentShift={swappingShift}
-        allShifts={schedules || []}
-        shiftTypes={shiftTypes || []}
-        teamMembers={teamMembers || []}
-        practiceId={practiceId}
-        onSuccess={handleSwapSuccess}
-      />
-    </Card>
+<SwapRequestDialog
+  open={swapDialogOpen}
+  onOpenChange={setSwapDialogOpen}
+  currentShift={swappingShift}
+  allShifts={schedules || []}
+  shiftTypes={shiftTypes || []}
+  teamMembers={teamMembers || []}
+  practiceId={practiceId}
+  onSuccess={handleSwapSuccess}
+  />
+
+  <ScheduleTemplateDialog
+    open={templateDialogOpen}
+    onOpenChange={setTemplateDialogOpen}
+    practiceId={practiceId}
+    shiftTypes={shiftTypes || []}
+    availableRoles={availableRoles}
+    onApplyTemplate={handleApplyTemplate}
+  />
+  </Card>
   )
 }

@@ -258,8 +258,8 @@ export default function TeamMemberDetailPage() {
                 <TabsTrigger value="overview">Übersicht</TabsTrigger>
                 <TabsTrigger value="contracts">Verträge</TabsTrigger>
                 <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
-                <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
                 <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
+                <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
                 <TabsTrigger value="documents">Dokumente</TabsTrigger>
                 <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
                 <TabsTrigger value="devices">Geräte</TabsTrigger>

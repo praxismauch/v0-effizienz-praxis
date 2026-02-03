@@ -54,6 +54,7 @@ export async function GET(
     if (respError) throw respError
 
     // Filter responsibilities assigned to this member
+    // responsible_user_id can be either team_member.id OR auth.user_id depending on how it was saved
     const responsibilities = (allResponsibilities || []).map((resp: any) => {
       const teamMemberIds = resp.team_member_ids || []
       const assignedTeams = resp.assigned_teams || []
@@ -61,13 +62,15 @@ export async function GET(
       let assignmentType: "direct" | "team_member" | "team" | "deputy" | undefined
       let assignmentTeamName: string | undefined
 
-      if (resp.responsible_user_id === authUserId) {
+      // Check if this member is the responsible person
+      // responsible_user_id could be team_member.id or auth user_id
+      if (resp.responsible_user_id === memberId || resp.responsible_user_id === authUserId) {
         assignmentType = "direct"
       } else if (teamMemberIds.includes(memberId)) {
         assignmentType = "team_member"
       } else if (assignedTeams.some((teamId: string) => memberTeamIds.includes(teamId))) {
         assignmentType = "team"
-      } else if (resp.deputy_user_id === authUserId) {
+      } else if (resp.deputy_user_id === memberId || resp.deputy_user_id === authUserId) {
         assignmentType = "deputy"
       }
 

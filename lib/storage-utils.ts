@@ -5,8 +5,10 @@
  * Simplified version that doesn't require encryption key persistence.
  */
 
+import Logger from "@/lib/logger"
+
 interface StoredData {
-  data: any
+  data: unknown
   expiresAt: number
   checksum: string
 }
@@ -67,13 +69,13 @@ export async function decryptStorage(encryptedString: string): Promise<any | nul
     const dataString = JSON.stringify(stored.data)
     const expectedChecksum = generateChecksum(`${dataString}:${stored.expiresAt}`)
     if (expectedChecksum !== stored.checksum) {
-      console.warn("[storage] Checksum verification failed - data may be tampered")
+      Logger.warn("storage", "Checksum verification failed - data may be tampered")
       return null
     }
 
     return stored.data
-  } catch (e) {
-    console.error("[storage] Storage error:", e)
+  } catch (error) {
+    Logger.error("storage", "Storage decryption error", error)
     return null
   }
 }

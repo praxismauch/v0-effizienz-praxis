@@ -4,31 +4,19 @@ import { createContext, useContext, useState, useEffect, useRef, useMemo, useCal
 import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { isSuperAdminRole, isPracticeAdminRole, normalizeRole } from "@/lib/auth-utils"
+import { isSuperAdminRole, isPracticeAdminRole } from "@/lib/auth-utils"
 import Logger from "@/lib/logger"
 import { encryptStorage, decryptStorage, isStorageExpired } from "@/lib/storage-utils"
 import { retryWithBackoff, isAuthError } from "@/lib/retry-utils"
+import { 
+  type User, 
+  mapProfileToUser, 
+  isPublicRoute, 
+  dispatchAuthRecovered 
+} from "@/lib/user-utils"
 
-const dispatchAuthRecovered = () => {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("auth-recovered"))
-  }
-}
-
-export interface User {
-  id: string
-  name: string
-  email: string
-  role: "superadmin" | "admin" | "doctor" | "nurse" | "receptionist"
-  avatar?: string
-  practiceId: string | null
-  isActive: boolean
-  joinedAt: string
-  preferred_language?: string
-  practice_id?: string
-  defaultPracticeId?: string | null
-  firstName?: string
-}
+// Re-export User type for consumers
+export type { User }
 
 interface Practice {
   id: string
@@ -52,46 +40,6 @@ interface UserContextType {
 }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined)
-
-const PUBLIC_ROUTES = [
-  "/",
-  "/auth/login",
-  "/auth/register",
-  "/auth/sign-up",
-  "/auth/reset-password",
-  "/auth/callback",
-  "/auth/pending-approval",
-  "/auth/sign-up-success",
-  "/features",
-  "/effizienz",
-  "/about",
-  "/contact",
-  "/kontakt",
-  "/preise",
-  "/coming-soon",
-  "/demo",
-  "/help",
-  "/careers",
-  "/karriere",
-  "/ueber-uns",
-  "/impressum",
-  "/datenschutz",
-  "/agb",
-  "/sicherheit",
-  "/cookies",
-  "/whats-new",
-  "/updates",
-]
-
-const PUBLIC_ROUTE_PREFIXES = ["/features/", "/blog/", "/auth/"]
-
-const isPublicRoute = (path: string): boolean => {
-  if (PUBLIC_ROUTES.some((route) => path === route)) return true
-  for (const prefix of PUBLIC_ROUTE_PREFIXES) {
-    if (path.startsWith(prefix)) return true
-  }
-  return false
-}
 
 export function UserProvider({
   children,
@@ -250,20 +198,7 @@ export function UserProvider({
                 throw new Error("No user data in dev response")
               }
 
-              const user: User = {
-                id: data.user.id,
-                name:
-                  data.user.name || `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim() || "Dev User",
-                email: data.user.email || DEV_USER_EMAIL,
-                role: normalizeRole(data.user.role) as User["role"],
-                avatar: data.user.avatar,
-                practiceId: data.user.practice_id?.toString() || "1",
-                practice_id: data.user.practice_id?.toString() || "1",
-                isActive: data.user.is_active ?? true,
-                joinedAt: data.user.created_at || new Date().toISOString(),
-                preferred_language: data.user.preferred_language,
-                firstName: data.user.first_name,
-              }
+              const user = mapProfileToUser(data.user, DEV_USER_EMAIL)
               setCurrentUser(user)
               await persistUserToStorage(user)
               hasFetchedUser.current = true
@@ -336,20 +271,7 @@ export function UserProvider({
                 throw new Error("Profile creation returned no data")
               }
               
-              const user: User = {
-                id: createdProfile.id,
-                name: createdProfile.name || `${createdProfile.first_name || ""} ${createdProfile.last_name || ""}`.trim() || "User",
-                email: createdProfile.email || authUser.email || "",
-                role: normalizeRole(createdProfile.role) as User["role"],
-                avatar: createdProfile.avatar,
-                practiceId: createdProfile.practice_id?.toString() || "1",
-                practice_id: createdProfile.practice_id?.toString() || "1",
-                isActive: createdProfile.is_active ?? true,
-                joinedAt: createdProfile.created_at || new Date().toISOString(),
-                preferred_language: createdProfile.preferred_language,
-                firstName: createdProfile.first_name,
-              }
-
+              const user = mapProfileToUser(createdProfile, authUser.email)
               setCurrentUser(user)
               await persistUserToStorage(user)
               hasFetchedUser.current = true
@@ -357,20 +279,7 @@ export function UserProvider({
               return
             }
 
-            const user: User = {
-              id: profile.id,
-              name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "User",
-              email: profile.email || authUser.email || "",
-              role: normalizeRole(profile.role) as User["role"],
-              avatar: profile.avatar,
-              practiceId: profile.practice_id?.toString() || "1",
-              practice_id: profile.practice_id?.toString() || "1",
-              isActive: profile.is_active ?? true,
-              joinedAt: profile.created_at || new Date().toISOString(),
-              preferred_language: profile.preferred_language,
-              firstName: profile.first_name,
-            }
-
+            const user = mapProfileToUser(profile, authUser.email)
             setCurrentUser(user)
             await persistUserToStorage(user)
             hasFetchedUser.current = true
@@ -466,19 +375,7 @@ export function UserProvider({
                 return
               }
               
-              const user: User = {
-                id: createdProfile.id,
-                name: createdProfile.name || `${createdProfile.first_name || ""} ${createdProfile.last_name || ""}`.trim() || "User",
-                email: createdProfile.email || session.user.email || "",
-                role: normalizeRole(createdProfile.role) as User["role"],
-                avatar: createdProfile.avatar,
-                practiceId: createdProfile.practice_id?.toString() || "1",
-                practice_id: createdProfile.practice_id?.toString() || "1",
-                isActive: createdProfile.is_active ?? true,
-                joinedAt: createdProfile.created_at || new Date().toISOString(),
-                preferred_language: createdProfile.preferred_language,
-                firstName: createdProfile.first_name,
-              }
+              const user = mapProfileToUser(createdProfile, session.user.email)
               setCurrentUser(user)
               await persistUserToStorage(user)
               hasFetchedUser.current = true
@@ -486,19 +383,7 @@ export function UserProvider({
               return
             }
 
-            const user: User = {
-              id: profile.id,
-              name: profile.name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "User",
-              email: profile.email || session.user.email || "",
-              role: normalizeRole(profile.role) as User["role"],
-              avatar: profile.avatar,
-              practiceId: profile.practice_id?.toString() || "1",
-              practice_id: profile.practice_id?.toString() || "1",
-              isActive: profile.is_active ?? true,
-              joinedAt: profile.created_at || new Date().toISOString(),
-              preferred_language: profile.preferred_language,
-              firstName: profile.first_name,
-            }
+            const user = mapProfileToUser(profile, session.user.email)
             setCurrentUser(user)
             await persistUserToStorage(user)
             hasFetchedUser.current = true
@@ -533,17 +418,7 @@ export function UserProvider({
           if (data.users) {
             const admins = data.users
               .filter((u: any) => isSuperAdminRole(u.role))
-              .map((u: any) => ({
-                id: u.id,
-                name: u.name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || "Unknown",
-                email: u.email,
-                role: u.role,
-                isActive: u.is_active ?? true,
-                practiceId: u.practice_id?.toString() || "1",
-                joinedAt: u.created_at || new Date().toISOString(),
-                avatar: u.avatar,
-                preferred_language: u.preferred_language,
-              }))
+              .map((u: any) => mapProfileToUser(u))
             setSuperAdmins(admins)
           }
         }

@@ -75,8 +75,18 @@ export async function GET(
     
     // Filter responsibilities assigned to this member
     // responsible_user_id can be either team_member.id OR auth.user_id depending on how it was saved
-    console.log("[v0] Checking responsibilities. Member ID:", memberId, "Auth User ID:", authUserId, "Team IDs:", memberTeamIds)
+    console.log("[v0] Checking responsibilities for member. Member ID:", memberId, "Auth User ID:", authUserId)
+    console.log("[v0] Member team IDs:", memberTeamIds)
     console.log("[v0] Total responsibilities to check:", allResponsibilities?.length || 0)
+    console.log("[v0] Team member lookup map size:", allTeamMembers?.length || 0)
+    
+    // Debug: Log first 5 responsibilities to see what IDs they contain
+    if (allResponsibilities && allResponsibilities.length > 0) {
+      console.log("[v0] Sample responsibilities:")
+      allResponsibilities.slice(0, 5).forEach((r: any, i: number) => {
+        console.log(`[v0]   ${i+1}. "${r.name}" - responsible_user_id: ${r.responsible_user_id}, deputy: ${r.deputy_user_id}, team_member_ids: ${JSON.stringify(r.team_member_ids)}`)
+      })
+    }
     
     const responsibilities = (allResponsibilities || []).map((resp: any) => {
       const teamMemberIds = resp.team_member_ids || []
@@ -119,12 +129,16 @@ export async function GET(
       
       if (isDirectResponsible) {
         assignmentType = "direct"
+        console.log(`[v0] MATCH (direct): "${resp.name}" - respUserId=${respUserId} matches memberId=${memberId} or authUserId=${authUserId}`)
       } else if (isInTeamMembers) {
         assignmentType = "team_member"
+        console.log(`[v0] MATCH (team_member): "${resp.name}"`)
       } else if (isInTeam) {
         assignmentType = "team"
+        console.log(`[v0] MATCH (team): "${resp.name}"`)
       } else if (isDeputy) {
         assignmentType = "deputy"
+        console.log(`[v0] MATCH (deputy): "${resp.name}"`)
       }
 
       return {
@@ -134,7 +148,7 @@ export async function GET(
       }
     }).filter((resp: any) => resp.assignment_type)
     
-    console.log("[v0] Found", responsibilities.length, "responsibilities for member", memberId)
+    console.log("[v0] Final matched responsibilities count:", responsibilities.length, "for member", memberId)
 
     return NextResponse.json(responsibilities)
   } catch (error: any) {

@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
+import { getSupabaseUrl, getSupabaseAnonKey, hasSupabaseConfig } from "./lib/supabase/config"
 
 /**
  * Edge-compatible logging utilities
@@ -150,13 +151,23 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
 
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = getSupabaseUrl()
+  const supabaseAnonKey = getSupabaseAnonKey()
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    edgeLog.error("Missing Supabase environment variables")
-    return supabaseResponse
+  // Debug logging to verify env vars are working
+  console.log("[v0] Middleware Supabase check:", {
+    hasConfig: hasSupabaseConfig(),
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey,
+    urlPreview: supabaseUrl ? `${supabaseUrl.slice(0, 30)}...` : "missing",
+  })
+
+  if (!hasSupabaseConfig()) {
+    console.log("[v0] Supabase not configured - skipping auth. Add credentials to lib/supabase/config.ts")
+    return addSecurityHeaders(supabaseResponse)
   }
+  
+  console.log("[v0] Supabase IS configured - running auth checks")
 
   try {
     // Create fresh Supabase client for each request

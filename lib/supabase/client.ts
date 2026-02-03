@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from "@supabase/ssr"
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseAnonKey, hasSupabaseConfig } from "./config"
 
 // Singleton instance for the browser client
 let browserClient: SupabaseClient | null = null
@@ -11,12 +12,11 @@ export function createClient(): SupabaseClient {
     return browserClient
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = getSupabaseUrl()
+  const supabaseAnonKey = getSupabaseAnonKey()
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn("Missing Supabase environment variables - returning mock client")
-    // Return a mock client that fails gracefully
+  if (!hasSupabaseConfig()) {
+    // Supabase not configured - return mock client
     return {
       auth: {
         getUser: async () => ({ data: { user: null }, error: null }),

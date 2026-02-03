@@ -1,5 +1,6 @@
 import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
 import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseAnonKey, getSupabaseServiceRoleKey, hasSupabaseConfig, hasSupabaseAdminConfig } from "./config"
 
 // Cache for admin client (service role) - this is safe to cache as it doesn't use cookies
 let adminClientCache: SupabaseClient | null = null
@@ -13,11 +14,11 @@ export async function createClient() {
   const { cookies } = await import("next/headers")
   const cookieStore = await cookies()
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = getSupabaseUrl()
+  const supabaseAnonKey = getSupabaseAnonKey()
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn("Supabase not configured - missing environment variables. Using placeholder client.")
+  if (!hasSupabaseConfig()) {
+    // Supabase not configured - return mock client
     // Return a mock client that will fail gracefully
     return {
       auth: {
@@ -70,11 +71,11 @@ export async function createAdminClient() {
     return adminClientCache
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = getSupabaseUrl()
+  const serviceRoleKey = getSupabaseServiceRoleKey()
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    console.warn("Supabase admin client not configured - missing SUPABASE_SERVICE_ROLE_KEY")
+  if (!hasSupabaseAdminConfig()) {
+    console.warn("Supabase admin client not configured - add credentials to lib/supabase/config.ts")
     return null as unknown as SupabaseClient
   }
 

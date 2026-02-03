@@ -345,7 +345,7 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
             </div>
             <Button onClick={() => handleOpenDialog()}>
               <Plus className="mr-2 h-4 w-4" />
-              Arbeitsmittel zuweisen
+              Arbeitsmittel Verwaltung
             </Button>
           </div>
         </CardHeader>

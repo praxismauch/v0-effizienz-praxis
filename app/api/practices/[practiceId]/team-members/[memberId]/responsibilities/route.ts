@@ -25,13 +25,17 @@ export async function GET(
     // Get team member's user_id
     const { data: teamMemberData, error: memberError } = await adminClient
       .from("team_members")
-      .select("user_id")
+      .select("id, user_id")
       .eq("id", memberId)
       .single()
 
-    if (memberError) throw memberError
+    if (memberError) {
+      console.error("[v0] Error fetching team member:", memberError)
+      throw memberError
+    }
 
     const authUserId = teamMemberData?.user_id
+    console.log("[v0] Team member ID:", memberId, "Auth user ID:", authUserId)
     let memberTeamIds: string[] = []
 
     // Get team assignments
@@ -53,8 +57,27 @@ export async function GET(
 
     if (respError) throw respError
 
+    // Build a lookup map of all team members to check both team_member.id and user_id
+    const { data: allTeamMembers } = await adminClient
+      .from("team_members")
+      .select("id, user_id")
+      .eq("practice_id", practiceId)
+    
+    // Create bidirectional lookup: team_member.id <-> user_id
+    const teamMemberIdToUserId = new Map<string, string>()
+    const userIdToTeamMemberId = new Map<string, string>()
+    allTeamMembers?.forEach((tm: any) => {
+      if (tm.user_id) {
+        teamMemberIdToUserId.set(tm.id, tm.user_id)
+        userIdToTeamMemberId.set(tm.user_id, tm.id)
+      }
+    })
+    
     // Filter responsibilities assigned to this member
     // responsible_user_id can be either team_member.id OR auth.user_id depending on how it was saved
+    console.log("[v0] Checking responsibilities. Member ID:", memberId, "Auth User ID:", authUserId, "Team IDs:", memberTeamIds)
+    console.log("[v0] Total responsibilities to check:", allResponsibilities?.length || 0)
+    
     const responsibilities = (allResponsibilities || []).map((resp: any) => {
       const teamMemberIds = resp.team_member_ids || []
       const assignedTeams = resp.assigned_teams || []
@@ -63,14 +86,44 @@ export async function GET(
       let assignmentTeamName: string | undefined
 
       // Check if this member is the responsible person
-      // responsible_user_id could be team_member.id or auth user_id
-      if (resp.responsible_user_id === memberId || resp.responsible_user_id === authUserId) {
+      // responsible_user_id could be team_member.id OR auth user_id - check both
+      const respUserId = resp.responsible_user_id
+      const deputyUserId = resp.deputy_user_id
+      
+      // Convert respUserId to check against both memberId and authUserId
+      const respIsTeamMemberId = respUserId === memberId
+      const respIsAuthUserId = respUserId === authUserId
+      // Also check if respUserId is another team member's user_id that matches our memberId
+      const respMatchesViaLookup = respUserId && (
+        userIdToTeamMemberId.get(respUserId) === memberId ||
+        teamMemberIdToUserId.get(respUserId) === authUserId
+      )
+      
+      const isDirectResponsible = respIsTeamMemberId || respIsAuthUserId || respMatchesViaLookup
+      
+      // Check team_member_ids array (could contain either type of ID)
+      const isInTeamMembers = teamMemberIds.includes(memberId) || 
+        (authUserId && teamMemberIds.includes(authUserId)) ||
+        teamMemberIds.some((id: string) => userIdToTeamMemberId.get(id) === memberId || teamMemberIdToUserId.get(id) === authUserId)
+      
+      const isInTeam = assignedTeams.some((teamId: string) => memberTeamIds.includes(teamId))
+      
+      // Check deputy similarly
+      const deputyIsTeamMemberId = deputyUserId === memberId
+      const deputyIsAuthUserId = deputyUserId === authUserId
+      const deputyMatchesViaLookup = deputyUserId && (
+        userIdToTeamMemberId.get(deputyUserId) === memberId ||
+        teamMemberIdToUserId.get(deputyUserId) === authUserId
+      )
+      const isDeputy = deputyIsTeamMemberId || deputyIsAuthUserId || deputyMatchesViaLookup
+      
+      if (isDirectResponsible) {
         assignmentType = "direct"
-      } else if (teamMemberIds.includes(memberId)) {
+      } else if (isInTeamMembers) {
         assignmentType = "team_member"
-      } else if (assignedTeams.some((teamId: string) => memberTeamIds.includes(teamId))) {
+      } else if (isInTeam) {
         assignmentType = "team"
-      } else if (resp.deputy_user_id === memberId || resp.deputy_user_id === authUserId) {
+      } else if (isDeputy) {
         assignmentType = "deputy"
       }
 
@@ -80,6 +133,8 @@ export async function GET(
         assignment_team_name: assignmentTeamName,
       }
     }).filter((resp: any) => resp.assignment_type)
+    
+    console.log("[v0] Found", responsibilities.length, "responsibilities for member", memberId)
 
     return NextResponse.json(responsibilities)
   } catch (error: any) {

@@ -500,7 +500,7 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
           </Button>
         )}
       </div>
-      </CardHeader>
+    </CardHeader>
   </Card>
 
       {/* Summary Cards */}

@@ -21,7 +21,7 @@ import { useRoleColors } from "@/lib/use-role-colors"
 import { ContractsManager } from "@/components/team/contracts-manager"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
 import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
-import { ArrowLeft, Clipboard, Trash2, Syringe, FileText, Cake } from "lucide-react"
+import { ArrowLeft, Clipboard, Trash2, Syringe, FileText, Cake, Package } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -735,39 +735,67 @@ export default function EditTeamMemberPage() {
           )}
 
           <TabsContent value="contracts" className="space-y-4">
-            {member && (
+            {member ? (
               <ContractsManager 
                 memberId={memberId} 
                 memberName={member.name}
                 practiceId={member.practice_id || ""}
               />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
           <TabsContent value="arbeitsmittel" className="space-y-4">
-            {member && (
+            {member ? (
               <ArbeitsmittelAssignments
                 teamMemberId={memberId}
                 practiceId={member.practice_id || ""}
               />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
           <TabsContent value="vaccinations" className="space-y-4">
-            {member && (
+            {member ? (
               <TeamMemberVaccinationTab
                 teamMemberId={memberId}
                 practiceId={Number(member.practice_id) || 1}
               />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Syringe className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-4">
-            {member && (
+            {member ? (
               <TeamMemberDocumentsTab
                 teamMemberId={memberId}
                 practiceId={member.practice_id || "1"}
               />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -489,9 +489,9 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
             <MessageSquare className="h-5 w-5" />
             Mitarbeitergespräche
           </CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <CardDescription>
             {appraisals.length} Gespräch{appraisals.length !== 1 ? "e" : ""} erfasst
-          </p>
+          </CardDescription>
         </div>
         {isAdmin && (
           <Button onClick={openNewDialog}>

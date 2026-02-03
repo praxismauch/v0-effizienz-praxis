@@ -9,6 +9,15 @@ import { useUser } from "@/contexts/user-context"
 import { useTranslation } from "@/contexts/translation-context"
 import { usePractice } from "@/contexts/practice-context"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Star, GripVertical, Trash2 } from "lucide-react"
 import { isSuperAdminRole, isPracticeAdminRole } from "@/lib/auth-utils"
 import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 import Logger from "@/lib/logger"
@@ -54,6 +63,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [badgeVisibility, setBadgeVisibility] = useState<Record<string, boolean>>(DEFAULT_BADGE_VISIBILITY)
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   const initialLoadDone = useRef(false)
+  
+  // Favorites edit dialog state
+  const [showFavoritesEditDialog, setShowFavoritesEditDialog] = useState(false)
+  const [editingFavorites, setEditingFavorites] = useState<string[]>([])
+  const [draggedFavoriteIndex, setDraggedFavoriteIndex] = useState<number | null>(null)
+  const [isSavingFavorites, setIsSavingFavorites] = useState(false)
 
   const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true

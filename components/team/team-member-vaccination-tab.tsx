@@ -207,7 +207,16 @@ export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMembe
   const selectedVaccType = VACCINATION_TYPES.find(v => v.type === formData.vaccination_type)
 
   if (loading) {
-    return <div className="p-4">Lade Impfstatus...</div>
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="animate-pulse">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground">Lade Impfstatus...</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

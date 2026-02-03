@@ -217,7 +217,16 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
   }
 
   if (loading) {
-    return <div className="p-4">Lade Dokumente...</div>
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="animate-pulse">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground">Lade Dokumente...</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

@@ -24,7 +24,7 @@ import {
   FolderOpen,
   Image as ImageIcon
 } from "lucide-react"
-import { SuperAdminLayout } from "@/components/super-admin-layout"
+
 
 interface ScreenshotJob {
   id: string
@@ -56,17 +56,44 @@ const defaultConfig: ScreenshotConfig = {
 }
 
 const defaultPages = [
+  // Public Pages
   { path: "/", name: "Landing Page" },
+  { path: "/about", name: "Über uns" },
+  { path: "/pricing", name: "Preise" },
+  { path: "/features", name: "Features" },
+  { path: "/contact", name: "Kontakt" },
+  { path: "/blog", name: "Blog" },
+  { path: "/auth/login", name: "Login" },
+  { path: "/auth/register", name: "Registrierung" },
+  // App Pages
   { path: "/dashboard", name: "Dashboard" },
   { path: "/analytics", name: "Auswertung" },
   { path: "/team", name: "Team" },
   { path: "/zeiterfassung", name: "Zeiterfassung" },
   { path: "/documents", name: "Dokumente" },
   { path: "/settings", name: "Einstellungen" },
+  { path: "/responsibilities", name: "Zuständigkeiten" },
+  { path: "/devices", name: "Geräte" },
+  { path: "/arbeitsmittel", name: "Arbeitsmittel" },
+  { path: "/skills", name: "Kompetenzen" },
+  { path: "/qm", name: "QM-Handbuch" },
+  { path: "/tasks", name: "Aufgaben" },
+  { path: "/calendar", name: "Kalender" },
+  { path: "/inbox", name: "Posteingang" },
+  { path: "/feedback", name: "Feedback" },
+  // Super Admin Pages
   { path: "/super-admin", name: "Super Admin Dashboard" },
   { path: "/super-admin/tickets", name: "Tickets" },
   { path: "/super-admin/practices", name: "Praxen" },
   { path: "/super-admin/users", name: "Benutzer" },
+  { path: "/super-admin/permissions", name: "Benutzerrechte" },
+  { path: "/super-admin/kpi-categories", name: "KPI-Kategorien" },
+  { path: "/super-admin/templates", name: "Vorlagen" },
+  { path: "/super-admin/blog", name: "Blog-Verwaltung" },
+  { path: "/super-admin/finance", name: "Finanzen" },
+  { path: "/super-admin/marketing", name: "Marketing" },
+  { path: "/super-admin/pages", name: "Seiten" },
+  { path: "/super-admin/screenshots", name: "Screenshots" },
 ]
 
 export function ScreenshotsPageClient() {
@@ -171,8 +198,7 @@ export function ScreenshotsPageClient() {
   }
 
   return (
-    <SuperAdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Screenshot Generator</h1>
@@ -405,8 +431,7 @@ export function ScreenshotsPageClient() {
               )}
             </CardContent>
           </Card>
-        </div>
       </div>
-    </SuperAdminLayout>
+    </div>
   )
 }

@@ -505,7 +505,7 @@ export default function EditTeamMemberPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-20 w-20">
+                  <Avatar className="h-24 w-24">
                     {formData.avatar && (
                       <AvatarImage
                         src={formData.avatar || "/placeholder.svg"}
@@ -513,7 +513,7 @@ export default function EditTeamMemberPage() {
                         className="object-cover"
                       />
                     )}
-                    <AvatarFallback className="text-lg bg-muted">
+                    <AvatarFallback className="text-3xl font-semibold bg-primary/10 text-primary">
                       {formData.firstName?.[0]?.toUpperCase() || ""}
                       {formData.lastName?.[0]?.toUpperCase() || ""}
                     </AvatarFallback>

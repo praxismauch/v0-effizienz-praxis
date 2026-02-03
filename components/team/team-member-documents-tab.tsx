@@ -39,9 +39,20 @@ const DOCUMENT_CATEGORIES = [
 interface TeamMemberDocumentsTabProps {
   teamMemberId: string
   practiceId: string
+  isAdmin?: boolean
+  currentUserId?: string
+  memberUserId?: string // The user_id of the team member being viewed
 }
 
-export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberDocumentsTabProps) {
+export function TeamMemberDocumentsTab({ 
+  teamMemberId, 
+  practiceId, 
+  isAdmin = false,
+  currentUserId,
+  memberUserId 
+}: TeamMemberDocumentsTabProps) {
+  // User can edit if they are admin OR viewing their own profile
+  const canEdit = isAdmin || (currentUserId && memberUserId && currentUserId === memberUserId)
   const [documents, setDocuments] = useState<TeamMemberDocument[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -217,22 +228,41 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
   }
 
   if (loading) {
-    return <div className="p-4">Lade Dokumente...</div>
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="animate-pulse">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground">Lade Dokumente...</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">Dokumente</h3>
-          <p className="text-sm text-muted-foreground">Verwalten Sie persönliche Dokumente des Mitarbeiters</p>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Dokumente
+            </CardTitle>
+            <CardDescription>
+              {documents.length} Dokument{documents.length !== 1 ? "e" : ""} vorhanden
+            </CardDescription>
+          </div>
+          {canEdit && (
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Dokument hinzufügen
+            </Button>
+          )}
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Dokument hinzufügen
-        </Button>
-      </div>
-
+      </CardHeader>
+      <CardContent>
       <div className="grid gap-4 md:grid-cols-2">
         {documents.map((doc) => {
           const FileIcon = getFileIcon(doc.type)
@@ -261,30 +291,34 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
                         </a>
                       </Button>
                     )}
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => {
-                        setEditingDocument(doc)
-                        setFormData({
-                          name: doc.name,
-                          category: doc.category,
-                          expiry_date: doc.expiry_date || "",
-                          notes: doc.notes || "",
-                          file: null,
-                        })
-                        setShowAddDialog(true)
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDelete(doc.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {canEdit && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => {
+                          setEditingDocument(doc)
+                          setFormData({
+                            name: doc.name,
+                            category: doc.category,
+                            expiry_date: doc.expiry_date || "",
+                            notes: doc.notes || "",
+                            file: null,
+                          })
+                          setShowAddDialog(true)
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canEdit && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDelete(doc.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -318,16 +352,18 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
       </div>
 
       {documents.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Noch keine Dokumente vorhanden</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">Noch keine Dokumente vorhanden</p>
+          {canEdit && (
             <Button variant="link" onClick={() => setShowAddDialog(true)}>
               Erstes Dokument hinzufügen
             </Button>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       )}
+      </CardContent>
+    </Card>
 
       <Dialog open={showAddDialog} onOpenChange={(open) => {
         setShowAddDialog(open)

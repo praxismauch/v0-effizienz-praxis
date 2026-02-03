@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -479,14 +479,19 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+  <div className="space-y-6">
+  {/* Header Card */}
+  <Card>
+    <CardHeader>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Mitarbeitergespräche</h3>
-          <p className="text-sm text-muted-foreground">
-            Professionelle Leistungsbeurteilungen und Entwicklungsgespräche
-          </p>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Mitarbeitergespräche
+          </CardTitle>
+          <CardDescription>
+            {appraisals.length} Gespräch{appraisals.length !== 1 ? "e" : ""} erfasst
+          </CardDescription>
         </div>
         {isAdmin && (
           <Button onClick={openNewDialog}>
@@ -495,6 +500,8 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
           </Button>
         )}
       </div>
+    </CardHeader>
+  </Card>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

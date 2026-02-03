@@ -20,6 +20,7 @@ import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
 import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
 import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiterfassung-tab"
+import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
 import { ContractsManager } from "@/components/team/contracts-manager"
 
 const roleLabels = {
@@ -256,13 +257,13 @@ export default function TeamMemberDetailPage() {
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:grid-cols-9 h-auto gap-1 mb-6">
                 <TabsTrigger value="overview">Übersicht</TabsTrigger>
                 <TabsTrigger value="contracts">Verträge</TabsTrigger>
-                <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
-                <TabsTrigger value="vaccinations">Impfstatus</TabsTrigger>
+                <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
                 <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
+                <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
+                <TabsTrigger value="documents">Dokumente</TabsTrigger>
                 <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
                 <TabsTrigger value="devices">Geräte</TabsTrigger>
-                <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
-                <TabsTrigger value="documents">Dokumente</TabsTrigger>
+                <TabsTrigger value="vaccinations">Impfstatus</TabsTrigger>
               </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
@@ -369,46 +370,6 @@ export default function TeamMemberDetailPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Team
-                  </CardTitle>
-                  <CardDescription>Team, dem dieses Mitglied zugewiesen ist</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {member.teamIds && member.teamIds.length > 0 ? (
-                    <div className="space-y-3">
-                      {member.teamIds.map((teamId) => {
-                        const team = teams.find((t) => t.id === teamId)
-                        if (!team) return null
-                        return (
-                          <div key={teamId} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: team.color || "#3b82f6" }}
-                              />
-                              <div>
-                                <div className="font-medium">{team.name}</div>
-                                <div className="text-sm text-muted-foreground">{team.description}</div>
-                              </div>
-                            </div>
-                            <Badge variant="outline">{team.memberCount || 0} Mitglieder</Badge>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>Dieses Mitglied ist keinem Team zugewiesen</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="contracts" className="space-y-4">
@@ -482,7 +443,15 @@ export default function TeamMemberDetailPage() {
             </TabsContent>
 
             <TabsContent value="documents" className="space-y-4">
-              {/* Documents content here */}
+              {member && (
+                <TeamMemberDocumentsTab
+                  teamMemberId={memberId}
+                  practiceId={member.practice_id || practiceId || "1"}
+                  isAdmin={isAdmin}
+                  currentUserId={currentUser?.id}
+                  memberUserId={member.user_id}
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>

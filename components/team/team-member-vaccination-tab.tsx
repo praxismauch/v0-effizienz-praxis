@@ -207,21 +207,39 @@ export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMembe
   const selectedVaccType = VACCINATION_TYPES.find(v => v.type === formData.vaccination_type)
 
   if (loading) {
-    return <div className="p-4">Lade Impfstatus...</div>
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="animate-pulse">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground">Lade Impfstatus...</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">Impfstatus</h3>
-          <p className="text-sm text-muted-foreground">Verwalten Sie die Impfungen nach IfSG-Anforderungen</p>
-        </div>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Impfung hinzufügen
-        </Button>
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ClipboardCheck className="h-5 w-5" />
+                Impfstatus
+              </CardTitle>
+              <CardDescription>
+                {vaccinations.length} Impfung{vaccinations.length !== 1 ? "en" : ""} erfasst
+              </CardDescription>
+            </div>
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Impfung hinzufügen
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
       {/* Erstuntersuchung Section */}
       <Card className="border-blue-200 bg-blue-50">

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createBrowserClient } from "@/lib/supabase-client" // Import createBrowserClient
-import { Shield, Cog } from "lucide-react" // Import Shield and Cog
+import { Shield, Cog, Star } from "lucide-react" // Import Shield, Cog and Star
 
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
@@ -76,6 +76,7 @@ interface MenuItem {
 interface MenuSection {
   id: string
   label: string
+  icon?: React.ComponentType<{ className?: string }>
   items: MenuItem[]
 }
 
@@ -771,15 +772,22 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       ],
     },
     {
-      id: "marketing",
-      label: "Marketing",
+      id: "super-admin-menu",
+      label: "Super Admin",
+      icon: Star,
       items: [
         {
           id: "roadmap",
-          label: "Roadmap",
+          label: "Roadmap & Ideen",
           icon: MapIcon,
-          href: "/super-admin/marketing?tab=roadmap",
+          href: "/super-admin/roadmap",
         },
+      ],
+    },
+    {
+      id: "marketing",
+      label: "Marketing",
+      items: [
         {
           id: "social-media",
           label: "Social Media Posts",
@@ -918,6 +926,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
                         collapsed && "hidden",
                       )}
                     />
+                    {section.icon && !collapsed && <section.icon className="h-4 w-4 text-yellow-500" />}
                     {!collapsed && <span className="text-xs font-medium uppercase tracking-wide">{section.label}</span>}
                   </Button>
                 </CollapsibleTrigger>

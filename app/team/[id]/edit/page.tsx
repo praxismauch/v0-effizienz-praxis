@@ -21,7 +21,7 @@ import { useRoleColors } from "@/lib/use-role-colors"
 import { ContractsManager } from "@/components/team/contracts-manager"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
 import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
-import { ArrowLeft, Clipboard, Trash2, Syringe, FileText, Cake } from "lucide-react"
+import { ArrowLeft, Clipboard, Trash2, Syringe, FileText, Cake, Package } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -486,14 +486,14 @@ export default function EditTeamMemberPage() {
             <TabsTrigger value="profile">Profil</TabsTrigger>
             {canEditPermissions && <TabsTrigger value="permissions">Berechtigungen</TabsTrigger>}
             <TabsTrigger value="contracts">Verträge</TabsTrigger>
+            <TabsTrigger value="documents" className="gap-1">
+              <FileText className="h-3 w-3" />
+              Dokumente
+            </TabsTrigger>
             <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
             <TabsTrigger value="vaccinations" className="gap-1">
               <Syringe className="h-3 w-3" />
               Impfstatus
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-1">
-              <FileText className="h-3 w-3" />
-              Dokumente
             </TabsTrigger>
           </TabsList>
 
@@ -505,7 +505,7 @@ export default function EditTeamMemberPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-20 w-20">
+                  <Avatar className="h-24 w-24">
                     {formData.avatar && (
                       <AvatarImage
                         src={formData.avatar || "/placeholder.svg"}
@@ -513,7 +513,7 @@ export default function EditTeamMemberPage() {
                         className="object-cover"
                       />
                     )}
-                    <AvatarFallback className="text-lg bg-muted">
+                    <AvatarFallback className="text-3xl font-semibold bg-primary/10 text-primary">
                       {formData.firstName?.[0]?.toUpperCase() || ""}
                       {formData.lastName?.[0]?.toUpperCase() || ""}
                     </AvatarFallback>
@@ -735,39 +735,70 @@ export default function EditTeamMemberPage() {
           )}
 
           <TabsContent value="contracts" className="space-y-4">
-            {member && (
+            {member ? (
               <ContractsManager 
                 memberId={memberId} 
                 memberName={member.name}
                 practiceId={member.practice_id || ""}
               />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
           <TabsContent value="arbeitsmittel" className="space-y-4">
-            {member && (
+            {member ? (
               <ArbeitsmittelAssignments
                 teamMemberId={memberId}
                 practiceId={member.practice_id || ""}
               />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
           <TabsContent value="vaccinations" className="space-y-4">
-            {member && (
+            {member ? (
               <TeamMemberVaccinationTab
                 teamMemberId={memberId}
                 practiceId={Number(member.practice_id) || 1}
               />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Syringe className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-4">
-            {member && (
+            {member ? (
               <TeamMemberDocumentsTab
                 teamMemberId={memberId}
                 practiceId={member.practice_id || "1"}
+                isAdmin={isAdmin}
+                currentUserId={currentUser?.id}
+                memberUserId={member.user_id}
               />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>

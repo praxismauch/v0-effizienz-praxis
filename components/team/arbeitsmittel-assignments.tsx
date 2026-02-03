@@ -319,7 +319,16 @@ export function ArbeitsmittelAssignments({ teamMemberId, practiceId }: Arbeitsmi
   })
 
   if (isLoading) {
-    return <div className="text-center py-8">Lädt...</div>
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="animate-pulse">
+            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground">Lade Arbeitsmittel...</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

@@ -67,6 +67,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       cannot_complete_during_consultation,
       calculate_time_automatically,
       optimization_suggestions,
+      joint_execution,
+      joint_execution_user_id,
+      joint_execution_team_group,
     } = body
     
     // Support both group_name and category from frontend
@@ -84,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         .update({
           name: name.trim(),
           description: description || null,
-          group_name: group_name || null,
+          group_name: finalGroupName || null,
           responsible_user_id: responsible_user_id || null,
           deputy_user_id: deputy_user_id || null,
           team_member_ids: team_member_ids || [],
@@ -97,6 +100,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           cannot_complete_during_consultation: cannot_complete_during_consultation || false,
           calculate_time_automatically: calculate_time_automatically || false,
           optimization_suggestions: optimization_suggestions || null,
+          joint_execution: joint_execution || false,
+          joint_execution_user_id: joint_execution_user_id || null,
+          joint_execution_team_group: joint_execution_team_group || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)

@@ -256,13 +256,13 @@ export default function TeamMemberDetailPage() {
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:grid-cols-9 h-auto gap-1 mb-6">
                 <TabsTrigger value="overview">Übersicht</TabsTrigger>
                 <TabsTrigger value="contracts">Verträge</TabsTrigger>
-                <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
-                <TabsTrigger value="vaccinations">Impfstatus</TabsTrigger>
+                <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
                 <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
+                <TabsTrigger value="skills">Kompetenzen</TabsTrigger>
+                <TabsTrigger value="documents">Dokumente</TabsTrigger>
                 <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
                 <TabsTrigger value="devices">Geräte</TabsTrigger>
-                <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
-                <TabsTrigger value="documents">Dokumente</TabsTrigger>
+                <TabsTrigger value="vaccinations">Impfstatus</TabsTrigger>
               </TabsList>
 
             <TabsContent value="overview" className="space-y-4">

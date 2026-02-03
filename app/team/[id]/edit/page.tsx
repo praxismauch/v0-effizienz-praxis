@@ -486,14 +486,14 @@ export default function EditTeamMemberPage() {
             <TabsTrigger value="profile">Profil</TabsTrigger>
             {canEditPermissions && <TabsTrigger value="permissions">Berechtigungen</TabsTrigger>}
             <TabsTrigger value="contracts">Verträge</TabsTrigger>
+            <TabsTrigger value="documents" className="gap-1">
+              <FileText className="h-3 w-3" />
+              Dokumente
+            </TabsTrigger>
             <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
             <TabsTrigger value="vaccinations" className="gap-1">
               <Syringe className="h-3 w-3" />
               Impfstatus
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-1">
-              <FileText className="h-3 w-3" />
-              Dokumente
             </TabsTrigger>
           </TabsList>
 

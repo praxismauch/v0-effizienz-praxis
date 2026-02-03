@@ -382,6 +382,16 @@ export function TeamMemberDocumentsTab({
 
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="name">Dokumentname *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="z.B. Arbeitsvertrag 2024"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="file">Datei hochladen</Label>
               <div className="border-2 border-dashed rounded-lg p-4 text-center">
                 <Input
@@ -397,16 +407,6 @@ export function TeamMemberDocumentsTab({
                   </p>
                 </label>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="name">Dokumentname *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="z.B. Arbeitsvertrag 2024"
-              />
             </div>
 
             <div className="space-y-2">

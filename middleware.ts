@@ -151,11 +151,12 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    edgeLog.error("Missing Supabase environment variables")
-    return supabaseResponse
+    edgeLog.debug("Supabase environment variables not configured - skipping auth check")
+    // Continue without auth check if Supabase is not configured
+    return addSecurityHeaders(supabaseResponse)
   }
 
   try {

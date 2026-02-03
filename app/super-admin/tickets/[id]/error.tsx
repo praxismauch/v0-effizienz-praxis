@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Logger from "@/lib/logger"
 
 export default function SuperAdminTicketDetailError({
   error,
@@ -16,7 +17,7 @@ export default function SuperAdminTicketDetailError({
   const router = useRouter()
 
   useEffect(() => {
-    console.error("[v0] SuperAdmin Ticket Detail Error:", error)
+    Logger.error("ui", "SuperAdmin Ticket Detail error", error, { digest: error.digest })
   }, [error])
 
   return (

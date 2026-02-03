@@ -3,26 +3,25 @@
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShieldAlert, RefreshCw, Home, LogIn } from "lucide-react"
+import { AlertCircle, RefreshCw, Home, LogIn } from "lucide-react"
 import Link from "next/link"
 import Logger from "@/lib/logger"
 
-export default function SuperAdminError({
-  error,
-  reset,
-}: {
+interface ErrorPageProps {
   error: Error & { digest?: string }
   reset: () => void
-}) {
+}
+
+export default function DashboardError({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    Logger.error("ui", "Super Admin route error", error, { digest: error.digest })
+    Logger.error("ui", "Dashboard route error", error, { digest: error.digest })
   }, [error])
 
+  // Check if it's an auth-related error
   const isAuthError =
     error.message?.includes("Auth") ||
     error.message?.includes("session") ||
-    error.message?.includes("Berechtigung") ||
-    error.message?.includes("403") ||
+    error.message?.includes("authentifiziert") ||
     error.message?.includes("401")
 
   return (
@@ -30,13 +29,13 @@ export default function SuperAdminError({
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-            <ShieldAlert className="h-6 w-6 text-destructive" />
+            <AlertCircle className="h-6 w-6 text-destructive" />
           </div>
-          <CardTitle>{isAuthError ? "Zugriff verweigert" : "Admin-Fehler"}</CardTitle>
+          <CardTitle>{isAuthError ? "Sitzung abgelaufen" : "Ein Fehler ist aufgetreten"}</CardTitle>
           <CardDescription>
             {isAuthError
-              ? "Sie haben keine Berechtigung für diesen Bereich oder Ihre Sitzung ist abgelaufen."
-              : "Im Administrationsbereich ist ein Fehler aufgetreten."}
+              ? "Ihre Sitzung ist abgelaufen oder ungültig. Bitte melden Sie sich erneut an."
+              : "Beim Laden dieser Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -54,9 +53,9 @@ export default function SuperAdminError({
             </Button>
           )}
           <Button variant="outline" asChild className="w-full">
-            <Link href="/dashboard">
+            <Link href="/">
               <Home className="mr-2 h-4 w-4" />
-              Zum Dashboard
+              Zur Startseite
             </Link>
           </Button>
           {process.env.NODE_ENV === "development" && error.message && (

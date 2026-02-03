@@ -18,6 +18,7 @@ import { Loader2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
+import Logger from "@/lib/logger"
 
 interface CreateTeamMemberDialogProps {
   open: boolean
@@ -58,7 +59,7 @@ export function CreateTeamMemberDialog({ open, onOpenChange, teams, onSuccess }:
         const data = await response.json()
         setDepartments(data.departments || [])
       } catch (error) {
-        console.error("Failed to fetch departments:", error)
+        Logger.warn("component", "Failed to fetch departments", { error })
       }
     }
 
@@ -68,12 +69,7 @@ export function CreateTeamMemberDialog({ open, onOpenChange, teams, onSuccess }:
   const handleSubmit = async () => {
     const practiceId = getEffectivePracticeId()
 
-    console.log("[v0] CreateTeamMemberDialog - handleSubmit called")
-    console.log("[v0] CreateTeamMemberDialog - formData:", formData)
-    console.log("[v0] CreateTeamMemberDialog - practiceId:", practiceId)
-
     if (!formData.firstName || !formData.lastName) {
-      console.log("[v0] CreateTeamMemberDialog - Missing required fields")
       toast({
         title: "Pflichtfelder fehlen",
         description: "Bitte füllen Sie Vorname und Nachname aus.",
@@ -82,7 +78,6 @@ export function CreateTeamMemberDialog({ open, onOpenChange, teams, onSuccess }:
       return
     }
 
-    console.log("[v0] CreateTeamMemberDialog - Starting API call")
     setIsLoading(true)
 
     try {
@@ -93,7 +88,6 @@ export function CreateTeamMemberDialog({ open, onOpenChange, teams, onSuccess }:
       })
 
       const data = await response.json()
-      console.log("[v0] CreateTeamMemberDialog - API response:", data)
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to create team member")
@@ -119,7 +113,7 @@ export function CreateTeamMemberDialog({ open, onOpenChange, teams, onSuccess }:
         onSuccess()
       }
     } catch (error) {
-      console.error("[v0] CreateTeamMemberDialog - Error:", error)
+      Logger.error("component", "Failed to create team member", error)
       toast({
         title: "Fehler",
         description: error instanceof Error ? error.message : "Team-Mitglied konnte nicht erstellt werden",

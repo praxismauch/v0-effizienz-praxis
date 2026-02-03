@@ -24,6 +24,7 @@ import { useTranslation } from "@/contexts/translation-context"
 import { useToast } from "@/hooks/use-toast"
 import { Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation" // Added useRouter import
+import Logger from "@/lib/logger"
 
 interface Candidate {
   id: string
@@ -145,7 +146,7 @@ export function EditCandidateDialog({
         setJobPostings(validJobPostings)
       }
     } catch (error) {
-      console.error("[v0] Error fetching job postings:", error)
+      Logger.warn("component", "Error fetching job postings", { error })
     }
   }
 
@@ -160,12 +161,11 @@ export function EditCandidateDialog({
           if (activeApp && activeApp.job_posting_id) {
             setSelectedJobPosting(activeApp.job_posting_id)
             setOriginalJobPosting(activeApp.job_posting_id)
-            console.log("[v0] Found existing application for job posting:", activeApp.job_posting_id)
           }
         }
       }
     } catch (error) {
-      console.error("[v0] Error fetching candidate applications:", error)
+      Logger.warn("component", "Error fetching candidate applications", { error })
     }
   }
 
@@ -205,11 +205,6 @@ export function EditCandidateDialog({
     e.preventDefault()
     setLoading(true)
 
-    console.log("[v0] Starting candidate update submission")
-    console.log("[v0] Candidate ID:", candidate.id)
-    console.log("[v0] Selected job posting:", selectedJobPosting)
-    console.log("[v0] Original job posting:", originalJobPosting)
-
     try {
       const weeklyHoursValue = formData.weekly_hours ? Number.parseFloat(formData.weekly_hours.replace(",", ".")) : null
 
@@ -229,37 +224,27 @@ export function EditCandidateDialog({
         events: events,
       }
 
-      console.log("[v0] Payload to send:", payload)
-
       const response = await fetch(`/api/hiring/candidates/${candidate.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
 
-      console.log("[v0] Response status:", response.status)
       const responseData = await response.json()
-      console.log("[v0] Response data:", responseData)
 
       if (response.ok) {
-        console.log("[v0] Candidate updated successfully")
-
         if (selectedJobPosting !== originalJobPosting) {
-          console.log("[v0] Job posting changed, updating application")
-
           if (originalJobPosting !== "none") {
             try {
               await fetch(`/api/hiring/applications?candidateId=${candidate.id}&jobPostingId=${originalJobPosting}`, {
                 method: "DELETE",
               })
-              console.log("[v0] Removed old application")
             } catch (error) {
-              console.error("[v0] Error removing old application:", error)
+              Logger.warn("component", "Error removing old application", { error })
             }
           }
 
           if (selectedJobPosting !== "none") {
-            console.log("[v0] Creating new application for job posting:", selectedJobPosting)
             const appResponse = await fetch("/api/hiring/applications", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -272,14 +257,10 @@ export function EditCandidateDialog({
               }),
             })
 
-            if (appResponse.ok) {
-              console.log("[v0] Application created successfully")
-            } else {
-              console.error("[v0] Failed to create application")
+            if (!appResponse.ok) {
+              Logger.warn("component", "Failed to create application")
             }
           }
-        } else {
-          console.log("[v0] Job posting unchanged, no application update needed")
         }
 
         toast({
@@ -293,11 +274,11 @@ export function EditCandidateDialog({
         }
         onOpenChange(false)
       } else {
-        console.error("[v0] Failed to update candidate:", responseData)
+        Logger.error("component", "Failed to update candidate", responseData)
         alert(`Fehler beim Speichern: ${responseData.error || "Unbekannter Fehler"}`)
       }
     } catch (error) {
-      console.error("[v0] Error updating candidate:", error)
+      Logger.error("component", "Error updating candidate", error)
       alert(`Fehler beim Speichern: ${error}`)
     } finally {
       setLoading(false)

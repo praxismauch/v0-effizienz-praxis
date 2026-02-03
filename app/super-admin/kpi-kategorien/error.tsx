@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, RefreshCw } from "lucide-react"
+import Logger from "@/lib/logger"
 
 export default function KpiKategorienError({
   error,
@@ -13,7 +14,7 @@ export default function KpiKategorienError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("KPI-Kategorien error:", error)
+    Logger.error("ui", "KPI-Kategorien error", error, { digest: error.digest })
   }, [error])
 
   return (

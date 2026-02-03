@@ -67,8 +67,9 @@ import {
   TrendingDown,
 } from "lucide-react"
 import { AppLayout } from "@/components/app-layout"
-import { cn } from "@/lib/utils" // Import cn for conditional styling
+import { cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
+import Logger from "@/lib/logger"
 
 // Import charting libraries
 import {
@@ -205,7 +206,7 @@ export default function SurveysPage() {
         setSurveys(data.surveys || [])
       }
     } catch (error) {
-      console.error("Error fetching surveys:", error)
+      Logger.error("api", "Error fetching surveys", error)
     } finally {
       setLoading(false)
     }
@@ -221,7 +222,7 @@ export default function SurveysPage() {
         setTemplates(data.templates || [])
       }
     } catch (error) {
-      console.error("Error fetching templates:", error)
+      Logger.error("api", "Error fetching templates", error)
     }
   }, [])
 
@@ -240,7 +241,7 @@ export default function SurveysPage() {
         setMoodAlerts(data.alerts || [])
       }
     } catch (error) {
-      console.error("Error fetching mood data:", error)
+      Logger.error("api", "Error fetching mood data", error)
     } finally {
       setIsLoadingMoodData(false)
     }
@@ -258,28 +259,20 @@ export default function SurveysPage() {
   }, [showMoodDashboard, fetchMoodData])
 
   const handleCreateSurvey = async () => {
-    console.log("[v0] handleCreateSurvey called")
-    console.log("[v0] currentPractice:", currentPractice)
-    console.log("[v0] newSurvey:", newSurvey)
-
     if (!currentPractice?.id || !newSurvey.title.trim()) {
-      console.log("[v0] Missing practice or title")
       return
     }
     setIsCreating(true)
     try {
-      console.log("[v0] Fetching /api/practices/" + currentPractice.id + "/surveys")
       const response = await fetch(`/api/practices/${currentPractice.id}/surveys`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(newSurvey),
       })
-      console.log("[v0] Response status:", response.status)
 
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Survey created successfully:", data.survey.id)
         toast({ title: "Umfrage erstellt", description: "Die Umfrage wurde erfolgreich erstellt." })
         setShowCreateDialog(false)
         setNewSurvey({
@@ -290,16 +283,14 @@ export default function SurveysPage() {
           is_anonymous: false,
           start_date: "",
           end_date: "",
-          notify_admin_on_response: false, // Reset notify admin option
+          notify_admin_on_response: false,
         })
         router.push(`/surveys/${data.survey.id}/edit`)
       } else {
-        const errorData = await response.text()
-        console.log("[v0] Error response:", errorData)
         throw new Error(`Failed to create survey: ${response.status}`)
       }
     } catch (error) {
-      console.error("[v0] Error creating survey:", error)
+      Logger.error("api", "Error creating survey", error)
       toast({
         title: "Fehler",
         description: error instanceof Error ? error.message : "Die Umfrage konnte nicht erstellt werden.",
@@ -311,11 +302,7 @@ export default function SurveysPage() {
   }
 
   const handleCreateFromTemplate = async (template: SurveyTemplate) => {
-    console.log("[v0] handleCreateFromTemplate called with template:", template.name)
-    console.log("[v0] currentPractice:", currentPractice)
-
     if (!currentPractice?.id) {
-      console.log("[v0] No practice selected, cannot create survey")
       toast({
         title: "Keine Praxis ausgewählt",
         description: "Bitte wählen Sie zuerst eine Praxis aus.",
@@ -325,7 +312,6 @@ export default function SurveysPage() {
     }
 
     setIsCreating(true)
-    console.log("[v0] Creating survey from template...")
 
     try {
       const response = await fetch(`/api/practices/${currentPractice.id}/surveys`, {
@@ -342,17 +328,12 @@ export default function SurveysPage() {
         }),
       })
 
-      console.log("[v0] Response status:", response.status)
-
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Survey created successfully:", data.survey.id)
         toast({ title: "Umfrage erstellt", description: "Die Umfrage wurde aus der Vorlage erstellt." })
         setShowTemplateDialog(false)
         router.push(`/surveys/${data.survey.id}/edit`)
       } else {
-        const errorData = await response.text()
-        console.log("[v0] Error response:", errorData)
         toast({
           title: "Fehler",
           description: `Die Umfrage konnte nicht erstellt werden: ${response.status}`,
@@ -360,7 +341,7 @@ export default function SurveysPage() {
         })
       }
     } catch (error) {
-      console.error("[v0] Error creating survey:", error)
+      Logger.error("api", "Error creating survey from template", error)
       toast({ title: "Fehler", description: "Die Umfrage konnte nicht erstellt werden.", variant: "destructive" })
     } finally {
       setIsCreating(false)

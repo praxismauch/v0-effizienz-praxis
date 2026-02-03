@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertTriangle } from "lucide-react"
+import Logger from "@/lib/logger"
 
 export default function Error({
   error,
@@ -13,7 +14,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("[v0] SuperAdmin Tickets Error:", error)
+    Logger.error("ui", "SuperAdmin Tickets error", error, { digest: error.digest })
   }, [error])
 
   return (

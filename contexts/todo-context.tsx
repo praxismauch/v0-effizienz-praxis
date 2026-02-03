@@ -1,11 +1,12 @@
 "use client"
 
 import { createContext, useContext, useMemo, useCallback, type ReactNode } from "react"
-import useSWR, { useSWRConfig } from "swr"
+import useSWR from "swr"
 import { usePractice } from "./practice-context"
 import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
 import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
 import { toast } from "sonner"
+import Logger from "@/lib/logger"
 
 export interface Todo {
   id: string
@@ -67,7 +68,6 @@ const TodoContext = createContext<TodoContextType | undefined>(undefined)
 
 export function TodoProvider({ children }: { children: ReactNode }) {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const { mutate: globalMutate } = useSWRConfig()
 
   const practiceId = currentPractice?.id || DEFAULT_PRACTICE_ID
 
@@ -109,7 +109,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
         return newTodo
       } catch (error) {
         toast.error("Fehler beim Erstellen des Todos")
-        console.error("Error adding todo:", error)
+        Logger.error("context", "Error adding todo", error)
         return null
       }
     },
@@ -145,7 +145,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
         // Rollback on error
         await mutate(previousTodos, { revalidate: false })
         toast.error("Fehler beim Aktualisieren des Todos")
-        console.error("Error updating todo:", error)
+        Logger.error("context", "Error updating todo", error)
       }
     },
     [practiceId, mutate, todos],
@@ -165,7 +165,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
         // Rollback on error
         await mutate(previousTodos, { revalidate: false })
         toast.error("Fehler beim Löschen des Todos")
-        console.error("Error deleting todo:", error)
+        Logger.error("context", "Error deleting todo", error)
       }
     },
     [practiceId, mutate, todos],

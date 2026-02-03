@@ -57,9 +57,10 @@ import {
 } from "lucide-react"
 import { usePractice } from "@/contexts/practice-context"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useUser } from "@/contexts/user-context" // Added import
-import { useToast } from "@/hooks/use-toast" // Added missing import for useToast hook
-import { useTranslation } from "@/contexts/translation-context" // Added useTranslation import
+import { useUser } from "@/contexts/user-context"
+import { useToast } from "@/hooks/use-toast"
+import { useTranslation } from "@/contexts/translation-context"
+import Logger from "@/lib/logger"
 
 interface Parameter {
   id: string
@@ -258,14 +259,14 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
           // Fallback to localStorage
           const savedSettings = localStorage.getItem("displaySettings")
           if (savedSettings) {
-            const parsed = JSON.JSON.parse(savedSettings)
+            const parsed = JSON.parse(savedSettings)
             if (parsed.intervalBadgeColors) {
               setIntervalBadgeColors(parsed.intervalBadgeColors)
             }
           }
         }
       } catch (error) {
-        console.error("[v0] Failed to load display settings:", error)
+        Logger.error("ui", "Failed to load display settings", error)
       }
     }
 
@@ -313,7 +314,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
 
       setParameters(transformedParameters)
     } catch (error) {
-      console.error("[v0] Error fetching practice parameters:", error)
+      Logger.error("api", "Error fetching practice parameters", error)
       setPracticeError(error instanceof Error ? error.message : "Failed to load practice parameters")
     } finally {
       setIsLoadingPractice(false)
@@ -356,7 +357,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
 
       setGroups(transformedCategories)
     } catch (error) {
-      console.error("[v0] Error fetching practice categories:", error)
+      Logger.error("api", "Error fetching practice categories", error)
       // Don't show error to user, just use empty array
       setGroups([])
     } finally {
@@ -407,7 +408,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
 
         setGlobalParameters(transformedParameters)
       } catch (error) {
-        console.error("[v0] Error fetching global KPIs:", error)
+        Logger.error("api", "Error fetching global KPIs", error)
         setGlobalError(error instanceof Error ? error.message : "Failed to load global KPIs")
       } finally {
         setIsLoadingGlobal(false)
@@ -439,7 +440,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         const usedTemplateIds = new Set(data.usedTemplates?.map((usage: any) => usage.template_id) || [])
         setUsedTemplates(usedTemplateIds)
       } catch (error) {
-        console.error("[v0] Error fetching used templates:", error)
+        Logger.error("api", "Error fetching used templates", error)
         // Don't show error to user, just assume no templates are used
         setUsedTemplates(new Set())
       } finally {
@@ -573,18 +574,13 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
   }
 
   const handleDeleteParameter = async (parameterId: string, force = false) => {
-    console.log("[v0] handleDeleteParameter called with ID:", parameterId, "force:", force)
-
     const parameter = parameters.find((p) => p.id === parameterId)
     if (!parameter) {
-      console.error("[v0] Parameter not found:", parameterId)
+      Logger.warn("ui", "Parameter not found for deletion", { parameterId })
       return
     }
 
-    console.log("[v0] Parameter to delete:", parameter)
-
     // Check if the parameter is global and prevent deletion
-    // Global parameters are templates, they should not be deleted from here.
     if (parameter.isGlobal) {
       toast({
         title: t("kpi.cannot_delete_global", "Cannot Delete Global KPI"),
@@ -596,7 +592,6 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
     }
 
     if (!currentPractice) {
-      console.error("[v0] No current practice selected")
       toast({
         title: t("common.error", "Error"),
         description: t("kpi.no_practice_selected", "No practice selected"),
@@ -607,14 +602,9 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
     }
 
     try {
-      console.log("[v0] Deleting parameter from database:", parameterId)
-
-      // The API endpoint should handle the `force` parameter for cascade deletion
       const response = await fetch(`/api/practices/${currentPractice.id}/parameters/${parameterId}?force=${force}`, {
         method: "DELETE",
       })
-
-      console.log("[v0] Delete response status:", response.status)
 
       if (!response.ok) {
         const contentType = response.headers.get("content-type")
@@ -641,12 +631,9 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
           throw new Error(errorData.error || "Failed to delete parameter")
         } else {
           const errorText = await response.text()
-          console.error("[v0] Non-JSON error response:", errorText)
           throw new Error(errorText || "Failed to delete parameter")
         }
       }
-
-      console.log("[v0] Parameter deleted successfully from database")
 
       setParameters((prevParams) => prevParams.filter((p) => p.id !== parameterId))
       setGroups((prevGroups) =>
@@ -656,15 +643,12 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         })),
       )
 
-      console.log("[v0] Parameter removed from local state")
-
       toast({
         title: t("kpi.parameter_deleted", "Parameter deleted"),
         description: t("kpi.parameter_deleted_description", "The parameter has been successfully deleted."),
       })
-      console.log("[v0] Delete operation completed, deleteParameterId cleared")
     } catch (error) {
-      console.error("[v0] Error deleting parameter:", error)
+      Logger.error("api", "Error deleting parameter", error, { parameterId })
       toast({
         title: t("common.error", "Error"),
         description:
@@ -730,7 +714,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         description: t("kpi.category_created_description", "KPI category has been created successfully"),
       })
     } catch (error) {
-      console.error("[v0] Error creating category:", error)
+      Logger.error("api", "Error creating category", error)
       toast({
         title: t("common.error", "Error"),
         description:
@@ -800,7 +784,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         description: t("kpi.category_updated_description", "KPI category has been updated successfully"),
       })
     } catch (error) {
-      console.error("[v0] Error updating category:", error)
+      Logger.error("api", "Error updating category", error)
       toast({
         title: t("common.error", "Error"),
         description:
@@ -823,8 +807,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         try {
           const errorData = await response.json()
           errorMessage = errorData.error || errorMessage
-        } catch (parseError) {
-          console.log("[v0] Could not parse error response as JSON:", parseError)
+        } catch {
           errorMessage = `${errorMessage} (${response.status} ${response.statusText})`
         }
         throw new Error(errorMessage)
@@ -837,7 +820,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         description: t("kpi.category_deleted_description", "Category deleted successfully"),
       })
     } catch (error) {
-      console.error("[v0] Error deleting category:", error)
+      Logger.error("api", "Error deleting category", error)
       toast({
         title: t("common.error", "Error"),
         description:
@@ -937,7 +920,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         description: t("kpi.parameter_created_description", "The parameter has been created successfully"),
       })
     } catch (error) {
-      console.error("[v0] Error creating parameter:", error)
+      Logger.error("api", "Error creating parameter", error)
       toast({
         title: t("common.error", "Error"),
         description: error instanceof Error ? error.message : t("kpi.create_failed", "Failed to create parameter"),
@@ -1032,7 +1015,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         ),
       })
     } catch (error) {
-      console.error("[v0] Error creating parameter from template:", error)
+      Logger.error("api", "Error creating parameter from template", error)
       toast({
         title: t("common.error", "Error"),
         description:
@@ -1162,7 +1145,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
 
       setIsBrowseGlobalOpen(false)
     } catch (error) {
-      console.error("[v0] Error applying templates:", error)
+      Logger.error("api", "Error applying templates", error)
       toast({
         title: t("common.error", "Error"),
         description:
@@ -1243,7 +1226,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         }))
         setParameters(transformedParameters)
       } else {
-        console.error("[v0] Failed to refetch parameters after template removal.")
+        Logger.warn("api", "Failed to refetch parameters after template removal")
       }
 
       if (usageResponse.ok) {
@@ -1251,7 +1234,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         const usedTemplateIds = new Set(usageData.usedTemplates?.map((usage: any) => usage.template_id) || [])
         setUsedTemplates(usedTemplateIds)
       } else {
-        console.error("[v0] Failed to refetch usage data after template removal.")
+        Logger.warn("api", "Failed to refetch usage data after template removal")
       }
 
       toast({
@@ -1262,7 +1245,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         ),
       })
     } catch (error) {
-      console.error("[v0] Error removing template:", error)
+      Logger.error("api", "Error removing template", error)
       toast({
         title: t("common.error", "Error"),
         description:
@@ -1305,7 +1288,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
             method: "DELETE",
           })
           if (!response.ok) {
-            console.error(`[v0] Failed to delete parameter ${param.id} during bulk removal.`)
+            Logger.warn("api", "Failed to delete parameter during bulk removal", { parameterId: param.id })
             // Optionally, throw an error or handle partial failures
           }
         }),
@@ -1318,7 +1301,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
             method: "DELETE",
           })
           if (!response.ok) {
-            console.error(`[v0] Failed to delete usage tracking for template ${templateId} during bulk removal.`)
+            Logger.warn("api", "Failed to delete usage tracking during bulk removal", { templateId })
             // Optionally, throw an error or handle partial failures
           }
         }),
@@ -1367,7 +1350,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         ),
       })
     } catch (error) {
-      console.error("[v0] Error removing all templates:", error)
+      Logger.error("api", "Error removing all templates", error)
       toast({
         title: t("common.error", "Error"),
         description: t("kpi.remove_all_templates_failed", "Failed to remove all templates"),
@@ -1379,49 +1362,31 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
   const fetchGlobalCategories = async () => {
     try {
       setIsLoadingGlobalCategories(true)
-      console.log("[v0] Component: Starting to fetch global categories...")
       const response = await fetch("/api/global-parameter-groups")
-      console.log("[v0] Component: Response status:", response.status)
-      console.log("[v0] Component: Response ok:", response.ok)
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error("[v0] Component: API error response:", errorData)
         throw new Error(`Failed to fetch global categories: ${errorData.details || errorData.error}`)
       }
 
       const data = await response.json()
 
-      console.log("[v0] Component: Received categories from API:", data.categories?.length || 0)
-      console.log(
-        "[v0] Component: Categories before filter:",
-        data.categories?.map((c: any) => ({ id: c.id, name: c.name, is_active: c.is_active })),
-      )
-
       // Transform the API response to match our ParameterGroup interface
       const transformedCategories: ParameterGroup[] = (data.categories || [])
-        .filter((cat: any) => cat.is_active === true) // Only show active categories
+        .filter((cat: any) => cat.is_active === true)
         .map((cat: any) => ({
           id: cat.id,
           name: cat.name,
           description: cat.description || "",
-          parameters: [], // Parameters are not relevant when importing category structure
+          parameters: [],
           color: cat.color || "bg-blue-500",
           isActive: cat.is_active ?? true,
           createdAt: cat.created_at?.split("T")[0] || new Date().toISOString().split("T")[0],
         }))
 
-      console.log("[v0] Component: Categories after active filter:", transformedCategories.length)
-      console.log(
-        "[v0] Component: Final categories:",
-        transformedCategories.map((c) => ({ id: c.id, name: c.name, isActive: c.isActive })),
-      )
-
       setGlobalCategories(transformedCategories)
     } catch (error) {
-      console.error("[v0] Error fetching global categories:", error)
-      console.error("[v0] Error type:", typeof error)
-      console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
+      Logger.error("api", "Error fetching global categories", error)
       setGlobalCategories([])
     } finally {
       setIsLoadingGlobalCategories(false)
@@ -1488,7 +1453,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         ),
       })
     } catch (error) {
-      console.error("[v0] Error importing categories:", error)
+      Logger.error("api", "Error importing categories", error)
       toast({
         title: t("common.error", "Error"),
         description:
@@ -1507,7 +1472,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
       // Ensure globalTemplates can be of type GlobalParameter[]
       setGlobalTemplates(data.parameters || [])
     } catch (error) {
-      console.error("[v0] Error fetching global templates:", error)
+      Logger.error("api", "Error fetching global templates", error)
       setGlobalTemplates([])
     } finally {
       setIsLoadingTemplates(false)
@@ -1577,16 +1542,13 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
               const errorData = await response.json()
               errorMessage = errorData.error || errorMessage
             } else {
-              const errorText = await response.text()
-              console.error("[v0] Non-JSON error response during template import:", errorText)
               errorMessage = `Server error (${response.status})`
             }
-          } catch (parseError) {
-            console.error("[v0] Error parsing error response during template import:", parseError)
+          } catch {
             errorMessage = `Server error (${response.status})`
           }
 
-          console.error(`[v0] Failed to import template: ${template.name} - ${errorMessage}`)
+          Logger.warn("api", "Failed to import template", { templateName: template.name, error: errorMessage })
           toast({
             title: t("kpi.import_failed", "Import Failed"),
             description: errorMessage,
@@ -1624,7 +1586,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
             }
             setParameters((prev) => [...prev, newParameter])
           } catch (parseError) {
-            console.error("[v0] Error parsing success response during template import:", parseError)
+            Logger.warn("api", "Error parsing success response during template import", { error: parseError, templateName: template.name })
             toast({
               title: t("kpi.import_warning", "Import Warning"),
               description: t(
@@ -1658,7 +1620,7 @@ export function ParameterManagement({ practiceId }: { practiceId: string }) {
         ),
       })
     } catch (error) {
-      console.error("[v0] Error importing templates:", error)
+      Logger.error("api", "Error importing templates", error)
       toast({
         title: t("kpi.import_error", "Import Error"),
         description:

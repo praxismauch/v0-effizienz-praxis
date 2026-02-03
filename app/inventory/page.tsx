@@ -200,7 +200,6 @@ export default function InventoryPage() {
             suppliers={suppliers}
             onAddSupplier={() => {
               // Future feature: Add supplier functionality
-              console.log('[v0] Add supplier feature - coming soon')
             }}
           />
         </TabsContent>
@@ -210,7 +209,6 @@ export default function InventoryPage() {
             bills={bills}
             onAddBill={() => {
               // Future feature: Add bill functionality
-              console.log('[v0] Add bill feature - coming soon')
             }}
           />
         </TabsContent>

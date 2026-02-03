@@ -8,6 +8,7 @@ import { useUser } from "./user-context"
 import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
 import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
 import { toast } from "sonner"
+import Logger from "@/lib/logger"
 
 interface TeamMember extends User {
   permissions: string[]
@@ -226,7 +227,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ teamIds }),
         })
       } catch (error) {
-        console.error("Error reordering teams:", error)
+        Logger.warn("context", "Error reordering teams", { error })
         await mutateTeams()
       }
     },
@@ -253,7 +254,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ teamId }),
         })
       } catch (error) {
-        console.error("Error assigning member:", error)
+        Logger.warn("context", "Error assigning member to team", { error })
         await mutateMembers()
       }
     },
@@ -280,7 +281,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ teamId }),
         })
       } catch (error) {
-        console.error("Error removing member:", error)
+        Logger.warn("context", "Error removing member from team", { error })
         await mutateMembers()
       }
     },

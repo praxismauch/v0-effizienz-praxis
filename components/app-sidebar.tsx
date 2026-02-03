@@ -1,5 +1,5 @@
 "use client"
-
+// Force rebuild - Dialog imports added
 import { Sidebar } from "@/components/ui/sidebar"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useState, useEffect, useRef } from "react"
@@ -579,7 +579,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
           </div>
         </div>
 
-        {/* Favorites Edit Dialog */}
+        {/* Favorites Edit Dialog - Updated */}
         <Dialog open={showFavoritesEditDialog} onOpenChange={setShowFavoritesEditDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>

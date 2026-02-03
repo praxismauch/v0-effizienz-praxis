@@ -3,6 +3,7 @@
 import useSWR from "swr"
 import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
 import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
+import { SHARED_SWR_CONFIG, REALTIME_SWR_CONFIG } from "@/lib/swr-config"
 
 // Types
 export interface Course {
@@ -82,11 +83,6 @@ export interface AcademyStats {
   averageRating: number
 }
 
-const SWR_CONFIG = {
-  revalidateOnFocus: false,
-  dedupingInterval: 300,
-}
-
 /**
  * Hook for fetching academy courses
  */
@@ -94,7 +90,7 @@ export function useAcademyCourses(practiceId = DEFAULT_PRACTICE_ID) {
   const { data, error, isLoading, mutate } = useSWR<Course[] | { courses: Course[] }>(
     SWR_KEYS.academyCourses(practiceId),
     swrFetcher,
-    SWR_CONFIG,
+    SHARED_SWR_CONFIG
   )
 
   const courses = Array.isArray(data) ? data : data?.courses || []
@@ -115,7 +111,7 @@ export function useAcademyModules(practiceId = DEFAULT_PRACTICE_ID, courseId?: s
   const { data, error, isLoading, mutate } = useSWR<Module[] | { modules: Module[] }>(
     SWR_KEYS.academyModules(practiceId, courseId),
     swrFetcher,
-    SWR_CONFIG,
+    SHARED_SWR_CONFIG
   )
 
   const modules = Array.isArray(data) ? data : data?.modules || []
@@ -136,7 +132,7 @@ export function useAcademyLessons(practiceId = DEFAULT_PRACTICE_ID, moduleId?: s
   const { data, error, isLoading, mutate } = useSWR<Lesson[] | { lessons: Lesson[] }>(
     SWR_KEYS.academyLessons(practiceId, moduleId),
     swrFetcher,
-    SWR_CONFIG,
+    SHARED_SWR_CONFIG
   )
 
   const lessons = Array.isArray(data) ? data : data?.lessons || []
@@ -157,7 +153,7 @@ export function useAcademyBadges(practiceId = DEFAULT_PRACTICE_ID) {
   const { data, error, isLoading, mutate } = useSWR<Badge[] | { badges: Badge[] }>(
     SWR_KEYS.academyBadges(practiceId),
     swrFetcher,
-    SWR_CONFIG,
+    SHARED_SWR_CONFIG
   )
 
   const badges = Array.isArray(data) ? data : data?.badges || []
@@ -178,7 +174,7 @@ export function useAcademyQuizzes(practiceId = DEFAULT_PRACTICE_ID) {
   const { data, error, isLoading, mutate } = useSWR<any[]>(
     `/api/practices/${practiceId}/academy/quizzes`,
     swrFetcher,
-    SWR_CONFIG,
+    SHARED_SWR_CONFIG
   )
 
   const quizzes = Array.isArray(data) ? data : data?.quizzes || []
@@ -200,7 +196,7 @@ export function useAcademyStats(practiceId = DEFAULT_PRACTICE_ID) {
   const { data, error, isLoading, mutate } = useSWR<AcademyStats>(
     SWR_KEYS.academyStats(practiceId),
     swrFetcher,
-    { ...SWR_CONFIG, refreshInterval: 60000 }, // Refresh stats every minute
+    { ...REALTIME_SWR_CONFIG, refreshInterval: 60000 }
   )
 
   return {

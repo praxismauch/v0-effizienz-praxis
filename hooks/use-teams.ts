@@ -3,6 +3,7 @@
 import useSWR from "swr"
 import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
 import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
+import { SHARED_SWR_CONFIG } from "@/lib/swr-config"
 
 // Types
 export interface Team {
@@ -51,16 +52,15 @@ interface TeamMembersResponse {
   data?: TeamMember[]
 }
 
-const SWR_CONFIG = {
-  revalidateOnFocus: false,
-  dedupingInterval: 300, // Reduced from 5000ms
-}
-
 /**
  * Hook for fetching teams for a practice (hardcoded to practice 1)
  */
 export function useTeams(practiceId = DEFAULT_PRACTICE_ID) {
-  const { data, error, isLoading, mutate } = useSWR<TeamsResponse>(SWR_KEYS.teams(practiceId), swrFetcher, SWR_CONFIG)
+  const { data, error, isLoading, mutate } = useSWR<TeamsResponse>(
+    SWR_KEYS.teams(practiceId),
+    swrFetcher,
+    SHARED_SWR_CONFIG
+  )
 
   // Handle both array and object responses
   const teams = Array.isArray(data) ? data : data?.teams || data?.data || []
@@ -81,7 +81,7 @@ export function useTeamMembers(practiceId = DEFAULT_PRACTICE_ID) {
   const { data, error, isLoading, mutate } = useSWR<TeamMembersResponse>(
     SWR_KEYS.teamMembers(practiceId),
     swrFetcher,
-    SWR_CONFIG,
+    SHARED_SWR_CONFIG
   )
 
   // Handle different response formats: { teamMembers: [...] }, { members: [...] }, { data: [...] }, or direct array

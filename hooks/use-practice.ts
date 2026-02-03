@@ -3,6 +3,7 @@
 import useSWR from "swr"
 import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
 import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
+import { SHARED_SWR_CONFIG } from "@/lib/swr-config"
 
 // Types
 export interface Practice {
@@ -31,16 +32,15 @@ export interface PracticeSettings {
   updated_at: string | null
 }
 
-const SWR_CONFIG = {
-  revalidateOnFocus: false,
-  dedupingInterval: 300,
-}
-
 /**
  * Hook for fetching practice data (hardcoded to practice 1)
  */
 export function usePractice(practiceId = DEFAULT_PRACTICE_ID) {
-  const { data, error, isLoading, mutate } = useSWR<Practice>(SWR_KEYS.practice(practiceId), swrFetcher, SWR_CONFIG)
+  const { data, error, isLoading, mutate } = useSWR<Practice>(
+    SWR_KEYS.practice(practiceId),
+    swrFetcher,
+    SHARED_SWR_CONFIG
+  )
 
   return {
     practice: data || null,
@@ -58,7 +58,7 @@ export function usePracticeSettings(practiceId = DEFAULT_PRACTICE_ID) {
   const { data, error, isLoading, mutate } = useSWR<PracticeSettings>(
     SWR_KEYS.practiceSettings(practiceId),
     swrFetcher,
-    SWR_CONFIG,
+    SHARED_SWR_CONFIG
   )
 
   const updateSettings = async (settings: Partial<PracticeSettings>) => {

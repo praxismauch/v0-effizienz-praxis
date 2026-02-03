@@ -36,12 +36,12 @@ export async function authenticateApiRequest(): Promise<ApiAuthResult> {
 
   if (error) {
     console.log("[v0] authenticateApiRequest auth error:", error.message)
-    throw new Error("Nicht authentifiziert")
+    throw new Error("Auth session missing!")
   }
   
   if (!user) {
     console.log("[v0] authenticateApiRequest: no user in session")
-    throw new Error("Nicht authentifiziert")
+    throw new Error("Auth session missing!")
   }
 
   // Get user data using admin client (bypasses RLS)

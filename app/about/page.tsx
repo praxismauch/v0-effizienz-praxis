@@ -47,6 +47,7 @@ export default function AboutPage() {
                     src="/images/dr.jpg"
                     alt="Dr. Daniel Mauch - Gründer von Effizienz-Praxis"
                     fill
+                    sizes="256px"
                     className="object-cover"
                     priority
                   />

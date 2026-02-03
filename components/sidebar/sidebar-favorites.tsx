@@ -57,7 +57,8 @@ export function SidebarFavorites({
                     href={item.href}
                     onClick={() => onNavigate(item.href)}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all hover:translate-x-0.5",
+                      "flex items-center gap-3 rounded-md py-2 text-sm transition-all hover:translate-x-0.5",
+                      "pl-6 pr-3",
                       isActive
                         ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

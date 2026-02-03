@@ -174,26 +174,41 @@ export function TeamMemberZeiterfassungTab({
 
   return (
     <div className="space-y-6">
-      {/* Month Navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePrevMonth}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-lg font-medium min-w-[150px] text-center">
-            {format(selectedMonth, "MMMM yyyy", { locale: de })}
-          </span>
-          <Button variant="outline" size="icon" onClick={handleNextMonth}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-        <Button asChild>
-          <Link href={`/zeiterfassung?user=${memberId}`}>
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Zur Zeiterfassung
-          </Link>
-        </Button>
-      </div>
+      {/* Header Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Zeiterfassung
+              </CardTitle>
+              <CardDescription>
+                Arbeitszeiten von {memberName}
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" onClick={handlePrevMonth}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium min-w-[120px] text-center">
+                  {format(selectedMonth, "MMMM yyyy", { locale: de })}
+                </span>
+                <Button variant="outline" size="icon" onClick={handleNextMonth}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button asChild>
+                <Link href={`/zeiterfassung?user=${memberId}`}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Zur Zeiterfassung
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
       {/* Stats Cards */}
       {isLoading ? (

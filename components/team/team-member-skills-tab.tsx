@@ -313,34 +313,46 @@ export function TeamMemberSkillsTab({
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Header with filters */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedTeamFilter} onValueChange={setSelectedTeamFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Alle Skills" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle Skills</SelectItem>
-                <SelectItem value="practice">Praxisweite Skills</SelectItem>
-                {teams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color || "#6b7280" }} />
-                      {team.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button variant="outline" size="sm" onClick={() => handleShowHistory()}>
-            <History className="h-4 w-4 mr-2" />
-            Änderungsverlauf
-          </Button>
-        </div>
+        {/* Header Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Kompetenzen
+                </CardTitle>
+                <CardDescription>
+                  {assessedSkills.length} von {filteredSkills.length} Skills bewertet
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={selectedTeamFilter} onValueChange={setSelectedTeamFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Alle Skills" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Skills</SelectItem>
+                    <SelectItem value="practice">Praxisweite Skills</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color || "#6b7280" }} />
+                          {team.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" onClick={() => handleShowHistory()}>
+                  <History className="h-4 w-4 mr-2" />
+                  Änderungsverlauf
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

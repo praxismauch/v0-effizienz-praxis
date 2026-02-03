@@ -131,15 +131,25 @@ export function TeamMemberDevicesTab({ memberId, practiceId, memberName }: TeamM
   }
 
   return (
-    <Card>
-      <CardHeader>
+  <Card>
+  <CardHeader>
+    <div className="flex items-center justify-between">
+      <div>
         <CardTitle className="text-lg flex items-center gap-2">
           <Monitor className="h-5 w-5" />
           Zugewiesene Geräte
         </CardTitle>
-        <CardDescription>Medizinische Geräte, für die {memberName} verantwortlich ist</CardDescription>
-      </CardHeader>
-      <CardContent>
+        <CardDescription>
+          {devices.length} Gerät{devices.length !== 1 ? "e" : ""} zugewiesen
+        </CardDescription>
+      </div>
+      <Button variant="outline" size="sm" onClick={() => router.push("/devices")}>
+        <Settings className="h-4 w-4 mr-2" />
+        Zur Geräteverwaltung
+      </Button>
+    </div>
+  </CardHeader>
+  <CardContent>
         {devices.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Monitor className="h-12 w-12 mx-auto mb-4 opacity-50" />

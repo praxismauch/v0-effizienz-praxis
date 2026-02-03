@@ -479,15 +479,29 @@ export function TeamMemberAppraisalsTab({ memberId, practiceId, memberName, isAd
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+  <div className="space-y-6">
+  {/* Header Card */}
+  <Card>
+    <CardHeader>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Mitarbeitergespräche</h3>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Mitarbeitergespräche
+          </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Professionelle Leistungsbeurteilungen und Entwicklungsgespräche
+            {appraisals.length} Gespräch{appraisals.length !== 1 ? "e" : ""} erfasst
           </p>
         </div>
+        {isAdmin && (
+          <Button onClick={openNewDialog}>
+            <Plus className="w-4 h-4 mr-2" />
+            Neues Gespräch
+          </Button>
+        )}
+      </div>
+    </CardHeader>
+  </Card>
         {isAdmin && (
           <Button onClick={openNewDialog}>
             <Plus className="w-4 h-4 mr-2" />

@@ -230,18 +230,25 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">Dokumente</h3>
-          <p className="text-sm text-muted-foreground">Verwalten Sie persönliche Dokumente des Mitarbeiters</p>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Dokumente
+            </CardTitle>
+            <CardDescription>
+              {documents.length} Dokument{documents.length !== 1 ? "e" : ""} vorhanden
+            </CardDescription>
+          </div>
+          <Button onClick={() => setShowAddDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Dokument hinzufügen
+          </Button>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Dokument hinzufügen
-        </Button>
-      </div>
-
+      </CardHeader>
+      <CardContent>
       <div className="grid gap-4 md:grid-cols-2">
         {documents.map((doc) => {
           const FileIcon = getFileIcon(doc.type)
@@ -327,16 +334,16 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
       </div>
 
       {documents.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Noch keine Dokumente vorhanden</p>
-            <Button variant="link" onClick={() => setShowAddDialog(true)}>
-              Erstes Dokument hinzufügen
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">Noch keine Dokumente vorhanden</p>
+          <Button variant="link" onClick={() => setShowAddDialog(true)}>
+            Erstes Dokument hinzufügen
+          </Button>
+        </div>
       )}
+      </CardContent>
+    </Card>
 
       <Dialog open={showAddDialog} onOpenChange={(open) => {
         setShowAddDialog(open)

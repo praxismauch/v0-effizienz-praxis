@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
+import Logger from "@/lib/logger"
 
 interface SidebarSettingsContextType {
   singleGroupMode: boolean
@@ -22,13 +23,16 @@ export function SidebarSettingsProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useUser()
   const { currentPractice } = usePractice()
 
-  // Load setting from localStorage on mount
+  // Hydration-safe: Load setting from localStorage on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    try {
       const saved = localStorage.getItem("sidebar-single-group-mode")
       if (saved !== null) {
         setSingleGroupModeState(saved === "true")
       }
+    } catch {
+      // localStorage may not be available
+    } finally {
       setIsLoaded(true)
     }
   }, [])
@@ -45,11 +49,15 @@ export function SidebarSettingsProvider({ children }: { children: ReactNode }) {
           const data = await response.json()
           if (data.preferences?.single_group_mode !== undefined) {
             setSingleGroupModeState(data.preferences.single_group_mode)
-            localStorage.setItem("sidebar-single-group-mode", String(data.preferences.single_group_mode))
+            try {
+              localStorage.setItem("sidebar-single-group-mode", String(data.preferences.single_group_mode))
+            } catch {
+              // localStorage may not be available
+            }
           }
         }
       } catch (error) {
-        console.error("[v0] Error loading sidebar settings:", error)
+        Logger.warn("context", "Error loading sidebar settings", { error })
       }
     }
 
@@ -58,7 +66,13 @@ export function SidebarSettingsProvider({ children }: { children: ReactNode }) {
 
   const setSingleGroupMode = async (value: boolean) => {
     setSingleGroupModeState(value)
-    localStorage.setItem("sidebar-single-group-mode", String(value))
+    
+    // Persist to localStorage (hydration-safe since this is user-triggered)
+    try {
+      localStorage.setItem("sidebar-single-group-mode", String(value))
+    } catch {
+      // localStorage may not be available
+    }
 
     // Save to API
     if (currentUser?.id) {
@@ -73,7 +87,7 @@ export function SidebarSettingsProvider({ children }: { children: ReactNode }) {
           }),
         })
       } catch (error) {
-        console.error("[v0] Error saving sidebar settings:", error)
+        Logger.warn("context", "Error saving sidebar settings", { error })
       }
     }
   }

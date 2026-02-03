@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClipboardList, Clock, ExternalLink, FolderOpen, Users, User } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useTeamMemberResponsibilities } from "@/hooks/use-team-data"
 
 interface Responsibility {
   id: string
@@ -28,12 +28,6 @@ interface Responsibility {
   assignment_team_name?: string
 }
 
-interface Team {
-  id: string
-  name: string
-  color: string
-}
-
 interface TeamMemberResponsibilitiesTabProps {
   memberId: string
   practiceId: string
@@ -53,92 +47,16 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
 
 const DEFAULT_COLOR = { bg: "bg-gray-50", text: "text-gray-700", border: "border-gray-200" }
 
-export function TeamMemberResponsibilitiesTab({
+export default function TeamMemberResponsibilitiesTab({
   memberId,
   practiceId,
   memberName,
 }: TeamMemberResponsibilitiesTabProps) {
   const router = useRouter()
-  const [allResponsibilities, setAllResponsibilities] = useState<Responsibility[]>([])
-  const [memberTeamIds, setMemberTeamIds] = useState<string[]>([])
-  const [memberUserId, setMemberUserId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   
-  // Fetch team member data to get user_id and team memberships
-  const fetchMemberData = useCallback(async () => {
-    if (!practiceId || !memberId) return
-    try {
-      const response = await fetch(`/api/practices/${practiceId}/team-members/${memberId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setMemberUserId(data.user_id || null)
-        setMemberTeamIds(data.team_ids || [])
-      }
-    } catch (err) {
-      console.error("Error fetching member data:", err)
-    }
-  }, [practiceId, memberId])
+  const { responsibilities, isLoading: loading, error: fetchError } = useTeamMemberResponsibilities(practiceId, memberId)
   
-  // Fetch all responsibilities using the working API
-  const fetchResponsibilities = useCallback(async () => {
-    if (!practiceId) {
-      setLoading(false)
-      return
-    }
-    
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await fetch(`/api/practices/${practiceId}/responsibilities`)
-      if (!response.ok) {
-        throw new Error(`Fehler beim Laden: ${response.status}`)
-      }
-      const data = await response.json()
-      const responsibilitiesArray = Array.isArray(data) ? data : (data.responsibilities || [])
-      setAllResponsibilities(responsibilitiesArray)
-    } catch (err) {
-      console.error("Error fetching responsibilities:", err)
-      setError(err instanceof Error ? err.message : "Fehler beim Laden der Zuständigkeiten")
-    } finally {
-      setLoading(false)
-    }
-  }, [practiceId])
-  
-  useEffect(() => {
-    fetchMemberData()
-    fetchResponsibilities()
-  }, [fetchMemberData, fetchResponsibilities])
-  
-  // Filter responsibilities for this team member
-  const responsibilities = allResponsibilities.map(resp => {
-    const teamMemberIds = resp.team_member_ids || []
-    const assignedTeams = resp.assigned_teams || []
-    
-    let assignmentType: "direct" | "team_member" | "team" | "deputy" | undefined
-    
-    // Check if this member is directly responsible (by team_member.id or user_id)
-    if (resp.responsible_user_id === memberId || resp.responsible_user_id === memberUserId) {
-      assignmentType = "direct"
-    } 
-    // Check if member is in team_member_ids array
-    else if (teamMemberIds.includes(memberId) || (memberUserId && teamMemberIds.includes(memberUserId))) {
-      assignmentType = "team_member"
-    }
-    // Check if member's team is assigned
-    else if (assignedTeams.some(teamId => memberTeamIds.includes(teamId))) {
-      assignmentType = "team"
-    }
-    // Check if member is deputy
-    else if (resp.deputy_user_id === memberId || resp.deputy_user_id === memberUserId) {
-      assignmentType = "deputy"
-    }
-    
-    return {
-      ...resp,
-      assignment_type: assignmentType
-    }
-  }).filter(resp => resp.assignment_type !== undefined)
+  const error = fetchError ? "Fehler beim Laden der Zuständigkeiten" : null
 
   const getCategoryColor = (category?: string) => {
     if (!category) return DEFAULT_COLOR
@@ -180,12 +98,12 @@ export function TeamMemberResponsibilitiesTab({
     }
   }
 
-  const totalHours = responsibilities.reduce((sum, r) => sum + (r.suggested_hours_per_week || 0), 0)
+  const totalHours = responsibilities.reduce((sum: number, r: Responsibility) => sum + (r.suggested_hours_per_week || 0), 0)
 
-  const directCount = responsibilities.filter((r) => r.assignment_type === "direct").length
-  const deputyCount = responsibilities.filter((r) => r.assignment_type === "deputy").length
+  const directCount = responsibilities.filter((r: Responsibility) => r.assignment_type === "direct").length
+  const deputyCount = responsibilities.filter((r: Responsibility) => r.assignment_type === "deputy").length
   const teamCount = responsibilities.filter(
-    (r) => r.assignment_type === "team" || r.assignment_type === "team_member",
+    (r: Responsibility) => r.assignment_type === "team" || r.assignment_type === "team_member",
   ).length
 
   if (loading) {
@@ -269,7 +187,7 @@ export function TeamMemberResponsibilitiesTab({
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {responsibilities.map((responsibility) => {
+            {responsibilities.map((responsibility: Responsibility) => {
               const categoryColor = getCategoryColor(responsibility.category || responsibility.group_name)
 
               return (
@@ -334,3 +252,5 @@ export function TeamMemberResponsibilitiesTab({
     </Card>
   )
 }
+
+export { TeamMemberResponsibilitiesTab }

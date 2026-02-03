@@ -48,7 +48,7 @@ export function SidebarFavorites({
         {sidebarOpen && (
           <button
             onClick={() => setIsEditMode(!isEditMode)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs text-sidebar-foreground/60 hover:text-amber-500 hover:underline transition-colors font-medium"
           >
             {isEditMode ? t("common.done", "Fertig") : t("common.edit", "Bearbeiten")}
           </button>

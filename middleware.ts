@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
+import { getSupabaseUrl, getSupabaseAnonKey, hasSupabaseConfig } from "./lib/supabase/config"
 
 /**
  * Edge-compatible logging utilities
@@ -150,18 +151,19 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
 
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const supabaseUrl = getSupabaseUrl()
+  const supabaseAnonKey = getSupabaseAnonKey()
 
-  // Temporary debug logging
-  console.log("[v0] Middleware env vars:", {
+  // Debug logging to verify env vars are working
+  console.log("[v0] Middleware Supabase check:", {
+    hasConfig: hasSupabaseConfig(),
     hasUrl: !!supabaseUrl,
     hasKey: !!supabaseAnonKey,
-    url: supabaseUrl ? `${supabaseUrl.slice(0, 30)}...` : "missing",
+    urlPreview: supabaseUrl ? `${supabaseUrl.slice(0, 30)}...` : "missing",
   })
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.log("[v0] Supabase not configured - skipping auth")
+  if (!hasSupabaseConfig()) {
+    console.log("[v0] Supabase not configured - skipping auth. Add credentials to lib/supabase/config.ts")
     return addSecurityHeaders(supabaseResponse)
   }
   

@@ -871,22 +871,13 @@ export function GlobalParameterManagement() {
       </div>
 
   <Tabs defaultValue="parameters" className="space-y-6">
-  <TabsList className="grid w-full grid-cols-2">
+  <TabsList>
   <TabsTrigger value="parameters" className="gap-2">
   <Database className="h-4 w-4" />
   {t("kpi.global_kpis", "Globale KPIs")}
   {parameters.length > 0 && (
     <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 text-xs">
       {parameters.length}
-    </Badge>
-  )}
-  </TabsTrigger>
-  <TabsTrigger value="groups" className="gap-2">
-  <BarChart3 className="h-4 w-4" />
-  {t("kpi.categories", "Kategorien")}
-  {groups.length > 0 && (
-    <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 text-xs">
-      {groups.length}
     </Badge>
   )}
   </TabsTrigger>
@@ -1305,124 +1296,6 @@ export function GlobalParameterManagement() {
                   )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="groups" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{t("kpi.categories", "KPI Categories")}</CardTitle>
-                  <CardDescription>
-                    {t("kpi.create_categories_desc", "Create standardized KPI categories for practices to adopt")}
-                  </CardDescription>
-                </div>
-                <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      {t("kpi.create_category", "Create Global Category")}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>{t("kpi.create_category", "Create Global Category")}</DialogTitle>
-                      <DialogDescription>
-                        {t("kpi.create_category_desc", "Create a standardized KPI category template")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div>
-                        <Label htmlFor="global-group-name">Category Name</Label>
-                        <Input
-                          id="global-group-name"
-                          value={newGroup.name || ""} // Ensure value is never null
-                          onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
-                          placeholder="e.g. Essential Practice Metrics"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="global-group-description">Description</Label>
-                        <Textarea
-                          id="global-group-description"
-                          value={newGroup.description || ""} // Ensure value is never null
-                          onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-                          placeholder="Description of the KPI category template..."
-                          rows={3}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="global-group-color">Color</Label>
-                          <Select
-                            value={newGroup.color}
-                            onValueChange={(value) => setNewGroup({ ...newGroup, color: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="bg-blue-500">Blue</SelectItem>
-                              <SelectItem value="bg-green-500">Green</SelectItem>
-                              <SelectItem value="bg-purple-500">Purple</SelectItem>
-                              <SelectItem value="bg-orange-500">Orange</SelectItem>
-                              <SelectItem value="bg-red-500">Red</SelectItem>
-                              <SelectItem value="bg-pink-500">Pink</SelectItem>
-                              <SelectItem value="bg-yellow-500">Yellow</SelectItem>
-                              <SelectItem value="bg-indigo-500">Indigo</SelectItem>
-                              <SelectItem value="bg-teal-500">Teal</SelectItem>
-                              <SelectItem value="bg-cyan-500">Cyan</SelectItem>
-                              <SelectItem value="bg-lime-500">Lime</SelectItem>
-                              <SelectItem value="bg-amber-500">Amber</SelectItem>
-                              <SelectItem value="bg-rose-500">Rose</SelectItem>
-                              <SelectItem value="bg-violet-500">Violet</SelectItem>
-                              <SelectItem value="bg-emerald-500">Emerald</SelectItem>
-                              <SelectItem value="bg-gray-500">Gray</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex items-center space-x-2 pt-6">
-                          <Switch
-                            id="global-group-active"
-                            checked={newGroup.isActive}
-                            onCheckedChange={(checked) => setNewGroup({ ...newGroup, isActive: checked })}
-                          />
-                          <Label htmlFor="global-group-active">Active</Label>
-                        </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsCreateGroupOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreateGroup}>Create Global Category</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {displayGroups.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No KPI categories yet. Create your first category to get started.</p>
-                </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {displayGroups.map((group) => (
-                    <GroupCard
-                      key={group.id}
-                      group={group}
-                      onEdit={handleEditGroup}
-                      onDuplicate={handleDuplicateGroup}
-                      onDelete={handleDeleteGroup}
-                      isDeletingGroup={isDeletingGroup}
-                    />
-                  ))}
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>

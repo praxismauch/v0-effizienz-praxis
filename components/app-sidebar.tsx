@@ -1,5 +1,8 @@
 "use client"
-
+/**
+ * AppSidebar - Main application sidebar navigation
+ * Last updated: 2026-02-03 - Removed Dialog, simplified favorites editing
+ */
 import { Sidebar } from "@/components/ui/sidebar"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useState, useEffect, useRef } from "react"

@@ -1,12 +1,12 @@
 "use client"
 
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClipboardList, Clock, ExternalLink, FolderOpen, Users, User } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useTeamMemberResponsibilities } from "@/hooks/use-team-data"
 
 interface Responsibility {
   id: string
@@ -59,10 +59,86 @@ export function TeamMemberResponsibilitiesTab({
   memberName,
 }: TeamMemberResponsibilitiesTabProps) {
   const router = useRouter()
+  const [allResponsibilities, setAllResponsibilities] = useState<Responsibility[]>([])
+  const [memberTeamIds, setMemberTeamIds] = useState<string[]>([])
+  const [memberUserId, setMemberUserId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
-  const { responsibilities, isLoading: loading, error: fetchError } = useTeamMemberResponsibilities(practiceId, memberId)
+  // Fetch team member data to get user_id and team memberships
+  const fetchMemberData = useCallback(async () => {
+    if (!practiceId || !memberId) return
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/team-members/${memberId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setMemberUserId(data.user_id || null)
+        setMemberTeamIds(data.team_ids || [])
+      }
+    } catch (err) {
+      console.error("Error fetching member data:", err)
+    }
+  }, [practiceId, memberId])
   
-  const error = fetchError ? "Fehler beim Laden der Zuständigkeiten" : null
+  // Fetch all responsibilities using the working API
+  const fetchResponsibilities = useCallback(async () => {
+    if (!practiceId) {
+      setLoading(false)
+      return
+    }
+    
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/responsibilities`)
+      if (!response.ok) {
+        throw new Error(`Fehler beim Laden: ${response.status}`)
+      }
+      const data = await response.json()
+      const responsibilitiesArray = Array.isArray(data) ? data : (data.responsibilities || [])
+      setAllResponsibilities(responsibilitiesArray)
+    } catch (err) {
+      console.error("Error fetching responsibilities:", err)
+      setError(err instanceof Error ? err.message : "Fehler beim Laden der Zuständigkeiten")
+    } finally {
+      setLoading(false)
+    }
+  }, [practiceId])
+  
+  useEffect(() => {
+    fetchMemberData()
+    fetchResponsibilities()
+  }, [fetchMemberData, fetchResponsibilities])
+  
+  // Filter responsibilities for this team member
+  const responsibilities = allResponsibilities.map(resp => {
+    const teamMemberIds = resp.team_member_ids || []
+    const assignedTeams = resp.assigned_teams || []
+    
+    let assignmentType: "direct" | "team_member" | "team" | "deputy" | undefined
+    
+    // Check if this member is directly responsible (by team_member.id or user_id)
+    if (resp.responsible_user_id === memberId || resp.responsible_user_id === memberUserId) {
+      assignmentType = "direct"
+    } 
+    // Check if member is in team_member_ids array
+    else if (teamMemberIds.includes(memberId) || (memberUserId && teamMemberIds.includes(memberUserId))) {
+      assignmentType = "team_member"
+    }
+    // Check if member's team is assigned
+    else if (assignedTeams.some(teamId => memberTeamIds.includes(teamId))) {
+      assignmentType = "team"
+    }
+    // Check if member is deputy
+    else if (resp.deputy_user_id === memberId || resp.deputy_user_id === memberUserId) {
+      assignmentType = "deputy"
+    }
+    
+    return {
+      ...resp,
+      assignment_type: assignmentType
+    }
+  }).filter(resp => resp.assignment_type !== undefined)
 
   const getCategoryColor = (category?: string) => {
     if (!category) return DEFAULT_COLOR

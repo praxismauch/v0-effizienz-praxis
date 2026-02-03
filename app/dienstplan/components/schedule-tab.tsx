@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useMemo } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2, ArrowLeftRight } from "lucide-react"
+import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2, ArrowLeftRight, Search, Users } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -14,6 +15,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import ShiftDialog from "./shift-dialog"
 import SwapRequestDialog from "./swap-request-dialog"
@@ -48,6 +56,10 @@ export default function ScheduleTab({
 }: ScheduleTabProps) {
   const { toast } = useToast()
   
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedRole, setSelectedRole] = useState<string>("all")
+  
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingShift, setEditingShift] = useState<Shift | null>(null)
@@ -58,8 +70,24 @@ export default function ScheduleTab({
   const [swapDialogOpen, setSwapDialogOpen] = useState(false)
   const [swappingShift, setSwappingShift] = useState<Shift | null>(null)
 
-  // Use teamMembers directly (with fallback to empty array)
-  const filteredTeamMembers = teamMembers || []
+  // Get unique roles from team members for the filter dropdown
+  const availableRoles = useMemo(() => {
+    const roles = new Set<string>()
+    ;(teamMembers || []).forEach((member) => {
+      if (member.role) roles.add(member.role)
+    })
+    return Array.from(roles).sort()
+  }, [teamMembers])
+
+  // Filter team members by search query and role
+  const filteredTeamMembers = useMemo(() => {
+    return (teamMembers || []).filter((member) => {
+      const fullName = `${member.first_name} ${member.last_name}`.toLowerCase()
+      const matchesSearch = searchQuery === "" || fullName.includes(searchQuery.toLowerCase())
+      const matchesRole = selectedRole === "all" || member.role === selectedRole
+      return matchesSearch && matchesRole
+    })
+  }, [teamMembers, searchQuery, selectedRole])
 
   // Memoize shifts by date and member for efficient lookups
   const shiftsByDateAndMember = React.useMemo(() => {
@@ -175,8 +203,43 @@ export default function ScheduleTab({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Wochenplan</CardTitle>
+      <CardHeader className="pb-4">
+        <div className="flex flex-col gap-4">
+          <CardTitle>Wochenplan</CardTitle>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search filter */}
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Mitarbeiter suchen..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {/* Role/Group filter */}
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Alle Gruppen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Gruppen</SelectItem>
+                {availableRoles.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    {role}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Filter info */}
+          {(searchQuery || selectedRole !== "all") && (
+            <p className="text-sm text-muted-foreground">
+              {filteredTeamMembers.length} von {teamMembers?.length || 0} Mitarbeitern angezeigt
+            </p>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">

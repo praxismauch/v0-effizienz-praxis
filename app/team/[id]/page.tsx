@@ -20,6 +20,7 @@ import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
 import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
 import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiterfassung-tab"
+import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
 import { ContractsManager } from "@/components/team/contracts-manager"
 
 const roleLabels = {
@@ -442,7 +443,15 @@ export default function TeamMemberDetailPage() {
             </TabsContent>
 
             <TabsContent value="documents" className="space-y-4">
-              {/* Documents content here */}
+              {member && (
+                <TeamMemberDocumentsTab
+                  teamMemberId={memberId}
+                  practiceId={member.practice_id || practiceId || "1"}
+                  isAdmin={isAdmin}
+                  currentUserId={currentUser?.id}
+                  memberUserId={member.user_id}
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>

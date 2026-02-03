@@ -788,6 +788,9 @@ export default function EditTeamMemberPage() {
               <TeamMemberDocumentsTab
                 teamMemberId={memberId}
                 practiceId={member.practice_id || "1"}
+                isAdmin={isAdmin}
+                currentUserId={currentUser?.id}
+                memberUserId={member.user_id}
               />
             ) : (
               <Card>

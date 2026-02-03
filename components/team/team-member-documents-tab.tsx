@@ -39,9 +39,20 @@ const DOCUMENT_CATEGORIES = [
 interface TeamMemberDocumentsTabProps {
   teamMemberId: string
   practiceId: string
+  isAdmin?: boolean
+  currentUserId?: string
+  memberUserId?: string // The user_id of the team member being viewed
 }
 
-export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberDocumentsTabProps) {
+export function TeamMemberDocumentsTab({ 
+  teamMemberId, 
+  practiceId, 
+  isAdmin = false,
+  currentUserId,
+  memberUserId 
+}: TeamMemberDocumentsTabProps) {
+  // User can edit if they are admin OR viewing their own profile
+  const canEdit = isAdmin || (currentUserId && memberUserId && currentUserId === memberUserId)
   const [documents, setDocuments] = useState<TeamMemberDocument[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -243,10 +254,12 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
               {documents.length} Dokument{documents.length !== 1 ? "e" : ""} vorhanden
             </CardDescription>
           </div>
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Dokument hinzufügen
-          </Button>
+          {canEdit && (
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Dokument hinzufügen
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -278,30 +291,34 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
                         </a>
                       </Button>
                     )}
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => {
-                        setEditingDocument(doc)
-                        setFormData({
-                          name: doc.name,
-                          category: doc.category,
-                          expiry_date: doc.expiry_date || "",
-                          notes: doc.notes || "",
-                          file: null,
-                        })
-                        setShowAddDialog(true)
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDelete(doc.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {canEdit && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => {
+                          setEditingDocument(doc)
+                          setFormData({
+                            name: doc.name,
+                            category: doc.category,
+                            expiry_date: doc.expiry_date || "",
+                            notes: doc.notes || "",
+                            file: null,
+                          })
+                          setShowAddDialog(true)
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canEdit && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDelete(doc.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -338,9 +355,11 @@ export function TeamMemberDocumentsTab({ teamMemberId, practiceId }: TeamMemberD
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-muted-foreground">Noch keine Dokumente vorhanden</p>
-          <Button variant="link" onClick={() => setShowAddDialog(true)}>
-            Erstes Dokument hinzufügen
-          </Button>
+          {canEdit && (
+            <Button variant="link" onClick={() => setShowAddDialog(true)}>
+              Erstes Dokument hinzufügen
+            </Button>
+          )}
         </div>
       )}
       </CardContent>

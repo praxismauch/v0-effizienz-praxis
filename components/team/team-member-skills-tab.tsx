@@ -288,18 +288,26 @@ export function TeamMemberSkillsTab({
   }
 
   if (!skills || skills.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">Keine Skills definiert</h3>
-          <p className="text-muted-foreground text-center max-w-md">
-            Es wurden noch keine Skills für diese Praxis definiert. Ein Administrator kann Skills unter dem Menüpunkt
-            "Skills" anlegen.
-          </p>
-        </CardContent>
-      </Card>
-    )
+  return (
+  <Card>
+  <CardContent className="flex flex-col items-center justify-center py-12">
+  <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+  <h3 className="text-lg font-medium mb-2">Keine Skills definiert</h3>
+  <p className="text-muted-foreground text-center max-w-md mb-4">
+  Es wurden noch keine Skills für diese Praxis definiert. Ein Administrator kann Skills unter dem Menüpunkt
+  "Skills" anlegen.
+  </p>
+  {isAdmin && (
+    <Button asChild>
+      <a href="/skills">
+        <Award className="h-4 w-4 mr-2" />
+        Skills verwalten
+      </a>
+    </Button>
+  )}
+  </CardContent>
+  </Card>
+  )
   }
 
   return (

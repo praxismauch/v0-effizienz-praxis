@@ -62,6 +62,8 @@ export default function DevicesPageClient() {
   const devices = devicesData?.devices || []
   const loading = isLoading
 
+  console.log("[v0] DevicesPageClient - currentPractice:", currentPractice?.id, "devices count:", devices.length, "loading:", loading, "error:", error)
+
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")

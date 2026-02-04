@@ -3,13 +3,20 @@
 import type { ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/contexts/user-context"
-import { SuperAdminSidebar } from "@/components/super-admin-sidebar"
-import { SuperAdminHeader } from "@/components/super-admin-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import dynamic from "next/dynamic"
+
+const SuperAdminSidebar = dynamic(() => import("@/components/super-admin-sidebar").then((mod) => ({ default: mod.SuperAdminSidebar })), {
+  ssr: false,
+})
+
+const SuperAdminHeader = dynamic(() => import("@/components/super-admin-header").then((mod) => ({ default: mod.SuperAdminHeader })), {
+  ssr: false,
+})
 
 interface SuperAdminLayoutProps {
   children: ReactNode

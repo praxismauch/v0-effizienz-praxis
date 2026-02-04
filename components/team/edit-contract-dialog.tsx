@@ -251,6 +251,15 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
               
               const blob = await uploadRes.json()
               
+              // Check if blob has required properties
+              if (!blob.url) {
+                toast({
+                  title: "Upload-Fehler",
+                  description: blob.error || "Datei konnte nicht hochgeladen werden",
+                  variant: "destructive",
+                })
+                continue
+              }
 
               const fileRes = await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}/files`, {
                 method: "POST",
@@ -284,11 +293,11 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
         title: "Erfolgreich gespeichert",
         description: "Vertrag wurde aktualisiert",
       })
-    } catch (error) {
-      
+    } catch (error: any) {
+      const errorMessage = error?.message || String(error) || "Ein unerwarteter Fehler ist aufgetreten"
       toast({
         title: "Fehler",
-        description: "Ein unerwarteter Fehler ist aufgetreten",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

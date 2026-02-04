@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { usePractice } from "@/contexts/practice-context"
 import { Upload, X, FileText, Trash2, Download, Eye, Calculator, Palmtree, Sun, Coins, Plus } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 
 import { Card, CardContent } from "@/components/ui/card"
 

@@ -12,7 +12,19 @@ export async function PUT(
 
     const supabase = await createAdminClient()
 
+    // Known columns in the contracts table
+    const knownColumns = [
+      'team_member_id', 'contract_type', 'start_date', 'end_date',
+      'hours_per_week', 'salary', 'salary_currency', 'bonus_personal_goal',
+      'bonus_practice_goal', 'bonus_employee_discussion', 'notes', 'is_active',
+      'has_13th_salary', 'holiday_days_fulltime', 'working_days_fulltime'
+    ]
+
     const sanitizedBody = Object.keys(body).reduce((acc: any, key) => {
+      // Skip unknown columns to prevent database errors
+      if (!knownColumns.includes(key)) {
+        return acc
+      }
       const value = body[key]
       if ((key.includes("_date") || key.includes("_time") || key === "birthday") && value === "") {
         acc[key] = null

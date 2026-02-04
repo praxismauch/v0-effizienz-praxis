@@ -40,11 +40,7 @@ function ArbeitsplaetzeManagement() {
   const { currentPractice } = usePractice()
   const practiceId = currentPractice?.id
 
-  console.log("[v0] ArbeitsplaetzeManagement - practiceId:", practiceId, "currentPractice:", currentPractice)
-
   const { arbeitsplaetze, isLoading: loading, mutate } = useArbeitsplaetze(practiceId)
-
-  console.log("[v0] ArbeitsplaetzeManagement - arbeitsplaetze count:", arbeitsplaetze?.length, "loading:", loading)
 
   const handleEdit = (arbeitsplatz: Arbeitsplatz) => {
     setSelectedArbeitsplatz(arbeitsplatz)

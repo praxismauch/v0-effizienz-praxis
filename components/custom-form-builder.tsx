@@ -164,7 +164,7 @@ export function CustomFormBuilder() {
         const response = await fetch(`/api/practices/${currentPractice.id}/team-members`)
         if (response.ok) {
           const data = await response.json()
-          const members = Array.isArray(data) ? data : data.members || []
+          const members = Array.isArray(data) ? data : data.teamMembers || data.members || []
           setLocalTeamMembers(members.filter((m: any) => m.id && m.id.trim() !== ""))
         }
       } catch (error) {

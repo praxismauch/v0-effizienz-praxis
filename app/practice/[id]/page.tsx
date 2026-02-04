@@ -116,7 +116,7 @@ export default function PracticeDetailsPage({ params }: { params: { id: string }
         const teamResponse = await fetch(`/api/practices/${practiceId}/team`)
         if (teamResponse.ok) {
           const teamData = await teamResponse.json()
-          setTeamMembers(teamData.members || [])
+          setTeamMembers(teamData.teamMembers || teamData.members || [])
         }
 
         // Load practice stats

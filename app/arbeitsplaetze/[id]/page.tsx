@@ -33,10 +33,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import { getColorConfig, ARBEITSPLATZ_COLORS, type ArbeitsplatzColor } from "@/components/arbeitsplaetze/arbeitsplatz-card"
 
 interface Room {
   id: string
   name: string
+  color?: string | null
 }
 
 interface Arbeitsplatz {
@@ -47,6 +49,8 @@ interface Arbeitsplatz {
   is_active: boolean
   room?: Room | null
   image_url?: string | null
+  color?: ArbeitsplatzColor | null
+  use_room_color?: boolean | null
 }
 
 interface Anweisung {
@@ -290,6 +294,13 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
     )
   }
 
+  // Determine the effective color for this Arbeitsplatz
+  let effectiveColor = arbeitsplatz.color
+  if ((arbeitsplatz.use_room_color !== false) && arbeitsplatz.room?.color) {
+    effectiveColor = arbeitsplatz.room.color as ArbeitsplatzColor
+  }
+  const colorConfig = getColorConfig(effectiveColor)
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -303,13 +314,13 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
               <div
                 className={cn(
                   "p-3 rounded-xl",
-                  arbeitsplatz.is_active ? "bg-green-100 dark:bg-green-900/50" : "bg-gray-100 dark:bg-gray-800",
+                  arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
                 )}
               >
                 <Monitor
                   className={cn(
                     "h-6 w-6",
-                    arbeitsplatz.is_active ? "text-green-600 dark:text-green-400" : "text-gray-500",
+                    arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
                   )}
                 />
               </div>
@@ -341,12 +352,12 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
         {/* Anweisungen List */}
         {anweisungen.length > 0 ? (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Anweisungen ({anweisungen.length})</h2>
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Anweisungen ({anweisungen.length})</h2>
             <div className="space-y-3">
               {anweisungen
                 .sort((a, b) => a.sort_order - b.sort_order)
                 .map((anweisung, index) => (
-                  <Card key={anweisung.id} className="hover:shadow-md transition-shadow">
+                  <Card key={anweisung.id} className="group hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
                         <div className="flex items-center gap-2 text-muted-foreground">
@@ -354,20 +365,20 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
                           <span className="text-sm font-medium">{index + 1}.</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold">{anweisung.title}</h3>
+                          <h3 className="font-medium text-foreground">{anweisung.title}</h3>
                           {anweisung.content && (
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{anweisung.content}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button variant="ghost" size="icon" onClick={() => openEditDialog(anweisung)}>
+                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(anweisung)}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
                             onClick={() => openDeleteDialog(anweisung)}
-                            className="hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

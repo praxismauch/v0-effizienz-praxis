@@ -87,7 +87,7 @@ export function CreateTodoFromResponsibilityDialog({
           return res.json()
         })
         .then((data) => {
-          setTeamMembers(Array.isArray(data) ? data : [])
+          setTeamMembers(Array.isArray(data) ? data : data.teamMembers || data.members || [])
         })
         .catch((err) => {
           console.error("[v0] Error fetching team members:", err)

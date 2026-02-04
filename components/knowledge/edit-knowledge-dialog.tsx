@@ -103,7 +103,7 @@ export function EditKnowledgeDialog({
         const response = await fetch(`/api/practices/${currentPractice.id}/team-members`)
         if (response.ok) {
           const data = await response.json()
-          setTeamMembers(data || [])
+          setTeamMembers(Array.isArray(data) ? data : data.teamMembers || data.members || [])
         }
       } catch (error) {
         console.error("[v0] Error fetching team members:", error)

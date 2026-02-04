@@ -26,10 +26,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2 } from "lucide-react"
+import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { AppLayout } from "@/components/app-layout"
 import { cn } from "@/lib/utils"
+import { MultiImageUpload } from "@/components/ui/multi-image-upload"
 
 const ROOM_COLOR_OPTIONS = [
   { value: "green", label: "Grün", class: "bg-green-500", bg: "bg-green-50", border: "border-l-4 border-l-green-500", icon: "text-green-600" },
@@ -47,6 +48,7 @@ interface Room {
   name: string
   beschreibung?: string
   color?: string
+  images?: string[]
   practice_id: string
   created_at: string
   updated_at?: string
@@ -134,6 +136,12 @@ export default function PageClient(_props: PageClientProps) {
   const [formName, setFormName] = useState("")
   const [formBeschreibung, setFormBeschreibung] = useState("")
   const [formColor, setFormColor] = useState("blue")
+  const [formImages, setFormImages] = useState<string[]>([])
+
+  // Get upload endpoint for images
+  const uploadEndpoint = currentPractice?.id
+    ? `/api/practices/${currentPractice.id}/rooms/upload-image`
+    : ""
 
   // Fetch rooms function
   const fetchRooms = useCallback(async () => {
@@ -171,6 +179,7 @@ export default function PageClient(_props: PageClientProps) {
           name: formName.trim(),
           beschreibung: formBeschreibung.trim() || null,
           color: formColor,
+          images: formImages.length > 0 ? formImages : null,
         }),
       })
 
@@ -216,6 +225,7 @@ export default function PageClient(_props: PageClientProps) {
           name: formName.trim(),
           beschreibung: formBeschreibung.trim() || null,
           color: formColor,
+          images: formImages.length > 0 ? formImages : null,
         }),
       })
 
@@ -281,6 +291,7 @@ export default function PageClient(_props: PageClientProps) {
     setFormName(room.name)
     setFormBeschreibung(room.beschreibung || "")
     setFormColor(room.color || "blue")
+    setFormImages(room.images || [])
     setIsEditOpen(true)
   }
 
@@ -293,6 +304,7 @@ export default function PageClient(_props: PageClientProps) {
     setFormName("")
     setFormBeschreibung("")
     setFormColor("blue")
+    setFormImages([])
   }
 
   const filteredRooms = rooms.filter(
@@ -401,7 +413,25 @@ export default function PageClient(_props: PageClientProps) {
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-3">
+                        {room.images && room.images.length > 0 && (
+                          <div className="flex gap-2 overflow-x-auto pb-1">
+                            {room.images.slice(0, 3).map((image, imgIndex) => (
+                              <div key={imgIndex} className="relative flex-shrink-0">
+                                <img
+                                  src={image}
+                                  alt={`${room.name} Bild ${imgIndex + 1}`}
+                                  className="h-16 w-24 object-cover rounded-md border border-border"
+                                />
+                              </div>
+                            ))}
+                            {room.images.length > 3 && (
+                              <div className="flex-shrink-0 h-16 w-16 rounded-md bg-muted flex items-center justify-center text-sm text-muted-foreground">
+                                +{room.images.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {room.beschreibung ? (
                           <p className="text-sm text-muted-foreground line-clamp-2">{room.beschreibung}</p>
                         ) : (
@@ -485,6 +515,20 @@ export default function PageClient(_props: PageClientProps) {
                   ))}
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Bilder
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">Laden Sie Bilder des Raums hoch (max. 10 Bilder)</p>
+                <MultiImageUpload
+                  images={formImages}
+                  onImagesChange={setFormImages}
+                  maxImages={10}
+                  uploadEndpoint={uploadEndpoint}
+                  disabled={isSaving}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -546,6 +590,20 @@ export default function PageClient(_props: PageClientProps) {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Bilder
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">Laden Sie Bilder des Raums hoch (max. 10 Bilder)</p>
+                <MultiImageUpload
+                  images={formImages}
+                  onImagesChange={setFormImages}
+                  maxImages={10}
+                  uploadEndpoint={uploadEndpoint}
+                  disabled={isSaving}
+                />
               </div>
             </div>
             <DialogFooter>

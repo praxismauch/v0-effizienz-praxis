@@ -5,7 +5,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
   try {
     const { practiceId, roomId } = await params
     const body = await request.json()
-    const { name, beschreibung, color } = body
+    const { name, beschreibung, color, images } = body
 
     if (!practiceId || !roomId) {
       return NextResponse.json({ error: "Practice ID and Room ID are required" }, { status: 400 })
@@ -19,6 +19,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
         name: name?.trim(),
         beschreibung: beschreibung?.trim() || null,
         color: color || null,
+        images: images || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", roomId)

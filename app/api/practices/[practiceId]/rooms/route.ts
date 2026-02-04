@@ -45,7 +45,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
   try {
     const { practiceId } = await params
     const body = await request.json()
-    const { name, beschreibung, color } = body
+    const { name, beschreibung, color, images } = body
 
     if (!practiceId) {
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })
@@ -64,6 +64,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         name: name.trim(),
         beschreibung: beschreibung?.trim() || null,
         color: color || null,
+        images: images || null,
         practice_id: practiceId,
       })
       .select()

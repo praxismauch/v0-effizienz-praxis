@@ -90,7 +90,7 @@ export const ProfileImageEditor = ({ currentAvatar, userName, onAvatarChange, tr
   const [previewUrl, setPreviewUrl] = useState(currentAvatar || "")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [cropSettings, setCropSettings] = useState({
-    zoom: 3,
+    zoom: 1,
     rotation: 0,
     panX: 0,
     panY: 0,
@@ -321,7 +321,7 @@ export const ProfileImageEditor = ({ currentAvatar, userName, onAvatarChange, tr
     setUrlInput("")
     setPreviewUrl("")
     setSelectedFile(null)
-    setCropSettings({ zoom: 3, rotation: 0, panX: 0, panY: 0 })
+    setCropSettings({ zoom: 1, rotation: 0, panX: 0, panY: 0 })
     setActiveTab("upload")
   }
 
@@ -514,7 +514,7 @@ export const ProfileImageEditor = ({ currentAvatar, userName, onAvatarChange, tr
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCropSettings({ zoom: 3, rotation: 0, panX: 0, panY: 0 })}
+                      onClick={() => setCropSettings({ zoom: 1, rotation: 0, panX: 0, panY: 0 })}
                       className="w-full"
                     >
                       Zurücksetzen

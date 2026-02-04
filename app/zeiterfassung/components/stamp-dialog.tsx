@@ -15,7 +15,8 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { WORK_LOCATIONS, type StampAction } from "../types"
+import { WORK_LOCATIONS, type StampAction, type TimeBlock } from "../types"
+import { differenceInMinutes } from "date-fns"
 
 interface StampDialogProps {
   open: boolean
@@ -26,6 +27,7 @@ interface StampDialogProps {
   onStampCommentChange: (comment: string) => void
   onConfirm: () => void
   isStamping: boolean
+  currentBlock?: TimeBlock | null
 }
 
 export default function StampDialog({
@@ -37,7 +39,25 @@ export default function StampDialog({
   onStampCommentChange,
   onConfirm,
   isStamping,
+  currentBlock,
 }: StampDialogProps) {
+  // Check if overtime when stopping
+  const isOvertime = (() => {
+    if (stampAction !== "stop" || !currentBlock?.start_time || !currentBlock?.planned_hours) {
+      return false
+    }
+    const startTime = new Date(currentBlock.start_time)
+    const now = new Date()
+    const workedMinutes = differenceInMinutes(now, startTime) - (currentBlock.break_minutes || 0)
+    const plannedMinutes = currentBlock.planned_hours * 60
+    return workedMinutes > plannedMinutes
+  })()
+
+  // Comment is required for remote work locations OR overtime when stopping
+  const requiresCommentForLocation = selectedLocation === "aussentermin" || selectedLocation === "homeoffice"
+  const requiresComment = requiresCommentForLocation || isOvertime
+  const isCommentValid = !requiresComment || stampComment.trim().length > 0
+
   const getTitle = () => {
     switch (stampAction) {
       case "start":
@@ -78,13 +98,25 @@ export default function StampDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Kommentar (optional)</Label>
+            <Label>
+              Kommentar {requiresComment ? <span className="text-red-500">*</span> : "(optional)"}
+            </Label>
             <Textarea
               value={stampComment}
               onChange={(e) => onStampCommentChange(e.target.value)}
-              placeholder="z.B. Hausbesuch bei Patient X, Fortbildung..."
+              placeholder={requiresComment 
+                ? "Bitte Grund angeben (z.B. Hausbesuch bei Patient X, Fortbildung...)" 
+                : "z.B. Hausbesuch bei Patient X, Fortbildung..."}
               rows={2}
+              className={cn(requiresComment && !stampComment.trim() && "border-red-300 focus-visible:ring-red-500")}
             />
+            {requiresComment && !stampComment.trim() && (
+              <p className="text-xs text-red-500">
+                {isOvertime 
+                  ? "Bei Überstunden ist ein Kommentar erforderlich (Grund für Mehrarbeit)" 
+                  : "Bei Außentermin oder Homeoffice ist ein Kommentar erforderlich"}
+              </p>
+            )}
           </div>
         </div>
 
@@ -94,7 +126,7 @@ export default function StampDialog({
           </Button>
           <Button
             onClick={onConfirm}
-            disabled={isStamping}
+            disabled={isStamping || !isCommentValid}
             className={cn(
               stampAction === "start" && "bg-green-600 hover:bg-green-700",
               stampAction === "stop" && "bg-red-600 hover:bg-red-700",

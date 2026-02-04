@@ -358,6 +358,7 @@ export default function ZeiterfassungPageClient() {
         onStampCommentChange={setStampComment}
         onConfirm={handleStamp}
         isStamping={isStamping}
+        currentBlock={currentBlock}
       />
 
       <CorrectionDialog

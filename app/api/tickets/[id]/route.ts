@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { sendNotification } from "@/lib/notifications"
+import { sendTicketMessage } from "@/lib/messages"
 import { getTicketStatusByValue } from "@/lib/tickets/config"
 import { isSuperAdminRole, normalizeRole } from "@/lib/auth-utils"
 
@@ -84,6 +85,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (body.status && existingTicket.status !== body.status && existingTicket.user_id) {
       const statusConfig = await getTicketStatusByValue(body.status)
       const statusLabel = statusConfig?.label_de || body.status
+      const oldStatusConfig = await getTicketStatusByValue(existingTicket.status)
+      const oldStatusLabel = oldStatusConfig?.label_de || existingTicket.status
 
       await sendNotification({
         ticketId: id,
@@ -91,6 +94,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         userId: existingTicket.user_id,
         updateType: body.status === "resolved" ? "resolved" : "status_change",
         newStatus: statusLabel,
+      })
+
+      // Send internal message to ticket creator about status change
+      await sendTicketMessage({
+        ticketId: id,
+        ticketTitle: existingTicket.title || "Ticket",
+        recipientId: existingTicket.user_id,
+        messageContent: `Der Status Ihres Tickets wurde von "${oldStatusLabel}" auf "${statusLabel}" geändert.`,
       })
     }
 
@@ -164,11 +175,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     console.log("[v0] Ticket updated successfully:", data)
 
-    // Send notification if status changed
+    // Send notification and internal message if status changed
     if (body.status && existingTicket.status !== body.status && existingTicket.user_id) {
       try {
         const statusConfig = await getTicketStatusByValue(body.status)
         const statusLabel = statusConfig?.label_de || body.status
+        const oldStatusConfig = await getTicketStatusByValue(existingTicket.status)
+        const oldStatusLabel = oldStatusConfig?.label_de || existingTicket.status
 
         await sendNotification({
           ticketId: id,
@@ -177,9 +190,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           updateType: body.status === "resolved" ? "resolved" : "status_change",
           newStatus: statusLabel,
         })
+
+        // Send internal message to ticket creator about status change
+        await sendTicketMessage({
+          ticketId: id,
+          ticketTitle: existingTicket.title || "Ticket",
+          recipientId: existingTicket.user_id,
+          messageContent: `Der Status Ihres Tickets wurde von "${oldStatusLabel}" auf "${statusLabel}" geändert.`,
+        })
       } catch (notifyError) {
-        console.error("[v0] Error sending notification:", notifyError)
-        // Don't fail the request if notification fails
+        console.error("[v0] Error sending notification/message:", notifyError)
+        // Don't fail the request if notification/message fails
       }
     }
 

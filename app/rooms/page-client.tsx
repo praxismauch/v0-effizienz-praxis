@@ -26,14 +26,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2 } from "lucide-react"
+import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2, ImageIcon, Cpu } from "lucide-react"
 import { toast } from "sonner"
 import { AppLayout } from "@/components/app-layout"
+import { cn } from "@/lib/utils"
+import { MultiImageUpload } from "@/components/ui/multi-image-upload"
+import { Badge } from "@/components/ui/badge"
+
+const ROOM_COLOR_OPTIONS = [
+  { value: "green", label: "Grün", class: "bg-green-500", bg: "bg-green-50", border: "border-l-4 border-l-green-500", icon: "text-green-600" },
+  { value: "blue", label: "Blau", class: "bg-blue-500", bg: "bg-blue-50", border: "border-l-4 border-l-blue-500", icon: "text-blue-600" },
+  { value: "purple", label: "Lila", class: "bg-purple-500", bg: "bg-purple-50", border: "border-l-4 border-l-purple-500", icon: "text-purple-600" },
+  { value: "orange", label: "Orange", class: "bg-orange-500", bg: "bg-orange-50", border: "border-l-4 border-l-orange-500", icon: "text-orange-600" },
+  { value: "red", label: "Rot", class: "bg-red-500", bg: "bg-red-50", border: "border-l-4 border-l-red-500", icon: "text-red-600" },
+  { value: "teal", label: "Türkis", class: "bg-teal-500", bg: "bg-teal-50", border: "border-l-4 border-l-teal-500", icon: "text-teal-600" },
+  { value: "pink", label: "Pink", class: "bg-pink-500", bg: "bg-pink-50", border: "border-l-4 border-l-pink-500", icon: "text-pink-600" },
+  { value: "yellow", label: "Gelb", class: "bg-yellow-500", bg: "bg-yellow-50", border: "border-l-4 border-l-yellow-500", icon: "text-yellow-600" },
+]
+
+interface Device {
+  id: string
+  name: string
+  category?: string
+  manufacturer?: string
+  model?: string
+  status?: string
+  image_url?: string
+}
 
 interface Room {
   id: string
   name: string
   beschreibung?: string
+  color?: string
+  images?: string[]
   practice_id: string
   created_at: string
   updated_at?: string
@@ -77,8 +103,16 @@ const FALLBACK_COLORS = [
   { bg: "bg-emerald-50", border: "border-l-4 border-l-emerald-500", icon: "text-emerald-600" },
 ]
 
-function getRoomColor(roomName: string, index: number) {
-  const nameLower = roomName.toLowerCase()
+function getRoomColor(room: Room, index: number) {
+  // If room has a custom color set, use it
+  if (room.color) {
+    const customColor = ROOM_COLOR_OPTIONS.find(c => c.value === room.color)
+    if (customColor) {
+      return { bg: customColor.bg, border: customColor.border, icon: customColor.icon }
+    }
+  }
+
+  const nameLower = room.name.toLowerCase()
 
   // Check for matching keywords
   for (const [keyword, colors] of Object.entries(ROOM_COLORS)) {
@@ -101,6 +135,7 @@ export default function PageClient(_props: PageClientProps) {
 
   // Data state - using useState with functional updates
   const [rooms, setRooms] = useState<Room[]>([])
+  const [roomDevices, setRoomDevices] = useState<Record<string, Device[]>>({})
 
   // Dialog states
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -112,6 +147,28 @@ export default function PageClient(_props: PageClientProps) {
   // Form states
   const [formName, setFormName] = useState("")
   const [formBeschreibung, setFormBeschreibung] = useState("")
+  const [formColor, setFormColor] = useState("blue")
+  const [formImages, setFormImages] = useState<string[]>([])
+
+  // Get upload endpoint for images
+  const uploadEndpoint = currentPractice?.id
+    ? `/api/practices/${currentPractice.id}/rooms/upload-image`
+    : ""
+
+  // Fetch devices for a specific room
+  const fetchDevicesForRoom = useCallback(async (roomId: string) => {
+    if (!currentPractice?.id) return
+
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/rooms/${roomId}/devices`)
+      if (response.ok) {
+        const data = await response.json()
+        setRoomDevices(prev => ({ ...prev, [roomId]: data.devices || [] }))
+      }
+    } catch (error) {
+      console.error("Error fetching devices for room:", error)
+    }
+  }, [currentPractice?.id])
 
   // Fetch rooms function
   const fetchRooms = useCallback(async () => {
@@ -121,13 +178,16 @@ export default function PageClient(_props: PageClientProps) {
       const response = await fetch(`/api/practices/${currentPractice.id}/rooms`)
       if (response.ok) {
         const data = await response.json()
-        setRooms(() => data || [])
+        const roomsData = data || []
+        setRooms(() => roomsData)
+        // Fetch devices for all rooms
+        roomsData.forEach((room: Room) => fetchDevicesForRoom(room.id))
       }
     } catch (error) {
       console.error("Error fetching rooms:", error)
       toast.error("Fehler beim Laden der Räume")
     }
-  }, [currentPractice?.id])
+  }, [currentPractice?.id, fetchDevicesForRoom])
 
   // Initial load
   useEffect(() => {
@@ -148,6 +208,8 @@ export default function PageClient(_props: PageClientProps) {
         body: JSON.stringify({
           name: formName.trim(),
           beschreibung: formBeschreibung.trim() || null,
+          color: formColor,
+          images: formImages.length > 0 ? formImages : null,
         }),
       })
 
@@ -192,6 +254,8 @@ export default function PageClient(_props: PageClientProps) {
         body: JSON.stringify({
           name: formName.trim(),
           beschreibung: formBeschreibung.trim() || null,
+          color: formColor,
+          images: formImages.length > 0 ? formImages : null,
         }),
       })
 
@@ -256,6 +320,8 @@ export default function PageClient(_props: PageClientProps) {
     setSelectedRoom(room)
     setFormName(room.name)
     setFormBeschreibung(room.beschreibung || "")
+    setFormColor(room.color || "blue")
+    setFormImages(room.images || [])
     setIsEditOpen(true)
   }
 
@@ -267,6 +333,8 @@ export default function PageClient(_props: PageClientProps) {
   const resetForm = () => {
     setFormName("")
     setFormBeschreibung("")
+    setFormColor("blue")
+    setFormImages([])
   }
 
   const filteredRooms = rooms.filter(
@@ -343,7 +411,8 @@ export default function PageClient(_props: PageClientProps) {
             ) : filteredRooms.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredRooms.map((room, index) => {
-                  const colors = getRoomColor(room.name, index)
+                  const colors = getRoomColor(room, index)
+                  const devices = roomDevices[room.id] || []
                   return (
                     <Card
                       key={room.id}
@@ -375,11 +444,56 @@ export default function PageClient(_props: PageClientProps) {
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-3">
+                        {room.images && room.images.length > 0 && (
+                          <div className="flex gap-2 overflow-x-auto pb-1">
+                            {room.images.slice(0, 3).map((image, imgIndex) => (
+                              <div key={imgIndex} className="relative flex-shrink-0">
+                                <img
+                                  src={image}
+                                  alt={`${room.name} Bild ${imgIndex + 1}`}
+                                  className="h-16 w-24 object-cover rounded-md border border-border"
+                                />
+                              </div>
+                            ))}
+                            {room.images.length > 3 && (
+                              <div className="flex-shrink-0 h-16 w-16 rounded-md bg-muted flex items-center justify-center text-sm text-muted-foreground">
+                                +{room.images.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {room.beschreibung ? (
                           <p className="text-sm text-muted-foreground line-clamp-2">{room.beschreibung}</p>
                         ) : (
                           <p className="text-sm text-muted-foreground/70 italic">Keine Beschreibung</p>
+                        )}
+                        {/* Devices section */}
+                        {devices.length > 0 && (
+                          <div className="pt-2 border-t border-border/50">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs font-medium text-muted-foreground">
+                                Geräte ({devices.length})
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {devices.slice(0, 4).map((device) => (
+                                <Badge
+                                  key={device.id}
+                                  variant="secondary"
+                                  className="text-xs bg-background/60 hover:bg-background/80"
+                                >
+                                  {device.name}
+                                </Badge>
+                              ))}
+                              {devices.length > 4 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{devices.length - 4} weitere
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </CardContent>
                     </Card>
@@ -437,6 +551,42 @@ export default function PageClient(_props: PageClientProps) {
                   rows={3}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Farbe</Label>
+                <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {ROOM_COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setFormColor(color.value)}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                        formColor === color.value
+                          ? "border-primary shadow-sm scale-105"
+                          : "border-border hover:border-primary/50",
+                      )}
+                    >
+                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                      <span className="text-sm font-medium">{color.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Bilder
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">Laden Sie Bilder des Raums hoch (max. 10 Bilder)</p>
+                <MultiImageUpload
+                  images={formImages}
+                  onImagesChange={setFormImages}
+                  maxImages={10}
+                  uploadEndpoint={uploadEndpoint}
+                  disabled={isSaving}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -475,6 +625,42 @@ export default function PageClient(_props: PageClientProps) {
                   value={formBeschreibung}
                   onChange={(e) => setFormBeschreibung(e.target.value)}
                   rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Farbe</Label>
+                <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {ROOM_COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setFormColor(color.value)}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                        formColor === color.value
+                          ? "border-primary shadow-sm scale-105"
+                          : "border-border hover:border-primary/50",
+                      )}
+                    >
+                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                      <span className="text-sm font-medium">{color.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Bilder
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">Laden Sie Bilder des Raums hoch (max. 10 Bilder)</p>
+                <MultiImageUpload
+                  images={formImages}
+                  onImagesChange={setFormImages}
+                  maxImages={10}
+                  uploadEndpoint={uploadEndpoint}
+                  disabled={isSaving}
                 />
               </div>
             </div>

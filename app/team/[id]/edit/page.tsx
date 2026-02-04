@@ -481,6 +481,23 @@ export default function EditTeamMemberPage() {
           </div>
         </div>
 
+        {/* Profile Header with Avatar and Name */}
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16">
+            {formData.avatar && <AvatarImage src={formData.avatar} alt={`${formData.firstName} ${formData.lastName}`} />}
+            <AvatarFallback className="text-xl bg-primary/10 text-primary font-semibold">
+              {formData.firstName?.[0]?.toUpperCase() || ""}
+              {formData.lastName?.[0]?.toUpperCase() || ""}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-semibold">
+              {formData.firstName} {formData.lastName}
+            </h1>
+            <p className="text-muted-foreground">Profil bearbeiten</p>
+          </div>
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto gap-1">
             <TabsTrigger value="profile">Profil</TabsTrigger>

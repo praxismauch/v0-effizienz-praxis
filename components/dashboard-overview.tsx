@@ -2,20 +2,16 @@
 
 import type React from "react"
 
-import { useState, useEffect, useMemo, useCallback, memo, useRef } from "react"
-import { Card } from "@/components/ui/card"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import {
   Users,
   Target,
   Workflow,
   FileText,
-  TrendingUp,
-  TrendingDown,
   Settings,
   Briefcase,
   CheckSquare,
   Calendar,
-  Clock,
   Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +28,14 @@ import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { GoogleReviewsWidget } from "./google-reviews-widget"
 import { JournalActionItemsCard } from "@/components/dashboard/insights-action-items-card"
 import { useTranslation } from "@/contexts/translation-context"
+import {
+  StatCard,
+  WeeklyTasksWidget,
+  TodayScheduleWidget,
+  ActivityChartWidget,
+  KPIWidget,
+  RecentActivitiesWidget,
+} from "@/components/dashboard"
 
 interface DashboardStats {
   teamMembers: number
@@ -104,62 +108,6 @@ const DEFAULT_WIDGETS = {
   todosFilterPriority: undefined,
   widgetOrder: DEFAULT_ORDER,
 }
-
-const StatCard = memo(function StatCard({
-  title,
-  value,
-  trend,
-  icon: Icon,
-  color,
-  href,
-  subtitle,
-}: {
-  title: string
-  value: number | string
-  trend?: number
-  icon: any
-  color: string
-  href: string
-  subtitle?: string
-}) {
-  const colorClasses: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-600",
-    green: "bg-green-50 text-green-600",
-    purple: "bg-purple-50 text-purple-600",
-    amber: "bg-amber-50 text-amber-600",
-    pink: "bg-pink-50 text-pink-600",
-    orange: "bg-orange-50 text-orange-600",
-    gray: "bg-gray-50 text-gray-600",
-  }
-
-  return (
-    <Link href={href}>
-      <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-          </div>
-          <div className={`p-2 rounded-lg ${colorClasses[color] || colorClasses.blue}`}>
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
-        {trend !== undefined && (
-          <div className="mt-2 flex items-center gap-1 text-xs">
-            {trend >= 0 ? (
-              <TrendingUp className="h-3 w-3 text-green-500" />
-            ) : (
-              <TrendingDown className="h-3 w-3 text-red-500" />
-            )}
-            <span className={trend >= 0 ? "text-green-500" : "text-red-500"}>{Math.abs(trend)}%</span>
-            <span className="text-muted-foreground">vs letzte Woche</span>
-          </div>
-        )}
-      </Card>
-    </Link>
-  )
-})
 
 export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps) {
   const { toast } = useToast()
@@ -307,133 +255,6 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
     }
     fetchDashboardData()
   }, [fetchDashboardData])
-
-  const renderBarChart = useCallback((data: Array<{ day: string; completed: number; pending: number }>) => {
-    if (!data || data.length === 0) {
-      return <div className="h-64 flex items-center justify-center text-muted-foreground">Keine Daten verfügbar</div>
-    }
-
-    const maxValue = Math.max(...data.flatMap((d) => [d.completed, d.pending]), 1)
-
-    return (
-      <div className="h-64 flex items-end justify-around gap-2 px-4">
-        {data.map((item, index) => {
-          const completedHeight = ((item.completed || 0) / maxValue) * 100
-          const pendingHeight = ((item.pending || 0) / maxValue) * 100
-
-          return (
-            <div key={index} className="flex-1 flex flex-col items-center gap-2">
-              <div className="w-full flex gap-1 items-end h-48">
-                <div
-                  className="flex-1 bg-primary rounded-t transition-all hover:opacity-80"
-                  style={{ height: `${completedHeight}%` }}
-                  title={`Erledigt: ${item.completed}`}
-                />
-                <div
-                  className="flex-1 bg-muted rounded-t transition-all hover:opacity-80"
-                  style={{ height: `${pendingHeight}%` }}
-                  title={`Ausstehend: ${item.pending}`}
-                />
-              </div>
-              <span className="text-xs text-muted-foreground">{item.day}</span>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }, [])
-
-  const renderLineChart = useCallback((data: Array<{ time: string; appointments: number }>) => {
-    if (!data || data.length === 0) {
-      return <div className="h-64 flex items-center justify-center text-muted-foreground">Keine Daten verfügbar</div>
-    }
-
-    const maxValue = Math.max(...data.map((d) => d.appointments), 1)
-    const points = data
-      .map((item, index) => {
-        const x = (index / Math.max(data.length - 1, 1)) * 100
-        const y = 100 - ((item.appointments || 0) / maxValue) * 80
-        return `${x},${y}`
-      })
-      .join(" ")
-
-    return (
-      <div className="h-64 relative px-4">
-        <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
-          <polyline
-            points={points}
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-          />
-          {data.map((item, index) => {
-            const x = (index / Math.max(data.length - 1, 1)) * 100
-            const y = 100 - ((item.appointments || 0) / maxValue) * 80
-            if (isNaN(x) || isNaN(y)) return null
-
-            return (
-              <circle key={index} cx={x} cy={y} r="1.5" fill="hsl(var(--primary))" className="hover:r-2 transition-all">
-                <title>{`${item.time}: ${item.appointments} Termine`}</title>
-              </circle>
-            )
-          })}
-        </svg>
-        <div className="flex justify-between mt-2">
-          {data.map((item, index) => (
-            <span key={index} className="text-xs text-muted-foreground">
-              {item.time}
-            </span>
-          ))}
-        </div>
-      </div>
-    )
-  }, [])
-
-  const renderAreaChart = useCallback((data: Array<{ date: string; value: number }>) => {
-    if (!data || data.length === 0) {
-      return <div className="h-64 flex items-center justify-center text-muted-foreground">Keine Daten verfügbar</div>
-    }
-
-    const maxValue = Math.max(...data.map((d) => d.value), 1)
-    const points = data
-      .map((item, index) => {
-        const x = (index / (data.length - 1)) * 100
-        const y = 100 - (item.value / maxValue) * 80
-        return `${x},${y}`
-      })
-      .join(" ")
-
-    const areaPoints = `0,100 ${points} 100,100`
-
-    return (
-      <div className="h-64 relative px-4">
-        <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <polygon points={areaPoints} fill="url(#areaGradient)" />
-          <polyline
-            points={points}
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-        <div className="flex justify-between mt-2">
-          {data.map((item, index) => (
-            <span key={index} className="text-xs text-muted-foreground">
-              {item.date}
-            </span>
-          ))}
-        </div>
-      </div>
-    )
-  }, [])
 
   const getColumnSpanClass = (widgetId: string): string => {
     const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
@@ -642,115 +463,31 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
         case "showWeeklyTasks":
           if (!widgets.showWeeklyTasks || !stats?.weeklyTasksData) return null
           return wrapWithSpan(
-            <Card key="weekly-tasks" className="p-6 border-muted col-span-full">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold">Wöchentliche Aufgaben</h2>
-                  <p className="text-sm text-muted-foreground">Erledigte und ausstehende Aufgaben diese Woche</p>
-                </div>
-                {renderBarChart(stats.weeklyTasksData)}
-                <div className="flex items-center justify-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-primary rounded" />
-                    <span className="text-muted-foreground">Erledigt</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-muted rounded" />
-                    <span className="text-muted-foreground">Ausstehend</span>
-                  </div>
-                </div>
-              </div>
-            </Card>,
+            <WeeklyTasksWidget key="weekly-tasks" data={stats.weeklyTasksData} />,
             widgetId,
           )
         case "showTodaySchedule":
           if (!widgets.showTodaySchedule || !stats?.todayScheduleData) return null
           return wrapWithSpan(
-            <Card key="today-schedule" className="p-6 border-muted col-span-full">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold">Heutiger Terminplan</h2>
-                  <p className="text-sm text-muted-foreground">Verteilung der Termine über den Tag</p>
-                </div>
-                {renderLineChart(stats.todayScheduleData)}
-              </div>
-            </Card>,
+            <TodayScheduleWidget key="today-schedule" data={stats.todayScheduleData} />,
             widgetId,
           )
         case "showActivityChart":
           if (!widgets.showActivityChart || !stats?.activityData) return null
           return wrapWithSpan(
-            <Card key="activity-chart" className="p-6 border-muted col-span-full">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold">Aktivität</h2>
-                  <p className="text-sm text-muted-foreground">Praxisaktivität der letzten 7 Tage</p>
-                </div>
-                {renderAreaChart(stats.activityData)}
-              </div>
-            </Card>,
+            <ActivityChartWidget key="activity-chart" data={stats.activityData} />,
             widgetId,
           )
         case "showKPIs":
           if (!widgets.showKPIs || !stats) return null
           return wrapWithSpan(
-            <Card key="kpis" className="p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Praxis-Score</p>
-                  <p className="text-2xl font-bold">{stats.kpiScore || 85}</p>
-                  <p className="text-xs text-muted-foreground">von 100 Punkten</p>
-                </div>
-                <div className="bg-primary/10 text-primary p-2 rounded-lg">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-              </div>
-              {(stats.kpiTrend || 5) !== 0 && (
-                <div className="mt-2 flex items-center gap-1 text-xs">
-                  {(stats.kpiTrend || 5) >= 0 ? (
-                    <TrendingUp className="h-3 w-3 text-green-500" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-red-500" />
-                  )}
-                  <span className={(stats.kpiTrend || 5) >= 0 ? "text-green-500" : "text-red-500"}>
-                    {Math.abs(stats.kpiTrend || 5)}%
-                  </span>
-                  <span className="text-muted-foreground">vs letzte Woche</span>
-                </div>
-              )}
-            </Card>,
+            <KPIWidget key="kpis" kpiScore={stats.kpiScore} kpiTrend={stats.kpiTrend} />,
             widgetId,
           )
         case "showRecentActivities":
           if (!widgets.showRecentActivities || !stats?.recentActivities?.length) return null
           return wrapWithSpan(
-            <Card key="recent-activities" className="p-6 border-muted col-span-full">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold">Letzte Aktivitäten</h2>
-                  <p className="text-sm text-muted-foreground">Die neuesten Ereignisse in Ihrer Praxis</p>
-                </div>
-                <div className="space-y-3">
-                  {stats.recentActivities.slice(0, 5).map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div
-                        className={`p-2 rounded-lg ${activity.priority === "high" ? "bg-red-500/10 text-red-500" : activity.priority === "medium" ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500"}`}
-                      >
-                        <Clock className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{activity.title}</p>
-                        <p className="text-sm text-muted-foreground">{activity.description}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>,
+            <RecentActivitiesWidget key="recent-activities" activities={stats.recentActivities} />,
             widgetId,
           )
         case "showInsightsActions":
@@ -777,9 +514,6 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
       currentPractice,
       t,
       practiceId,
-      renderBarChart,
-      renderLineChart,
-      renderAreaChart,
       cockpitCardSettings,
     ],
   )

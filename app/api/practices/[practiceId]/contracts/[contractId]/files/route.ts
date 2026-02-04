@@ -28,11 +28,11 @@ export async function GET(
 
     return NextResponse.json(files || [])
   } catch (error: any) {
-    console.error("Error fetching contract files:", error)
-    // Return empty array instead of error for missing table
-    if (error.code === 'PGRST205') {
+    // Return empty array for missing table - don't log as error
+    if (error.code === 'PGRST205' || error.message?.includes('contract_files')) {
       return NextResponse.json([])
     }
+    console.error("Error fetching contract files:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -76,12 +76,13 @@ export async function POST(
 
     return NextResponse.json(file)
   } catch (error: any) {
-    console.error("Error creating contract file:", error)
-    if (error.code === 'PGRST205') {
+    // Return graceful error for missing table - don't log as error
+    if (error.code === 'PGRST205' || error.message?.includes('contract_files')) {
       return NextResponse.json({ 
         error: "Datei-Upload ist derzeit nicht verfügbar" 
       }, { status: 503 })
     }
+    console.error("Error creating contract file:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

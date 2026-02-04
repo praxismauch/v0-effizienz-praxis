@@ -45,7 +45,7 @@ export function InventoryListTab({
   onConsumeItem,
 }: InventoryListTabProps) {
   const filteredItems = items.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = !searchQuery || item.name?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -63,7 +63,7 @@ export function InventoryListTab({
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Suchen..."
-                value={searchQuery}
+                value={searchQuery || ""}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="pl-8"
               />

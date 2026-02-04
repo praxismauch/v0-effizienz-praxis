@@ -132,8 +132,24 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
       return
     }
 
+    if (!practiceId) {
+      toast({
+        title: "Fehler",
+        description: "Keine Praxis ausgewählt",
+        variant: "destructive",
+      })
+      return
+    }
+
     setSaving(true)
     try {
+      console.log("[v0] Creating anweisung with:", {
+        practiceId,
+        arbeitsplatzId: resolvedParams.id,
+        title: formData.title,
+        content: formData.content,
+      })
+
       const response = await fetch(`/api/practices/${practiceId}/arbeitsplaetze/${resolvedParams.id}/anweisungen`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,7 +160,12 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
         }),
       })
 
-      if (!response.ok) throw new Error("Failed to create")
+      const result = await response.json()
+      console.log("[v0] Create anweisung response:", response.status, result)
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to create")
+      }
 
       toast({
         title: "Erfolg",
@@ -154,10 +175,11 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
       setCreateDialogOpen(false)
       setFormData({ title: "", content: "" })
       fetchAnweisungen()
-    } catch (error) {
+    } catch (error: any) {
+      console.error("[v0] Error creating anweisung:", error)
       toast({
         title: "Fehler",
-        description: "Anweisung konnte nicht erstellt werden",
+        description: error.message || "Anweisung konnte nicht erstellt werden",
         variant: "destructive",
       })
     } finally {

@@ -11,9 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { usePractice } from "@/contexts/practice-context"
-import { Upload, X, FileText, Trash2, Download, Eye, Calculator, Palmtree } from "lucide-react"
+import { Upload, X, FileText, Trash2, Download, Eye, Calculator, Palmtree, Sun, Coins, Plus } from "lucide-react"
 import { put } from "@vercel/blob"
 import { Card, CardContent } from "@/components/ui/card"
+
+interface AdditionalPayment {
+  id: string
+  name: string
+  amount: number | string
+  frequency: "monthly" | "yearly" | "one-time"
+}
 
 interface Contract {
   id: string
@@ -30,6 +37,8 @@ interface Contract {
   notes: string | null
   is_active: boolean
   has_13th_salary?: boolean
+  vacation_bonus?: number | null
+  additional_payments?: AdditionalPayment[]
   holiday_days_fulltime?: number
   working_days_fulltime?: number
 }
@@ -50,6 +59,12 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
   const [existingFiles, setExistingFiles] = useState<any[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [previewFile, setPreviewFile] = useState<any | null>(null)
+  const [additionalPayments, setAdditionalPayments] = useState<AdditionalPayment[]>(
+    contract.additional_payments?.map(p => ({
+      ...p,
+      amount: p.amount?.toString() || ""
+    })) || []
+  )
   const [formData, setFormData] = useState({
     contract_type: contract.contract_type,
     start_date: contract.start_date,
@@ -62,6 +77,7 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
     bonus_employee_discussion: contract.bonus_employee_discussion?.toString() || "",
     notes: contract.notes || "",
     has_13th_salary: contract.has_13th_salary || false,
+    vacation_bonus: contract.vacation_bonus?.toString() || "",
     holiday_days_fulltime: contract.holiday_days_fulltime?.toString() || "30",
     working_days_fulltime: contract.working_days_fulltime?.toString() || "5",
   })
@@ -169,6 +185,15 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
             ? Number.parseFloat(formData.bonus_employee_discussion)
             : null,
           has_13th_salary: formData.has_13th_salary,
+          vacation_bonus: formData.vacation_bonus ? Number.parseFloat(formData.vacation_bonus) : null,
+          additional_payments: additionalPayments.length > 0 
+            ? additionalPayments.map(p => ({
+                id: p.id,
+                name: p.name,
+                amount: Number.parseFloat(p.amount as string) || 0,
+                frequency: p.frequency
+              }))
+            : null,
           holiday_days_fulltime: formData.holiday_days_fulltime ? Number.parseInt(formData.holiday_days_fulltime) : 30,
           working_days_fulltime: formData.working_days_fulltime ? Number.parseInt(formData.working_days_fulltime) : 5,
         }),
@@ -421,6 +446,123 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
               </Label>
             </div>
           </div>
+
+          {/* Urlaubsgeld */}
+          <Card className="bg-orange-50 border-orange-200">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sun className="h-5 w-5 text-orange-600" />
+                <h4 className="font-medium text-orange-800">Urlaubsgeld</h4>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vacation_bonus_edit" className="text-sm">
+                  Urlaubsgeld (jährlich)
+                </Label>
+                <Input
+                  id="vacation_bonus_edit"
+                  type="number"
+                  step="0.01"
+                  placeholder="z.B. 500.00"
+                  value={formData.vacation_bonus}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, vacation_bonus: e.target.value }))}
+                  className="bg-white"
+                />
+                <p className="text-xs text-orange-600">
+                  Einmalzahlung pro Jahr, typischerweise im Sommer vor dem Urlaub
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Zusatzzahlungen */}
+          <Card className="bg-purple-50 border-purple-200">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-purple-600" />
+                  <h4 className="font-medium text-purple-800">Zusatzzahlungen</h4>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAdditionalPayments((prev) => [
+                    ...prev,
+                    { id: crypto.randomUUID(), name: "", amount: "", frequency: "monthly" }
+                  ])}
+                  className="text-purple-600 border-purple-300 hover:bg-purple-100"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Hinzufügen
+                </Button>
+              </div>
+              
+              {additionalPayments.length === 0 ? (
+                <p className="text-sm text-purple-600">
+                  Keine Zusatzzahlungen konfiguriert. Klicken Sie auf "Hinzufügen" um Zulagen wie Fahrtkosten, VWL, etc. hinzuzufügen.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {additionalPayments.map((payment, index) => (
+                    <div key={payment.id} className="flex gap-2 items-start p-3 bg-white rounded-lg border">
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          placeholder="Name (z.B. Fahrtkosten)"
+                          value={payment.name}
+                          onChange={(e) => {
+                            const updated = [...additionalPayments]
+                            updated[index].name = e.target.value
+                            setAdditionalPayments(updated)
+                          }}
+                        />
+                      </div>
+                      <div className="w-32">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Betrag"
+                          value={payment.amount}
+                          onChange={(e) => {
+                            const updated = [...additionalPayments]
+                            updated[index].amount = e.target.value
+                            setAdditionalPayments(updated)
+                          }}
+                        />
+                      </div>
+                      <div className="w-32">
+                        <Select
+                          value={payment.frequency}
+                          onValueChange={(value: "monthly" | "yearly" | "one-time") => {
+                            const updated = [...additionalPayments]
+                            updated[index].frequency = value
+                            setAdditionalPayments(updated)
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monthly">Monatlich</SelectItem>
+                            <SelectItem value="yearly">Jährlich</SelectItem>
+                            <SelectItem value="one-time">Einmalig</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAdditionalPayments((prev) => prev.filter((_, i) => i !== index))}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notizen (optional)</Label>

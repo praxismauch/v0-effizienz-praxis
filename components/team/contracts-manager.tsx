@@ -4,12 +4,19 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Calendar, Edit, Trash2, Infinity, TrendingUp, FileText, Download, Eye, Palmtree } from "lucide-react"
+import { Plus, Calendar, Edit, Trash2, Infinity, TrendingUp, FileText, Download, Eye, Palmtree, Sun, Coins } from "lucide-react"
 import { usePractice } from "@/contexts/practice-context"
 import { CreateContractDialog } from "@/components/team/create-contract-dialog"
 import { EditContractDialog } from "@/components/team/edit-contract-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog"
+
+interface AdditionalPayment {
+  id: string
+  name: string
+  amount: number
+  frequency: "monthly" | "yearly" | "one-time"
+}
 
 interface Contract {
   id: string
@@ -28,6 +35,8 @@ interface Contract {
   created_at: string
   updated_at: string
   has_13th_salary?: boolean
+  vacation_bonus?: number | null
+  additional_payments?: AdditionalPayment[]
   holiday_days_fulltime?: number
   working_days_fulltime?: number
 }
@@ -329,7 +338,8 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                   {(contract.bonus_personal_goal ||
                     contract.bonus_practice_goal ||
                     contract.bonus_employee_discussion ||
-                    contract.has_13th_salary) && (
+                    contract.has_13th_salary ||
+                    contract.vacation_bonus) && (
                     <div className="mt-3 pt-3 border-t">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                         <TrendingUp className="h-3 w-3" />
@@ -350,6 +360,31 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                             13. Gehalt
                           </Badge>
                         )}
+                        {contract.vacation_bonus && (
+                          <Badge variant="outline" className="text-orange-600 border-orange-600">
+                            <Sun className="h-3 w-3 mr-1" />
+                            Urlaubsgeld: {contract.vacation_bonus.toLocaleString("de-DE")} {contract.salary_currency}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {contract.additional_payments && contract.additional_payments.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                        <Coins className="h-3 w-3" />
+                        Zusatzzahlungen
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {contract.additional_payments.map((payment) => (
+                          <Badge key={payment.id} variant="outline" className="text-purple-600 border-purple-600">
+                            {payment.name}: {payment.amount.toLocaleString("de-DE")} {contract.salary_currency}
+                            {payment.frequency === "monthly" && "/Monat"}
+                            {payment.frequency === "yearly" && "/Jahr"}
+                            {payment.frequency === "one-time" && " (einmalig)"}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                   )}

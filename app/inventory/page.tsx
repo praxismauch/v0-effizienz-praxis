@@ -194,34 +194,34 @@ export default function InventoryPage() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab 
-            items={activeItems} 
-            stats={stats} 
-            settings={settings}
-            onViewItem={handleEditItem}
-          />
+          <OverviewTab items={activeItems} />
         </TabsContent>
 
         <TabsContent value="inventory" className="mt-6">
           <InventoryListTab
-            items={filteredItems}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
+            items={activeItems}
+            loading={isLoading}
+            searchQuery={searchTerm}
             categoryFilter={categoryFilter}
+            onSearchChange={setSearchTerm}
             onCategoryChange={setCategoryFilter}
-            categories={categories}
+            onCreateItem={() => setShowAddDialog(true)}
             onEditItem={handleEditItem}
-            onDeleteItem={deleteItem}
-            onArchiveItem={archiveItem}
+            onDeleteItem={(item) => deleteItem(item.id)}
+            onConsumeItem={(item) => {
+              // TODO: Implement consume dialog
+              console.log("Consume item:", item.id)
+            }}
           />
         </TabsContent>
 
         <TabsContent value="suggestions" className="mt-6">
-          <SuggestionsTab 
-            items={activeItems} 
-            settings={settings}
-            onReorder={(item) => {
-              // Reorder logic
+          <SuggestionsTab
+            suggestions={[]}
+            loading={isLoading}
+            onRefresh={() => {
+              // TODO: Implement refresh suggestions
+              fetchInventory()
             }}
           />
         </TabsContent>
@@ -229,8 +229,9 @@ export default function InventoryPage() {
         <TabsContent value="suppliers" className="mt-6">
           <SuppliersTab
             suppliers={suppliers}
-            onAddSupplier={() => {
-              // Future feature: Add supplier functionality
+            onCreateSupplier={() => {
+              // TODO: Implement add supplier dialog
+              console.log("Add supplier")
             }}
           />
         </TabsContent>

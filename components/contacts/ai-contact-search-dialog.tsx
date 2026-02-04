@@ -291,7 +291,7 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
 
           {/* Results */}
           {results.length > 0 && (
-            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">
                   {results.length} Ergebnis(se) gefunden
@@ -300,7 +300,7 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
                   {results.every(r => r.selected) ? "Alle abwählen" : "Alle auswählen"}
                 </Button>
               </div>
-              <ScrollArea className="flex-1 -mx-6 px-6">
+              <ScrollArea className="h-[250px] -mx-6 px-6">
                 <div className="space-y-2 pb-4">
                   {results.map((result) => (
                     <Card

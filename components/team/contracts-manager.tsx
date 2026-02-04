@@ -77,27 +77,31 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
     const controller = new AbortController()
     
     const loadAllFiles = async () => {
-      const filesMap: Record<string, any[]> = {}
-      
-      // Fetch files sequentially to avoid too many concurrent connections
-      for (const contract of contracts) {
-        if (isCancelled) break
-        try {
-          const res = await fetch(
-            `/api/practices/${effectivePracticeId}/contracts/${contract.id}/files`,
-            { signal: controller.signal }
-          )
-          if (res.ok) {
-            filesMap[contract.id] = await res.json()
+      // Fetch all contract files in parallel (limited by browser connection pool)
+      const results = await Promise.allSettled(
+        contracts.map(async (contract) => {
+          try {
+            const res = await fetch(
+              `/api/practices/${effectivePracticeId}/contracts/${contract.id}/files`,
+              { signal: controller.signal }
+            )
+            if (res.ok) {
+              return { contractId: contract.id, files: await res.json() }
+            }
+            return { contractId: contract.id, files: [] }
+          } catch {
+            return { contractId: contract.id, files: [] }
           }
-        } catch (err) {
-          if ((err as Error).name !== 'AbortError') {
-            console.error("Error fetching contract files:", err)
-          }
-        }
-      }
+        })
+      )
       
       if (!isCancelled) {
+        const filesMap: Record<string, any[]> = {}
+        results.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            filesMap[result.value.contractId] = result.value.files
+          }
+        })
         setContractFiles(filesMap)
       }
     }

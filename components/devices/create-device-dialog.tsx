@@ -398,7 +398,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
     setSelectedRoomIds((prev) => (prev.includes(roomId) ? prev.filter((id) => id !== roomId) : [...prev, roomId]))
   }
 
-  const activeMembers = teamMembers.filter(isActiveMember)
+
 
   const handleImageUpload = useCallback(
     async (file: File) => {
@@ -1061,14 +1061,19 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     <SelectTrigger>
                       <SelectValue placeholder={teamLoading ? "Laden..." : "Verantwortlichen auswählen"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper" className="max-h-[300px]">
                       <SelectItem value="none">Keine Auswahl</SelectItem>
-                      {activeMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.user_id || member.id || `member-${member.id}`}>
-                          {member.firstName || member.first_name || ""} {member.lastName || member.last_name || ""}
-                        </SelectItem>
-                      ))}
-                      {activeMembers.length === 0 && !teamLoading && (
+                      {teamMembers.filter(isActiveMember).map((member) => {
+                        const memberId = member.user_id || member.id
+                        if (!memberId) return null
+                        const displayName = `${member.firstName || member.first_name || ""} ${member.lastName || member.last_name || ""}`.trim() || member.email || "Unbekannt"
+                        return (
+                          <SelectItem key={memberId} value={memberId}>
+                            {displayName}
+                          </SelectItem>
+                        )
+                      })}
+                      {teamMembers.filter(isActiveMember).length === 0 && !teamLoading && (
                         <SelectItem value="no-members" disabled>
                           Keine Teammitglieder verfügbar
                         </SelectItem>

@@ -237,6 +237,16 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
             </div>
           </div>
 
+          {/* Wichtige Nummern Button */}
+          <Button
+            variant="outline"
+            className="w-full border-dashed border-primary/50 text-primary hover:bg-primary/5"
+            onClick={() => setShowRecommendedDialog(true)}
+          >
+            <PhoneCall className="h-4 w-4 mr-2" />
+            Wichtige Nummern (Notdienste, KV, BGW, etc.)
+          </Button>
+
           {/* Location & Radius */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -370,6 +380,15 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Recommended Contacts Dialog (Wichtige Nummern) */}
+      <RecommendedContactsDialog
+        open={showRecommendedDialog}
+        onOpenChange={setShowRecommendedDialog}
+        onSuccess={() => {
+          onSuccess()
+        }}
+      />
     </Dialog>
   )
 }

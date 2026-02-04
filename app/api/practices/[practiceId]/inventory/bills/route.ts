@@ -35,6 +35,44 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
 
     const body = await request.json()
 
+    // Check for duplicate bills by file hash or file name + size
+    const fileHash = body.file_hash
+    if (fileHash) {
+      const { data: existingByHash } = await adminClient
+        .from("inventory_bills")
+        .select("id, file_name, created_at, is_archived, status")
+        .eq("practice_id", practiceId)
+        .eq("file_hash", fileHash)
+        .is("deleted_at", null)
+        .maybeSingle()
+
+      if (existingByHash) {
+        return NextResponse.json({
+          error: "duplicate",
+          message: "Diese Rechnung wurde bereits hochgeladen",
+          existing_bill: existingByHash,
+        }, { status: 409 })
+      }
+    }
+
+    // Also check by filename + size as fallback
+    const { data: existingByMeta } = await adminClient
+      .from("inventory_bills")
+      .select("id, file_name, created_at, is_archived, status")
+      .eq("practice_id", practiceId)
+      .eq("file_name", body.file_name)
+      .eq("file_size", body.file_size)
+      .is("deleted_at", null)
+      .maybeSingle()
+
+    if (existingByMeta) {
+      return NextResponse.json({
+        error: "duplicate",
+        message: "Eine Rechnung mit gleichem Namen und Größe existiert bereits",
+        existing_bill: existingByMeta,
+      }, { status: 409 })
+    }
+
     const { data, error } = await adminClient
       .from("inventory_bills")
       .insert({
@@ -43,6 +81,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         file_url: body.file_url,
         file_type: body.file_type,
         file_size: body.file_size,
+        file_hash: fileHash,
         uploaded_by: user.id,
         notes: body.notes,
         status: "pending",

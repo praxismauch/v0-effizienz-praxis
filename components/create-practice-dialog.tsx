@@ -98,10 +98,10 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.type) {
+    if (!formData.name || !formData.type || !formData.bundesland) {
       toast({
         title: "Validierungsfehler",
-        description: "Bitte füllen Sie alle Pflichtfelder aus.",
+        description: "Bitte füllen Sie alle Pflichtfelder aus (Name, Typ und Bundesland).",
         variant: "destructive",
       })
       return
@@ -117,6 +117,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         body: JSON.stringify({
           name: formData.name,
           type: formData.type,
+          bundesland: formData.bundesland,
           street: formData.address.street,
           city: formData.address.city,
           zipCode: formData.address.zipCode,
@@ -212,6 +213,27 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
             </div>
 
             <div className="grid gap-2">
+              <Label htmlFor="bundesland">Bundesland *</Label>
+              <Select
+                value={formData.bundesland}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, bundesland: value }))}
+                required
+                disabled={isSubmitting}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Bundesland wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BUNDESLAENDER.map((land) => (
+                    <SelectItem key={land} value={land}>
+                      {land}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
               <Label>Adresse</Label>
               <AddressInput
                 value={formData.address}
@@ -263,7 +285,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={!formData.name || !formData.type || isSubmitting || isLoadingTypes}>
+            <Button type="submit" disabled={!formData.name || !formData.type || !formData.bundesland || isSubmitting || isLoadingTypes}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Praxis erstellen
             </Button>

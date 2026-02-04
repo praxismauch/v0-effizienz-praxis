@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
-import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2 } from "lucide-react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -19,10 +19,13 @@ import { useToast } from "@/hooks/use-toast"
 import CreateContactDialog from "@/components/contacts/create-contact-dialog"
 import EditContactDialog from "@/components/contacts/edit-contact-dialog"
 import AIContactExtractorDialog from "@/components/contacts/ai-contact-extractor-dialog"
+import AIContactSearchDialog from "@/components/contacts/ai-contact-search-dialog"
+import AIRecommendedContactsDialog from "@/components/contacts/ai-recommended-contacts-dialog"
 import BatchImportContactsDialog from "@/components/contacts/batch-import-contacts-dialog"
 import { AppLayout } from "@/components/app-layout"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
+import { useTeam } from "@/contexts/team-context"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,17 +62,7 @@ interface Contact {
   availability: string | null
 }
 
-interface TeamMember {
-  id: string
-  name: string
-  firstName: string
-  lastName: string
-  email: string
-  phone?: string
-  mobile?: string
-  role: string
-  avatar?: string | null
-}
+
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -79,6 +72,8 @@ export default function ContactsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showAIDialog, setShowAIDialog] = useState(false)
+  const [showAISearchDialog, setShowAISearchDialog] = useState(false)
+  const [showRecommendedDialog, setShowRecommendedDialog] = useState(false)
   const [showBatchDialog, setShowBatchDialog] = useState(false)
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
   const [visibleColumns, setVisibleColumns] = useState({
@@ -91,6 +86,7 @@ export default function ContactsPage() {
   const { toast } = useToast()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { currentUser, loading: userLoading } = useUser()
+  const { teamMembers, loading: teamLoading } = useTeam()
 
   const hasLoadedRef = useRef(false)
   const loadingPracticeIdRef = useRef<string | null>(null)
@@ -197,15 +193,49 @@ export default function ContactsPage() {
     }
   }
 
-  const filteredContacts = contacts.filter((contact) => {
+  // Convert team members to contact format
+  const teamContactsFromMembers: Contact[] = useMemo(() => {
+    return teamMembers.map((member) => ({
+      id: `team-${member.id}`,
+      salutation: null,
+      title: null,
+      first_name: member.first_name || member.name?.split(" ")[0] || null,
+      last_name: member.last_name || member.name?.split(" ").slice(1).join(" ") || member.name || "",
+      company: currentPractice?.name || "Praxis",
+      position: member.role || null,
+      email: member.email || null,
+      phone: member.phone || null,
+      mobile: member.mobile || null,
+      street: null,
+      house_number: null,
+      postal_code: null,
+      city: null,
+      category: "Team",
+      image_url: member.avatar || null,
+      ai_extracted: false,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      contact_person: null,
+      direct_phone: null,
+      availability: null,
+      isTeamMember: true,
+    })) as (Contact & { isTeamMember?: boolean })[]
+  }, [teamMembers, currentPractice?.name])
+
+  // Merge contacts with team members and filter
+  const filteredContacts = useMemo(() => {
+    const allContacts = [...teamContactsFromMembers, ...contacts]
     const search = searchQuery.toLowerCase()
-    return (
-      contact.first_name?.toLowerCase().includes(search) ||
-      contact.last_name.toLowerCase().includes(search) ||
-      contact.company?.toLowerCase().includes(search) ||
-      contact.email?.toLowerCase().includes(search)
-    )
-  })
+    return allContacts.filter((contact) => {
+      return (
+        contact.first_name?.toLowerCase().includes(search) ||
+        contact.last_name.toLowerCase().includes(search) ||
+        contact.company?.toLowerCase().includes(search) ||
+        contact.email?.toLowerCase().includes(search) ||
+        contact.category?.toLowerCase().includes(search)
+      )
+    })
+  }, [contacts, teamContactsFromMembers, searchQuery])
 
   return (
     <AppLayout>
@@ -222,6 +252,22 @@ export default function ContactsPage() {
             >
               <Sparkles className="h-4 w-4" />
               KI-Extraktion
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setShowAISearchDialog(true)}
+            >
+              <Search className="h-4 w-4" />
+              KI-Suche
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-primary/50 text-primary hover:bg-primary/10"
+              onClick={() => setShowRecommendedDialog(true)}
+            >
+              <Phone className="h-4 w-4" />
+              Empfohlene Nummern
             </Button>
             <Button variant="outline" onClick={() => setShowBatchDialog(true)}>
               <Upload className="h-4 w-4 mr-2" />
@@ -407,7 +453,15 @@ export default function ContactsPage() {
                           )}
                           {visibleColumns.category && (
                             <TableCell>
-                              {contact.category && <Badge variant="outline">{contact.category}</Badge>}
+                              {contact.category && (
+                                <Badge 
+                                  variant={contact.category === "Team" ? "default" : "outline"}
+                                  className={contact.category === "Team" ? "bg-primary/10 text-primary border-primary/20" : ""}
+                                >
+                                  {contact.category === "Team" && <Users className="h-3 w-3 mr-1" />}
+                                  {contact.category}
+                                </Badge>
+                              )}
                               {contact.ai_extracted && (
                                 <Badge variant="secondary" className="ml-2">
                                   KI
@@ -416,27 +470,31 @@ export default function ContactsPage() {
                             </TableCell>
                           )}
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-9 w-9 p-0"
-                                onClick={() => {
-                                  setSelectedContact(contact)
-                                  setShowEditDialog(true)
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-9 w-9 p-0"
-                                onClick={() => setContactToDelete(contact)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
+                            {contact.id.startsWith("team-") ? (
+                              <span className="text-xs text-muted-foreground italic">Teammitglied</span>
+                            ) : (
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-9 w-9 p-0"
+                                  onClick={() => {
+                                    setSelectedContact(contact)
+                                    setShowEditDialog(true)
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-9 w-9 p-0"
+                                  onClick={() => setContactToDelete(contact)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -459,6 +517,10 @@ export default function ContactsPage() {
           )}
 
           <AIContactExtractorDialog open={showAIDialog} onOpenChange={setShowAIDialog} onSuccess={handleReload} />
+
+          <AIContactSearchDialog open={showAISearchDialog} onOpenChange={setShowAISearchDialog} onSuccess={handleReload} />
+
+          <AIRecommendedContactsDialog open={showRecommendedDialog} onOpenChange={setShowRecommendedDialog} onSuccess={handleReload} />
 
           <BatchImportContactsDialog
             open={showBatchDialog}

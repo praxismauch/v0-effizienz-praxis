@@ -4,23 +4,19 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] Devices API - GET called with practiceId:", practiceId)
     
     if (!practiceId) {
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
     const { adminClient, user } = await requirePracticeAccess(practiceId)
-    console.log("[v0] Devices API - user:", user?.id)
-
+    
     const { data: devices, error } = await adminClient
       .from("medical_devices")
       .select("*")
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .order("name", { ascending: true })
-    
-    console.log("[v0] Devices API - fetched count:", devices?.length, "error:", error)
 
     if (error) {
       console.error("[v0] Error fetching devices:", error)

@@ -50,7 +50,7 @@ export function SkillsListView({
                 {categorySkills.map((skill) => (
                   <div
                     key={skill.id}
-                    className="flex items-center justify-between p-4 border-b last:border-b-0 hover:bg-muted/30"
+                    className="group flex items-center justify-between p-4 border-b last:border-b-0 hover:bg-muted/30"
                   >
                     <div className="flex items-center gap-3">
                       <Award className="h-5 w-5 text-primary" />
@@ -70,20 +70,24 @@ export function SkillsListView({
                       >
                         {categoryLabels[skill.category || "other"]}
                       </Badge>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEditSkill(skill)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDeleteSkill(skill)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => onEditSkill(skill)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
+                          onClick={() => onDeleteSkill(skill)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

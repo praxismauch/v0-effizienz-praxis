@@ -380,6 +380,7 @@ async function flushErrorTracking() {
   
   try {
     if (typeof window !== "undefined" && window.location) {
+      // Send to the new error-tracking API that saves to database
       await fetch(`${window.location.origin}/api/error-tracking`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -23,6 +23,7 @@ import {
   Trash2,
   Tag,
 } from "lucide-react"
+import { TicketAIAction } from "@/components/ticket-ai-action"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { useTicketStatuses, useTicketPriorities } from "@/lib/tickets/hooks"
@@ -385,6 +386,16 @@ export default function SuperAdminTicketDetail({ ticketId }: TicketDetailProps) 
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* AI Action Item */}
+          <TicketAIAction
+            ticketId={ticket.id}
+            title={ticket.title}
+            description={ticket.description || undefined}
+            type={ticket.type}
+            priority={ticket.priority}
+            screenshots={ticket.screenshot_urls || undefined}
+          />
+
           {/* Status & Priority */}
           <Card>
             <CardHeader>

@@ -270,13 +270,33 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
   }, [toast])
 
   // Restore backup
-  const restoreBackup = useCallback(async (backupId: string) => {
+  const restoreBackup = useCallback(async (backupId: string | null, file?: File | null, restoreMode?: string, selectedPracticeIds?: string[], selectedTables?: string[]) => {
     try {
       setIsRestoring(true)
+      
+      let body: any = { restoreMode: restoreMode || "full" }
+      
+      if (restoreMode === "practices" && selectedPracticeIds) {
+        body.selectedPracticeIds = selectedPracticeIds
+      }
+      if (restoreMode === "tables" && selectedTables) {
+        body.selectedTables = selectedTables
+      }
+      
+      if (file) {
+        const fileContent = await file.text()
+        const backupData = JSON.parse(fileContent)
+        body.backupData = backupData
+      } else if (backupId) {
+        body.backupId = backupId
+      } else {
+        throw new Error("Either backupId or file must be provided")
+      }
+      
       const response = await fetch("/api/super-admin/backups/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backupId }),
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) {
@@ -284,9 +304,10 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
         throw new Error(errorData.error || "Failed to restore backup")
       }
 
+      const result = await response.json()
       toast({
         title: "Erfolg",
-        description: "Backup wurde erfolgreich wiederhergestellt",
+        description: result.message || "Backup wurde erfolgreich wiederhergestellt",
       })
       return true
     } catch (error) {
@@ -294,42 +315,6 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
       toast({
         title: "Fehler",
         description: error instanceof Error ? error.message : "Backup konnte nicht wiederhergestellt werden",
-        variant: "destructive",
-      })
-      return false
-    } finally {
-      setIsRestoring(false)
-    }
-  }, [toast])
-
-  // Upload and restore backup
-  const uploadAndRestoreBackup = useCallback(async (file: File) => {
-    try {
-      setIsRestoring(true)
-      const fileContent = await file.text()
-      const backupData = JSON.parse(fileContent)
-
-      const response = await fetch("/api/super-admin/backups/restore", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backupData }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to restore backup")
-      }
-
-      toast({
-        title: "Erfolg",
-        description: "Backup-Datei wurde erfolgreich wiederhergestellt",
-      })
-      return true
-    } catch (error) {
-      console.error("Error uploading and restoring backup:", error)
-      toast({
-        title: "Fehler",
-        description: error instanceof Error ? error.message : "Backup-Datei konnte nicht wiederhergestellt werden",
         variant: "destructive",
       })
       return false
@@ -629,7 +614,6 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
     deleteBackup,
     downloadBackup,
     restoreBackup,
-    uploadAndRestoreBackup,
     verifyBackup,
     verifyAllBackups,
     setupAllPracticeSchedules,

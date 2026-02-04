@@ -18,16 +18,20 @@ import {
   CreateItemDialog, 
   EditItemDialog, 
   BillDetailDialog,
-  DeleteItemDialog 
+  DeleteItemDialog,
 } from "./components/inventory-dialogs"
-import type { InventoryItem, Supplier } from "./types"
+import type { InventoryItem, Supplier, InventoryBill } from "./types"
 
 export default function InventoryPage() {
   const {
     items,
     suppliers,
     bills,
+    archivedBills,
     isLoading,
+    isBillsLoading,
+    isUploading,
+    extractingBillId,
     settings,
     setSettings,
     stats,
@@ -39,7 +43,15 @@ export default function InventoryPage() {
     deleteItem,
     archiveItem,
     restoreItem,
+    uploadBill,
+    extractBill,
+    applyBillItems,
   } = useInventory()
+
+  const [selectedBill, setSelectedBill] = useState<InventoryBill | null>(null)
+  const [showBillDetailDialog, setShowBillDetailDialog] = useState(false)
+  const [selectedBillItems, setSelectedBillItems] = useState<number[]>([])
+  const [applyingBillItems, setApplyingBillItems] = useState(false)
 
   const [activeTab, setActiveTab] = useState("overview")
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -92,6 +104,25 @@ export default function InventoryPage() {
 
   const handleSaveSettings = async () => {
     // Save settings logic
+  }
+
+  const handleViewBillDetails = (bill: InventoryBill) => {
+    setSelectedBill(bill)
+    setSelectedBillItems([])
+    setShowBillDetailDialog(true)
+  }
+
+  const handleApplyBillItems = async () => {
+    if (!selectedBill) return
+    setApplyingBillItems(true)
+    try {
+      await applyBillItems(selectedBill.id, selectedBillItems.length > 0 ? selectedBillItems : undefined)
+      setShowBillDetailDialog(false)
+      setSelectedBill(null)
+      setSelectedBillItems([])
+    } finally {
+      setApplyingBillItems(false)
+    }
   }
 
   const activeItems = items.filter((i) => i.status !== "archived")
@@ -163,34 +194,34 @@ export default function InventoryPage() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab 
-            items={activeItems} 
-            stats={stats} 
-            settings={settings}
-            onViewItem={handleEditItem}
-          />
+          <OverviewTab items={activeItems} />
         </TabsContent>
 
         <TabsContent value="inventory" className="mt-6">
           <InventoryListTab
-            items={filteredItems}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
+            items={activeItems}
+            loading={isLoading}
+            searchQuery={searchTerm}
             categoryFilter={categoryFilter}
+            onSearchChange={setSearchTerm}
             onCategoryChange={setCategoryFilter}
-            categories={categories}
+            onCreateItem={() => setShowAddDialog(true)}
             onEditItem={handleEditItem}
-            onDeleteItem={deleteItem}
-            onArchiveItem={archiveItem}
+            onDeleteItem={(item) => deleteItem(item.id)}
+            onConsumeItem={(item) => {
+              // TODO: Implement consume dialog
+              console.log("Consume item:", item.id)
+            }}
           />
         </TabsContent>
 
         <TabsContent value="suggestions" className="mt-6">
-          <SuggestionsTab 
-            items={activeItems} 
-            settings={settings}
-            onReorder={(item) => {
-              // Reorder logic
+          <SuggestionsTab
+            suggestions={[]}
+            loading={isLoading}
+            onRefresh={() => {
+              // TODO: Implement refresh suggestions
+              fetchInventory()
             }}
           />
         </TabsContent>
@@ -198,26 +229,38 @@ export default function InventoryPage() {
         <TabsContent value="suppliers" className="mt-6">
           <SuppliersTab
             suppliers={suppliers}
-            onAddSupplier={() => {
-              // Future feature: Add supplier functionality
+            onCreateSupplier={() => {
+              // TODO: Implement add supplier dialog
+              console.log("Add supplier")
             }}
           />
         </TabsContent>
 
         <TabsContent value="bills" className="mt-6">
           <BillsTab
-            bills={bills}
-            onAddBill={() => {
-              // Future feature: Add bill functionality
+            bills={bills.filter((b) => !b.is_archived)}
+            loading={isBillsLoading}
+            uploading={isUploading}
+            extractingBillId={extractingBillId}
+            onUpload={async (e) => {
+              const files = e.target.files
+              if (!files) return
+              for (const file of Array.from(files)) {
+                await uploadBill(file)
+              }
+              e.target.value = ""
             }}
+            onExtract={extractBill}
+            onViewDetails={handleViewBillDetails}
+            onApplyItems={(bill) => applyBillItems(bill.id)}
           />
         </TabsContent>
 
         <TabsContent value="archive" className="mt-6">
           <ArchiveTab
-            items={archivedItems}
-            onRestoreItem={restoreItem}
-            onDeleteItem={deleteItem}
+            bills={archivedBills}
+            loading={isBillsLoading}
+            onViewDetails={handleViewBillDetails}
           />
         </TabsContent>
 
@@ -250,27 +293,22 @@ export default function InventoryPage() {
         />
       )}
 
-      {/* AddSupplierDialog and AddBillDialog - Future Implementation */}
-      {/* <AddSupplierDialog
-        open={showAddSupplierDialog}
-        onOpenChange={setShowAddSupplierDialog}
-        onAdd={async (supplier) => {
-          // Add supplier logic
-          fetchSuppliers()
-          return true
+      {/* Bill Detail Dialog */}
+      <BillDetailDialog
+        open={showBillDetailDialog}
+        onOpenChange={(open) => {
+          setShowBillDetailDialog(open)
+          if (!open) {
+            setSelectedBill(null)
+            setSelectedBillItems([])
+          }
         }}
+        bill={selectedBill}
+        selectedItems={selectedBillItems}
+        onSelectedItemsChange={setSelectedBillItems}
+        onApply={handleApplyBillItems}
+        applying={applyingBillItems}
       />
-
-      <AddBillDialog
-        open={showAddBillDialog}
-        onOpenChange={setShowAddBillDialog}
-        onAdd={async (bill) => {
-          // Add bill logic
-          fetchBills()
-          return true
-        }}
-        suppliers={suppliers}
-      /> */}
     </div>
   )
 }

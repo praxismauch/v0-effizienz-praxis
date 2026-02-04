@@ -39,6 +39,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const body = await request.json()
 
+    // Validate required field
+    if (!body.last_name) {
+      return NextResponse.json({ error: "last_name is required" }, { status: 400 })
+    }
+
     const contactData = {
       salutation: body.salutation || null,
       title: body.title || null,
@@ -62,11 +67,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       created_by: user.id,
     }
 
+    console.log("[v0] Creating contact with data:", JSON.stringify(contactData))
+
     const { data: contact, error } = await supabase.from("contacts").insert(contactData).select().single()
 
     if (error) {
       console.error("[v0] Error creating contact:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: error.message, details: error }, { status: 500 })
     }
 
     return NextResponse.json(contact, { status: 201 })
@@ -120,6 +127,56 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json(contact)
+  } catch (error) {
+    return handleApiError(error)
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
+  try {
+    const { practiceId } = await params
+    const body = await request.json()
+
+    if (!body.id) {
+      return NextResponse.json({ error: "Contact ID required" }, { status: 400 })
+    }
+
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+
+    // Toggle favorite
+    if (body.action === "toggle_favorite") {
+      // First get current value
+      const { data: current, error: fetchError } = await supabase
+        .from("contacts")
+        .select("is_favorite")
+        .eq("id", body.id)
+        .eq("practice_id", practiceId)
+        .single()
+
+      if (fetchError) {
+        console.error("[v0] Error fetching contact:", fetchError)
+        return NextResponse.json({ error: fetchError.message }, { status: 500 })
+      }
+
+      const newValue = !current?.is_favorite
+
+      const { data: contact, error } = await supabase
+        .from("contacts")
+        .update({ is_favorite: newValue, updated_at: new Date().toISOString() })
+        .eq("id", body.id)
+        .eq("practice_id", practiceId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error("[v0] Error toggling favorite:", error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json(contact)
+    }
+
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (error) {
     return handleApiError(error)
   }

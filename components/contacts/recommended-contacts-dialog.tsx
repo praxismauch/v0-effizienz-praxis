@@ -219,27 +219,32 @@ export default function RecommendedContactsDialog({ open, onOpenChange, onSucces
 
       for (const contact of contactsToImport) {
         try {
+          const contactData = {
+            last_name: contact.name,
+            company: contact.name, // Use name as company for organizations
+            phone: contact.phone,
+            street: contact.address?.split(",")[0]?.trim() || null,
+            city: contact.address?.split(",").slice(1).join(",").trim() || null,
+            category: contact.category,
+            notes: contact.description || null,
+            ai_extracted: false,
+          }
+          
           const response = await fetch(`/api/practices/${currentPractice.id}/contacts`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              last_name: contact.name,
-              company: contact.category,
-              phone: contact.phone,
-              street: contact.address?.split(",")[0] || "",
-              city: contact.address?.split(",")[1]?.trim() || "",
-              category: contact.category,
-              notes: contact.description || "",
-              ai_extracted: false,
-            }),
+            body: JSON.stringify(contactData),
           })
 
           if (response.ok) {
             successCount++
             setImportedCount(successCount)
+          } else {
+            const errorData = await response.json()
+            console.error("[v0] Error importing contact:", contact.name, errorData)
           }
         } catch (err) {
-          console.error("Error importing contact:", contact.name, err)
+          console.error("[v0] Error importing contact:", contact.name, err)
         }
       }
 

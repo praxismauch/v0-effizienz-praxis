@@ -319,6 +319,9 @@ export async function getSidebarBadges(practiceId: string) {
       organigrammResult,
     ] = results
 
+    // Contacts count includes team members (as they are shown merged in the contacts list)
+    const contactsCount = (Number(contactsResult.count) || 0) + (Number(teamResult.count) || 0)
+
     const badges = {
       tasks: Number(tasksResult.count) || 0,
       goals: Number(goalsResult.count) || 0,
@@ -333,7 +336,7 @@ export async function getSidebarBadges(practiceId: string) {
       calendar: Number(calendarResult.count) || 0,
       documents: Number(documentsResult.count) || 0,
       cirs: Number(cirsResult.count) || 0,
-      contacts: Number(contactsResult.count) || 0,
+      contacts: contactsCount,
       hygiene: Number(hygieneResult.count) || 0,
       training: Number(trainingResult.count) || 0,
       protocols: Number(protocolsResult.count) || 0,

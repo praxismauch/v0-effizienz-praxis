@@ -1,18 +1,20 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Loader2, Sparkles, MapPin, Search, Building2, Phone, Mail, Plus, Check } from "lucide-react"
+import { Loader2, Sparkles, MapPin, Search, Building2, Phone, Mail, Plus, Check, PhoneCall } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Checkbox } from "@/components/ui/checkbox"
+import RecommendedContactsDialog from "@/components/contacts/recommended-contacts-dialog"
 
 interface AIContactSearchDialogProps {
   open: boolean
@@ -34,14 +36,24 @@ interface SearchResult {
 }
 
 export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIContactSearchDialogProps) {
+  const { toast } = useToast()
+  const { currentUser } = useUser()
+  const { currentPractice } = usePractice()
+  
   const [searchQuery, setSearchQuery] = useState("")
   const [location, setLocation] = useState("")
   const [radius, setRadius] = useState("20")
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
   const [importing, setImporting] = useState(false)
-  const { toast } = useToast()
-  const { currentUser } = useUser()
+  const [showRecommendedDialog, setShowRecommendedDialog] = useState(false)
+
+  // Prefill location with practice postal code when dialog opens
+  useEffect(() => {
+    if (open && currentPractice?.zipCode && !location) {
+      setLocation(currentPractice.zipCode)
+    }
+  }, [open, currentPractice?.zipCode])
 
   const exampleQueries = [
     "Alle Hausärzte",
@@ -179,7 +191,7 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
 
   function handleClose() {
     setSearchQuery("")
-    setLocation("")
+    setLocation(currentPractice?.zipCode || "")
     setRadius("20")
     setResults([])
     onOpenChange(false)
@@ -225,6 +237,16 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
             </div>
           </div>
 
+          {/* Wichtige Nummern Button */}
+          <Button
+            variant="outline"
+            className="w-full border-dashed border-primary/50 text-primary hover:bg-primary/5"
+            onClick={() => setShowRecommendedDialog(true)}
+          >
+            <PhoneCall className="h-4 w-4 mr-2" />
+            Wichtige Nummern (Notdienste, KV, BGW, etc.)
+          </Button>
+
           {/* Location & Radius */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -269,7 +291,7 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
 
           {/* Results */}
           {results.length > 0 && (
-            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">
                   {results.length} Ergebnis(se) gefunden
@@ -278,7 +300,7 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
                   {results.every(r => r.selected) ? "Alle abwählen" : "Alle auswählen"}
                 </Button>
               </div>
-              <ScrollArea className="flex-1 -mx-6 px-6">
+              <ScrollArea className="h-[250px] -mx-6 px-6">
                 <div className="space-y-2 pb-4">
                   {results.map((result) => (
                     <Card
@@ -358,6 +380,15 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Recommended Contacts Dialog (Wichtige Nummern) */}
+      <RecommendedContactsDialog
+        open={showRecommendedDialog}
+        onOpenChange={setShowRecommendedDialog}
+        onSuccess={() => {
+          onSuccess()
+        }}
+      />
     </Dialog>
   )
 }

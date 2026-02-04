@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users } from "lucide-react"
+import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -56,6 +56,7 @@ interface Contact {
   image_url: string | null
   ai_extracted: boolean
   is_active: boolean
+  is_favorite?: boolean
   created_at: string
   contact_person: string | null
   direct_phone: string | null
@@ -68,6 +69,7 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -162,6 +164,38 @@ export default function ContactsPage() {
     }
   }, [practiceId, toast])
 
+  async function toggleFavorite(contact: Contact) {
+    if (!practiceId || contact.id.startsWith("team-")) return
+
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/contacts`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: contact.id, action: "toggle_favorite" }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to toggle favorite")
+      }
+
+      const updatedContact = await response.json()
+      setContacts((prev) =>
+        prev.map((c) => (c.id === contact.id ? { ...c, is_favorite: updatedContact.is_favorite } : c))
+      )
+
+      toast({
+        title: updatedContact.is_favorite ? "Als Favorit markiert" : "Favorit entfernt",
+        description: `${contact.first_name || ""} ${contact.last_name}`,
+      })
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Favorit konnte nicht geändert werden",
+        variant: "destructive",
+      })
+    }
+  }
+
   async function confirmDelete() {
     if (!contactToDelete || !practiceId) return
 
@@ -227,6 +261,10 @@ export default function ContactsPage() {
     const allContacts = [...teamContactsFromMembers, ...contacts]
     const search = searchQuery.toLowerCase()
     return allContacts.filter((contact) => {
+      // Filter by favorites if enabled
+      if (showOnlyFavorites && !contact.is_favorite) return false
+      
+      // Search filter
       return (
         contact.first_name?.toLowerCase().includes(search) ||
         contact.last_name.toLowerCase().includes(search) ||
@@ -235,7 +273,12 @@ export default function ContactsPage() {
         contact.category?.toLowerCase().includes(search)
       )
     })
-  }, [contacts, teamContactsFromMembers, searchQuery])
+  }, [contacts, teamContactsFromMembers, searchQuery, showOnlyFavorites])
+
+  // Count favorites
+  const favoritesCount = useMemo(() => {
+    return contacts.filter((c) => c.is_favorite).length
+  }, [contacts])
 
   return (
     <AppLayout>
@@ -293,6 +336,15 @@ export default function ContactsPage() {
                     className="pl-10"
                   />
                 </div>
+                <Button
+                  variant={showOnlyFavorites ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                  className={showOnlyFavorites ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}
+                >
+                  <Star className={`h-4 w-4 mr-1 ${showOnlyFavorites ? "fill-current" : ""}`} />
+                  Favoriten {favoritesCount > 0 && `(${favoritesCount})`}
+                </Button>
                 <Badge variant="secondary">{filteredContacts.length} Kontakte</Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -474,6 +526,21 @@ export default function ContactsPage() {
                               <span className="text-xs text-muted-foreground italic">Teammitglied</span>
                             ) : (
                               <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-9 w-9 p-0"
+                                  onClick={() => toggleFavorite(contact)}
+                                  title={contact.is_favorite ? "Aus Favoriten entfernen" : "Als Favorit markieren"}
+                                >
+                                  <Star
+                                    className={`h-4 w-4 ${
+                                      contact.is_favorite
+                                        ? "fill-amber-400 text-amber-400"
+                                        : "text-muted-foreground hover:text-amber-400"
+                                    }`}
+                                  />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2 } from "lucide-react"
+import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useToast } from "@/hooks/use-toast"
 import CreateContactDialog from "@/components/contacts/create-contact-dialog"
 import EditContactDialog from "@/components/contacts/edit-contact-dialog"
@@ -24,6 +25,7 @@ import BatchImportContactsDialog from "@/components/contacts/batch-import-contac
 import { AppLayout } from "@/components/app-layout"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
+import { useTeam } from "@/contexts/team-context"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,6 +95,8 @@ export default function ContactsPage() {
   const { toast } = useToast()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { currentUser, loading: userLoading } = useUser()
+  const { teamMembers, loading: teamLoading } = useTeam()
+  const [showTeamMembers, setShowTeamMembers] = useState(true)
 
   const hasLoadedRef = useRef(false)
   const loadingPracticeIdRef = useRef<string | null>(null)
@@ -245,6 +249,79 @@ export default function ContactsPage() {
         </div>
 
         <div className="space-y-4">
+          {/* Team Members Section */}
+          <Collapsible open={showTeamMembers} onOpenChange={setShowTeamMembers}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      <h2 className="font-semibold">Praxis-Team</h2>
+                      <Badge variant="secondary">{teamMembers.length} Mitglieder</Badge>
+                    </div>
+                    {showTeamMembers ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  {teamLoading ? (
+                    <div className="text-center py-4 text-muted-foreground">Lädt Teammitglieder...</div>
+                  ) : teamMembers.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground">Keine Teammitglieder verfügbar</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {teamMembers.map((member) => (
+                        <div
+                          key={member.id}
+                          className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                            {member.avatar ? (
+                              <img src={member.avatar} alt={member.name} className="h-10 w-10 rounded-full object-cover" />
+                            ) : (
+                              <span>{(member.first_name?.[0] || member.name?.[0] || "?").toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{member.name || `${member.first_name} ${member.last_name}`}</p>
+                            <p className="text-xs text-muted-foreground truncate">{member.role}</p>
+                          </div>
+                          <div className="flex flex-col gap-1 shrink-0">
+                            {member.email && (
+                              <a
+                                href={`mailto:${member.email}`}
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                                title={member.email}
+                              >
+                                <Mail className="h-3 w-3" />
+                                <span className="hidden xl:inline truncate max-w-[120px]">{member.email}</span>
+                              </a>
+                            )}
+                            {(member.phone || member.mobile) && (
+                              <a
+                                href={`tel:${member.phone || member.mobile}`}
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                <Phone className="h-3 w-3" />
+                                <span>{member.phone || member.mobile}</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
           <Card>
             <CardHeader>
               <div className="flex items-center gap-4">

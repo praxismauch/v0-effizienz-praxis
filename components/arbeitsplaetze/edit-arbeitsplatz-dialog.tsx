@@ -117,14 +117,10 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Edit Arbeitsplatz - Submit started")
-    console.log("[v0] Edit Arbeitsplatz - Current user:", currentUser)
-    console.log("[v0] Edit Arbeitsplatz - Arbeitsplatz ID:", arbeitsplatz.id)
     setLoading(true)
 
     try {
       if (!currentUser?.practice_id) {
-        console.error("[v0] Edit Arbeitsplatz - No practice ID found")
         throw new Error("No practice ID")
       }
       
@@ -138,25 +134,18 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
         color: selectedColor,
       }
 
-      console.log("[v0] Edit Arbeitsplatz - Payload:", payload)
-      console.log("[v0] Edit Arbeitsplatz - URL:", `/api/practices/${currentUser.practice_id}/arbeitsplaetze/${arbeitsplatz.id}`)
-
       const response = await fetch(`/api/practices/${currentUser.practice_id}/arbeitsplaetze/${arbeitsplatz.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
 
-      console.log("[v0] Edit Arbeitsplatz - Response status:", response.status)
-
       if (!response.ok) {
         const error = await response.json()
-        console.error("[v0] Edit Arbeitsplatz - Error response:", error)
         throw new Error(error.error || "Failed to update")
       }
 
-      const result = await response.json()
-      console.log("[v0] Edit Arbeitsplatz - Success:", result)
+      await response.json()
 
       toast({ title: "Erfolg", description: "Arbeitsplatz wurde aktualisiert" })
       onSuccess()

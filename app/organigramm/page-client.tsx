@@ -204,16 +204,20 @@ export default function OrganigrammClient() {
   const handleUpdate = async (id: string, data: Partial<Position>) => {
     try {
       const response = await fetch(`/api/practices/${currentPractice?.id}/org-chart-positions/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ ...data, updated_at: new Date().toISOString() }),
       })
 
-      const updatedPosition = await response.json()
+      const result = await response.json()
 
-      setPositions((prev) => prev.map((p) => (p.id === id ? updatedPosition : p)))
+      if (!response.ok) {
+        throw new Error(result.error || "Position konnte nicht aktualisiert werden")
+      }
+
+      setPositions((prev) => prev.map((p) => (p.id === id ? result : p)))
       setEditingPosition(null)
       toast({ title: "Erfolg", description: "Position wurde aktualisiert" })
     } catch (error: any) {

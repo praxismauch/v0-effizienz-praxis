@@ -21,6 +21,7 @@ import CreateContactDialog from "@/components/contacts/create-contact-dialog"
 import EditContactDialog from "@/components/contacts/edit-contact-dialog"
 import AIContactExtractorDialog from "@/components/contacts/ai-contact-extractor-dialog"
 import AIContactSearchDialog from "@/components/contacts/ai-contact-search-dialog"
+import AIRecommendedContactsDialog from "@/components/contacts/ai-recommended-contacts-dialog"
 import BatchImportContactsDialog from "@/components/contacts/batch-import-contacts-dialog"
 import { AppLayout } from "@/components/app-layout"
 import { usePractice } from "@/contexts/practice-context"
@@ -83,6 +84,7 @@ export default function ContactsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showAIDialog, setShowAIDialog] = useState(false)
   const [showAISearchDialog, setShowAISearchDialog] = useState(false)
+  const [showRecommendedDialog, setShowRecommendedDialog] = useState(false)
   const [showBatchDialog, setShowBatchDialog] = useState(false)
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
   const [visibleColumns, setVisibleColumns] = useState({
@@ -236,6 +238,14 @@ export default function ContactsPage() {
             >
               <Search className="h-4 w-4" />
               KI-Suche
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-primary/50 text-primary hover:bg-primary/10"
+              onClick={() => setShowRecommendedDialog(true)}
+            >
+              <Phone className="h-4 w-4" />
+              Empfohlene Nummern
             </Button>
             <Button variant="outline" onClick={() => setShowBatchDialog(true)}>
               <Upload className="h-4 w-4 mr-2" />
@@ -548,6 +558,8 @@ export default function ContactsPage() {
           <AIContactExtractorDialog open={showAIDialog} onOpenChange={setShowAIDialog} onSuccess={handleReload} />
 
           <AIContactSearchDialog open={showAISearchDialog} onOpenChange={setShowAISearchDialog} onSuccess={handleReload} />
+
+          <AIRecommendedContactsDialog open={showRecommendedDialog} onOpenChange={setShowRecommendedDialog} onSuccess={handleReload} />
 
           <BatchImportContactsDialog
             open={showBatchDialog}

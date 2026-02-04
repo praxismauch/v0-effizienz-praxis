@@ -11,15 +11,31 @@ const KEY_LENGTH = 256
 const IV_LENGTH = 12
 const TAG_LENGTH = 128
 
+// Cached encryption key to prevent repeated env access
+let cachedEncryptionKey: string | null = null
+
 // Get encryption key from environment or generate a default
+// Lazy initialization to prevent TDZ errors
 function getEncryptionKey(): string {
-  const key = process.env.ENCRYPTION_KEY
-  if (!key) {
-    console.warn("[Encryption] ENCRYPTION_KEY not set, using fallback. Set ENCRYPTION_KEY in production!")
-    // Fallback key for development - DO NOT use in production
-    return "effizienz-praxis-dev-key-32chars!"
+  if (cachedEncryptionKey) {
+    return cachedEncryptionKey
   }
-  return key
+
+  try {
+    const key = typeof process !== "undefined" && process.env ? process.env.ENCRYPTION_KEY : undefined
+    if (!key) {
+      console.warn("[Encryption] ENCRYPTION_KEY not set, using fallback. Set ENCRYPTION_KEY in production!")
+      // Fallback key for development - DO NOT use in production
+      cachedEncryptionKey = "effizienz-praxis-dev-key-32chars!"
+    } else {
+      cachedEncryptionKey = key
+    }
+  } catch {
+    console.warn("[Encryption] Error accessing ENCRYPTION_KEY, using fallback")
+    cachedEncryptionKey = "effizienz-praxis-dev-key-32chars!"
+  }
+
+  return cachedEncryptionKey
 }
 
 /**

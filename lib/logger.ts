@@ -53,20 +53,37 @@ interface StructuredLog {
   }
 }
 
+// Lazy getter functions to prevent TDZ errors
 function checkIsProduction(): boolean {
   if (typeof window !== "undefined") {
-    const vercelEnv = typeof process !== "undefined" && process.env ? process.env.NEXT_PUBLIC_VERCEL_ENV : undefined
-    return vercelEnv === "production"
+    try {
+      const vercelEnv = typeof process !== "undefined" && process.env ? process.env.NEXT_PUBLIC_VERCEL_ENV : undefined
+      return vercelEnv === "production"
+    } catch {
+      return false
+    }
   }
-  return typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production"
+  try {
+    return typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production"
+  } catch {
+    return false
+  }
 }
 
 function checkIsDevelopment(): boolean {
   if (typeof window !== "undefined") {
-    const vercelEnv = typeof process !== "undefined" && process.env ? process.env.NEXT_PUBLIC_VERCEL_ENV : undefined
-    return !vercelEnv || vercelEnv === "development" || vercelEnv === "preview"
+    try {
+      const vercelEnv = typeof process !== "undefined" && process.env ? process.env.NEXT_PUBLIC_VERCEL_ENV : undefined
+      return !vercelEnv || vercelEnv === "development" || vercelEnv === "preview"
+    } catch {
+      return true // Default to development on error
+    }
   }
-  return typeof process !== "undefined" && process.env && process.env.NODE_ENV === "development"
+  try {
+    return typeof process !== "undefined" && process.env && process.env.NODE_ENV === "development"
+  } catch {
+    return true // Default to development on error
+  }
 }
 
 const LOG_COLORS = {

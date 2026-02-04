@@ -205,34 +205,58 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
         // Upload new files using server-side API
         if (uploadedFiles.length > 0) {
           for (const file of uploadedFiles) {
-            // Upload file via unified server-side API
-            const uploadFormData = new FormData()
-            uploadFormData.append("file", file)
-            uploadFormData.append("type", "general")
-            uploadFormData.append("practiceId", currentPractice.id)
-            
-            const uploadRes = await fetch("/api/upload/unified", {
-              method: "POST",
-              body: uploadFormData,
-            })
-            
-            if (!uploadRes.ok) {
-              console.error("File upload failed:", await uploadRes.text())
-              continue
-            }
-            
-            const blob = await uploadRes.json()
+            try {
+              console.log("[v0] Uploading file:", file.name, file.type, file.size)
+              
+              // Upload file via unified server-side API
+              const uploadFormData = new FormData()
+              uploadFormData.append("file", file)
+              uploadFormData.append("type", "general")
+              uploadFormData.append("practiceId", currentPractice.id)
+              
+              const uploadRes = await fetch("/api/upload/unified", {
+                method: "POST",
+                body: uploadFormData,
+              })
+              
+              console.log("[v0] Upload response status:", uploadRes.status)
+              
+              if (!uploadRes.ok) {
+                const errorText = await uploadRes.text()
+                console.error("[v0] File upload failed:", errorText)
+                toast({
+                  title: "Datei-Upload fehlgeschlagen",
+                  description: errorText || "Unbekannter Fehler beim Hochladen",
+                  variant: "destructive",
+                })
+                continue
+              }
+              
+              const blob = await uploadRes.json()
+              console.log("[v0] Upload successful:", blob)
 
-            await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}/files`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                file_name: blob.fileName || file.name,
-                file_url: blob.url,
-                file_size: blob.fileSize || file.size,
-                file_type: blob.fileType || file.type,
-              }),
-            })
+              const fileRes = await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}/files`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  file_name: blob.fileName || file.name,
+                  file_url: blob.url,
+                  file_size: blob.fileSize || file.size,
+                  file_type: blob.fileType || file.type,
+                }),
+              })
+              
+              if (!fileRes.ok) {
+                console.error("[v0] Failed to save file record:", await fileRes.text())
+              }
+            } catch (uploadError) {
+              console.error("[v0] Upload exception:", uploadError)
+              toast({
+                title: "Upload-Fehler",
+                description: "Ein Fehler ist beim Hochladen aufgetreten",
+                variant: "destructive",
+              })
+            }
           }
         }
 

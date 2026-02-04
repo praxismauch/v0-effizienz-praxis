@@ -333,6 +333,37 @@ export function EditContactDialog({ open, onOpenChange, contact, onSuccess }: Ed
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="contact_person">Ansprechpartner</Label>
+              <Input
+                id="contact_person"
+                value={formData.contact_person}
+                onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
+                placeholder="Name des Ansprechpartners"
+              />
+            </div>
+            <div>
+              <Label htmlFor="direct_phone">Direktnummer</Label>
+              <Input
+                id="direct_phone"
+                value={formData.direct_phone}
+                onChange={(e) => setFormData({ ...formData, direct_phone: e.target.value })}
+                placeholder="Durchwahl / Direktnummer"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="availability">Erreichbarkeit</Label>
+            <Input
+              id="availability"
+              value={formData.availability}
+              onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
+              placeholder="z.B. nur vormittags, 24/7, Mo-Fr 9-17 Uhr"
+            />
+          </div>
+
           <div>
             <Label htmlFor="notes">Notizen</Label>
             <Textarea

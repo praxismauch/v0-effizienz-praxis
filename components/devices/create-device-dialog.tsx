@@ -26,6 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+import { MultiImageUpload } from "@/components/ui/multi-image-upload"
 
 interface Room {
   id: string
@@ -1075,13 +1076,19 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2">
-                  {/* <Label>Bild-URL</Label> */}
-                  {/* <Input
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="URL zum Gerätebild"
-                  /> */}
+                <div className="col-span-2 space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Gerätebilder
+                  </Label>
+                  <p className="text-xs text-muted-foreground">Laden Sie Bilder des Geräts hoch (max. 10 Bilder)</p>
+                  <MultiImageUpload
+                    images={images}
+                    onImagesChange={setImages}
+                    maxImages={10}
+                    uploadEndpoint={practiceId ? `/api/practices/${practiceId}/devices/upload-image` : ""}
+                    disabled={loading || !practiceId}
+                  />
                 </div>
               </div>
             </TabsContent>

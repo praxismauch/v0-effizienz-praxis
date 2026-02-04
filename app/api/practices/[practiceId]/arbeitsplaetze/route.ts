@@ -19,7 +19,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     const { data, error } = await adminClient
       .from("arbeitsplaetze")
-      .select("*")
+      .select(`
+        *,
+        room:rooms(id, name, color)
+      `)
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .eq("is_active", true)

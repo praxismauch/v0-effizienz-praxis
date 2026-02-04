@@ -15,7 +15,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Settings, Monitor } from "lucide-react"
+import { Settings, Monitor, Palette } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils"
 interface Room {
   id: string
   name: string
+  color?: string | null
 }
 
 interface CreateArbeitsplatzDialogProps {
@@ -43,6 +45,7 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
   const [isLoadingData, setIsLoadingData] = useState(false)
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [selectedColor, setSelectedColor] = useState<string>("green")
+  const [useRoomColor, setUseRoomColor] = useState<boolean>(true)
   const { toast } = useToast()
   const { user, loading: authLoading } = useAuth()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
@@ -71,6 +74,7 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
       setRaumId("")
       setImageUrls([])
       setSelectedColor("green")
+      setUseRoomColor(true)
     }
   }, [open])
 
@@ -130,7 +134,8 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
           beschreibung: cleanBeschreibung,
           raum_id: raumId && raumId !== "none" ? raumId : null,
           image_urls: imageUrls.length > 0 ? imageUrls : null,
-          color: selectedColor,
+          color: useRoomColor ? null : selectedColor,
+          use_room_color: useRoomColor,
         }),
       })
 
@@ -215,27 +220,68 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Farbe</Label>
-            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Arbeitsplatz</p>
-            <div className="grid grid-cols-4 gap-2">
-              {COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => setSelectedColor(color.value)}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
-                    selectedColor === color.value
-                      ? "border-primary shadow-sm scale-105"
-                      : "border-border hover:border-primary/50",
-                  )}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Farbe
+            </Label>
+            
+            {raumId && raumId !== "none" && (
+              <div className="flex items-center space-x-2 p-3 rounded-lg bg-muted/50 border">
+                <Checkbox 
+                  id="useRoomColorCreate" 
+                  checked={useRoomColor}
+                  onCheckedChange={(checked) => setUseRoomColor(checked === true)}
+                />
+                <label
+                  htmlFor="useRoomColorCreate"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  <div className={cn("w-5 h-5 rounded-full", color.class)} />
-                  <span className="text-sm font-medium">{color.label}</span>
-                </button>
-              ))}
-            </div>
+                  Raumfarbe verwenden
+                  {(() => {
+                    const selectedRoom = rooms.find(r => r.id === raumId)
+                    if (selectedRoom?.color) {
+                      const roomColorConfig = COLORS.find(c => c.value === selectedRoom.color)
+                      return roomColorConfig ? (
+                        <span className="ml-2 inline-flex items-center gap-1.5 text-muted-foreground">
+                          <span className={cn("w-3 h-3 rounded-full inline-block", roomColorConfig.class)} />
+                          ({roomColorConfig.label})
+                        </span>
+                      ) : null
+                    }
+                    return null
+                  })()}
+                </label>
+              </div>
+            )}
+
+            {(!useRoomColor || !raumId || raumId === "none") && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {raumId && raumId !== "none" 
+                    ? "Manuelle Farbauswahl (überschreibt die Raumfarbe)" 
+                    : "Wählen Sie eine Farbe für diesen Arbeitsplatz"}
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setSelectedColor(color.value)}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                        selectedColor === color.value
+                          ? "border-primary shadow-sm scale-105"
+                          : "border-border hover:border-primary/50",
+                      )}
+                    >
+                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                      <span className="text-sm font-medium">{color.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="space-y-2">

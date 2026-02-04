@@ -26,13 +26,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { backupId, backupData } = body
+    const { backupId, backupData, restoreMode, selectedPracticeIds, selectedTables } = body
+
+    // restoreMode can be: 'full', 'practices', 'tables'
+    // selectedPracticeIds: array of practice IDs to restore (when mode is 'practices')
+    // selectedTables: array of table names to restore (when mode is 'tables')
 
     if (!backupId && !backupData) {
       return NextResponse.json({ error: "Backup ID or backup data required" }, { status: 400 })
     }
 
-    console.log("[v0] Starting backup restoration:", backupId)
+    console.log("[v0] Starting backup restoration:", backupId, "mode:", restoreMode || "full")
 
     let backupContent: any
 
@@ -63,15 +67,56 @@ export async function POST(request: NextRequest) {
 
     const restoredTables: string[] = []
     let totalRowsRestored = 0
+    const mode = restoreMode || "full"
 
-    for (const [tableName, rows] of Object.entries(backupContent.tables)) {
+    // Determine which tables to restore based on mode
+    let tablesToRestore = Object.keys(backupContent.tables)
+    
+    if (mode === "tables" && selectedTables && selectedTables.length > 0) {
+      // Only restore selected tables
+      tablesToRestore = tablesToRestore.filter((t) => selectedTables.includes(t))
+      console.log("[v0] Restoring only selected tables:", tablesToRestore)
+    }
+
+    for (const tableName of tablesToRestore) {
       try {
-        const tableRows = rows as any[]
+        let tableRows = backupContent.tables[tableName] as any[]
+        if (!tableRows || tableRows.length === 0) continue
+
+        // Filter rows by selected practices if mode is 'practices'
+        if (mode === "practices" && selectedPracticeIds && selectedPracticeIds.length > 0) {
+          // Check if this table has practice_id column
+          const hasPracticeId = tableRows.some((row) => row.practice_id !== undefined)
+          
+          if (hasPracticeId) {
+            tableRows = tableRows.filter((row) => selectedPracticeIds.includes(row.practice_id))
+            console.log(`[v0] Filtered ${tableName} to ${tableRows.length} rows for selected practices`)
+          } else if (tableName === "practices") {
+            // Filter practices table by id
+            tableRows = tableRows.filter((row) => selectedPracticeIds.includes(row.id))
+          }
+          // Tables without practice_id are skipped in practices mode (except for practices table)
+          if (!hasPracticeId && tableName !== "practices") {
+            console.log(`[v0] Skipping ${tableName} - no practice_id column`)
+            continue
+          }
+        }
+
         if (tableRows.length === 0) continue
 
         console.log(`[v0] Restoring ${tableRows.length} rows to ${tableName}`)
 
-        if (backupContent.practice_id && tableName !== "users" && tableName !== "practices") {
+        // Delete existing data based on restore mode
+        if (mode === "practices" && selectedPracticeIds && selectedPracticeIds.length > 0) {
+          // Delete only data for selected practices
+          for (const practiceId of selectedPracticeIds) {
+            if (tableName === "practices") {
+              await supabase.from(tableName).delete().eq("id", practiceId)
+            } else {
+              await supabase.from(tableName).delete().eq("practice_id", practiceId)
+            }
+          }
+        } else if (backupContent.practice_id && tableName !== "users" && tableName !== "practices") {
           await supabase.from(tableName).delete().eq("practice_id", backupContent.practice_id)
         }
 

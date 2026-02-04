@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import CreateArbeitsplatzDialog from "./create-arbeitsplatz-dialog"
 import EditArbeitsplatzDialog from "./edit-arbeitsplatz-dialog"
-import { ArbeitsplatzCard } from "./arbeitsplatz-card"
+import { ArbeitsplatzCard, ARBEITSPLATZ_COLORS } from "./arbeitsplatz-card"
 import { cn } from "@/lib/utils"
 import { usePractice } from "@/contexts/practice-context"
 import { useArbeitsplaetze } from "@/hooks/use-arbeitsplaetze"
@@ -191,10 +191,14 @@ function ArbeitsplaetzeManagement() {
       {/* Content */}
       {filteredArbeitsplaetze.length > 0 ? (
         <div className={cn(viewMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-3")}>
-          {filteredArbeitsplaetze.map((arbeitsplatz) => (
+          {filteredArbeitsplaetze.map((arbeitsplatz, index) => (
             <ArbeitsplatzCard
               key={arbeitsplatz.id}
-              arbeitsplatz={arbeitsplatz}
+              arbeitsplatz={{
+                ...arbeitsplatz,
+                // Assign color based on index if not already set
+                color: arbeitsplatz.color || ARBEITSPLATZ_COLORS[index % ARBEITSPLATZ_COLORS.length].value,
+              }}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onToggleActive={handleToggleActive}

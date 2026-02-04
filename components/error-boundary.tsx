@@ -26,6 +26,35 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     Logger.error("ui", "ErrorBoundary caught error", error, { componentStack: errorInfo.componentStack })
+    
+    // Send to error tracking database
+    this.sendToErrorTracking(error, errorInfo)
+  }
+
+  private async sendToErrorTracking(error: Error, errorInfo: React.ErrorInfo) {
+    try {
+      await fetch("/api/error-tracking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          level: "error",
+          category: "ui",
+          message: `ErrorBoundary: ${error.message}`,
+          error: {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          },
+          context: {
+            componentStack: errorInfo.componentStack,
+          },
+          url: typeof window !== "undefined" ? window.location.href : undefined,
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+        }),
+      })
+    } catch (e) {
+      // Silent fail - don't cause more errors while reporting errors
+    }
   }
 
   handleReset = () => {

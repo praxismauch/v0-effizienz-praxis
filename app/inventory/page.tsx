@@ -20,14 +20,18 @@ import {
   BillDetailDialog,
   DeleteItemDialog 
 } from "./components/inventory-dialogs"
-import type { InventoryItem, Supplier } from "./types"
+import type { InventoryItem, Supplier, InventoryBill } from "./types"
 
 export default function InventoryPage() {
   const {
     items,
     suppliers,
     bills,
+    archivedBills,
     isLoading,
+    isBillsLoading,
+    isUploading,
+    extractingBillId,
     settings,
     setSettings,
     stats,
@@ -39,7 +43,13 @@ export default function InventoryPage() {
     deleteItem,
     archiveItem,
     restoreItem,
+    uploadBill,
+    extractBill,
+    applyBillItems,
   } = useInventory()
+
+  const [selectedBill, setSelectedBill] = useState<InventoryBill | null>(null)
+  const [showBillDetailDialog, setShowBillDetailDialog] = useState(false)
 
   const [activeTab, setActiveTab] = useState("overview")
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -206,18 +216,35 @@ export default function InventoryPage() {
 
         <TabsContent value="bills" className="mt-6">
           <BillsTab
-            bills={bills}
-            onAddBill={() => {
-              // Future feature: Add bill functionality
+            bills={bills.filter((b) => !b.is_archived)}
+            loading={isBillsLoading}
+            uploading={isUploading}
+            extractingBillId={extractingBillId}
+            onUpload={async (e) => {
+              const files = e.target.files
+              if (!files) return
+              for (const file of Array.from(files)) {
+                await uploadBill(file)
+              }
+              e.target.value = ""
             }}
+            onExtract={extractBill}
+            onViewDetails={(bill) => {
+              setSelectedBill(bill)
+              setShowBillDetailDialog(true)
+            }}
+            onApplyItems={(bill) => applyBillItems(bill.id)}
           />
         </TabsContent>
 
         <TabsContent value="archive" className="mt-6">
           <ArchiveTab
-            items={archivedItems}
-            onRestoreItem={restoreItem}
-            onDeleteItem={deleteItem}
+            bills={archivedBills}
+            loading={isBillsLoading}
+            onViewDetails={(bill) => {
+              setSelectedBill(bill)
+              setShowBillDetailDialog(true)
+            }}
           />
         </TabsContent>
 

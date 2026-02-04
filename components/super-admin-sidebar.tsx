@@ -45,6 +45,7 @@ import {
   Camera,
   X,
   ExternalLink,
+  AlertTriangle,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -925,6 +926,14 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           href: "/super-admin/chat-logs",
           badge: true,
           badgeType: "chatLogs" as const,
+        },
+        {
+          id: "error-logs",
+          label: "Error Logging",
+          icon: AlertTriangle,
+          href: "/super-admin/logging",
+          badge: true,
+          badgeType: "criticalLogs" as const,
         },
         {
           id: "admin-settings",

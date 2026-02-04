@@ -39,15 +39,20 @@ export function TeamMemberDevicesTab({ memberId, practiceId, memberName }: TeamM
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchDevices() {
-      if (!practiceId || !memberId) {
-        setLoading(false)
-        return
-      }
+    if (!practiceId || !memberId) {
+      setLoading(false)
+      return
+    }
 
+    let isCancelled = false
+    const controller = new AbortController()
+
+    async function fetchDevices() {
       try {
         setLoading(true)
-        const response = await fetch(`/api/practices/${practiceId}/devices`)
+        const response = await fetch(`/api/practices/${practiceId}/devices`, {
+          signal: controller.signal
+        })
         if (!response.ok) {
           throw new Error("Failed to fetch devices")
         }
@@ -56,16 +61,27 @@ export function TeamMemberDevicesTab({ memberId, practiceId, memberName }: TeamM
         const memberDevices = (data.devices || []).filter(
           (device: MedicalDevice & { responsible_user_id?: string }) => device.responsible_user_id === memberId,
         )
-        setDevices(memberDevices)
+        if (!isCancelled) {
+          setDevices(memberDevices)
+        }
       } catch (err) {
-        console.error("[v0] Error fetching devices:", err)
-        setError("Fehler beim Laden der Geräte")
+        if ((err as Error).name !== 'AbortError' && !isCancelled) {
+          console.error("Error fetching devices:", err)
+          setError("Fehler beim Laden der Geräte")
+        }
       } finally {
-        setLoading(false)
+        if (!isCancelled) {
+          setLoading(false)
+        }
       }
     }
 
     fetchDevices()
+
+    return () => {
+      isCancelled = true
+      controller.abort()
+    }
   }, [practiceId, memberId])
 
   const getStatusBadge = (status: string, isActive: boolean) => {

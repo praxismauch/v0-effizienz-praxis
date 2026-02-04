@@ -71,14 +71,42 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
   }, [effectivePracticeId, memberId])
 
   useEffect(() => {
-    if (contracts.length > 0 && effectivePracticeId) {
-      contracts.forEach(async (contract) => {
-        const res = await fetch(`/api/practices/${effectivePracticeId}/contracts/${contract.id}/files`)
-        if (res.ok) {
-          const files = await res.json()
-          setContractFiles((prev) => ({ ...prev, [contract.id]: files }))
+    if (contracts.length === 0 || !effectivePracticeId) return
+    
+    let isCancelled = false
+    const controller = new AbortController()
+    
+    const loadAllFiles = async () => {
+      const filesMap: Record<string, any[]> = {}
+      
+      // Fetch files sequentially to avoid too many concurrent connections
+      for (const contract of contracts) {
+        if (isCancelled) break
+        try {
+          const res = await fetch(
+            `/api/practices/${effectivePracticeId}/contracts/${contract.id}/files`,
+            { signal: controller.signal }
+          )
+          if (res.ok) {
+            filesMap[contract.id] = await res.json()
+          }
+        } catch (err) {
+          if ((err as Error).name !== 'AbortError') {
+            console.error("Error fetching contract files:", err)
+          }
         }
-      })
+      }
+      
+      if (!isCancelled) {
+        setContractFiles(filesMap)
+      }
+    }
+    
+    loadAllFiles()
+    
+    return () => {
+      isCancelled = true
+      controller.abort()
     }
   }, [contracts, effectivePracticeId])
 

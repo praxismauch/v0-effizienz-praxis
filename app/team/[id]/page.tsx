@@ -113,23 +113,26 @@ export default function TeamMemberDetailPage() {
 
   // Fetch member data
   useEffect(() => {
+    // First, try to find in context - check id, user_id, and team_member_id fields
+    const contextMember = teamMembers.find((m: any) => 
+      m.id === memberId || m.user_id === memberId || m.team_member_id === memberId
+    )
+    
+    if (contextMember) {
+      setMember(contextMember)
+      setLoading(false)
+      return
+    }
+
+    let isCancelled = false
+    const controller = new AbortController()
+    
     const fetchMember = async () => {
-      // First, try to find in context - check id, user_id, and team_member_id fields
-      const contextMember = teamMembers.find((m: any) => 
-        m.id === memberId || m.user_id === memberId || m.team_member_id === memberId
-      )
-      
-      if (contextMember) {
-        setMember(contextMember)
-        setLoading(false)
-        return
-      }
-      
       try {
         const apiUrl = `/api/practices/${practiceId}/team-members`
-        const response = await fetch(apiUrl)
+        const response = await fetch(apiUrl, { signal: controller.signal })
         
-        if (response.ok) {
+        if (response.ok && !isCancelled) {
           const data = await response.json()
           
           // Check id, user_id, and team_member_id fields when searching
@@ -137,18 +140,27 @@ export default function TeamMemberDetailPage() {
             m.id === memberId || m.user_id === memberId || m.team_member_id === memberId
           )
           
-          if (fetchedMember) {
+          if (fetchedMember && !isCancelled) {
             setMember(fetchedMember)
           }
         }
       } catch (error) {
-        console.error("Error fetching member:", error)
+        if ((error as Error).name !== 'AbortError') {
+          console.error("Error fetching member:", error)
+        }
       } finally {
-        setLoading(false)
+        if (!isCancelled) {
+          setLoading(false)
+        }
       }
     }
     
     fetchMember()
+
+    return () => {
+      isCancelled = true
+      controller.abort()
+    }
   }, [memberId, teamMembers, practiceId])
 
   const canEdit = isAdmin || currentUser?.id === memberId

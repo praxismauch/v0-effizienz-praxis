@@ -2,7 +2,20 @@ import nodemailer from "nodemailer"
 import { createAdminClient } from "@/lib/supabase/server"
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+let resendInstance: Resend | null = null
+
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    return null
+  }
+
+  if (!resendInstance) {
+    resendInstance = new Resend(apiKey)
+  }
+
+  return resendInstance
+}
 
 interface SmtpConfig {
   host: string
@@ -231,7 +244,9 @@ export async function sendEmailWithResend({
   attachments,
 }: SendEmailParams): Promise<SendEmailResult> {
   try {
-    if (!process.env.RESEND_API_KEY) {
+    const resend = getResendClient()
+    
+    if (!resend) {
       console.warn("RESEND_API_KEY not configured - skipping email send")
       return {
         success: false,

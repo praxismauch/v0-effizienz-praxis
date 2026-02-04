@@ -34,12 +34,6 @@ const nextConfig = {
       'recharts',
     ],
     reactCompiler: false, // Enable when ready for React Compiler
-    turbo: {
-      // Turbopack configuration
-      resolveAlias: {
-        '@': './',
-      },
-    },
   },
   async headers() {
     return [

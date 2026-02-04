@@ -1,12 +1,20 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles } from "lucide-react"
+import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import CreateContactDialog from "@/components/contacts/create-contact-dialog"
 import EditContactDialog from "@/components/contacts/edit-contact-dialog"
@@ -73,6 +81,13 @@ export default function ContactsPage() {
   const [showAIDialog, setShowAIDialog] = useState(false)
   const [showBatchDialog, setShowBatchDialog] = useState(false)
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
+  const [visibleColumns, setVisibleColumns] = useState({
+    name: true,
+    company: true,
+    contact: true,
+    address: true,
+    category: true,
+  })
   const { toast } = useToast()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { currentUser, loading: userLoading } = useUser()
@@ -233,6 +248,57 @@ export default function ContactsPage() {
                   />
                 </div>
                 <Badge variant="secondary">{filteredContacts.length} Kontakte</Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Settings2 className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Spalten anzeigen</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                      checked={visibleColumns.name}
+                      onCheckedChange={(checked) =>
+                        setVisibleColumns((prev) => ({ ...prev, name: checked }))
+                      }
+                    >
+                      Name
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={visibleColumns.company}
+                      onCheckedChange={(checked) =>
+                        setVisibleColumns((prev) => ({ ...prev, company: checked }))
+                      }
+                    >
+                      Firma
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={visibleColumns.contact}
+                      onCheckedChange={(checked) =>
+                        setVisibleColumns((prev) => ({ ...prev, contact: checked }))
+                      }
+                    >
+                      Kontakt
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={visibleColumns.address}
+                      onCheckedChange={(checked) =>
+                        setVisibleColumns((prev) => ({ ...prev, address: checked }))
+                      }
+                    >
+                      Adresse
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={visibleColumns.category}
+                      onCheckedChange={(checked) =>
+                        setVisibleColumns((prev) => ({ ...prev, category: checked }))
+                      }
+                    >
+                      Kategorie
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardHeader>
             <CardContent>
@@ -245,100 +311,110 @@ export default function ContactsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[180px]">Name</TableHead>
-                        <TableHead className="min-w-[140px]">Firma</TableHead>
-                        <TableHead className="min-w-[180px]">Kontakt</TableHead>
-                        <TableHead className="min-w-[160px]">Adresse</TableHead>
-                        <TableHead className="min-w-[100px]">Kategorie</TableHead>
+                        {visibleColumns.name && <TableHead className="min-w-[180px]">Name</TableHead>}
+                        {visibleColumns.company && <TableHead className="min-w-[140px]">Firma</TableHead>}
+                        {visibleColumns.contact && <TableHead className="min-w-[180px]">Kontakt</TableHead>}
+                        {visibleColumns.address && <TableHead className="min-w-[160px]">Adresse</TableHead>}
+                        {visibleColumns.category && <TableHead className="min-w-[100px]">Kategorie</TableHead>}
                         <TableHead className="text-right min-w-[100px]">Aktionen</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredContacts.map((contact) => (
                         <TableRow key={contact.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {contact.image_url && (
-                                <img
-                                  src={contact.image_url || "/placeholder.svg"}
-                                  alt={contact.last_name}
-                                  className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-                                />
-                              )}
-                              <div>
-                                <div className="font-medium whitespace-nowrap">
-                                  {contact.salutation && `${contact.salutation} `}
-                                  {contact.title && `${contact.title} `}
-                                  {contact.first_name} {contact.last_name}
-                                </div>
-                                {contact.position && (
-                                  <div className="text-sm text-muted-foreground">{contact.position}</div>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {contact.company && (
+                          {visibleColumns.name && (
+                            <TableCell>
                               <div className="flex items-center gap-2">
-                                <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                <span className="truncate max-w-[120px]">{contact.company}</span>
+                                {contact.image_url && (
+                                  <img
+                                    src={contact.image_url || "/placeholder.svg"}
+                                    alt={contact.last_name}
+                                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                                  />
+                                )}
+                                <div>
+                                  <div className="font-medium whitespace-nowrap">
+                                    {contact.salutation && `${contact.salutation} `}
+                                    {contact.title && `${contact.title} `}
+                                    {contact.first_name} {contact.last_name}
+                                  </div>
+                                  {contact.position && (
+                                    <div className="text-sm text-muted-foreground">{contact.position}</div>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              {contact.email && (
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Mail className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                  <a
-                                    href={`mailto:${contact.email}`}
-                                    className="hover:underline truncate max-w-[150px]"
-                                  >
-                                    {contact.email}
-                                  </a>
+                            </TableCell>
+                          )}
+                          {visibleColumns.company && (
+                            <TableCell>
+                              {contact.company && (
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <span className="truncate max-w-[120px]">{contact.company}</span>
                                 </div>
                               )}
-                              {(contact.phone || contact.mobile) && (
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                  <span className="whitespace-nowrap">{contact.phone || contact.mobile}</span>
-                                </div>
+                            </TableCell>
+                          )}
+                          {visibleColumns.contact && (
+                            <TableCell>
+                              <div className="space-y-1">
+                                {contact.email && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Mail className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                    <a
+                                      href={`mailto:${contact.email}`}
+                                      className="hover:underline truncate max-w-[150px]"
+                                    >
+                                      {contact.email}
+                                    </a>
+                                  </div>
+                                )}
+                                {(contact.phone || contact.mobile) && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                    <span className="whitespace-nowrap">{contact.phone || contact.mobile}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
+                          {visibleColumns.address && (
+                            <TableCell>
+                              {(contact.street || contact.city) && (
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                    [contact.street, contact.house_number, contact.postal_code, contact.city]
+                                      .filter(Boolean)
+                                      .join(" ")
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:underline block"
+                                >
+                                  {contact.street && (
+                                    <div className="whitespace-nowrap">
+                                      {contact.street} {contact.house_number}
+                                    </div>
+                                  )}
+                                  {contact.city && (
+                                    <div className="whitespace-nowrap">
+                                      {contact.postal_code} {contact.city}
+                                    </div>
+                                  )}
+                                </a>
                               )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {(contact.street || contact.city) && (
-                              <a
-                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                                  [contact.street, contact.house_number, contact.postal_code, contact.city]
-                                    .filter(Boolean)
-                                    .join(" ")
-                                )}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-600 hover:underline block"
-                              >
-                                {contact.street && (
-                                  <div className="whitespace-nowrap">
-                                    {contact.street} {contact.house_number}
-                                  </div>
-                                )}
-                                {contact.city && (
-                                  <div className="whitespace-nowrap">
-                                    {contact.postal_code} {contact.city}
-                                  </div>
-                                )}
-                              </a>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {contact.category && <Badge variant="outline">{contact.category}</Badge>}
-                            {contact.ai_extracted && (
-                              <Badge variant="secondary" className="ml-2">
-                                KI
-                              </Badge>
-                            )}
-                          </TableCell>
+                            </TableCell>
+                          )}
+                          {visibleColumns.category && (
+                            <TableCell>
+                              {contact.category && <Badge variant="outline">{contact.category}</Badge>}
+                              {contact.ai_extracted && (
+                                <Badge variant="secondary" className="ml-2">
+                                  KI
+                                </Badge>
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
                               <Button

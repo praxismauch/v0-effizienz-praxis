@@ -21,7 +21,7 @@ export function SkillsGridView({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {skills.map((skill) => (
-        <Card key={skill.id} className="hover:shadow-md transition-shadow">
+        <Card key={skill.id} className="group hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
@@ -30,7 +30,7 @@ export function SkillsGridView({
                 </div>
                 <CardTitle className="text-base line-clamp-1">{skill.name}</CardTitle>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -42,7 +42,7 @@ export function SkillsGridView({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
                   onClick={() => onDeleteSkill(skill)}
                 >
                   <Trash2 className="h-4 w-4" />

@@ -1,5 +1,19 @@
-import { generateText, Output } from "ai"
+import { generateObject } from "ai"
 import { z } from "zod"
+
+const contactResultSchema = z.object({
+  results: z.array(z.object({
+    id: z.string().describe("Eindeutige ID"),
+    name: z.string().describe("Name der Person oder Einrichtung"),
+    company: z.string().nullable().describe("Firmenname oder Praxisname"),
+    specialty: z.string().nullable().describe("Fachrichtung oder Spezialisierung"),
+    address: z.string().nullable().describe("Vollständige Adresse"),
+    phone: z.string().nullable().describe("Telefonnummer"),
+    email: z.string().nullable().describe("E-Mail-Adresse"),
+    website: z.string().nullable().describe("Website URL"),
+    distance: z.string().nullable().describe("Entfernung vom Standort, z.B. '5.2 km'"),
+  })),
+})
 
 export async function POST(request: Request) {
   try {
@@ -32,27 +46,13 @@ Die Adressen sollten plausibel für die angegebene Region sein.
 
 WICHTIG: Dies sind simulierte Kontakte für Demonstrationszwecke. In einer Produktionsumgebung würde hier eine echte Datenbanksuche oder API-Anbindung stattfinden.`
 
-    const result = await generateText({
+    const result = await generateObject({
       model: "openai/gpt-4o-mini",
       prompt,
-      output: Output.object({
-        schema: z.object({
-          results: z.array(z.object({
-            id: z.string().describe("Eindeutige ID"),
-            name: z.string().describe("Name der Person oder Einrichtung"),
-            company: z.string().nullable().describe("Firmenname oder Praxisname"),
-            specialty: z.string().nullable().describe("Fachrichtung oder Spezialisierung"),
-            address: z.string().nullable().describe("Vollständige Adresse"),
-            phone: z.string().nullable().describe("Telefonnummer"),
-            email: z.string().nullable().describe("E-Mail-Adresse"),
-            website: z.string().nullable().describe("Website URL"),
-            distance: z.string().nullable().describe("Entfernung vom Standort, z.B. '5.2 km'"),
-          })),
-        }),
-      }),
+      schema: contactResultSchema,
     })
 
-    return Response.json(result.output)
+    return Response.json(result.object)
   } catch (error: any) {
     console.error("[AI Search Error]", error)
     return Response.json(

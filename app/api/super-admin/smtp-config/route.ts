@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createAdminClient } from "@/lib/supabase/server"
+import { encrypt } from "@/lib/encryption"
 
 export async function GET() {
   await cookies()
@@ -52,15 +53,6 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { protocol, host, port, username, password, secure, emailSignature } = body
 
-    console.log("[v0] SMTP config save request:", {
-      protocol,
-      host,
-      port,
-      username,
-      secure,
-      hasSignature: !!emailSignature,
-    })
-
     // Only save if at least one field has a value
     if (!host && !username && !password && !emailSignature) {
       return NextResponse.json({
@@ -71,12 +63,15 @@ export async function POST(request: Request) {
 
     const { data: existingSettings } = await supabase.from("smtp_settings").select("id").limit(1).maybeSingle()
 
+    // Encrypt password before storing
+    const encryptedPassword = password ? await encrypt(password) : ""
+
     const settingsData = {
       protocol: protocol || "smtp",
       host: host || "",
       port: port || "587",
       username: username || "",
-      password_encrypted: password || "", // TODO: Add encryption in production
+      password_encrypted: encryptedPassword,
       use_ssl: secure || false,
       use_tls: secure || false,
       email_signature: emailSignature || "",
@@ -87,18 +82,18 @@ export async function POST(request: Request) {
 
     if (existingSettings) {
       // Update existing settings
-      console.log("[v0] Updating existing SMTP settings with ID:", existingSettings.id)
+      // Updating existing SMTP settings
       const result = await supabase.from("smtp_settings").update(settingsData).eq("id", existingSettings.id)
       error = result.error
     } else {
       // Insert new settings
-      console.log("[v0] Inserting new SMTP settings")
+      // Inserting new SMTP settings
       const result = await supabase.from("smtp_settings").insert(settingsData)
       error = result.error
     }
 
     if (error) {
-      console.error("[v0] Error saving SMTP settings:", error)
+      console.error("Error saving SMTP settings:", error)
       return NextResponse.json(
         {
           error: "Failed to save SMTP settings",
@@ -108,10 +103,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log("[v0] SMTP settings saved successfully")
+    
     return NextResponse.json({ success: true, message: "SMTP-Konfiguration erfolgreich gespeichert" })
   } catch (error) {
-    console.error("[v0] Error saving SMTP config:", error)
+    console.error("Error saving SMTP config:", error)
     return NextResponse.json(
       {
         error: "Failed to save SMTP config",

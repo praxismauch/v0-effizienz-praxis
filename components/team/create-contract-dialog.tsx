@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { usePractice } from "@/contexts/practice-context"
-import { Upload, X, FileText, Calculator, Palmtree } from "lucide-react"
-import { put } from "@vercel/blob"
+import { Upload, X, FileText, Calculator, Palmtree, Sun, Coins, Plus, Trash2 } from "lucide-react"
+
 import { Card, CardContent } from "@/components/ui/card"
 
 interface CreateContractDialogProps {
@@ -37,6 +37,14 @@ function CreateContractDialog({
   const [isInfinite, setIsInfinite] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  interface AdditionalPayment {
+    id: string
+    name: string
+    amount: string
+    frequency: "monthly" | "yearly" | "one-time"
+  }
+
+  const [additionalPayments, setAdditionalPayments] = useState<AdditionalPayment[]>([])
   const [formData, setFormData] = useState({
     contract_type: "full-time",
     start_date: "",
@@ -49,6 +57,7 @@ function CreateContractDialog({
     bonus_employee_discussion: "5",
     notes: "",
     has_13th_salary: false,
+    vacation_bonus: "",
     holiday_days_fulltime: "30",
     working_days_fulltime: "5",
   })
@@ -140,6 +149,15 @@ function CreateContractDialog({
           bonus_employee_discussion: formData.bonus_employee_discussion
             ? Number.parseFloat(formData.bonus_employee_discussion)
             : null,
+          vacation_bonus: formData.vacation_bonus ? Number.parseFloat(formData.vacation_bonus) : null,
+          additional_payments: additionalPayments.length > 0 
+            ? additionalPayments.map(p => ({
+                id: p.id,
+                name: p.name,
+                amount: Number.parseFloat(p.amount) || 0,
+                frequency: p.frequency
+              }))
+            : null,
           holiday_days_fulltime: formData.holiday_days_fulltime ? Number.parseInt(formData.holiday_days_fulltime) : 30,
           working_days_fulltime: formData.working_days_fulltime ? Number.parseInt(formData.working_days_fulltime) : 5,
         }),
@@ -150,18 +168,32 @@ function CreateContractDialog({
 
         if (uploadedFiles.length > 0) {
           for (const file of uploadedFiles) {
-            const blob = await put(`contracts/${newContract.id}/${file.name}`, file, {
-              access: "public",
+            // Upload file via unified server-side API
+            const uploadFormData = new FormData()
+            uploadFormData.append("file", file)
+            uploadFormData.append("type", "general")
+            uploadFormData.append("practiceId", currentPractice.id)
+            
+            const uploadRes = await fetch("/api/upload/unified", {
+              method: "POST",
+              body: uploadFormData,
             })
+            
+            if (!uploadRes.ok) {
+              console.error("File upload failed:", await uploadRes.text())
+              continue
+            }
+            
+            const blob = await uploadRes.json()
 
             await fetch(`/api/practices/${currentPractice.id}/contracts/${newContract.id}/files`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                file_name: file.name,
+                file_name: blob.fileName || file.name,
                 file_url: blob.url,
-                file_size: file.size,
-                file_type: file.type,
+                file_size: blob.fileSize || file.size,
+                file_type: blob.fileType || file.type,
               }),
             })
           }
@@ -180,11 +212,13 @@ function CreateContractDialog({
           bonus_employee_discussion: "5",
           notes: "",
           has_13th_salary: false,
+          vacation_bonus: "",
           holiday_days_fulltime: "30",
           working_days_fulltime: "5",
         })
         setIsInfinite(false)
         setUploadedFiles([])
+        setAdditionalPayments([])
       }
     } catch (error) {
       console.error("Error creating contract:", error)
@@ -326,7 +360,7 @@ function CreateContractDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="salary">Gehalt</Label>
+              <Label htmlFor="salary">Gehalt (monatlich)</Label>
               <Input
                 id="salary"
                 type="number"
@@ -335,6 +369,11 @@ function CreateContractDialog({
                 value={formData.salary}
                 onChange={(e) => setFormData((prev) => ({ ...prev, salary: e.target.value }))}
               />
+              {formData.salary && formData.hours_per_week && (
+                <p className="text-xs text-muted-foreground">
+                  Stundenlohn: {((Number(formData.salary) / (Number(formData.hours_per_week) * 4.33)).toFixed(2))} {formData.salary_currency}/h
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -407,6 +446,115 @@ function CreateContractDialog({
               </Label>
             </div>
           </div>
+
+          {/* Urlaubsgeld & Zusatzzahlungen - Collapsed Section */}
+          <details className="border rounded-lg">
+            <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+              <Sun className="h-4 w-4" />
+              Urlaubsgeld & Zusatzzahlungen
+              {(formData.vacation_bonus || additionalPayments.length > 0) && (
+                <span className="ml-auto text-xs bg-muted px-2 py-0.5 rounded">
+                  {[formData.vacation_bonus && "Urlaubsgeld", additionalPayments.length > 0 && `${additionalPayments.length} Zusatzzahlung(en)`].filter(Boolean).join(", ")}
+                </span>
+              )}
+            </summary>
+            <div className="px-4 pb-4 space-y-4 border-t pt-4">
+              {/* Urlaubsgeld */}
+              <div className="space-y-2">
+                <Label htmlFor="vacation_bonus" className="text-sm flex items-center gap-2">
+                  <Sun className="h-4 w-4 text-orange-500" />
+                  Urlaubsgeld (jährlich)
+                </Label>
+                <Input
+                  id="vacation_bonus"
+                  type="number"
+                  step="0.01"
+                  placeholder="z.B. 500.00"
+                  value={formData.vacation_bonus}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, vacation_bonus: e.target.value }))}
+                />
+              </div>
+
+              {/* Zusatzzahlungen */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-2">
+                    <Coins className="h-4 w-4 text-purple-500" />
+                    Zusatzzahlungen
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAdditionalPayments((prev) => [
+                      ...prev,
+                      { id: crypto.randomUUID(), name: "", amount: "", frequency: "monthly" }
+                    ])}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Hinzufügen
+                  </Button>
+                </div>
+                
+                {additionalPayments.length > 0 && (
+                  <div className="space-y-2">
+                    {additionalPayments.map((payment, index) => (
+                      <div key={payment.id} className="flex gap-2 items-center">
+                        <Input
+                          placeholder="Name"
+                          value={payment.name}
+                          onChange={(e) => {
+                            const updated = [...additionalPayments]
+                            updated[index].name = e.target.value
+                            setAdditionalPayments(updated)
+                          }}
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Betrag"
+                          value={payment.amount}
+                          onChange={(e) => {
+                            const updated = [...additionalPayments]
+                            updated[index].amount = e.target.value
+                            setAdditionalPayments(updated)
+                          }}
+                          className="w-24"
+                        />
+                        <Select
+                          value={payment.frequency}
+                          onValueChange={(value: "monthly" | "yearly" | "one-time") => {
+                            const updated = [...additionalPayments]
+                            updated[index].frequency = value
+                            setAdditionalPayments(updated)
+                          }}
+                        >
+                          <SelectTrigger className="w-28">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monthly">Monatlich</SelectItem>
+                            <SelectItem value="yearly">Jährlich</SelectItem>
+                            <SelectItem value="one-time">Einmalig</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setAdditionalPayments((prev) => prev.filter((_, i) => i !== index))}
+                          className="text-destructive hover:text-destructive h-8 w-8"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </details>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notizen (optional)</Label>

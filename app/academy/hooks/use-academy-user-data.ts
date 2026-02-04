@@ -10,7 +10,7 @@ interface UseAcademyProps {
   hasPractice: boolean
 }
 
-export function useAcademy({ practiceId, userId, isAuthenticated, hasPractice }: UseAcademyProps) {
+export function useAcademyUserData({ practiceId, userId, isAuthenticated, hasPractice }: UseAcademyProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [userStats, setUserStats] = useState<UserStats | null>(null)

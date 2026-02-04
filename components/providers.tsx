@@ -14,6 +14,7 @@ import { SidebarSettingsProvider } from "@/contexts/sidebar-settings-context"
 import RoutePersistence from "@/components/route-persistence"
 import GlobalDragPrevention from "@/components/global-drag-prevention"
 import { SWRConfig } from "swr"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 const PUBLIC_ROUTES = [
   "/",
@@ -96,9 +97,11 @@ export function Providers({
                   <CalendarProvider>
                     <WorkflowProvider>
                       <AnalyticsDataProvider>
-                        <RoutePersistence />
-                        <GlobalDragPrevention />
-                        {children}
+                        <ErrorBoundary>
+                          <RoutePersistence />
+                          <GlobalDragPrevention />
+                          {children}
+                        </ErrorBoundary>
                       </AnalyticsDataProvider>
                     </WorkflowProvider>
                   </CalendarProvider>

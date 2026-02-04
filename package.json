@@ -23,6 +23,7 @@
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
     "@emotion/is-prop-valid": "latest",
+    "@eslint/eslintrc": "^3.3.3",
     "@fal-ai/client": "1.7.2",
     "@fal-ai/serverless-client": "0.15.0",
     "@hello-pangea/dnd": "^16.6.0",

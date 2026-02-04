@@ -11,9 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { usePractice } from "@/contexts/practice-context"
-import { Upload, X, FileText, Trash2, Download, Eye, Calculator, Palmtree } from "lucide-react"
-import { put } from "@vercel/blob"
+import { Upload, X, FileText, Trash2, Download, Eye, Calculator, Palmtree, Sun, Coins, Plus } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+
 import { Card, CardContent } from "@/components/ui/card"
+
+interface AdditionalPayment {
+  id: string
+  name: string
+  amount: number | string
+  frequency: "monthly" | "yearly" | "one-time"
+}
 
 interface Contract {
   id: string
@@ -30,6 +38,8 @@ interface Contract {
   notes: string | null
   is_active: boolean
   has_13th_salary?: boolean
+  vacation_bonus?: number | null
+  additional_payments?: AdditionalPayment[]
   holiday_days_fulltime?: number
   working_days_fulltime?: number
 }
@@ -50,6 +60,12 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
   const [existingFiles, setExistingFiles] = useState<any[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [previewFile, setPreviewFile] = useState<any | null>(null)
+  const [additionalPayments, setAdditionalPayments] = useState<AdditionalPayment[]>(
+    contract.additional_payments?.map(p => ({
+      ...p,
+      amount: p.amount?.toString() || ""
+    })) || []
+  )
   const [formData, setFormData] = useState({
     contract_type: contract.contract_type,
     start_date: contract.start_date,
@@ -62,6 +78,7 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
     bonus_employee_discussion: contract.bonus_employee_discussion?.toString() || "",
     notes: contract.notes || "",
     has_13th_salary: contract.has_13th_salary || false,
+    vacation_bonus: contract.vacation_bonus?.toString() || "",
     holiday_days_fulltime: contract.holiday_days_fulltime?.toString() || "30",
     working_days_fulltime: contract.working_days_fulltime?.toString() || "5",
   })
@@ -155,6 +172,8 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
 
     setLoading(true)
     try {
+      
+      
       const res = await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -169,39 +188,118 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
             ? Number.parseFloat(formData.bonus_employee_discussion)
             : null,
           has_13th_salary: formData.has_13th_salary,
+          vacation_bonus: formData.vacation_bonus ? Number.parseFloat(formData.vacation_bonus) : null,
+          additional_payments: additionalPayments.length > 0 
+            ? additionalPayments.map(p => ({
+                id: p.id,
+                name: p.name,
+                amount: Number.parseFloat(p.amount as string) || 0,
+                frequency: p.frequency
+              }))
+            : null,
           holiday_days_fulltime: formData.holiday_days_fulltime ? Number.parseInt(formData.holiday_days_fulltime) : 30,
           working_days_fulltime: formData.working_days_fulltime ? Number.parseInt(formData.working_days_fulltime) : 5,
         }),
       })
 
-      if (res.ok) {
-        const updatedContract = await res.json()
+      
 
-        // Upload new files
+      if (!res.ok) {
+        const errorText = await res.text()
+        
+        toast({
+          title: "Fehler beim Speichern",
+          description: errorText || "Vertrag konnte nicht aktualisiert werden",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      const updatedContract = await res.json()
+      
+
+        // Upload new files using server-side API
         if (uploadedFiles.length > 0) {
           for (const file of uploadedFiles) {
-            const blob = await put(`contracts/${contract.id}/${file.name}`, file, {
-              access: "public",
-            })
+            try {
+              
+              
+              // Upload file via unified server-side API
+              const uploadFormData = new FormData()
+              uploadFormData.append("file", file)
+              uploadFormData.append("type", "general")
+              uploadFormData.append("practiceId", currentPractice.id)
+              
+              const uploadRes = await fetch("/api/upload/unified", {
+                method: "POST",
+                body: uploadFormData,
+              })
+              
+              
+              
+              if (!uploadRes.ok) {
+                const errorText = await uploadRes.text()
+                
+                toast({
+                  title: "Datei-Upload fehlgeschlagen",
+                  description: errorText || "Unbekannter Fehler beim Hochladen",
+                  variant: "destructive",
+                })
+                continue
+              }
+              
+              const blob = await uploadRes.json()
+              
+              // Check if blob has required properties
+              if (!blob.url) {
+                toast({
+                  title: "Upload-Fehler",
+                  description: blob.error || "Datei konnte nicht hochgeladen werden",
+                  variant: "destructive",
+                })
+                continue
+              }
 
-            await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}/files`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                file_name: file.name,
-                file_url: blob.url,
-                file_size: file.size,
-                file_type: file.type,
-              }),
-            })
+              const fileRes = await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}/files`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  file_name: blob.fileName || file.name,
+                  file_url: blob.url,
+                  file_size: blob.fileSize || file.size,
+                  file_type: blob.fileType || file.type,
+                }),
+              })
+              
+              if (!fileRes.ok) {
+                // File record save failed - table may not exist
+              }
+            } catch (uploadError) {
+              
+              toast({
+                title: "Upload-Fehler",
+                description: "Ein Fehler ist beim Hochladen aufgetreten",
+                variant: "destructive",
+              })
+            }
           }
         }
 
         onContractUpdated(updatedContract)
-        setUploadedFiles([])
-      }
-    } catch (error) {
-      console.error("Error updating contract:", error)
+      setUploadedFiles([])
+      
+      toast({
+        title: "Erfolgreich gespeichert",
+        description: "Vertrag wurde aktualisiert",
+      })
+    } catch (error: any) {
+      const errorMessage = error?.message || String(error) || "Ein unerwarteter Fehler ist aufgetreten"
+      toast({
+        title: "Fehler",
+        description: errorMessage,
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -340,7 +438,7 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="salary">Gehalt</Label>
+              <Label htmlFor="salary">Gehalt (monatlich)</Label>
               <Input
                 id="salary"
                 type="number"
@@ -349,6 +447,11 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
                 value={formData.salary}
                 onChange={(e) => setFormData((prev) => ({ ...prev, salary: e.target.value }))}
               />
+              {formData.salary && formData.hours_per_week && (
+                <p className="text-xs text-muted-foreground">
+                  Stundenlohn: {((Number(formData.salary) / (Number(formData.hours_per_week) * 4.33)).toFixed(2))} {formData.salary_currency}/h
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -421,6 +524,115 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
               </Label>
             </div>
           </div>
+
+          {/* Urlaubsgeld & Zusatzzahlungen - Collapsed Section */}
+          <details className="border rounded-lg">
+            <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+              <Sun className="h-4 w-4" />
+              Urlaubsgeld & Zusatzzahlungen
+              {(formData.vacation_bonus || additionalPayments.length > 0) && (
+                <span className="ml-auto text-xs bg-muted px-2 py-0.5 rounded">
+                  {[formData.vacation_bonus && "Urlaubsgeld", additionalPayments.length > 0 && `${additionalPayments.length} Zusatzzahlung(en)`].filter(Boolean).join(", ")}
+                </span>
+              )}
+            </summary>
+            <div className="px-4 pb-4 space-y-4 border-t pt-4">
+              {/* Urlaubsgeld */}
+              <div className="space-y-2">
+                <Label htmlFor="vacation_bonus_edit" className="text-sm flex items-center gap-2">
+                  <Sun className="h-4 w-4 text-orange-500" />
+                  Urlaubsgeld (jährlich)
+                </Label>
+                <Input
+                  id="vacation_bonus_edit"
+                  type="number"
+                  step="0.01"
+                  placeholder="z.B. 500.00"
+                  value={formData.vacation_bonus}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, vacation_bonus: e.target.value }))}
+                />
+              </div>
+
+              {/* Zusatzzahlungen */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-2">
+                    <Coins className="h-4 w-4 text-purple-500" />
+                    Zusatzzahlungen
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAdditionalPayments((prev) => [
+                      ...prev,
+                      { id: crypto.randomUUID(), name: "", amount: "", frequency: "monthly" }
+                    ])}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Hinzufügen
+                  </Button>
+                </div>
+                
+                {additionalPayments.length > 0 && (
+                  <div className="space-y-2">
+                    {additionalPayments.map((payment, index) => (
+                      <div key={payment.id} className="flex gap-2 items-center">
+                        <Input
+                          placeholder="Name"
+                          value={payment.name}
+                          onChange={(e) => {
+                            const updated = [...additionalPayments]
+                            updated[index].name = e.target.value
+                            setAdditionalPayments(updated)
+                          }}
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Betrag"
+                          value={payment.amount}
+                          onChange={(e) => {
+                            const updated = [...additionalPayments]
+                            updated[index].amount = e.target.value
+                            setAdditionalPayments(updated)
+                          }}
+                          className="w-24"
+                        />
+                        <Select
+                          value={payment.frequency}
+                          onValueChange={(value: "monthly" | "yearly" | "one-time") => {
+                            const updated = [...additionalPayments]
+                            updated[index].frequency = value
+                            setAdditionalPayments(updated)
+                          }}
+                        >
+                          <SelectTrigger className="w-28">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monthly">Monatlich</SelectItem>
+                            <SelectItem value="yearly">Jährlich</SelectItem>
+                            <SelectItem value="one-time">Einmalig</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setAdditionalPayments((prev) => prev.filter((_, i) => i !== index))}
+                          className="text-destructive hover:text-destructive h-8 w-8"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </details>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notizen (optional)</Label>

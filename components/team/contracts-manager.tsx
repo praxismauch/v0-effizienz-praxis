@@ -4,12 +4,21 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Calendar, Edit, Trash2, Infinity, TrendingUp, FileText, Download, Eye, Palmtree } from "lucide-react"
+import { Plus, Calendar, Edit, Trash2, Infinity, TrendingUp, FileText, Download, Eye, Palmtree, Sun, Coins } from "lucide-react"
 import { usePractice } from "@/contexts/practice-context"
 import { CreateContractDialog } from "@/components/team/create-contract-dialog"
 import { EditContractDialog } from "@/components/team/edit-contract-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/hooks/use-toast"
+
+interface AdditionalPayment {
+  id: string
+  name: string
+  amount: number
+  frequency: "monthly" | "yearly" | "one-time"
+}
 
 interface Contract {
   id: string
@@ -28,6 +37,8 @@ interface Contract {
   created_at: string
   updated_at: string
   has_13th_salary?: boolean
+  vacation_bonus?: number | null
+  additional_payments?: AdditionalPayment[]
   holiday_days_fulltime?: number
   working_days_fulltime?: number
 }
@@ -71,14 +82,46 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
   }, [effectivePracticeId, memberId])
 
   useEffect(() => {
-    if (contracts.length > 0 && effectivePracticeId) {
-      contracts.forEach(async (contract) => {
-        const res = await fetch(`/api/practices/${effectivePracticeId}/contracts/${contract.id}/files`)
-        if (res.ok) {
-          const files = await res.json()
-          setContractFiles((prev) => ({ ...prev, [contract.id]: files }))
-        }
-      })
+    if (contracts.length === 0 || !effectivePracticeId) return
+    
+    let isCancelled = false
+    const controller = new AbortController()
+    
+    const loadAllFiles = async () => {
+      // Fetch all contract files in parallel (limited by browser connection pool)
+      const results = await Promise.allSettled(
+        contracts.map(async (contract) => {
+          try {
+            const res = await fetch(
+              `/api/practices/${effectivePracticeId}/contracts/${contract.id}/files`,
+              { signal: controller.signal }
+            )
+            if (res.ok) {
+              return { contractId: contract.id, files: await res.json() }
+            }
+            return { contractId: contract.id, files: [] }
+          } catch {
+            return { contractId: contract.id, files: [] }
+          }
+        })
+      )
+      
+      if (!isCancelled) {
+        const filesMap: Record<string, any[]> = {}
+        results.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            filesMap[result.value.contractId] = result.value.files
+          }
+        })
+        setContractFiles(filesMap)
+      }
+    }
+    
+    loadAllFiles()
+    
+    return () => {
+      isCancelled = true
+      controller.abort()
     }
   }, [contracts, effectivePracticeId])
 
@@ -117,8 +160,79 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
   }
 
   const handleContractCreated = (newContract: Contract) => {
-    setContracts((prev) => [newContract, ...prev])
+    // If new contract is active, deactivate others
+    if (newContract.is_active) {
+      setContracts((prev) => [newContract, ...prev.map(c => ({ ...c, is_active: false }))])
+    } else {
+      setContracts((prev) => [newContract, ...prev])
+    }
     setShowCreateDialog(false)
+  }
+
+  const handleStatusChange = async (contractId: string, newStatus: "active" | "inactive") => {
+    if (!effectivePracticeId) return
+
+    try {
+      const isActive = newStatus === "active"
+      
+      // Update the contract status
+      const res = await fetch(`/api/practices/${effectivePracticeId}/contracts/${contractId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: isActive }),
+      })
+
+      if (!res.ok) {
+        toast({
+          title: "Fehler",
+          description: "Status konnte nicht geändert werden",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // If activating this contract, deactivate all others
+      if (isActive) {
+        // Deactivate all other contracts
+        const otherContracts = contracts.filter(c => c.id !== contractId && c.is_active)
+        await Promise.all(
+          otherContracts.map(c =>
+            fetch(`/api/practices/${effectivePracticeId}/contracts/${c.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ is_active: false }),
+            })
+          )
+        )
+        
+        // Update local state - activate this one, deactivate others
+        setContracts((prev) =>
+          prev.map((c) => ({
+            ...c,
+            is_active: c.id === contractId,
+          }))
+        )
+      } else {
+        // Just deactivate this contract
+        setContracts((prev) =>
+          prev.map((c) =>
+            c.id === contractId ? { ...c, is_active: false } : c
+          )
+        )
+      }
+
+      toast({
+        title: "Status geändert",
+        description: isActive ? "Vertrag ist jetzt aktiv" : "Vertrag ist jetzt inaktiv",
+      })
+    } catch (error) {
+      console.error("Error changing contract status:", error)
+      toast({
+        title: "Fehler",
+        description: "Status konnte nicht geändert werden",
+        variant: "destructive",
+      })
+    }
   }
 
   const calculateHourlyRate = (contract: Contract): number | null => {
@@ -227,14 +341,25 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge variant={active ? "default" : "secondary"}>
+                      <Badge variant={contract.is_active ? "default" : "secondary"}>
                         {getContractTypeLabel(contract.contract_type)}
                       </Badge>
-                      {active && (
-                        <Badge variant="outline" className="text-green-600 border-green-600">
-                          Aktiv
-                        </Badge>
-                      )}
+                      <Select
+                        value={contract.is_active ? "active" : "inactive"}
+                        onValueChange={(value: "active" | "inactive") => handleStatusChange(contract.id, value)}
+                      >
+                        <SelectTrigger className={`w-[100px] h-7 text-xs ${contract.is_active ? "text-green-600 border-green-600" : "text-muted-foreground"}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active" className="text-green-600">
+                            Aktiv
+                          </SelectItem>
+                          <SelectItem value="inactive" className="text-muted-foreground">
+                            Inaktiv
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                       {!contract.end_date && (
                         <Badge variant="outline" className="text-blue-600 border-blue-600">
                           <Infinity className="h-3 w-3 mr-1" />
@@ -297,7 +422,8 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                   {(contract.bonus_personal_goal ||
                     contract.bonus_practice_goal ||
                     contract.bonus_employee_discussion ||
-                    contract.has_13th_salary) && (
+                    contract.has_13th_salary ||
+                    contract.vacation_bonus) && (
                     <div className="mt-3 pt-3 border-t">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                         <TrendingUp className="h-3 w-3" />
@@ -318,6 +444,31 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                             13. Gehalt
                           </Badge>
                         )}
+                        {contract.vacation_bonus && (
+                          <Badge variant="outline" className="text-orange-600 border-orange-600">
+                            <Sun className="h-3 w-3 mr-1" />
+                            Urlaubsgeld: {contract.vacation_bonus.toLocaleString("de-DE")} {contract.salary_currency}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {contract.additional_payments && contract.additional_payments.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                        <Coins className="h-3 w-3" />
+                        Zusatzzahlungen
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {contract.additional_payments.map((payment) => (
+                          <Badge key={payment.id} variant="outline" className="text-purple-600 border-purple-600">
+                            {payment.name}: {payment.amount.toLocaleString("de-DE")} {contract.salary_currency}
+                            {payment.frequency === "monthly" && "/Monat"}
+                            {payment.frequency === "yearly" && "/Jahr"}
+                            {payment.frequency === "one-time" && " (einmalig)"}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                   )}

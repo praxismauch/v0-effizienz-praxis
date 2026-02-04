@@ -17,10 +17,21 @@ export async function GET(
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
-    if (error) throw error
+    // If table doesn't exist, return empty array gracefully
+    if (error) {
+      if (error.code === 'PGRST205' || error.message?.includes('contract_files')) {
+        // Table doesn't exist yet - return empty array
+        return NextResponse.json([])
+      }
+      throw error
+    }
 
     return NextResponse.json(files || [])
   } catch (error: any) {
+    // Return empty array for missing table - don't log as error
+    if (error.code === 'PGRST205' || error.message?.includes('contract_files')) {
+      return NextResponse.json([])
+    }
     console.error("Error fetching contract files:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -53,10 +64,24 @@ export async function POST(
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      // If table doesn't exist, return a message
+      if (error.code === 'PGRST205' || error.message?.includes('contract_files')) {
+        return NextResponse.json({ 
+          error: "Datei-Upload ist derzeit nicht verfügbar. Die Tabelle 'contract_files' muss erst erstellt werden." 
+        }, { status: 503 })
+      }
+      throw error
+    }
 
     return NextResponse.json(file)
   } catch (error: any) {
+    // Return graceful error for missing table - don't log as error
+    if (error.code === 'PGRST205' || error.message?.includes('contract_files')) {
+      return NextResponse.json({ 
+        error: "Datei-Upload ist derzeit nicht verfügbar" 
+      }, { status: 503 })
+    }
     console.error("Error creating contract file:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

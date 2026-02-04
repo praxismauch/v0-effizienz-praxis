@@ -30,7 +30,7 @@ import {
 } from "lucide-react"
 import { format, addDays, differenceInDays } from "date-fns"
 import { de } from "date-fns/locale"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 
 interface DeviceSensor {

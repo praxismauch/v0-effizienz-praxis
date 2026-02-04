@@ -18,15 +18,18 @@ export async function POST(request: NextRequest) {
       const prompt = `Du bist ein Experte für Produktentwicklung und Feature-Planung für medizinische Praxismanagement-Software.
 
 Kontext:
-- Software: Effizienz-Praxis - Eine umfassende Praxismanagement-Lösung
-- Bestehende Features: ${existingFeatures?.join(", ") || "KI-Analyse, Ziele, Workflows, Team-Management, Kalender, Dokumenten-Management"}
+- Software: Effizienz-Praxis - Eine umfassende Praxismanagement-Lösung für die Organisation und Verwaltung von Arztpraxen
+- WICHTIG: Diese Software ist KEINE Patientenverwaltung! Sie speichert KEINE Patientendaten.
+- Fokus der Software: Team-Management, Zeiterfassung, Zuständigkeiten, Geräte-/Arbeitsmittel-Management, QM-Handbuch, Dokumenten-Management, Aufgaben, Workflows, Kalender, KPIs und Praxisorganisation
+- Bestehende Features: ${existingFeatures?.join(", ") || "KI-Analyse, Ziele, Workflows, Team-Management, Kalender, Dokumenten-Management, Zeiterfassung, Zuständigkeiten, Geräte-Management"}
 ${focusArea ? `- Fokusbereich: ${focusArea}` : ""}
 ${context ? `- Zusätzlicher Kontext: ${context}` : ""}
 
 Erstelle 5-7 innovative Feature-Ideen für die Produkt-Roadmap. Jedes Feature sollte:
-1. Einen echten Mehrwert für Praxen bieten
+1. Einen echten Mehrwert für die Praxisorganisation bieten (NICHT für Patientenverwaltung)
 2. Technisch umsetzbar sein
 3. Sich von bestehenden Features unterscheiden oder diese sinnvoll erweitern
+4. KEINE Patientendaten oder Patientenmanagement-Features beinhalten
 
 Antworte ausschließlich mit einem JSON-Array in folgendem Format (ohne Markdown, nur reines JSON):
 [
@@ -54,50 +57,50 @@ Antworte ausschließlich mit einem JSON-Array in folgendem Format (ohne Markdown
     } catch (aiError) {
       console.error("[v0] AI generation failed, using fallback:", aiError)
 
-      // Intelligente Fallback-Daten
+      // Intelligente Fallback-Daten (keine Patientenverwaltungs-Features)
       featuresData = [
         {
-          title: "Sprachsteuerung für Dokumentation",
+          title: "Sprachsteuerung für QM-Dokumentation",
           description:
-            "Ermöglicht Ärzten, Patientennotizen und Dokumentation per Sprache zu erfassen. Nutzt fortschrittliche Spracherkennung für medizinische Fachbegriffe.",
+            "Ermöglicht das Erfassen von QM-Protokollen und Praxis-Dokumentation per Sprache. Nutzt fortschrittliche Spracherkennung für effiziente Eingabe.",
           priority: "high",
           effort: "high",
           impact: "high",
           category: "ai",
-          reasoning: "Spart erheblich Zeit bei der Dokumentation und verbessert die Work-Life-Balance der Ärzte.",
+          reasoning: "Spart erheblich Zeit bei der QM-Dokumentation und verbessert die Compliance.",
           suggestedQuarter: "Q2 2025",
         },
         {
-          title: "Automatische Recall-Management",
+          title: "Automatische Geräte-Wartungserinnerung",
           description:
-            "KI-gestützte Patientenwiedervorstellung mit automatischen Erinnerungen, optimierten Terminfenstern und Priorisierung nach medizinischer Dringlichkeit.",
+            "KI-gestützte Wartungsplanung für medizinische Geräte mit automatischen Erinnerungen und optimierten Wartungsfenstern.",
           priority: "high",
           effort: "medium",
           impact: "high",
           category: "automation",
-          reasoning: "Verbessert die Patientenversorgung und erhöht die Praxisauslastung.",
+          reasoning: "Vermeidet Ausfallzeiten und sichert die Compliance bei der Gerätewartung.",
           suggestedQuarter: "Q1 2025",
         },
         {
-          title: "Integriertes Patienten-Portal",
+          title: "Integriertes Team-Portal",
           description:
-            "Self-Service Portal für Patienten mit Terminbuchung, Dokumentenzugriff, Befundabruf und sicherem Messaging mit der Praxis.",
+            "Self-Service Portal für Mitarbeiter mit Urlaubsanträgen, Zeiterfassung, Dokumentenzugriff und interner Kommunikation.",
           priority: "medium",
           effort: "high",
           impact: "high",
           category: "communication",
-          reasoning: "Reduziert Telefonanrufe und verbessert die Patientenzufriedenheit erheblich.",
+          reasoning: "Reduziert Verwaltungsaufwand und verbessert die interne Kommunikation.",
           suggestedQuarter: "Q3 2025",
         },
         {
-          title: "KI-Abrechnungsoptimierung",
+          title: "KI-Schichtplanung",
           description:
-            "Analysiert Behandlungsdokumentation und schlägt passende Abrechnungsziffern vor. Erkennt fehlende oder suboptimale Abrechnungen.",
+            "Analysiert Teamverfügbarkeit, Qualifikationen und Präferenzen und erstellt optimale Dienstpläne automatisch.",
           priority: "high",
           effort: "medium",
           impact: "high",
           category: "ai",
-          reasoning: "Kann den Praxisumsatz um 10-15% steigern ohne zusätzlichen Behandlungsaufwand.",
+          reasoning: "Kann die Planungszeit um 80% reduzieren und die Mitarbeiterzufriedenheit steigern.",
           suggestedQuarter: "Q2 2025",
         },
         {
@@ -112,25 +115,25 @@ Antworte ausschließlich mit einem JSON-Array in folgendem Format (ohne Markdown
           suggestedQuarter: "Q1 2025",
         },
         {
-          title: "Wartezeit-Prognose",
+          title: "Aufgaben-Automatisierung",
           description:
-            "Echtzeitberechnung und Anzeige der voraussichtlichen Wartezeit für Patienten, inkl. automatischer SMS-Benachrichtigung.",
+            "Automatische Erstellung wiederkehrender Aufgaben basierend auf QM-Vorgaben, Wartungsintervallen und Praxisabläufen.",
           priority: "medium",
           effort: "medium",
           impact: "medium",
-          category: "communication",
-          reasoning: "Verbessert die Patientenerfahrung und reduziert Frustration im Wartezimmer.",
+          category: "automation",
+          reasoning: "Reduziert manuellen Aufwand und stellt sicher, dass nichts vergessen wird.",
           suggestedQuarter: "Q2 2025",
         },
         {
           title: "Praxis-Benchmark Dashboard",
           description:
-            "Vergleich der eigenen Praxiskennzahlen mit anonymisierten Durchschnittswerten ähnlicher Praxen für bessere Einordnung der eigenen Performance.",
+            "Vergleich der eigenen Praxis-KPIs mit anonymisierten Durchschnittswerten für bessere Einordnung der eigenen Performance.",
           priority: "low",
           effort: "medium",
           impact: "medium",
           category: "analytics",
-          reasoning: "Hilft Praxen, ihre Position im Markt zu verstehen und Verbesserungspotenziale zu erkennen.",
+          reasoning: "Hilft Praxen, ihre Effizienz zu verstehen und Verbesserungspotenziale zu erkennen.",
           suggestedQuarter: "Q4 2025",
         },
       ]

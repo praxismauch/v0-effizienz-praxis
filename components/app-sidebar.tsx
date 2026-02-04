@@ -210,7 +210,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
                 const allItems = getAllNavItems()
                 const activeItem = allItems.find((item) => item.href === data.preferences.expanded_items.lastPath)
                 if (activeItem) {
-                  const navGroups = getNavigationGroups(isAdmin, isSuperAdmin, t)
+                  const navGroups = getNavigationGroups(t)
                   const activeGroup = navGroups.find((group) =>
                     group.items.some((item) => item.href === data.preferences.expanded_items.lastPath),
                   )

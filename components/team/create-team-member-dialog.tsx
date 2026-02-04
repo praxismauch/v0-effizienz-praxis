@@ -17,7 +17,7 @@ import { usePractice } from "@/contexts/practice-context"
 import { Loader2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import Logger from "@/lib/logger"
 
 interface CreateTeamMemberDialogProps {

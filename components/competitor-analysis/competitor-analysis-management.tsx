@@ -10,7 +10,7 @@ import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { CreateCompetitorAnalysisDialog } from "./create-competitor-analysis-dialog"
 import { EditCompetitorAnalysisDialog } from "./edit-competitor-analysis-dialog"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import {
   AlertDialog,
   AlertDialogAction,

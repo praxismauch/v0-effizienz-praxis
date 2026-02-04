@@ -99,7 +99,7 @@ export default function ArbeitsmittelPage() {
     return Array.isArray(data) ? data : []
   })
 
-  console.log("[v0] teamMembers data:", teamMembers)
+  
 
   const filteredItems = useMemo(() => {
     if (!arbeitsmittel) return []
@@ -330,8 +330,8 @@ export default function ArbeitsmittelPage() {
                       ) : (
                         filteredItems.map((item) => {
                           const Icon = typeIcons[item.type] || Package
-                          const assignedMember = item.assigned_to
-                            ? teamMembers.find((m) => m.id === item.assigned_to)
+                          const assignedMember = item.assigned_to && Array.isArray(teamMembers)
+                            ? teamMembers.find((m) => m.id === item.assigned_to || m.user_id === item.assigned_to)
                             : null
                           return (
                             <TableRow key={item.id}>

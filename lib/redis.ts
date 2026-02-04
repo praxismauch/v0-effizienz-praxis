@@ -10,15 +10,15 @@ let redis: Redis | null = null
 function getRedis(): Redis | null {
   if (redis) return redis
 
-  const url = process.env.KV_REST_API_URL
-  const token = process.env.KV_REST_API_TOKEN
-
-  if (!url || !token) {
-    console.warn("[v0] Redis not configured - KV_REST_API_URL or KV_REST_API_TOKEN missing")
-    return null
-  }
-
   try {
+    const url = typeof process !== "undefined" && process.env ? process.env.KV_REST_API_URL : undefined
+    const token = typeof process !== "undefined" && process.env ? process.env.KV_REST_API_TOKEN : undefined
+
+    if (!url || !token) {
+      console.warn("[v0] Redis not configured - KV_REST_API_URL or KV_REST_API_TOKEN missing")
+      return null
+    }
+
     redis = new Redis({ url, token })
     return redis
   } catch (error) {

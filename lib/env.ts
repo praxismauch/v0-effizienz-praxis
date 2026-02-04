@@ -96,10 +96,14 @@ export function getOptionalEnv(key: string, defaultValue?: string): string | und
  * Uses NEXT_PUBLIC_VERCEL_ENV for client compatibility
  */
 export function isProduction(): boolean {
-  if (typeof window !== "undefined") {
-    return process.env.NEXT_PUBLIC_VERCEL_ENV === "production"
+  try {
+    if (typeof window !== "undefined") {
+      return process.env.NEXT_PUBLIC_VERCEL_ENV === "production"
+    }
+    return process.env.NODE_ENV === "production"
+  } catch {
+    return false
   }
-  return process.env.NODE_ENV === "production"
 }
 
 /**
@@ -107,15 +111,21 @@ export function isProduction(): boolean {
  * Uses NEXT_PUBLIC_VERCEL_ENV for client compatibility
  */
 export function isDevelopment(): boolean {
-  if (typeof window !== "undefined") {
-    const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV
-    return !vercelEnv || vercelEnv === "development" || vercelEnv === "preview"
+  try {
+    if (typeof window !== "undefined") {
+      const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV
+      return !vercelEnv || vercelEnv === "development" || vercelEnv === "preview"
+    }
+    return process.env.NODE_ENV === "development"
+  } catch {
+    return true
   }
-  return process.env.NODE_ENV === "development"
 }
 
-export const IS_PRODUCTION = isProduction()
-export const IS_DEVELOPMENT = isDevelopment()
+// REMOVED: Module-level constant exports that cause TDZ errors
+// Use isProduction() and isDevelopment() functions instead
+// export const IS_PRODUCTION = isProduction()
+// export const IS_DEVELOPMENT = isDevelopment()
 
 /**
  * Get the app URL

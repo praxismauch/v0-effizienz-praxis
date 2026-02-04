@@ -360,7 +360,7 @@ function CreateContractDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="salary">Gehalt</Label>
+              <Label htmlFor="salary">Gehalt (monatlich)</Label>
               <Input
                 id="salary"
                 type="number"
@@ -369,6 +369,11 @@ function CreateContractDialog({
                 value={formData.salary}
                 onChange={(e) => setFormData((prev) => ({ ...prev, salary: e.target.value }))}
               />
+              {formData.salary && formData.hours_per_week && (
+                <p className="text-xs text-muted-foreground">
+                  Stundenlohn: {((Number(formData.salary) / (Number(formData.hours_per_week) * 4.33)).toFixed(2))} {formData.salary_currency}/h
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -442,15 +447,22 @@ function CreateContractDialog({
             </div>
           </div>
 
-          {/* Urlaubsgeld */}
-          <Card className="bg-orange-50 border-orange-200">
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Sun className="h-5 w-5 text-orange-600" />
-                <h4 className="font-medium text-orange-800">Urlaubsgeld</h4>
-              </div>
+          {/* Urlaubsgeld & Zusatzzahlungen - Collapsed Section */}
+          <details className="border rounded-lg">
+            <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
+              <Sun className="h-4 w-4" />
+              Urlaubsgeld & Zusatzzahlungen
+              {(formData.vacation_bonus || additionalPayments.length > 0) && (
+                <span className="ml-auto text-xs bg-muted px-2 py-0.5 rounded">
+                  {[formData.vacation_bonus && "Urlaubsgeld", additionalPayments.length > 0 && `${additionalPayments.length} Zusatzzahlung(en)`].filter(Boolean).join(", ")}
+                </span>
+              )}
+            </summary>
+            <div className="px-4 pb-4 space-y-4 border-t pt-4">
+              {/* Urlaubsgeld */}
               <div className="space-y-2">
-                <Label htmlFor="vacation_bonus" className="text-sm">
+                <Label htmlFor="vacation_bonus" className="text-sm flex items-center gap-2">
+                  <Sun className="h-4 w-4 text-orange-500" />
                   Urlaubsgeld (jährlich)
                 </Label>
                 <Input
@@ -460,58 +472,44 @@ function CreateContractDialog({
                   placeholder="z.B. 500.00"
                   value={formData.vacation_bonus}
                   onChange={(e) => setFormData((prev) => ({ ...prev, vacation_bonus: e.target.value }))}
-                  className="bg-white"
                 />
-                <p className="text-xs text-orange-600">
-                  Einmalzahlung pro Jahr, typischerweise im Sommer vor dem Urlaub
-                </p>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Zusatzzahlungen */}
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-purple-600" />
-                  <h4 className="font-medium text-purple-800">Zusatzzahlungen</h4>
+              {/* Zusatzzahlungen */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-2">
+                    <Coins className="h-4 w-4 text-purple-500" />
+                    Zusatzzahlungen
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAdditionalPayments((prev) => [
+                      ...prev,
+                      { id: crypto.randomUUID(), name: "", amount: "", frequency: "monthly" }
+                    ])}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Hinzufügen
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAdditionalPayments((prev) => [
-                    ...prev,
-                    { id: crypto.randomUUID(), name: "", amount: "", frequency: "monthly" }
-                  ])}
-                  className="text-purple-600 border-purple-300 hover:bg-purple-100"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Hinzufügen
-                </Button>
-              </div>
-              
-              {additionalPayments.length === 0 ? (
-                <p className="text-sm text-purple-600">
-                  Keine Zusatzzahlungen konfiguriert. Klicken Sie auf "Hinzufügen" um Zulagen wie Fahrtkosten, VWL, etc. hinzuzufügen.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {additionalPayments.map((payment, index) => (
-                    <div key={payment.id} className="flex gap-2 items-start p-3 bg-white rounded-lg border">
-                      <div className="flex-1 space-y-2">
+                
+                {additionalPayments.length > 0 && (
+                  <div className="space-y-2">
+                    {additionalPayments.map((payment, index) => (
+                      <div key={payment.id} className="flex gap-2 items-center">
                         <Input
-                          placeholder="Name (z.B. Fahrtkosten)"
+                          placeholder="Name"
                           value={payment.name}
                           onChange={(e) => {
                             const updated = [...additionalPayments]
                             updated[index].name = e.target.value
                             setAdditionalPayments(updated)
                           }}
+                          className="flex-1"
                         />
-                      </div>
-                      <div className="w-32">
                         <Input
                           type="number"
                           step="0.01"
@@ -522,9 +520,8 @@ function CreateContractDialog({
                             updated[index].amount = e.target.value
                             setAdditionalPayments(updated)
                           }}
+                          className="w-24"
                         />
-                      </div>
-                      <div className="w-32">
                         <Select
                           value={payment.frequency}
                           onValueChange={(value: "monthly" | "yearly" | "one-time") => {
@@ -533,7 +530,7 @@ function CreateContractDialog({
                             setAdditionalPayments(updated)
                           }}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-28">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -542,22 +539,22 @@ function CreateContractDialog({
                             <SelectItem value="one-time">Einmalig</SelectItem>
                           </SelectContent>
                         </Select>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setAdditionalPayments((prev) => prev.filter((_, i) => i !== index))}
+                          className="text-destructive hover:text-destructive h-8 w-8"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setAdditionalPayments((prev) => prev.filter((_, i) => i !== index))}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </details>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notizen (optional)</Label>

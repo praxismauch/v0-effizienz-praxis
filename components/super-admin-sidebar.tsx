@@ -1237,6 +1237,22 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           ))}
         </nav>
       </ScrollArea>
+
+      {/* Footer at bottom of sidebar */}
+      <div className={cn(
+        "mt-auto border-t border-slate-700/50 p-3",
+        collapsed ? "px-2" : "px-4"
+      )}>
+        {!collapsed ? (
+          <div className="text-center">
+            <p className="text-xs text-slate-500">&copy; {new Date().getFullYear()} Praxis Effizienz</p>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <Shield className="h-4 w-4 text-slate-500" />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

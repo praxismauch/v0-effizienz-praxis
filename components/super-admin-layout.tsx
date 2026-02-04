@@ -93,7 +93,12 @@ function SuperAdminLayoutInner({ children }: SuperAdminLayoutProps) {
 
           {/* Content - scrollable, full width with consistent padding */}
           <main className="flex-1 overflow-y-auto">
-            <div className="w-full h-full px-6 py-6">{children}</div>
+            <div className="w-full min-h-full flex flex-col">
+              <div className="flex-1 px-6 py-6">{children}</div>
+              <footer className="px-6 py-4 border-t bg-muted/30 text-center text-sm text-muted-foreground">
+                <p>&copy; {new Date().getFullYear()} Praxis Effizienz. Alle Rechte vorbehalten.</p>
+              </footer>
+            </div>
           </main>
         </div>
       </div>

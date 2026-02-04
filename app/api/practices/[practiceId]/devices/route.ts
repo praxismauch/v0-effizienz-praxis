@@ -4,27 +4,19 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] Devices API GET - practiceId:", practiceId)
     
     if (!practiceId) {
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
     const { adminClient, user } = await requirePracticeAccess(practiceId)
-    console.log("[v0] Devices API - user authenticated:", user?.id)
-
-    // Convert to number for INTEGER column comparison
-    const practiceIdNum = parseInt(practiceId, 10)
-    console.log("[v0] Devices API - practiceIdNum:", practiceIdNum)
     
     const { data: devices, error } = await adminClient
       .from("medical_devices")
       .select("*")
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .order("name", { ascending: true })
-
-    console.log("[v0] Devices API - query result:", { count: devices?.length, error: error?.message })
 
     if (error) {
       console.error("[v0] Error fetching devices:", error)
@@ -68,9 +60,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { user, adminClient } = await requirePracticeAccess(practiceId)
     const userId = user.id
 
-    // Convert to number for INTEGER column
-    const practiceIdNum = parseInt(practiceId, 10)
-
     const body = await request.json()
 
     // Calculate next maintenance date if interval is provided
@@ -92,7 +81,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data: device, error } = await adminClient
       .from("medical_devices")
       .insert({
-        practice_id: practiceIdNum,
+        practice_id: practiceId,
         name: deviceData.name,
         description: deviceData.description,
         category: deviceData.category,
@@ -141,7 +130,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const roomAssociations = room_ids.map((roomId: string) => ({
         device_id: device.id,
         room_id: roomId,
-        practice_id: practiceIdNum,
+        practice_id: practiceId,
         created_by: userId,
       }))
 

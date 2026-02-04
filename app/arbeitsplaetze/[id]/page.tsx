@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { SimpleRichTextEditor } from "@/components/arbeitsplaetze/simple-rich-text-editor"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -417,12 +417,10 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
             </div>
             <div>
               <Label htmlFor="content">Inhalt</Label>
-              <Textarea
-                id="content"
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              <SimpleRichTextEditor
+                content={formData.content}
+                onChange={(content) => setFormData({ ...formData, content })}
                 placeholder="Beschreiben Sie die Anweisung..."
-                rows={4}
               />
             </div>
           </div>
@@ -455,11 +453,10 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
             </div>
             <div>
               <Label htmlFor="edit-content">Inhalt</Label>
-              <Textarea
-                id="edit-content"
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={4}
+              <SimpleRichTextEditor
+                content={formData.content}
+                onChange={(content) => setFormData({ ...formData, content })}
+                placeholder="Beschreiben Sie die Anweisung..."
               />
             </div>
           </div>

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { usePractice } from "@/contexts/practice-context"
 import { Upload, X, FileText, Calculator, Palmtree, Sun, Coins, Plus, Trash2 } from "lucide-react"
-import { put } from "@vercel/blob"
+
 import { Card, CardContent } from "@/components/ui/card"
 
 interface CreateContractDialogProps {
@@ -168,18 +168,32 @@ function CreateContractDialog({
 
         if (uploadedFiles.length > 0) {
           for (const file of uploadedFiles) {
-            const blob = await put(`contracts/${newContract.id}/${file.name}`, file, {
-              access: "public",
+            // Upload file via unified server-side API
+            const uploadFormData = new FormData()
+            uploadFormData.append("file", file)
+            uploadFormData.append("type", "general")
+            uploadFormData.append("practiceId", currentPractice.id)
+            
+            const uploadRes = await fetch("/api/upload/unified", {
+              method: "POST",
+              body: uploadFormData,
             })
+            
+            if (!uploadRes.ok) {
+              console.error("File upload failed:", await uploadRes.text())
+              continue
+            }
+            
+            const blob = await uploadRes.json()
 
             await fetch(`/api/practices/${currentPractice.id}/contracts/${newContract.id}/files`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                file_name: file.name,
+                file_name: blob.fileName || file.name,
                 file_url: blob.url,
-                file_size: file.size,
-                file_type: file.type,
+                file_size: blob.fileSize || file.size,
+                file_type: blob.fileType || file.type,
               }),
             })
           }

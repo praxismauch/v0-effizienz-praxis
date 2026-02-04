@@ -26,11 +26,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2, ImageIcon } from "lucide-react"
+import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2, ImageIcon, Cpu } from "lucide-react"
 import { toast } from "sonner"
 import { AppLayout } from "@/components/app-layout"
 import { cn } from "@/lib/utils"
 import { MultiImageUpload } from "@/components/ui/multi-image-upload"
+import { Badge } from "@/components/ui/badge"
 
 const ROOM_COLOR_OPTIONS = [
   { value: "green", label: "Grün", class: "bg-green-500", bg: "bg-green-50", border: "border-l-4 border-l-green-500", icon: "text-green-600" },
@@ -42,6 +43,16 @@ const ROOM_COLOR_OPTIONS = [
   { value: "pink", label: "Pink", class: "bg-pink-500", bg: "bg-pink-50", border: "border-l-4 border-l-pink-500", icon: "text-pink-600" },
   { value: "yellow", label: "Gelb", class: "bg-yellow-500", bg: "bg-yellow-50", border: "border-l-4 border-l-yellow-500", icon: "text-yellow-600" },
 ]
+
+interface Device {
+  id: string
+  name: string
+  category?: string
+  manufacturer?: string
+  model?: string
+  status?: string
+  image_url?: string
+}
 
 interface Room {
   id: string
@@ -124,6 +135,7 @@ export default function PageClient(_props: PageClientProps) {
 
   // Data state - using useState with functional updates
   const [rooms, setRooms] = useState<Room[]>([])
+  const [roomDevices, setRoomDevices] = useState<Record<string, Device[]>>({})
 
   // Dialog states
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -143,6 +155,21 @@ export default function PageClient(_props: PageClientProps) {
     ? `/api/practices/${currentPractice.id}/rooms/upload-image`
     : ""
 
+  // Fetch devices for a specific room
+  const fetchDevicesForRoom = useCallback(async (roomId: string) => {
+    if (!currentPractice?.id) return
+
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/rooms/${roomId}/devices`)
+      if (response.ok) {
+        const data = await response.json()
+        setRoomDevices(prev => ({ ...prev, [roomId]: data.devices || [] }))
+      }
+    } catch (error) {
+      console.error("Error fetching devices for room:", error)
+    }
+  }, [currentPractice?.id])
+
   // Fetch rooms function
   const fetchRooms = useCallback(async () => {
     if (!currentPractice?.id) return
@@ -151,13 +178,16 @@ export default function PageClient(_props: PageClientProps) {
       const response = await fetch(`/api/practices/${currentPractice.id}/rooms`)
       if (response.ok) {
         const data = await response.json()
-        setRooms(() => data || [])
+        const roomsData = data || []
+        setRooms(() => roomsData)
+        // Fetch devices for all rooms
+        roomsData.forEach((room: Room) => fetchDevicesForRoom(room.id))
       }
     } catch (error) {
       console.error("Error fetching rooms:", error)
       toast.error("Fehler beim Laden der Räume")
     }
-  }, [currentPractice?.id])
+  }, [currentPractice?.id, fetchDevicesForRoom])
 
   // Initial load
   useEffect(() => {
@@ -382,6 +412,7 @@ export default function PageClient(_props: PageClientProps) {
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredRooms.map((room, index) => {
                   const colors = getRoomColor(room, index)
+                  const devices = roomDevices[room.id] || []
                   return (
                     <Card
                       key={room.id}
@@ -436,6 +467,33 @@ export default function PageClient(_props: PageClientProps) {
                           <p className="text-sm text-muted-foreground line-clamp-2">{room.beschreibung}</p>
                         ) : (
                           <p className="text-sm text-muted-foreground/70 italic">Keine Beschreibung</p>
+                        )}
+                        {/* Devices section */}
+                        {devices.length > 0 && (
+                          <div className="pt-2 border-t border-border/50">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs font-medium text-muted-foreground">
+                                Geräte ({devices.length})
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {devices.slice(0, 4).map((device) => (
+                                <Badge
+                                  key={device.id}
+                                  variant="secondary"
+                                  className="text-xs bg-background/60 hover:bg-background/80"
+                                >
+                                  {device.name}
+                                </Badge>
+                              ))}
+                              {devices.length > 4 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{devices.length - 4} weitere
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </CardContent>
                     </Card>

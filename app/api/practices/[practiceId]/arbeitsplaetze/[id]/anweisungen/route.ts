@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 // GET all anweisungen for an arbeitsplatz
@@ -9,9 +9,9 @@ export async function GET(
   const { practiceId, id } = await params
 
   try {
-    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const { data: anweisungen, error } = await supabase
+    const { data: anweisungen, error } = await adminClient
       .from("arbeitsplatz_anweisungen")
       .select("*")
       .eq("arbeitsplatz_id", id)
@@ -34,10 +34,10 @@ export async function POST(
   const { practiceId, id } = await params
 
   try {
-    const supabase = await createClient()
+    const adminClient = createAdminClient()
     const body = await request.json()
 
-    const { data: anweisung, error } = await supabase
+    const { data: anweisung, error } = await adminClient
       .from("arbeitsplatz_anweisungen")
       .insert({
         arbeitsplatz_id: id,

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 // PATCH update anweisung
@@ -9,10 +9,10 @@ export async function PATCH(
   const { practiceId, id, anweisungId } = await params
 
   try {
-    const supabase = await createClient()
+    const adminClient = createAdminClient()
     const body = await request.json()
 
-    const { data: anweisung, error } = await supabase
+    const { data: anweisung, error } = await adminClient
       .from("arbeitsplatz_anweisungen")
       .update({
         title: body.title,
@@ -43,9 +43,9 @@ export async function DELETE(
   const { practiceId, id, anweisungId } = await params
 
   try {
-    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    const { error } = await supabase
+    const { error } = await adminClient
       .from("arbeitsplatz_anweisungen")
       .delete()
       .eq("id", anweisungId)

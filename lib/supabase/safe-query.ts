@@ -64,14 +64,14 @@ export async function safeSupabaseQuery<T>(
     const result = await queryFn()
 
     if (result.error && isRateLimitError(result.error)) {
-      console.warn("[v0] Rate limit detected in query result, returning fallback data")
+      // Rate limit detected, returning fallback
       return { data: fallback, error: { message: "Rate limited", code: "RATE_LIMITED" } }
     }
 
     return result
   } catch (error) {
     if (isRateLimitError(error)) {
-      console.warn("[v0] Rate limit detected, returning fallback data")
+      // Rate limit detected, returning fallback
       return { data: fallback, error: { message: "Rate limited", code: "RATE_LIMITED" } }
     }
 
@@ -121,10 +121,10 @@ export async function safeCreateClient<T>(
     return await createFn()
   } catch (error) {
     if (isRateLimitError(error)) {
-      console.warn("[v0] Rate limited when creating Supabase client")
+      // Rate limited when creating client
       return null
     }
-    console.error(`[v0] ${errorMessage}:`, error)
+    console.error(`${errorMessage}:`, error)
     return null
   }
 }
@@ -168,7 +168,7 @@ export async function retryWithBackoff<T>(
       }
 
       if (isRateLimitError(result.error)) {
-        console.warn(`[v0] Rate limit on retry ${i + 1}, backing off...`)
+        console.warn(`Rate limit on retry ${i + 1}, backing off...`)
         lastError = result.error
         if (i < maxRetries - 1) {
           await delay(initialDelay * Math.pow(2, i))
@@ -179,7 +179,7 @@ export async function retryWithBackoff<T>(
       lastError = result.error
     } catch (error) {
       if (isRateLimitError(error)) {
-        console.warn(`[v0] Rate limit on retry ${i + 1}, backing off...`)
+        console.warn(`Rate limit on retry ${i + 1}, backing off...`)
       }
       lastError = error
     }
@@ -190,4 +190,76 @@ export async function retryWithBackoff<T>(
   }
 
   return { data: null, error: lastError }
+}
+
+/**
+ * Error codes that indicate a table doesn't exist
+ */
+const TABLE_NOT_FOUND_CODES = ["PGRST205", "42P01"]
+
+/**
+ * Checks if an error indicates a missing table
+ */
+export function isTableMissingError(error: unknown): boolean {
+  if (!error) return false
+  const errorObj = error as ErrorLike
+  const errorCode = errorObj?.code || ""
+  const errorMessage = errorObj?.message || String(error)
+  
+  return (
+    TABLE_NOT_FOUND_CODES.includes(errorCode) ||
+    errorMessage.includes("Could not find") ||
+    errorMessage.includes("does not exist") ||
+    errorMessage.includes("in the schema cache")
+  )
+}
+
+/**
+ * Wraps a Supabase query to handle missing table errors gracefully
+ * Returns fallback data instead of throwing for missing tables
+ */
+export async function safeQueryWithTableFallback<T>(
+  queryFn: () => Promise<QueryResult<T>>,
+  fallback: T,
+): Promise<QueryResult<T>> {
+  try {
+    const result = await queryFn()
+
+    if (result.error) {
+      if (isTableMissingError(result.error)) {
+        return { data: fallback, error: null }
+      }
+      if (isRateLimitError(result.error)) {
+        return { data: fallback, error: { message: "Rate limited", code: "RATE_LIMITED" } }
+      }
+    }
+
+    return result
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return { data: fallback, error: null }
+    }
+    if (isRateLimitError(error)) {
+      return { data: fallback, error: { message: "Rate limited", code: "RATE_LIMITED" } }
+    }
+    return { data: fallback, error: { message: String(error), code: "UNKNOWN_ERROR" } }
+  }
+}
+
+/**
+ * Handles Supabase errors and returns appropriate HTTP status codes
+ */
+export function getHttpStatusForError(error: unknown): number {
+  if (!error) return 200
+  
+  const errorObj = error as ErrorLike
+  const code = errorObj?.code || ""
+  
+  if (isTableMissingError(error)) return 503
+  if (isRateLimitError(error)) return 429
+  if (code === "PGRST301" || code === "401") return 401
+  if (code === "23505") return 409 // Duplicate
+  if (code === "23503") return 400 // Foreign key violation
+  
+  return 500
 }

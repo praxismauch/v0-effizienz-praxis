@@ -172,7 +172,7 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
 
     setLoading(true)
     try {
-      console.log("[v0] Submitting contract update...")
+      
       
       const res = await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}`, {
         method: "PUT",
@@ -202,11 +202,11 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
         }),
       })
 
-      console.log("[v0] Contract update response:", res.status)
+      
 
       if (!res.ok) {
         const errorText = await res.text()
-        console.error("[v0] Contract update failed:", errorText)
+        
         toast({
           title: "Fehler beim Speichern",
           description: errorText || "Vertrag konnte nicht aktualisiert werden",
@@ -217,13 +217,13 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
       }
 
       const updatedContract = await res.json()
-      console.log("[v0] Contract updated successfully")
+      
 
         // Upload new files using server-side API
         if (uploadedFiles.length > 0) {
           for (const file of uploadedFiles) {
             try {
-              console.log("[v0] Uploading file:", file.name, file.type, file.size)
+              
               
               // Upload file via unified server-side API
               const uploadFormData = new FormData()
@@ -236,11 +236,11 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
                 body: uploadFormData,
               })
               
-              console.log("[v0] Upload response status:", uploadRes.status)
+              
               
               if (!uploadRes.ok) {
                 const errorText = await uploadRes.text()
-                console.error("[v0] File upload failed:", errorText)
+                
                 toast({
                   title: "Datei-Upload fehlgeschlagen",
                   description: errorText || "Unbekannter Fehler beim Hochladen",
@@ -250,7 +250,7 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
               }
               
               const blob = await uploadRes.json()
-              console.log("[v0] Upload successful:", blob)
+              
 
               const fileRes = await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}/files`, {
                 method: "POST",
@@ -264,10 +264,10 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
               })
               
               if (!fileRes.ok) {
-                console.error("[v0] Failed to save file record:", await fileRes.text())
+                // File record save failed - table may not exist
               }
             } catch (uploadError) {
-              console.error("[v0] Upload exception:", uploadError)
+              
               toast({
                 title: "Upload-Fehler",
                 description: "Ein Fehler ist beim Hochladen aufgetreten",
@@ -285,7 +285,7 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
         description: "Vertrag wurde aktualisiert",
       })
     } catch (error) {
-      console.error("[v0] Error updating contract:", error)
+      
       toast({
         title: "Fehler",
         description: "Ein unerwarteter Fehler ist aufgetreten",

@@ -1,12 +1,13 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseServiceRoleKey, hasSupabaseAdminConfig } from "./config"
 
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceKey) {
+  if (!hasSupabaseAdminConfig()) {
     throw new Error("Missing Supabase service role credentials")
   }
+
+  const supabaseUrl = getSupabaseUrl()
+  const supabaseServiceKey = getSupabaseServiceRoleKey()
 
   return createSupabaseClient(supabaseUrl, supabaseServiceKey, {
     auth: {

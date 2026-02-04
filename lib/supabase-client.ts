@@ -1,5 +1,6 @@
 import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ssr"
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { getSupabaseUrl, getSupabaseAnonKey, hasSupabaseConfig } from "@/lib/supabase/config"
 
 let clientInstance: SupabaseClient | null = null
 
@@ -8,12 +9,12 @@ export function createBrowserClient() {
     return clientInstance
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!hasSupabaseConfig()) {
     throw new Error("Supabase URL and Anon Key must be provided")
   }
+
+  const supabaseUrl = getSupabaseUrl()
+  const supabaseAnonKey = getSupabaseAnonKey()
 
   clientInstance = createSupabaseBrowserClient(supabaseUrl, supabaseAnonKey)
   return clientInstance

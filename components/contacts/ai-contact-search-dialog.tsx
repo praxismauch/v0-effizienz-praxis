@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Loader2, Sparkles, MapPin, Search, Building2, Phone, Mail, Plus, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -34,14 +35,23 @@ interface SearchResult {
 }
 
 export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIContactSearchDialogProps) {
+  const { toast } = useToast()
+  const { currentUser } = useUser()
+  const { currentPractice } = usePractice()
+  
   const [searchQuery, setSearchQuery] = useState("")
   const [location, setLocation] = useState("")
   const [radius, setRadius] = useState("20")
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
   const [importing, setImporting] = useState(false)
-  const { toast } = useToast()
-  const { currentUser } = useUser()
+
+  // Prefill location with practice postal code when dialog opens
+  useEffect(() => {
+    if (open && currentPractice?.zipCode && !location) {
+      setLocation(currentPractice.zipCode)
+    }
+  }, [open, currentPractice?.zipCode])
 
   const exampleQueries = [
     "Alle Hausärzte",
@@ -179,7 +189,7 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
 
   function handleClose() {
     setSearchQuery("")
-    setLocation("")
+    setLocation(currentPractice?.zipCode || "")
     setRadius("20")
     setResults([])
     onOpenChange(false)

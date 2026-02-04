@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Loader2, Sparkles, MapPin, Search, Building2, Phone, Mail, Plus, Check } from "lucide-react"
+import { Loader2, Sparkles, MapPin, Search, Building2, Phone, Mail, Plus, Check, PhoneCall } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Checkbox } from "@/components/ui/checkbox"
+import RecommendedContactsDialog from "@/components/contacts/recommended-contacts-dialog"
 
 interface AIContactSearchDialogProps {
   open: boolean
@@ -45,6 +46,7 @@ export function AIContactSearchDialog({ open, onOpenChange, onSuccess }: AIConta
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
   const [importing, setImporting] = useState(false)
+  const [showRecommendedDialog, setShowRecommendedDialog] = useState(false)
 
   // Prefill location with practice postal code when dialog opens
   useEffect(() => {

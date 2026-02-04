@@ -119,7 +119,27 @@ export const IS_DEVELOPMENT = isDevelopment()
 
 /**
  * Get the app URL
+ * Priority: NEXT_PUBLIC_APP_URL > VERCEL_URL > localhost
  */
 export function getAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  return "http://localhost:3000"
+}
+
+/**
+ * Get the base URL for server-side operations
+ * Automatically handles Vercel deployment URLs
+ */
+export function getBaseUrl(): string {
+  // Client-side: use relative URLs
+  if (typeof window !== "undefined") {
+    return ""
+  }
+  // Server-side: use environment variables
+  return getAppUrl()
 }

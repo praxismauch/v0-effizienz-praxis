@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       throw responseError
     }
 
-    const questionnaireUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/questionnaire/${response.id}`
+    const questionnaireUrl = `${process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")}/questionnaire/${response.id}`
 
     const emailResult = await sendEmail({
       to: candidate.email,

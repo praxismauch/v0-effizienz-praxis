@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/context-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useUser } from "@/contexts/user-context"
-import { usePractice } from "@/contexts/practice-context"
 import {
   Building2,
   Mail,
@@ -94,7 +93,6 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { currentUser } = useUser()
-  const { currentPractice } = usePractice()
   const [collapsed, setCollapsed] = useState(false)
   const [openSections, setOpenSections] = useState<string[]>(["overview", "management"])
   const [expandedItems, setExpandedItems] = useState<string[]>([])

@@ -30,6 +30,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ReportBugDialog from "@/components/report-bug-dialog"
+import { TicketAIAction } from "@/components/ticket-ai-action"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -626,40 +627,53 @@ export default function TicketsPage() {
                               </div>
                             )}
 
-                            <div className="flex items-center gap-4 text-sm pt-2 border-t">
-                              {ticket.status === "open" && (
-                                <div className="flex items-center gap-2 text-blue-600">
-                                  <Clock className="h-4 w-4" />
-                                  <span>Warten auf Bearbeitung</span>
-                                </div>
-                              )}
-                              {ticket.status === "in_progress" && (
-                                <div className="flex items-center gap-2 text-yellow-600">
-                                  <MessageSquare className="h-4 w-4" />
-                                  <span>Wird bearbeitet</span>
-                                </div>
-                              )}
-                              {ticket.status === "resolved" && (
-                                <div className="flex items-center gap-2 text-green-600">
-                                  <CheckCircle className="h-4 w-4" />
-                                  <span>Gelöst am {formatDateDE(ticket.updated_at)}</span>
-                                </div>
-                              )}
-                              {ticket.status === "closed" && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <CheckCircle className="h-4 w-4" />
-                                  <span>Geschlossen</span>
-                                </div>
-                              )}
-                              {ticket.status === "wont_fix" && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <XCircle className="h-4 w-4" />
-                                  <span>Wird nicht behoben</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
+{/* AI Action Item */}
+                                            <div className="pt-4 border-t">
+                                              <TicketAIAction
+                                                ticketId={ticket.id}
+                                                title={ticket.title}
+                                                description={ticket.description}
+                                                type={ticket.type}
+                                                priority={ticket.priority}
+                                                screenshots={ticket.screenshot_urls}
+                                                autoGenerate={true}
+                                              />
+                                            </div>
+
+                                            <div className="flex items-center gap-4 text-sm pt-2 border-t">
+                                              {ticket.status === "open" && (
+                                                <div className="flex items-center gap-2 text-blue-600">
+                                                  <Clock className="h-4 w-4" />
+                                                  <span>Warten auf Bearbeitung</span>
+                                                </div>
+                                              )}
+                                              {ticket.status === "in_progress" && (
+                                                <div className="flex items-center gap-2 text-yellow-600">
+                                                  <MessageSquare className="h-4 w-4" />
+                                                  <span>Wird bearbeitet</span>
+                                                </div>
+                                              )}
+                                              {ticket.status === "resolved" && (
+                                                <div className="flex items-center gap-2 text-green-600">
+                                                  <CheckCircle className="h-4 w-4" />
+                                                  <span>Gelöst am {formatDateDE(ticket.updated_at)}</span>
+                                                </div>
+                                              )}
+                                              {ticket.status === "closed" && (
+                                                <div className="flex items-center gap-2 text-gray-600">
+                                                  <CheckCircle className="h-4 w-4" />
+                                                  <span>Geschlossen</span>
+                                                </div>
+                                              )}
+                                              {ticket.status === "wont_fix" && (
+                                                <div className="flex items-center gap-2 text-gray-600">
+                                                  <XCircle className="h-4 w-4" />
+                                                  <span>Wird nicht behoben</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ) : (
                           <>
                             <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap line-clamp-2">
                               {ticket.description}

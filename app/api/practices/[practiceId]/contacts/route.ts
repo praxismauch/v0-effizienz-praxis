@@ -39,6 +39,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const body = await request.json()
 
+    // Validate required field
+    if (!body.last_name) {
+      return NextResponse.json({ error: "last_name is required" }, { status: 400 })
+    }
+
     const contactData = {
       salutation: body.salutation || null,
       title: body.title || null,
@@ -62,11 +67,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       created_by: user.id,
     }
 
+    console.log("[v0] Creating contact with data:", JSON.stringify(contactData))
+
     const { data: contact, error } = await supabase.from("contacts").insert(contactData).select().single()
 
     if (error) {
       console.error("[v0] Error creating contact:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: error.message, details: error }, { status: 500 })
     }
 
     return NextResponse.json(contact, { status: 201 })

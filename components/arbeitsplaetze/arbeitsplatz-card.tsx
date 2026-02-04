@@ -69,7 +69,7 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
 
   if (viewMode === "list") {
     return (
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="group hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             {arbeitsplatz.image_url ? (
@@ -115,16 +115,18 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <Button variant="outline" size="sm" onClick={() => router.push(`/arbeitsplaetze/${arbeitsplatz.id}`)}>
+              <Button variant="ghost" size="sm" onClick={() => router.push(`/arbeitsplaetze/${arbeitsplatz.id}`)} className="text-muted-foreground hover:text-foreground">
                 <FileText className="h-4 w-4 mr-1" />
                 Anweisungen
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => onEdit(arbeitsplatz)}>
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => onDelete(arbeitsplatz.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <Button variant="ghost" size="icon" onClick={() => onEdit(arbeitsplatz)} className="h-8 w-8">
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => onDelete(arbeitsplatz.id)} className="h-8 w-8 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -208,26 +210,28 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
 
         <div className="flex items-center gap-2 pt-2">
           <Button
-            variant="default"
+            variant="ghost"
             size="sm"
             onClick={() => router.push(`/arbeitsplaetze/${arbeitsplatz.id}`)}
-            className="flex-1"
+            className="flex-1 text-muted-foreground hover:text-foreground"
           >
             <FileText className="h-4 w-4 mr-1.5" />
             Anweisungen
             <ChevronRight className="h-4 w-4 ml-auto" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => onEdit(arbeitsplatz)} className="shrink-0">
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => onDelete(arbeitsplatz.id)}
-            className="shrink-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-950/30"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <Button variant="ghost" size="icon" onClick={() => onEdit(arbeitsplatz)} className="shrink-0 h-8 w-8">
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(arbeitsplatz.id)}
+              className="shrink-0 h-8 w-8 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

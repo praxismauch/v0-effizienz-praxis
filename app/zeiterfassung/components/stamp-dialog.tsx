@@ -38,6 +38,10 @@ export default function StampDialog({
   onConfirm,
   isStamping,
 }: StampDialogProps) {
+  // Comment is required for remote work locations
+  const requiresComment = selectedLocation === "aussentermin" || selectedLocation === "homeoffice"
+  const isCommentValid = !requiresComment || stampComment.trim().length > 0
+
   const getTitle = () => {
     switch (stampAction) {
       case "start":
@@ -78,13 +82,21 @@ export default function StampDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Kommentar (optional)</Label>
+            <Label>
+              Kommentar {requiresComment ? <span className="text-red-500">*</span> : "(optional)"}
+            </Label>
             <Textarea
               value={stampComment}
               onChange={(e) => onStampCommentChange(e.target.value)}
-              placeholder="z.B. Hausbesuch bei Patient X, Fortbildung..."
+              placeholder={requiresComment 
+                ? "Bitte Grund angeben (z.B. Hausbesuch bei Patient X, Fortbildung...)" 
+                : "z.B. Hausbesuch bei Patient X, Fortbildung..."}
               rows={2}
+              className={cn(requiresComment && !stampComment.trim() && "border-red-300 focus-visible:ring-red-500")}
             />
+            {requiresComment && !stampComment.trim() && (
+              <p className="text-xs text-red-500">Bei Außentermin oder Homeoffice ist ein Kommentar erforderlich</p>
+            )}
           </div>
         </div>
 
@@ -94,7 +106,7 @@ export default function StampDialog({
           </Button>
           <Button
             onClick={onConfirm}
-            disabled={isStamping}
+            disabled={isStamping || !isCommentValid}
             className={cn(
               stampAction === "start" && "bg-green-600 hover:bg-green-700",
               stampAction === "stop" && "bg-red-600 hover:bg-red-700",

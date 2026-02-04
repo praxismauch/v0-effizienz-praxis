@@ -58,7 +58,11 @@ export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMembe
   const [initialExam, setInitialExam] = useState({
     vaccination_passport_checked: false,
     measles_proof_documented: false,
+    measles_titer_date: '',
+    measles_titer_value: '',
     hepatitis_b_titer_checked: false,
+    hepatitis_b_titer_date: '',
+    hepatitis_b_titer_value: '',
     exam_date: '',
     exam_notes: '',
   })
@@ -270,30 +274,80 @@ export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMembe
               </div>
             </div>
             
-            <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
-              <Checkbox 
-                checked={initialExam.measles_proof_documented} 
-                onCheckedChange={(checked) => 
-                  setInitialExam({...initialExam, measles_proof_documented: checked as boolean})
-                }
-              />
-              <div className="flex-1">
-                <Label className="font-semibold text-red-600">Masern-Nachweis (IfSG!) dokumentieren</Label>
-                <p className="text-sm text-muted-foreground">Gesetzlich verpflichtender Nachweis nach Infektionsschutzgesetz</p>
+            <div className="p-3 bg-white rounded-lg space-y-3">
+              <div className="flex items-start gap-3">
+                <Checkbox 
+                  checked={initialExam.measles_proof_documented} 
+                  onCheckedChange={(checked) => 
+                    setInitialExam({...initialExam, measles_proof_documented: checked as boolean})
+                  }
+                />
+                <div className="flex-1">
+                  <Label className="font-semibold text-red-600">Masern-Nachweis (IfSG!) dokumentieren</Label>
+                  <p className="text-sm text-muted-foreground">Gesetzlich verpflichtender Nachweis nach Infektionsschutzgesetz</p>
+                </div>
               </div>
+              {initialExam.measles_proof_documented && (
+                <div className="ml-7 grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Titer-Datum</Label>
+                    <Input
+                      type="date"
+                      value={initialExam.measles_titer_date}
+                      onChange={(e) => setInitialExam({...initialExam, measles_titer_date: e.target.value})}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Titer-Wert (IU/L)</Label>
+                    <Input
+                      type="text"
+                      placeholder="z.B. >200 oder positiv"
+                      value={initialExam.measles_titer_value}
+                      onChange={(e) => setInitialExam({...initialExam, measles_titer_value: e.target.value})}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             
-            <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
-              <Checkbox 
-                checked={initialExam.hepatitis_b_titer_checked} 
-                onCheckedChange={(checked) => 
-                  setInitialExam({...initialExam, hepatitis_b_titer_checked: checked as boolean})
-                }
-              />
-              <div className="flex-1">
-                <Label className="font-semibold">Hepatitis-B-Status inkl. Anti-HBs-Titer</Label>
-                <p className="text-sm text-muted-foreground">Immunstatus prüfen und dokumentieren</p>
+            <div className="p-3 bg-white rounded-lg space-y-3">
+              <div className="flex items-start gap-3">
+                <Checkbox 
+                  checked={initialExam.hepatitis_b_titer_checked} 
+                  onCheckedChange={(checked) => 
+                    setInitialExam({...initialExam, hepatitis_b_titer_checked: checked as boolean})
+                  }
+                />
+                <div className="flex-1">
+                  <Label className="font-semibold">Hepatitis-B-Status inkl. Anti-HBs-Titer</Label>
+                  <p className="text-sm text-muted-foreground">Immunstatus prüfen und dokumentieren</p>
+                </div>
               </div>
+              {initialExam.hepatitis_b_titer_checked && (
+                <div className="ml-7 grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Titer-Datum</Label>
+                    <Input
+                      type="date"
+                      value={initialExam.hepatitis_b_titer_date}
+                      onChange={(e) => setInitialExam({...initialExam, hepatitis_b_titer_date: e.target.value})}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Anti-HBs-Titer (IU/L)</Label>
+                    <Input
+                      type="text"
+                      placeholder="z.B. >100 IU/L"
+                      value={initialExam.hepatitis_b_titer_value}
+                      onChange={(e) => setInitialExam({...initialExam, hepatitis_b_titer_value: e.target.value})}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

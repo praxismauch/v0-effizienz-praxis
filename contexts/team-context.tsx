@@ -98,7 +98,8 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     if (!membersData) return []
     const rawMembers = Array.isArray(membersData)
       ? membersData
-      : (membersData as { members: TeamMember[] }).members || []
+      : (membersData as { teamMembers?: TeamMember[]; members?: TeamMember[] }).teamMembers || 
+        (membersData as { members?: TeamMember[] }).members || []
     return rawMembers.map((m: Partial<TeamMember> & Record<string, unknown>) => ({
       ...m,
       id: (m.id || m.user_id) as string,

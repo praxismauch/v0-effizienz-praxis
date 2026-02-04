@@ -36,24 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       query = query.eq("status", status)
     }
 
-    const [requestsResult, blockedPeriodsResult, bankHolidaysResult] = await Promise.all([
-      safeSupabaseQuery(() => query, []),
-      safeSupabaseQuery(
-        () =>
-          supabase
-            .from("holiday_blocked_periods")
-            .select("*")
-            .eq("practice_id", practiceId)
-            .is("deleted_at", null)
-            .gte("end_date", `${year}-01-01`)
-            .lte("start_date", `${year}-12-31`),
-        [],
-      ),
-      safeSupabaseQuery(
-        () => supabase.from("holidays").select("*").eq("practice_id", practiceId).is("deleted_at", null),
-        [],
-      ),
-    ])
+    const requestsResult = await safeSupabaseQuery(() => query, [])
 
     if (requestsResult.error && requestsResult.error.code !== "RATE_LIMITED") {
       console.error("Error fetching holiday requests:", requestsResult.error)
@@ -62,8 +45,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     return NextResponse.json({
       requests: requestsResult.data || [],
-      blockedPeriods: blockedPeriodsResult.data || [],
-      bankHolidays: bankHolidaysResult.data || [],
+      blockedPeriods: [],
+      bankHolidays: [],
     })
   } catch (error) {
     console.error("Error in holiday requests GET:", error)

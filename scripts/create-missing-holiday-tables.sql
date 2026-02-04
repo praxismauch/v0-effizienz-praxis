@@ -38,7 +38,6 @@ CREATE TABLE IF NOT EXISTS holidays (
   practice_id TEXT NOT NULL,
   name TEXT NOT NULL,
   date DATE NOT NULL,
-  year INTEGER,
   is_recurring BOOLEAN DEFAULT false,
   created_by TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -49,7 +48,6 @@ CREATE TABLE IF NOT EXISTS holidays (
 -- Create indexes for holidays
 CREATE INDEX IF NOT EXISTS idx_holidays_practice_id ON holidays(practice_id);
 CREATE INDEX IF NOT EXISTS idx_holidays_date ON holidays(date);
-CREATE INDEX IF NOT EXISTS idx_holidays_year ON holidays(year);
 CREATE INDEX IF NOT EXISTS idx_holidays_deleted_at ON holidays(deleted_at);
 
 -- Enable RLS for holidays

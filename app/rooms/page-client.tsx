@@ -29,11 +29,24 @@ import {
 import { Plus, Search, DoorOpen, Pencil, Trash2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { AppLayout } from "@/components/app-layout"
+import { cn } from "@/lib/utils"
+
+const ROOM_COLOR_OPTIONS = [
+  { value: "green", label: "Grün", class: "bg-green-500", bg: "bg-green-50", border: "border-l-4 border-l-green-500", icon: "text-green-600" },
+  { value: "blue", label: "Blau", class: "bg-blue-500", bg: "bg-blue-50", border: "border-l-4 border-l-blue-500", icon: "text-blue-600" },
+  { value: "purple", label: "Lila", class: "bg-purple-500", bg: "bg-purple-50", border: "border-l-4 border-l-purple-500", icon: "text-purple-600" },
+  { value: "orange", label: "Orange", class: "bg-orange-500", bg: "bg-orange-50", border: "border-l-4 border-l-orange-500", icon: "text-orange-600" },
+  { value: "red", label: "Rot", class: "bg-red-500", bg: "bg-red-50", border: "border-l-4 border-l-red-500", icon: "text-red-600" },
+  { value: "teal", label: "Türkis", class: "bg-teal-500", bg: "bg-teal-50", border: "border-l-4 border-l-teal-500", icon: "text-teal-600" },
+  { value: "pink", label: "Pink", class: "bg-pink-500", bg: "bg-pink-50", border: "border-l-4 border-l-pink-500", icon: "text-pink-600" },
+  { value: "yellow", label: "Gelb", class: "bg-yellow-500", bg: "bg-yellow-50", border: "border-l-4 border-l-yellow-500", icon: "text-yellow-600" },
+]
 
 interface Room {
   id: string
   name: string
   beschreibung?: string
+  color?: string
   practice_id: string
   created_at: string
   updated_at?: string
@@ -77,8 +90,16 @@ const FALLBACK_COLORS = [
   { bg: "bg-emerald-50", border: "border-l-4 border-l-emerald-500", icon: "text-emerald-600" },
 ]
 
-function getRoomColor(roomName: string, index: number) {
-  const nameLower = roomName.toLowerCase()
+function getRoomColor(room: Room, index: number) {
+  // If room has a custom color set, use it
+  if (room.color) {
+    const customColor = ROOM_COLOR_OPTIONS.find(c => c.value === room.color)
+    if (customColor) {
+      return { bg: customColor.bg, border: customColor.border, icon: customColor.icon }
+    }
+  }
+
+  const nameLower = room.name.toLowerCase()
 
   // Check for matching keywords
   for (const [keyword, colors] of Object.entries(ROOM_COLORS)) {
@@ -112,6 +133,7 @@ export default function PageClient(_props: PageClientProps) {
   // Form states
   const [formName, setFormName] = useState("")
   const [formBeschreibung, setFormBeschreibung] = useState("")
+  const [formColor, setFormColor] = useState("blue")
 
   // Fetch rooms function
   const fetchRooms = useCallback(async () => {
@@ -148,6 +170,7 @@ export default function PageClient(_props: PageClientProps) {
         body: JSON.stringify({
           name: formName.trim(),
           beschreibung: formBeschreibung.trim() || null,
+          color: formColor,
         }),
       })
 
@@ -192,6 +215,7 @@ export default function PageClient(_props: PageClientProps) {
         body: JSON.stringify({
           name: formName.trim(),
           beschreibung: formBeschreibung.trim() || null,
+          color: formColor,
         }),
       })
 
@@ -256,6 +280,7 @@ export default function PageClient(_props: PageClientProps) {
     setSelectedRoom(room)
     setFormName(room.name)
     setFormBeschreibung(room.beschreibung || "")
+    setFormColor(room.color || "blue")
     setIsEditOpen(true)
   }
 
@@ -267,6 +292,7 @@ export default function PageClient(_props: PageClientProps) {
   const resetForm = () => {
     setFormName("")
     setFormBeschreibung("")
+    setFormColor("blue")
   }
 
   const filteredRooms = rooms.filter(
@@ -343,7 +369,7 @@ export default function PageClient(_props: PageClientProps) {
             ) : filteredRooms.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredRooms.map((room, index) => {
-                  const colors = getRoomColor(room.name, index)
+                  const colors = getRoomColor(room, index)
                   return (
                     <Card
                       key={room.id}
@@ -437,6 +463,28 @@ export default function PageClient(_props: PageClientProps) {
                   rows={3}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Farbe</Label>
+                <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {ROOM_COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setFormColor(color.value)}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                        formColor === color.value
+                          ? "border-primary shadow-sm scale-105"
+                          : "border-border hover:border-primary/50",
+                      )}
+                    >
+                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                      <span className="text-sm font-medium">{color.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -476,6 +524,28 @@ export default function PageClient(_props: PageClientProps) {
                   onChange={(e) => setFormBeschreibung(e.target.value)}
                   rows={3}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Farbe</Label>
+                <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {ROOM_COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setFormColor(color.value)}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                        formColor === color.value
+                          ? "border-primary shadow-sm scale-105"
+                          : "border-border hover:border-primary/50",
+                      )}
+                    >
+                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                      <span className="text-sm font-medium">{color.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <DialogFooter>

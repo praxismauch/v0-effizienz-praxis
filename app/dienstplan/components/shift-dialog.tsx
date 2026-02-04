@@ -161,12 +161,16 @@ export default function ShiftDialog({
               <SelectTrigger>
                 <SelectValue placeholder="Mitarbeiter auswählen" />
               </SelectTrigger>
-              <SelectContent>
-                {teamMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.first_name} {member.last_name}
-                  </SelectItem>
-                ))}
+              <SelectContent position="popper" className="max-h-[300px]">
+                {teamMembers.map((member) => {
+                  const memberId = member.user_id || member.id || member.team_member_id
+                  if (!memberId) return null
+                  return (
+                    <SelectItem key={memberId} value={memberId}>
+                      {member.first_name} {member.last_name}
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
           </div>

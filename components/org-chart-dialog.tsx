@@ -188,13 +188,17 @@ export function OrgChartDialog({
                 <SelectTrigger>
                   <SelectValue placeholder="Keine Person zugewiesen" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="max-h-[300px]">
                   <SelectItem value="none">Keine Person zugewiesen</SelectItem>
-                  {teamMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.first_name} {member.last_name}
-                    </SelectItem>
-                  ))}
+                  {teamMembers.map((member) => {
+                    const memberId = member.user_id || member.id || member.team_member_id
+                    if (!memberId) return null
+                    return (
+                      <SelectItem key={memberId} value={memberId}>
+                        {member.first_name} {member.last_name}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>

@@ -5,25 +5,33 @@ import { createAdminClient } from "@/lib/supabase/admin"
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
+    console.log("[v0] Arbeitsplaetze API - GET called with practiceId:", practiceId)
 
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
+    console.log("[v0] Arbeitsplaetze API - user:", user?.id)
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = await createAdminClient()
+    const adminClient = createAdminClient()
 
     const { data, error } = await adminClient
       .from("arbeitsplaetze")
-      .select("*")
+      .select(`
+        *,
+        room:rooms(id, name, color)
+      `)
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .eq("is_active", true)
       .order("name")
+
+    console.log("[v0] Arbeitsplaetze API - fetched count:", data?.length, "error:", error)
 
     if (error) {
       console.error("Error fetching arbeitsplaetze:", error)
@@ -51,7 +59,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const adminClient = await createAdminClient()
+    const adminClient = createAdminClient()
 
     const { data, error } = await adminClient
       .from("arbeitsplaetze")
@@ -60,7 +68,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         beschreibung: body.beschreibung || null,
         raum_id: body.raum_id || null,
         image_url: body.image_url || null,
-        color: body.color || "green",
+        color: body.color || null,
+        use_room_color: body.use_room_color !== undefined ? body.use_room_color : true,
         practice_id: practiceId,
         created_by: user.id,
         is_active: true,

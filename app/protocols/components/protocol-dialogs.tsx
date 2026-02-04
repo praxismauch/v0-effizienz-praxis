@@ -349,21 +349,25 @@ function ProtocolForm({
                         <User className="h-4 w-4 mr-2" />
                         <SelectValue placeholder="Verantwortlich" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" className="max-h-[300px]">
                         <SelectItem value="unassigned">Nicht zugewiesen</SelectItem>
-                        {teamMembers.map((member) => (
-                          <SelectItem key={member.id} value={member.id}>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-5 w-5">
-                                <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
-                                <AvatarFallback className="text-xs">
-                                  {member.name?.charAt(0) || "?"}
-                                </AvatarFallback>
-                              </Avatar>
-                              {member.name}
-                            </div>
-                          </SelectItem>
-                        ))}
+                        {teamMembers.map((member) => {
+                          const memberId = member.user_id || member.id || member.team_member_id
+                          if (!memberId) return null
+                          return (
+                            <SelectItem key={memberId} value={memberId}>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
+                                  <AvatarFallback className="text-xs">
+                                    {member.name?.charAt(0) || "?"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {member.name}
+                              </div>
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
 

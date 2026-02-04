@@ -26,6 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+import { MultiImageUpload } from "@/components/ui/multi-image-upload"
 
 interface Room {
   id: string
@@ -397,7 +398,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
     setSelectedRoomIds((prev) => (prev.includes(roomId) ? prev.filter((id) => id !== roomId) : [...prev, roomId]))
   }
 
-  const activeMembers = teamMembers.filter(isActiveMember)
+
 
   const handleImageUpload = useCallback(
     async (file: File) => {
@@ -1060,14 +1061,19 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     <SelectTrigger>
                       <SelectValue placeholder={teamLoading ? "Laden..." : "Verantwortlichen auswählen"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper" className="max-h-[300px]">
                       <SelectItem value="none">Keine Auswahl</SelectItem>
-                      {activeMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.user_id || member.id || `member-${member.id}`}>
-                          {member.firstName || member.first_name || ""} {member.lastName || member.last_name || ""}
-                        </SelectItem>
-                      ))}
-                      {activeMembers.length === 0 && !teamLoading && (
+                      {teamMembers.filter(isActiveMember).map((member) => {
+                        const memberId = member.user_id || member.id
+                        if (!memberId) return null
+                        const displayName = `${member.firstName || member.first_name || ""} ${member.lastName || member.last_name || ""}`.trim() || member.email || "Unbekannt"
+                        return (
+                          <SelectItem key={memberId} value={memberId}>
+                            {displayName}
+                          </SelectItem>
+                        )
+                      })}
+                      {teamMembers.filter(isActiveMember).length === 0 && !teamLoading && (
                         <SelectItem value="no-members" disabled>
                           Keine Teammitglieder verfügbar
                         </SelectItem>
@@ -1075,13 +1081,19 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2">
-                  {/* <Label>Bild-URL</Label> */}
-                  {/* <Input
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="URL zum Gerätebild"
-                  /> */}
+                <div className="col-span-2 space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Gerätebilder
+                  </Label>
+                  <p className="text-xs text-muted-foreground">Laden Sie Bilder des Geräts hoch (max. 10 Bilder)</p>
+                  <MultiImageUpload
+                    images={images}
+                    onImagesChange={setImages}
+                    maxImages={10}
+                    uploadEndpoint={practiceId ? `/api/practices/${practiceId}/devices/upload-image` : ""}
+                    disabled={loading || !practiceId}
+                  />
                 </div>
               </div>
             </TabsContent>

@@ -15,7 +15,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Settings, Monitor } from "lucide-react"
+import { Settings, Monitor, Palette } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useUser } from "@/contexts/user-context"
 import { useToast } from "@/hooks/use-toast"
 import { SimpleRichTextEditor } from "./simple-rich-text-editor"
@@ -25,6 +26,7 @@ import { cn } from "@/lib/utils"
 interface Room {
   id: string
   name: string
+  color?: string | null
 }
 
 interface Arbeitsplatz {
@@ -35,6 +37,7 @@ interface Arbeitsplatz {
   is_active: boolean
   image_urls?: string[] | null
   color?: string | null
+  use_room_color?: boolean | null
 }
 
 interface EditArbeitsplatzDialogProps {
@@ -64,6 +67,7 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
     return []
   })
   const [selectedColor, setSelectedColor] = useState<string>(arbeitsplatz.color || "green")
+  const [useRoomColor, setUseRoomColor] = useState<boolean>(arbeitsplatz.use_room_color !== false)
   const { currentUser } = useUser()
   const { toast } = useToast()
 
@@ -84,6 +88,7 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
       setBeschreibung(arbeitsplatz.beschreibung || "")
       setRaumId(arbeitsplatz.raum_id || "none")
       setSelectedColor(arbeitsplatz.color || "green")
+      setUseRoomColor(arbeitsplatz.use_room_color !== false)
       if (arbeitsplatz.image_urls) {
         if (typeof arbeitsplatz.image_urls === "string") {
           try {
@@ -117,14 +122,10 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Edit Arbeitsplatz - Submit started")
-    console.log("[v0] Edit Arbeitsplatz - Current user:", currentUser)
-    console.log("[v0] Edit Arbeitsplatz - Arbeitsplatz ID:", arbeitsplatz.id)
     setLoading(true)
 
     try {
       if (!currentUser?.practice_id) {
-        console.error("[v0] Edit Arbeitsplatz - No practice ID found")
         throw new Error("No practice ID")
       }
       
@@ -135,11 +136,9 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
         beschreibung: cleanBeschreibung,
         raum_id: raumId && raumId !== "none" ? raumId : null,
         image_urls: imageUrls.length > 0 ? imageUrls : null,
-        color: selectedColor,
+        color: useRoomColor ? null : selectedColor,
+        use_room_color: useRoomColor,
       }
-
-      console.log("[v0] Edit Arbeitsplatz - Payload:", payload)
-      console.log("[v0] Edit Arbeitsplatz - URL:", `/api/practices/${currentUser.practice_id}/arbeitsplaetze/${arbeitsplatz.id}`)
 
       const response = await fetch(`/api/practices/${currentUser.practice_id}/arbeitsplaetze/${arbeitsplatz.id}`, {
         method: "PATCH",
@@ -147,16 +146,12 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
         body: JSON.stringify(payload),
       })
 
-      console.log("[v0] Edit Arbeitsplatz - Response status:", response.status)
-
       if (!response.ok) {
         const error = await response.json()
-        console.error("[v0] Edit Arbeitsplatz - Error response:", error)
         throw new Error(error.error || "Failed to update")
       }
 
-      const result = await response.json()
-      console.log("[v0] Edit Arbeitsplatz - Success:", result)
+      await response.json()
 
       toast({ title: "Erfolg", description: "Arbeitsplatz wurde aktualisiert" })
       onSuccess()
@@ -230,26 +225,68 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="color">Farbe</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => setSelectedColor(color.value)}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
-                    selectedColor === color.value
-                      ? "border-primary shadow-sm scale-105"
-                      : "border-border hover:border-primary/50",
-                  )}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Farbe
+            </Label>
+            
+            {raumId && raumId !== "none" && (
+              <div className="flex items-center space-x-2 p-3 rounded-lg bg-muted/50 border">
+                <Checkbox 
+                  id="useRoomColor" 
+                  checked={useRoomColor}
+                  onCheckedChange={(checked) => setUseRoomColor(checked === true)}
+                />
+                <label
+                  htmlFor="useRoomColor"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  <div className={cn("w-5 h-5 rounded-full", color.class)} />
-                  <span className="text-sm font-medium">{color.label}</span>
-                </button>
-              ))}
-            </div>
+                  Raumfarbe verwenden
+                  {(() => {
+                    const selectedRoom = rooms.find(r => r.id === raumId)
+                    if (selectedRoom?.color) {
+                      const roomColorConfig = COLORS.find(c => c.value === selectedRoom.color)
+                      return roomColorConfig ? (
+                        <span className="ml-2 inline-flex items-center gap-1.5 text-muted-foreground">
+                          <span className={cn("w-3 h-3 rounded-full inline-block", roomColorConfig.class)} />
+                          ({roomColorConfig.label})
+                        </span>
+                      ) : null
+                    }
+                    return null
+                  })()}
+                </label>
+              </div>
+            )}
+
+            {(!useRoomColor || !raumId || raumId === "none") && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {raumId && raumId !== "none" 
+                    ? "Manuelle Farbauswahl (überschreibt die Raumfarbe)" 
+                    : "Wählen Sie eine Farbe für diesen Arbeitsplatz"}
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setSelectedColor(color.value)}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
+                        selectedColor === color.value
+                          ? "border-primary shadow-sm scale-105"
+                          : "border-border hover:border-primary/50",
+                      )}
+                    >
+                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
+                      <span className="text-sm font-medium">{color.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="space-y-2">

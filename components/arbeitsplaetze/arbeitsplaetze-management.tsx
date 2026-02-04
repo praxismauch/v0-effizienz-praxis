@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import CreateArbeitsplatzDialog from "./create-arbeitsplatz-dialog"
 import EditArbeitsplatzDialog from "./edit-arbeitsplatz-dialog"
-import { ArbeitsplatzCard } from "./arbeitsplatz-card"
+import { ArbeitsplatzCard, ARBEITSPLATZ_COLORS } from "./arbeitsplatz-card"
 import { cn } from "@/lib/utils"
 import { usePractice } from "@/contexts/practice-context"
 import { useArbeitsplaetze } from "@/hooks/use-arbeitsplaetze"
@@ -16,6 +16,7 @@ import { useUser } from "@/contexts/user-context" // Import useUser hook
 interface Room {
   id: string
   name: string
+  color?: string | null
 }
 
 interface Arbeitsplatz {
@@ -25,6 +26,8 @@ interface Arbeitsplatz {
   raum_id: string | null
   is_active: boolean
   room?: Room | null
+  color?: string | null
+  use_room_color?: boolean | null
 }
 
 function ArbeitsplaetzeManagement() {
@@ -37,7 +40,11 @@ function ArbeitsplaetzeManagement() {
   const { currentPractice } = usePractice()
   const practiceId = currentPractice?.id
 
+  console.log("[v0] ArbeitsplaetzeManagement - practiceId:", practiceId, "currentPractice:", currentPractice)
+
   const { arbeitsplaetze, isLoading: loading, mutate } = useArbeitsplaetze(practiceId)
+
+  console.log("[v0] ArbeitsplaetzeManagement - arbeitsplaetze count:", arbeitsplaetze?.length, "loading:", loading)
 
   const handleEdit = (arbeitsplatz: Arbeitsplatz) => {
     setSelectedArbeitsplatz(arbeitsplatz)
@@ -191,16 +198,34 @@ function ArbeitsplaetzeManagement() {
       {/* Content */}
       {filteredArbeitsplaetze.length > 0 ? (
         <div className={cn(viewMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-3")}>
-          {filteredArbeitsplaetze.map((arbeitsplatz) => (
-            <ArbeitsplatzCard
-              key={arbeitsplatz.id}
-              arbeitsplatz={arbeitsplatz}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleActive={handleToggleActive}
-              viewMode={viewMode}
-            />
-          ))}
+          {filteredArbeitsplaetze.map((arbeitsplatz, index) => {
+            // Determine the color to use
+            let effectiveColor = arbeitsplatz.color
+            
+            // If use_room_color is true (or undefined for backwards compatibility) and has a room with color
+            if ((arbeitsplatz.use_room_color !== false) && arbeitsplatz.room?.color) {
+              effectiveColor = arbeitsplatz.room.color
+            }
+            
+            // Fallback to index-based color if no color is set
+            if (!effectiveColor) {
+              effectiveColor = ARBEITSPLATZ_COLORS[index % ARBEITSPLATZ_COLORS.length].value
+            }
+            
+            return (
+              <ArbeitsplatzCard
+                key={arbeitsplatz.id}
+                arbeitsplatz={{
+                  ...arbeitsplatz,
+                  color: effectiveColor,
+                }}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggleActive={handleToggleActive}
+                viewMode={viewMode}
+              />
+            )
+          })}
         </div>
       ) : arbeitsplaetze.length === 0 ? (
         /* Empty State */

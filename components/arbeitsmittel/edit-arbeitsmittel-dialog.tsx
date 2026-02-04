@@ -355,15 +355,17 @@ export function EditArbeitsmittelDialog({
                 <SelectTrigger>
                   <SelectValue placeholder="Nicht zugewiesen" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="max-h-[300px]">
                   <SelectItem value="__none__">Nicht zugewiesen</SelectItem>
                   {teamMembers && teamMembers.length > 0 ? (
                     teamMembers.map((member) => {
+                      const memberId = member.user_id || member.id || member.team_member_id
+                      if (!memberId) return null
                       const firstName = member.firstName || member.first_name || ""
                       const lastName = member.lastName || member.last_name || ""
-                      const displayName = member.name || `${firstName} ${lastName}`.trim() || "Unbekannt"
+                      const displayName = member.name || `${firstName} ${lastName}`.trim() || member.email || "Unbekannt"
                       return (
-                        <SelectItem key={member.id} value={member.id}>
+                        <SelectItem key={memberId} value={memberId}>
                           {displayName}
                         </SelectItem>
                       )

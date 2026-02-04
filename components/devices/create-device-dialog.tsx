@@ -1143,94 +1143,6 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     onChange={(e) => setFormData({ ...formData, warranty_end_date: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Handbuch (PDF/Word)</Label>
-                  <input
-                    type="file"
-                    ref={handbookInputRef}
-                    onChange={handleHandbookSelect}
-                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    className="hidden"
-                  />
-
-                  {formData.handbook_url || handbookFileName ? (
-                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
-                        <FileText className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{handbookFileName || "Handbuch"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formData.handbook_url ? "Hochgeladen" : "Wird hochgeladen..."}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {formData.handbook_url && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(formData.handbook_url, "_blank")}
-                          >
-                            Öffnen
-                          </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={removeHandbook}
-                          disabled={isUploadingHandbook}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      className={`
-                        relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
-                        transition-colors duration-200
-                        ${
-                          isDraggingHandbook
-                            ? "border-primary bg-primary/5"
-                            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
-                        }
-                        ${isUploadingHandbook ? "pointer-events-none opacity-50" : ""}
-                      `}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        setIsDraggingHandbook(true)
-                      }}
-                      onDragLeave={(e) => {
-                        e.preventDefault()
-                        setIsDraggingHandbook(false)
-                      }}
-                      onDrop={handleHandbookDrop}
-                      onClick={() => handbookInputRef.current?.click()}
-                    >
-                      {isUploadingHandbook ? (
-                        <div className="flex flex-col items-center gap-2">
-                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                          <p className="text-sm text-muted-foreground">Wird hochgeladen...</p>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
-                            <FileText className="w-6 h-6 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Handbuch hochladen</p>
-                            <p className="text-xs text-muted-foreground">
-                              PDF oder Word-Datei hierher ziehen oder klicken
-                            </p>
-                          </div>
-                          <p className="text-xs text-muted-foreground">Max. 50 MB</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
             </TabsContent>
 
@@ -1381,6 +1293,98 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
 
             <TabsContent value="instructions" className="mt-0 space-y-4">
               <div className="space-y-4">
+                {/* Handbuch Upload Section */}
+                <div className="space-y-2">
+                  <Label>Handbuch (PDF/Word)</Label>
+                  <input
+                    type="file"
+                    ref={handbookInputRef}
+                    onChange={handleHandbookSelect}
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                  />
+
+                  {formData.handbook_url || handbookFileName ? (
+                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                        <FileText className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{handbookFileName || "Handbuch"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formData.handbook_url ? "Hochgeladen" : "Wird hochgeladen..."}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {formData.handbook_url && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(formData.handbook_url, "_blank")}
+                          >
+                            Öffnen
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={removeHandbook}
+                          disabled={isUploadingHandbook}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={`
+                        relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
+                        transition-colors duration-200
+                        ${
+                          isDraggingHandbook
+                            ? "border-primary bg-primary/5"
+                            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+                        }
+                        ${isUploadingHandbook ? "pointer-events-none opacity-50" : ""}
+                      `}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setIsDraggingHandbook(true)
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault()
+                        setIsDraggingHandbook(false)
+                      }}
+                      onDrop={handleHandbookDrop}
+                      onClick={() => handbookInputRef.current?.click()}
+                    >
+                      {isUploadingHandbook ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                          <p className="text-sm text-muted-foreground">Wird hochgeladen...</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                            <FileText className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Handbuch hochladen</p>
+                            <p className="text-xs text-muted-foreground">
+                              PDF oder Word-Datei hierher ziehen oder klicken
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Max. 50 MB</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* ADDED DOCUMENT UPLOAD SECTION */}
                 <div>
                   <Label className="mb-2 block">Dokumente hochladen</Label>

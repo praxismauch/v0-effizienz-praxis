@@ -49,11 +49,31 @@ const TIMEZONES = ["Europe/Berlin", "Europe/Vienna", "Europe/Zurich", "Europe/Lo
 
 const CURRENCIES = ["EUR", "CHF", "GBP", "USD"]
 
+const BUNDESLAENDER = [
+  "Baden-Württemberg",
+  "Bayern",
+  "Berlin",
+  "Brandenburg",
+  "Bremen",
+  "Hamburg",
+  "Hessen",
+  "Mecklenburg-Vorpommern",
+  "Niedersachsen",
+  "Nordrhein-Westfalen",
+  "Rheinland-Pfalz",
+  "Saarland",
+  "Sachsen",
+  "Sachsen-Anhalt",
+  "Schleswig-Holstein",
+  "Thüringen",
+]
+
 export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePracticeDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     type: "",
+    bundesland: "",
     street: "",
     city: "",
     zipCode: "",
@@ -69,6 +89,7 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
     setFormData({
       name: "",
       type: "",
+      bundesland: "",
       street: "",
       city: "",
       zipCode: "",
@@ -90,10 +111,10 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.name || !formData.type) {
+    if (!formData.name || !formData.type || !formData.bundesland) {
       toast({
         title: "Fehler",
-        description: "Bitte füllen Sie alle Pflichtfelder aus.",
+        description: "Bitte füllen Sie alle Pflichtfelder aus (Name, Typ und Bundesland).",
         variant: "destructive",
       })
       return
@@ -176,6 +197,28 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
                   {PRACTICE_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>
                       {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Bundesland */}
+            <div className="grid gap-2">
+              <Label htmlFor="bundesland">
+                Bundesland <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.bundesland}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, bundesland: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Bundesland wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BUNDESLAENDER.map((land) => (
+                    <SelectItem key={land} value={land}>
+                      {land}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -310,7 +353,7 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={!formData.name || !formData.type || isSubmitting}>
+            <Button type="submit" disabled={!formData.name || !formData.type || !formData.bundesland || isSubmitting}>
               {isSubmitting ? "Wird erstellt..." : "Praxis erstellen"}
             </Button>
           </DialogFooter>

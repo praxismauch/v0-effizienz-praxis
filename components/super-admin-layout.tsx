@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 interface SuperAdminLayoutProps {
   children: ReactNode
@@ -72,21 +73,23 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
 
   // Main layout - full browser width
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
-      {/* Sidebar - fixed width */}
-      <SuperAdminSidebar />
+    <TooltipProvider delayDuration={300}>
+      <div className="flex h-screen w-screen overflow-hidden bg-background">
+        {/* Sidebar - fixed width */}
+        <SuperAdminSidebar />
 
-      {/* Main content area - takes remaining width */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header - full width of content area */}
-        <SuperAdminHeader />
+        {/* Main content area - takes remaining width */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Header - full width of content area */}
+          <SuperAdminHeader />
 
-        {/* Content - scrollable, full width with consistent padding */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="w-full h-full px-6 py-6">{children}</div>
-        </main>
+          {/* Content - scrollable, full width with consistent padding */}
+          <main className="flex-1 overflow-y-auto">
+            <div className="w-full h-full px-6 py-6">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }
 

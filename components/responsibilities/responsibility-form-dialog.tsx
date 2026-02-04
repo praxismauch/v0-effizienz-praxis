@@ -471,13 +471,17 @@ export function ResponsibilityFormDialog({
                         <SelectTrigger id="responsible_user">
                           <SelectValue placeholder="Nicht zugewiesen" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="max-h-[300px]">
                           <SelectItem value="none">Nicht zugewiesen</SelectItem>
-                          {teamMembers.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>
-                              {getTeamMemberName(member)}
-                            </SelectItem>
-                          ))}
+                          {teamMembers.map((member) => {
+                            const memberId = member.user_id || member.id || member.team_member_id
+                            if (!memberId) return null
+                            return (
+                              <SelectItem key={memberId} value={memberId}>
+                                {getTeamMemberName(member)}
+                              </SelectItem>
+                            )
+                          })}
                         </SelectContent>
                       </Select>
                     )}
@@ -500,15 +504,19 @@ export function ResponsibilityFormDialog({
                         <SelectTrigger id="deputy_user">
                           <SelectValue placeholder="Nicht zugewiesen" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="max-h-[300px]">
                           <SelectItem value="none">Nicht zugewiesen</SelectItem>
                           {teamMembers
-                            .filter((m) => m.id !== formData.responsible_user_id)
-                            .map((member) => (
-                              <SelectItem key={member.id} value={member.id}>
-                                {getTeamMemberName(member)}
-                              </SelectItem>
-                            ))}
+                            .filter((m) => (m.user_id || m.id) !== formData.responsible_user_id)
+                            .map((member) => {
+                              const memberId = member.user_id || member.id || member.team_member_id
+                              if (!memberId) return null
+                              return (
+                                <SelectItem key={memberId} value={memberId}>
+                                  {getTeamMemberName(member)}
+                                </SelectItem>
+                              )
+                            })}
                         </SelectContent>
                       </Select>
                     )}

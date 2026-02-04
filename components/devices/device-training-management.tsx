@@ -858,12 +858,16 @@ export function DeviceTrainingManagement({ devices }: { devices: Device[] }) {
                   <SelectTrigger>
                     <SelectValue placeholder="Mitarbeiter auswählen" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {activeMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name}
-                      </SelectItem>
-                    ))}
+                  <SelectContent position="popper" className="max-h-[300px]">
+                    {activeMembers.map((member) => {
+                      const memberId = member.user_id || member.id || member.team_member_id
+                      if (!memberId) return null
+                      return (
+                        <SelectItem key={memberId} value={memberId}>
+                          {member.first_name} {member.last_name}
+                        </SelectItem>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
               </div>

@@ -173,15 +173,19 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                     <SelectTrigger>
                       <SelectValue placeholder="Mitarbeiter auswählen" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {activeMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.first_name} {member.last_name}
-                          {!trainedMemberIds.has(member.id) && !trainedMemberIds.has(member.user_id || "") && (
-                            <span className="text-yellow-600 ml-2">(nicht eingewiesen)</span>
-                          )}
-                        </SelectItem>
-                      ))}
+                    <SelectContent position="popper" className="max-h-[300px]">
+                      {activeMembers.map((member) => {
+                        const memberId = member.user_id || member.id || member.team_member_id
+                        if (!memberId) return null
+                        return (
+                          <SelectItem key={memberId} value={memberId}>
+                            {member.first_name} {member.last_name}
+                            {!trainedMemberIds.has(memberId) && !trainedMemberIds.has(member.user_id || "") && (
+                              <span className="text-yellow-600 ml-2">(nicht eingewiesen)</span>
+                            )}
+                          </SelectItem>
+                        )
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

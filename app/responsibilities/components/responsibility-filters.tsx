@@ -50,14 +50,18 @@ export function ResponsibilityFilters({
             <User className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Alle Mitarbeiter" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" className="max-h-[300px]">
             <SelectItem value="all">Alle Mitarbeiter</SelectItem>
             <SelectItem value="unassigned">Nicht zugewiesen</SelectItem>
-            {teamMembers.map((member) => (
-              <SelectItem key={member.id} value={member.id}>
-                {member.first_name} {member.last_name}
-              </SelectItem>
-            ))}
+            {teamMembers.map((member) => {
+              const memberId = member.user_id || member.id || member.team_member_id
+              if (!memberId) return null
+              return (
+                <SelectItem key={memberId} value={memberId}>
+                  {member.first_name} {member.last_name}
+                </SelectItem>
+              )
+            })}
           </SelectContent>
         </Select>
 

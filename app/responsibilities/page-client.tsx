@@ -189,9 +189,11 @@ export default function ResponsibilitiesPageClient() {
                   </div>
                 </SelectItem>
                 {teamMembers.map((member) => {
+                  const memberId = member.user_id || member.id || member.team_member_id
+                  if (!memberId) return null
                   const memberColor = getMemberTeamColor(member)
                   return (
-                    <SelectItem key={member.id} value={member.id}>
+                    <SelectItem key={memberId} value={memberId}>
                       <div className="flex items-center gap-2">
                         <div 
                           className="h-3 w-3 rounded-full flex-shrink-0" 

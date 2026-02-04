@@ -462,18 +462,22 @@ export default function CommunicationPage() {
                       <SelectTrigger>
                         <SelectValue placeholder="Empfänger auswählen..." />
                       </SelectTrigger>
-                      <SelectContent>
-                        {teamMembers.map((member) => (
-                          <SelectItem key={member.user_id} value={member.user_id}>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
-                                <AvatarFallback className="text-xs">{member.first_name?.[0]}</AvatarFallback>
-                              </Avatar>
-                              {member.first_name} {member.last_name}
-                              <span className="text-muted-foreground">({member.role})</span>
-                            </div>
-                          </SelectItem>
-                        ))}
+                      <SelectContent position="popper" className="max-h-[300px]">
+                        {teamMembers.map((member) => {
+                          const memberId = member.user_id || member.id || member.team_member_id
+                          if (!memberId) return null
+                          return (
+                            <SelectItem key={memberId} value={memberId}>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarFallback className="text-xs">{member.first_name?.[0]}</AvatarFallback>
+                                </Avatar>
+                                {member.first_name} {member.last_name}
+                                <span className="text-muted-foreground">({member.role})</span>
+                              </div>
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
                   </div>

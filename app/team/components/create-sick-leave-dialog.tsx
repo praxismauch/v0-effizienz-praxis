@@ -94,21 +94,25 @@ export default function CreateSickLeaveDialog({
                 <SelectTrigger>
                   <SelectValue placeholder="Mitarbeiter wählen" />
                 </SelectTrigger>
-                <SelectContent>
-                  {teamMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
-                          <AvatarFallback className="text-xs">
-                            {member.first_name?.[0]}
-                            {member.last_name?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        {member.first_name} {member.last_name}
-                      </div>
-                    </SelectItem>
-                  ))}
+                <SelectContent position="popper" className="max-h-[300px]">
+                  {teamMembers.map((member) => {
+                    const memberId = member.user_id || member.id || member.team_member_id
+                    if (!memberId) return null
+                    return (
+                      <SelectItem key={memberId} value={memberId}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
+                            <AvatarFallback className="text-xs">
+                              {member.first_name?.[0]}
+                              {member.last_name?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          {member.first_name} {member.last_name}
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>

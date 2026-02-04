@@ -379,26 +379,30 @@ export function CreateMultipleTodosDialog({
                             <SelectTrigger className="w-40 h-8 text-xs">
                               <SelectValue placeholder="Niemand" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper" className="max-h-[300px]">
                               <SelectItem value="none">Niemand</SelectItem>
-                              {activeMembers.map((member) => (
-                                <SelectItem key={member.id} value={member.id}>
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-4 w-4">
-                                      <AvatarImage src={member.avatar || ""} />
-                                      <AvatarFallback className="text-[8px]">
-                                        {member.name
-                                          ?.split(" ")
-                                          .map((n: string) => n[0])
-                                          .join("")
-                                          .slice(0, 2)
-                                          .toUpperCase() || "TM"}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    {member.name || member.email}
-                                  </div>
-                                </SelectItem>
-                              ))}
+                              {activeMembers.map((member) => {
+                                const memberId = member.user_id || member.id || member.team_member_id
+                                if (!memberId) return null
+                                return (
+                                  <SelectItem key={memberId} value={memberId}>
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-4 w-4">
+                                        <AvatarImage src={member.avatar || ""} />
+                                        <AvatarFallback className="text-[8px]">
+                                          {member.name
+                                            ?.split(" ")
+                                            .map((n: string) => n[0])
+                                            .join("")
+                                            .slice(0, 2)
+                                            .toUpperCase() || "TM"}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      {member.name || member.email}
+                                    </div>
+                                  </SelectItem>
+                                )
+                              })}
                             </SelectContent>
                           </Select>
                         </div>

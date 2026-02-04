@@ -25,7 +25,7 @@ import { Eye, Users, RefreshCw, Building2, UserPlus, Zap, DollarSign, Clock, Tar
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
 

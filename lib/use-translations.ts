@@ -1,2 +1,2 @@
-// Re-export useTranslations from hooks
-export { useTranslations } from "@/hooks/use-translations"
+// Re-export useTranslation from the context
+export { useTranslation } from "@/contexts/translation-context"

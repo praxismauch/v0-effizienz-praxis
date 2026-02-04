@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useUser } from "@/contexts/user-context"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 interface Review {
   id: string

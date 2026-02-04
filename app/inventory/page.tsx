@@ -18,7 +18,7 @@ import {
   CreateItemDialog, 
   EditItemDialog, 
   BillDetailDialog,
-  DeleteItemDialog 
+  DeleteItemDialog,
 } from "./components/inventory-dialogs"
 import type { InventoryItem, Supplier, InventoryBill } from "./types"
 
@@ -50,6 +50,8 @@ export default function InventoryPage() {
 
   const [selectedBill, setSelectedBill] = useState<InventoryBill | null>(null)
   const [showBillDetailDialog, setShowBillDetailDialog] = useState(false)
+  const [selectedBillItems, setSelectedBillItems] = useState<number[]>([])
+  const [applyingBillItems, setApplyingBillItems] = useState(false)
 
   const [activeTab, setActiveTab] = useState("overview")
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -102,6 +104,25 @@ export default function InventoryPage() {
 
   const handleSaveSettings = async () => {
     // Save settings logic
+  }
+
+  const handleViewBillDetails = (bill: InventoryBill) => {
+    setSelectedBill(bill)
+    setSelectedBillItems([])
+    setShowBillDetailDialog(true)
+  }
+
+  const handleApplyBillItems = async () => {
+    if (!selectedBill) return
+    setApplyingBillItems(true)
+    try {
+      await applyBillItems(selectedBill.id, selectedBillItems.length > 0 ? selectedBillItems : undefined)
+      setShowBillDetailDialog(false)
+      setSelectedBill(null)
+      setSelectedBillItems([])
+    } finally {
+      setApplyingBillItems(false)
+    }
   }
 
   const activeItems = items.filter((i) => i.status !== "archived")
@@ -229,10 +250,7 @@ export default function InventoryPage() {
               e.target.value = ""
             }}
             onExtract={extractBill}
-            onViewDetails={(bill) => {
-              setSelectedBill(bill)
-              setShowBillDetailDialog(true)
-            }}
+            onViewDetails={handleViewBillDetails}
             onApplyItems={(bill) => applyBillItems(bill.id)}
           />
         </TabsContent>
@@ -241,10 +259,7 @@ export default function InventoryPage() {
           <ArchiveTab
             bills={archivedBills}
             loading={isBillsLoading}
-            onViewDetails={(bill) => {
-              setSelectedBill(bill)
-              setShowBillDetailDialog(true)
-            }}
+            onViewDetails={handleViewBillDetails}
           />
         </TabsContent>
 
@@ -277,27 +292,22 @@ export default function InventoryPage() {
         />
       )}
 
-      {/* AddSupplierDialog and AddBillDialog - Future Implementation */}
-      {/* <AddSupplierDialog
-        open={showAddSupplierDialog}
-        onOpenChange={setShowAddSupplierDialog}
-        onAdd={async (supplier) => {
-          // Add supplier logic
-          fetchSuppliers()
-          return true
+      {/* Bill Detail Dialog */}
+      <BillDetailDialog
+        open={showBillDetailDialog}
+        onOpenChange={(open) => {
+          setShowBillDetailDialog(open)
+          if (!open) {
+            setSelectedBill(null)
+            setSelectedBillItems([])
+          }
         }}
+        bill={selectedBill}
+        selectedItems={selectedBillItems}
+        onSelectedItemsChange={setSelectedBillItems}
+        onApply={handleApplyBillItems}
+        applying={applyingBillItems}
       />
-
-      <AddBillDialog
-        open={showAddBillDialog}
-        onOpenChange={setShowAddBillDialog}
-        onAdd={async (bill) => {
-          // Add bill logic
-          fetchBills()
-          return true
-        }}
-        suppliers={suppliers}
-      /> */}
     </div>
   )
 }

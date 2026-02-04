@@ -33,10 +33,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import { getColorConfig, ARBEITSPLATZ_COLORS, type ArbeitsplatzColor } from "@/components/arbeitsplaetze/arbeitsplatz-card"
 
 interface Room {
   id: string
   name: string
+  color?: string | null
 }
 
 interface Arbeitsplatz {
@@ -47,6 +49,8 @@ interface Arbeitsplatz {
   is_active: boolean
   room?: Room | null
   image_url?: string | null
+  color?: ArbeitsplatzColor | null
+  use_room_color?: boolean | null
 }
 
 interface Anweisung {
@@ -290,6 +294,13 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
     )
   }
 
+  // Determine the effective color for this Arbeitsplatz
+  let effectiveColor = arbeitsplatz.color
+  if ((arbeitsplatz.use_room_color !== false) && arbeitsplatz.room?.color) {
+    effectiveColor = arbeitsplatz.room.color as ArbeitsplatzColor
+  }
+  const colorConfig = getColorConfig(effectiveColor)
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -303,13 +314,13 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
               <div
                 className={cn(
                   "p-3 rounded-xl",
-                  arbeitsplatz.is_active ? "bg-green-100 dark:bg-green-900/50" : "bg-gray-100 dark:bg-gray-800",
+                  arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
                 )}
               >
                 <Monitor
                   className={cn(
                     "h-6 w-6",
-                    arbeitsplatz.is_active ? "text-green-600 dark:text-green-400" : "text-gray-500",
+                    arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
                   )}
                 />
               </div>

@@ -311,8 +311,8 @@ export default function ContactsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        {visibleColumns.name && <TableHead className="min-w-[180px]">Name</TableHead>}
                         {visibleColumns.company && <TableHead className="min-w-[140px]">Firma</TableHead>}
+                        {visibleColumns.name && <TableHead className="min-w-[180px]">Name</TableHead>}
                         {visibleColumns.contact && <TableHead className="min-w-[180px]">Kontakt</TableHead>}
                         {visibleColumns.address && <TableHead className="min-w-[160px]">Adresse</TableHead>}
                         {visibleColumns.category && <TableHead className="min-w-[100px]">Kategorie</TableHead>}
@@ -321,40 +321,40 @@ export default function ContactsPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredContacts.map((contact) => (
-                        <TableRow key={contact.id}>
-                          {visibleColumns.name && (
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                {contact.image_url && (
-                                  <img
-                                    src={contact.image_url || "/placeholder.svg"}
-                                    alt={contact.last_name}
-                                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-                                  />
-                                )}
-                                <div>
-                                  <div className="font-medium whitespace-nowrap">
-                                    {contact.salutation && `${contact.salutation} `}
-                                    {contact.title && `${contact.title} `}
-                                    {contact.first_name} {contact.last_name}
-                                  </div>
-                                  {contact.position && (
-                                    <div className="text-sm text-muted-foreground">{contact.position}</div>
-                                  )}
-                                </div>
-                              </div>
-                            </TableCell>
-                          )}
-                          {visibleColumns.company && (
-                            <TableCell>
-                              {contact.company && (
-                                <div className="flex items-center gap-2">
-                                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                  <span className="truncate max-w-[120px]">{contact.company}</span>
-                                </div>
-                              )}
-                            </TableCell>
-                          )}
+<TableRow key={contact.id}>
+                                          {visibleColumns.company && (
+                                            <TableCell>
+                                              {contact.company && (
+                                                <div className="flex items-center gap-2">
+                                                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                                  <span className="truncate max-w-[120px]">{contact.company}</span>
+                                                </div>
+                                              )}
+                                            </TableCell>
+                                          )}
+                                          {visibleColumns.name && (
+                                            <TableCell>
+                                              <div className="flex items-center gap-2">
+                                                {contact.image_url && (
+                                                  <img
+                                                    src={contact.image_url || "/placeholder.svg"}
+                                                    alt={contact.last_name}
+                                                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                                                  />
+                                                )}
+                                                <div>
+                                                  <div className="font-medium whitespace-nowrap">
+                                                    {contact.salutation && `${contact.salutation} `}
+                                                    {contact.title && `${contact.title} `}
+                                                    {contact.first_name} {contact.last_name}
+                                                  </div>
+                                                  {contact.position && (
+                                                    <div className="text-sm text-muted-foreground">{contact.position}</div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </TableCell>
+                                          )}
                           {visibleColumns.contact && (
                             <TableCell>
                               <div className="space-y-1">

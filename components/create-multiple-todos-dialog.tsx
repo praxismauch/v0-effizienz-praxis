@@ -98,7 +98,7 @@ export function CreateMultipleTodosDialog({
           return res.json()
         })
         .then((data) => {
-          setTeamMembers(Array.isArray(data) ? data : [])
+          setTeamMembers(Array.isArray(data) ? data : data.teamMembers || data.members || [])
         })
         .catch((err) => {
           console.error("Error fetching team members:", err)

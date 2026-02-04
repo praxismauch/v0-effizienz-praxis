@@ -171,6 +171,8 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
 
     setLoading(true)
     try {
+      console.log("[v0] Submitting contract update...")
+      
       const res = await fetch(`/api/practices/${currentPractice.id}/contracts/${contract.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -199,8 +201,22 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
         }),
       })
 
-      if (res.ok) {
-        const updatedContract = await res.json()
+      console.log("[v0] Contract update response:", res.status)
+
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error("[v0] Contract update failed:", errorText)
+        toast({
+          title: "Fehler beim Speichern",
+          description: errorText || "Vertrag konnte nicht aktualisiert werden",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      const updatedContract = await res.json()
+      console.log("[v0] Contract updated successfully")
 
         // Upload new files using server-side API
         if (uploadedFiles.length > 0) {
@@ -261,10 +277,19 @@ function EditContractDialog({ open, onOpenChange, contract, memberName, onContra
         }
 
         onContractUpdated(updatedContract)
-        setUploadedFiles([])
-      }
+      setUploadedFiles([])
+      
+      toast({
+        title: "Erfolgreich gespeichert",
+        description: "Vertrag wurde aktualisiert",
+      })
     } catch (error) {
-      console.error("Error updating contract:", error)
+      console.error("[v0] Error updating contract:", error)
+      toast({
+        title: "Fehler",
+        description: "Ein unerwarteter Fehler ist aufgetreten",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }

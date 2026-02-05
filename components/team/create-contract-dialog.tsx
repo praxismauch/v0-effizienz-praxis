@@ -484,8 +484,9 @@ function CreateContractDialog({
                   </Label>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => setAdditionalPayments((prev) => [
                       ...prev,
                       { id: crypto.randomUUID(), name: "", amount: "", frequency: "monthly" }

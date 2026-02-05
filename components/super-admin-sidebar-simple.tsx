@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/context-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useUser } from "@/contexts/user-context"
+import { useSuperAdminSidebar } from "@/contexts/super-admin-sidebar-context"
 import {
   ChevronDown,
   ChevronRight,
@@ -93,7 +94,7 @@ interface MenuSection {
 export function SuperAdminSidebarSimple() {
   const pathname = usePathname()
   const { currentUser } = useUser()
-  const [collapsed, setCollapsed] = useState(false)
+  const { collapsed, setCollapsed } = useSuperAdminSidebar()
   const [openSections, setOpenSections] = useState<string[]>(["overview", "management"])
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)

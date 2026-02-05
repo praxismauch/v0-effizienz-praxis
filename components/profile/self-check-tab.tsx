@@ -192,8 +192,9 @@ const getWeekInfo = (date: Date) => {
 
 export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
   const { toast } = useToast()
-  const [activeSubTab, setActiveSubTab] = useState("weekly")
+  const [activeSubTab, setActiveSubTab] = useState("overview")
   const [isLoading, setIsLoading] = useState(true)
+  const [showNewAssessmentForm, setShowNewAssessmentForm] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
   const [history, setHistory] = useState<SelfCheckData[]>([])
@@ -311,6 +312,7 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
       })
 
       await loadHistory()
+      setShowNewAssessmentForm(false)
     } catch (error) {
       console.error("[v0] Error saving self-check:", error)
       toast({
@@ -507,163 +509,288 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
 
       {/* Sub-tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="assessment" className="gap-2">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="overview" className="gap-2">
             <CheckCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Selbsteinschätzung</span>
-            <span className="sm:hidden">Check</span>
+            <span className="hidden sm:inline">Selbsteinschätzungen</span>
+            <span className="sm:hidden">Übersicht</span>
           </TabsTrigger>
           <TabsTrigger value="insights" className="gap-2">
             <Lightbulb className="h-4 w-4" />
             <span className="hidden sm:inline">KI-Empfehlungen</span>
             <span className="sm:hidden">KI</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="gap-2">
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Verlauf</span>
-            <span className="sm:hidden">Verlauf</span>
-          </TabsTrigger>
         </TabsList>
 
-        {/* Assessment Tab */}
-        <TabsContent value="assessment" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Wöchentliche Selbsteinschätzung
-                  </CardTitle>
-                  <CardDescription>Bewerten Sie Ihr aktuelles Befinden auf einer Skala von 1-10</CardDescription>
-                </div>
-                <Badge variant="outline">
-                  {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              {DIMENSIONS.map((dimension) => {
-                const Icon = dimension.icon
-                const value = currentAssessment[dimension.key]
-
-                return (
-                  <div key={dimension.key} className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={cn("p-2 rounded-lg", dimension.bgColor)}>
-                          <Icon className={cn("h-5 w-5", dimension.color)} />
-                        </div>
-                        <div>
-                          <div className="font-medium">{dimension.label}</div>
-                          <div className="text-sm text-muted-foreground">{dimension.description}</div>
-                        </div>
-                      </div>
-                      <div
-                        className={cn(
-                          "text-2xl font-bold tabular-nums min-w-[3rem] text-right",
-                          value !== null ? dimension.color : "text-muted-foreground",
-                        )}
-                      >
-                        {value !== null ? value : "—"}
-                      </div>
+        {/* Overview Tab - Shows all assessments + Wellness Profile + Add button */}
+        <TabsContent value="overview" className="space-y-6 mt-6">
+          {!showNewAssessmentForm ? (
+            <>
+              {/* Add New Assessment Button */}
+              <Card className="border-dashed bg-muted/30">
+                <CardContent className="flex items-center justify-between p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Plus className="h-5 w-5 text-primary" />
                     </div>
-                    <div className="px-2">
-                      <Slider
-                        value={value !== null ? [value] : [5]}
-                        onValueChange={([v]) => setCurrentAssessment((prev) => ({ ...prev, [dimension.key]: v }))}
-                        min={1}
-                        max={10}
-                        step={1}
-                        className="cursor-pointer"
-                      />
-                      <div className="flex justify-between mt-1 text-xs text-muted-foreground">
-                        <span>{dimension.lowLabel}</span>
-                        <span>{dimension.highLabel}</span>
-                      </div>
+                    <div>
+                      <div className="font-semibold">Neue Selbsteinschätzung</div>
+                      <div className="text-sm text-muted-foreground">Bewerten Sie Ihr aktuelles Befinden</div>
                     </div>
                   </div>
-                )
-              })}
+                  <Button onClick={() => setShowNewAssessmentForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Hinzufügen
+                  </Button>
+                </CardContent>
+              </Card>
 
-              {/* Notes */}
-              <div className="space-y-2 pt-4 border-t">
-                <label className="text-sm font-medium">Persönliche Notizen (optional)</label>
-                <Textarea
-                  placeholder="Gibt es etwas, das Sie diese Woche besonders beeinflusst hat?"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
+              {/* Wellness-Profil Radar Chart */}
+              {Object.values(currentAssessment).some((v) => v !== null) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Wellness-Profil</CardTitle>
+                    <CardDescription>Visualisierung Ihrer aktuellen Bewertungen</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[350px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart data={radarData}>
+                          <PolarGrid stroke="hsl(var(--border))" />
+                          <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                          <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                          <Radar
+                            name="Ihre Bewertung"
+                            dataKey="value"
+                            stroke="hsl(var(--primary))"
+                            fill="hsl(var(--primary))"
+                            fillOpacity={0.5}
+                            strokeWidth={2}
+                          />
+                          <Legend />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button onClick={handleSave} disabled={isSaving} className="flex-1">
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Speichern...
-                    </>
+              {/* History List - Frühere Einschätzungen */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Frühere Einschätzungen</CardTitle>
+                  <CardDescription>{history.length} Einträge</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {history.length > 0 ? (
+                    <div className="space-y-3">
+                      {history.slice(0, 10).map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={cn(
+                                "p-2 rounded-full",
+                                entry.overall_score && entry.overall_score >= 7
+                                  ? "bg-emerald-500/10"
+                                  : entry.overall_score && entry.overall_score >= 5
+                                    ? "bg-amber-500/10"
+                                    : "bg-red-500/10",
+                              )}
+                            >
+                              {entry.overall_score && entry.overall_score >= 7 ? (
+                                <Smile className="h-5 w-5 text-emerald-500" />
+                              ) : entry.overall_score && entry.overall_score >= 5 ? (
+                                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                              ) : (
+                                <AlertTriangle className="h-5 w-5 text-red-500" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium">
+                                {new Date(entry.assessment_date).toLocaleDateString("de-DE", {
+                                  weekday: "long",
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                })}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {entry.notes ? entry.notes.substring(0, 50) + "..." : "Keine Notizen"}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className={cn("text-2xl font-bold tabular-nums", getScoreColor(entry.overall_score))}>
+                              {entry.overall_score?.toFixed(1) || "—"}
+                            </div>
+                            {entry.ai_recommendations && (
+                              <Badge variant="outline" className="gap-1">
+                                <Sparkles className="h-3 w-3" />
+                                KI
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Einschätzung speichern
-                    </>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">
+                        Noch keine Einschätzungen vorhanden. Starten Sie jetzt mit Ihrer ersten Selbsteinschätzung.
+                      </p>
+                    </div>
                   )}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleGenerateAI}
-                  disabled={isGeneratingAI || !Object.values(currentAssessment).some((v) => v !== null)}
-                  className="flex-1"
-                >
-                  {isGeneratingAI ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analysiere...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      KI-Empfehlungen generieren
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              {/* New Assessment Form (using existing assessment UI) */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Wöchentliche Selbsteinschätzung
+                      </CardTitle>
+                      <CardDescription>Bewerten Sie Ihr aktuelles Befinden auf einer Skala von 1-10</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
+                      </Badge>
+                      <Button variant="ghost" size="sm" onClick={() => setShowNewAssessmentForm(false)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  {DIMENSIONS.map((dimension) => {
+                    const Icon = dimension.icon
+                    const value = currentAssessment[dimension.key]
 
-          {/* Radar Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Wellness-Profil</CardTitle>
-              <CardDescription>Visualisierung Ihrer aktuellen Bewertungen</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="hsl(var(--border))" />
-                    <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <PolarRadiusAxis
-                      angle={30}
-                      domain={[0, 10]}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                    return (
+                      <div key={dimension.key} className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={cn("p-2 rounded-lg", dimension.bgColor)}>
+                              <Icon className={cn("h-5 w-5", dimension.color)} />
+                            </div>
+                            <div>
+                              <div className="font-medium">{dimension.label}</div>
+                              <div className="text-sm text-muted-foreground">{dimension.description}</div>
+                            </div>
+                          </div>
+                          <div
+                            className={cn(
+                              "text-2xl font-bold tabular-nums min-w-[3rem] text-right",
+                              value !== null ? dimension.color : "text-muted-foreground",
+                            )}
+                          >
+                            {value !== null ? value : "—"}
+                          </div>
+                        </div>
+                        <div className="px-2">
+                          <Slider
+                            value={value !== null ? [value] : [5]}
+                            onValueChange={([v]) => setCurrentAssessment((prev) => ({ ...prev, [dimension.key]: v }))}
+                            min={1}
+                            max={10}
+                            step={1}
+                            className="cursor-pointer"
+                          />
+                          <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                            <span>{dimension.lowLabel}</span>
+                            <span>{dimension.highLabel}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {/* Notes */}
+                  <div className="space-y-2 pt-4 border-t">
+                    <label className="text-sm font-medium">Persönliche Notizen (optional)</label>
+                    <Textarea
+                      placeholder="Gibt es etwas, das Sie diese Woche besonders beeinflusst hat?"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="min-h-[100px]"
                     />
-                    <Radar
-                      name="Aktuell"
-                      dataKey="value"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.3}
-                      strokeWidth={2}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <Button onClick={handleSave} disabled={isSaving} className="flex-1">
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Speichern...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Einschätzung speichern
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleGenerateAI}
+                      disabled={isGeneratingAI || !Object.values(currentAssessment).some((v) => v !== null)}
+                      className="flex-1"
+                    >
+                      {isGeneratingAI ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Analysiere...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          KI-Empfehlungen generieren
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Wellness-Profil in form view */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Wellness-Profil</CardTitle>
+                  <CardDescription>Visualisierung Ihrer aktuellen Bewertungen</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke="hsl(var(--border))" />
+                        <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                        <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                        <Radar
+                          name="Ihre Bewertung"
+                          dataKey="value"
+                          stroke="hsl(var(--primary))"
+                          fill="hsl(var(--primary))"
+                          fillOpacity={0.5}
+                          strokeWidth={2}
+                        />
+                        <Legend />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         {/* AI Insights Tab */}
@@ -786,146 +913,7 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
           )}
         </TabsContent>
 
-        {/* History Tab */}
-        <TabsContent value="history" className="space-y-6 mt-6">
-          {/* Trend Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Wellness-Verlauf</CardTitle>
-              <CardDescription>Entwicklung Ihres mentalen Wohlbefindens über Zeit</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {historyChartData.length > 1 ? (
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={historyChartData}>
-                      <defs>
-                        <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                      <YAxis domain={[0, 10]} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--background))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                      />
-                      <Legend />
-                      <Area
-                        type="monotone"
-                        dataKey="score"
-                        name="Gesamtscore"
-                        stroke="hsl(var(--primary))"
-                        fill="url(#scoreGradient)"
-                        strokeWidth={2}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="energy"
-                        name="Energie"
-                        stroke="#f59e0b"
-                        strokeWidth={1.5}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="motivation"
-                        name="Motivation"
-                        stroke="#10b981"
-                        strokeWidth={1.5}
-                        dot={false}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    Noch nicht genügend Daten für einen Verlauf. Führen Sie regelmäßig Selbsteinschätzungen durch.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* History List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Frühere Einschätzungen</CardTitle>
-              <CardDescription>{history.length} Einträge</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {history.length > 0 ? (
-                <div className="space-y-3">
-                  {history.slice(0, 10).map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={cn(
-                            "p-2 rounded-full",
-                            entry.overall_score && entry.overall_score >= 7
-                              ? "bg-emerald-500/10"
-                              : entry.overall_score && entry.overall_score >= 5
-                                ? "bg-amber-500/10"
-                                : "bg-red-500/10",
-                          )}
-                        >
-                          {entry.overall_score && entry.overall_score >= 7 ? (
-                            <Smile className="h-5 w-5 text-emerald-500" />
-                          ) : entry.overall_score && entry.overall_score >= 5 ? (
-                            <AlertTriangle className="h-5 w-5 text-amber-500" />
-                          ) : (
-                            <AlertTriangle className="h-5 w-5 text-red-500" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium">
-                            {new Date(entry.assessment_date).toLocaleDateString("de-DE", {
-                              weekday: "long",
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            })}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {entry.notes ? entry.notes.substring(0, 50) + "..." : "Keine Notizen"}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className={cn("text-2xl font-bold tabular-nums", getScoreColor(entry.overall_score))}>
-                          {entry.overall_score?.toFixed(1) || "—"}
-                        </div>
-                        {entry.ai_recommendations && (
-                          <Badge variant="outline" className="gap-1">
-                            <Sparkles className="h-3 w-3" />
-                            KI
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    Noch keine Einschätzungen vorhanden. Starten Sie jetzt mit Ihrer ersten Selbsteinschätzung.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { User, Building, Mail, Calendar } from "lucide-react"
@@ -28,6 +28,9 @@ export function TicketDetailsDialog({ ticket, open, onOpenChange }: TicketDetail
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">{ticket.title}</DialogTitle>
+          <DialogDescription>
+            Ticket-Details und Informationen
+          </DialogDescription>
           <div className="flex flex-wrap gap-2 mt-2">
             <Badge className={getPriorityColor(ticket.priority)}>{getPriorityLabel(ticket.priority)}</Badge>
             <Badge variant="outline">{getTypeLabel(ticket.type)}</Badge>

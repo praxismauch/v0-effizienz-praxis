@@ -25,6 +25,12 @@ import {
   Archive,
   Trash2,
   ImageIcon,
+  AlertCircle,
+  ArrowUp,
+  Minus,
+  AlertTriangle,
+  FolderOpen,
+  Pencil,
 } from "lucide-react"
 import {
   getStatusColor,
@@ -35,15 +41,43 @@ import {
   formatDateDE,
 } from "@/lib/tickets/utils"
 import type { TicketItem } from "../types"
+import { useEffect, useState } from "react"
+
+interface MenuItem {
+  name: string
+  href: string
+  groupLabel?: string
+}
 
 interface TicketCardProps {
   ticket: TicketItem
   onViewDetails: (ticket: TicketItem) => void
+  onEdit: (ticket: TicketItem) => void
   onStatusChange: (ticketId: string, status: string) => void
+  onPriorityChange: (ticketId: string, priority: string) => void
+  onCategoryChange: (ticketId: string, category: string) => void
   onDelete: (ticketId: string) => void
 }
 
-export function TicketCard({ ticket, onViewDetails, onStatusChange, onDelete }: TicketCardProps) {
+export function TicketCard({ ticket, onViewDetails, onEdit, onStatusChange, onPriorityChange, onCategoryChange, onDelete }: TicketCardProps) {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  
+  useEffect(() => {
+    // Fetch menu items from API
+    const fetchMenuItems = async () => {
+      try {
+        const response = await fetch("/api/menu-items")
+        if (response.ok) {
+          const data = await response.json()
+          setMenuItems(data.items || [])
+        }
+      } catch (error) {
+        console.error("Error fetching menu items:", error)
+      }
+    }
+    fetchMenuItems()
+  }, [])
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "bug":
@@ -61,12 +95,19 @@ export function TicketCard({ ticket, onViewDetails, onStatusChange, onDelete }: 
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <Badge className={getPriorityColor(ticket.priority)}>{getPriorityLabel(ticket.priority)}</Badge>
+              {/* Priority Badge */}
+              <Badge className={`${getPriorityColor(ticket.priority)} text-white border-0`}>
+                {getPriorityLabel(ticket.priority)}
+              </Badge>
+              {/* Status Badge */}
+              <Badge className={`${getStatusColor(ticket.status)} text-white border-0`}>
+                {getStatusLabel(ticket.status)}
+              </Badge>
+              {/* Type Badge */}
               <Badge variant="outline" className="flex items-center gap-1">
                 {getTypeIcon(ticket.type)}
                 {getTypeLabel(ticket.type)}
               </Badge>
-              <Badge className={getStatusColor(ticket.status)}>{getStatusLabel(ticket.status)}</Badge>
             </div>
 
             <h3
@@ -137,17 +178,27 @@ export function TicketCard({ ticket, onViewDetails, onStatusChange, onDelete }: 
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" className="bg-transparent" onClick={() => onViewDetails(ticket)}>
               <Eye className="h-4 w-4 mr-1" />
               Details
             </Button>
 
+            <Button variant="outline" size="sm" className="bg-transparent" onClick={() => onEdit(ticket)}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Bearbeiten
+            </Button>
+
+            {/* Status Dropdown with Badge-like styling */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-transparent">
-                  Status
-                  <ChevronDown className="h-4 w-4 ml-1" />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`${getStatusColor(ticket.status)} text-white border-0 hover:opacity-90 h-7 px-3 gap-1.5 font-medium shadow-sm`}
+                >
+                  {getStatusLabel(ticket.status)}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -173,6 +224,73 @@ export function TicketCard({ ticket, onViewDetails, onStatusChange, onDelete }: 
                   <XCircle className="h-4 w-4 mr-2 text-red-500" />
                   Wird nicht behoben
                 </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Priority Dropdown with Badge-like styling */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`${getPriorityColor(ticket.priority)} text-white border-0 hover:opacity-90 h-7 px-3 gap-1.5 font-medium shadow-sm`}
+                >
+                  {getPriorityLabel(ticket.priority)}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Priorität ändern</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onPriorityChange(ticket.id, "low")}>
+                  <Minus className="h-4 w-4 mr-2 text-gray-500" />
+                  Niedrig
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onPriorityChange(ticket.id, "medium")}>
+                  <AlertCircle className="h-4 w-4 mr-2 text-blue-500" />
+                  Mittel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onPriorityChange(ticket.id, "high")}>
+                  <ArrowUp className="h-4 w-4 mr-2 text-orange-500" />
+                  Hoch
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onPriorityChange(ticket.id, "urgent")}>
+                  <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
+                  Dringend
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-transparent">
+                  Kategorie
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="max-h-[400px] overflow-y-auto">
+                <DropdownMenuLabel>Kategorie ändern</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {menuItems.length === 0 ? (
+                  <DropdownMenuItem disabled>Lädt...</DropdownMenuItem>
+                ) : (
+                  <>
+                    <DropdownMenuItem onClick={() => onCategoryChange(ticket.id, "")}>
+                      <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
+                      Keine Kategorie
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {menuItems.map((item, index) => (
+                      <DropdownMenuItem 
+                        key={index} 
+                        onClick={() => onCategoryChange(ticket.id, item.name)}
+                      >
+                        <span className="text-xs text-muted-foreground mr-2">{item.groupLabel || "App"}</span>
+                        {item.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 

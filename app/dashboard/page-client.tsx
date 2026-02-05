@@ -18,9 +18,10 @@ interface DashboardPageClientProps {
   } | null
   practiceId: string | null | undefined
   userId: string
+  userName: string
 }
 
-export default function DashboardPageClient({ initialData, practiceId, userId }: DashboardPageClientProps) {
+export default function DashboardPageClient({ initialData, practiceId, userId, userName }: DashboardPageClientProps) {
   const router = useRouter()
 
   // If no practice ID, show error

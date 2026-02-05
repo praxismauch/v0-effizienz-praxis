@@ -25,6 +25,7 @@ import { TicketStatsCards } from "./components/ticket-stats-cards"
 import { TicketFilters } from "./components/ticket-filters"
 import { TicketCard } from "./components/ticket-card"
 import { TicketDetailsDialog } from "./components/ticket-details-dialog"
+import { EditTicketDialog } from "./components/edit-ticket-dialog"
 
 // Import types
 import type { TicketItem, TicketStats } from "./types"
@@ -42,6 +43,8 @@ export default function SuperAdminTicketManager() {
   const activeTab = searchParams.get("tab") || "all"
   const [selectedTicket, setSelectedTicket] = useState<TicketItem | null>(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [ticketToEdit, setTicketToEdit] = useState<TicketItem | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [ticketToDelete, setTicketToDelete] = useState<string | null>(null)
   const [stats, setStats] = useState<TicketStats>({
@@ -145,6 +148,30 @@ export default function SuperAdminTicketManager() {
       toast({ title: "Erfolg", description: "Kategorie wurde aktualisiert" })
     } catch (error) {
       toast({ title: "Fehler", description: "Kategorie konnte nicht geändert werden", variant: "destructive" })
+    }
+  }
+
+  const handleEdit = (ticket: TicketItem) => {
+    setTicketToEdit(ticket)
+    setShowEditDialog(true)
+  }
+
+  const handleEditSave = async (updatedTicket: Partial<TicketItem>) => {
+    if (!ticketToEdit) return
+    try {
+      const response = await fetch(`/api/tickets/${ticketToEdit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedTicket),
+      })
+      if (!response.ok) throw new Error("Failed to update ticket")
+      const data = await response.json()
+      setTickets((prev) => prev.map((t) => (t.id === ticketToEdit.id ? { ...t, ...data.ticket } : t)))
+      toast({ title: "Erfolg", description: "Ticket wurde aktualisiert" })
+      setShowEditDialog(false)
+      setTicketToEdit(null)
+    } catch (error) {
+      toast({ title: "Fehler", description: "Ticket konnte nicht aktualisiert werden", variant: "destructive" })
     }
   }
 
@@ -274,6 +301,7 @@ export default function SuperAdminTicketManager() {
                   onPriorityChange={handlePriorityChange}
                   onCategoryChange={handleCategoryChange}
                   onViewDetails={(t) => { setSelectedTicket(t); setShowDetailsDialog(true) }}
+                  onEdit={handleEdit}
                   onDelete={(id) => { setTicketToDelete(id); setShowDeleteDialog(true) }}
                 />
               ))}
@@ -290,6 +318,14 @@ export default function SuperAdminTicketManager() {
         statuses={statuses}
         priorities={priorities}
         types={types}
+      />
+
+      {/* Edit Dialog */}
+      <EditTicketDialog
+        ticket={ticketToEdit}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSave={handleEditSave}
       />
 
       {/* Delete Confirmation Dialog */}

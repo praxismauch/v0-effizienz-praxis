@@ -30,6 +30,7 @@ import {
   Minus,
   AlertTriangle,
   FolderOpen,
+  Pencil,
 } from "lucide-react"
 import {
   getStatusColor,
@@ -51,13 +52,14 @@ interface MenuItem {
 interface TicketCardProps {
   ticket: TicketItem
   onViewDetails: (ticket: TicketItem) => void
+  onEdit: (ticket: TicketItem) => void
   onStatusChange: (ticketId: string, status: string) => void
   onPriorityChange: (ticketId: string, priority: string) => void
   onCategoryChange: (ticketId: string, category: string) => void
   onDelete: (ticketId: string) => void
 }
 
-export function TicketCard({ ticket, onViewDetails, onStatusChange, onPriorityChange, onCategoryChange, onDelete }: TicketCardProps) {
+export function TicketCard({ ticket, onViewDetails, onEdit, onStatusChange, onPriorityChange, onCategoryChange, onDelete }: TicketCardProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   
   useEffect(() => {
@@ -173,6 +175,11 @@ export function TicketCard({ ticket, onViewDetails, onStatusChange, onPriorityCh
             <Button variant="outline" size="sm" className="bg-transparent" onClick={() => onViewDetails(ticket)}>
               <Eye className="h-4 w-4 mr-1" />
               Details
+            </Button>
+
+            <Button variant="outline" size="sm" className="bg-transparent" onClick={() => onEdit(ticket)}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Bearbeiten
             </Button>
 
             <DropdownMenu>

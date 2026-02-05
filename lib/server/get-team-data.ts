@@ -125,6 +125,37 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
 })
 
 /**
+ * Get a single team member by ID
+ */
+export const getTeamMemberById = cache(async (memberId: string, practiceId: string): Promise<any | null> => {
+  try {
+    const supabase = await createServerClient()
+    
+    console.log("[v0] Fetching team member:", memberId, "for practice:", practiceId)
+    
+    const practiceIdNum = parseInt(practiceId, 10)
+    
+    const { data, error } = await supabase
+      .from("team_members")
+      .select("*")
+      .eq("id", memberId)
+      .eq("practice_id", practiceIdNum)
+      .single()
+
+    if (error) {
+      console.error("[v0] Error fetching team member by ID:", error)
+      return null
+    }
+
+    console.log("[v0] Found team member:", data ? "yes" : "no")
+    return data
+  } catch (error) {
+    console.error("[v0] Error getting team member by ID:", error)
+    return null
+  }
+})
+
+/**
  * Get all team-related data for a practice (teams + members)
  */
 export const getAllTeamData = cache(async (practiceId: string) => {

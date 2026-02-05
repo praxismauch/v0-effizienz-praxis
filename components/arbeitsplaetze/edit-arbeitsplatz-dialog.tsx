@@ -211,7 +211,11 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
               </div>
               <Select value={raumId} onValueChange={setRaumId}>
                 <SelectTrigger id="raum">
-                  <SelectValue placeholder="Kein Raum" />
+                  <SelectValue>
+                    {raumId === "none" || !raumId 
+                      ? "Kein Raum" 
+                      : rooms.find(r => r.id === raumId)?.name || "Kein Raum"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Kein Raum</SelectItem>

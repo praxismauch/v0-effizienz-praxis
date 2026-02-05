@@ -94,16 +94,8 @@ export function TicketCard({ ticket, onViewDetails, onEdit, onStatusChange, onPr
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              {/* Priority Badge */}
-              <Badge className={`${getPriorityColor(ticket.priority)} text-white border-0`}>
-                {getPriorityLabel(ticket.priority)}
-              </Badge>
-              {/* Status Badge */}
-              <Badge className={`${getStatusColor(ticket.status)} text-white border-0`}>
-                {getStatusLabel(ticket.status)}
-              </Badge>
-              {/* Type Badge */}
+            {/* Type Badge - only showing type since status/priority are in dropdowns */}
+            <div className="flex items-center gap-2 mb-2">
               <Badge variant="outline" className="flex items-center gap-1">
                 {getTypeIcon(ticket.type)}
                 {getTypeLabel(ticket.type)}

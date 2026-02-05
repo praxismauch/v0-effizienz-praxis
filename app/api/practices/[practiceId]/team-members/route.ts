@@ -108,6 +108,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const userIds = activeMembers.map((m) => m.user_id).filter(Boolean) as string[]
 
     let teamAssignments: TeamAssignment[] = []
+    let userAvatars: Record<string, string | null> = {}
 
     if (userIds.length > 0) {
       try {
@@ -118,6 +119,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       } catch (assignError: unknown) {
         console.error("Error fetching team assignments:", assignError)
       }
+
+      // Fetch avatars from users table
+      try {
+        const { data: usersData } = await supabase
+          .from("users")
+          .select("id, avatar")
+          .in("id", userIds)
+
+        if (usersData) {
+          userAvatars = usersData.reduce((acc: Record<string, string | null>, user: any) => {
+            acc[user.id] = user.avatar
+            return acc
+          }, {})
+        }
+      } catch (avatarError: unknown) {
+        console.error("Error fetching user avatars:", avatarError)
+      }
     }
 
     const teamMembers = activeMembers.map((member) => {
@@ -126,6 +144,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const firstName = member.first_name?.trim() || ""
       const lastName = member.last_name?.trim() || ""
       const name = firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || "Unbekannt"
+
+      const avatar = member.user_id ? userAvatars[member.user_id] : null
 
       return {
         id: memberId,
@@ -138,8 +158,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         name: name,
         email: "",
         role: member.role || "user",
-        avatar: null, // No avatar in team_members table
-        avatar_url: null, // No avatar in team_members table
+        avatar: avatar,
+        avatar_url: avatar,
         practiceId: practiceId,
         isActive: member.status === "active" || !member.status,
         is_active: member.status === "active" || !member.status,

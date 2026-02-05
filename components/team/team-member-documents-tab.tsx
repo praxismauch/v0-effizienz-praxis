@@ -394,16 +394,20 @@ export function TeamMemberDocumentsTab({
             <div className="space-y-2">
               <Label htmlFor="file">Datei hochladen</Label>
               <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                <Input
+                <input
                   id="file"
                   type="file"
                   onChange={handleFileChange}
                   className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                 />
-                <label htmlFor="file" className="cursor-pointer">
+                <label htmlFor="file" className="cursor-pointer block">
                   <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">
                     {formData.file ? formData.file.name : "Klicken zum Hochladen oder Datei hierher ziehen"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PDF, DOC, DOCX, XLS, XLSX, JPG, PNG
                   </p>
                 </label>
               </div>

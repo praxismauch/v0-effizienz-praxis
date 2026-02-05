@@ -234,8 +234,8 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
         return
       }
 
-      // Output size (circular avatar is 192px in the editor, we'll use 384px for quality)
-      const outputSize = 384
+      // Output size (circular avatar is 384px in the editor, we'll use 768px for quality)
+      const outputSize = 768
       canvas.width = outputSize
       canvas.height = outputSize
 
@@ -250,8 +250,8 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
       })
 
       // Calculate the crop based on zoom and pan settings
-      // The preview div is 192x192 (w-48 h-48)
-      const previewSize = 192
+      // The preview div is 384x384 (w-96 h-96)
+      const previewSize = 384
       const zoom = cropSettings.zoom
       const panX = cropSettings.panX
       const panY = cropSettings.panY
@@ -519,7 +519,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
                 <div className="flex flex-col items-center gap-2">
                   <div
                     ref={imageRef}
-                    className="relative w-48 h-48 rounded-full overflow-hidden bg-muted cursor-move touch-none select-none"
+                    className="relative w-96 h-96 rounded-full overflow-hidden bg-muted cursor-move touch-none select-none"
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}

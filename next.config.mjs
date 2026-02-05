@@ -19,7 +19,7 @@ const nextConfig = {
   serverExternalPackages: ["googleapis", "nodemailer", "bcryptjs"],
   // Turbopack configuration
   turbopack: {
-    root: process.cwd(),
+    root: '/vercel/share/v0-project',
   },
   
   // Next.js 16: Experimental features

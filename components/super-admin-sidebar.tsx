@@ -1,10 +1,8 @@
 "use client"
 
 import type React from "react"
-import { createBrowserClient } from "@/lib/supabase-client" // Import createBrowserClient
-import { Shield, Cog, Star } from "lucide-react" // Import Shield, Cog and Star
-
 import { useState, useEffect } from "react"
+import { Shield, Cog, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -170,15 +168,10 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       }
 
       try {
-        const supabase = createBrowserClient()
-        const { data, error } = await supabase
-          .from("user_sidebar_preferences")
-          .select("expanded_groups, sidebar_collapsed, expanded_items, favorites")
-          .eq("user_id", currentUser.id)
-          .eq("practice_id", "super-admin")
-          .maybeSingle()
-
-        if (data && !error) {
+        // Use API route to fetch preferences instead of direct Supabase call
+        const response = await fetch(`/api/super-admin/sidebar-preferences`)
+        if (response.ok) {
+          const data = await response.json()
           if (Array.isArray(data.expanded_groups) && data.expanded_groups.length > 0) {
             setOpenSections(data.expanded_groups)
           }
@@ -193,7 +186,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           }
         }
       } catch (error) {
-        console.debug("Error loading super admin sidebar state from DB:", error)
+        console.debug("Error loading super admin sidebar state from API:", error)
       }
     }
 

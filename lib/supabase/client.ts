@@ -48,4 +48,14 @@ export function getClientSafe(): SupabaseClient | null {
   }
 }
 
+/**
+ * Async version for contexts that need to await initialization
+ */
+export async function getClientAsync(): Promise<SupabaseClient> {
+  return createClient()
+}
+
+// Aliases for backwards compatibility
+export const createBrowserSupabaseClient = createClient
+
 export default createClient

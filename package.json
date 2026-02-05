@@ -6,7 +6,7 @@
     "prebuild": "pnpm run clean",
     "build": "next build",
     "clean": "rm -rf .next",
-    "dev": "next dev",
+    "dev": "next dev --turbopack=false",
     "fix-uuid": "tsx scripts/fix-uuid-comparisons.ts",
     "fix:slugs": "node scripts/fix-dynamic-slugs.mjs",
     "lint": "next lint",

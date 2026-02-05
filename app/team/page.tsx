@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic"
 
 import { redirect } from "next/navigation"
 import { getCurrentUser, getCurrentPracticeId } from "@/lib/server/get-current-user"
-import { getTeamsByPractice } from "@/lib/server/get-team-data"
+import { getAllTeamData } from "@/lib/server/get-team-data"
 import { AppLayout } from "@/components/app-layout"
 import PageClient from "./page-client"
 
@@ -18,20 +18,20 @@ export default async function TeamPage() {
     redirect("/auth/login")
   }
   
-  // Fetch team data if practice exists
-  const teams = practiceId ? await getTeamsByPractice(practiceId) : []
+  // Fetch all team data if practice exists
+  const teamData = practiceId ? await getAllTeamData(practiceId) : {
+    teams: [],
+    teamMembers: [],
+    responsibilities: [],
+    staffingPlans: [],
+    holidayRequests: [],
+    sickLeaves: []
+  }
 
   return (
     <AppLayout>
       <PageClient 
-        initialData={{
-          teamMembers: [],
-          teams: teams,
-          responsibilities: [],
-          staffingPlans: [],
-          holidayRequests: [],
-          sickLeaves: []
-        }}
+        initialData={teamData}
         practiceId={practiceId}
         userId={user.id}
       />

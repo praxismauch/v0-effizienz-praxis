@@ -47,8 +47,75 @@ const nextConfig = {
       '@radix-ui/react-tabs',
       'date-fns',
       'recharts',
+      '@supabase/supabase-js',
+      '@supabase/ssr',
+      'swr',
+      'sonner',
+      'react-hook-form',
+      'zod',
     ],
     reactCompiler: false, // Enable when ready for React Compiler
+  },
+  
+  // Webpack optimizations for bundle size
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Ensure proper code splitting for large libraries
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Supabase client - load on demand only
+            supabase: {
+              name: 'supabase',
+              test: /[\\/]node_modules[\\/](@supabase)[\\/]/,
+              priority: 10,
+              reuseExistingChunk: true,
+            },
+            // SWR - load on demand only
+            swr: {
+              name: 'swr',
+              test: /[\\/]node_modules[\\/](swr)[\\/]/,
+              priority: 10,
+              reuseExistingChunk: true,
+            },
+            // Charts library - load on demand
+            recharts: {
+              name: 'recharts',
+              test: /[\\/]node_modules[\\/](recharts|d3-.*)[\\/]/,
+              priority: 10,
+              reuseExistingChunk: true,
+            },
+            // Common React libraries
+            react: {
+              name: 'react',
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+              priority: 20,
+              reuseExistingChunk: true,
+            },
+            // UI components that are used everywhere
+            ui: {
+              name: 'ui',
+              test: /[\\/]node_modules[\\/](@radix-ui)[\\/]/,
+              priority: 15,
+              reuseExistingChunk: true,
+            },
+            // Other vendor libraries
+            lib: {
+              name: 'lib',
+              test: /[\\/]node_modules[\\/]/,
+              priority: 5,
+              minChunks: 2,
+              reuseExistingChunk: true,
+            },
+          },
+        },
+      }
+    }
+    return config
   },
   async headers() {
     return [

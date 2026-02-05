@@ -5,6 +5,7 @@ export interface TicketItem {
   status: "open" | "in_progress" | "resolved" | "closed" | "wont_fix"
   priority: "low" | "medium" | "high" | "urgent"
   type: "bug" | "feature_request" | "question" | "other"
+  category?: string
   practice_id?: string
   practice_name?: string
   user_id?: string

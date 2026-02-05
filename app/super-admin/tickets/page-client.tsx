@@ -133,6 +133,21 @@ export default function SuperAdminTicketManager() {
     }
   }
 
+  const handleCategoryChange = async (ticketId: string, newCategory: string) => {
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: newCategory }),
+      })
+      if (!response.ok) throw new Error("Failed to update category")
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, category: newCategory } : t)))
+      toast({ title: "Erfolg", description: "Kategorie wurde aktualisiert" })
+    } catch (error) {
+      toast({ title: "Fehler", description: "Kategorie konnte nicht geändert werden", variant: "destructive" })
+    }
+  }
+
   const handleDelete = async () => {
     if (!ticketToDelete) return
     try {
@@ -257,6 +272,7 @@ export default function SuperAdminTicketManager() {
                   ticket={ticket}
                   onStatusChange={handleStatusChange}
                   onPriorityChange={handlePriorityChange}
+                  onCategoryChange={handleCategoryChange}
                   onViewDetails={(t) => { setSelectedTicket(t); setShowDetailsDialog(true) }}
                   onDelete={(id) => { setTicketToDelete(id); setShowDeleteDialog(true) }}
                 />

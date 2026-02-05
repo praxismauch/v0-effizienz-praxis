@@ -29,6 +29,7 @@ import {
   ArrowUp,
   Minus,
   AlertTriangle,
+  FolderOpen,
 } from "lucide-react"
 import {
   getStatusColor,
@@ -39,16 +40,42 @@ import {
   formatDateDE,
 } from "@/lib/tickets/utils"
 import type { TicketItem } from "../types"
+import { useEffect, useState } from "react"
+
+interface MenuItem {
+  name: string
+  href: string
+  groupLabel?: string
+}
 
 interface TicketCardProps {
   ticket: TicketItem
   onViewDetails: (ticket: TicketItem) => void
   onStatusChange: (ticketId: string, status: string) => void
   onPriorityChange: (ticketId: string, priority: string) => void
+  onCategoryChange: (ticketId: string, category: string) => void
   onDelete: (ticketId: string) => void
 }
 
-export function TicketCard({ ticket, onViewDetails, onStatusChange, onPriorityChange, onDelete }: TicketCardProps) {
+export function TicketCard({ ticket, onViewDetails, onStatusChange, onPriorityChange, onCategoryChange, onDelete }: TicketCardProps) {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  
+  useEffect(() => {
+    // Fetch menu items from API
+    const fetchMenuItems = async () => {
+      try {
+        const response = await fetch("/api/menu-items")
+        if (response.ok) {
+          const data = await response.json()
+          setMenuItems(data.items || [])
+        }
+      } catch (error) {
+        console.error("Error fetching menu items:", error)
+      }
+    }
+    fetchMenuItems()
+  }, [])
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "bug":
@@ -207,6 +234,39 @@ export function TicketCard({ ticket, onViewDetails, onStatusChange, onPriorityCh
                   <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
                   Dringend
                 </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-transparent">
+                  Kategorie
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="max-h-[400px] overflow-y-auto">
+                <DropdownMenuLabel>Kategorie ändern</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {menuItems.length === 0 ? (
+                  <DropdownMenuItem disabled>Lädt...</DropdownMenuItem>
+                ) : (
+                  <>
+                    <DropdownMenuItem onClick={() => onCategoryChange(ticket.id, "")}>
+                      <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
+                      Keine Kategorie
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {menuItems.map((item, index) => (
+                      <DropdownMenuItem 
+                        key={index} 
+                        onClick={() => onCategoryChange(ticket.id, item.name)}
+                      >
+                        <span className="text-xs text-muted-foreground mr-2">{item.groupLabel || "App"}</span>
+                        {item.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 

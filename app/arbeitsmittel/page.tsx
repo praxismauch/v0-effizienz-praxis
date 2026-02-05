@@ -334,7 +334,7 @@ export default function ArbeitsmittelPage() {
                             ? teamMembers.find((m) => m.id === item.assigned_to || m.user_id === item.assigned_to)
                             : null
                           return (
-                            <TableRow key={item.id}>
+                            <TableRow key={item.id} className="group">
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -353,32 +353,27 @@ export default function ArbeitsmittelPage() {
                               </TableCell>
                               <TableCell>{item.condition || "-"}</TableCell>
                               <TableCell className="text-right">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setSelectedItem(item)
-                                        setEditDialogOpen(true)
-                                      }}
-                                      className="py-3"
-                                    >
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      Bearbeiten
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleDeleteClick(item.id)}
-                                      className="text-destructive py-3"
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Löschen
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2"
+                                    onClick={() => {
+                                      setSelectedItem(item)
+                                      setEditDialogOpen(true)
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleDeleteClick(item.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           )

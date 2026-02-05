@@ -65,6 +65,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check if BLOB_READ_WRITE_TOKEN is set
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error("[v0] BLOB_READ_WRITE_TOKEN is not set")
+      return NextResponse.json({ error: "Blob storage not configured. Please add the Vercel Blob integration." }, { status: 500 })
+    }
+
     // Upload to Vercel Blob
     const blob = await put(finalFileName, fileBuffer, {
       access: "public",
@@ -79,7 +85,8 @@ export async function POST(request: NextRequest) {
       compressed: fileBuffer.length < file.size,
     })
   } catch (error) {
-    console.error("Error uploading file:", error)
-    return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
+    console.error("[v0] Error uploading file:", error)
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    return NextResponse.json({ error: `Failed to upload file: ${errorMessage}` }, { status: 500 })
   }
 }

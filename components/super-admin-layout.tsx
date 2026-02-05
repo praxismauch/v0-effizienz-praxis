@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import dynamic from "next/dynamic"
-import { useState, useEffect } from "react"
+
 
 const SuperAdminSidebar = dynamic(() => import("@/components/super-admin-sidebar").then((mod) => ({ default: mod.SuperAdminSidebar })), {
   ssr: false,
@@ -107,24 +107,6 @@ function SuperAdminLayoutInner({ children }: SuperAdminLayoutProps) {
 }
 
 export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Show loading state until mounted to prevent TDZ errors
-  if (!mounted) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
-          <p className="mt-4 text-sm text-muted-foreground">Wird geladen...</p>
-        </div>
-      </div>
-    )
-  }
-
   return <SuperAdminLayoutInner>{children}</SuperAdminLayoutInner>
 }
 

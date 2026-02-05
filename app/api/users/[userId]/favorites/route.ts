@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const { userId } = await params
+    const { searchParams } = new URL(request.url)
+    const practiceId = searchParams.get("practice_id") || "default"
     const supabase = await createClient()
 
     // Try to get favorites with sort_order, fall back to just favorite_path if column doesn't exist
@@ -13,6 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("user_favorites")
       .select("favorite_path, sort_order")
       .eq("user_id", userId)
+      .eq("practice_id", practiceId)
       .order("sort_order", { ascending: true })
 
     // Check for column not found errors (42703 = undefined_column, PGRST204 = schema cache miss)
@@ -26,6 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .from("user_favorites")
         .select("favorite_path")
         .eq("user_id", userId)
+        .eq("practice_id", practiceId)
       
       data = fallbackResult.data
       error = fallbackResult.error
@@ -51,7 +55,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { userId } = await params
     const body = await request.json()
-    const { item_path, action, favorites } = body
+    const { item_path, action, favorites, practice_id } = body
+    const practiceId = practice_id || "default"
 
     const supabase = await createClient()
 
@@ -64,6 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           .from("user_favorites")
           .update({ sort_order: i })
           .eq("user_id", userId)
+          .eq("practice_id", practiceId)
           .eq("favorite_path", favorites[i])
 
         // If sort_order column doesn't exist, just skip reordering
@@ -87,13 +93,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (action === "add") {
       // Try to add favorite, handling missing sort_order column
-      let upsertData: any = { user_id: userId, favorite_path: item_path }
+      let upsertData: any = { user_id: userId, practice_id: practiceId, favorite_path: item_path }
       
       // Try to get the highest sort_order for this user
       const { data: existingFavorites, error: selectError } = await supabase
         .from("user_favorites")
         .select("sort_order")
         .eq("user_id", userId)
+        .eq("practice_id", practiceId)
         .order("sort_order", { ascending: false })
         .limit(1)
 
@@ -112,8 +119,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         // If upsert fails due to missing sort_order, try without it
         if ((error.code === 'PGRST204' || error.code === '42703') && error.message.includes('sort_order')) {
           const { error: fallbackError } = await supabase.from("user_favorites").upsert(
-            { user_id: userId, favorite_path: item_path },
-            { onConflict: "user_id,favorite_path" }
+            { user_id: userId, practice_id: practiceId, favorite_path: item_path },
+            { onConflict: "user_id,practice_id,favorite_path" }
           )
           
           if (fallbackError) {
@@ -132,6 +139,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .from("user_favorites")
         .delete()
         .eq("user_id", userId)
+        .eq("practice_id", practiceId)
         .eq("favorite_path", item_path)
 
       if (error) {

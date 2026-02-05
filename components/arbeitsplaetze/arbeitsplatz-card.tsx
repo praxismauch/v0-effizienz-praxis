@@ -169,34 +169,34 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
               : "bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30",
           )}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                "p-2.5 rounded-xl shrink-0",
+                arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
+              )}
+            >
+              <Monitor
                 className={cn(
-                  "p-2.5 rounded-xl shrink-0",
-                  arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
+                  "h-5 w-5",
+                  arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
                 )}
-              >
-                <Monitor
-                  className={cn(
-                    "h-5 w-5",
-                    arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
-                  )}
-                />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-semibold text-base truncate">{arbeitsplatz.name}</h3>
-                {arbeitsplatz.room && (
-                  <div className="flex items-center text-sm text-muted-foreground mt-0.5">
-                    <MapPin className="h-3 w-3 mr-1 shrink-0" />
-                    <span className="truncate">{arbeitsplatz.room.name}</span>
-                  </div>
-                )}
-              </div>
+              />
             </div>
-            <Badge variant={arbeitsplatz.is_active ? "success" : "secondary"} className="shrink-0">
-              {arbeitsplatz.is_active ? "Aktiv" : "Inaktiv"}
-            </Badge>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-semibold text-base truncate flex-1">{arbeitsplatz.name}</h3>
+                <Badge variant={arbeitsplatz.is_active ? "success" : "secondary"} className="shrink-0">
+                  {arbeitsplatz.is_active ? "Aktiv" : "Inaktiv"}
+                </Badge>
+              </div>
+              {arbeitsplatz.room && (
+                <div className="flex items-center text-sm text-muted-foreground mt-0.5">
+                  <MapPin className="h-3 w-3 mr-1 shrink-0" />
+                  <span className="truncate">{arbeitsplatz.room.name}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

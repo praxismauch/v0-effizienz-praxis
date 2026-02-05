@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { useTeam } from "@/contexts/team-context"
 import { useUser } from "@/contexts/user-context"
-import { Shield, UserIcon, ArrowLeft, Edit, Mail, Calendar, Users, CircleUser as FileUser } from "lucide-react"
+import { Shield, UserIcon, ArrowLeft, Edit, Mail, Calendar, Users, CircleUser as FileUser, Clock, Palmtree, Banknote } from "lucide-react"
 import { ArbeitsmittelAssignments } from "@/components/team/arbeitsmittel-assignments"
 import { useTranslation } from "@/contexts/translation-context"
 import { useRoleColors } from "@/lib/use-role-colors"
@@ -105,6 +105,8 @@ export default function TeamMemberDetailPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   const [mounted, setMounted] = useState(false)
+  const [activeContract, setActiveContract] = useState<any>(null)
+  const [teamAverageHourlyRate, setTeamAverageHourlyRate] = useState<number | null>(null)
   
   // Ensure client-side only
   useEffect(() => {
@@ -164,6 +166,146 @@ export default function TeamMemberDetailPage() {
   }, [memberId, teamMembers, practiceId])
 
   const canEdit = isAdmin || currentUser?.id === memberId
+
+  // Fetch active contract for overview - must run unconditionally for hook consistency
+  useEffect(() => {
+    // Guard inside the hook, not outside
+    if (!member || !practiceId || !memberId) {
+      setActiveContract(null)
+      return
+    }
+
+    const controller = new AbortController()
+    
+    const fetchActiveContract = async () => {
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/contracts?team_member_id=${memberId}`, {
+          signal: controller.signal
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          // Find active contract
+          const active = data.contracts?.find((c: any) => {
+            const now = new Date()
+            const start = new Date(c.start_date)
+            const end = c.end_date ? new Date(c.end_date) : null
+            return c.is_active && start <= now && (!end || end >= now)
+          })
+          setActiveContract(active || null)
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error("Error fetching contract:", error)
+        }
+      }
+    }
+    
+    fetchActiveContract()
+    return () => controller.abort()
+  }, [member, practiceId, memberId])
+
+  // Fetch team average hourly rate for comparison
+  useEffect(() => {
+    if (!member || !practiceId || !member.teamIds || member.teamIds.length === 0) {
+      setTeamAverageHourlyRate(null)
+      return
+    }
+
+    const controller = new AbortController()
+    
+    const fetchTeamAverageRate = async () => {
+      try {
+        // Get all team members in the same teams
+        const teamMembersInSameTeam = teamMembers.filter((tm: any) => 
+          tm.id !== memberId && 
+          tm.teamIds?.some((teamId: string) => member.teamIds.includes(teamId))
+        )
+
+        if (teamMembersInSameTeam.length === 0) {
+          setTeamAverageHourlyRate(null)
+          return
+        }
+
+        // Fetch contracts for all team members
+        const contractPromises = teamMembersInSameTeam.map((tm: any) =>
+          fetch(`/api/practices/${practiceId}/contracts?team_member_id=${tm.id}`, {
+            signal: controller.signal
+          }).then(res => res.ok ? res.json() : { contracts: [] })
+        )
+
+        const contractsResults = await Promise.all(contractPromises)
+        
+        // Calculate effective hourly rates for all active contracts
+        const hourlyRates: number[] = []
+        
+        contractsResults.forEach((result) => {
+          const activeContract = result.contracts?.find((c: any) => {
+            const now = new Date()
+            const start = new Date(c.start_date)
+            const end = c.end_date ? new Date(c.end_date) : null
+            return c.is_active && start <= now && (!end || end >= now)
+          })
+          
+          if (activeContract && activeContract.salary && activeContract.hours_per_week) {
+            const totalBonusPercentage =
+              (activeContract.bonus_personal_goal || 0) +
+              (activeContract.bonus_practice_goal || 0) +
+              (activeContract.bonus_employee_discussion || 0)
+            
+            const salaryWith100Bonus = activeContract.salary * (1 + totalBonusPercentage / 100)
+            const monthlyHours = activeContract.hours_per_week * 4.33
+            const hourlyRate = salaryWith100Bonus / monthlyHours
+            
+            hourlyRates.push(hourlyRate)
+          }
+        })
+        
+        if (hourlyRates.length > 0) {
+          const average = hourlyRates.reduce((a, b) => a + b, 0) / hourlyRates.length
+          setTeamAverageHourlyRate(Math.round(average * 100) / 100)
+        } else {
+          setTeamAverageHourlyRate(null)
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error("Error fetching team average:", error)
+        }
+      }
+    }
+    
+    fetchTeamAverageRate()
+    return () => controller.abort()
+  }, [member, practiceId, memberId, teamMembers])
+
+  // Helper functions for contract calculations
+  const calculateHolidayDays = (contract: any): number => {
+    const hoursPerWeek = contract.hours_per_week || 0
+    const workingDaysFulltime = contract.working_days_fulltime || 5
+    const holidayDaysFulltime = contract.holiday_days_fulltime || 30
+    
+    if (hoursPerWeek <= 0 || workingDaysFulltime <= 0) return 0
+    
+    const fullTimeHoursPerWeek = workingDaysFulltime * 8
+    const workingDaysPartTime = (hoursPerWeek / fullTimeHoursPerWeek) * workingDaysFulltime
+    
+    return Math.ceil((workingDaysPartTime / workingDaysFulltime) * holidayDaysFulltime)
+  }
+
+  const calculateEffectiveHourlyRate = (contract: any): number | null => {
+    if (!contract.salary || !contract.hours_per_week) return null
+    
+    const totalBonusPercentage =
+      (contract.bonus_personal_goal || 0) +
+      (contract.bonus_practice_goal || 0) +
+      (contract.bonus_employee_discussion || 0)
+    
+    const salaryWith100Bonus = contract.salary * (1 + totalBonusPercentage / 100)
+    const monthlyHours = contract.hours_per_week * 4.33
+    const hourlyRate = salaryWith100Bonus / monthlyHours
+    
+    return Math.round(hourlyRate * 100) / 100
+  }
 
   // Prevent SSR mismatch - only render on client
   if (!mounted) {
@@ -280,103 +422,105 @@ export default function TeamMemberDetailPage() {
 
             <TabsContent value="overview" className="space-y-4">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Persönliche Informationen</CardTitle>
-                  <CardDescription>Grundlegende Profilinformationen und Kontaktdaten</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    {/* Avatar */}
+                    <Avatar className="h-16 w-16 shrink-0">
                       {member.avatar && <AvatarImage src={member.avatar} alt={member.name} />}
-                      <AvatarFallback className="text-2xl bg-primary/10 text-primary font-semibold">
+                      <AvatarFallback className="text-xl bg-primary/10 text-primary font-semibold">
                         {member.name
                           .split(" ")
-                          .map((n) => n[0])
+                          .map((n: string) => n[0])
                           .join("")
                           .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h3 className="text-xl font-semibold">{member.name}</h3>
-                      {age && <p className="text-muted-foreground">{age} Jahre alt</p>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <UserIcon className="h-4 w-4" />
-                        Vollständiger Name
-                      </Label>
-                      <p className="font-medium">{member.name}</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        E-Mail-Adresse
-                      </Label>
-                      <p className="font-medium">
-                        {member.email?.includes("@placeholder.local") ? "Keine E-Mail" : member.email}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Rolle
-                      </Label>
-                      <Badge className={roleColors[member.role as keyof typeof roleColors] || roleColors.user}>
-                        {roleLabels[member.role as keyof typeof roleLabels] || member.role}
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Mitglied seit
-                      </Label>
-                      <p className="font-medium">
-                        {member.created_at ? formatDate(new Date(member.created_at)) : "Unbekannt"}
-                      </p>
-                    </div>
-
-                    {member.date_of_birth && (
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">Geburtsdatum</Label>
-                        <p className="font-medium">{formatDate(new Date(member.date_of_birth))}</p>
+                    
+                    {/* Main Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-lg font-semibold">{member.name}</h3>
+                        <Badge className={roleColors[member.role as keyof typeof roleColors] || roleColors.user}>
+                          {roleLabels[member.role as keyof typeof roleLabels] || member.role}
+                        </Badge>
                       </div>
-                    )}
-
-                    <div className="space-y-2 col-span-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Teamzuweisungen
-                      </Label>
-                      {member.teamIds && member.teamIds.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {member.teamIds.map((teamId) => {
+                      
+                      {/* Compact Info Row */}
+                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
+                        {member.email && !member.email.includes("@placeholder.local") && (
+                          <span className="flex items-center gap-1">
+                            <Mail className="h-3.5 w-3.5" />
+                            {member.email}
+                          </span>
+                        )}
+                        {member.date_of_birth && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {formatDate(new Date(member.date_of_birth))} {age && `(${age} J.)`}
+                          </span>
+                        )}
+                        {member.created_at && (
+                          <span className="flex items-center gap-1">
+                            <UserIcon className="h-3.5 w-3.5" />
+                            Seit {formatDate(new Date(member.created_at))}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Team Badges */}
+                      {member.teamIds && member.teamIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {member.teamIds.map((teamId: string) => {
                             const team = teams.find((t) => t.id === teamId)
                             if (!team) return null
                             return (
                               <Badge
                                 key={teamId}
                                 variant="outline"
-                                className="px-2 py-1"
+                                className="px-2 py-0.5 text-xs"
                                 style={{
                                   backgroundColor: `${team.color}15`,
                                   borderColor: team.color,
                                   color: team.color,
                                 }}
                               >
-                                <div className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: team.color }} />
+                                <div className="w-1.5 h-1.5 rounded-full mr-1" style={{ backgroundColor: team.color }} />
                                 {team.name}
                               </Badge>
                             )
                           })}
                         </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Keine Teamzuweisungen</p>
+                      )}
+                      
+                      {/* Contract Info - inline below personal info */}
+                      {activeContract && (
+                        <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t text-sm">
+                          {activeContract.hours_per_week && (
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5 text-blue-500" />
+                              <span className="font-medium text-foreground">{activeContract.hours_per_week}h</span>/Woche
+                            </span>
+                          )}
+                          {activeContract.hours_per_week && (
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Palmtree className="h-3.5 w-3.5 text-green-500" />
+                              <span className="font-medium text-green-600">{calculateHolidayDays(activeContract)}</span> Urlaubstage
+                            </span>
+                          )}
+                          {calculateEffectiveHourlyRate(activeContract) && (
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Banknote className="h-3.5 w-3.5 text-purple-500" />
+                              <span className="font-medium text-purple-600">
+                                {calculateEffectiveHourlyRate(activeContract)?.toLocaleString("de-DE")} {activeContract.salary_currency}
+                              </span>/Std.
+                              {teamAverageHourlyRate && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  (Ø Team: {teamAverageHourlyRate.toLocaleString("de-DE")} {activeContract.salary_currency})
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

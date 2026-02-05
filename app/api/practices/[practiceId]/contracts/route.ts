@@ -41,7 +41,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       'team_member_id', 'contract_type', 'start_date', 'end_date',
       'hours_per_week', 'salary', 'salary_currency', 'bonus_personal_goal',
       'bonus_practice_goal', 'bonus_employee_discussion', 'notes', 'is_active',
-      'has_13th_salary', 'holiday_days_fulltime', 'working_days_fulltime'
+      'has_13th_salary', 'holiday_days_fulltime', 'working_days_fulltime',
+      'vacation_bonus', 'additional_payments'
     ]
 
     // Filter out unknown columns to prevent database errors

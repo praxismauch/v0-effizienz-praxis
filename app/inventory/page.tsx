@@ -3,7 +3,9 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Plus, Package, LayoutDashboard, Lightbulb, Truck, Receipt, Archive, Settings } from "lucide-react"
+import { Plus, Package, LayoutDashboard, Lightbulb, Truck, Receipt, Archive, Settings, Brain, Upload, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 import { useInventory } from "./hooks/use-inventory"
 import { InventoryStatsCards } from "./components/inventory-stats-cards"
@@ -153,10 +155,39 @@ export default function InventoryPage() {
           <h1 className="text-3xl font-bold">Inventar</h1>
           <p className="text-muted-foreground">Verwalten Sie Ihr Praxisinventar</p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Artikel hinzufügen
-        </Button>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="header-bill-upload" className="cursor-pointer">
+            <div className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium text-sm h-10">
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Brain className="h-4 w-4" />
+              )}
+              Rechnungen hochladen
+            </div>
+          </Label>
+          <Input
+            id="header-bill-upload"
+            type="file"
+            accept="image/*,.pdf"
+            multiple
+            className="hidden"
+            onChange={async (e) => {
+              const files = e.target.files
+              if (!files) return
+              for (const file of Array.from(files)) {
+                await uploadBill(file)
+              }
+              e.target.value = ""
+              setActiveTab("bills")
+            }}
+            disabled={isUploading}
+          />
+          <Button onClick={() => setShowAddDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Artikel hinzufügen
+          </Button>
+        </div>
       </div>
 
       <InventoryStatsCards stats={stats} settings={settings} />

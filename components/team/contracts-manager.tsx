@@ -463,6 +463,22 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                         </p>
                       </div>
                     )}
+                    {calculateHourlyRate(contract) && (
+                      <div>
+                        <p className="text-muted-foreground">Stundenlohn</p>
+                        <p className="font-medium">
+                          {calculateHourlyRate(contract)?.toLocaleString("de-DE")} {contract.salary_currency}/Std.
+                        </p>
+                      </div>
+                    )}
+                    {calculateHourlyRateWith100Bonus(contract) && (
+                      <div>
+                        <p className="text-muted-foreground">Eff. Stundenlohn</p>
+                        <p className="font-medium text-blue-600">
+                          {calculateHourlyRateWith100Bonus(contract)?.toLocaleString("de-DE")} {contract.salary_currency}/Std.
+                        </p>
+                      </div>
+                    )}
                     {contract.hours_per_week && (
                       <div>
                         <p className="text-muted-foreground flex items-center gap-1">
@@ -486,17 +502,43 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {contract.bonus_personal_goal && (
-                          <Badge variant="outline">Persönlich: {contract.bonus_personal_goal}%</Badge>
+                          <Badge variant="outline">
+                            Persönlich: {contract.bonus_personal_goal}%
+                            {contract.salary && (
+                              <span className="ml-1 text-muted-foreground">
+                                ({((contract.salary * contract.bonus_personal_goal) / 100).toLocaleString("de-DE")} {contract.salary_currency})
+                              </span>
+                            )}
+                          </Badge>
                         )}
                         {contract.bonus_practice_goal && (
-                          <Badge variant="outline">Praxis: {contract.bonus_practice_goal}%</Badge>
+                          <Badge variant="outline">
+                            Praxis: {contract.bonus_practice_goal}%
+                            {contract.salary && (
+                              <span className="ml-1 text-muted-foreground">
+                                ({((contract.salary * contract.bonus_practice_goal) / 100).toLocaleString("de-DE")} {contract.salary_currency})
+                              </span>
+                            )}
+                          </Badge>
                         )}
                         {contract.bonus_employee_discussion && (
-                          <Badge variant="outline">Gespräch: {contract.bonus_employee_discussion}%</Badge>
+                          <Badge variant="outline">
+                            Gespräch: {contract.bonus_employee_discussion}%
+                            {contract.salary && (
+                              <span className="ml-1 text-muted-foreground">
+                                ({((contract.salary * contract.bonus_employee_discussion) / 100).toLocaleString("de-DE")} {contract.salary_currency})
+                              </span>
+                            )}
+                          </Badge>
                         )}
                         {contract.has_13th_salary && (
                           <Badge variant="outline" className="text-amber-600 border-amber-600">
                             13. Gehalt
+                            {contract.salary && (
+                              <span className="ml-1">
+                                ({contract.salary.toLocaleString("de-DE")} {contract.salary_currency})
+                              </span>
+                            )}
                           </Badge>
                         )}
                         {contract.vacation_bonus && (

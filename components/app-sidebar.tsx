@@ -158,7 +158,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   // Load favorites from database with localStorage fallback
   try {
-  const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites`)
+  const favoritesResponse = await fetch(`/api/users/${currentUser.id}/favorites?practice_id=${practiceId}`)
   if (favoritesResponse.ok) {
   const favoritesData = await favoritesResponse.json()
   if (favoritesData.favorites && Array.isArray(favoritesData.favorites) && favoritesData.favorites.length > 0) {
@@ -414,6 +414,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
   
   // Save to database
   if (currentUser?.id) {
+  const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
   try {
   const response = await fetch(`/api/users/${currentUser.id}/favorites`, {
   method: "POST",
@@ -421,6 +422,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
   body: JSON.stringify({
   item_path: href,
   action: isAdding ? "add" : "remove",
+  practice_id: practiceId,
           }),
         })
 

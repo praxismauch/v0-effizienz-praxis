@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
-import { upload } from "@vercel/blob/client"
 import type { InventoryItem, Supplier, InventoryBill, InventorySettings } from "../types"
 
 // Helper to calculate file hash
@@ -35,17 +34,18 @@ export function useInventory() {
     autoReorder: false,
   })
 
-  const fetchInventory = useCallback(async () => {
+  const fetchInventory = useCallback(async (signal?: AbortSignal) => {
     if (!practiceId) return
 
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/practices/${practiceId}/inventory`)
+      const response = await fetch(`/api/practices/${practiceId}/inventory`, { signal })
       if (response.ok) {
         const data = await response.json()
         setItems(data.items || [])
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') return
       console.error("Error fetching inventory:", error)
       toast({
         title: "Fehler",
@@ -57,39 +57,41 @@ export function useInventory() {
     }
   }, [practiceId, toast])
 
-  const fetchSuppliers = useCallback(async () => {
+  const fetchSuppliers = useCallback(async (signal?: AbortSignal) => {
     if (!practiceId) return
 
     try {
-      const response = await fetch(`/api/practices/${practiceId}/suppliers`)
+      const response = await fetch(`/api/practices/${practiceId}/suppliers`, { signal })
       if (response.ok) {
         const data = await response.json()
         setSuppliers(data.suppliers || [])
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') return
       console.error("Error fetching suppliers:", error)
     }
   }, [practiceId])
 
-  const fetchBills = useCallback(async () => {
+  const fetchBills = useCallback(async (signal?: AbortSignal) => {
     if (!practiceId) return
 
     setIsBillsLoading(true)
     try {
       // Fetch active bills
-      const response = await fetch(`/api/practices/${practiceId}/inventory/bills`)
+      const response = await fetch(`/api/practices/${practiceId}/inventory/bills`, { signal })
       if (response.ok) {
         const data = await response.json()
         setBills(data || [])
       }
 
       // Fetch archived bills
-      const archivedResponse = await fetch(`/api/practices/${practiceId}/inventory/bills?archived=true`)
+      const archivedResponse = await fetch(`/api/practices/${practiceId}/inventory/bills?archived=true`, { signal })
       if (archivedResponse.ok) {
         const archivedData = await archivedResponse.json()
         setArchivedBills(archivedData || [])
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') return
       console.error("Error fetching bills:", error)
     } finally {
       setIsBillsLoading(false)
@@ -97,11 +99,16 @@ export function useInventory() {
   }, [practiceId])
 
   useEffect(() => {
-    if (practiceId) {
-      fetchInventory()
-      fetchSuppliers()
-      fetchBills()
-    }
+    if (!practiceId) return
+    
+    const controller = new AbortController()
+    const signal = controller.signal
+    
+    fetchInventory(signal)
+    fetchSuppliers(signal)
+    fetchBills(signal)
+    
+    return () => controller.abort()
   }, [practiceId, fetchInventory, fetchSuppliers, fetchBills])
 
   const addItem = async (item: Partial<InventoryItem>) => {
@@ -203,11 +210,23 @@ export function useInventory() {
       // Calculate file hash for duplicate detection
       const fileHash = await calculateFileHash(file)
 
-      // Upload to Vercel Blob
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
+      // Upload to Vercel Blob via server-side API
+      const formData = new FormData()
+      formData.append("file", file)
+      
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       })
+      
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text()
+        console.log("[v0] Upload API error:", uploadResponse.status, errorText)
+        throw new Error(`Datei-Upload fehlgeschlagen: ${errorText}`)
+      }
+      
+      const blob = await uploadResponse.json()
+      console.log("[v0] Upload successful:", blob.url)
 
       // Create bill record
       const response = await fetch(`/api/practices/${practiceId}/inventory/bills`, {
@@ -233,7 +252,9 @@ export function useInventory() {
       }
 
       if (!response.ok) {
-        throw new Error("Upload fehlgeschlagen")
+        const errorText = await response.text()
+        console.log("[v0] Bills API error:", response.status, errorText)
+        throw new Error(`Upload fehlgeschlagen: ${errorText}`)
       }
 
       const bill = await response.json()

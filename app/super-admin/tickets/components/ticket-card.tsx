@@ -25,6 +25,10 @@ import {
   Archive,
   Trash2,
   ImageIcon,
+  AlertCircle,
+  ArrowUp,
+  Minus,
+  AlertTriangle,
 } from "lucide-react"
 import {
   getStatusColor,
@@ -40,10 +44,11 @@ interface TicketCardProps {
   ticket: TicketItem
   onViewDetails: (ticket: TicketItem) => void
   onStatusChange: (ticketId: string, status: string) => void
+  onPriorityChange: (ticketId: string, priority: string) => void
   onDelete: (ticketId: string) => void
 }
 
-export function TicketCard({ ticket, onViewDetails, onStatusChange, onDelete }: TicketCardProps) {
+export function TicketCard({ ticket, onViewDetails, onStatusChange, onPriorityChange, onDelete }: TicketCardProps) {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "bug":
@@ -172,6 +177,35 @@ export function TicketCard({ ticket, onViewDetails, onStatusChange, onDelete }: 
                 <DropdownMenuItem onClick={() => onStatusChange(ticket.id, "wont_fix")}>
                   <XCircle className="h-4 w-4 mr-2 text-red-500" />
                   Wird nicht behoben
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-transparent">
+                  Priorität
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Priorität ändern</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onPriorityChange(ticket.id, "low")}>
+                  <Minus className="h-4 w-4 mr-2 text-gray-500" />
+                  Niedrig
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onPriorityChange(ticket.id, "medium")}>
+                  <AlertCircle className="h-4 w-4 mr-2 text-blue-500" />
+                  Mittel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onPriorityChange(ticket.id, "high")}>
+                  <ArrowUp className="h-4 w-4 mr-2 text-orange-500" />
+                  Hoch
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onPriorityChange(ticket.id, "urgent")}>
+                  <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
+                  Dringend
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

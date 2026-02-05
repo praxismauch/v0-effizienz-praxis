@@ -255,9 +255,6 @@ export default function SuperAdminTicketManager() {
                 <TicketCard
                   key={ticket.id}
                   ticket={ticket}
-                  statuses={statuses}
-                  priorities={priorities}
-                  types={types}
                   onStatusChange={handleStatusChange}
                   onPriorityChange={handlePriorityChange}
                   onViewDetails={(t) => { setSelectedTicket(t); setShowDetailsDialog(true) }}

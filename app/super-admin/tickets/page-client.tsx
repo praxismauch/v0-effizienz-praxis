@@ -41,7 +41,7 @@ export default function SuperAdminTicketManager() {
   const [sortByDate, setSortByDate] = useState<"newest" | "oldest">("newest")
   const searchParams = useSearchParams()
   const router = useRouter()
-  const activeTab = searchParams.get("tab") || "all"
+  const activeTab = searchParams.get("tab") || "open"
   const [selectedTicket, setSelectedTicket] = useState<TicketItem | null>(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -270,10 +270,10 @@ export default function SuperAdminTicketManager() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
-          <TabsTrigger value="all">Alle <Badge variant="secondary" className="ml-2">{stats.total}</Badge></TabsTrigger>
           <TabsTrigger value="open">Offen <Badge variant="secondary" className="ml-2">{stats.open}</Badge></TabsTrigger>
           <TabsTrigger value="in_progress">In Bearbeitung <Badge variant="secondary" className="ml-2">{stats.in_progress}</Badge></TabsTrigger>
           <TabsTrigger value="resolved">Erledigt <Badge variant="secondary" className="ml-2">{stats.resolved + stats.closed}</Badge></TabsTrigger>
+          <TabsTrigger value="all">Alle <Badge variant="secondary" className="ml-2">{stats.total}</Badge></TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">

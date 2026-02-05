@@ -326,6 +326,8 @@ export function KnowledgeBaseManager() {
             <PracticeHandbookView
               articles={allArticles.filter((a) => a.status === "published")}
               orgaCategories={orgaCategories}
+              onEdit={setEditingArticle}
+              onDelete={setArticleToDelete}
             />
           </TabsContent>
 

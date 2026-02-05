@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@/contexts/user-context"
+import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -197,36 +198,26 @@ export default function HygienePlanClient() {
 
   const categoryStats = getCategoryStats()
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
   return (
-    <div className="container mx-auto p-6 space-y-8 max-w-7xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-            <Shield className="h-10 w-10 text-primary" />
-            Hygieneplan
-          </h1>
-          <p className="text-muted-foreground text-lg">RKI-konforme Hygienepläne für Ihre Praxis</p>
+    <AppLayout loading={loading} loadingMessage="Hygienepläne werden geladen...">
+      <div className="space-y-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-1">Hygieneplan</h1>
+            <p className="text-muted-foreground">RKI-konforme Hygienepläne für Ihre Praxis</p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Neuer Plan
+            </Button>
+            <Button onClick={() => setIsGenerateDialogOpen(true)} className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700">
+              <Sparkles className="h-4 w-4 mr-2" />
+              KI-Plan generieren
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Neuer Plan
-          </Button>
-          <Button onClick={() => setIsGenerateDialogOpen(true)} className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700">
-            <Sparkles className="h-4 w-4 mr-2" />
-            KI-Plan generieren
-          </Button>
-        </div>
-      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -401,22 +392,23 @@ export default function HygienePlanClient() {
       )}
 
       {/* Generate AI Plan Dialog */}
-      <GenerateAIPlanDialog
-        open={isGenerateDialogOpen}
-        onOpenChange={setIsGenerateDialogOpen}
-        onGenerate={generateAIPlan}
-        generating={generating}
-      />
-
-      {/* Plan Detail Dialog */}
-      {selectedPlan && (
-        <PlanDetailDialog
-          plan={selectedPlan}
-          open={!!selectedPlan}
-          onOpenChange={(open) => !open && setSelectedPlan(null)}
+        <GenerateAIPlanDialog
+          open={isGenerateDialogOpen}
+          onOpenChange={setIsGenerateDialogOpen}
+          onGenerate={generateAIPlan}
+          generating={generating}
         />
-      )}
-    </div>
+
+        {/* Plan Detail Dialog */}
+        {selectedPlan && (
+          <PlanDetailDialog
+            plan={selectedPlan}
+            open={!!selectedPlan}
+            onOpenChange={(open) => !open && setSelectedPlan(null)}
+          />
+        )}
+      </div>
+    </AppLayout>
   )
 }
 

@@ -166,9 +166,13 @@ export default function TeamMemberDetailPage() {
 
   const canEdit = isAdmin || currentUser?.id === memberId
 
-  // Fetch active contract for overview
+  // Fetch active contract for overview - must run unconditionally for hook consistency
   useEffect(() => {
-    if (!member || !practiceId) return
+    // Guard inside the hook, not outside
+    if (!member || !practiceId || !memberId) {
+      setActiveContract(null)
+      return
+    }
 
     const controller = new AbortController()
     

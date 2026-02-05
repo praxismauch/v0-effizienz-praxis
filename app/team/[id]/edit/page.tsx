@@ -228,7 +228,7 @@ export default function EditTeamMemberPage() {
       }
 
       // Refetch team members to get updated avatar
-      await mutate(SWR_KEYS.TEAM_MEMBERS(practiceId))
+      await mutate(SWR_KEYS.teamMembers(practiceId))
       
       toast.success("Änderungen gespeichert", {
         description: "Die Änderungen wurden erfolgreich gespeichert.",

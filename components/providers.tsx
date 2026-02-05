@@ -93,20 +93,20 @@ export function Providers({
             <SidebarSettingsProvider>
               <OnboardingProvider>
                 <TeamProvider>
-                <TodoProvider>
-                  <CalendarProvider>
-                    <WorkflowProvider>
-                      <AnalyticsDataProvider>
-                        <ErrorBoundary>
-                          <RoutePersistence />
-                          <GlobalDragPrevention />
-                          {children}
-                        </ErrorBoundary>
-                      </AnalyticsDataProvider>
-                    </WorkflowProvider>
-                  </CalendarProvider>
-                </TodoProvider>
-              </TeamProvider>
+                  <TodoProvider>
+                    <CalendarProvider>
+                      <WorkflowProvider>
+                        <AnalyticsDataProvider>
+                          <ErrorBoundary>
+                            <RoutePersistence />
+                            <GlobalDragPrevention />
+                            {children}
+                          </ErrorBoundary>
+                        </AnalyticsDataProvider>
+                      </WorkflowProvider>
+                    </CalendarProvider>
+                  </TodoProvider>
+                </TeamProvider>
               </OnboardingProvider>
             </SidebarSettingsProvider>
           </PracticeProvider>

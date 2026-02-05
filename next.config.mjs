@@ -42,7 +42,11 @@ const nextConfig = {
     ],
     reactCompiler: false, // Enable when ready for React Compiler
     turbo: {
-      root: __dirname,
+      // Explicitly set root relative to where next.config.mjs is located
+      root: path.resolve(__dirname, '.'),
+      resolveAlias: {
+        '@': path.resolve(__dirname, '.'),
+      },
     },
   },
   async headers() {

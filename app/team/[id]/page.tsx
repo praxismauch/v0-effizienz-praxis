@@ -53,32 +53,7 @@ export default async function TeamMemberDetailPage({ params }: { params: { id: s
       .toUpperCase()
       .slice(0, 2)
   }
-  
-  if (!practiceId) {
-    console.log("[v0] No practiceId, redirecting to dashboard")
-    redirect("/dashboard")
-  }
-  
-  // Fetch team member data directly
-  console.log("[v0] About to fetch team member:", params.id, "for practice:", practiceId)
-  const supabase = await createServerClient()
-  const practiceIdInt = parseInt(practiceId, 10)
-  
-  const { data: teamMember, error } = await supabase
-    .from("team_members")
-    .select("*")
-    .eq("id", params.id)
-    .eq("practice_id", practiceIdInt)
-    .single()
-  
-  console.log("[v0] Team member fetch result:", teamMember ? "Found" : "NOT FOUND", error ? `Error: ${error.message}` : "")
-  
-  // If team member not found, show 404
-  if (!teamMember || error) {
-    console.log("[v0] Calling notFound() for member ID:", params.id)
-    notFound()
-  }
-  
+
   const displayName = teamMember.name || teamMember.email || "Teammitglied"
   const initials = displayName ? getInitials(displayName) : "TM"
 

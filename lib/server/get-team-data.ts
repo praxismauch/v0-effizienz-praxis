@@ -101,25 +101,14 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
   try {
     const supabase = await createServerClient()
     
-    // First get all teams for this practice
-    const { data: teams } = await supabase
-      .from("teams")
-      .select("id")
-      .eq("practice_id", practiceId)
+    // Convert practiceId to number since database stores it as integer
+    const practiceIdNum = parseInt(practiceId, 10)
+    console.log("[v0] Fetching team members for practice:", practiceIdNum, "(from string:", practiceId, ")")
     
-    if (!teams || teams.length === 0) {
-      console.log("[v0] No teams found for practice:", practiceId)
-      return []
-    }
-    
-    const teamIds = teams.map(t => t.id)
-    console.log("[v0] Found", teams.length, "teams, fetching members for team IDs:", teamIds)
-    
-    // Then get all team members for those teams
     const { data, error } = await supabase
       .from("team_members")
       .select("*")
-      .in("team_id", teamIds)
+      .eq("practice_id", practiceIdNum)
       .order("created_at")
 
     if (error) {
@@ -127,7 +116,7 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
       return []
     }
 
-    console.log("[v0] Found", data?.length || 0, "team members")
+    console.log("[v0] Found", data?.length || 0, "team members for practice", practiceIdNum)
     return data || []
   } catch (error) {
     console.error("[v0] Error getting team members by practice:", error)

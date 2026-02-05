@@ -125,29 +125,26 @@ function LoginForm() {
       }
 
       console.log("[v0] Login successful, user:", data.user.id)
-      setStatus("Sitzung wird verifiziert...")
+      setStatus("Sitzung wird eingerichtet...")
       
-      // Wait a moment for the session to be established
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Refresh the session to ensure cookies are properly set
+      const { data: { session }, error: refreshError } = await supabase.auth.refreshSession()
+      console.log("[v0] Session refresh:", session ? "Success" : "Failed", refreshError)
       
-      // Verify the session is properly set
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log("[v0] Session check:", session ? "Valid" : "Invalid")
-      
-      if (!session) {
-        console.log("[v0] No session found after login")
-        throw new Error("Sitzung konnte nicht erstellt werden")
+      if (!session || refreshError) {
+        console.log("[v0] Session refresh failed:", refreshError)
+        throw new Error("Sitzung konnte nicht eingerichtet werden")
       }
 
-      setStatus("Erfolgreich angemeldet! Weiterleitung...")
+      setStatus("Weiterleitung zum Dashboard...")
       
-      // Use window.location for a full page reload to ensure cookies are read correctly
-      if (typeof window !== "undefined") {
-        console.log("[v0] Redirecting to:", redirectTo)
-        window.location.href = redirectTo
-      } else {
-        router.replace(redirectTo)
-      }
+      // Small delay to ensure cookies are written
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Use router.push with refresh to ensure server components reload with new session
+      console.log("[v0] Redirecting to:", redirectTo)
+      router.push(redirectTo)
+      router.refresh()
     } catch (error: any) {
       console.log("[v0] Login failed:", error)
       let errorMessage = "Ein Fehler ist aufgetreten"

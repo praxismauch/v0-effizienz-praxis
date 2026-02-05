@@ -24,6 +24,8 @@ import {
   Users,
   Network,
   GraduationCap,
+  Pencil,
+  Trash2,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
@@ -57,6 +59,8 @@ interface HandbookChapter {
 interface PracticeHandbookViewProps {
   articles: KnowledgeArticle[]
   orgaCategories: OrgaCategory[]
+  onEdit?: (article: KnowledgeArticle) => void
+  onDelete?: (article: KnowledgeArticle) => void
 }
 
 const DEFAULT_HANDBOOK_CHAPTERS: HandbookChapter[] = [
@@ -452,7 +456,7 @@ function ChapterContent({ chapter, practiceId }: { chapter: HandbookChapter; pra
   return <div className="space-y-4">{renderContent()}</div>
 }
 
-export function PracticeHandbookView({ articles, orgaCategories }: PracticeHandbookViewProps) {
+export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelete }: PracticeHandbookViewProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
   const [exportingPdf, setExportingPdf] = useState(false)
@@ -811,10 +815,37 @@ export function PracticeHandbookView({ articles, orgaCategories }: PracticeHandb
                     {groupedArticles[category].map((article, index) => (
                       <div
                         key={article.id}
-                        className="border-l-4 pl-6 py-2"
+                        className="group relative border-l-4 pl-6 py-2"
                         style={{ borderColor: categoryData?.color || "#94a3b8" }}
                       >
-                        <div className="flex items-start justify-between gap-4 mb-3">
+                        {/* Hover actions */}
+                        {(onEdit || onDelete) && (
+                          <div className="absolute top-2 right-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {onEdit && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground"
+                                onClick={() => onEdit(article)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Bearbeiten</span>
+                              </Button>
+                            )}
+                            {onDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground"
+                                onClick={() => onDelete(article)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Löschen</span>
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex items-start justify-between gap-4 mb-3 pr-20">
                           <h3 className="text-xl font-semibold text-balance">{article.title}</h3>
                           <Badge variant="outline" className="text-xs whitespace-nowrap">
                             Version {article.version}

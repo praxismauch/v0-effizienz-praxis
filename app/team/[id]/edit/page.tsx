@@ -120,6 +120,24 @@ export default function EditTeamMemberPage() {
 
   const member = teamMembers.find((m) => m.id === memberId)
 
+  // If member not found, show loading or error state
+  if (!member && teamMembers.length > 0) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <h2 className="text-2xl font-semibold mb-2">Teammitglied nicht gefunden</h2>
+            <p className="text-muted-foreground mb-4">Das gesuchte Teammitglied existiert nicht oder wurde gelöscht.</p>
+            <Button onClick={() => router.push("/team")}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Zurück zum Team
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
   const canEditProfile = isAdmin || currentUser?.id === memberId
   const canEditRole = isAdmin && member?.role !== "admin"
   const canEditPermissions = isAdmin
@@ -158,6 +176,13 @@ export default function EditTeamMemberPage() {
   }, [member])
 
   const handleSave = async () => {
+    if (!member) {
+      toast.error("Fehler", {
+        description: "Teammitglied nicht gefunden",
+      })
+      return
+    }
+
     setIsUpdatingStatus(true)
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim()
@@ -173,8 +198,8 @@ export default function EditTeamMemberPage() {
       })
 
       // Handle team assignments
-      if (canEditTeams) {
-        const currentTeamIds = member.teamIds
+      if (canEditTeams && member) {
+        const currentTeamIds = member.teamIds || []
         const newTeamIds = formData.teamIds
 
         // Remove from teams no longer assigned

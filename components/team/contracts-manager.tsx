@@ -502,13 +502,34 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {contract.bonus_personal_goal && (
-                          <Badge variant="outline">Persönlich: {contract.bonus_personal_goal}%</Badge>
+                          <Badge variant="outline">
+                            Persönlich: {contract.bonus_personal_goal}%
+                            {contract.salary && (
+                              <span className="ml-1 text-muted-foreground">
+                                ({((contract.salary * contract.bonus_personal_goal) / 100).toLocaleString("de-DE")} {contract.salary_currency})
+                              </span>
+                            )}
+                          </Badge>
                         )}
                         {contract.bonus_practice_goal && (
-                          <Badge variant="outline">Praxis: {contract.bonus_practice_goal}%</Badge>
+                          <Badge variant="outline">
+                            Praxis: {contract.bonus_practice_goal}%
+                            {contract.salary && (
+                              <span className="ml-1 text-muted-foreground">
+                                ({((contract.salary * contract.bonus_practice_goal) / 100).toLocaleString("de-DE")} {contract.salary_currency})
+                              </span>
+                            )}
+                          </Badge>
                         )}
                         {contract.bonus_employee_discussion && (
-                          <Badge variant="outline">Gespräch: {contract.bonus_employee_discussion}%</Badge>
+                          <Badge variant="outline">
+                            Gespräch: {contract.bonus_employee_discussion}%
+                            {contract.salary && (
+                              <span className="ml-1 text-muted-foreground">
+                                ({((contract.salary * contract.bonus_employee_discussion) / 100).toLocaleString("de-DE")} {contract.salary_currency})
+                              </span>
+                            )}
+                          </Badge>
                         )}
                         {contract.has_13th_salary && (
                           <Badge variant="outline" className="text-amber-600 border-amber-600">

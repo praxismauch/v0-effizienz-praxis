@@ -401,108 +401,72 @@ export default function TeamMemberDetailPage() {
               )}
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Persönliche Informationen</CardTitle>
-                  <CardDescription>Grundlegende Profilinformationen und Kontaktdaten</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    {/* Avatar */}
+                    <Avatar className="h-16 w-16 shrink-0">
                       {member.avatar && <AvatarImage src={member.avatar} alt={member.name} />}
-                      <AvatarFallback className="text-2xl bg-primary/10 text-primary font-semibold">
+                      <AvatarFallback className="text-xl bg-primary/10 text-primary font-semibold">
                         {member.name
                           .split(" ")
-                          .map((n) => n[0])
+                          .map((n: string) => n[0])
                           .join("")
                           .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h3 className="text-xl font-semibold">{member.name}</h3>
-                      {age && <p className="text-muted-foreground">{age} Jahre alt</p>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <UserIcon className="h-4 w-4" />
-                        Vollständiger Name
-                      </Label>
-                      <p className="font-medium">{member.name}</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        E-Mail-Adresse
-                      </Label>
-                      <p className="font-medium">
-                        {member.email?.includes("@placeholder.local") ? "Keine E-Mail" : member.email}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Rolle
-                      </Label>
-                      <Badge className={roleColors[member.role as keyof typeof roleColors] || roleColors.user}>
-                        {roleLabels[member.role as keyof typeof roleLabels] || member.role}
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Mitglied seit
-                      </Label>
-                      <p className="font-medium">
-                        {member.created_at ? formatDate(new Date(member.created_at)) : "Unbekannt"}
-                      </p>
-                    </div>
-
-                    {member.date_of_birth && (
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">Geburtsdatum</Label>
-                        <p className="font-medium">{formatDate(new Date(member.date_of_birth))}</p>
+                    
+                    {/* Main Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-lg font-semibold">{member.name}</h3>
+                        <Badge className={roleColors[member.role as keyof typeof roleColors] || roleColors.user}>
+                          {roleLabels[member.role as keyof typeof roleLabels] || member.role}
+                        </Badge>
                       </div>
-                    )}
-
-                    <div className="space-y-2 col-span-2">
-                      <Label className="text-muted-foreground flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Teamzuweisungen
-                      </Label>
-                      {member.teamIds && member.teamIds.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {member.teamIds.map((teamId) => {
+                      
+                      {/* Compact Info Row */}
+                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
+                        {member.email && !member.email.includes("@placeholder.local") && (
+                          <span className="flex items-center gap-1">
+                            <Mail className="h-3.5 w-3.5" />
+                            {member.email}
+                          </span>
+                        )}
+                        {member.date_of_birth && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {formatDate(new Date(member.date_of_birth))} {age && `(${age} J.)`}
+                          </span>
+                        )}
+                        {member.created_at && (
+                          <span className="flex items-center gap-1">
+                            <UserIcon className="h-3.5 w-3.5" />
+                            Seit {formatDate(new Date(member.created_at))}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Team Badges */}
+                      {member.teamIds && member.teamIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {member.teamIds.map((teamId: string) => {
                             const team = teams.find((t) => t.id === teamId)
                             if (!team) return null
                             return (
                               <Badge
                                 key={teamId}
                                 variant="outline"
-                                className="px-2 py-1"
+                                className="px-2 py-0.5 text-xs"
                                 style={{
                                   backgroundColor: `${team.color}15`,
                                   borderColor: team.color,
                                   color: team.color,
                                 }}
                               >
-                                <div className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: team.color }} />
+                                <div className="w-1.5 h-1.5 rounded-full mr-1" style={{ backgroundColor: team.color }} />
                                 {team.name}
                               </Badge>
                             )
-                          })}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Keine Teamzuweisungen</p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="contracts" className="space-y-4">

@@ -13,10 +13,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true, // TODO: Fix remaining type errors and set to false
   },
-  // Fix Turbopack workspace root detection
-  turbopack: {
-    root: process.cwd(),
-  },
   // Image optimization
   images: {
     formats: ["image/webp", "image/avif"],

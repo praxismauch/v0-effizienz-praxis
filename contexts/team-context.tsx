@@ -332,7 +332,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       )
 
       try {
-        await mutationFetcher(`${SWR_KEYS.teamMembers(practiceId)}/${id}`, {
+        await mutationFetcher(SWR_KEYS.teamMember(practiceId, id), {
           method: "PUT",
           body: updates,
         })
@@ -355,7 +355,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       )
 
       try {
-        await mutationFetcher(`${SWR_KEYS.teamMembers(practiceId)}/${id}`, {
+        await mutationFetcher(SWR_KEYS.teamMember(practiceId, id), {
           method: "DELETE",
         })
         toast.success("Teammitglied entfernt")

@@ -97,163 +97,77 @@ export default async function RootLayout({
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
-        {/* DNS prefetch and preconnect for external resources */}
-        <link rel="dns-prefetch" href="https://sytvmjmvwkqdzcfvjqkr.supabase.co" />
-        <link rel="preconnect" href="https://sytvmjmvwkqdzcfvjqkr.supabase.co" crossOrigin="anonymous" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.googleapis.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        {/* DNS prefetch for common domains */}
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+        {/* Security headers */}
+        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+        <meta httpEquiv="X-Frame-Options" content="DENY" />
+        <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
+        {/* Theme color for mobile browsers */}
+        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        {/* Apple touch icon */}
+        <link rel="apple-touch-icon" href="/logo.png" />
+        {/* Manifest for PWA */}
+        <link rel="manifest" href="/manifest.json" />
+        {/* Open Graph meta tags */}
+        <meta property="og:title" content="Effizienz Praxis" />
+        <meta
+          property="og:description"
+          content="Struktur. Erfolg. Leichtigkeit. - Moderne Praxismanagement Software"
+        />
+        <meta property="og:image" content="/logo.png" />
+        <meta property="og:type" content="website" />
+        {/* Twitter Card meta tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Effizienz Praxis" />
+        <meta
+          name="twitter:description"
+          content="Struktur. Erfolg. Leichtigkeit. - Moderne Praxismanagement Software"
+        />
+        <meta name="twitter:image" content="/logo.png" />
+        {/* Apple-specific meta tags */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Effizienz Praxis" />
+        {/* Microsoft specific */}
+        <meta name="msapplication-TileColor" content="#000000" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-(function() {
-  'use strict';
-  
-  // Guard: Only patch once
-  if (typeof window === 'undefined') return;
-  
-  // SUPPRESS SUPABASE AUTH FETCH ERRORS - Must be FIRST
-  if (!window.__supabaseErrorSuppressed) {
-    window.__supabaseErrorSuppressed = true;
-    
-    // Suppress unhandled promise rejections for auth errors
-    window.addEventListener('unhandledrejection', function(event) {
-      var msg = (event.reason && event.reason.message) || String(event.reason || '');
-      if (msg.indexOf('Failed to fetch') !== -1 || 
-          msg.indexOf('_getUser') !== -1 || 
-          msg.indexOf('_useSession') !== -1 ||
-          msg.indexOf('auth-js') !== -1 ||
-          msg.indexOf('supabase') !== -1) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return false;
-      }
-    }, true);
-    
-    // Also suppress global errors
-    var origOnError = window.onerror;
-    window.onerror = function(msg, src, line, col, err) {
-      var message = String(msg || '');
-      if (message.indexOf('Failed to fetch') !== -1 ||
-          message.indexOf('_getUser') !== -1 ||
-          message.indexOf('_useSession') !== -1) {
-        return true;
-      }
-      return origOnError ? origOnError.apply(this, arguments) : false;
-    };
-  }
-  
-  if (window.__btoaPatched === true) return;
-  
-  // Mark as patched immediately to prevent race conditions
-  window.__btoaPatched = true;
-  
-  try {
-    // Store original functions with proper binding
-    var _btoa = window.btoa;
-    var _atob = window.atob;
-    var originalBtoa = function(str) { return _btoa.call(window, str); };
-    var originalAtob = function(str) { return _atob.call(window, str); };
-    
-    // Check if TextEncoder is available
-    var hasTextEncoder = typeof TextEncoder !== 'undefined';
-    var hasTextDecoder = typeof TextDecoder !== 'undefined';
-    
-    // BTOA: String to Base64 with Unicode support
-    window.btoa = function(str) {
-      try {
-        // Handle null/undefined/empty
-        if (str == null || str === '') {
-          return originalBtoa('');
-        }
-        
-        str = String(str);
-        
-        // Fast path: Check if ASCII-only
-        var isAscii = true;
-        for (var i = 0; i < str.length; i++) {
-          if (str.charCodeAt(i) > 127) {
-            isAscii = false;
-            break;
-          }
-        }
-        
-        // Use native btoa for ASCII strings
-        if (isAscii) {
-          return originalBtoa(str);
-        }
-        
-        // Unicode path: Use TextEncoder if available
-        if (hasTextEncoder) {
-          try {
-            var encoder = new TextEncoder();
-            var bytes = encoder.encode(str);
-            var binaryString = '';
-            for (var j = 0; j < bytes.length; j++) {
-              binaryString += String.fromCharCode(bytes[j]);
-            }
-            return originalBtoa(binaryString);
-          } catch (unicodeError) {
-            console.error('[v0-btoa] Unicode encoding failed:', unicodeError);
-            // Fallback: Strip non-ASCII
-            var asciiOnly = str.replace(/[^\\x00-\\x7F]/g, '?');
-            return originalBtoa(asciiOnly);
-          }
-        } else {
-          // No TextEncoder: Strip non-ASCII immediately
-          console.warn('[v0-btoa] TextEncoder not available, replacing non-ASCII with ?');
-          var stripped = str.replace(/[^\\x00-\\x7F]/g, '?');
-          return originalBtoa(stripped);
-        }
-      } catch (outerError) {
-        console.error('[v0-btoa] Fatal error:', outerError, 'Input type:', typeof str);
-        return originalBtoa('');
-      }
-    };
-    
-    // ATOB: Base64 to String with Unicode support
-    window.atob = function(str) {
-      try {
-        if (str == null || str === '') {
-          return originalAtob('');
-        }
-        
-        str = String(str);
-        var decoded = originalAtob(str);
-        
-        // Try to decode as UTF-8 if TextDecoder is available
-        if (hasTextDecoder) {
-          try {
-            var bytes = new Uint8Array(decoded.length);
-            for (var i = 0; i < decoded.length; i++) {
-              bytes[i] = decoded.charCodeAt(i);
-            }
-            var decoder = new TextDecoder('utf-8', { fatal: false });
-            return decoder.decode(bytes);
-          } catch (decodeError) {
-            // Return raw decoded string if UTF-8 decode fails
-            return decoded;
-          }
-        }
-        
-        return decoded;
-      } catch (error) {
-        console.error('[v0-atob] Decoding failed:', error);
-        return '';
-      }
-    };
-  } catch (patchError) {
-    console.error('[v0] btoa/atob patching failed:', patchError);
-  }
-})();
-`,
+              try {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark')
+                } else {
+                  document.documentElement.classList.remove('dark')
+                }
+              } catch (_) {}
+            `,
           }}
           suppressHydrationWarning
         />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <Providers initialUser={initialUser}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <SidebarProvider defaultOpen={defaultSidebarOpen}>
+            <SidebarProvider defaultOpen={true}>
               {children}
               <Toaster />
             </SidebarProvider>

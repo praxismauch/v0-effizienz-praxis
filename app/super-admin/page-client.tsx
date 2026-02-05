@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
+import { useUser } from "@/contexts/user-context"
+import { useRouter } from "next/navigation"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface DashboardStats {
   users: { total: number; active: number; superAdmins: number }
@@ -231,6 +234,52 @@ function DashboardContent() {
 }
 
 export default function SuperAdminPageClient() {
+  const { isSuperAdmin, loading, currentUser } = useUser()
+  const router = useRouter()
+
+  // Show loading skeleton while checking auth
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64 mt-2" />
+          </div>
+        </div>
+        <Skeleton className="h-24 w-full" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+      </div>
+    )
+  }
+
+  // Redirect if not super admin
+  if (!isSuperAdmin) {
+    router.push("/dashboard?error=access_denied")
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-lg font-semibold mb-2">Zugriff verweigert</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Sie haben keine Berechtigung für diesen Bereich.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard">Zurück zum Dashboard</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Render dashboard for super admins
   return (
     <Suspense
       fallback={

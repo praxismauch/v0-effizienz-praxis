@@ -35,9 +35,6 @@ const nextConfig = {
       'recharts',
     ],
     reactCompiler: false, // Enable when ready for React Compiler
-    turbo: {
-      root: process.cwd(),
-    },
   },
   async headers() {
     return [

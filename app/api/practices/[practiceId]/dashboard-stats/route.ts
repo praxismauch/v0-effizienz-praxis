@@ -86,11 +86,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let queryResults
     try {
       queryResults = await Promise.all([
-        // team_assignments to count team members
+        // team_members to count team members (uses integer practice_id)
         supabase
-          .from("team_assignments")
+          .from("team_members")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceIdStr),
+          .eq("practice_id", practiceIdInt),
         // goals uses integer practice_id
         supabase
           .from("goals")
@@ -137,11 +137,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .eq("is_archived", false),
         // hiring_candidates (active) - return 0 if table doesn't exist
         Promise.resolve({ count: 0, data: null, error: null }),
-        // team_assignments (prev week)
+        // team_members (prev week) uses integer
         supabase
-          .from("team_assignments")
+          .from("team_members")
           .select("id", { count: "exact", head: true })
-          .eq("practice_id", practiceIdStr)
+          .eq("practice_id", practiceIdInt)
           .lte("created_at", sevenDaysAgo.toISOString()),
         // goals (prev week) uses integer
         supabase

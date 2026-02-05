@@ -122,19 +122,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       // Fetch avatars from users table
       try {
-        const { data: usersData } = await supabase
+        const { data: usersData, error: usersError } = await supabase
           .from("users")
           .select("id, avatar")
           .in("id", userIds)
 
+        if (usersError) {
+          console.error("[v0] Error fetching user avatars:", usersError)
+        }
+
         if (usersData) {
+          console.log("[v0] Fetched avatars for users:", usersData)
           userAvatars = usersData.reduce((acc: Record<string, string | null>, user: any) => {
             acc[user.id] = user.avatar
             return acc
           }, {})
         }
       } catch (avatarError: unknown) {
-        console.error("Error fetching user avatars:", avatarError)
+        console.error("[v0] Exception fetching user avatars:", avatarError)
       }
     }
 
@@ -146,6 +151,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const name = firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || "Unbekannt"
 
       const avatar = member.user_id ? userAvatars[member.user_id] : null
+      
+      if (member.user_id) {
+        console.log(`[v0] Avatar for ${name} (${member.user_id}):`, avatar)
+      }
 
       return {
         id: memberId,

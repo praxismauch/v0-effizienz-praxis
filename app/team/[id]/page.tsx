@@ -457,7 +457,7 @@ export default function TeamMemberDetailPage() {
             <TabsContent value="documents" className="space-y-4">
               {member && (
 <TeamMemberDocumentsTab
-  teamMemberId={memberId}
+  teamMemberId={member.team_member_id || member.id}
   practiceId={practiceId}
                   isAdmin={isAdmin}
                   currentUserId={currentUser?.id}

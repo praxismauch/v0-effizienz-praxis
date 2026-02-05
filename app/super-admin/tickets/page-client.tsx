@@ -37,7 +37,8 @@ export default function SuperAdminTicketManager() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [filterType, setFilterType] = useState("all")
   const [filterPriority, setFilterPriority] = useState("all")
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "priority">("newest")
+  const [sortByPriority, setSortByPriority] = useState<"priority" | "none">("priority")
+  const [sortByDate, setSortByDate] = useState<"newest" | "oldest">("newest")
   const searchParams = useSearchParams()
   const router = useRouter()
   const activeTab = searchParams.get("tab") || "all"
@@ -211,16 +212,23 @@ export default function SuperAdminTicketManager() {
       )
     }
 
-    // Sort
-    if (sortBy === "newest") filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    else if (sortBy === "oldest") filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    else if (sortBy === "priority") {
-      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 }
-      filtered.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
-    }
+    // Sort - first by priority (if enabled), then by date
+    filtered.sort((a, b) => {
+      // Primary sort: Priority (if enabled)
+      if (sortByPriority === "priority") {
+        const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 }
+        const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority]
+        if (priorityDiff !== 0) return priorityDiff
+      }
+      
+      // Secondary sort: Date
+      const dateA = new Date(a.created_at).getTime()
+      const dateB = new Date(b.created_at).getTime()
+      return sortByDate === "newest" ? dateB - dateA : dateA - dateB
+    })
 
     return filtered
-  }, [tickets, activeTab, searchQuery, sortBy])
+  }, [tickets, activeTab, searchQuery, sortByPriority, sortByDate])
 
   const resetFilters = () => {
     setSearchQuery("")
@@ -243,15 +251,17 @@ export default function SuperAdminTicketManager() {
       {/* Filters */}
       <TicketFilters
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        setSearchQuery={setSearchQuery}
         filterStatus={filterStatus}
-        onFilterStatusChange={setFilterStatus}
+        setFilterStatus={setFilterStatus}
         filterType={filterType}
-        onFilterTypeChange={setFilterType}
+        setFilterType={setFilterType}
         filterPriority={filterPriority}
-        onFilterPriorityChange={setFilterPriority}
-        sortBy={sortBy}
-        onSortByChange={setSortBy}
+        setFilterPriority={setFilterPriority}
+        sortByPriority={sortByPriority}
+        setSortByPriority={setSortByPriority}
+        sortByDate={sortByDate}
+        setSortByDate={setSortByDate}
         statuses={statuses}
         types={types}
         priorities={priorities}

@@ -15,8 +15,10 @@ interface TicketFiltersProps {
   setFilterType: (value: string) => void
   filterPriority: string
   setFilterPriority: (value: string) => void
-  sortBy: "newest" | "oldest" | "priority"
-  setSortBy: (value: "newest" | "oldest" | "priority") => void
+  sortByPriority: "priority" | "none"
+  setSortByPriority: (value: "priority" | "none") => void
+  sortByDate: "newest" | "oldest"
+  setSortByDate: (value: "newest" | "oldest") => void
   statuses: Array<{ value: string; label_de: string }>
   types: Array<{ value: string; label_de: string }>
   priorities: Array<{ value: string; label_de: string }>
@@ -31,8 +33,10 @@ export function TicketFilters({
   setFilterType,
   filterPriority,
   setFilterPriority,
-  sortBy,
-  setSortBy,
+  sortByPriority,
+  setSortByPriority,
+  sortByDate,
+  setSortByDate,
   statuses,
   types,
   priorities,
@@ -40,7 +44,7 @@ export function TicketFilters({
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div className="space-y-2">
             <Label>Suche</Label>
             <div className="relative">
@@ -114,15 +118,27 @@ export function TicketFilters({
           </div>
 
           <div className="space-y-2">
-            <Label>Sortierung</Label>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+            <Label>Sortierung (Priorität)</Label>
+            <Select value={sortByPriority} onValueChange={(v) => setSortByPriority(v as typeof sortByPriority)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="priority">Nach Priorität</SelectItem>
+                <SelectItem value="none">Keine</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Sortierung (Datum)</Label>
+            <Select value={sortByDate} onValueChange={(v) => setSortByDate(v as typeof sortByDate)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="newest">Neueste zuerst</SelectItem>
                 <SelectItem value="oldest">Älteste zuerst</SelectItem>
-                <SelectItem value="priority">Nach Priorität</SelectItem>
               </SelectContent>
             </Select>
           </div>

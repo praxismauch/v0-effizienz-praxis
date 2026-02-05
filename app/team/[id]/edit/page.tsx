@@ -197,7 +197,7 @@ export default function EditTeamMemberPage() {
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim()
 
-      updateTeamMember(memberId, {
+      await updateTeamMember(memberId, {
         name: fullName,
         email: formData.email,
         role: canEditRole ? formData.role : member.role,

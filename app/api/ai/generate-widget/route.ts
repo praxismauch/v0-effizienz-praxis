@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || "",
-})
+import { generateText } from "ai"
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,13 +9,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 })
     }
 
-    const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: `Du bist ein Assistent für medizinische Praxen, der hilft, Dashboard-Widgets zu erstellen.
+    const { text } = await generateText({
+      model: "anthropic/claude-3-5-sonnet-20241022",
+      maxTokens: 1024,
+      prompt: `Du bist ein Assistent für medizinische Praxen, der hilft, Dashboard-Widgets zu erstellen.
 
 Basierend auf dieser Beschreibung: "${prompt}"
 
@@ -33,17 +26,10 @@ Erstelle eine Widget-Konfiguration im folgenden JSON-Format:
 }
 
 Wähle den besten Widget-Typ und die beste Darstellungsform für die Anfrage. Antworte NUR mit dem JSON, ohne zusätzlichen Text.`,
-        },
-      ],
     })
 
-    const content = message.content[0]
-    if (content.type !== "text") {
-      throw new Error("Unexpected response type")
-    }
-
     // Parse the JSON response
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/)
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       throw new Error("No JSON found in response")
     }

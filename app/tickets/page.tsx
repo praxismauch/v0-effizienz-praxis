@@ -454,13 +454,13 @@ export default function TicketsPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              {/* Priority Dropdown */}
+                              {/* Priority Dropdown with Badge-like styling */}
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className={`${getPriorityColor(ticket.priority)} h-7 px-3 gap-1.5 font-medium cursor-pointer shadow-sm`}
+                                    className={`${getPriorityColor(ticket.priority)} text-white border-0 hover:opacity-90 h-7 px-3 gap-1.5 font-medium shadow-sm cursor-pointer`}
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <span className="text-sm font-semibold">{getPriorityIcon(ticket.priority)}</span>
@@ -487,17 +487,17 @@ export default function TicketsPage() {
                                 </DropdownMenuContent>
                               </DropdownMenu>
 
-                              {/* Status Dropdown */}
+                              {/* Status Dropdown with Badge-like styling */}
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
-                                    variant="secondary"
+                                    variant="outline"
                                     size="sm"
-                                    className={`${getStatusColor(ticket.status)} h-7 px-3 gap-1.5 font-medium border-0 cursor-pointer shadow-sm`}
+                                    className={`${getStatusColor(ticket.status)} text-white border-0 hover:opacity-90 h-7 px-3 gap-1.5 font-medium shadow-sm cursor-pointer`}
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     {getStatusLabel(ticket.status)}
-                                    <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+                                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="start" className="z-[9999] min-w-[180px]">
@@ -520,7 +520,9 @@ export default function TicketsPage() {
                               </DropdownMenu>
 
                               {/* Type Badge (not a dropdown) */}
-                              <Badge className={getTypeColor(ticket.type)}>{getTypeLabel(ticket.type)}</Badge>
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                {getTypeLabel(ticket.type)}
+                              </Badge>
                             </div>
                             <div className="flex items-center gap-2">
                               <span

@@ -95,12 +95,19 @@ export function TicketCard({ ticket, onViewDetails, onEdit, onStatusChange, onPr
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <Badge className={getPriorityColor(ticket.priority)}>{getPriorityLabel(ticket.priority)}</Badge>
+              {/* Priority Badge */}
+              <Badge className={`${getPriorityColor(ticket.priority)} text-white border-0`}>
+                {getPriorityLabel(ticket.priority)}
+              </Badge>
+              {/* Status Badge */}
+              <Badge className={`${getStatusColor(ticket.status)} text-white border-0`}>
+                {getStatusLabel(ticket.status)}
+              </Badge>
+              {/* Type Badge */}
               <Badge variant="outline" className="flex items-center gap-1">
                 {getTypeIcon(ticket.type)}
                 {getTypeLabel(ticket.type)}
               </Badge>
-              <Badge className={getStatusColor(ticket.status)}>{getStatusLabel(ticket.status)}</Badge>
             </div>
 
             <h3
@@ -182,11 +189,16 @@ export function TicketCard({ ticket, onViewDetails, onEdit, onStatusChange, onPr
               Bearbeiten
             </Button>
 
+            {/* Status Dropdown with Badge-like styling */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-transparent">
-                  Status
-                  <ChevronDown className="h-4 w-4 ml-1" />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`${getStatusColor(ticket.status)} text-white border-0 hover:opacity-90 h-7 px-3 gap-1.5 font-medium shadow-sm`}
+                >
+                  {getStatusLabel(ticket.status)}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -215,11 +227,16 @@ export function TicketCard({ ticket, onViewDetails, onEdit, onStatusChange, onPr
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Priority Dropdown with Badge-like styling */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-transparent">
-                  Priorität
-                  <ChevronDown className="h-4 w-4 ml-1" />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`${getPriorityColor(ticket.priority)} text-white border-0 hover:opacity-90 h-7 px-3 gap-1.5 font-medium shadow-sm`}
+                >
+                  {getPriorityLabel(ticket.priority)}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

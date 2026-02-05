@@ -1,9 +1,3 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -41,13 +35,6 @@ const nextConfig = {
       'recharts',
     ],
     reactCompiler: false, // Enable when ready for React Compiler
-    turbo: {
-      // Explicitly set root relative to where next.config.mjs is located
-      root: path.resolve(__dirname, '.'),
-      resolveAlias: {
-        '@': path.resolve(__dirname, '.'),
-      },
-    },
   },
   async headers() {
     return [

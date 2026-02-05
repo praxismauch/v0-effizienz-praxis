@@ -85,6 +85,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let queryResults
     try {
+      console.log("[v0] Dashboard stats - querying team_members with practice_id:", practiceIdInt, "type:", typeof practiceIdInt)
+      
       queryResults = await Promise.all([
         // team_members to count team members (uses integer practice_id)
         supabase
@@ -227,6 +229,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .lt("created_at", sevenDaysAgo.toISOString()),
       ])
 
+      console.log("[v0] Dashboard stats - team_members query result:", {
+        count: queryResults[0]?.count,
+        error: queryResults[0]?.error,
+        data: queryResults[0]?.data,
+      })
+      
       console.log("[v0] Dashboard stats - query results:", {
         teamMembers: queryResults[0]?.count,
         goals: queryResults[1]?.count,

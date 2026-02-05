@@ -88,8 +88,8 @@ export function IgelManagement() {
         </p>
       </div>
 
-      {/* Professional info card - compact design */}
-      <Card className="bg-card border-card">
+      {/* Professional info card - blue design matching other views */}
+      <Card className="border-primary/20 bg-primary/5">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-2">
@@ -108,8 +108,8 @@ export function IgelManagement() {
         <CardContent className="pt-2">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-background rounded">
+                <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h4 className="font-medium text-sm">Vollständige Kostenanalyse</h4>
@@ -117,8 +117,8 @@ export function IgelManagement() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <DollarSign className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-background rounded">
+                <DollarSign className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h4 className="font-medium text-sm">3 Preisszenarien</h4>
@@ -126,8 +126,8 @@ export function IgelManagement() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <ThumbsUp className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-background rounded">
+                <ThumbsUp className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h4 className="font-medium text-sm">Klare Empfehlungen</h4>

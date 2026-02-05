@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { useTeam } from "@/contexts/team-context"
 import { useUser } from "@/contexts/user-context"
-import { Shield, UserIcon, ArrowLeft, Edit, Mail, Calendar, Users, CircleUser as FileUser } from "lucide-react"
+import { Shield, UserIcon, ArrowLeft, Edit, Mail, Calendar, Users, CircleUser as FileUser, Clock, Palmtree, Banknote } from "lucide-react"
 import { ArbeitsmittelAssignments } from "@/components/team/arbeitsmittel-assignments"
 import { useTranslation } from "@/contexts/translation-context"
 import { useRoleColors } from "@/lib/use-role-colors"
@@ -105,6 +105,7 @@ export default function TeamMemberDetailPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   const [mounted, setMounted] = useState(false)
+  const [activeContract, setActiveContract] = useState<any>(null)
   
   // Ensure client-side only
   useEffect(() => {
@@ -164,6 +165,69 @@ export default function TeamMemberDetailPage() {
   }, [memberId, teamMembers, practiceId])
 
   const canEdit = isAdmin || currentUser?.id === memberId
+
+  // Fetch active contract for overview
+  useEffect(() => {
+    if (!member || !practiceId) return
+
+    const controller = new AbortController()
+    
+    const fetchActiveContract = async () => {
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/contracts?team_member_id=${memberId}`, {
+          signal: controller.signal
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          // Find active contract
+          const active = data.contracts?.find((c: any) => {
+            const now = new Date()
+            const start = new Date(c.start_date)
+            const end = c.end_date ? new Date(c.end_date) : null
+            return c.is_active && start <= now && (!end || end >= now)
+          })
+          setActiveContract(active || null)
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error("Error fetching contract:", error)
+        }
+      }
+    }
+    
+    fetchActiveContract()
+    return () => controller.abort()
+  }, [member, practiceId, memberId])
+
+  // Helper functions for contract calculations
+  const calculateHolidayDays = (contract: any): number => {
+    const hoursPerWeek = contract.hours_per_week || 0
+    const workingDaysFulltime = contract.working_days_fulltime || 5
+    const holidayDaysFulltime = contract.holiday_days_fulltime || 30
+    
+    if (hoursPerWeek <= 0 || workingDaysFulltime <= 0) return 0
+    
+    const fullTimeHoursPerWeek = workingDaysFulltime * 8
+    const workingDaysPartTime = (hoursPerWeek / fullTimeHoursPerWeek) * workingDaysFulltime
+    
+    return Math.ceil((workingDaysPartTime / workingDaysFulltime) * holidayDaysFulltime)
+  }
+
+  const calculateEffectiveHourlyRate = (contract: any): number | null => {
+    if (!contract.salary || !contract.hours_per_week) return null
+    
+    const totalBonusPercentage =
+      (contract.bonus_personal_goal || 0) +
+      (contract.bonus_practice_goal || 0) +
+      (contract.bonus_employee_discussion || 0)
+    
+    const salaryWith100Bonus = contract.salary * (1 + totalBonusPercentage / 100)
+    const monthlyHours = contract.hours_per_week * 4.33
+    const hourlyRate = salaryWith100Bonus / monthlyHours
+    
+    return Math.round(hourlyRate * 100) / 100
+  }
 
   // Prevent SSR mismatch - only render on client
   if (!mounted) {
@@ -279,6 +343,63 @@ export default function TeamMemberDetailPage() {
               </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
+              {/* Active Contract Summary */}
+              {activeContract && (
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Banknote className="h-5 w-5 text-primary" />
+                      Aktiver Vertrag
+                    </CardTitle>
+                    <CardDescription>
+                      {activeContract.contract_type === "fulltime" ? "Vollzeit" : 
+                       activeContract.contract_type === "parttime" ? "Teilzeit" : 
+                       activeContract.contract_type === "minijob" ? "Minijob" : 
+                       activeContract.contract_type} seit {new Date(activeContract.start_date).toLocaleDateString("de-DE")}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {activeContract.hours_per_week && (
+                        <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                          <div className="p-2 rounded-full bg-blue-100">
+                            <Clock className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Stunden/Woche</p>
+                            <p className="text-xl font-semibold">{activeContract.hours_per_week}h</p>
+                          </div>
+                        </div>
+                      )}
+                      {activeContract.hours_per_week && (
+                        <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                          <div className="p-2 rounded-full bg-green-100">
+                            <Palmtree className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Urlaubsanspruch</p>
+                            <p className="text-xl font-semibold text-green-600">{calculateHolidayDays(activeContract)} Tage/Jahr</p>
+                          </div>
+                        </div>
+                      )}
+                      {calculateEffectiveHourlyRate(activeContract) && (
+                        <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                          <div className="p-2 rounded-full bg-purple-100">
+                            <Banknote className="h-5 w-5 text-purple-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Eff. Stundenlohn</p>
+                            <p className="text-xl font-semibold text-purple-600">
+                              {calculateEffectiveHourlyRate(activeContract)?.toLocaleString("de-DE")} {activeContract.salary_currency}/Std.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Persönliche Informationen</CardTitle>

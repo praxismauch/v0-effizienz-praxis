@@ -24,7 +24,7 @@ Generiere 3-5 konkrete Optimierungsvorschläge, die den Prozess verbessern könn
 Antworte auf Deutsch in klaren, umsetzbaren Punkten.`
 
     const { text } = await generateText({
-      model: "anthropic/claude-sonnet-4-20250514",
+      model: "anthropic/claude-3-5-sonnet-20241022",
       prompt,
     })
 

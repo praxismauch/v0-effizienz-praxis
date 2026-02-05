@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       try {
         if (isPDF) {
           const { object } = await generateObject({
-            model: "anthropic/claude-sonnet-4-20250514",
+            model: "anthropic/claude-3-5-sonnet-20241022",
             schema: analysisSchema,
             messages: [
               {
@@ -90,7 +90,7 @@ Bitte generiere realistische Beispielwerte für diese KV Abrechnung.`,
           fileAnalyses.push({ fileUrl, fileName: `Datei ${i + 1}`, ...object })
         } else {
           const { object } = await generateObject({
-            model: "anthropic/claude-sonnet-4-20250514",
+            model: "anthropic/claude-3-5-sonnet-20241022",
             schema: analysisSchema,
             messages: [
               {

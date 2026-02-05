@@ -33,9 +33,9 @@ Antworte NUR mit einem validen JSON-Array in diesem Format:
 ]`
 
     const { text } = await generateText({
-      model: "anthropic/claude-sonnet-4-20250514",
+      model: "anthropic/claude-3-5-sonnet-20241022",
       prompt,
-      maxOutputTokens: 1000,
+      maxTokens: 1000,
     })
 
     // Parse the JSON response

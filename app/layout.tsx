@@ -90,9 +90,9 @@ export default async function RootLayout({
     }
   }
 
-  const cookieStore = await cookies()
-  const sidebarStateCookie = cookieStore.get("sidebar_state")
-  const defaultSidebarOpen = sidebarStateCookie?.value !== "false"
+  // Use static default to prevent hydration mismatch
+  // Sidebar state will be managed client-side after hydration
+  const defaultSidebarOpen = true
 
   return (
     <html lang="de" suppressHydrationWarning>

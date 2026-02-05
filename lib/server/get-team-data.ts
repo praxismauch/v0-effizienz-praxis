@@ -124,10 +124,14 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
  */
 export const getAllTeamData = cache(async (practiceId: string) => {
   try {
+    console.log("[v0] getAllTeamData called for practiceId:", practiceId)
+    
     const [teams, teamMembers] = await Promise.all([
       getTeamsByPractice(practiceId),
       getTeamMembersByPractice(practiceId),
     ])
+
+    console.log("[v0] getAllTeamData results - teams:", teams.length, "teamMembers:", teamMembers.length)
 
     return {
       teams,
@@ -138,7 +142,7 @@ export const getAllTeamData = cache(async (practiceId: string) => {
       sickLeaves: [], // TODO: Add sick leaves table
     }
   } catch (error) {
-    console.error("[Server] Error getting all team data:", error)
+    console.error("[v0] Error getting all team data:", error)
     return {
       teams: [],
       teamMembers: [],

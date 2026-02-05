@@ -50,6 +50,12 @@ interface TeamPageClientProps {
 export default function TeamPageClient({ initialData, practiceId, userId }: TeamPageClientProps) {
   const router = useRouter()
 
+  console.log("[v0] TeamPageClient received initialData:", {
+    hasData: !!initialData,
+    teamMembers: initialData?.teamMembers?.length,
+    teams: initialData?.teams?.length,
+  })
+
   const [activeTab, setActiveTab] = useState("members")
   const [isLoading, setIsLoading] = useState(!initialData)
 

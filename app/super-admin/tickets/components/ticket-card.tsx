@@ -103,7 +103,7 @@ export function TicketCard({ ticket, onViewDetails, onEdit, onStatusChange, onPr
             </div>
 
             <h3
-              className="font-semibold text-lg mb-1 cursor-pointer hover:text-primary truncate"
+              className="font-semibold text-lg mb-1 cursor-pointer hover:text-primary"
               onClick={() => onViewDetails(ticket)}
             >
               {ticket.title}

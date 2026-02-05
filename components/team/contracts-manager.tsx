@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Calendar, Edit, Trash2, Infinity, TrendingUp, FileText, Download, Eye, Palmtree, Sun, Coins } from "lucide-react"
+import { Plus, Calendar, Edit, Trash2, Infinity, TrendingUp, FileText, Download, Eye, Palmtree, Sun, Coins, Copy } from "lucide-react"
 import { usePractice } from "@/contexts/practice-context"
 import { CreateContractDialog } from "@/components/team/create-contract-dialog"
 import { EditContractDialog } from "@/components/team/edit-contract-dialog"
@@ -167,6 +167,57 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
       setContracts((prev) => [newContract, ...prev])
     }
     setShowCreateDialog(false)
+  }
+
+  const handleDuplicateContract = async (contract: Contract) => {
+    if (!effectivePracticeId) return
+
+    try {
+      // Create a copy of the contract without id, timestamps, and set as inactive
+      const duplicateData = {
+        team_member_id: contract.team_member_id,
+        contract_type: contract.contract_type,
+        start_date: new Date().toISOString().split('T')[0], // Today's date
+        end_date: contract.end_date,
+        hours_per_week: contract.hours_per_week,
+        salary: contract.salary,
+        salary_currency: contract.salary_currency,
+        bonus_personal_goal: contract.bonus_personal_goal,
+        bonus_practice_goal: contract.bonus_practice_goal,
+        bonus_employee_discussion: contract.bonus_employee_discussion,
+        notes: contract.notes,
+        is_active: false, // Duplicate is inactive by default
+        has_13th_salary: contract.has_13th_salary,
+        vacation_bonus: contract.vacation_bonus,
+        additional_payments: contract.additional_payments,
+        holiday_days_fulltime: contract.holiday_days_fulltime,
+        working_days_fulltime: contract.working_days_fulltime,
+      }
+
+      const res = await fetch(`/api/practices/${effectivePracticeId}/contracts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(duplicateData),
+      })
+
+      if (res.ok) {
+        const newContract = await res.json()
+        setContracts((prev) => [newContract, ...prev])
+        toast({
+          title: "Vertrag dupliziert",
+          description: "Der Vertrag wurde erfolgreich kopiert. Der neue Vertrag ist inaktiv.",
+        })
+      } else {
+        throw new Error("Failed to duplicate contract")
+      }
+    } catch (error) {
+      console.error("Error duplicating contract:", error)
+      toast({
+        title: "Fehler",
+        description: "Der Vertrag konnte nicht dupliziert werden",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleStatusChange = async (contractId: string, newStatus: "active" | "inactive") => {
@@ -368,8 +419,11 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                       )}
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm" onClick={() => setEditingContract(contract)}>
+                      <Button variant="ghost" size="sm" onClick={() => setEditingContract(contract)} title="Bearbeiten">
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDuplicateContract(contract)} title="Duplizieren">
+                        <Copy className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -378,6 +432,7 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                           setContractToDelete({ id: contract.id, type: getContractTypeLabel(contract.contract_type) })
                         }
                         className="text-destructive hover:text-destructive"
+                        title="Löschen"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

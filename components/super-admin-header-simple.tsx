@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useSuperAdminSidebar } from "@/contexts/super-admin-sidebar-context"
 
 interface SuperAdminHeaderSimpleProps {
   user?: {
@@ -26,6 +27,7 @@ interface SuperAdminHeaderSimpleProps {
 export function SuperAdminHeaderSimple({ user }: SuperAdminHeaderSimpleProps) {
   const { theme, setTheme } = useTheme()
   const router = useRouter()
+  const { sidebarWidth } = useSuperAdminSidebar()
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -40,7 +42,10 @@ export function SuperAdminHeaderSimple({ user }: SuperAdminHeaderSimpleProps) {
     .toUpperCase() || "SA"
 
   return (
-    <header className="fixed left-64 right-0 top-0 z-20 h-16 border-b bg-background">
+    <header
+      className="fixed right-0 top-0 z-20 h-16 border-b bg-background transition-all duration-300"
+      style={{ left: `${sidebarWidth}px` }}
+    >
       <div className="flex h-full items-center justify-between px-6">
         <div className="flex-1" />
 

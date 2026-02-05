@@ -17,10 +17,6 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ["googleapis", "nodemailer", "bcryptjs"],
-  // Turbopack configuration
-  turbopack: {
-    root: '/vercel/share/v0-project',
-  },
   
   // Next.js 16: Experimental features
   experimental: {

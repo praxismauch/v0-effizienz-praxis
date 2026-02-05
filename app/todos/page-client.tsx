@@ -1,9 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useUser } from "@/contexts/user-context"
-import { usePractice } from "@/contexts/practice-context"
-import { useTodos } from "@/contexts/todo-context"
+import useSWR from "swr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,12 +11,37 @@ import { Plus, Search, Clock } from "lucide-react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 
-type PageClientProps = {}
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-export default function PageClient(_props: PageClientProps) {
-  const { user } = useUser()
-  const { currentPractice } = usePractice()
-  const { todos, loading, updateTodo } = useTodos()
+interface Todo {
+  id: string
+  title: string
+  description?: string
+  completed: boolean
+  priority?: string
+  due_date?: string
+  created_at: string
+}
+
+interface PageClientProps {
+  initialTodos: Todo[]
+  practiceId: string | null | undefined
+  user: {
+    id: string
+    email: string
+    name?: string
+  }
+}
+
+export default function PageClient({ initialTodos, practiceId, user }: PageClientProps) {
+  const { data, mutate, isLoading } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/todos` : null,
+    fetcher,
+    { fallbackData: { todos: initialTodos } }
+  )
+  
+  const todos = data?.todos || initialTodos || []
+  const loading = isLoading
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all")
 
@@ -40,15 +63,21 @@ export default function PageClient(_props: PageClientProps) {
   }
 
   const handleToggle = async (todoId: string, completed: boolean) => {
-    await updateTodo(todoId, { completed })
-  }
-
-  if (!user || !currentPractice) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Bitte melden Sie sich an</p>
-      </div>
-    )
+    if (!practiceId) return
+    
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/todos/${todoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed }),
+      })
+      
+      if (res.ok) {
+        mutate() // Refresh the data
+      }
+    } catch (error) {
+      console.error("[v0] Error updating todo:", error)
+    }
   }
 
   return (

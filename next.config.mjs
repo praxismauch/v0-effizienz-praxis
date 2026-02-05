@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // NOTE: Re-enable type checking once all `any` types are fixed
+  // typescript: {
+  //   ignoreBuildErrors: false,
+  // },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: true, // TODO: Fix remaining type errors and set to false
   },
   // Fix Turbopack workspace root detection
   turbopack: {

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Star, ChevronRight } from "lucide-react"
+import { ChevronRight, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
@@ -70,8 +70,8 @@ export function AppSidebarHeader({
                     : "text-sidebar-primary hover:text-sidebar-primary/80 hover:bg-sidebar-accent"
                 )}
               >
-                <Star className="h-4 w-4 fill-amber-500" />
-                <span>Super Admin</span>
+                <span>MANAGEMENT</span>
+                <ChevronRight className="h-4 w-4 ml-auto" />
               </Link>
             </div>
           )}
@@ -79,7 +79,7 @@ export function AppSidebarHeader({
         </div>
       )}
 
-      {/* Collapsed state: show Super Admin icon with tooltip */}
+      {/* Collapsed state: show Management icon with tooltip */}
       {!sidebarOpen && isSuperAdmin && (
         <div className="px-2 py-2 border-b border-sidebar-border/30">
           <Tooltip>
@@ -93,11 +93,11 @@ export function AppSidebarHeader({
                     : "text-sidebar-primary hover:text-sidebar-primary/80 hover:bg-sidebar-accent"
                 )}
               >
-                <Star className="h-5 w-5 fill-amber-500" />
+                <Settings className="h-5 w-5" />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right">
-              <span>Super Admin</span>
+              <span>Management</span>
             </TooltipContent>
           </Tooltip>
         </div>

@@ -1,48 +1,37 @@
 /**
- * Supabase configuration
+ * Supabase Configuration
  * 
- * ⚠️ ACTION REQUIRED FOR V0 PREVIEW ⚠️
+ * Environment variables are loaded from Vercel project settings.
+ * Configure via v0 sidebar: Vars section or Vercel dashboard.
  * 
- * The environment variables in your Vars section are not being picked up in the preview.
- * To make the app work, paste your Supabase credentials directly below:
- * 
- * 1. Get from Supabase dashboard (https://supabase.com/dashboard > Settings > API):
- *    - Project URL (looks like: https://xxxxx.supabase.co)
- *    - anon/public key (starts with: eyJ...)
- *    - service_role key (starts with: eyJ...)
- * 
- * 2. Paste them in the three constants below (in quotes)
- * 
- * These values will ONLY be used in v0 preview. When deployed to Vercel,
- * the environment variables from your Vars section will be used instead.
+ * Required environment variables:
+ * - NEXT_PUBLIC_SUPABASE_URL: Your Supabase project URL
+ * - NEXT_PUBLIC_SUPABASE_ANON_KEY: Your Supabase anon/public key
+ * - SUPABASE_SERVICE_ROLE_KEY: Your Supabase service role key (server-side only)
  */
 
-// 🔽 PASTE YOUR SUPABASE CREDENTIALS HERE 🔽
-const SUPABASE_URL_FALLBACK = "" // Example: "https://abcdefgh.supabase.co"
-const SUPABASE_ANON_KEY_FALLBACK = "" // Example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-const SUPABASE_SERVICE_ROLE_KEY_FALLBACK = "" // Example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-// Get environment variables with fallbacks for v0 preview
-export const getSupabaseUrl = () => {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    SUPABASE_URL_FALLBACK
-  )
+// Get environment variables
+export const getSupabaseUrl = (): string => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!url) {
+    console.warn("[Supabase] NEXT_PUBLIC_SUPABASE_URL is not configured")
+  }
+  return url || ""
 }
 
-export const getSupabaseAnonKey = () => {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    SUPABASE_ANON_KEY_FALLBACK
-  )
+export const getSupabaseAnonKey = (): string => {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+              process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  if (!key) {
+    console.warn("[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured")
+  }
+  return key || ""
 }
 
-export const getSupabaseServiceRoleKey = () => {
-  return (
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    SUPABASE_SERVICE_ROLE_KEY_FALLBACK
-  )
+export const getSupabaseServiceRoleKey = (): string => {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // Don't warn for service role key on client-side - it's only needed server-side
+  return key || ""
 }
 
 // Validation helpers

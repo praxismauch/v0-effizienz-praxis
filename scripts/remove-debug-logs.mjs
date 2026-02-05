@@ -6,38 +6,67 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, "..")
 
-// Patterns to match and remove
-const debugPatterns = [
-  /^\s*console\.log$$\s*["']\[v0\].*?$$\s*;?\s*$/gm,
-  /^\s*console\.debug$$\s*["']\[v0\].*?$$\s*;?\s*$/gm,
-  /^\s*console\.info$$\s*["']\[v0\].*?$$\s*;?\s*$/gm,
+// Mode: "v0-only" removes only [v0] prefixed logs, "all" removes all console.log/debug/info
+const mode = process.argv[2] || "v0-only"
+
+// Patterns for v0-only mode
+const v0DebugPatterns = [
+  /^\s*console\.log\(\s*["']\[v0\].*?\)\s*;?\s*$/gm,
+  /^\s*console\.debug\(\s*["']\[v0\].*?\)\s*;?\s*$/gm,
+  /^\s*console\.info\(\s*["']\[v0\].*?\)\s*;?\s*$/gm,
+]
+
+// Patterns for all mode - removes ALL console.log/debug statements (keeps console.error/warn)
+const allDebugPatterns = [
+  /^\s*console\.log\([\s\S]*?\)\s*;?\s*$/gm,
+  /^\s*console\.debug\([\s\S]*?\)\s*;?\s*$/gm,
+  /^\s*console\.info\([\s\S]*?\)\s*;?\s*$/gm,
 ]
 
 // Additional multi-line pattern for template literals
-const multiLinePattern = /^\s*console\.log$$\s*`\[v0\][^`]*`[^)]*$$\s*;?\s*$/gm
+const v0MultiLinePattern = /^\s*console\.log\(\s*`\[v0\][^`]*`[^)]*\)\s*;?\s*$/gm
 
 let totalRemoved = 0
 let filesModified = 0
+
+// Files/patterns to skip (important logs we want to keep)
+const skipPatterns = [
+  /console\.(error|warn)\(/,  // Keep errors and warnings
+  /\.catch\(/,                 // Keep catch block logs
+]
 
 function removeDebugLogs(filePath) {
   const content = fs.readFileSync(filePath, "utf8")
   let modified = content
   let localRemoved = 0
 
+  const patterns = mode === "all" ? allDebugPatterns : v0DebugPatterns
+
   // Apply all patterns
-  for (const pattern of debugPatterns) {
+  for (const pattern of patterns) {
     const matches = modified.match(pattern)
     if (matches) {
-      localRemoved += matches.length
-      modified = modified.replace(pattern, "")
+      // Filter out matches we want to keep
+      const filteredMatches = matches.filter(match => 
+        !skipPatterns.some(skip => skip.test(match))
+      )
+      localRemoved += filteredMatches.length
+      modified = modified.replace(pattern, (match) => {
+        if (skipPatterns.some(skip => skip.test(match))) {
+          return match // Keep this one
+        }
+        return "" // Remove
+      })
     }
   }
 
-  // Apply multi-line pattern
-  const multiMatches = modified.match(multiLinePattern)
-  if (multiMatches) {
-    localRemoved += multiMatches.length
-    modified = modified.replace(multiLinePattern, "")
+  // Apply multi-line pattern (v0 only)
+  if (mode === "v0-only") {
+    const multiMatches = modified.match(v0MultiLinePattern)
+    if (multiMatches) {
+      localRemoved += multiMatches.length
+      modified = modified.replace(v0MultiLinePattern, "")
+    }
   }
 
   // Remove excessive blank lines (more than 2 consecutive)
@@ -69,7 +98,11 @@ function walkDirectory(dir, extensions = [".ts", ".tsx", ".js", ".jsx"]) {
   }
 }
 
-console.log("Starting debug log removal...")
+console.log(`Starting debug log removal (mode: ${mode})...`)
+console.log(`Mode "v0-only" removes only [v0] prefixed logs`)
+console.log(`Mode "all" removes ALL console.log/debug/info (keeps errors/warnings)`)
+console.log(`Usage: node scripts/remove-debug-logs.mjs [v0-only|all]`)
+console.log("")
 console.log("Scanning directories: app/api, lib, components")
 console.log("")
 

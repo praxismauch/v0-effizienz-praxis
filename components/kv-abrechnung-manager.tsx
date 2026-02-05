@@ -33,33 +33,39 @@ interface KVFile {
   file_size: number
 }
 
-interface KVAbrechnungData {
+/** Extracted data structure from KV documents */
+interface KVExtractedData {
+  gesamtbetrag?: number
+  einzelleistungen?: Array<{
+    bezeichnung: string
+    anzahl: number
+    betrag: number
+  }>
+  arzt?: string
+  praxis?: string
+  abrechnungszeitraum?: string
+  datum?: string
+  raw_text?: string
+  [key: string]: unknown // Allow additional dynamic fields from AI extraction
+}
+
+/** Main KV Abrechnung entity - single source of truth */
+interface KVAbrechnung {
   id: string
   practice_id: string
   year: number
   quarter: number
-  image_url: string | null
-  files: KVFile[] // New field for multiple files
-  extracted_data: any
+  image_url?: string | null
+  files: KVFile[]
+  extracted_data: KVExtractedData | null
   created_by: string
   created_at: string
   updated_at: string
   file_url: string | null
 }
 
-// Updated interface name to align with the change below
-interface KVAbrechnung {
-  id: string
-  practice_id: string
-  year: number
-  quarter: number
-  files: KVFile[] // Multiple files support
-  extracted_data: any
-  created_by: string
-  created_at: string
-  updated_at: string
-  file_url: string | null
-}
+// Alias for backwards compatibility
+type KVAbrechnungData = KVAbrechnung
 
 const QUARTERS = [
   { value: 1, label: "Q1 (Jan-Mär)" },

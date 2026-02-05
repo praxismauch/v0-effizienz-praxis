@@ -97,9 +97,10 @@ export default function ScheduleTab({
         if (!shiftType) continue
 
         // Find matching team members based on role filter
+        const safeTeamMembers = Array.isArray(teamMembers) ? teamMembers : []
         const eligibleMembers = templateShift.role_filter
-          ? teamMembers.filter((m) => m.role === templateShift.role_filter)
-          : teamMembers
+          ? safeTeamMembers.filter((m) => m.role === templateShift.role_filter)
+          : safeTeamMembers
 
         // For now, create one shift per template entry (can be expanded later)
         if (eligibleMembers.length > 0) {

@@ -82,7 +82,7 @@ export function createErrorResponse(message: string, status = 500) {
 /**
  * Create success response with consistent format
  */
-export function createSuccessResponse(data: any, status = 200) {
+export function createSuccessResponse<T = unknown>(data: T, status = 200) {
   return NextResponse.json(data, { status })
 }
 

@@ -2,12 +2,7 @@ export const dynamic = "force-dynamic"
 
 import { redirect, notFound } from "next/navigation"
 import { getCurrentUser, getCurrentPracticeId } from "@/lib/server/get-current-user"
-import { getTeamMemberById } from "@/lib/server/get-team-data"
-import { AppLayout } from "@/components/app-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { createServerClient } from "@/lib/server/supabase"
 
 export default async function TeamMemberDetailPage({ params }: { params: { id: string } }) {
   console.log("[v0] Team member detail page accessed with ID:", params.id)
@@ -31,62 +26,69 @@ export default async function TeamMemberDetailPage({ params }: { params: { id: s
     redirect("/dashboard")
   }
   
-  // Fetch team member data server-side
+  // Fetch team member data directly
   console.log("[v0] About to fetch team member:", params.id, "for practice:", practiceId)
-  const teamMember = await getTeamMemberById(params.id, practiceId)
-  console.log("[v0] Team member fetch result:", teamMember ? "Found" : "NOT FOUND")
+  const supabase = await createServerClient()
+  const practiceIdInt = parseInt(practiceId, 10)
+  
+  const { data: teamMember, error } = await supabase
+    .from("team_members")
+    .select("*")
+    .eq("id", params.id)
+    .eq("practice_id", practiceIdInt)
+    .single()
+  
+  console.log("[v0] Team member fetch result:", teamMember ? "Found" : "NOT FOUND", error ? `Error: ${error.message}` : "")
   
   // If team member not found, show 404
-  if (!teamMember) {
+  if (!teamMember || error) {
     console.log("[v0] Calling notFound() for member ID:", params.id)
     notFound()
   }
   
   return (
-    <AppLayout>
-      <div className="container py-6 space-y-6">
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Link href="/team">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Zurück
-            </Button>
-          </Link>
-          <h1 className="text-3xl font-bold">Teammitglied Details</h1>
+          <a href="/team" className="text-sm text-blue-600 hover:underline">
+            ← Zurück zur Teamübersicht
+          </a>
         </div>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>{teamMember.name || teamMember.email || "Teammitglied"}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">E-Mail</p>
-                <p className="font-medium">{teamMember.email || "—"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Rolle</p>
-                <p className="font-medium">{teamMember.role || "—"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Abteilung</p>
-                <p className="font-medium">{teamMember.department || "—"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <p className="font-medium">{teamMember.status || "Aktiv"}</p>
-              </div>
+        <h1 className="text-3xl font-bold">Teammitglied Details</h1>
+        
+        <div className="bg-white rounded-lg border p-6 space-y-4">
+          <h2 className="text-xl font-semibold">{teamMember.name || teamMember.email || "Teammitglied"}</h2>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">E-Mail</p>
+              <p className="font-medium">{teamMember.email || "—"}</p>
             </div>
-            
-            <div className="pt-4 flex gap-2">
-              <Link href={`/team/${params.id}/edit`}>
-                <Button>Bearbeiten</Button>
-              </Link>
+            <div>
+              <p className="text-sm text-gray-500">Rolle</p>
+              <p className="font-medium">{teamMember.role || "—"}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="text-sm text-gray-500">Abteilung</p>
+              <p className="font-medium">{teamMember.department || "—"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Status</p>
+              <p className="font-medium">{teamMember.status || "Aktiv"}</p>
+            </div>
+          </div>
+          
+          <div className="pt-4">
+            <a 
+              href={`/team/${params.id}/edit`}
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Bearbeiten
+            </a>
+          </div>
+        </div>
       </div>
-    </AppLayout>
+    </div>
   )
 }

@@ -534,6 +534,11 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                         {contract.has_13th_salary && (
                           <Badge variant="outline" className="text-amber-600 border-amber-600">
                             13. Gehalt
+                            {contract.salary && (
+                              <span className="ml-1">
+                                ({contract.salary.toLocaleString("de-DE")} {contract.salary_currency})
+                              </span>
+                            )}
                           </Badge>
                         )}
                         {contract.vacation_bonus && (

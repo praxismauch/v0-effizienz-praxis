@@ -960,7 +960,7 @@ export default function TodosPage() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex flex-col gap-3">
-          {/* Row 1: Title only */}
+          {/* Title section */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-2xl font-bold tracking-tight">Aufgaben</h1>

@@ -93,3 +93,59 @@ export const getTeamMembers = cache(async (teamId: string): Promise<TeamMember[]
     return []
   }
 })
+
+/**
+ * Get all team members for a practice
+ */
+export const getTeamMembersByPractice = cache(async (practiceId: string): Promise<any[]> => {
+  try {
+    const supabase = await createServerClient()
+    
+    const { data, error } = await supabase
+      .from("team_members")
+      .select("*")
+      .eq("practice_id", practiceId)
+      .order("joined_at")
+
+    if (error) {
+      console.error("[Server] Error fetching team members by practice:", error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error("[Server] Error getting team members by practice:", error)
+    return []
+  }
+})
+
+/**
+ * Get all team-related data for a practice (teams + members)
+ */
+export const getAllTeamData = cache(async (practiceId: string) => {
+  try {
+    const [teams, teamMembers] = await Promise.all([
+      getTeamsByPractice(practiceId),
+      getTeamMembersByPractice(practiceId),
+    ])
+
+    return {
+      teams,
+      teamMembers,
+      responsibilities: [], // TODO: Add responsibilities table
+      staffingPlans: [], // TODO: Add staffing plans table
+      holidayRequests: [], // TODO: Add holiday requests table
+      sickLeaves: [], // TODO: Add sick leaves table
+    }
+  } catch (error) {
+    console.error("[Server] Error getting all team data:", error)
+    return {
+      teams: [],
+      teamMembers: [],
+      responsibilities: [],
+      staffingPlans: [],
+      holidayRequests: [],
+      sickLeaves: [],
+    }
+  }
+})

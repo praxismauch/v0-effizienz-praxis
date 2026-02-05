@@ -11,10 +11,13 @@ interface SidebarTourButtonProps {
 }
 
 export function SidebarTourButton({ sidebarOpen }: SidebarTourButtonProps) {
-  const { isNewPractice, daysRemaining, setIsOnboardingOpen, shouldShowOnboarding } =
-    useOnboarding()
-
-  if (!shouldShowOnboarding) return null
+  // Use the hook which safely returns null during SSR
+  const onboarding = useOnboarding()
+  
+  // Return null if provider isn't available (SSR) or shouldn't show
+  if (!onboarding || !onboarding.shouldShowOnboarding) return null
+  
+  const { isNewPractice, daysRemaining, setIsOnboardingOpen } = onboarding
 
   const buttonContent = (
     <Button

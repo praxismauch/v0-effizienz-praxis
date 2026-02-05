@@ -34,17 +34,18 @@ export function useInventory() {
     autoReorder: false,
   })
 
-  const fetchInventory = useCallback(async () => {
+  const fetchInventory = useCallback(async (signal?: AbortSignal) => {
     if (!practiceId) return
 
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/practices/${practiceId}/inventory`)
+      const response = await fetch(`/api/practices/${practiceId}/inventory`, { signal })
       if (response.ok) {
         const data = await response.json()
         setItems(data.items || [])
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') return
       console.error("Error fetching inventory:", error)
       toast({
         title: "Fehler",
@@ -56,39 +57,41 @@ export function useInventory() {
     }
   }, [practiceId, toast])
 
-  const fetchSuppliers = useCallback(async () => {
+  const fetchSuppliers = useCallback(async (signal?: AbortSignal) => {
     if (!practiceId) return
 
     try {
-      const response = await fetch(`/api/practices/${practiceId}/suppliers`)
+      const response = await fetch(`/api/practices/${practiceId}/suppliers`, { signal })
       if (response.ok) {
         const data = await response.json()
         setSuppliers(data.suppliers || [])
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') return
       console.error("Error fetching suppliers:", error)
     }
   }, [practiceId])
 
-  const fetchBills = useCallback(async () => {
+  const fetchBills = useCallback(async (signal?: AbortSignal) => {
     if (!practiceId) return
 
     setIsBillsLoading(true)
     try {
       // Fetch active bills
-      const response = await fetch(`/api/practices/${practiceId}/inventory/bills`)
+      const response = await fetch(`/api/practices/${practiceId}/inventory/bills`, { signal })
       if (response.ok) {
         const data = await response.json()
         setBills(data || [])
       }
 
       // Fetch archived bills
-      const archivedResponse = await fetch(`/api/practices/${practiceId}/inventory/bills?archived=true`)
+      const archivedResponse = await fetch(`/api/practices/${practiceId}/inventory/bills?archived=true`, { signal })
       if (archivedResponse.ok) {
         const archivedData = await archivedResponse.json()
         setArchivedBills(archivedData || [])
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') return
       console.error("Error fetching bills:", error)
     } finally {
       setIsBillsLoading(false)
@@ -96,11 +99,16 @@ export function useInventory() {
   }, [practiceId])
 
   useEffect(() => {
-    if (practiceId) {
-      fetchInventory()
-      fetchSuppliers()
-      fetchBills()
-    }
+    if (!practiceId) return
+    
+    const controller = new AbortController()
+    const signal = controller.signal
+    
+    fetchInventory(signal)
+    fetchSuppliers(signal)
+    fetchBills(signal)
+    
+    return () => controller.abort()
   }, [practiceId, fetchInventory, fetchSuppliers, fetchBills])
 
   const addItem = async (item: Partial<InventoryItem>) => {

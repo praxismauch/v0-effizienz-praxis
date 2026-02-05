@@ -297,7 +297,7 @@ export function CreateWunschpatientDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto relative">
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col gap-4">
         {(generatingProfile || generatingImage) && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
             <div className="flex flex-col items-center gap-4 p-8 text-center">
@@ -381,7 +381,7 @@ export function CreateWunschpatientDialog({
           </div>
         )}
 
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             Neuen Wunschpatienten erstellen
@@ -392,16 +392,16 @@ export function CreateWunschpatientDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {error && <div className="bg-destructive/10 text-destructive px-4 py-2 rounded-md text-sm">{error}</div>}
+        {error && <div className="bg-destructive/10 text-destructive px-4 py-2 rounded-md text-sm flex-shrink-0">{error}</div>}
 
         {generatingImage && (
-          <div className="bg-primary/10 text-primary px-4 py-3 rounded-md text-sm flex items-center gap-2">
+          <div className="bg-primary/10 text-primary px-4 py-3 rounded-md text-sm flex items-center gap-2 flex-shrink-0">
             <ImageIcon className="h-4 w-4 animate-pulse" />
             <span>KI generiert ein photorealistisches Patientenbild...</span>
           </div>
         )}
 
-        <div className="max-h-[60vh] pr-4 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pr-2 -mr-2 min-h-0">
           <Tabs value={currentTab} onValueChange={setCurrentTab}>
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="demografie">Demografie</TabsTrigger>
@@ -714,7 +714,7 @@ export function CreateWunschpatientDialog({
           </Tabs>
         </div>
 
-        <div className="flex justify-between pt-4 border-t">
+        <div className="flex justify-between pt-4 border-t flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading || generatingImage}>
             Abbrechen
           </Button>

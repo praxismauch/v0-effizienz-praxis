@@ -9,10 +9,17 @@ import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
-import { usePractice } from "@/contexts/practice-context"
-import { useCurrentUser } from "@/hooks/use-current-user"
-
 import type { CalendarEvent } from "./types"
+
+interface CalendarPageClientProps {
+  initialEvents: CalendarEvent[]
+  practiceId: string | null | undefined
+  user: {
+    id: string
+    email: string
+    name?: string
+  }
+}
 import { MonthView } from "./components/month-view"
 import { WeekView } from "./components/week-view"
 import { DayView } from "./components/day-view"
@@ -24,10 +31,7 @@ import { AICalendarDialog } from "@/components/ai-calendar-dialog"
 
 const fetcher = (url: string) => fetch(url, { credentials: "include" }).then((res) => res.json())
 
-export default function CalendarPageClient() {
-  const { currentPractice } = usePractice()
-  const { user, isLoading: userLoading } = useCurrentUser()
-  const practiceId = currentPractice?.id?.toString()
+export default function CalendarPageClient({ initialEvents, practiceId, user }: CalendarPageClientProps) {
 
   // View state
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">(() => {
@@ -67,15 +71,18 @@ export default function CalendarPageClient() {
     localStorage.setItem("calendar-current-date", currentDate.toISOString())
   }, [viewMode, currentDate])
 
-  // Fetch events
+  // Fetch events with initial data from server
   const { data: eventsData, mutate: refreshEvents, isLoading } = useSWR(
     practiceId ? `/api/practices/${practiceId}/calendar-events` : null,
     fetcher,
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      fallbackData: { events: initialEvents }
+    }
   )
 
-  const events: CalendarEvent[] = eventsData?.events || []
-  const loading = userLoading || isLoading
+  const events: CalendarEvent[] = eventsData?.events || initialEvents || []
+  const loading = isLoading
 
   // Navigation
   const navigatePrevious = useCallback(() => {
@@ -215,7 +222,7 @@ export default function CalendarPageClient() {
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Kalender</h1>
-          <p className="text-muted-foreground">Gemeinsamer Kalender für {currentPractice?.name || "Ihre Praxis"}</p>
+          <p className="text-muted-foreground">Gemeinsamer Kalender für Ihre Praxis</p>
         </div>
         <div className="flex gap-2">
           <Button variant="default" className="bg-purple-500 hover:bg-purple-600" onClick={() => setShowAIDialog(true)}>

@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { usePractice } from "@/contexts/practice-context"
-import { useAuth } from "@/contexts/auth-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -36,23 +34,32 @@ import type {
   SickLeave,
 } from "./types"
 
-export default function TeamPageClient() {
+interface TeamPageClientProps {
+  initialData: {
+    teamMembers: TeamMember[]
+    teams: Team[]
+    responsibilities: Responsibility[]
+    staffingPlans: StaffingPlan[]
+    holidayRequests: HolidayRequest[]
+    sickLeaves: SickLeave[]
+  } | null
+  practiceId: string | null | undefined
+  userId: string
+}
+
+export default function TeamPageClient({ initialData, practiceId, userId }: TeamPageClientProps) {
   const router = useRouter()
-  const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const { user } = useAuth()
 
   const [activeTab, setActiveTab] = useState("members")
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!initialData)
 
-  // Data states - using useState with functional updates
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [teams, setTeams] = useState<Team[]>([])
-  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([])
-  const [staffingPlans, setStaffingPlans] = useState<StaffingPlan[]>([])
-  const [holidayRequests, setHolidayRequests] = useState<HolidayRequest[]>([])
-  const [sickLeaves, setSickLeaves] = useState<SickLeave[]>([])
-
-  const practiceId = currentPractice?.id?.toString()
+  // Data states - initialize with server data
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData?.teamMembers || [])
+  const [teams, setTeams] = useState<Team[]>(initialData?.teams || [])
+  const [responsibilities, setResponsibilities] = useState<Responsibility[]>(initialData?.responsibilities || [])
+  const [staffingPlans, setStaffingPlans] = useState<StaffingPlan[]>(initialData?.staffingPlans || [])
+  const [holidayRequests, setHolidayRequests] = useState<HolidayRequest[]>(initialData?.holidayRequests || [])
+  const [sickLeaves, setSickLeaves] = useState<SickLeave[]>(initialData?.sickLeaves || [])
 
   // Fetch data function
   const fetchData = useCallback(async () => {
@@ -98,13 +105,13 @@ export default function TeamPageClient() {
     }
   }, [practiceId])
 
-  // Initial load
+  // Only fetch if we don't have initial data
   useEffect(() => {
-    if (!practiceLoading && practiceId) {
+    if (!initialData && practiceId) {
       setIsLoading(true)
       fetchData().finally(() => setIsLoading(false))
     }
-  }, [fetchData, practiceLoading, practiceId])
+  }, [fetchData, practiceId, initialData])
 
   // Handler stubs - implement as needed
   const handleAddMember = () => router.push("/team/add")
@@ -151,7 +158,7 @@ export default function TeamPageClient() {
     toast.success("Krankmeldung erfasst")
   }
 
-  if (practiceLoading || isLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -272,7 +279,7 @@ export default function TeamPageClient() {
         <TabsContent value="responsibilities" className="mt-6">
           <ResponsibilitiesTab
             responsibilities={responsibilities}
-            isAdmin={!!user}
+            isAdmin={!!userId}
           />
         </TabsContent>
 

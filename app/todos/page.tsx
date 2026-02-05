@@ -1,9 +1,39 @@
-"use client"
-
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { redirect } from "next/navigation"
+import { getCurrentUser, getCurrentPracticeId } from "@/lib/server/get-current-user"
+import { getTodoData } from "@/lib/server/get-todo-data"
 import { AppLayout } from "@/components/app-layout"
+import PageClient from "./page-client-refactored"
+
+export default async function TodosPage() {
+  // Fetch user and practice data server-side
+  const [user, practiceId] = await Promise.all([
+    getCurrentUser(),
+    getCurrentPracticeId(),
+  ])
+  
+  // Redirect if not authenticated
+  if (!user) {
+    redirect("/auth/login")
+  }
+  
+  // Fetch todo data if practice exists
+  const todoData = practiceId ? await getTodoData(practiceId) : null
+
+  return (
+    <AppLayout>
+      <PageClient 
+        initialTodos={todoData?.todos || []}
+        practiceId={practiceId}
+        user={user}
+      />
+    </AppLayout>
+  )
+}
+
+/* OLD CLIENT CODE MOVED TO page-client-refactored.tsx
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useTodos, type Todo, type TodoAttachment } from "@/contexts/todo-context"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"

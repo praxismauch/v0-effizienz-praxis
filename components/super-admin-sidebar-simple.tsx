@@ -18,117 +18,90 @@ import {
   Lightbulb,
   Package,
   Share2,
-  FileBarChart,
   MessageSquare,
   UserCog,
   Database,
   Globe,
-  Megaphone,
 } from "lucide-react"
 
 const menuSections = [
   {
-    title: "Overview",
+    title: "Übersicht",
     items: [
       {
         href: "/super-admin",
         icon: LayoutDashboard,
         label: "Dashboard",
       },
-      {
-        href: "/super-admin/analytics",
-        icon: BarChart3,
-        label: "Analytics",
-      },
     ],
   },
   {
-    title: "Management",
+    title: "Verwaltung",
     items: [
       {
-        href: "/super-admin/practices",
-        icon: Building2,
-        label: "Practices",
-      },
-      {
-        href: "/super-admin/users",
-        icon: Users,
-        label: "Users",
-      },
-      {
-        href: "/super-admin/roles",
-        icon: UserCog,
-        label: "Roles & Permissions",
-      },
-      {
-        href: "/super-admin/holiday-requests",
-        icon: Calendar,
-        label: "Holiday Requests",
-      },
-      {
-        href: "/super-admin/documents",
-        icon: FileText,
-        label: "Documents",
-      },
-      {
-        href: "/super-admin/templates",
-        icon: FileCheck,
-        label: "Templates",
-      },
-    ],
-  },
-  {
-    title: "Content & Features",
-    items: [
-      {
-        href: "/super-admin/widgets",
-        icon: Package,
-        label: "Widgets",
-      },
-      {
-        href: "/super-admin/ai-suggestions",
-        icon: Lightbulb,
-        label: "AI Suggestions",
-      },
-      {
-        href: "/super-admin/reports",
-        icon: FileBarChart,
-        label: "Reports",
-      },
-      {
-        href: "/super-admin/feedback",
-        icon: MessageSquare,
-        label: "Feedback",
-      },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      {
-        href: "/super-admin/audit-logs",
-        icon: ShieldCheck,
-        label: "Audit Logs",
-      },
-      {
-        href: "/super-admin/notifications",
-        icon: Bell,
-        label: "Notifications",
-      },
-      {
-        href: "/super-admin/email-logs",
+        href: "/super-admin/tickets",
         icon: Mail,
-        label: "Email Logs",
+        label: "Tickets",
       },
       {
-        href: "/super-admin/backups",
-        icon: Database,
-        label: "Backups",
+        href: "/super-admin/verwaltung?tab=practices",
+        icon: Building2,
+        label: "Praxen",
       },
       {
-        href: "/super-admin/settings",
-        icon: Settings,
-        label: "Settings",
+        href: "/super-admin/verwaltung?tab=users",
+        icon: Users,
+        label: "Benutzer",
+      },
+      {
+        href: "/super-admin/user-rights",
+        icon: UserCog,
+        label: "Benutzerrechte",
+      },
+      {
+        href: "/super-admin/kpi-kategorien",
+        icon: BarChart3,
+        label: "KPI-Kategorien",
+      },
+      {
+        href: "/super-admin/content",
+        icon: FileCheck,
+        label: "Vorlagen",
+      },
+    ],
+  },
+  {
+    title: "Content",
+    items: [
+      {
+        href: "/super-admin/academy",
+        icon: Globe,
+        label: "Academy",
+      },
+      {
+        href: "/super-admin/waitlist",
+        icon: Package,
+        label: "Warteliste",
+      },
+    ],
+  },
+  {
+    title: "Finanzen",
+    items: [
+      {
+        href: "/super-admin/zahlungen",
+        icon: MessageSquare,
+        label: "Zahlungen",
+      },
+    ],
+  },
+  {
+    title: "Super Admin",
+    items: [
+      {
+        href: "/super-admin/roadmap",
+        icon: Lightbulb,
+        label: "Roadmap & Ideen",
       },
     ],
   },
@@ -138,17 +111,62 @@ const menuSections = [
       {
         href: "/super-admin/social-media",
         icon: Share2,
-        label: "Social Media",
+        label: "Social Media Posts",
+      },
+    ],
+  },
+  {
+    title: "Seiten",
+    items: [
+      {
+        href: "/super-admin/landingpages",
+        icon: FileText,
+        label: "Landingpages",
+      },
+    ],
+  },
+  {
+    title: "Testing",
+    items: [
+      {
+        href: "/super-admin/testing",
+        icon: Database,
+        label: "UI-Tests",
       },
       {
-        href: "/super-admin/campaigns",
-        icon: Megaphone,
-        label: "Campaigns",
+        href: "/super-admin/screenshots",
+        icon: Bell,
+        label: "Screenshots",
+      },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      {
+        href: "/super-admin/system",
+        icon: Settings,
+        label: "Systemverwaltung",
       },
       {
-        href: "/super-admin/landing-pages",
-        icon: Globe,
-        label: "Landing Pages",
+        href: "/super-admin/features",
+        icon: ShieldCheck,
+        label: "Feature-Verwaltung",
+      },
+      {
+        href: "/super-admin/chat-logs",
+        icon: MessageSquare,
+        label: "Chat-Protokolle",
+      },
+      {
+        href: "/super-admin/logging",
+        icon: Calendar,
+        label: "Error Logging",
+      },
+      {
+        href: "/super-admin/settings",
+        icon: Settings,
+        label: "Admin-Einstellungen",
       },
     ],
   },

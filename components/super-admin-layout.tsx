@@ -1,42 +1,39 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { SuperAdminSidebar } from "@/components/super-admin-sidebar"
-import { SuperAdminHeader } from "@/components/super-admin-header"
+import { SuperAdminSidebarSimple } from "@/components/super-admin-sidebar-simple"
+import { SuperAdminHeaderSimple } from "@/components/super-admin-header-simple"
 
 interface SuperAdminLayoutProps {
   children: ReactNode
+  user?: {
+    email?: string
+    full_name?: string
+    avatar?: string
+  }
 }
 
 /**
- * Full super-admin layout with complete sidebar and header.
+ * Simplified super-admin layout with clean sidebar and header.
  * Auth checks are handled in page-client components.
  */
-export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
+export function SuperAdminLayout({ children, user }: SuperAdminLayoutProps) {
   return (
-    <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen w-screen overflow-hidden bg-background">
-        {/* Full Sidebar with all menu items */}
-        <SuperAdminSidebar />
+    <div className="min-h-screen bg-background">
+      {/* Simplified Sidebar */}
+      <SuperAdminSidebarSimple />
 
-        {/* Main content area - takes remaining width */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Full Header with all functionality */}
-          <SuperAdminHeader />
+      {/* Main content area with header */}
+      <div className="pl-64">
+        {/* Simplified Header */}
+        <SuperAdminHeaderSimple user={user} />
 
-          {/* Content - scrollable, full width with consistent padding */}
-          <main className="flex-1 overflow-y-auto">
-            <div className="w-full min-h-full flex flex-col">
-              <div className="flex-1 px-6 py-6">{children}</div>
-              <footer className="px-6 py-4 border-t bg-muted/30 text-center text-sm text-muted-foreground">
-                <p>&copy; {new Date().getFullYear()} Praxis Effizienz. Alle Rechte vorbehalten.</p>
-              </footer>
-            </div>
-          </main>
-        </div>
+        {/* Content - with top padding for fixed header */}
+        <main className="pt-16">
+          <div className="p-6">{children}</div>
+        </main>
       </div>
-    </TooltipProvider>
+    </div>
   )
 }
 

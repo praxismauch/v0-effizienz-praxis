@@ -106,6 +106,7 @@ export default function TeamMemberDetailPage() {
   const [activeTab, setActiveTab] = useState("overview")
   const [mounted, setMounted] = useState(false)
   const [activeContract, setActiveContract] = useState<any>(null)
+  const [teamAverageHourlyRate, setTeamAverageHourlyRate] = useState<number | null>(null)
   
   // Ensure client-side only
   useEffect(() => {
@@ -203,6 +204,79 @@ export default function TeamMemberDetailPage() {
     fetchActiveContract()
     return () => controller.abort()
   }, [member, practiceId, memberId])
+
+  // Fetch team average hourly rate for comparison
+  useEffect(() => {
+    if (!member || !practiceId || !member.teamIds || member.teamIds.length === 0) {
+      setTeamAverageHourlyRate(null)
+      return
+    }
+
+    const controller = new AbortController()
+    
+    const fetchTeamAverageRate = async () => {
+      try {
+        // Get all team members in the same teams
+        const teamMembersInSameTeam = teamMembers.filter((tm: any) => 
+          tm.id !== memberId && 
+          tm.teamIds?.some((teamId: string) => member.teamIds.includes(teamId))
+        )
+
+        if (teamMembersInSameTeam.length === 0) {
+          setTeamAverageHourlyRate(null)
+          return
+        }
+
+        // Fetch contracts for all team members
+        const contractPromises = teamMembersInSameTeam.map((tm: any) =>
+          fetch(`/api/practices/${practiceId}/contracts?team_member_id=${tm.id}`, {
+            signal: controller.signal
+          }).then(res => res.ok ? res.json() : { contracts: [] })
+        )
+
+        const contractsResults = await Promise.all(contractPromises)
+        
+        // Calculate effective hourly rates for all active contracts
+        const hourlyRates: number[] = []
+        
+        contractsResults.forEach((result) => {
+          const activeContract = result.contracts?.find((c: any) => {
+            const now = new Date()
+            const start = new Date(c.start_date)
+            const end = c.end_date ? new Date(c.end_date) : null
+            return c.is_active && start <= now && (!end || end >= now)
+          })
+          
+          if (activeContract && activeContract.salary && activeContract.hours_per_week) {
+            const totalBonusPercentage =
+              (activeContract.bonus_personal_goal || 0) +
+              (activeContract.bonus_practice_goal || 0) +
+              (activeContract.bonus_employee_discussion || 0)
+            
+            const salaryWith100Bonus = activeContract.salary * (1 + totalBonusPercentage / 100)
+            const monthlyHours = activeContract.hours_per_week * 4.33
+            const hourlyRate = salaryWith100Bonus / monthlyHours
+            
+            hourlyRates.push(hourlyRate)
+          }
+        })
+        
+        if (hourlyRates.length > 0) {
+          const average = hourlyRates.reduce((a, b) => a + b, 0) / hourlyRates.length
+          setTeamAverageHourlyRate(Math.round(average * 100) / 100)
+        } else {
+          setTeamAverageHourlyRate(null)
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error("Error fetching team average:", error)
+        }
+      }
+    }
+    
+    fetchTeamAverageRate()
+    return () => controller.abort()
+  }, [member, practiceId, memberId, teamMembers])
 
   // Helper functions for contract calculations
   const calculateHolidayDays = (contract: any): number => {
@@ -439,6 +513,11 @@ export default function TeamMemberDetailPage() {
                               <span className="font-medium text-purple-600">
                                 {calculateEffectiveHourlyRate(activeContract)?.toLocaleString("de-DE")} {activeContract.salary_currency}
                               </span>/Std.
+                              {teamAverageHourlyRate && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  (Ø Team: {teamAverageHourlyRate.toLocaleString("de-DE")} {activeContract.salary_currency})
+                                </span>
+                              )}
                             </span>
                           )}
                         </div>

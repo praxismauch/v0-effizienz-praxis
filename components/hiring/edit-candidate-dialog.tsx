@@ -287,7 +287,7 @@ export function EditCandidateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl w-[95vw] max-h-[95vh]">
+      <DialogContent className="max-w-[1600px] w-[98vw] max-h-[98vh]">
         <DialogHeader>
           <DialogTitle>{t("hiring.editCandidateDialog.title", "Kandidat bearbeiten")}</DialogTitle>
           <DialogDescription>
@@ -295,7 +295,7 @@ export function EditCandidateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-8 overflow-y-auto max-h-[calc(95vh-160px)] pr-2">
+        <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2">
           {/* Left Column */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -626,7 +626,7 @@ export function EditCandidateDialog({
             </div>
           </div>
 
-          <DialogFooter className="col-span-2 flex-col sm:flex-row gap-2">
+          <DialogFooter className="col-span-3 flex-col sm:flex-row gap-2">
             <Button
               type="button"
               onClick={() => setShowInterviewGenerator(true)}

@@ -463,6 +463,22 @@ export function ContractsManager({ memberId, memberName, practiceId }: Contracts
                         </p>
                       </div>
                     )}
+                    {calculateHourlyRate(contract) && (
+                      <div>
+                        <p className="text-muted-foreground">Stundenlohn</p>
+                        <p className="font-medium">
+                          {calculateHourlyRate(contract)?.toLocaleString("de-DE")} {contract.salary_currency}/Std.
+                        </p>
+                      </div>
+                    )}
+                    {calculateHourlyRateWith100Bonus(contract) && (
+                      <div>
+                        <p className="text-muted-foreground">Eff. Stundenlohn</p>
+                        <p className="font-medium text-blue-600">
+                          {calculateHourlyRateWith100Bonus(contract)?.toLocaleString("de-DE")} {contract.salary_currency}/Std.
+                        </p>
+                      </div>
+                    )}
                     {contract.hours_per_week && (
                       <div>
                         <p className="text-muted-foreground flex items-center gap-1">

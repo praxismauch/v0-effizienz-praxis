@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React, { type ReactNode } from "react"
 import { UserProvider, type User } from "@/contexts/user-context"
 import { PracticeProvider } from "@/contexts/practice-context"
 import { TeamProvider } from "@/contexts/team-context"
@@ -85,6 +85,38 @@ export function Providers({
   children: React.ReactNode
   initialUser?: User | null
 }) {
+  const [mounted, setMounted] = React.useState(false)
+  
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  // Core providers needed on every page
+  const coreProviders = (
+    <SWRConfig value={swrConfig}>
+      <UserProvider initialUser={initialUser}>
+        <TranslationProvider>
+          <PracticeProvider>
+            <SidebarSettingsProvider>
+              <ErrorBoundary>
+                <RoutePersistence />
+                <GlobalDragPrevention />
+                {children}
+              </ErrorBoundary>
+            </SidebarSettingsProvider>
+          </PracticeProvider>
+        </TranslationProvider>
+      </UserProvider>
+    </SWRConfig>
+  )
+  
+  // Feature-specific providers - only load after mount to avoid hydration issues
+  // These will be loaded on-demand by pages that need them
+  if (!mounted || !initialUser) {
+    return coreProviders
+  }
+  
+  // Authenticated users get full provider tree
   return (
     <SWRConfig value={swrConfig}>
       <UserProvider initialUser={initialUser}>
@@ -93,20 +125,20 @@ export function Providers({
             <SidebarSettingsProvider>
               <OnboardingProvider>
                 <TeamProvider>
-                <TodoProvider>
-                  <CalendarProvider>
-                    <WorkflowProvider>
-                      <AnalyticsDataProvider>
-                        <ErrorBoundary>
-                          <RoutePersistence />
-                          <GlobalDragPrevention />
-                          {children}
-                        </ErrorBoundary>
-                      </AnalyticsDataProvider>
-                    </WorkflowProvider>
-                  </CalendarProvider>
-                </TodoProvider>
-              </TeamProvider>
+                  <TodoProvider>
+                    <CalendarProvider>
+                      <WorkflowProvider>
+                        <AnalyticsDataProvider>
+                          <ErrorBoundary>
+                            <RoutePersistence />
+                            <GlobalDragPrevention />
+                            {children}
+                          </ErrorBoundary>
+                        </AnalyticsDataProvider>
+                      </WorkflowProvider>
+                    </CalendarProvider>
+                  </TodoProvider>
+                </TeamProvider>
               </OnboardingProvider>
             </SidebarSettingsProvider>
           </PracticeProvider>

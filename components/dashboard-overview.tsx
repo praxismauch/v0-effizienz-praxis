@@ -109,13 +109,39 @@ const DEFAULT_WIDGETS = {
   widgetOrder: DEFAULT_ORDER,
 }
 
-export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps) {
+interface DashboardOverviewPropsExtended extends DashboardOverviewProps {
+  initialData?: {
+    totalTeams: number
+    totalMembers: number
+    activeTodos: number
+    completedTodos: number
+    upcomingEvents: number
+  } | null
+}
+
+export function DashboardOverview({ practiceId, userId, initialData }: DashboardOverviewPropsExtended) {
   const { toast } = useToast()
   const { currentPractice } = usePractice()
   const { isEnabled } = useAiEnabled()
   const { t } = useTranslation()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  
+  // Use initialData from server if available, otherwise fetch client-side
+  const [stats, setStats] = useState<DashboardStats | null>(
+    initialData ? {
+      teamMembers: initialData.totalMembers || 0,
+      activeGoals: initialData.activeTodos || 0,
+      workflows: 0,
+      documents: 0,
+      teamMembersTrend: 0,
+      goalsTrend: 0,
+      workflowsTrend: 0,
+      documentsTrend: 0,
+      activityData: [],
+      openTasks: initialData.activeTodos || 0,
+      todayAppointments: initialData.upcomingEvents || 0,
+    } : null
+  )
+  const [loading, setLoading] = useState(!initialData)
   const [error, setError] = useState<string | null>(null)
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({
     widgets: DEFAULT_WIDGETS,
@@ -123,8 +149,8 @@ export function DashboardOverview({ practiceId, userId }: DashboardOverviewProps
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [cockpitCardSettings, setCockpitCardSettings] = useState<CockpitCardSetting[]>([])
 
-  const hasLoadedRef = useRef(false)
-  const loadingPracticeIdRef = useRef<string | null>(null)
+  const hasLoadedRef = useRef(!!initialData)
+  const loadingPracticeIdRef = useRef<string | null>(initialData ? practiceId : null)
 
   useEffect(() => {
     const fetchCockpitSettings = async () => {

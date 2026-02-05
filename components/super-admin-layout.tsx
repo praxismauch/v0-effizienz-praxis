@@ -3,7 +3,6 @@
 import type { ReactNode } from "react"
 import { SuperAdminSidebarSimple } from "@/components/super-admin-sidebar-simple"
 import { SuperAdminHeaderSimple } from "@/components/super-admin-header-simple"
-import { SuperAdminSidebarProvider, useSuperAdminSidebar } from "@/contexts/super-admin-sidebar-context"
 
 interface SuperAdminLayoutProps {
   children: ReactNode
@@ -14,19 +13,18 @@ interface SuperAdminLayoutProps {
   }
 }
 
-function SuperAdminLayoutContent({ children, user }: SuperAdminLayoutProps) {
-  const { sidebarWidth } = useSuperAdminSidebar()
-
+/**
+ * Simplified super-admin layout with clean sidebar and header.
+ * Auth checks are handled in page-client components.
+ */
+export function SuperAdminLayout({ children, user }: SuperAdminLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
-      {/* Simplified Sidebar */}
+      {/* Simplified Sidebar - fixed positioning */}
       <SuperAdminSidebarSimple />
 
-      {/* Main content area with header */}
-      <div
-        className="transition-all duration-300"
-        style={{ paddingLeft: `${sidebarWidth}px` }}
-      >
+      {/* Main content area - fixed left padding for sidebar */}
+      <div className="pl-64">
         {/* Simplified Header */}
         <SuperAdminHeaderSimple user={user} />
 
@@ -36,18 +34,6 @@ function SuperAdminLayoutContent({ children, user }: SuperAdminLayoutProps) {
         </main>
       </div>
     </div>
-  )
-}
-
-/**
- * Simplified super-admin layout with clean sidebar and header.
- * Auth checks are handled in page-client components.
- */
-export function SuperAdminLayout({ children, user }: SuperAdminLayoutProps) {
-  return (
-    <SuperAdminSidebarProvider>
-      <SuperAdminLayoutContent user={user}>{children}</SuperAdminLayoutContent>
-    </SuperAdminSidebarProvider>
   )
 }
 

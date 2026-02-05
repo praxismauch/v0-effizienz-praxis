@@ -217,6 +217,9 @@ export default function EditTeamMemberPage() {
         })
       }
 
+      // Refetch team members to get updated avatar
+      await refetchTeamMembers()
+      
       toast.success("Änderungen gespeichert", {
         description: "Die Änderungen wurden erfolgreich gespeichert.",
       })

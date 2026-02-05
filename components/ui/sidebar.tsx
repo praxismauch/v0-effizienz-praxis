@@ -117,6 +117,7 @@ function SidebarProvider({
       <TooltipProvider delayDuration={0}>
         <div
           data-slot="sidebar-wrapper"
+          suppressHydrationWarning
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH,

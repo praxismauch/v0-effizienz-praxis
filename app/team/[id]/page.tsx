@@ -119,12 +119,6 @@ export default function TeamMemberDetailPage() {
     )
     
     if (contextMember) {
-      console.log("[v0] Found member in context:", {
-        name: contextMember.name,
-        avatar: contextMember.avatar,
-        avatar_url: contextMember.avatar_url,
-        user_id: contextMember.user_id
-      })
       setMember(contextMember)
       setLoading(false)
       return
@@ -147,12 +141,6 @@ export default function TeamMemberDetailPage() {
           )
           
           if (fetchedMember && !isCancelled) {
-            console.log("[v0] Fetched member from API:", {
-              name: fetchedMember.name,
-              avatar: fetchedMember.avatar,
-              avatar_url: fetchedMember.avatar_url,
-              user_id: fetchedMember.user_id
-            })
             setMember(fetchedMember)
           }
         }

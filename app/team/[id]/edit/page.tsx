@@ -116,8 +116,22 @@ export default function EditTeamMemberPage() {
 
   const member = teamMembers.find((m) => m.id === memberId)
 
-  // If member not found, show loading or error state
-  if (!member && teamMembers.length > 0) {
+  // Show loading state while team members are being fetched
+  if (teamMembers.length === 0) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Lädt Teammitglied...</p>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  // If member not found after loading, show error state
+  if (!member) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -135,7 +149,7 @@ export default function EditTeamMemberPage() {
   }
 
   const canEditProfile = isAdmin || currentUser?.id === memberId
-  const canEditRole = isAdmin && member?.role !== "admin"
+  const canEditRole = isAdmin && member.role !== "admin"
   const canEditPermissions = isAdmin
   const canEditTeams = isAdmin
   const canEditStatus = isAdmin

@@ -37,6 +37,9 @@ import AppLayout from "@/components/app-layout" // Import AppLayout
 import ArbeitsmittelAssignments from "@/components/team/arbeitsmittel-assignments" // Import ArbeitsmittelAssignments
 import { format } from "date-fns" // Import format
 import { de } from "date-fns/locale" // Import de
+import { useSWRConfig } from "swr"
+import { SWR_KEYS } from "@/lib/swr-keys"
+import { usePractice } from "@/contexts/practice-context"
 
 const availablePermissions = [
   { id: "all", label: "Alle Berechtigungen", description: "Voller Zugriff auf alle Systemfunktionen" },
@@ -86,8 +89,12 @@ const formatDate = (date: Date | string) => {
 export default function EditTeamMemberPage() {
   const router = useRouter()
   const params = useParams()
-  const memberId = params.id as string
+  const { teamMembers, teams, updateTeamMember, removeTeamMember, assignMemberToTeam, removeMemberFromTeam } =
+    useTeam()
+  const { currentUser, isAdmin, isSuperAdmin } = useUser()
   const { t } = useTranslation()
+  const { mutate } = useSWRConfig()
+  const { practiceId } = usePractice()
   const { roleColors } = useRoleColors()
 
   const {
@@ -218,7 +225,7 @@ export default function EditTeamMemberPage() {
       }
 
       // Refetch team members to get updated avatar
-      await refetchTeamMembers()
+      await mutate(SWR_KEYS.TEAM_MEMBERS(practiceId))
       
       toast.success("Änderungen gespeichert", {
         description: "Die Änderungen wurden erfolgreich gespeichert.",

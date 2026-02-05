@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic"
 
 import { redirect } from "next/navigation"
 import { getCurrentUser, getCurrentPracticeId } from "@/lib/server/get-current-user"
-import { getTodoData } from "@/lib/server/get-todo-data"
+import { getTodosByPractice } from "@/lib/server/get-todo-data"
 import { AppLayout } from "@/components/app-layout"
 import PageClient from "./page-client-refactored"
 
@@ -18,13 +18,13 @@ export default async function TodosPage() {
     redirect("/auth/login")
   }
   
-  // Fetch todo data if practice exists
-  const todoData = practiceId ? await getTodoData(practiceId) : null
+  // Fetch todos if practice exists
+  const todos = practiceId ? await getTodosByPractice(practiceId) : []
 
   return (
     <AppLayout>
       <PageClient 
-        initialTodos={todoData?.todos || []}
+        initialTodos={todos}
         practiceId={practiceId}
         user={user}
       />

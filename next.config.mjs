@@ -13,6 +13,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true, // TODO: Fix remaining type errors and set to false
   },
+  // Empty turbopack config to silence build error when using webpack
+  turbopack: {},
   // Image optimization
   images: {
     formats: ["image/webp", "image/avif"],

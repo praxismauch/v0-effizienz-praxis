@@ -5,14 +5,19 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useOnboarding } from "@/contexts/onboarding-context"
+import { useContext } from "react"
+import { OnboardingContext } from "@/contexts/onboarding-context"
 
 interface SidebarTourButtonProps {
   sidebarOpen: boolean
 }
 
 export function SidebarTourButton({ sidebarOpen }: SidebarTourButtonProps) {
-  const { isNewPractice, daysRemaining, setIsOnboardingOpen, shouldShowOnboarding } =
-    useOnboarding()
+  // Safe check if provider is available - return null during SSR
+  const context = useContext(OnboardingContext)
+  if (!context) return null
+  
+  const { isNewPractice, daysRemaining, setIsOnboardingOpen, shouldShowOnboarding } = context
 
   if (!shouldShowOnboarding) return null
 

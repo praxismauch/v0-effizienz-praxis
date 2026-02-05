@@ -20,25 +20,52 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     const adminClient = createAdminClient()
 
-    const { data, error } = await adminClient
+    // Fetch arbeitsplaetze without the rooms join (foreign key may not exist)
+    const { data: arbeitsplaetzeData, error } = await adminClient
       .from("arbeitsplaetze")
-      .select(`
-        *,
-        room:rooms(id, name, color)
-      `)
+      .select("*")
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .eq("is_active", true)
       .order("name")
 
-    console.log("[v0] Arbeitsplaetze API - fetched count:", data?.length, "error:", error)
+    console.log("[v0] Arbeitsplaetze API - fetched count:", arbeitsplaetzeData?.length, "error:", error)
 
     if (error) {
       console.error("Error fetching arbeitsplaetze:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ arbeitsplaetze: data || [] })
+    // Fetch rooms separately to enrich arbeitsplaetze data
+    const roomIds = arbeitsplaetzeData
+      ?.map((a) => a.raum_id)
+      .filter((id): id is string => id !== null) || []
+
+    let roomsMap: Record<string, { id: string; name: string; color: string | null }> = {}
+
+    if (roomIds.length > 0) {
+      const { data: roomsData } = await adminClient
+        .from("rooms")
+        .select("id, name, color")
+        .in("id", roomIds)
+
+      if (roomsData) {
+        roomsMap = roomsData.reduce((acc, room) => {
+          acc[room.id] = room
+          return acc
+        }, {} as Record<string, { id: string; name: string; color: string | null }>)
+      }
+    }
+
+    // Enrich arbeitsplaetze with room data
+    const data = arbeitsplaetzeData?.map((arbeitsplatz) => ({
+      ...arbeitsplatz,
+      room: arbeitsplatz.raum_id ? roomsMap[arbeitsplatz.raum_id] || null : null,
+    })) || []
+
+    console.log("[v0] Arbeitsplaetze API - enriched with rooms, final count:", data.length)
+
+    return NextResponse.json({ arbeitsplaetze: data })
   } catch (error: any) {
     console.error("Error in arbeitsplaetze GET:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })

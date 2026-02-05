@@ -301,14 +301,35 @@ export const ProfileImageEditor = ({ currentAvatar, userName, onAvatarChange, tr
     setIsDragging(false)
   }
 
-  const handleSave = () => {
-    if (selectedFile) {
-      onAvatarChange(previewUrl)
-    } else if (urlInput) {
-      onAvatarChange(urlInput)
+  const handleSave = async () => {
+    try {
+      if (selectedFile) {
+        // Upload file to blob storage
+        const formDataUpload = new FormData()
+        formDataUpload.append("file", selectedFile)
+        formDataUpload.append("type", "avatar")
+
+        const response = await fetch("/api/upload/unified", {
+          method: "POST",
+          body: formDataUpload,
+        })
+
+        if (!response.ok) {
+          throw new Error("Upload fehlgeschlagen")
+        }
+
+        const { url } = await response.json()
+        onAvatarChange(url)
+        toast.success("Profilbild erfolgreich hochgeladen")
+      } else if (urlInput) {
+        onAvatarChange(urlInput)
+      }
+      setOpen(false)
+      resetEditor()
+    } catch (error) {
+      toast.error("Fehler beim Hochladen des Bildes")
+      console.error("Error uploading avatar:", error)
     }
-    setOpen(false)
-    resetEditor()
   }
 
   const handleRemove = () => {

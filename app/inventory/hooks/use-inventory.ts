@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
-import { upload } from "@vercel/blob/client"
 import type { InventoryItem, Supplier, InventoryBill, InventorySettings } from "../types"
 
 // Helper to calculate file hash
@@ -203,11 +202,20 @@ export function useInventory() {
       // Calculate file hash for duplicate detection
       const fileHash = await calculateFileHash(file)
 
-      // Upload to Vercel Blob
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
+      // Upload to Vercel Blob via server-side API
+      const formData = new FormData()
+      formData.append("file", file)
+      
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       })
+      
+      if (!uploadResponse.ok) {
+        throw new Error("Datei-Upload fehlgeschlagen")
+      }
+      
+      const blob = await uploadResponse.json()
 
       // Create bill record
       const response = await fetch(`/api/practices/${practiceId}/inventory/bills`, {

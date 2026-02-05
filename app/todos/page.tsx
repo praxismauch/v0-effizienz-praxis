@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { getCurrentUser, getCurrentPracticeId } from "@/lib/server/get-current-user"
 import { getTodosByPractice } from "@/lib/server/get-todo-data"
 import { AppLayout } from "@/components/app-layout"
-import PageClient from "./page-client-refactored"
+import PageClient from "./page-client"
 
 export default async function TodosPage() {
   // Fetch user and practice data server-side

@@ -80,39 +80,36 @@ export function IgelManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header with title and action button */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Selbstzahler-Analyse</h1>
-          <p className="text-muted-foreground">
-            Analysieren Sie Ihre Selbstzahlerleistungen auf Rentabilität und Optimierungspotenzial
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)} size="lg" className="shrink-0">
-          <Plus className="mr-2 h-4 w-4" />
-          Neue Analyse
-        </Button>
+      {/* Header with title */}
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold">Selbstzahler-Analyse</h1>
+        <p className="text-muted-foreground">
+          Analysieren Sie Ihre Selbstzahlerleistungen auf Rentabilität und Optimierungspotenzial
+        </p>
       </div>
 
-      {/* Professional info card */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 rounded-lg bg-primary/10">
-              <Lightbulb className="h-6 w-6 text-primary" />
+      {/* Professional info card - compact design */}
+      <Card className="bg-card border-card">
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">KI-gestützte Rentabilitätsanalyse</CardTitle>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg mb-1">KI-gestützte Rentabilitätsanalyse</h3>
-              <p className="text-sm text-muted-foreground">
-                Finden Sie heraus, welche Selbstzahlerleistungen sich für Ihre Praxis wirklich lohnen
-              </p>
-            </div>
+            <Button onClick={() => setCreateOpen(true)} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Neue Analyse
+            </Button>
           </div>
-          
+          <CardDescription>
+            Finden Sie heraus, welche Selbstzahlerleistungen sich für Ihre Praxis wirklich lohnen
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-2">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded bg-background">
-                <BarChart3 className="h-5 w-5 text-primary" />
+              <div className="p-2 bg-muted rounded">
+                <BarChart3 className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <h4 className="font-medium text-sm">Vollständige Kostenanalyse</h4>
@@ -120,8 +117,8 @@ export function IgelManagement() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded bg-background">
-                <DollarSign className="h-5 w-5 text-primary" />
+              <div className="p-2 bg-muted rounded">
+                <DollarSign className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <h4 className="font-medium text-sm">3 Preisszenarien</h4>
@@ -129,8 +126,8 @@ export function IgelManagement() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded bg-background">
-                <ThumbsUp className="h-5 w-5 text-primary" />
+              <div className="p-2 bg-muted rounded">
+                <ThumbsUp className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <h4 className="font-medium text-sm">Klare Empfehlungen</h4>

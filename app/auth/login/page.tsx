@@ -106,6 +106,8 @@ function LoginForm() {
     }
 
     try {
+      console.log("[v0] Starting login process")
+      
       // Direct login without clearing session first
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
@@ -113,22 +115,41 @@ function LoginForm() {
       })
 
       if (authError) {
+        console.log("[v0] Login error:", authError)
         throw authError
       }
 
       if (!data.user) {
+        console.log("[v0] No user data received")
         throw new Error("Keine Benutzerdaten erhalten")
+      }
+
+      console.log("[v0] Login successful, user:", data.user.id)
+      setStatus("Sitzung wird verifiziert...")
+      
+      // Wait a moment for the session to be established
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Verify the session is properly set
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log("[v0] Session check:", session ? "Valid" : "Invalid")
+      
+      if (!session) {
+        console.log("[v0] No session found after login")
+        throw new Error("Sitzung konnte nicht erstellt werden")
       }
 
       setStatus("Erfolgreich angemeldet! Weiterleitung...")
       
       // Use window.location for a full page reload to ensure cookies are read correctly
       if (typeof window !== "undefined") {
+        console.log("[v0] Redirecting to:", redirectTo)
         window.location.href = redirectTo
       } else {
         router.replace(redirectTo)
       }
     } catch (error: any) {
+      console.log("[v0] Login failed:", error)
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.message) {
         const msg = error.message.toLowerCase()

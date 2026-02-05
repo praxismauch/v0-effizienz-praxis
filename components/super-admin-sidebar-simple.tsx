@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   ContextMenu,
   ContextMenuContent,
@@ -17,7 +15,6 @@ import {
 } from "@/components/ui/context-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useUser } from "@/contexts/user-context"
-import { useSuperAdminSidebar } from "@/contexts/super-admin-sidebar-context"
 import {
   ChevronDown,
   ChevronRight,
@@ -25,7 +22,6 @@ import {
   X,
   ExternalLink,
   ArrowLeft,
-  Shield,
   LayoutGrid,
   Building2,
   Mail,
@@ -41,6 +37,7 @@ import {
   TestTube,
   ToggleLeft,
   AlertTriangle,
+  Shield,
   FolderKanban,
   Award,
   Workflow,
@@ -94,7 +91,7 @@ interface MenuSection {
 export function SuperAdminSidebarSimple() {
   const pathname = usePathname()
   const { currentUser } = useUser()
-  const { collapsed, setCollapsed } = useSuperAdminSidebar()
+  const [collapsed, setCollapsed] = useState(false)
   const [openSections, setOpenSections] = useState<string[]>(["overview", "management"])
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
@@ -149,11 +146,11 @@ export function SuperAdminSidebarSimple() {
         if (savedExpanded) {
           try {
             const parsed = JSON.parse(savedExpanded)
-            if (Array.isArray(parsed) && parsed.length > 0) {
+            if (Array.isArray(parsed)) {
               setExpandedItems(parsed)
             }
           } catch (e) {
-            console.warn("[v0] Failed to parse expanded items from localStorage:", e)
+            console.warn("[v0] Failed to parse saved expanded items from localStorage:", e)
           }
         }
         if (savedCollapsed) {
@@ -166,36 +163,38 @@ export function SuperAdminSidebarSimple() {
               setFavorites(parsed)
             }
           } catch (e) {
-            console.warn("[v0] Failed to parse favorites from localStorage:", e)
+            console.warn("[v0] Failed to parse saved favorites from localStorage:", e)
           }
         }
         return
       }
 
       try {
-        const response = await fetch(`/api/super-admin/sidebar-preferences`)
-        if (response.ok) {
-          const data = await response.json()
-          if (Array.isArray(data.expanded_groups) && data.expanded_groups.length > 0) {
+        const res = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=super-admin`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.expanded_groups && Array.isArray(data.expanded_groups)) {
             setOpenSections(data.expanded_groups)
           }
-          if (Array.isArray(data.expanded_items) && data.expanded_items.length > 0) {
+          if (data.expanded_items && Array.isArray(data.expanded_items)) {
             setExpandedItems(data.expanded_items)
           }
-          if (typeof data.sidebar_collapsed === "boolean") {
-            setCollapsed(data.sidebar_collapsed)
+          if (typeof data.is_collapsed === "boolean") {
+            setCollapsed(data.is_collapsed)
           }
-          if (Array.isArray(data.favorites)) {
+          if (data.favorites && Array.isArray(data.favorites)) {
             setFavorites(data.favorites)
           }
         }
       } catch (error) {
-        console.debug("[v0] Error loading super admin sidebar state from API:", error)
+        console.debug("[v0] Error loading super admin sidebar state:", error)
       }
     }
 
-    loadSidebarState()
-  }, [mounted, currentUser?.id])
+    if (mounted) {
+      loadSidebarState()
+    }
+  }, [currentUser, mounted])
 
   // Load all badge counts
   useEffect(() => {
@@ -677,27 +676,6 @@ export function SuperAdminSidebarSimple() {
     },
   ]
 
-  const getAllMenuItems = (): MenuItem[] => {
-    const items: MenuItem[] = []
-    menuSections.forEach((section) => {
-      section.items.forEach((item) => {
-        if (item.href) {
-          items.push(item)
-        }
-        if (item.subitems) {
-          item.subitems.forEach((subitem) => {
-            if (subitem.href) {
-              items.push(subitem)
-            }
-          })
-        }
-      })
-    })
-    return items
-  }
-
-  const favoriteItems = getAllMenuItems().filter((item) => item.href && favorites.includes(item.href))
-
   const getBadgeCount = (badgeType?: BadgeType): number => {
     if (!badgeType) return 0
     const counts = {
@@ -727,17 +705,134 @@ export function SuperAdminSidebarSimple() {
   }
 
   const isActive = (item: MenuItem): boolean => {
-    if (item.href) {
-      return pathname === item.href || pathname.startsWith(item.href + "/")
+    if (!item.href) return false
+    return pathname === item.href || pathname.startsWith(item.href + "/")
+  }
+
+  // Get favorite items from menu
+  const favoriteItems: MenuItem[] = []
+  menuSections.forEach((section) => {
+    section.items.forEach((item) => {
+      if (item.href && favorites.includes(item.href)) {
+        favoriteItems.push(item)
+      }
+      if (item.subitems) {
+        item.subitems.forEach((subitem) => {
+          if (subitem.href && favorites.includes(subitem.href)) {
+            favoriteItems.push(subitem)
+          }
+        })
+      }
+    })
+  })
+
+  const renderMenuItem = (item: MenuItem) => {
+    const Icon = item.icon
+    const active = isActive(item)
+    const badgeCount = item.badge ? getBadgeCount(item.badgeType) : 0
+    const hasSubitems = item.subitems && item.subitems.length > 0
+    const isExpanded = expandedItems.includes(item.id)
+
+    if (hasSubitems) {
+      return (
+        <div key={item.id}>
+          <button
+            onClick={() => toggleExpandedItem(item.id)}
+            className={cn(
+              "flex w-full items-center rounded-md py-2 px-3 text-sm transition-all",
+              collapsed ? "justify-center" : "gap-2",
+              "text-slate-300 hover:bg-slate-800/50 hover:text-white",
+            )}
+          >
+            {collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Icon className="h-4 w-4 shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent side="right">{item.label}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1 truncate text-left">{item.label}</span>
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 shrink-0" />
+                )}
+              </>
+            )}
+          </button>
+          {isExpanded && !collapsed && (
+            <div className="ml-4 mt-1 space-y-0.5">
+              {item.subitems!.map((subitem) => renderMenuItem(subitem))}
+            </div>
+          )}
+        </div>
+      )
     }
-    return false
+
+    const content = (
+      <Link
+        key={item.id}
+        href={item.href || "#"}
+        className={cn(
+          "flex items-center rounded-md py-2 px-3 text-sm transition-all",
+          collapsed ? "justify-center" : "gap-2",
+          active ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-800/50 hover:text-white",
+        )}
+      >
+        {collapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Icon className="h-4 w-4 shrink-0" />
+            </TooltipTrigger>
+            <TooltipContent side="right">{item.label}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <>
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="flex-1 truncate">{item.label}</span>
+            {badgeCount > 0 && (
+              <Badge
+                variant={active ? "secondary" : "default"}
+                className="ml-auto shrink-0 bg-blue-500 text-white"
+              >
+                {badgeCount}
+              </Badge>
+            )}
+          </>
+        )}
+      </Link>
+    )
+
+    if (item.href && !collapsed) {
+      return (
+        <ContextMenu key={item.id}>
+          <ContextMenuTrigger asChild>{content}</ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onClick={() => item.href && toggleFavorite(item.href)}>
+              <Star className="mr-2 h-4 w-4" />
+              {favorites.includes(item.href) ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={() => window.open(item.href, "_blank")}>
+              <ExternalLink className="mr-2 h-4 w-4" />
+              In neuem Tab öffnen
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      )
+    }
+
+    return content
   }
 
   return (
     <div
       className={cn(
-        "flex h-full flex-col bg-slate-900 border-r border-slate-700/50 transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        "fixed left-0 top-0 z-30 flex h-screen flex-col bg-slate-900 border-r border-slate-700/50 transition-all duration-300",
+        collapsed ? "w-16" : "w-64",
       )}
     >
       {/* Header */}
@@ -760,11 +855,22 @@ export function SuperAdminSidebarSimple() {
           className={cn(
             "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
             "text-slate-300 hover:text-white hover:bg-slate-700/50",
-            collapsed && "justify-center"
+            collapsed && "justify-center",
           )}
         >
-          <ArrowLeft className="h-4 w-4" />
-          {!collapsed && <span>Zurück zur App</span>}
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <ArrowLeft className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="right">Zurück zur App</TooltipContent>
+            </Tooltip>
+          ) : (
+            <>
+              <ArrowLeft className="h-4 w-4" />
+              <span>Zurück zur App</span>
+            </>
+          )}
         </Link>
       </div>
 
@@ -810,64 +916,34 @@ export function SuperAdminSidebarSimple() {
               }
 
               return (
-                <ContextMenu key={`fav-${item.href}`}>
-                  <ContextMenuTrigger asChild>
-                    <div className="relative group">
-                      {collapsed ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Link
-                              href={item.href || "#"}
-                              className={cn(
-                                "flex items-center justify-center rounded-md py-2 px-2 text-sm transition-all",
-                                active
-                                  ? "bg-blue-600 text-white"
-                                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
-                              )}
-                            >
-                              <Icon className="h-4 w-4" />
-                            </Link>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">{item.label}</TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <Link
-                          href={item.href || "#"}
-                          className={cn(
-                            "flex items-center gap-3 rounded-md py-2 text-sm transition-all hover:translate-x-0.5",
-                            "pl-6 pr-3",
-                            active
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "text-slate-300 hover:bg-slate-800/50 hover:text-white",
-                            badgeCount > 0 && "pr-10"
-                          )}
-                        >
-                          <Icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="flex-1 truncate">{item.label}</span>
-                        </Link>
+                <Link
+                  key={`fav-${item.href}`}
+                  href={item.href || "#"}
+                  className={cn(
+                    "flex items-center rounded-md py-2 px-3 text-sm transition-all",
+                    collapsed ? "justify-center" : "gap-2",
+                    active ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-800/50 hover:text-white",
+                  )}
+                >
+                  {collapsed ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Icon className="h-4 w-4" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{item.label}</TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <>
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {badgeCount > 0 && (
+                        <Badge variant={active ? "secondary" : "default"} className="ml-auto shrink-0">
+                          {badgeCount}
+                        </Badge>
                       )}
-                      {!collapsed && badgeCount > 0 && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-[10px] font-semibold text-white">
-                          {badgeCount > 99 ? "99+" : badgeCount}
-                        </span>
-                      )}
-                    </div>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent className="w-48">
-                    <ContextMenuItem
-                      onClick={() => item.href && toggleFavorite(item.href)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Star className="mr-2 h-4 w-4" />
-                      Aus Favoriten entfernen
-                    </ContextMenuItem>
-                    <ContextMenuSeparator />
-                    <ContextMenuItem onClick={() => window.open(item.href, "_blank")}>
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      In neuem Tab öffnen
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
+                    </>
+                  )}
+                </Link>
               )
             })}
           </div>
@@ -875,188 +951,62 @@ export function SuperAdminSidebarSimple() {
       )}
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-2">
-          {menuSections.map((section) => (
-            <Collapsible
-              key={section.id}
-              open={openSections.includes(section.id)}
-              onOpenChange={() => toggleSection(section.id)}
-            >
-              <div className="space-y-1">
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-slate-800/50 h-8 px-2",
-                      collapsed && "justify-center px-2"
-                    )}
-                  >
-                    <ChevronRight
-                      className={cn(
-                        "h-3.5 w-3.5 transition-transform shrink-0",
-                        openSections.includes(section.id) && "rotate-90",
-                        collapsed && "hidden"
+      <div className="flex-1 overflow-y-auto px-2 py-2">
+        <div className="space-y-4">
+          {menuSections.map((section) => {
+            const SectionIcon = section.icon
+            const isSectionOpen = openSections.includes(section.id)
+
+            return (
+              <div key={section.id}>
+                <button
+                  onClick={() => toggleSection(section.id)}
+                  className={cn(
+                    "flex w-full items-center px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors",
+                    collapsed ? "justify-center" : "gap-2",
+                    "text-slate-400 hover:text-slate-200",
+                  )}
+                >
+                  {collapsed ? (
+                    <>
+                      {SectionIcon && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SectionIcon className="h-3.5 w-3.5" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right">{section.label}</TooltipContent>
+                        </Tooltip>
                       )}
-                    />
-                    {section.icon && !collapsed && <section.icon className="h-4 w-4 text-yellow-500" />}
-                    {!collapsed && <span className="text-xs font-medium uppercase tracking-wide">{section.label}</span>}
-                  </Button>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent className="space-y-0.5">
-                  {section.items.map((item) => {
-                    const active = isActive(item)
-                    const badgeCount = item.badge ? getBadgeCount(item.badgeType) : 0
-                    const hasSubitems = item.subitems && item.subitems.length > 0
-                    const isExpanded = expandedItems.includes(item.id)
-
-                    if (hasSubitems) {
-                      return (
-                        <div key={item.id} className="space-y-0.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleExpandedItem(item.id)}
-                            className={cn(
-                              "w-full justify-start gap-2 text-slate-300 hover:text-white hover:bg-slate-800/50 h-9 pl-8 pr-3",
-                              collapsed && "justify-center px-2"
-                            )}
-                          >
-                            {!collapsed && (
-                              <>
-                                <item.icon className="h-4 w-4 shrink-0" />
-                                <span className="flex-1 text-left text-sm">{item.label}</span>
-                                <ChevronDown
-                                  className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")}
-                                />
-                              </>
-                            )}
-                            {collapsed && <item.icon className="h-4 w-4" />}
-                          </Button>
-
-                          {!collapsed && isExpanded && (
-                            <div className="ml-6 space-y-0.5 border-l border-slate-700/30 pl-2">
-                              {item.subitems!.map((subitem) => {
-                                const subActive = isActive(subitem)
-                                const isFavorite = favorites.includes(subitem.href || "")
-                                const subBadgeCount = subitem.badge ? getBadgeCount(subitem.badgeType) : 0
-                                return (
-                                  <ContextMenu key={subitem.id}>
-                                    <ContextMenuTrigger asChild>
-                                      <Link href={subitem.href || "#"}>
-                                        <Button
-                                          variant={subActive ? "secondary" : "ghost"}
-                                          size="sm"
-                                          className={cn(
-                                            "w-full justify-start gap-2 h-8 px-2 relative",
-                                            subActive
-                                              ? "bg-blue-600 text-white hover:bg-blue-700"
-                                              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                                          )}
-                                        >
-                                          <subitem.icon className="h-3.5 w-3.5 shrink-0" />
-                                          <span className="text-xs flex-1 text-left">{subitem.label}</span>
-                                          {subBadgeCount > 0 && (
-                                            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-semibold text-white">
-                                              {subBadgeCount > 99 ? "99+" : subBadgeCount}
-                                            </span>
-                                          )}
-                                        </Button>
-                                      </Link>
-                                    </ContextMenuTrigger>
-                                    <ContextMenuContent className="w-48">
-                                      <ContextMenuItem onClick={() => subitem.href && toggleFavorite(subitem.href)}>
-                                        <Star
-                                          className={cn("mr-2 h-4 w-4", isFavorite && "fill-amber-500 text-amber-500")}
-                                        />
-                                        {isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
-                                      </ContextMenuItem>
-                                      <ContextMenuSeparator />
-                                      <ContextMenuItem onClick={() => window.open(subitem.href, "_blank")}>
-                                        <ExternalLink className="mr-2 h-4 w-4" />
-                                        In neuem Tab öffnen
-                                      </ContextMenuItem>
-                                    </ContextMenuContent>
-                                  </ContextMenu>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    }
-
-                    return (
-                      <ContextMenu key={item.id}>
-                        <ContextMenuTrigger asChild>
-                          <Link href={item.href || "#"}>
-                            <Button
-                              variant={active ? "secondary" : "ghost"}
-                              size="sm"
-                              className={cn(
-                                "w-full justify-start gap-2 relative h-9 pl-8 pr-3",
-                                active
-                                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                                  : "text-slate-300 hover:text-white hover:bg-slate-800/50",
-                                collapsed && "justify-center px-2"
-                              )}
-                            >
-                              {!collapsed ? (
-                                <>
-                                  <item.icon className="h-4 w-4 shrink-0" />
-                                  <span className="flex-1 text-left text-sm">{item.label}</span>
-                                  {badgeCount > 0 && (
-                                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-semibold text-white">
-                                      {badgeCount > 99 ? "99+" : badgeCount}
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
-                                <item.icon className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </Link>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent className="w-48">
-                          <ContextMenuItem onClick={() => item.href && toggleFavorite(item.href)}>
-                            <Star
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                favorites.includes(item.href || "") && "fill-amber-500 text-amber-500"
-                              )}
-                            />
-                            {favorites.includes(item.href || "")
-                              ? "Aus Favoriten entfernen"
-                              : "Zu Favoriten hinzufügen"}
-                          </ContextMenuItem>
-                          <ContextMenuSeparator />
-                          <ContextMenuItem onClick={() => window.open(item.href, "_blank")}>
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            In neuem Tab öffnen
-                          </ContextMenuItem>
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    )
-                  })}
-                </CollapsibleContent>
+                    </>
+                  ) : (
+                    <>
+                      {SectionIcon && <SectionIcon className="h-3.5 w-3.5 shrink-0" />}
+                      <span className="flex-1 text-left">{section.label}</span>
+                      {isSectionOpen ? (
+                        <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                      )}
+                    </>
+                  )}
+                </button>
+                {(isSectionOpen || collapsed) && (
+                  <div className="mt-1 space-y-0.5">{section.items.map((item) => renderMenuItem(item))}</div>
+                )}
               </div>
-            </Collapsible>
-          ))}
-        </nav>
-      </ScrollArea>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Footer */}
-      <div className={cn("mt-auto border-t border-slate-700/50 p-3", collapsed ? "px-2" : "px-4")}>
-        {!collapsed ? (
-          <div className="text-center">
-            <p className="text-xs text-slate-500">&copy; {new Date().getFullYear()} Praxis Effizienz</p>
+      <div className="border-t border-slate-700/50 p-4">
+        {collapsed ? (
+          <div className="flex justify-center">
+            <Shield className="h-5 w-5 text-slate-400" />
           </div>
         ) : (
-          <div className="flex justify-center">
-            <Shield className="h-4 w-4 text-slate-500" />
-          </div>
+          <p className="text-xs text-slate-400 text-center">© 2026 Praxis Effizienz</p>
         )}
       </div>
     </div>

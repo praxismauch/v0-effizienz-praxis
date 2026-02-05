@@ -36,7 +36,7 @@ const nextConfig = {
     ],
     reactCompiler: false, // Enable when ready for React Compiler
     turbo: {
-      root: '/vercel/share/v0-project',
+      root: process.cwd(),
     },
   },
   async headers() {

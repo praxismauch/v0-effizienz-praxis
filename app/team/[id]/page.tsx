@@ -343,63 +343,6 @@ export default function TeamMemberDetailPage() {
               </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
-              {/* Active Contract Summary */}
-              {activeContract && (
-                <Card className="border-primary/20 bg-primary/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Banknote className="h-5 w-5 text-primary" />
-                      Aktiver Vertrag
-                    </CardTitle>
-                    <CardDescription>
-                      {activeContract.contract_type === "fulltime" ? "Vollzeit" : 
-                       activeContract.contract_type === "parttime" ? "Teilzeit" : 
-                       activeContract.contract_type === "minijob" ? "Minijob" : 
-                       activeContract.contract_type} seit {new Date(activeContract.start_date).toLocaleDateString("de-DE")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {activeContract.hours_per_week && (
-                        <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                          <div className="p-2 rounded-full bg-blue-100">
-                            <Clock className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Stunden/Woche</p>
-                            <p className="text-xl font-semibold">{activeContract.hours_per_week}h</p>
-                          </div>
-                        </div>
-                      )}
-                      {activeContract.hours_per_week && (
-                        <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                          <div className="p-2 rounded-full bg-green-100">
-                            <Palmtree className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Urlaubsanspruch</p>
-                            <p className="text-xl font-semibold text-green-600">{calculateHolidayDays(activeContract)} Tage/Jahr</p>
-                          </div>
-                        </div>
-                      )}
-                      {calculateEffectiveHourlyRate(activeContract) && (
-                        <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                          <div className="p-2 rounded-full bg-purple-100">
-                            <Banknote className="h-5 w-5 text-purple-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Eff. Stundenlohn</p>
-                            <p className="text-xl font-semibold text-purple-600">
-                              {calculateEffectiveHourlyRate(activeContract)?.toLocaleString("de-DE")} {activeContract.salary_currency}/Std.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
@@ -467,6 +410,39 @@ export default function TeamMemberDetailPage() {
                                 {team.name}
                               </Badge>
                             )
+                          })}
+                        </div>
+                      )}
+                      
+                      {/* Contract Info - inline below personal info */}
+                      {activeContract && (
+                        <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t text-sm">
+                          {activeContract.hours_per_week && (
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5 text-blue-500" />
+                              <span className="font-medium text-foreground">{activeContract.hours_per_week}h</span>/Woche
+                            </span>
+                          )}
+                          {activeContract.hours_per_week && (
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Palmtree className="h-3.5 w-3.5 text-green-500" />
+                              <span className="font-medium text-green-600">{calculateHolidayDays(activeContract)}</span> Urlaubstage
+                            </span>
+                          )}
+                          {calculateEffectiveHourlyRate(activeContract) && (
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Banknote className="h-3.5 w-3.5 text-purple-500" />
+                              <span className="font-medium text-purple-600">
+                                {calculateEffectiveHourlyRate(activeContract)?.toLocaleString("de-DE")} {activeContract.salary_currency}
+                              </span>/Std.
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="contracts" className="space-y-4">

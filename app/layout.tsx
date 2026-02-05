@@ -6,7 +6,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Providers } from "@/components/providers"
-import { ClientSidebarWrapper } from "@/components/client-sidebar-wrapper"
+import { SidebarProvider } from "@/components/ui/sidebar"
 import { getCurrentUserProfile } from "@/lib/auth/get-current-user"
 
 const inter = Inter({
@@ -167,10 +167,10 @@ export default async function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers initialUser={initialUser}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <ClientSidebarWrapper>
+            <SidebarProvider defaultOpen={defaultSidebarOpen}>
               {children}
               <Toaster />
-            </ClientSidebarWrapper>
+            </SidebarProvider>
           </ThemeProvider>
         </Providers>
       </body>

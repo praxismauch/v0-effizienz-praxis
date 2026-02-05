@@ -305,12 +305,25 @@ export function UserProvider({
     fetchUser()
   }, [pathname, initialUser, router, persistUserToStorage, getSupabase, mounted])
 
+  // Use a ref to track if we already have a subscription to prevent duplicates
+  const authSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null)
+  // Use a ref for currentUser in the auth callback to avoid re-subscribing
+  const currentUserRef = useRef<User | null>(currentUser)
+  
+  // Keep the ref in sync with state
+  useEffect(() => {
+    currentUserRef.current = currentUser
+  }, [currentUser])
+
   useEffect(() => {
     if (typeof window === "undefined") return
     if (!mounted) return
     const IS_DEV_MODE = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
 
     if (IS_DEV_MODE) return
+
+    // Prevent duplicate subscriptions
+    if (authSubscriptionRef.current) return
 
     const supabase = getSupabase()
     if (!supabase) return
@@ -324,7 +337,8 @@ export function UserProvider({
         if (now - lastFetchTime.current < FETCH_COOLDOWN_MS) {
           return
         }
-        if (hasFetchedUser.current && currentUser) {
+        // Use ref instead of state to avoid re-subscribing
+        if (hasFetchedUser.current && currentUserRef.current) {
           return
         }
         lastFetchTime.current = now
@@ -395,10 +409,13 @@ export function UserProvider({
       }
     })
 
+    authSubscriptionRef.current = subscription
+
     return () => {
       subscription.unsubscribe()
+      authSubscriptionRef.current = null
     }
-  }, [mounted, getSupabase, persistUserToStorage, currentUser])
+  }, [mounted, getSupabase, persistUserToStorage])
 
   useEffect(() => {
     if (!currentUser) return

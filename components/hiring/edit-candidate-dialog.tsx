@@ -287,7 +287,7 @@ export function EditCandidateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[104rem] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[1600px] w-[98vw] max-h-[98vh]">
         <DialogHeader>
           <DialogTitle>{t("hiring.editCandidateDialog.title", "Kandidat bearbeiten")}</DialogTitle>
           <DialogDescription>
@@ -295,38 +295,40 @@ export function EditCandidateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="job_posting">
-              {t("hiring.editCandidateDialog.addJobPosting", "Stellenausschreibung hinzufügen")}
-            </Label>
-            <Select value={selectedJobPosting} onValueChange={setSelectedJobPosting}>
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={t("hiring.editCandidateDialog.selectJobPosting", "Wählen Sie eine Stelle (optional)")}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Keine</SelectItem>
-                {jobPostings.map((job) => (
-                  <SelectItem key={job.id} value={job.id}>
-                    {job.title} - {formatDepartment(job.department)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2">
+          {/* Left Column */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="job_posting">
+                {t("hiring.editCandidateDialog.addJobPosting", "Stellenausschreibung hinzufügen")}
+              </Label>
+              <Select value={selectedJobPosting} onValueChange={setSelectedJobPosting}>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("hiring.editCandidateDialog.selectJobPosting", "Wählen Sie eine Stelle (optional)")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keine</SelectItem>
+                  {jobPostings.map((job) => (
+                    <SelectItem key={job.id} value={job.id}>
+                      {job.title} - {formatDepartment(job.department)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label>{t("hiring.editCandidateDialog.profileImage", "Profilbild")}</Label>
-            <CandidateImageUpload
-              imageUrl={imageUrl}
-              onImageChange={setImageUrl}
-              candidateName={`${formData.first_name} ${formData.last_name}`.trim()}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label>{t("hiring.editCandidateDialog.profileImage", "Profilbild")}</Label>
+              <CandidateImageUpload
+                imageUrl={imageUrl}
+                onImageChange={setImageUrl}
+                candidateName={`${formData.first_name} ${formData.last_name}`.trim()}
+              />
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="first_name">{t("hiring.editCandidateDialog.firstName", "Vorname")} *</Label>
               <Input
@@ -570,55 +572,61 @@ export function EditCandidateDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">{t("hiring.editCandidateDialog.notes", "Notizen")}</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="notes">{t("hiring.editCandidateDialog.notes", "Notizen")}</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={3}
+              />
+            </div>
           </div>
 
-          {/* Candidate Events Section */}
-          <div className="border-t pt-4 mt-4">
-            <CandidateEventsManager 
-              events={events} 
-              onChange={setEvents} 
-              candidateName={`${formData.first_name} ${formData.last_name}`}
-            />
+          {/* Right Column */}
+          <div className="space-y-4">
+            {/* Candidate Events Section */}
+            <div className="border rounded-lg p-4">
+              <CandidateEventsManager 
+                events={events} 
+                onChange={setEvents} 
+                candidateName={`${formData.first_name} ${formData.last_name}`}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("hiring.editCandidateDialog.documents", "Dokumente")}</Label>
+              <CandidateDocumentsUpload documents={documents} onDocumentsChange={setDocuments} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_contact_date">
+                  {t("hiring.editCandidateDialog.firstContactDate", "Monat / Jahr der ersten Kontaktaufnahme")}
+                </Label>
+                <Input
+                  id="first_contact_date"
+                  type="date"
+                  value={formData.first_contact_date}
+                  onChange={(e) => setFormData({ ...formData, first_contact_date: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="availability_date">
+                  {t("hiring.editCandidateDialog.availableFrom", "Verfügbarkeit ab")}
+                </Label>
+                <Input
+                  id="availability_date"
+                  type="date"
+                  value={formData.availability_date}
+                  onChange={(e) => setFormData({ ...formData, availability_date: e.target.value })}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>{t("hiring.editCandidateDialog.documents", "Dokumente")}</Label>
-            <CandidateDocumentsUpload documents={documents} onDocumentsChange={setDocuments} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="first_contact_date">
-              {t("hiring.editCandidateDialog.firstContactDate", "Monat / Jahr der ersten Kontaktaufnahme")}
-            </Label>
-            <Input
-              id="first_contact_date"
-              type="date"
-              value={formData.first_contact_date}
-              onChange={(e) => setFormData({ ...formData, first_contact_date: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="availability_date">
-              {t("hiring.editCandidateDialog.availableFrom", "Verfügbarkeit ab")}
-            </Label>
-            <Input
-              id="availability_date"
-              type="date"
-              value={formData.availability_date}
-              onChange={(e) => setFormData({ ...formData, availability_date: e.target.value })}
-            />
-          </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="col-span-3 flex-col sm:flex-row gap-2">
             <Button
               type="button"
               onClick={() => setShowInterviewGenerator(true)}

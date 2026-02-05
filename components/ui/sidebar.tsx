@@ -55,8 +55,14 @@ function SidebarProvider({
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }) {
+  const [isMounted, setIsMounted] = React.useState(false)
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+
+  // Track when component has mounted to prevent hydration mismatch
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -77,39 +83,47 @@ function SidebarProvider({
     [setOpenProp, open],
   )
 
-  // Helper to toggle the sidebar.
-  const toggleSidebar = React.useCallback(() => {
-    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-  }, [isMobile, setOpen, setOpenMobile])
-
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault()
-        toggleSidebar()
+        // Use current isMobile state directly in the effect
+        if (isMobile) {
+          setOpenMobile((open) => !open)
+        } else {
+          setOpen((open) => !open)
+        }
       }
     }
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [toggleSidebar])
+  }, [isMobile, setOpen, setOpenMobile])
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? "expanded" : "collapsed"
+
+  // Use false for isMobile during SSR to ensure consistent hydration
+  const effectiveIsMobile = isMounted ? isMobile : false
+
+  // Helper to toggle the sidebar - use effectiveIsMobile for consistency
+  const effectiveToggleSidebar = React.useCallback(() => {
+    return effectiveIsMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
+  }, [effectiveIsMobile, setOpen, setOpenMobile])
 
   const contextValue = React.useMemo<SidebarContextProps>(
     () => ({
       state,
       open,
       setOpen,
-      isMobile,
+      isMobile: effectiveIsMobile,
       openMobile,
       setOpenMobile,
-      toggleSidebar,
+      toggleSidebar: effectiveToggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
+    [state, open, setOpen, effectiveIsMobile, openMobile, setOpenMobile, effectiveToggleSidebar],
   )
 
   return (

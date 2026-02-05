@@ -108,7 +108,7 @@ export default function CreateHolidayRequestDialog({
     }
   }
 
-  const activeMembers = teamMembers.filter((m) => m.status === "active" || !m.status)
+  const activeMembers = Array.isArray(teamMembers) ? teamMembers.filter((m) => m.status === "active" || !m.status) : []
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

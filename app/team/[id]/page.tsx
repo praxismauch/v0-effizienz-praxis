@@ -217,10 +217,10 @@ export default function TeamMemberDetailPage() {
     const fetchTeamAverageRate = async () => {
       try {
         // Get all team members in the same teams
-        const teamMembersInSameTeam = teamMembers.filter((tm: any) => 
+        const teamMembersInSameTeam = Array.isArray(teamMembers) ? teamMembers.filter((tm: any) => 
           tm.id !== memberId && 
           tm.teamIds?.some((teamId: string) => member.teamIds.includes(teamId))
-        )
+        ) : []
 
         if (teamMembersInSameTeam.length === 0) {
           setTeamAverageHourlyRate(null)

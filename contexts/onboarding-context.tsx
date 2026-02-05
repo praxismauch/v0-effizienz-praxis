@@ -394,6 +394,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 export function useOnboarding() {
   const context = useContext(OnboardingContext)
   if (context === undefined) {
+    // During SSR or when provider isn't available, return null instead of throwing
+    // This allows components to safely check for null and render fallback
+    if (typeof window === "undefined") {
+      return null
+    }
     throw new Error("useOnboarding must be used within an OnboardingProvider")
   }
   return context

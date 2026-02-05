@@ -89,24 +89,12 @@ const formatDate = (date: Date | string) => {
 export default function EditTeamMemberPage() {
   const router = useRouter()
   const params = useParams()
-  const { teamMembers, teams, updateTeamMember, removeTeamMember, assignMemberToTeam, removeMemberFromTeam } =
+  const { teamMembers, teams, updateTeamMember, removeTeamMember, assignMemberToTeam, removeMemberFromTeam, practiceId } =
     useTeam()
   const { currentUser, isAdmin, isSuperAdmin } = useUser()
   const { t } = useTranslation()
   const { mutate } = useSWRConfig()
-  const { practiceId } = usePractice()
   const { roleColors } = useRoleColors()
-
-  const {
-    teamMembers,
-    updateTeamMember,
-    teams,
-    assignMemberToTeam,
-    removeMemberFromTeam,
-    practiceId,
-    removeTeamMember,
-  } = useTeam()
-  const { currentUser, isAdmin, isSuperAdmin } = useUser()
 
   const [formData, setFormData] = useState({
     firstName: "",

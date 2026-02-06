@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
+import { createServerClient } from "./lib/supabase/server"
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 
@@ -52,26 +52,14 @@ export async function middleware(request: NextRequest) {
     request,
   })
 
-  // Update Supabase session - this happens in background, doesn't block the response
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
-
-  // Refresh session - updates cookies via the setAll callback above
-  await supabase.auth.getUser()
+  // Update Supabase session - silently handle errors to not crash middleware
+  try {
+    const supabase = await createServerClient()
+    await supabase.auth.getUser()
+  } catch (error) {
+    // Silently handle - don't crash the middleware
+    console.error("[middleware] Supabase session update failed:", error)
+  }
 
   // Add security headers
   response.headers.set("X-Frame-Options", "DENY")

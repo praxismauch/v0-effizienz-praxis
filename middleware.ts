@@ -19,34 +19,7 @@ const ratelimit = new Ratelimit({
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Create the response - let the request pass through
-  let response = NextResponse.next({
-    request,
-  })
-
-  // Update Supabase session without blocking the request
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
-
-  // Refresh session if expired - this updates cookies automatically
-  await supabase.auth.getUser()
-
-  // Apply rate limiting to API routes
+  // Apply rate limiting to API routes FIRST (before any other processing)
   if (pathname.startsWith("/api/")) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || 
                request.headers.get("x-real-ip") || 
@@ -74,7 +47,33 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Add security headers to the response
+  // Create response that passes through to API routes
+  const response = NextResponse.next({
+    request,
+  })
+
+  // Update Supabase session - this happens in background, doesn't block the response
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+
+  // Refresh session - updates cookies via the setAll callback above
+  await supabase.auth.getUser()
+
+  // Add security headers
   response.headers.set("X-Frame-Options", "DENY")
   response.headers.set("X-Content-Type-Options", "nosniff")
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")

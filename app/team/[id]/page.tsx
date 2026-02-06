@@ -11,8 +11,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Mail, Briefcase, Building2, Calendar, Edit } from "lucide-react"
 import Link from "next/link"
 
-export default async function TeamMemberDetailPage({ params }: { params: { id: string } }) {
-  console.log("[v0] Team member detail page accessed with ID:", params.id)
+export default async function TeamMemberDetailPage(props: { params: Promise<{ id: string }> }) {
+  // Await params in Next.js 16
+  const params = await props.params
+  const memberId = params.id
+  
+  console.log("[v0] Team member detail page accessed with ID:", memberId)
   
   // Fetch user and practice data server-side
   const [user, practiceId] = await Promise.all([
@@ -34,9 +38,9 @@ export default async function TeamMemberDetailPage({ params }: { params: { id: s
   }
   
   // Fetch team member data server-side
-  console.log("[v0] About to fetch team member:", params.id, "for practice:", practiceId)
-  const teamMember = await getTeamMemberById(params.id, practiceId)
-  console.log("[v0] Team member fetch result:", teamMember ? "Found" : "NOT FOUND")
+  console.log("[v0] About to fetch team member:", memberId, "for practice:", practiceId)
+  const teamMember = await getTeamMemberById(memberId, practiceId)
+  console.log("[v0] Team member fetch result:", teamMember ? "Found" : "NOT FOUND", teamMember)
   
   // If team member not found, show 404
   if (!teamMember) {
@@ -72,7 +76,7 @@ export default async function TeamMemberDetailPage({ params }: { params: { id: s
             </Link>
             <h1 className="text-3xl font-bold">Teammitglied Details</h1>
           </div>
-          <Link href={`/team/${params.id}/edit`}>
+          <Link href={`/team/${memberId}/edit`}>
             <Button>
               <Edit className="h-4 w-4 mr-2" />
               Bearbeiten

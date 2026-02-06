@@ -6,7 +6,11 @@ import { getTeamMemberById, getAllTeamData } from "@/lib/server/get-team-data"
 import { AppLayout } from "@/components/app-layout"
 import EditTeamMemberClient from "./page-client"
 
-export default async function TeamMemberEditPage({ params }: { params: { id: string } }) {
+export default async function TeamMemberEditPage(props: { params: Promise<{ id: string }> }) {
+  // Await params in Next.js 16
+  const params = await props.params
+  const memberId = params.id
+  
   // Fetch user and practice data server-side
   const [user, practiceId] = await Promise.all([
     getCurrentUser(),
@@ -24,7 +28,7 @@ export default async function TeamMemberEditPage({ params }: { params: { id: str
   
   // Fetch team member and all team data server-side
   const [teamMember, teamData] = await Promise.all([
-    getTeamMemberById(params.id, practiceId),
+    getTeamMemberById(memberId, practiceId),
     getAllTeamData(practiceId),
   ])
   

@@ -61,8 +61,8 @@ async function updateSession(request: NextRequest) {
   }
 }
 
-// Main proxy function - must be default export for Next.js 16
-export default async function proxy(request: NextRequest) {
+// Main middleware function - default export for Next.js 16
+export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const supabaseResponse = await updateSession(request)

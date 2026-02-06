@@ -71,7 +71,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
             <Link href="/team">
               <Button variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Zurück
+                Zurück zum Team
               </Button>
             </Link>
             <h1 className="text-3xl font-bold">Teammitglied Details</h1>

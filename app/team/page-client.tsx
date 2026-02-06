@@ -73,12 +73,12 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
 
     try {
       const [membersRes, teamsRes, responsibilitiesRes, staffingRes, holidaysRes, sickLeavesRes] = await Promise.all([
-        fetch(`/api/practices/${practiceId}/team-members`),
-        fetch(`/api/practices/${practiceId}/teams`),
-        fetch(`/api/practices/${practiceId}/responsibilities`),
-        fetch(`/api/practices/${practiceId}/staffing-plans`),
-        fetch(`/api/practices/${practiceId}/holiday-requests`),
-        fetch(`/api/practices/${practiceId}/sick-leaves`),
+        fetch(`/api/practices/${practiceId}/team-members`, { credentials: "include" }),
+        fetch(`/api/practices/${practiceId}/teams`, { credentials: "include" }),
+        fetch(`/api/practices/${practiceId}/responsibilities`, { credentials: "include" }),
+        fetch(`/api/practices/${practiceId}/staffing-plans`, { credentials: "include" }),
+        fetch(`/api/practices/${practiceId}/holiday-requests`, { credentials: "include" }),
+        fetch(`/api/practices/${practiceId}/sick-leaves`, { credentials: "include" }),
       ])
 
       if (membersRes.ok) {
@@ -127,6 +127,7 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
     try {
       const res = await fetch(`/api/practices/${practiceId}/team-members/${member.id}`, {
         method: "DELETE",
+        credentials: "include",
       })
       if (res.ok) {
         // Instant update using functional state

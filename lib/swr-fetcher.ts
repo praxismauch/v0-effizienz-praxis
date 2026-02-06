@@ -19,7 +19,9 @@ export class FetchError extends Error {
  */
 export async function swrFetcher<T>(url: string, retries = 2): Promise<T> {
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, {
+      credentials: "include", // Include cookies for authentication
+    })
 
     // Retry on 502/503/504 gateway errors (transient network issues)
     if ((res.status === 502 || res.status === 503 || res.status === 504) && retries > 0) {
@@ -81,6 +83,7 @@ export async function mutationFetcher<T>(
       "Content-Type": "application/json",
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
+    credentials: "include", // Include cookies for authentication
   })
 
   if (!res.ok) {

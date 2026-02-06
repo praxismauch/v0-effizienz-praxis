@@ -189,7 +189,9 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
       // Helper to safely fetch and parse JSON with rate limit handling
       const safeFetch = async <T = unknown>(url: string, fallback: T | null = null): Promise<T | null> => {
         try {
-          const response = await fetch(url)
+          const response = await fetch(url, {
+            credentials: "include", // Include cookies for authentication
+          })
           if (!response.ok) {
             return fallback
           }

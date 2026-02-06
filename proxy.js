@@ -1,4 +1,3 @@
-import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { getSupabaseUrl, getSupabaseAnonKey, hasSupabaseConfig } from "./lib/supabase/config"
@@ -8,16 +7,16 @@ import { getSupabaseUrl, getSupabaseAnonKey, hasSupabaseConfig } from "./lib/sup
  * Optimized for middleware performance in Next.js 16
  */
 const edgeLog = {
-  debug: (msg: string, data?: unknown) => {
+  debug: (msg, data) => {
     if (process.env.NODE_ENV !== "production") {
-      console.log(`[middleware] ${msg}`, data ?? "")
+      console.log(`[proxy] ${msg}`, data ?? "")
     }
   },
-  error: (msg: string, error?: unknown) => {
-    console.error(`[middleware] ${msg}`, error ?? "")
+  error: (msg, error) => {
+    console.error(`[proxy] ${msg}`, error ?? "")
   },
-  generateRequestId: (): string => `${Date.now()}-${Math.random().toString(36).substring(7)}`,
-} as const
+  generateRequestId: () => `${Date.now()}-${Math.random().toString(36).substring(7)}`,
+}
 
 // Expanded list of protected routes
 const PROTECTED_ROUTES = [
@@ -57,24 +56,19 @@ const PROTECTED_ROUTES = [
 ]
 
 // Helper function to check if path is protected
-function isProtectedRoute(pathname: string): boolean {
+function isProtectedRoute(pathname) {
   return PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
 }
 
 /**
- * In-memory rate limiting for middleware
+ * In-memory rate limiting for proxy
  * Production apps should use Redis (Upstash) for distributed rate limiting
  */
-interface RateLimitEntry {
-  count: number
-  resetTime: number
-}
-
-const ipRequestCounts = new Map<string, RateLimitEntry>()
+const ipRequestCounts = new Map()
 const MIDDLEWARE_RATE_LIMIT = 800
 const RATE_LIMIT_WINDOW = 60 * 1000
 
-function checkMiddlewareRateLimit(ip: string): boolean {
+function checkMiddlewareRateLimit(ip) {
   const now = Date.now()
   const entry = ipRequestCounts.get(ip)
 
@@ -108,7 +102,7 @@ if (typeof setInterval !== "undefined") {
  * Apply security headers to all responses
  * Next.js 16 compatible with enhanced security policies
  */
-function addSecurityHeaders(response: NextResponse): NextResponse {
+function addSecurityHeaders(response) {
   const headers = [
     ["X-Frame-Options", "DENY"],
     ["X-Content-Type-Options", "nosniff"],
@@ -116,7 +110,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     ["Referrer-Policy", "strict-origin-when-cross-origin"],
     ["Permissions-Policy", "camera=(), microphone=(self), geolocation=(), interest-cohort=()"],
     ["X-DNS-Prefetch-Control", "on"],
-  ] as const
+  ]
 
   headers.forEach(([key, value]) => response.headers.set(key, value))
 
@@ -146,7 +140,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
  * Update and validate user session
  * Next.js 16 optimized with proper error handling
  */
-async function updateSession(request: NextRequest): Promise<NextResponse> {
+async function updateSession(request) {
   const requestId = edgeLog.generateRequestId()
 
   let supabaseResponse = NextResponse.next({ request })
@@ -215,7 +209,7 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request) {
   const { pathname } = request.nextUrl
 
   const supabaseResponse = await updateSession(request)

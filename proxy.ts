@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "./lib/supabase/server"
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 
@@ -68,14 +67,6 @@ export async function proxy(request: NextRequest) {
   const response = NextResponse.next({
     request,
   })
-
-  // Update Supabase session - silently handle errors to not crash middleware
-  try {
-    const supabase = await createServerClient()
-    await supabase.auth.getUser()
-  } catch (error) {
-    // Silently handle - don't crash the middleware
-  }
 
   // Add security headers
   response.headers.set("X-Frame-Options", "DENY")

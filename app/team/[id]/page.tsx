@@ -16,6 +16,9 @@ import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-
 import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 import { TeamMemberSkillsTab } from "@/components/team/team-member-skills-tab"
 import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiterfassung-tab"
+import { ArbeitsmittelAssignments } from "@/components/team/arbeitsmittel-assignments"
+import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
+import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
 
 export default async function TeamMemberDetailPage(props: { params: Promise<{ id: string }> }) {
   // Await params in Next.js 16
@@ -221,36 +224,25 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="equipment" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Arbeitsmittel</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Keine Arbeitsmittel zugewiesen</p>
-              </CardContent>
-            </Card>
+            <ArbeitsmittelAssignments 
+              teamMemberId={memberId}
+              practiceId={practiceId}
+            />
           </TabsContent>
 
           <TabsContent value="devices" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Geräte</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Keine Geräte zugewiesen</p>
-              </CardContent>
-            </Card>
+            <TeamMemberDevicesTab 
+              memberId={memberId}
+              practiceId={practiceId}
+              memberName={displayName}
+            />
           </TabsContent>
 
           <TabsContent value="vaccination" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Impfstatus</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Kein Impfstatus hinterlegt</p>
-              </CardContent>
-            </Card>
+            <TeamMemberVaccinationTab 
+              teamMemberId={memberId}
+              practiceId={parseInt(practiceId, 10)}
+            />
           </TabsContent>
         </Tabs>
       </div>

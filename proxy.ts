@@ -215,7 +215,7 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function proxy(request: NextRequest) {
+async function proxyHandler(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const supabaseResponse = await updateSession(request)
@@ -244,6 +244,10 @@ export async function proxy(request: NextRequest) {
 
   return addSecurityHeaders(supabaseResponse)
 }
+
+// Export as both named "proxy" and default for Next.js 16 compatibility
+export const proxy = proxyHandler
+export default proxyHandler
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],

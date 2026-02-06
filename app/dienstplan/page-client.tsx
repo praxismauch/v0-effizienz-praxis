@@ -1,8 +1,15 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight, Users, Calendar, Clock, AlertTriangle } from "lucide-react"
+import { AppLayout } from "@/components/app-layout"
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from "date-fns"
 import { de } from "date-fns/locale"
+import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useToast } from "@/hooks/use-toast"
@@ -39,6 +46,7 @@ export default function DienstplanPageClient({
   practiceId,
   userId,
 }: DienstplanPageClientProps) {
+  const router = useRouter()
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
@@ -131,10 +139,24 @@ export default function DienstplanPageClient({
     }
   }, [currentWeek, fetchData, initialWeek])
 
-  // Week navigation
-  const goToPreviousWeek = () => setCurrentWeek((prev) => subWeeks(prev, 1))
-  const goToNextWeek = () => setCurrentWeek((prev) => addWeeks(prev, 1))
-  const goToCurrentWeek = () => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))
+  // Week navigation with URL updates
+  const goToPreviousWeek = () => {
+    const newWeek = subWeeks(currentWeek, 1)
+    setCurrentWeek(newWeek)
+    router.push(`/dienstplan?week=${format(newWeek, "yyyy-MM-dd")}`)
+  }
+  
+  const goToNextWeek = () => {
+    const newWeek = addWeeks(currentWeek, 1)
+    setCurrentWeek(newWeek)
+    router.push(`/dienstplan?week=${format(newWeek, "yyyy-MM-dd")}`)
+  }
+  
+  const goToCurrentWeek = () => {
+    const newWeek = startOfWeek(new Date(), { weekStartsOn: 1 })
+    setCurrentWeek(newWeek)
+    router.push(`/dienstplan?week=${format(newWeek, "yyyy-MM-dd")}`)
+  }
 
   // Handlers - using functional state updates for instant UI updates
   const handleApproveSwap = async (id: string) => {
@@ -175,7 +197,7 @@ export default function DienstplanPageClient({
 
   const handleDeleteShiftType = async (id: string) => {
     try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/dienstplan/shift-types/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/shift-types/${id}`, {
         method: "DELETE",
       })
       if (res.ok) {
@@ -202,8 +224,8 @@ export default function DienstplanPageClient({
   const handleSaveShiftType = async (data: Partial<ShiftType>) => {
     const isEditing = !!editingShiftType
     const url = isEditing
-      ? `/api/practices/${currentPractice?.id}/dienstplan/shift-types/${editingShiftType.id}`
-      : `/api/practices/${currentPractice?.id}/dienstplan/shift-types`
+      ? `/api/practices/${practiceId}/dienstplan/shift-types/${editingShiftType.id}`
+      : `/api/practices/${practiceId}/dienstplan/shift-types`
 
     const res = await fetch(url, {
       method: isEditing ? "PUT" : "POST",

@@ -32,27 +32,34 @@ export async function proxy(request: NextRequest) {
                request.headers.get("x-real-ip") || 
                "unknown"
 
-    // Get rate limiter (lazy initialization)
-    const limiter = getRateLimiter()
-    const { success } = await limiter.limit(ip)
+    // Try rate limiting - gracefully handle failures (e.g., in v0 preview environment)
+    try {
+      const limiter = getRateLimiter()
+      const { success } = await limiter.limit(ip)
 
-    if (!success) {
-      return new NextResponse(
-        JSON.stringify({
-          error: "Too many requests",
-          message: "Please slow down and try again later.",
-        }),
-        {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "Retry-After": "60",
-            "X-Frame-Options": "DENY",
-            "X-Content-Type-Options": "nosniff",
-            "Referrer-Policy": "strict-origin-when-cross-origin",
-          },
-        }
-      )
+      if (!success) {
+        return new NextResponse(
+          JSON.stringify({
+            error: "Too many requests",
+            message: "Please slow down and try again later.",
+          }),
+          {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+              "Retry-After": "60",
+              "X-Frame-Options": "DENY",
+              "X-Content-Type-Options": "nosniff",
+              "Referrer-Policy": "strict-origin-when-cross-origin",
+            },
+          }
+        )
+      }
+    } catch (error) {
+      // Rate limiting failed (likely invalid Redis config) - log but allow request to continue
+      console.error("[proxy] Rate limiting failed:", error)
+      // In production with proper Redis config, this won't happen
+      // In v0 preview without Redis, requests will pass through without rate limiting
     }
   }
 

@@ -42,14 +42,18 @@ export default function ShiftDialog({
   open,
   onOpenChange,
   shift,
-  shiftTypes,
-  teamMembers,
+  shiftTypes: shiftTypesProp,
+  teamMembers: teamMembersProp,
   selectedDate,
   selectedMemberId,
   defaultDate,
   defaultTeamMemberId,
   onSave,
 }: ShiftDialogProps) {
+  // Add null safety guards
+  const shiftTypes = shiftTypesProp || []
+  const teamMembers = teamMembersProp || []
+  
   const isEditing = !!shift
   const { toast } = useToast()
 

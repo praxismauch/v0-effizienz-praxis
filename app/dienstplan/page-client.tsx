@@ -55,7 +55,13 @@ export default function DienstplanPageClient({
 
   // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")
-  const [currentWeek, setCurrentWeek] = useState(initialWeek)
+  // Ensure currentWeek is never null - default to current week if initialWeek is invalid
+  const [currentWeek, setCurrentWeek] = useState(() => {
+    if (!initialWeek || isNaN(new Date(initialWeek).getTime())) {
+      return startOfWeek(new Date(), { weekStartsOn: 1 })
+    }
+    return initialWeek
+  })
   const [isLoading, setIsLoading] = useState(false) // No initial loading needed
 
   // Data state - initialize with server-fetched data with fallbacks
@@ -70,8 +76,12 @@ export default function DienstplanPageClient({
   const [shiftTypeDialogOpen, setShiftTypeDialogOpen] = useState(false)
   const [editingShiftType, setEditingShiftType] = useState<ShiftType | null>(null)
 
-  // Week days
+  // Week days - safely calculate with validated currentWeek
   const weekDays = useMemo(() => {
+    if (!currentWeek || isNaN(new Date(currentWeek).getTime())) {
+      const fallbackWeek = startOfWeek(new Date(), { weekStartsOn: 1 })
+      return Array.from({ length: 7 }, (_, i) => addDays(fallbackWeek, i))
+    }
     return Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i))
   }, [currentWeek])
 

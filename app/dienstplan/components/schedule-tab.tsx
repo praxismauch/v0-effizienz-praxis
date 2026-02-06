@@ -47,14 +47,19 @@ const getShiftIcon = (name: string) => {
 }
 
 export default function ScheduleTab({
-  weekDays,
-  teamMembers,
-  schedules,
-  shiftTypes,
+  weekDays: weekDaysProp,
+  teamMembers: teamMembersProp,
+  schedules: schedulesProp,
+  shiftTypes: shiftTypesProp,
   practiceId,
   onRefresh,
   setSchedules,
 }: ScheduleTabProps) {
+  // Add null safety guards
+  const weekDays = weekDaysProp || []
+  const teamMembers = teamMembersProp || []
+  const schedules = schedulesProp || []
+  const shiftTypes = shiftTypesProp || []
   const { toast } = useToast()
   
   // Filter state

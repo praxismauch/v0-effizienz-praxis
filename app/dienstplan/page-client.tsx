@@ -1,15 +1,17 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from "date-fns"
-import { de } from "date-fns/locale"
-import { useUser } from "@/contexts/user-context"
-import { usePractice } from "@/contexts/practice-context"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronLeft, ChevronRight, Calendar, Users, ArrowLeftRight, Clock, Settings } from "lucide-react"
+import { ChevronLeft, ChevronRight, Users, Calendar, Clock, AlertTriangle, ArrowLeftRight, Settings } from "lucide-react"
+import { AppLayout } from "@/components/app-layout"
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from "date-fns"
+import { de } from "date-fns/locale"
+import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 
 import ScheduleTab from "./components/schedule-tab"
 import AvailabilityTab from "./components/availability-tab"
@@ -18,22 +20,43 @@ import ShiftTypesTab from "./components/shift-types-tab"
 import ShiftTypeDialog from "./components/shift-type-dialog"
 import type { TeamMember, ShiftType, Shift, Availability, SwapRequest, Violation, DienstplanStats } from "./types"
 
-export default function DienstplanPageClient() {
+interface DienstplanPageClientProps {
+  initialData: {
+    teamMembers: any[]
+    shiftTypes: any[]
+    schedules: any[]
+    availability: any[]
+    swapRequests: any[]
+  }
+  initialWeek: Date
+  teams: any[]
+  practiceId: string
+  userId: string
+}
+
+export default function DienstplanPageClient({
+  initialData,
+  initialWeek,
+  teams,
+  practiceId,
+  userId,
+}: DienstplanPageClientProps) {
+  const router = useRouter()
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
 
-  // Core state
+  // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
-  const [isLoading, setIsLoading] = useState(true)
+  const [currentWeek, setCurrentWeek] = useState(initialWeek)
+  const [isLoading, setIsLoading] = useState(false) // No initial loading needed
 
-  // Data state - using useState with functional updates
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([])
-  const [schedules, setSchedules] = useState<Shift[]>([])
-  const [availability, setAvailability] = useState<Availability[]>([])
-  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>([])
+  // Data state - initialize with server-fetched data
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData.teamMembers)
+  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(initialData.shiftTypes)
+  const [schedules, setSchedules] = useState<Shift[]>(initialData.schedules)
+  const [availability, setAvailability] = useState<Availability[]>(initialData.availability)
+  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(initialData.swapRequests)
   const [violations, setViolations] = useState<Violation[]>([])
 
   // Dialog state for shift types
@@ -63,18 +86,16 @@ export default function DienstplanPageClient() {
 
   // Fetch all data - returns a promise that resolves when data is loaded
   const fetchData = useCallback(async () => {
-    if (!currentPractice) return
-
     const weekStart = format(currentWeek, "yyyy-MM-dd")
     const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "yyyy-MM-dd")
 
     try {
       const [teamRes, shiftTypesRes, schedulesRes, availabilityRes, swapRes] = await Promise.all([
-        fetch(`/api/practices/${currentPractice.id}/team-members`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/shift-types`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/schedules?start=${weekStart}&end=${weekEnd}`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/availability`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/swap-requests?status=pending`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/team-members`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/dienstplan/shift-types`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/dienstplan/schedules?start=${weekStart}&end=${weekEnd}`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/dienstplan/availability`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/dienstplan/swap-requests?status=pending`, { cache: "no-store" }),
       ])
 
       // Use functional updates to ensure state changes are detected
@@ -102,25 +123,40 @@ export default function DienstplanPageClient() {
       console.error("Error fetching dienstplan data:", error)
       toast({ title: "Fehler", description: "Daten konnten nicht geladen werden", variant: "destructive" })
     }
-  }, [currentPractice, currentWeek, toast])
+  }, [practiceId, currentWeek, toast])
 
-  // Initial load and week change
+  // Only refetch when week changes (initial data comes from server)
   useEffect(() => {
-    if (!practiceLoading && currentPractice) {
+    // Skip initial render since we have server data
+    if (currentWeek.getTime() !== initialWeek.getTime()) {
       setIsLoading(true)
       fetchData().finally(() => setIsLoading(false))
     }
-  }, [fetchData, practiceLoading, currentPractice])
+  }, [currentWeek, fetchData, initialWeek])
 
-  // Week navigation
-  const goToPreviousWeek = () => setCurrentWeek((prev) => subWeeks(prev, 1))
-  const goToNextWeek = () => setCurrentWeek((prev) => addWeeks(prev, 1))
-  const goToCurrentWeek = () => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))
+  // Week navigation with URL updates
+  const goToPreviousWeek = () => {
+    const newWeek = subWeeks(currentWeek, 1)
+    setCurrentWeek(newWeek)
+    router.push(`/dienstplan?week=${format(newWeek, "yyyy-MM-dd")}`)
+  }
+  
+  const goToNextWeek = () => {
+    const newWeek = addWeeks(currentWeek, 1)
+    setCurrentWeek(newWeek)
+    router.push(`/dienstplan?week=${format(newWeek, "yyyy-MM-dd")}`)
+  }
+  
+  const goToCurrentWeek = () => {
+    const newWeek = startOfWeek(new Date(), { weekStartsOn: 1 })
+    setCurrentWeek(newWeek)
+    router.push(`/dienstplan?week=${format(newWeek, "yyyy-MM-dd")}`)
+  }
 
   // Handlers - using functional state updates for instant UI updates
   const handleApproveSwap = async (id: string) => {
     try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/dienstplan/swap-requests/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/swap-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "approved" }),
@@ -139,7 +175,7 @@ export default function DienstplanPageClient() {
 
   const handleRejectSwap = async (id: string) => {
     try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/dienstplan/swap-requests/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/swap-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "rejected" }),
@@ -156,7 +192,7 @@ export default function DienstplanPageClient() {
 
   const handleDeleteShiftType = async (id: string) => {
     try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/dienstplan/shift-types/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/shift-types/${id}`, {
         method: "DELETE",
       })
       if (res.ok) {
@@ -183,8 +219,8 @@ export default function DienstplanPageClient() {
   const handleSaveShiftType = async (data: Partial<ShiftType>) => {
     const isEditing = !!editingShiftType
     const url = isEditing
-      ? `/api/practices/${currentPractice?.id}/dienstplan/shift-types/${editingShiftType.id}`
-      : `/api/practices/${currentPractice?.id}/dienstplan/shift-types`
+      ? `/api/practices/${practiceId}/dienstplan/shift-types/${editingShiftType.id}`
+      : `/api/practices/${practiceId}/dienstplan/shift-types`
 
     const res = await fetch(url, {
       method: isEditing ? "PUT" : "POST",
@@ -322,17 +358,27 @@ export default function DienstplanPageClient() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="schedule">
-          <ScheduleTab
-            schedules={schedules}
-            teamMembers={teamMembers}
-            shiftTypes={shiftTypes}
-            weekDays={weekDays}
-            practiceId={currentPractice.id}
-            onRefresh={fetchData}
-            setSchedules={setSchedules}
-          />
-        </TabsContent>
+          <TabsContent value="schedule">
+            <ScheduleTab
+              weekDays={weekDays}
+              schedules={schedules}
+              teamMembers={teamMembers}
+              shiftTypes={shiftTypes}
+              practiceId={practiceId}
+              onRefresh={fetchData}
+              setSchedules={setSchedules}
+            />
+          </TabsContent>
+
+          <TabsContent value="availability">
+            <AvailabilityTab
+              availability={availability}
+              teamMembers={teamMembers}
+              currentWeek={currentWeek}
+              practiceId={practiceId}
+              onRefresh={fetchData}
+            />
+          </TabsContent>
 
         <TabsContent value="availability">
           <AvailabilityTab
@@ -343,14 +389,26 @@ export default function DienstplanPageClient() {
           />
         </TabsContent>
 
-        <TabsContent value="swaps">
-          <SwapRequestsTab
-            swapRequests={swapRequests}
-            onApprove={handleApproveSwap}
-            onReject={handleRejectSwap}
-            isLoading={isLoading}
-          />
-        </TabsContent>
+          <TabsContent value="swaps">
+            <SwapRequestsTab
+              swapRequests={swapRequests}
+              teamMembers={teamMembers}
+              schedules={schedules}
+              practiceId={practiceId}
+              onApprove={handleApproveSwap}
+              onReject={handleRejectSwap}
+            />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <ShiftTypesTab
+              shiftTypes={shiftTypes}
+              practiceId={practiceId}
+              onAdd={handleAddShiftType}
+              onEdit={handleEditShiftType}
+              onDelete={handleDeleteShiftType}
+            />
+          </TabsContent>
 
         <TabsContent value="settings">
           <ShiftTypesTab
@@ -368,6 +426,7 @@ export default function DienstplanPageClient() {
         open={shiftTypeDialogOpen}
         onOpenChange={setShiftTypeDialogOpen}
         shiftType={editingShiftType}
+        practiceId={practiceId}
         onSave={handleSaveShiftType}
       />
     </div>

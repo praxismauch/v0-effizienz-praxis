@@ -273,13 +273,14 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="members" className="mt-6">
-          <MembersTab
-            teamMembers={teamMembers}
-            onAddMember={handleAddMember}
-            onEditMember={handleEditMember}
-            onDeleteMember={handleDeleteMember}
-          />
+            <TabsContent value="members" className="mt-6">
+              <MembersTab
+                teamMembers={teamMembers}
+                teams={teams}
+                onAddMember={handleAddMember}
+                onEditMember={handleEditMember}
+                onDeleteMember={handleDeleteMember}
+              />
         </TabsContent>
 
         <TabsContent value="responsibilities" className="mt-6">

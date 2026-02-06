@@ -134,7 +134,7 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
     
     // Convert practiceId to number since database stores it as integer
     const practiceIdNum = parseInt(practiceId, 10)
-    console.log("[v0] Fetching team member:", memberId, "for practice:", practiceIdNum)
+    console.log("[v0] getTeamMemberById called with:", { memberId, practiceId, practiceIdNum })
     
     const { data, error } = await supabase
       .from("team_members")
@@ -149,7 +149,7 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
       return null
     }
 
-    console.log("[v0] Found team member:", data ? "yes" : "no")
+    console.log("[v0] getTeamMemberById result:", { found: !!data, data: data ? { id: data.id, first_name: data.first_name, last_name: data.last_name, email: data.email } : null })
     return data
   } catch (error) {
     console.error("[v0] Error getting team member by ID:", error)

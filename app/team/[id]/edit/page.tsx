@@ -38,14 +38,12 @@ export default async function TeamMemberEditPage(props: { params: Promise<{ id: 
   }
   
   return (
-    <AppLayout>
-      <EditTeamMemberClient 
-        member={teamMember}
-        teams={teamData.teams}
-        allTeamMembers={teamData.teamMembers}
-        practiceId={practiceId}
-        currentUser={user}
-      />
-    </AppLayout>
+    <EditTeamMemberClient 
+      initialMember={teamMember}
+      teams={teamData.teams}
+      allTeamMembers={teamData.teamMembers}
+      practiceId={practiceId}
+      currentUser={user}
+    />
   )
 }

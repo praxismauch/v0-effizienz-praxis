@@ -40,6 +40,14 @@ export default function DienstplanPageClient({
   practiceId,
   userId,
 }: DienstplanPageClientProps) {
+  console.log("[v0] DienstplanPageClient received:", {
+    hasInitialData: !!initialData,
+    initialWeek: initialWeek,
+    teamMembers: initialData?.teamMembers?.length,
+    teams: teams?.length,
+    practiceId,
+  })
+
   const router = useRouter()
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
@@ -50,12 +58,12 @@ export default function DienstplanPageClient({
   const [currentWeek, setCurrentWeek] = useState(initialWeek)
   const [isLoading, setIsLoading] = useState(false) // No initial loading needed
 
-  // Data state - initialize with server-fetched data
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData.teamMembers)
-  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(initialData.shiftTypes)
-  const [schedules, setSchedules] = useState<Shift[]>(initialData.schedules)
-  const [availability, setAvailability] = useState<Availability[]>(initialData.availability)
-  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(initialData.swapRequests)
+  // Data state - initialize with server-fetched data with fallbacks
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData?.teamMembers || [])
+  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(initialData?.shiftTypes || [])
+  const [schedules, setSchedules] = useState<Shift[]>(initialData?.schedules || [])
+  const [availability, setAvailability] = useState<Availability[]>(initialData?.availability || [])
+  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(initialData?.swapRequests || [])
   const [violations, setViolations] = useState<Violation[]>([])
 
   // Dialog state for shift types

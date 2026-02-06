@@ -47,12 +47,30 @@ export default async function DienstplanPage({
     getAllTeamData(practiceId),
   ])
 
+  console.log("[v0] Dienstplan server data:", {
+    teamMembers: dienstplanData.teamMembers?.length || 0,
+    shiftTypes: dienstplanData.shiftTypes?.length || 0,
+    schedules: dienstplanData.schedules?.length || 0,
+    availability: dienstplanData.availability?.length || 0,
+    swapRequests: dienstplanData.swapRequests?.length || 0,
+    teams: teamData.teams?.length || 0,
+  })
+
+  // Ensure all data is an array, never null
+  const safeInitialData = {
+    teamMembers: dienstplanData.teamMembers || [],
+    shiftTypes: dienstplanData.shiftTypes || [],
+    schedules: dienstplanData.schedules || [],
+    availability: dienstplanData.availability || [],
+    swapRequests: dienstplanData.swapRequests || [],
+  }
+
   return (
     <AppLayout>
       <DienstplanPageClient 
-        initialData={dienstplanData}
+        initialData={safeInitialData}
         initialWeek={weekStart}
-        teams={teamData.teams}
+        teams={teamData.teams || []}
         practiceId={practiceId}
         userId={user.id}
       />

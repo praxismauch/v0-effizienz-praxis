@@ -16,35 +16,26 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
   const params = await props.params
   const memberId = params.id
   
-  console.log("[v0] Team member detail page accessed with ID:", memberId)
-  
   // Fetch user and practice data server-side
   const [user, practiceId] = await Promise.all([
     getCurrentUser(),
     getCurrentPracticeId(),
   ])
   
-  console.log("[v0] Team member detail - user:", user?.id, "practiceId:", practiceId)
-  
   // Redirect if not authenticated
   if (!user) {
-    console.log("[v0] No user, redirecting to login")
     redirect("/auth/login")
   }
   
   if (!practiceId) {
-    console.log("[v0] No practiceId, redirecting to dashboard")
     redirect("/dashboard")
   }
   
   // Fetch team member data server-side
-  console.log("[v0] About to fetch team member:", memberId, "for practice:", practiceId)
   const teamMember = await getTeamMemberById(memberId, practiceId)
-  console.log("[v0] Team member fetch result:", teamMember ? "Found" : "NOT FOUND", teamMember)
   
   // If team member not found, show 404
   if (!teamMember) {
-    console.log("[v0] Calling notFound() for member ID:", params.id)
     notFound()
   }
   

@@ -215,7 +215,7 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const supabaseResponse = await updateSession(request)

@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Mail, Briefcase, Building2, Calendar, Edit } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ArrowLeft, Mail, Briefcase, Building2, Calendar, Edit, FileText, ClipboardList, Briefcase as BriefcaseIcon, Clock, Folder, Laptop, Smartphone, Syringe } from "lucide-react"
 import Link from "next/link"
 
 export default async function TeamMemberDetailPage(props: { params: Promise<{ id: string }> }) {
@@ -90,54 +91,174 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span className="text-sm font-medium">E-Mail</span>
-                </div>
-                <p className="text-base">{teamMember.email || "—"}</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Briefcase className="h-4 w-4" />
-                  <span className="text-sm font-medium">Position</span>
-                </div>
-                <p className="text-base">{teamMember.position || teamMember.role || "—"}</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Building2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">Abteilung</span>
-                </div>
-                <p className="text-base">{teamMember.department || "—"}</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span className="text-sm font-medium">Mitglied seit</span>
-                </div>
-                <p className="text-base">
-                  {teamMember.created_at 
-                    ? new Date(teamMember.created_at).toLocaleDateString("de-DE")
-                    : "—"
-                  }
-                </p>
-              </div>
-            </div>
-
-            {teamMember.bio && (
-              <div className="space-y-2 pt-4 border-t">
-                <h3 className="text-sm font-medium text-muted-foreground">Über</h3>
-                <p className="text-base">{teamMember.bio}</p>
-              </div>
-            )}
-          </CardContent>
         </Card>
+
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9">
+            <TabsTrigger value="overview">Übersicht</TabsTrigger>
+            <TabsTrigger value="contracts">Verträge</TabsTrigger>
+            <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
+            <TabsTrigger value="competencies">Kompetenzen</TabsTrigger>
+            <TabsTrigger value="time">Zeiterfassung</TabsTrigger>
+            <TabsTrigger value="documents">Dokumente</TabsTrigger>
+            <TabsTrigger value="equipment">Arbeitsmittel</TabsTrigger>
+            <TabsTrigger value="devices">Geräte</TabsTrigger>
+            <TabsTrigger value="vaccination">Impfstatus</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Persönliche Informationen</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <span className="text-sm font-medium">E-Mail-Adresse</span>
+                    </div>
+                    <p className="text-base">{teamMember.email || "—"}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Briefcase className="h-4 w-4" />
+                      <span className="text-sm font-medium">Rolle</span>
+                    </div>
+                    <p className="text-base">{teamMember.position || teamMember.role || "—"}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Building2 className="h-4 w-4" />
+                      <span className="text-sm font-medium">Abteilung</span>
+                    </div>
+                    <p className="text-base">{teamMember.department || "—"}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-sm font-medium">Mitglied seit</span>
+                    </div>
+                    <p className="text-base">
+                      {teamMember.created_at 
+                        ? new Date(teamMember.created_at).toLocaleDateString("de-DE")
+                        : "—"
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                {teamMember.bio && (
+                  <div className="space-y-2 pt-4 border-t">
+                    <h3 className="text-sm font-medium text-muted-foreground">Über</h3>
+                    <p className="text-base">{teamMember.bio}</p>
+                  </div>
+                )}
+
+                <div className="space-y-2 pt-4 border-t">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <ClipboardList className="h-4 w-4" />
+                    <span className="text-sm font-medium">Teamzuweisungen</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Keine Teams zugewiesen
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="contracts" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Verträge</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Vertrags-Verwaltung wird geladen...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="responsibilities" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Zuständigkeiten</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Keine Zuständigkeiten zugewiesen</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="competencies" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Kompetenzen</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Keine Kompetenzen hinterlegt</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="time" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Zeiterfassung</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Zeiterfassungsdaten werden geladen...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documents" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dokumente</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Keine Dokumente vorhanden</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="equipment" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Arbeitsmittel</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Keine Arbeitsmittel zugewiesen</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="devices" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Geräte</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Keine Geräte zugewiesen</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="vaccination" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Impfstatus</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Kein Impfstatus hinterlegt</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   )

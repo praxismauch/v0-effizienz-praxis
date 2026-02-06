@@ -33,19 +33,34 @@ interface DienstplanPageClientProps {
   userId: string
 }
 
-export default function DienstplanPageClient({
+export default function DienstplanPageClient({ 
   initialData,
   initialWeek,
   teams,
   practiceId,
   userId,
 }: DienstplanPageClientProps) {
+  const { toast } = useToast()
+  
+  // Debug logging to understand what data is received
   console.log("[v0] DienstplanPageClient received:", {
     hasInitialData: !!initialData,
     initialWeek: initialWeek,
     teamMembers: initialData?.teamMembers?.length,
+    shiftTypes: initialData?.shiftTypes?.length,
+    schedules: initialData?.schedules?.length,
     teams: teams?.length,
-    practiceId,
+  })
+
+  // Core state - initialize with server data
+  const [activeTab, setActiveTab] = useState("schedule")
+  // Ensure currentWeek is never null - default to current week if initialWeek is invalid
+  const [currentWeek, setCurrentWeek] = useState(() => {
+    if (!initialWeek || isNaN(new Date(initialWeek).getTime())) {
+      console.log("[v0] Invalid initialWeek, using fallback")
+      return startOfWeek(new Date(), { weekStartsOn: 1 })
+    }
+    return initialWeek
   })
 
   const router = useRouter()

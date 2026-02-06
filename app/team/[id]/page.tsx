@@ -54,7 +54,9 @@ export default async function TeamMemberDetailPage({ params }: { params: { id: s
       .slice(0, 2)
   }
 
-  const displayName = teamMember.name || teamMember.email || "Teammitglied"
+  // Build display name from first_name and last_name
+  const fullName = [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ")
+  const displayName = fullName || teamMember.email || "Teammitglied"
   const initials = displayName ? getInitials(displayName) : "TM"
 
   return (

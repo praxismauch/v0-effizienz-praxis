@@ -224,10 +224,13 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
 
       // Refetch team members to get updated avatar
       await mutate(SWR_KEYS.teamMembers(practiceId))
-      
+
       toast.success("Änderungen gespeichert", {
         description: "Die Änderungen wurden erfolgreich gespeichert.",
       })
+      
+      // Refresh server components before navigating
+      router.refresh()
       router.push(`/team/${memberId}`)
     } catch (error) {
       console.error("Error updating team member profile:", error)

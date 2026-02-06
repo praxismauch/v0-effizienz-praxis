@@ -61,6 +61,7 @@ export async function PUT(
     if (body.role !== undefined) teamMemberUpdates.role = body.role
     if (body.department !== undefined) teamMemberUpdates.department = body.department
     if (body.email !== undefined) teamMemberUpdates.email = body.email
+    if (body.avatar !== undefined) teamMemberUpdates.avatar_url = body.avatar
     if (body.isActive !== undefined) teamMemberUpdates.status = body.isActive ? "active" : "inactive"
     if (body.status !== undefined) teamMemberUpdates.status = body.status
 

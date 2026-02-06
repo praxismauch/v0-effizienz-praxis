@@ -18,22 +18,42 @@ import ShiftTypesTab from "./components/shift-types-tab"
 import ShiftTypeDialog from "./components/shift-type-dialog"
 import type { TeamMember, ShiftType, Shift, Availability, SwapRequest, Violation, DienstplanStats } from "./types"
 
-export default function DienstplanPageClient() {
+interface DienstplanPageClientProps {
+  initialData: {
+    teamMembers: any[]
+    shiftTypes: any[]
+    schedules: any[]
+    availability: any[]
+    swapRequests: any[]
+  }
+  initialWeek: Date
+  teams: any[]
+  practiceId: string
+  userId: string
+}
+
+export default function DienstplanPageClient({
+  initialData,
+  initialWeek,
+  teams,
+  practiceId,
+  userId,
+}: DienstplanPageClientProps) {
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
 
-  // Core state
+  // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
-  const [isLoading, setIsLoading] = useState(true)
+  const [currentWeek, setCurrentWeek] = useState(initialWeek)
+  const [isLoading, setIsLoading] = useState(false) // No initial loading needed
 
-  // Data state - using useState with functional updates
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([])
-  const [schedules, setSchedules] = useState<Shift[]>([])
-  const [availability, setAvailability] = useState<Availability[]>([])
-  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>([])
+  // Data state - initialize with server-fetched data
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData.teamMembers)
+  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(initialData.shiftTypes)
+  const [schedules, setSchedules] = useState<Shift[]>(initialData.schedules)
+  const [availability, setAvailability] = useState<Availability[]>(initialData.availability)
+  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(initialData.swapRequests)
   const [violations, setViolations] = useState<Violation[]>([])
 
   // Dialog state for shift types
@@ -63,18 +83,16 @@ export default function DienstplanPageClient() {
 
   // Fetch all data - returns a promise that resolves when data is loaded
   const fetchData = useCallback(async () => {
-    if (!currentPractice) return
-
     const weekStart = format(currentWeek, "yyyy-MM-dd")
     const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "yyyy-MM-dd")
 
     try {
       const [teamRes, shiftTypesRes, schedulesRes, availabilityRes, swapRes] = await Promise.all([
-        fetch(`/api/practices/${currentPractice.id}/team-members`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/shift-types`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/schedules?start=${weekStart}&end=${weekEnd}`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/availability`, { cache: "no-store" }),
-        fetch(`/api/practices/${currentPractice.id}/dienstplan/swap-requests?status=pending`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/team-members`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/dienstplan/shift-types`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/dienstplan/schedules?start=${weekStart}&end=${weekEnd}`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/dienstplan/availability`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/dienstplan/swap-requests?status=pending`, { cache: "no-store" }),
       ])
 
       // Use functional updates to ensure state changes are detected
@@ -102,15 +120,16 @@ export default function DienstplanPageClient() {
       console.error("Error fetching dienstplan data:", error)
       toast({ title: "Fehler", description: "Daten konnten nicht geladen werden", variant: "destructive" })
     }
-  }, [currentPractice, currentWeek, toast])
+  }, [practiceId, currentWeek, toast])
 
-  // Initial load and week change
+  // Only refetch when week changes (initial data comes from server)
   useEffect(() => {
-    if (!practiceLoading && currentPractice) {
+    // Skip initial render since we have server data
+    if (currentWeek.getTime() !== initialWeek.getTime()) {
       setIsLoading(true)
       fetchData().finally(() => setIsLoading(false))
     }
-  }, [fetchData, practiceLoading, currentPractice])
+  }, [currentWeek, fetchData, initialWeek])
 
   // Week navigation
   const goToPreviousWeek = () => setCurrentWeek((prev) => subWeeks(prev, 1))
@@ -120,7 +139,7 @@ export default function DienstplanPageClient() {
   // Handlers - using functional state updates for instant UI updates
   const handleApproveSwap = async (id: string) => {
     try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/dienstplan/swap-requests/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/swap-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "approved" }),
@@ -139,7 +158,7 @@ export default function DienstplanPageClient() {
 
   const handleRejectSwap = async (id: string) => {
     try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/dienstplan/swap-requests/${id}`, {
+      const res = await fetch(`/api/practices/${practiceId}/dienstplan/swap-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "rejected" }),

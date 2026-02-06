@@ -1,67 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { Ratelimit } from "@upstash/ratelimit"
-import { Redis } from "@upstash/redis"
-
-// Lazy initialization of Redis to ensure env vars are loaded
-let ratelimit: Ratelimit | null = null
-
-function getRateLimiter() {
-  if (!ratelimit) {
-    const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL || "",
-      token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
-    })
-
-    ratelimit = new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(60, "1 m"), // 60 requests per minute
-      analytics: true,
-    })
-  }
-  return ratelimit
-}
 
 // Main proxy function (renamed from middleware in Next.js 16)
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Apply rate limiting to API routes ONLY if Redis is configured
-  if (pathname.startsWith("/api/")) {
-    const hasRedisConfig = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    
-    if (hasRedisConfig) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || 
-                 request.headers.get("x-real-ip") || 
-                 "unknown"
-
-      try {
-        const limiter = getRateLimiter()
-        const { success } = await limiter.limit(ip)
-
-        if (!success) {
-          return new NextResponse(
-            JSON.stringify({
-              error: "Too many requests",
-              message: "Please slow down and try again later.",
-            }),
-            {
-              status: 429,
-              headers: {
-                "Content-Type": "application/json",
-                "Retry-After": "60",
-                "X-Frame-Options": "DENY",
-                "X-Content-Type-Options": "nosniff",
-                "Referrer-Policy": "strict-origin-when-cross-origin",
-              },
-            }
-          )
-        }
-      } catch (error) {
-        // Rate limiting failed - silently continue without blocking request
-      }
-    }
-    // If no Redis config, skip rate limiting (e.g., in v0 preview environment)
-  }
+  // Note: Rate limiting disabled in v0 preview environment
+  // In production, add Upstash Redis rate limiting here
 
   // Create response that passes through to API routes
   const response = NextResponse.next({

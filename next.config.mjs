@@ -30,6 +30,9 @@ const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["googleapis", "nodemailer", "bcryptjs"],
   
+  // Next.js 16: React Compiler (moved from experimental in v16)
+  reactCompiler: false, // Enable when ready for React Compiler
+  
   // Next.js 16: Experimental features
   experimental: {
     serverMinification: true,
@@ -52,7 +55,6 @@ const nextConfig = {
       'react-hook-form',
       'zod',
     ],
-    reactCompiler: false, // Enable when ready for React Compiler
   },
   
   // Webpack optimizations for bundle size

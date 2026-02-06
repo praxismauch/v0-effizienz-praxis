@@ -156,8 +156,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         firstName: firstName,
         lastName: lastName,
         name: name,
-        email: "",
+        email: member.email || "",
         role: member.role || "user",
+        position: member.position || member.role || "user",
+        department: member.department || null,
         avatar: avatar,
         avatar_url: avatar,
         practiceId: practiceId,
@@ -166,9 +168,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         status: member.status || "active",
         userIsActive: true,
         joinedAt: member.joined_date || member.created_at || new Date().toISOString(),
+        joined_date: member.joined_date || member.created_at || new Date().toISOString(),
         created_at: member.created_at,
         permissions: [],
         lastActive: new Date().toISOString(),
+        skills: member.skills || [],
         team_ids: member.user_id
           ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
           : [],

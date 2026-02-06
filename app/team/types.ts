@@ -34,6 +34,11 @@ export interface TeamMember {
   team_ids?: string[]
   status?: string
   skills?: string[]
+  department?: string
+  joined_date?: string
+  joinedAt?: string
+  is_active?: boolean
+  isActive?: boolean
 }
 
 export interface SortableTeamCardProps {

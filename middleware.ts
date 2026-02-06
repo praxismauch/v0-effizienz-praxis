@@ -15,12 +15,16 @@ const ratelimit = new Ratelimit({
   analytics: true,
 })
 
-// Update Supabase session
-async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
+// Main middleware function
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Create the response - let the request pass through
+  let response = NextResponse.next({
     request,
   })
 
+  // Update Supabase session without blocking the request
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -30,40 +34,17 @@ async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
         },
       },
     }
   )
 
-  // Refresh session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  return supabaseResponse
-}
-
-// Add security headers
-function addSecurityHeaders(response: NextResponse) {
-  response.headers.set("X-Frame-Options", "DENY")
-  response.headers.set("X-Content-Type-Options", "nosniff")
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-  return response
-}
-
-// Main middleware function
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Update Supabase session
-  const supabaseResponse = await updateSession(request)
+  // Refresh session if expired - this updates cookies automatically
+  await supabase.auth.getUser()
 
   // Apply rate limiting to API routes
   if (pathname.startsWith("/api/")) {
@@ -84,15 +65,21 @@ export async function middleware(request: NextRequest) {
           headers: {
             "Content-Type": "application/json",
             "Retry-After": "60",
+            "X-Frame-Options": "DENY",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
           },
         }
       )
     }
-
-    return addSecurityHeaders(supabaseResponse)
   }
 
-  return addSecurityHeaders(supabaseResponse)
+  // Add security headers to the response
+  response.headers.set("X-Frame-Options", "DENY")
+  response.headers.set("X-Content-Type-Options", "nosniff")
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+
+  return response
 }
 
 export const config = {

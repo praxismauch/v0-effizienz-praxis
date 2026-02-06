@@ -101,14 +101,12 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
   try {
     const supabase = await createServerClient()
     
-    // Convert practiceId to number since database stores it as integer
-    const practiceIdNum = parseInt(practiceId, 10)
-    console.log("[v0] Fetching team members for practice:", practiceIdNum, "(from string:", practiceId, ")")
+    console.log("[v0] Fetching team members for practice:", practiceId)
     
     const { data, error } = await supabase
       .from("team_members")
       .select("*")
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .order("created_at")
 
     if (error) {
@@ -116,7 +114,7 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
       return []
     }
 
-    console.log("[v0] Found", data?.length || 0, "team members for practice", practiceIdNum)
+    console.log("[v0] Found", data?.length || 0, "team members for practice", practiceId)
     return data || []
   } catch (error) {
     console.error("[v0] Error getting team members by practice:", error)
@@ -133,14 +131,12 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
     
     console.log("[v0] Fetching team member:", memberId, "for practice:", practiceId)
     
-    const practiceIdNum = parseInt(practiceId, 10)
-    
     const { data, error } = await supabase
       .from("team_members")
       .select("*")
       .eq("id", memberId)
-      .eq("practice_id", practiceIdNum)
-      .single()
+      .eq("practice_id", practiceId)
+      .maybeSingle()
 
     if (error) {
       console.error("[v0] Error fetching team member by ID:", error)

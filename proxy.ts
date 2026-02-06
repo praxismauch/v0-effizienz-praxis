@@ -2,19 +2,12 @@ import { type NextRequest, NextResponse } from "next/server"
 
 // Main proxy function (renamed from middleware in Next.js 16)
 export async function proxy(request: NextRequest) {
-  console.log("[v0] Proxy v2 - NO rate limiting (cache cleared)")
-  
-  const { pathname } = request.nextUrl
-
-  // Note: Rate limiting disabled in v0 preview environment
-  // In production, add Upstash Redis rate limiting here
-
-  // Create response that passes through to API routes
+  // Create response that passes through to all routes
   const response = NextResponse.next({
     request,
   })
 
-  // Add security headers
+  // Add security headers to all responses
   response.headers.set("X-Frame-Options", "DENY")
   response.headers.set("X-Content-Type-Options", "nosniff")
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")

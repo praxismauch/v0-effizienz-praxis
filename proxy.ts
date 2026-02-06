@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 
 // Main proxy function (renamed from middleware in Next.js 16)
 export async function proxy(request: NextRequest) {
+  console.log("[v0] Proxy v2 - NO rate limiting (cache cleared)")
+  
   const { pathname } = request.nextUrl
 
   // Note: Rate limiting disabled in v0 preview environment

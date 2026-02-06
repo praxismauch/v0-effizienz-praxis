@@ -15,8 +15,8 @@ const ratelimit = new Ratelimit({
   analytics: true,
 })
 
-// Main middleware function
-export async function middleware(request: NextRequest) {
+// Main proxy function (renamed from middleware in Next.js 16)
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Apply rate limiting to API routes FIRST (before any other processing)

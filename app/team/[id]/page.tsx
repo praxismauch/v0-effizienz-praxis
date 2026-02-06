@@ -13,6 +13,7 @@ import { ArrowLeft, Mail, Briefcase, Building2, Calendar, Edit, FileText, Clipbo
 import Link from "next/link"
 import { ContractsManager } from "@/components/team/contracts-manager"
 import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
+import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 
 export default async function TeamMemberDetailPage(props: { params: Promise<{ id: string }> }) {
   // Await params in Next.js 16
@@ -182,14 +183,11 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="responsibilities" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Zuständigkeiten</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Keine Zuständigkeiten zugewiesen</p>
-              </CardContent>
-            </Card>
+            <TeamMemberResponsibilitiesTab 
+              memberId={memberId}
+              practiceId={practiceId}
+              memberName={displayName}
+            />
           </TabsContent>
 
           <TabsContent value="competencies" className="mt-6">

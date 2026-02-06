@@ -3,6 +3,7 @@ import { getCurrentUser, getCurrentPracticeId } from "@/lib/server/get-current-u
 import { getDienstplanData } from "@/lib/server/get-dienstplan-data"
 import { getAllTeamData } from "@/lib/server/get-team-data"
 import { startOfWeek } from "date-fns"
+import { AppLayout } from "@/components/app-layout"
 import DienstplanPageClient from "./page-client"
 
 export const metadata = {
@@ -47,12 +48,14 @@ export default async function DienstplanPage({
   ])
 
   return (
-    <DienstplanPageClient 
-      initialData={dienstplanData}
-      initialWeek={weekStart}
-      teams={teamData.teams}
-      practiceId={practiceId}
-      userId={user.id}
-    />
+    <AppLayout>
+      <DienstplanPageClient 
+        initialData={dienstplanData}
+        initialWeek={weekStart}
+        teams={teamData.teams}
+        practiceId={practiceId}
+        userId={user.id}
+      />
+    </AppLayout>
   )
 }

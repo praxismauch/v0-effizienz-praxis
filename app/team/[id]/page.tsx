@@ -15,6 +15,7 @@ import { ContractsManager } from "@/components/team/contracts-manager"
 import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
 import { TeamMemberResponsibilitiesTab } from "@/components/team/team-member-responsibilities-tab"
 import { TeamMemberSkillsTab } from "@/components/team/team-member-skills-tab"
+import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiterfassung-tab"
 
 export default async function TeamMemberDetailPage(props: { params: Promise<{ id: string }> }) {
   // Await params in Next.js 16
@@ -202,14 +203,11 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="time" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Zeiterfassung</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Zeiterfassungsdaten werden geladen...</p>
-              </CardContent>
-            </Card>
+            <TeamMemberZeiterfassungTab 
+              memberId={memberId}
+              practiceId={practiceId}
+              memberName={displayName}
+            />
           </TabsContent>
 
           <TabsContent value="documents" className="mt-6">

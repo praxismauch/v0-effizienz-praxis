@@ -61,11 +61,11 @@ async function updateSession(request: NextRequest) {
   }
 }
 
-// Main proxy function
-export default async function proxy(request: NextRequest) {
+// Main proxy function - exported as named export
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const supabaseResponse = await updateSession(request)
+  const supabaseResponse = updateSession(request)
 
   if (pathname.startsWith("/api/")) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "unknown"
@@ -86,10 +86,10 @@ export default async function proxy(request: NextRequest) {
       )
     }
 
-    return addSecurityHeaders(supabaseResponse)
+    return supabaseResponse.then(addSecurityHeaders)
   }
 
-  return addSecurityHeaders(supabaseResponse)
+  return supabaseResponse.then(addSecurityHeaders)
 }
 
 export const config = {

@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Mail, Briefcase, Building2, Calendar, Edit, FileText, ClipboardList, Briefcase as BriefcaseIcon, Clock, Folder, Laptop, Smartphone, Syringe } from "lucide-react"
 import Link from "next/link"
+import { ContractsManager } from "@/components/team/contracts-manager"
+import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
 
 export default async function TeamMemberDetailPage(props: { params: Promise<{ id: string }> }) {
   // Await params in Next.js 16
@@ -172,14 +174,11 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="contracts" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Verträge</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Vertrags-Verwaltung wird geladen...</p>
-              </CardContent>
-            </Card>
+            <ContractsManager 
+              memberId={memberId}
+              memberName={displayName}
+              practiceId={practiceId}
+            />
           </TabsContent>
 
           <TabsContent value="responsibilities" className="mt-6">
@@ -216,14 +215,13 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="documents" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Dokumente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Keine Dokumente vorhanden</p>
-              </CardContent>
-            </Card>
+            <TeamMemberDocumentsTab 
+              teamMemberId={memberId}
+              practiceId={practiceId}
+              isAdmin={true}
+              currentUserId={user.id}
+              memberUserId={teamMember.user_id}
+            />
           </TabsContent>
 
           <TabsContent value="equipment" className="mt-6">

@@ -70,11 +70,15 @@ const getAvailabilityLabel = (type: string) => {
 }
 
 export default function AvailabilityTab({
-  availability,
-  teamMembers,
+  availability: availabilityProp,
+  teamMembers: teamMembersProp,
   practiceId,
   onRefresh,
 }: AvailabilityTabProps) {
+  // Add null safety guards
+  const availability = availabilityProp || []
+  const teamMembers = teamMembersProp || []
+  
   const { toast } = useToast()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)

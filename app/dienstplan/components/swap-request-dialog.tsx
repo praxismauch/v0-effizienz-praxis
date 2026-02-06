@@ -43,13 +43,18 @@ export default function SwapRequestDialog({
   open,
   onOpenChange,
   currentShift,
-  allShifts,
-  shiftTypes,
-  teamMembers,
+  allShifts: allShiftsProp,
+  shiftTypes: shiftTypesProp,
+  teamMembers: teamMembersProp,
   practiceId,
   currentUserId,
   onSuccess,
 }: SwapRequestDialogProps) {
+  // Add null safety guards
+  const allShifts = allShiftsProp || []
+  const shiftTypes = shiftTypesProp || []
+  const teamMembers = teamMembersProp || []
+  
   const [targetShiftId, setTargetShiftId] = useState("")
   const [reason, setReason] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)

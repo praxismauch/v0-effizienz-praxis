@@ -14,7 +14,10 @@ interface ShiftTypesTabProps {
   isLoading?: boolean
 }
 
-export default function ShiftTypesTab({ shiftTypes, onAdd, onEdit, onDelete, isLoading }: ShiftTypesTabProps) {
+export default function ShiftTypesTab({ shiftTypes: shiftTypesProp, onAdd, onEdit, onDelete, isLoading }: ShiftTypesTabProps) {
+  // Add null safety guard
+  const shiftTypes = shiftTypesProp || []
+  
   // Safe handlers with fallbacks
   const handleAdd = () => {
     if (typeof onAdd === "function") {

@@ -52,10 +52,14 @@ export default function ScheduleTemplateDialog({
   open,
   onOpenChange,
   practiceId,
-  shiftTypes,
-  availableRoles,
+  shiftTypes: shiftTypesProp,
+  availableRoles: availableRolesProp,
   onApplyTemplate,
 }: ScheduleTemplateDialogProps) {
+  // Add null safety guards
+  const shiftTypes = shiftTypesProp || []
+  const availableRoles = availableRolesProp || []
+  
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("templates")
   const [templates, setTemplates] = useState<ScheduleTemplate[]>([])

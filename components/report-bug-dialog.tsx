@@ -67,6 +67,8 @@ function ReportBugDialog({
   const [description, setDescription] = useState("")
   const [type, setType] = useState("bug")
   const [priority, setPriority] = useState("medium")
+  const [category, setCategory] = useState("")
+  const [reportedBy, setReportedBy] = useState("")
   const [screenshots, setScreenshots] = useState<string[]>([])
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -80,6 +82,16 @@ function ReportBugDialog({
 
   const typeOptions = types ? typesToOptions(types) : []
   const priorityOptions = priorities ? prioritiesToOptions(priorities) : []
+  
+  const categoryOptions = [
+    { value: "ui", label: "UI/UX" },
+    { value: "functionality", label: "Funktionalität" },
+    { value: "performance", label: "Performance" },
+    { value: "security", label: "Sicherheit" },
+    { value: "data", label: "Daten" },
+    { value: "integration", label: "Integration" },
+    { value: "other", label: "Sonstiges" },
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -239,6 +251,8 @@ function ReportBugDialog({
           description,
           type,
           priority,
+          category: category || undefined,
+          reported_by: reportedBy || undefined,
           screenshot_urls: screenshots,
           practice_id: currentUser?.practice_id || null,
           user_name: currentUser?.name,
@@ -267,6 +281,8 @@ function ReportBugDialog({
       setDescription("")
       setType("bug")
       setPriority("medium")
+      setCategory("")
+      setReportedBy("")
       setScreenshots([])
     } catch (error) {
       console.error("[v0] Error creating ticket:", error)
@@ -433,6 +449,34 @@ function ReportBugDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">Kategorie</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Kategorie auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reportedBy">Gemeldet von</Label>
+                <Input
+                  id="reportedBy"
+                  placeholder="Name (optional)"
+                  value={reportedBy}
+                  onChange={(e) => setReportedBy(e.target.value)}
+                />
               </div>
             </div>
 

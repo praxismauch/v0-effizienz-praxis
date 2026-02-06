@@ -3,17 +3,24 @@ import { createServerClient } from "./lib/supabase/server"
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 
-// Create Upstash Redis rate limiter
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-})
+// Lazy initialization of Redis to ensure env vars are loaded
+let ratelimit: Ratelimit | null = null
 
-const ratelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(60, "1 m"), // 60 requests per minute
-  analytics: true,
-})
+function getRateLimiter() {
+  if (!ratelimit) {
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL || "",
+      token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
+    })
+
+    ratelimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(60, "1 m"), // 60 requests per minute
+      analytics: true,
+    })
+  }
+  return ratelimit
+}
 
 // Main proxy function (renamed from middleware in Next.js 16)
 export async function proxy(request: NextRequest) {
@@ -25,7 +32,9 @@ export async function proxy(request: NextRequest) {
                request.headers.get("x-real-ip") || 
                "unknown"
 
-    const { success } = await ratelimit.limit(ip)
+    // Get rate limiter (lazy initialization)
+    const limiter = getRateLimiter()
+    const { success } = await limiter.limit(ip)
 
     if (!success) {
       return new NextResponse(

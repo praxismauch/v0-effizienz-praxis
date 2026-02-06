@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
+import { createServerClient } from "./lib/supabase/server"
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 
@@ -15,57 +15,11 @@ const ratelimit = new Ratelimit({
   analytics: true,
 })
 
-// Update Supabase session
-async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // Refresh session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  return supabaseResponse
-}
-
-// Add security headers
-function addSecurityHeaders(response: NextResponse) {
-  response.headers.set("X-Frame-Options", "DENY")
-  response.headers.set("X-Content-Type-Options", "nosniff")
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-  return response
-}
-
 // Main middleware function
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Update Supabase session
-  const supabaseResponse = await updateSession(request)
-
-  // Apply rate limiting to API routes
+  // Apply rate limiting to API routes FIRST (before any other processing)
   if (pathname.startsWith("/api/")) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || 
                request.headers.get("x-real-ip") || 
@@ -84,15 +38,35 @@ export async function middleware(request: NextRequest) {
           headers: {
             "Content-Type": "application/json",
             "Retry-After": "60",
+            "X-Frame-Options": "DENY",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
           },
         }
       )
     }
-
-    return addSecurityHeaders(supabaseResponse)
   }
 
-  return addSecurityHeaders(supabaseResponse)
+  // Create response that passes through to API routes
+  const response = NextResponse.next({
+    request,
+  })
+
+  // Update Supabase session - silently handle errors to not crash middleware
+  try {
+    const supabase = await createServerClient()
+    await supabase.auth.getUser()
+  } catch (error) {
+    // Silently handle - don't crash the middleware
+    console.error("[middleware] Supabase session update failed:", error)
+  }
+
+  // Add security headers
+  response.headers.set("X-Frame-Options", "DENY")
+  response.headers.set("X-Content-Type-Options", "nosniff")
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+
+  return response
 }
 
 export const config = {

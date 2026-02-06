@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "./lib/supabase/config"
+import { createServerClient } from "./lib/supabase/server"
 
 // Rate limiting map (edge-safe, in-memory)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()

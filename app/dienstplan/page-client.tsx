@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronLeft, ChevronRight, Calendar, Users, ArrowLeftRight, Clock, Settings } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Users, ArrowLeftRight, Clock, Settings, AlertTriangle } from "lucide-react"
 
 import ScheduleTab from "./components/schedule-tab"
 import AvailabilityTab from "./components/availability-tab"
@@ -363,17 +363,27 @@ export default function DienstplanPageClient({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="schedule">
-          <ScheduleTab
-            schedules={schedules}
-            teamMembers={teamMembers}
-            shiftTypes={shiftTypes}
-            weekDays={weekDays}
-            practiceId={currentPractice.id}
-            onRefresh={fetchData}
-            setSchedules={setSchedules}
-          />
-        </TabsContent>
+          <TabsContent value="schedule">
+            <ScheduleTab
+              weekDays={weekDays}
+              schedules={schedules}
+              teamMembers={teamMembers}
+              shiftTypes={shiftTypes}
+              practiceId={practiceId}
+              onRefresh={fetchData}
+              setSchedules={setSchedules}
+            />
+          </TabsContent>
+
+          <TabsContent value="availability">
+            <AvailabilityTab
+              availability={availability}
+              teamMembers={teamMembers}
+              currentWeek={currentWeek}
+              practiceId={practiceId}
+              onRefresh={fetchData}
+            />
+          </TabsContent>
 
         <TabsContent value="availability">
           <AvailabilityTab
@@ -384,14 +394,26 @@ export default function DienstplanPageClient({
           />
         </TabsContent>
 
-        <TabsContent value="swaps">
-          <SwapRequestsTab
-            swapRequests={swapRequests}
-            onApprove={handleApproveSwap}
-            onReject={handleRejectSwap}
-            isLoading={isLoading}
-          />
-        </TabsContent>
+          <TabsContent value="swaps">
+            <SwapRequestsTab
+              swapRequests={swapRequests}
+              teamMembers={teamMembers}
+              schedules={schedules}
+              practiceId={practiceId}
+              onApprove={handleApproveSwap}
+              onReject={handleRejectSwap}
+            />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <ShiftTypesTab
+              shiftTypes={shiftTypes}
+              practiceId={practiceId}
+              onAdd={handleAddShiftType}
+              onEdit={handleEditShiftType}
+              onDelete={handleDeleteShiftType}
+            />
+          </TabsContent>
 
         <TabsContent value="settings">
           <ShiftTypesTab
@@ -409,6 +431,7 @@ export default function DienstplanPageClient({
         open={shiftTypeDialogOpen}
         onOpenChange={setShiftTypeDialogOpen}
         shiftType={editingShiftType}
+        practiceId={practiceId}
         onSave={handleSaveShiftType}
       />
     </div>

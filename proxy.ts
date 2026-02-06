@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+console.log("[v0] ===== PROXY V3 LOADED - SIMPLIFIED VERSION =====")
+
 // Main proxy function (renamed from middleware in Next.js 16)
 export async function proxy(request: NextRequest) {
   // Create response that passes through to all routes

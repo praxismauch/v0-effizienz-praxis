@@ -116,10 +116,7 @@ function TodoMenuBar({
 
         {/* Create Todo Button */}
         <Button
-          onClick={() => {
-            console.log("[v0] Create Todo button clicked")
-            onCreateTodo()
-          }}
+          onClick={onCreateTodo}
           className="gap-2"
         >
           <Plus className="h-4 w-4" />

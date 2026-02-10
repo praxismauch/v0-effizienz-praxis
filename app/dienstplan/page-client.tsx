@@ -55,7 +55,6 @@ export default function DienstplanPageClient({
   const router = useRouter()
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const { toast } = useToast()
 
   // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")

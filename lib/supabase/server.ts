@@ -18,21 +18,28 @@ export async function createClient() {
   const supabaseAnonKey = getSupabaseAnonKey()
 
   if (!hasSupabaseConfig()) {
-    // Supabase not configured - return mock client that supports method chaining
-    const mockResult = { data: null, error: null }
-    const chainable: Record<string, unknown> = {}
-    const methods = ["select", "insert", "update", "delete", "upsert", "eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike", "is", "in", "contains", "containedBy", "range", "textSearch", "match", "not", "or", "filter", "order", "limit", "single", "maybeSingle", "csv", "then"]
-    for (const method of methods) {
-      if (method === "then") {
-        chainable[method] = (resolve: (value: typeof mockResult) => void) => resolve(mockResult)
-      } else if (method === "single" || method === "maybeSingle") {
-        chainable[method] = () => ({ ...chainable, data: null, error: null })
-      } else {
-        chainable[method] = () => chainable
+    // Supabase not configured - return mock client that supports full method chaining
+    // This ensures all query builder patterns (e.g. .from().select().eq().gte().order()) work
+    const mockResult = { data: null, error: null, count: null, status: 200, statusText: "OK" }
+
+    function createChainable(): Record<string, unknown> {
+      const chainable: Record<string, unknown> = { ...mockResult }
+      const handler = () => createChainable()
+      const methods = [
+        "select", "insert", "update", "delete", "upsert",
+        "eq", "neq", "gt", "gte", "lt", "lte",
+        "like", "ilike", "is", "in", "contains", "containedBy",
+        "range", "textSearch", "match", "not", "or", "and", "filter",
+        "order", "limit", "offset", "single", "maybeSingle", "csv",
+        "returns", "throwOnError", "abortSignal", "rollback",
+      ]
+      for (const method of methods) {
+        chainable[method] = handler
       }
+      // Make it thenable so `await supabase.from(...).select(...)...` resolves to mockResult
+      chainable.then = (resolve: (value: typeof mockResult) => void) => Promise.resolve(resolve(mockResult))
+      return chainable
     }
-    // Make chainable also act as a thenable (Promise-like) so await works
-    Object.assign(chainable, mockResult)
 
     return {
       auth: {
@@ -42,8 +49,17 @@ export async function createClient() {
         signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
         signUp: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
       },
-      from: () => chainable,
+      from: () => createChainable(),
       rpc: async () => mockResult,
+      storage: {
+        from: () => ({
+          upload: async () => ({ data: null, error: null }),
+          download: async () => ({ data: null, error: null }),
+          getPublicUrl: () => ({ data: { publicUrl: "" } }),
+          remove: async () => ({ data: null, error: null }),
+          list: async () => ({ data: null, error: null }),
+        }),
+      },
     } as unknown as ReturnType<typeof supabaseCreateServerClient>
   }
 

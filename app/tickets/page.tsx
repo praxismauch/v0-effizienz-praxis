@@ -655,6 +655,12 @@ export default function TicketsPage() {
                                                   <span>Wird bearbeitet</span>
                                                 </div>
                                               )}
+                                              {ticket.status === "to_test" && (
+                                                <div className="flex items-center gap-2 text-purple-600">
+                                                  <Clock className="h-4 w-4" />
+                                                  <span>Zu testen</span>
+                                                </div>
+                                              )}
                                               {ticket.status === "resolved" && (
                                                 <div className="flex items-center gap-2 text-green-600">
                                                   <CheckCircle className="h-4 w-4" />
@@ -699,6 +705,12 @@ export default function TicketsPage() {
                                 <div className="flex items-center gap-2 text-yellow-600">
                                   <MessageSquare className="h-4 w-4" />
                                   <span>Wird bearbeitet</span>
+                                </div>
+                              )}
+                              {ticket.status === "to_test" && (
+                                <div className="flex items-center gap-2 text-purple-600">
+                                  <Clock className="h-4 w-4" />
+                                  <span>Zu testen</span>
                                 </div>
                               )}
                               {ticket.status === "resolved" && (

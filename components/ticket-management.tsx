@@ -49,7 +49,7 @@ interface TicketItem {
   id: string
   title: string
   description: string
-  status: "open" | "in_progress" | "resolved" | "closed" | "wont_fix"
+  status: "open" | "in_progress" | "to_test" | "resolved" | "closed" | "wont_fix"
   priority: "low" | "medium" | "high" | "urgent"
   type: string
   practice_id: string
@@ -279,6 +279,7 @@ export default function TicketManagement() {
       if (activeStatusTab === "alle") return true
       if (activeStatusTab === "offen") return ticket.status === "open"
       if (activeStatusTab === "in_bearbeitung") return ticket.status === "in_progress"
+      if (activeStatusTab === "zu_testen") return ticket.status === "to_test"
       if (activeStatusTab === "archiv") {
         return ["closed", "resolved", "wont_fix"].includes(ticket.status)
       }
@@ -442,7 +443,7 @@ export default function TicketManagement() {
       </Card>
 
       <Tabs value={activeStatusTab} onValueChange={setActiveStatusTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="offen">
             Offen
             <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">
@@ -453,6 +454,12 @@ export default function TicketManagement() {
             In Bearbeitung
             <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">
               {tickets.filter((t) => t.status === "in_progress").length}
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="zu_testen">
+            Zu testen
+            <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">
+              {tickets.filter((t) => t.status === "to_test").length}
             </span>
           </TabsTrigger>
           <TabsTrigger value="archiv">

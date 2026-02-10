@@ -29,6 +29,7 @@ import {
   ArrowUp,
   Minus,
   AlertTriangle,
+  FlaskConical,
   FolderOpen,
   Pencil,
 } from "lucide-react"
@@ -203,6 +204,10 @@ export function TicketCard({ ticket, onViewDetails, onEdit, onStatusChange, onPr
                 <DropdownMenuItem onClick={() => onStatusChange(ticket.id, "in_progress")}>
                   <PlayCircle className="h-4 w-4 mr-2 text-blue-500" />
                   In Bearbeitung
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onStatusChange(ticket.id, "to_test")}>
+                  <FlaskConical className="h-4 w-4 mr-2 text-purple-500" />
+                  Zu testen
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onStatusChange(ticket.id, "resolved")}>
                   <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />

@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Ticket, AlertCircle, PlayCircle, AlertTriangle } from "lucide-react"
+import { Ticket, AlertCircle, PlayCircle, AlertTriangle, FlaskConical } from "lucide-react"
 import type { TicketStats } from "../types"
 
 interface TicketStatsCardsProps {
@@ -10,7 +10,7 @@ interface TicketStatsCardsProps {
 
 export function TicketStatsCards({ stats }: TicketStatsCardsProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -43,6 +43,18 @@ export function TicketStatsCards({ stats }: TicketStatsCardsProps) {
               <p className="text-3xl font-bold text-blue-600">{stats.in_progress}</p>
             </div>
             <PlayCircle className="h-10 w-10 text-blue-600 opacity-50" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Zu testen</p>
+              <p className="text-3xl font-bold text-purple-600">{stats.to_test}</p>
+            </div>
+            <FlaskConical className="h-10 w-10 text-purple-600 opacity-50" />
           </div>
         </CardContent>
       </Card>

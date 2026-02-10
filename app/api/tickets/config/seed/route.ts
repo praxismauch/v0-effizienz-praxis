@@ -62,12 +62,20 @@ export async function POST(request: Request) {
         sort_order: 2,
       },
       {
+        value: "to_test",
+        label_de: "Zu testen",
+        label_en: "To Test",
+        color_class: "bg-purple-500",
+        icon_name: "FlaskConical",
+        sort_order: 3,
+      },
+      {
         value: "resolved",
         label_de: "Gelöst",
         label_en: "Resolved",
         color_class: "bg-green-500",
         icon_name: "CheckCircle2",
-        sort_order: 3,
+        sort_order: 4,
       },
       {
         value: "closed",
@@ -75,7 +83,7 @@ export async function POST(request: Request) {
         label_en: "Closed",
         color_class: "bg-gray-500",
         icon_name: "XCircle",
-        sort_order: 4,
+        sort_order: 5,
       },
       {
         value: "wont_fix",
@@ -83,7 +91,7 @@ export async function POST(request: Request) {
         label_en: "Won't Fix",
         color_class: "bg-red-500",
         icon_name: "Ban",
-        sort_order: 5,
+        sort_order: 6,
       },
     ]
 

@@ -18,8 +18,22 @@ export async function createClient() {
   const supabaseAnonKey = getSupabaseAnonKey()
 
   if (!hasSupabaseConfig()) {
-    // Supabase not configured - return mock client
-    // Return a mock client that will fail gracefully
+    // Supabase not configured - return mock client that supports method chaining
+    const mockResult = { data: null, error: null }
+    const chainable: Record<string, unknown> = {}
+    const methods = ["select", "insert", "update", "delete", "upsert", "eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike", "is", "in", "contains", "containedBy", "range", "textSearch", "match", "not", "or", "filter", "order", "limit", "single", "maybeSingle", "csv", "then"]
+    for (const method of methods) {
+      if (method === "then") {
+        chainable[method] = (resolve: (value: typeof mockResult) => void) => resolve(mockResult)
+      } else if (method === "single" || method === "maybeSingle") {
+        chainable[method] = () => ({ ...chainable, data: null, error: null })
+      } else {
+        chainable[method] = () => chainable
+      }
+    }
+    // Make chainable also act as a thenable (Promise-like) so await works
+    Object.assign(chainable, mockResult)
+
     return {
       auth: {
         getUser: async () => ({ data: { user: null }, error: null }),
@@ -28,12 +42,8 @@ export async function createClient() {
         signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
         signUp: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
       },
-      from: () => ({
-        select: () => ({ data: null, error: { message: "Supabase not configured" } }),
-        insert: () => ({ data: null, error: { message: "Supabase not configured" } }),
-        update: () => ({ data: null, error: { message: "Supabase not configured" } }),
-        delete: () => ({ data: null, error: { message: "Supabase not configured" } }),
-      }),
+      from: () => chainable,
+      rpc: async () => mockResult,
     } as unknown as ReturnType<typeof supabaseCreateServerClient>
   }
 

@@ -70,7 +70,7 @@ export function AppSidebarHeader({
                     : "text-sidebar-primary hover:text-sidebar-primary/80 hover:bg-sidebar-accent"
                 )}
               >
-                <span>MANAGEMENT</span>
+                <span>Super Admin</span>
                 <ChevronRight className="h-4 w-4 ml-auto" />
               </Link>
             </div>
@@ -97,7 +97,7 @@ export function AppSidebarHeader({
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right">
-              <span>Management</span>
+              <span>Super Admin</span>
             </TooltipContent>
           </Tooltip>
         </div>

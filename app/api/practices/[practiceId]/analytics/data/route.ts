@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { hasSupabaseConfig } from "@/lib/supabase/config"
 import { sub, startOfMonth, endOfMonth, format, startOfWeek, endOfWeek } from "date-fns"
 
 export const dynamic = "force-dynamic"
@@ -16,6 +17,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         },
         { status: 400 },
       )
+    }
+
+    if (!hasSupabaseConfig()) {
+      return NextResponse.json({
+        practiceGrowthData: [],
+        weeklyData: [],
+        todoStats: { total: 0, completed: 0, inProgress: 0, open: 0 },
+        ticketStats: { total: 0, open: 0, inProgress: 0, resolved: 0 },
+      })
     }
 
     const supabase = await createClient()

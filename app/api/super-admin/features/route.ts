@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { hasSupabaseConfig } from "@/lib/supabase/config"
 import { type NextRequest, NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
@@ -7,6 +8,10 @@ export const dynamic = "force-dynamic"
 // GET - Fetch all feature flags with optional practice-specific overrides
 export async function GET(request: NextRequest) {
   try {
+    if (!hasSupabaseConfig()) {
+      return NextResponse.json({ features: [], practiceOverrides: {}, practices: [] })
+    }
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -14,7 +19,6 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      console.log("[v0] Features API GET - Auth error or no user:", { authError })
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

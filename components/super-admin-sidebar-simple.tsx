@@ -993,7 +993,7 @@ export function SuperAdminSidebarSimple() {
                   )}
                 </button>
                 {(isSectionOpen || collapsed) && (
-                  <div className="mt-1 space-y-0.5">{section.items.map((item) => renderMenuItem(item))}</div>
+                  <div className="mt-1 ml-2 space-y-0.5">{section.items.map((item) => renderMenuItem(item))}</div>
                 )}
               </div>
             )

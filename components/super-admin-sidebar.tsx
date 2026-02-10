@@ -125,6 +125,8 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
   }, [])
 
   useEffect(() => {
+    if (!mounted) return
+    
     const loadSidebarState = async () => {
       // Always load from localStorage first for instant restore
       try {
@@ -148,7 +150,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           if (Array.isArray(parsed)) setFavorites(parsed)
         }
       } catch (e) {
-        console.warn("Failed to parse sidebar state from localStorage:", e)
+        console.warn("[v0] Failed to parse sidebar state from localStorage:", e)
       }
 
       // Then try API for database-backed state (overrides localStorage if available)
@@ -168,12 +170,11 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
             }
             if (Array.isArray(data.favorites) && data.favorites.length > 0) {
               setFavorites(data.favorites)
-              // Sync API data back to localStorage
               try { localStorage.setItem("superAdminFavorites", JSON.stringify(data.favorites)) } catch (e) {}
             }
           }
         } catch (error) {
-          console.debug("Error loading super admin sidebar state from API:", error)
+          console.debug("[v0] Error loading super admin sidebar state from API:", error)
         }
       }
     }

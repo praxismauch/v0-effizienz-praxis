@@ -127,6 +127,8 @@ export function SuperAdminSidebarSimple() {
 
   // Load sidebar state (collapsed, sections, expanded items, favorites)
   useEffect(() => {
+    if (!mounted) return
+
     const loadSidebarState = async () => {
       // Always load from localStorage first for instant restore
       try {
@@ -134,6 +136,7 @@ export function SuperAdminSidebarSimple() {
         const savedExpanded = localStorage.getItem("superAdminExpandedItems")
         const savedCollapsed = localStorage.getItem("superAdminSidebarCollapsed")
         const savedFavorites = localStorage.getItem("superAdminFavorites")
+        console.log("[v0] Simple sidebar load - localStorage favorites raw:", savedFavorites)
         if (savedSections) {
           const parsed = JSON.parse(savedSections)
           if (Array.isArray(parsed) && parsed.length > 0) setOpenSections(parsed)
@@ -147,6 +150,7 @@ export function SuperAdminSidebarSimple() {
         }
         if (savedFavorites) {
           const parsed = JSON.parse(savedFavorites)
+          console.log("[v0] Simple sidebar load - parsed favorites:", parsed)
           if (Array.isArray(parsed)) setFavorites(parsed)
         }
       } catch (e) {
@@ -157,20 +161,23 @@ export function SuperAdminSidebarSimple() {
       if (currentUser?.id) {
         try {
           const res = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=super-admin`)
+          console.log("[v0] Simple sidebar API response status:", res.status)
           if (res.ok) {
             const data = await res.json()
-            if (data.expanded_groups && Array.isArray(data.expanded_groups)) {
-              setOpenSections(data.expanded_groups)
+            const prefs = data.preferences || data
+            console.log("[v0] Simple sidebar API favorites:", prefs.favorites)
+            if (prefs.expanded_groups && Array.isArray(prefs.expanded_groups)) {
+              setOpenSections(prefs.expanded_groups)
             }
-            if (data.expanded_items && Array.isArray(data.expanded_items)) {
-              setExpandedItems(data.expanded_items)
+            if (prefs.expanded_items && Array.isArray(prefs.expanded_items)) {
+              setExpandedItems(prefs.expanded_items)
             }
-            if (typeof data.is_collapsed === "boolean") {
-              setCollapsed(data.is_collapsed)
+            if (typeof prefs.is_collapsed === "boolean") {
+              setCollapsed(prefs.is_collapsed)
             }
-            if (data.favorites && Array.isArray(data.favorites) && data.favorites.length > 0) {
-              setFavorites(data.favorites)
-              try { localStorage.setItem("superAdminFavorites", JSON.stringify(data.favorites)) } catch (e) {}
+            if (prefs.favorites && Array.isArray(prefs.favorites) && prefs.favorites.length > 0) {
+              setFavorites(prefs.favorites)
+              try { localStorage.setItem("superAdminFavorites", JSON.stringify(prefs.favorites)) } catch (e) {}
             }
           }
         } catch (error) {
@@ -179,10 +186,8 @@ export function SuperAdminSidebarSimple() {
       }
     }
 
-    if (mounted) {
-      loadSidebarState()
-    }
-  }, [currentUser, mounted])
+    loadSidebarState()
+  }, [currentUser?.id, mounted])
 
   // Load all badge counts
   useEffect(() => {
@@ -392,11 +397,18 @@ export function SuperAdminSidebarSimple() {
   const toggleFavorite = async (href: string) => {
     const isAdding = !favorites.includes(href)
     const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
+    console.log("[v0] Simple toggleFavorite:", href, "newFavorites:", newFavorites)
     setFavorites(newFavorites)
 
     // Always save to localStorage for reliable persistence
     if (mounted) {
-      try { localStorage.setItem("superAdminFavorites", JSON.stringify(newFavorites)) } catch (e) {}
+      try { 
+        localStorage.setItem("superAdminFavorites", JSON.stringify(newFavorites))
+        console.log("[v0] Simple saved to localStorage:", JSON.stringify(newFavorites))
+        // Verify it was saved
+        const verify = localStorage.getItem("superAdminFavorites")
+        console.log("[v0] Simple localStorage verify:", verify)
+      } catch (e) { console.log("[v0] Simple localStorage save failed:", e) }
     }
 
     // Also try to save to database if authenticated

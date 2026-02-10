@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { hasSupabaseConfig } from "@/lib/supabase/config"
+import { DEFAULT_FEATURE_FLAGS } from "@/lib/defaults/feature-flags"
 import { type NextRequest, NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
@@ -9,7 +10,11 @@ export const dynamic = "force-dynamic"
 export async function GET(request: NextRequest) {
   try {
     if (!hasSupabaseConfig()) {
-      return NextResponse.json({ features: [], practiceOverrides: {}, practices: [] })
+      return NextResponse.json({
+        features: DEFAULT_FEATURE_FLAGS,
+        practiceOverrides: {},
+        practices: [{ id: "demo-practice", name: "Demo Praxis" }],
+      })
     }
 
     const supabase = await createClient()

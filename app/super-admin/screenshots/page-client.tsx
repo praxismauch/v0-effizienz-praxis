@@ -56,7 +56,7 @@ const defaultConfig: ScreenshotConfig = {
 }
 
 const defaultPages = [
-  // Public Pages
+  // ── Public / Landing Pages ──
   { path: "/", name: "Landing Page" },
   { path: "/about", name: "Über uns" },
   { path: "/pricing", name: "Preise" },
@@ -65,35 +65,103 @@ const defaultPages = [
   { path: "/blog", name: "Blog" },
   { path: "/auth/login", name: "Login" },
   { path: "/auth/register", name: "Registrierung" },
-  // App Pages
+
+  // ── App – Übersicht ──
   { path: "/dashboard", name: "Dashboard" },
-  { path: "/analytics", name: "Auswertung" },
-  { path: "/team", name: "Team" },
-  { path: "/zeiterfassung", name: "Zeiterfassung" },
-  { path: "/documents", name: "Dokumente" },
-  { path: "/settings", name: "Einstellungen" },
-  { path: "/responsibilities", name: "Zuständigkeiten" },
-  { path: "/devices", name: "Geräte" },
-  { path: "/arbeitsmittel", name: "Arbeitsmittel" },
-  { path: "/skills", name: "Kompetenzen" },
-  { path: "/qm", name: "QM-Handbuch" },
-  { path: "/tasks", name: "Aufgaben" },
+  { path: "/analysis", name: "KI-Analyse" },
+  { path: "/academy", name: "Academy" },
+
+  // ── App – Planung & Organisation ──
   { path: "/calendar", name: "Kalender" },
-  { path: "/inbox", name: "Posteingang" },
-  { path: "/feedback", name: "Feedback" },
-  // Super Admin Pages
-  { path: "/super-admin", name: "Super Admin Dashboard" },
-  { path: "/super-admin/tickets", name: "Tickets" },
-  { path: "/super-admin/practices", name: "Praxen" },
-  { path: "/super-admin/users", name: "Benutzer" },
-  { path: "/super-admin/permissions", name: "Benutzerrechte" },
-  { path: "/super-admin/kpi-categories", name: "KPI-Kategorien" },
-  { path: "/super-admin/templates", name: "Vorlagen" },
-  { path: "/super-admin/blog", name: "Blog-Verwaltung" },
-  { path: "/super-admin/finance", name: "Finanzen" },
-  { path: "/super-admin/marketing", name: "Marketing" },
-  { path: "/super-admin/pages", name: "Seiten" },
-  { path: "/super-admin/screenshots", name: "Screenshots" },
+  { path: "/dienstplan", name: "Dienstplan" },
+  { path: "/zeiterfassung", name: "Zeiterfassung" },
+  { path: "/todos", name: "Aufgaben" },
+  { path: "/goals", name: "Ziele" },
+  { path: "/workflows", name: "Workflows" },
+  { path: "/responsibilities", name: "Zuständigkeiten" },
+
+  // ── App – Daten & Dokumente ──
+  { path: "/analytics", name: "Kennzahlen" },
+  { path: "/documents", name: "Dokumente" },
+  { path: "/practice-insights", name: "Journal" },
+  { path: "/knowledge", name: "Wissen" },
+  { path: "/protocols", name: "Protokolle" },
+  { path: "/cirs", name: "Verbesserungsmeldung" },
+
+  // ── App – Qualitäts-Management ──
+  { path: "/hygieneplan", name: "Hygieneplan" },
+
+  // ── App – Strategie & Führung ──
+  { path: "/strategy-journey", name: "Strategiepfad" },
+  { path: "/leadership", name: "Leadership" },
+  { path: "/wellbeing", name: "Mitarbeiter-Wellbeing" },
+  { path: "/leitbild", name: "Leitbild" },
+  { path: "/roi-analysis", name: "Lohnt-es-sich-Analyse" },
+  { path: "/igel-analysis", name: "Selbstzahler-Analyse" },
+  { path: "/competitor-analysis", name: "Konkurrenzanalyse" },
+  { path: "/wunschpatient", name: "Wunschpatient" },
+
+  // ── App – Team & Personal ──
+  { path: "/hiring", name: "Personalsuche" },
+  { path: "/team", name: "Team" },
+  { path: "/mitarbeitergespraeche", name: "Mitarbeitergespräche" },
+  { path: "/selbst-check", name: "Selbst-Check" },
+  { path: "/skills", name: "Kompetenzen" },
+  { path: "/organigramm", name: "Organigramm" },
+  { path: "/training", name: "Fortbildung" },
+
+  // ── App – Praxis & Einstellungen ──
+  { path: "/contacts", name: "Kontakte" },
+  { path: "/surveys", name: "Umfragen" },
+  { path: "/arbeitsplaetze", name: "Arbeitsplätze" },
+  { path: "/rooms", name: "Räume" },
+  { path: "/arbeitsmittel", name: "Arbeitsmittel" },
+  { path: "/inventory", name: "Material" },
+  { path: "/devices", name: "Geräte" },
+  { path: "/settings", name: "Einstellungen" },
+
+  // ── Super Admin – Übersicht ──
+  { path: "/super-admin", name: "SA Dashboard" },
+
+  // ── Super Admin – Verwaltung ──
+  { path: "/super-admin/tickets", name: "SA Tickets" },
+  { path: "/super-admin/verwaltung?tab=practices", name: "SA Praxen" },
+  { path: "/super-admin/verwaltung?tab=users", name: "SA Benutzer" },
+  { path: "/super-admin/user-rights", name: "SA Benutzerrechte" },
+  { path: "/super-admin/kpi-kategorien", name: "SA KPI-Kategorien" },
+  { path: "/super-admin/content?tab=skills", name: "SA Vorlagen: Skills" },
+  { path: "/super-admin/content?tab=workflows", name: "SA Vorlagen: Workflows" },
+  { path: "/super-admin/content?tab=checklisten", name: "SA Vorlagen: Checklisten" },
+  { path: "/super-admin/content?tab=dokumente", name: "SA Vorlagen: Dokumente" },
+  { path: "/super-admin/content?tab=teams", name: "SA Vorlagen: Teams" },
+  { path: "/super-admin/content?tab=event-types", name: "SA Vorlagen: Event-Typen" },
+
+  // ── Super Admin – Content ──
+  { path: "/super-admin/academy", name: "SA Academy" },
+  { path: "/super-admin/waitlist", name: "SA Warteliste" },
+
+  // ── Super Admin – Finanzen ──
+  { path: "/super-admin/zahlungen", name: "SA Zahlungen" },
+
+  // ── Super Admin – Management ──
+  { path: "/super-admin/roadmap", name: "SA Roadmap & Ideen" },
+
+  // ── Super Admin – Marketing ──
+  { path: "/super-admin/social-media", name: "SA Social Media Posts" },
+
+  // ── Super Admin – Seiten ──
+  { path: "/super-admin/landingpages", name: "SA Landingpages" },
+
+  // ── Super Admin – Testing ──
+  { path: "/super-admin/testing", name: "SA UI-Tests" },
+  { path: "/super-admin/screenshots", name: "SA Screenshots" },
+
+  // ── Super Admin – System ──
+  { path: "/super-admin/system", name: "SA Systemverwaltung" },
+  { path: "/super-admin/features", name: "SA Feature-Verwaltung" },
+  { path: "/super-admin/chat-logs", name: "SA Chat-Protokolle" },
+  { path: "/super-admin/logging", name: "SA Error Logging" },
+  { path: "/super-admin/settings", name: "SA Admin-Einstellungen" },
 ]
 
 export function ScreenshotsPageClient() {

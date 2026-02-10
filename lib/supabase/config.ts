@@ -10,35 +10,30 @@
  * - SUPABASE_SERVICE_ROLE_KEY: Your Supabase service role key (server-side only)
  */
 
-// Get environment variables
+// Get environment variables - read directly from process.env each time (no caching)
 export const getSupabaseUrl = (): string => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  if (!url) {
-    console.warn("[Supabase] NEXT_PUBLIC_SUPABASE_URL is not configured")
-  }
-  return url || ""
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ""
 }
 
 export const getSupabaseAnonKey = (): string => {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-              process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  if (!key) {
-    console.warn("[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured")
-  }
-  return key || ""
+  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+         process.env.SUPABASE_ANON_KEY ||
+         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ""
 }
 
 export const getSupabaseServiceRoleKey = (): string => {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  // Don't warn for service role key on client-side - it's only needed server-side
-  return key || ""
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 }
 
 // Validation helpers
-export const hasSupabaseConfig = () => {
-  return !!(getSupabaseUrl() && getSupabaseAnonKey())
+export const hasSupabaseConfig = (): boolean => {
+  const url = getSupabaseUrl()
+  const key = getSupabaseAnonKey()
+  return !!(url && key)
 }
 
-export const hasSupabaseAdminConfig = () => {
-  return !!(getSupabaseUrl() && getSupabaseServiceRoleKey())
+export const hasSupabaseAdminConfig = (): boolean => {
+  const url = getSupabaseUrl()
+  const key = getSupabaseServiceRoleKey()
+  return !!(url && key)
 }

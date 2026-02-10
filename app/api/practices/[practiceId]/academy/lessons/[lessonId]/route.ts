@@ -1,7 +1,17 @@
 import { createClient } from "@supabase/supabase-js"
 import { type NextRequest, NextResponse } from "next/server"
 
-const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+let _supabaseAdmin: ReturnType<typeof createClient> | null = null
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) throw new Error("Supabase not configured")
+    _supabaseAdmin = createClient(url, key)
+  }
+  return _supabaseAdmin
+}
+const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, { get: (_, prop) => (getSupabaseAdmin() as any)[prop] })
 
 export async function GET(
   request: NextRequest,

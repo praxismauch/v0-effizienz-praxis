@@ -576,7 +576,7 @@ export function SuperAdminSidebarSimple() {
     {
       id: "super-admin-menu",
       label: "Management",
-      icon: Star,
+      icon: undefined,
       items: [
         {
           id: "roadmap",

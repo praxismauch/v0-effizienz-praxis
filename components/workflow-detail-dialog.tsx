@@ -46,6 +46,7 @@ interface WorkflowDetailDialogProps {
   workflow: Workflow | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialEditing?: boolean
 }
 
 const categoryLabels: Record<string, string> = {
@@ -67,7 +68,7 @@ const priorityLabels: Record<string, string> = {
   low: "Niedrig",
 }
 
-export function WorkflowDetailDialog({ workflow, open, onOpenChange }: WorkflowDetailDialogProps) {
+export function WorkflowDetailDialog({ workflow, open, onOpenChange, initialEditing = false }: WorkflowDetailDialogProps) {
   const { updateWorkflow, updateWorkflowStep, deleteWorkflow } = useWorkflow()
   const { teamMembers: contextTeamMembers, loading: teamLoading } = useTeam()
   const { currentPractice } = usePractice()
@@ -124,8 +125,11 @@ export function WorkflowDetailDialog({ workflow, open, onOpenChange }: WorkflowD
     if (!open) {
       setIsEditing(false)
       setActiveTab("steps")
+    } else if (initialEditing) {
+      setIsEditing(true)
+      setActiveTab("settings")
     }
-  }, [open])
+  }, [open, initialEditing])
 
   if (!workflow) return null
 

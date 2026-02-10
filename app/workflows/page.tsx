@@ -21,7 +21,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AppLayout } from "@/components/app-layout"
 import { PageHeader } from "@/components/page-header"
 import { WorkflowDetailDialog } from "@/components/workflow-detail-dialog"
-import { WorkflowTemplateDialog } from "@/components/workflow-template-dialog"
 import { AIWorkflowGeneratorDialog } from "@/components/ai-workflow-generator-dialog"
 import { useWorkflow, type Workflow, type WorkflowStep, type WorkflowTemplate } from "@/contexts/workflow-context"
 import { useTeam } from "@/contexts/team-context"
@@ -83,6 +82,7 @@ export default function WorkflowsPage() {
   const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null)
   const [selectedStep, setSelectedStep] = useState<string | null>(null)
   const [selectedWorkflowForDetail, setSelectedWorkflowForDetail] = useState<string | null>(null)
+  const [openDetailInEditMode, setOpenDetailInEditMode] = useState(false)
 
   const [templateFormOpen, setTemplateFormOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null)
@@ -279,7 +279,10 @@ export default function WorkflowsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelectedWorkflowForDetail(workflow.id)}
+              onClick={() => {
+                setOpenDetailInEditMode(true)
+                setSelectedWorkflowForDetail(workflow.id)
+              }}
               title="Bearbeiten"
             >
               <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
@@ -287,7 +290,10 @@ export default function WorkflowsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelectedWorkflowForDetail(workflow.id)}
+              onClick={() => {
+                setOpenDetailInEditMode(false)
+                setSelectedWorkflowForDetail(workflow.id)
+              }}
               title="Details anzeigen"
             >
               <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
@@ -751,20 +757,58 @@ export default function WorkflowsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Template Dialog */}
-      <WorkflowTemplateDialog
-        open={templateDialogOpen}
-        onOpenChange={setTemplateDialogOpen}
-        templates={templates}
-        onSelectTemplate={handleCreateFromTemplate}
-      />
+      {/* Template Selection Dialog */}
+      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Workflow aus Vorlage erstellen</DialogTitle>
+            <DialogDescription>Wählen Sie eine Vorlage als Grundlage für einen neuen Workflow</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {templates.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileTemplate className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Keine Vorlagen verfügbar. Erstellen Sie zuerst eine Vorlage.</p>
+              </div>
+            ) : (
+              templates.map((template) => (
+                <Card
+                  key={template.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handleCreateFromTemplate(template.id)}
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">{template.title}</CardTitle>
+                    {template.description && (
+                      <CardDescription className="text-sm">{template.description}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{template.steps?.length || 0} Schritte</span>
+                      <span>-</span>
+                      <span>{getCategoryLabel(template.category)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Workflow Detail Dialog */}
       {selectedWorkflowForDetail && (
         <WorkflowDetailDialog
           open={!!selectedWorkflowForDetail}
-          onOpenChange={(open) => !open && setSelectedWorkflowForDetail(null)}
-          workflowId={selectedWorkflowForDetail}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedWorkflowForDetail(null)
+              setOpenDetailInEditMode(false)
+            }
+          }}
+          workflow={practiceWorkflows.find((w) => w.id === selectedWorkflowForDetail) || null}
+          initialEditing={openDetailInEditMode}
         />
       )}
 

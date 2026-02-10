@@ -5,9 +5,12 @@
  * Configure via v0 sidebar: Vars section or Vercel dashboard.
  * 
  * Required environment variables:
- * - NEXT_PUBLIC_SUPABASE_URL: Your Supabase project URL
- * - NEXT_PUBLIC_SUPABASE_ANON_KEY: Your Supabase anon/public key
+ * - NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL): Your Supabase project URL
+ * - NEXT_PUBLIC_SUPABASE_ANON_KEY (or SUPABASE_ANON_KEY): Your Supabase anon/public key
  * - SUPABASE_SERVICE_ROLE_KEY: Your Supabase service role key (server-side only)
+ * 
+ * Fallback: SUPABASE_URL / SUPABASE_ANON_KEY are used when NEXT_PUBLIC_ variants
+ * are not available (e.g. server-side in v0 preview before build inlines them).
  */
 
 // Get environment variables - read directly from process.env each time (no caching)

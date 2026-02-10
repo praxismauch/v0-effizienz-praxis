@@ -837,7 +837,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
     },
     {
       id: "super-admin-menu",
-      label: "Super Admin",
+      label: "Management",
       icon: Star,
       items: [
         {

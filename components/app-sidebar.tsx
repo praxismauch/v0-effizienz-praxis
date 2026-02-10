@@ -144,6 +144,17 @@ export function AppSidebar({ className }: AppSidebarProps) {
       const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
       if (!currentUser?.id) return
       if (initialLoadDone.current) return
+
+      // Always load favorites from localStorage first for instant restore
+      try {
+        const localFavorites = localStorage.getItem(`sidebar_favorites_${currentUser.id}`)
+        if (localFavorites) {
+          const parsed = JSON.parse(localFavorites)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setFavorites(parsed)
+          }
+        }
+      } catch (e) { /* localStorage not available */ }
       
       try {
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=${practiceId}`)

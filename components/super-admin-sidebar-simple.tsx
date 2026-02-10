@@ -128,66 +128,54 @@ export function SuperAdminSidebarSimple() {
   // Load sidebar state (collapsed, sections, expanded items, favorites)
   useEffect(() => {
     const loadSidebarState = async () => {
-      if (!currentUser?.id) {
+      // Always load from localStorage first for instant restore
+      try {
         const savedSections = localStorage.getItem("superAdminSidebarSections")
         const savedExpanded = localStorage.getItem("superAdminExpandedItems")
         const savedCollapsed = localStorage.getItem("superAdminSidebarCollapsed")
         const savedFavorites = localStorage.getItem("superAdminFavorites")
         if (savedSections) {
-          try {
-            const parsed = JSON.parse(savedSections)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setOpenSections(parsed)
-            }
-          } catch (e) {
-            console.warn("[v0] Failed to parse saved sections from localStorage:", e)
-          }
+          const parsed = JSON.parse(savedSections)
+          if (Array.isArray(parsed) && parsed.length > 0) setOpenSections(parsed)
         }
         if (savedExpanded) {
-          try {
-            const parsed = JSON.parse(savedExpanded)
-            if (Array.isArray(parsed)) {
-              setExpandedItems(parsed)
-            }
-          } catch (e) {
-            console.warn("[v0] Failed to parse saved expanded items from localStorage:", e)
-          }
+          const parsed = JSON.parse(savedExpanded)
+          if (Array.isArray(parsed)) setExpandedItems(parsed)
         }
         if (savedCollapsed) {
           setCollapsed(savedCollapsed === "true")
         }
         if (savedFavorites) {
-          try {
-            const parsed = JSON.parse(savedFavorites)
-            if (Array.isArray(parsed)) {
-              setFavorites(parsed)
-            }
-          } catch (e) {
-            console.warn("[v0] Failed to parse saved favorites from localStorage:", e)
-          }
+          const parsed = JSON.parse(savedFavorites)
+          if (Array.isArray(parsed)) setFavorites(parsed)
         }
-        return
+      } catch (e) {
+        console.warn("[v0] Failed to parse sidebar state from localStorage:", e)
       }
 
-      try {
-        const res = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=super-admin`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.expanded_groups && Array.isArray(data.expanded_groups)) {
-            setOpenSections(data.expanded_groups)
+      // Then try API for database-backed state (overrides localStorage if available)
+      if (currentUser?.id) {
+        try {
+          const res = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=super-admin`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.expanded_groups && Array.isArray(data.expanded_groups)) {
+              setOpenSections(data.expanded_groups)
+            }
+            if (data.expanded_items && Array.isArray(data.expanded_items)) {
+              setExpandedItems(data.expanded_items)
+            }
+            if (typeof data.is_collapsed === "boolean") {
+              setCollapsed(data.is_collapsed)
+            }
+            if (data.favorites && Array.isArray(data.favorites) && data.favorites.length > 0) {
+              setFavorites(data.favorites)
+              try { localStorage.setItem("superAdminFavorites", JSON.stringify(data.favorites)) } catch (e) {}
+            }
           }
-          if (data.expanded_items && Array.isArray(data.expanded_items)) {
-            setExpandedItems(data.expanded_items)
-          }
-          if (typeof data.is_collapsed === "boolean") {
-            setCollapsed(data.is_collapsed)
-          }
-          if (data.favorites && Array.isArray(data.favorites)) {
-            setFavorites(data.favorites)
-          }
+        } catch (error) {
+          console.debug("[v0] Error loading super admin sidebar state:", error)
         }
-      } catch (error) {
-        console.debug("[v0] Error loading super admin sidebar state:", error)
       }
     }
 
@@ -406,6 +394,12 @@ export function SuperAdminSidebarSimple() {
     const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
     setFavorites(newFavorites)
 
+    // Always save to localStorage for reliable persistence
+    if (mounted) {
+      try { localStorage.setItem("superAdminFavorites", JSON.stringify(newFavorites)) } catch (e) {}
+    }
+
+    // Also try to save to database if authenticated
     if (currentUser?.id) {
       try {
         await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
@@ -418,10 +412,7 @@ export function SuperAdminSidebarSimple() {
         })
       } catch (error) {
         console.debug("[v0] Error saving super admin favorites:", error)
-        setFavorites(favorites) // Rollback on error
       }
-    } else if (mounted) {
-      localStorage.setItem("superAdminFavorites", JSON.stringify(newFavorites))
     }
   }
 

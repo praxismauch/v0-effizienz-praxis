@@ -18,6 +18,13 @@ export async function POST(
     
     const supabase = await createAdminClient()
     
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Datenbankverbindung nicht verfügbar", success: false },
+        { status: 503 }
+      )
+    }
+    
     const body = await request.json()
     const { blockId, userId, startTime, endTime } = body
 

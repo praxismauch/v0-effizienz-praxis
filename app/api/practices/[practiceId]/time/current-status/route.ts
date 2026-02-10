@@ -25,6 +25,17 @@ export async function GET(
     }
 
     const supabase = await createAdminClient()
+    
+    if (!supabase) {
+      return NextResponse.json({
+        status: "idle",
+        block: null,
+        isOnBreak: false,
+        activeBreak: null,
+        error: "Database not configured",
+      })
+    }
+    
     const today = format(new Date(), "yyyy-MM-dd")
 
     // Get today's open time block - try with is_open, fallback to checking end_time is null

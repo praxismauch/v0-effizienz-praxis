@@ -95,9 +95,6 @@ export default function ZeiterfassungPageClient() {
 
   // Handle stamp action
   const handleStamp = async () => {
-    console.log("[v0] handleStamp called with action:", stampAction, "location:", selectedLocation)
-    console.log("[v0] practiceId:", practiceId, "userId:", user?.id)
-    
     if (!practiceId || !user?.id) {
       toast.error("Benutzerdaten fehlen. Bitte neu anmelden.")
       return

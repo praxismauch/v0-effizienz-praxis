@@ -9,6 +9,13 @@ export async function PATCH(
     const { breakId } = await params
     const supabase = await createAdminClient()
     
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Datenbankverbindung nicht verfügbar", success: false },
+        { status: 503 }
+      )
+    }
+    
     const body = await request.json()
 
     // Update break

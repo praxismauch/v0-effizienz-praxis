@@ -10,10 +10,7 @@ export async function POST(
     const { practiceId: practiceIdStr } = await params
     const practiceId = parseInt(practiceIdStr, 10)
     
-    console.log("[v0] Time stamps API called with practiceId:", practiceIdStr)
-    
     if (isNaN(practiceId)) {
-      console.log("[v0] Invalid practice ID")
       return NextResponse.json(
         { error: "Invalid practice ID" },
         { status: 400 }
@@ -22,13 +19,18 @@ export async function POST(
     
     const supabase = await createAdminClient()
     
+    if (!supabase) {
+      console.error("[v0] Supabase admin client not available - check SUPABASE_SERVICE_ROLE_KEY")
+      return NextResponse.json(
+        { error: "Datenbankverbindung nicht verfügbar. Bitte Konfiguration prüfen.", success: false },
+        { status: 503 }
+      )
+    }
+    
     const body = await request.json()
     const { user_id, action, location, comment } = body
     
-    console.log("[v0] Time stamps request body:", { user_id, action, location, comment: comment?.substring(0, 50) })
-
     if (!user_id) {
-      console.log("[v0] Missing user_id")
       return NextResponse.json(
         { error: "user_id is required" },
         { status: 400 }

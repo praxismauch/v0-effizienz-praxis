@@ -52,17 +52,6 @@ export default function DienstplanPageClient({
     teams: teams?.length,
   })
 
-  // Core state - initialize with server data
-  const [activeTab, setActiveTab] = useState("schedule")
-  // Ensure currentWeek is never null - default to current week if initialWeek is invalid
-  const [currentWeek, setCurrentWeek] = useState(() => {
-    if (!initialWeek || isNaN(new Date(initialWeek).getTime())) {
-      console.log("[v0] Invalid initialWeek, using fallback")
-      return startOfWeek(new Date(), { weekStartsOn: 1 })
-    }
-    return initialWeek
-  })
-
   const router = useRouter()
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()

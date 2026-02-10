@@ -344,8 +344,8 @@ export default function ScheduleTab({
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
                         <AvatarFallback>
-                          {member.first_name[0]}
-                          {member.last_name[0]}
+                          {member.first_name?.[0] ?? ""}
+                          {member.last_name?.[0] ?? ""}
                         </AvatarFallback>
                       </Avatar>
                       <div>

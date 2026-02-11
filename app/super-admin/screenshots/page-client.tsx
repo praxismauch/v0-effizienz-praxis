@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react"
+import html2canvas from "html2canvas"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -206,6 +207,83 @@ function formatDuration(start: string, end: string | null) {
   return `${minutes}m ${remainingSeconds}s`
 }
 
+const VIEWPORT_WIDTHS: Record<string, number> = {
+  desktop: 1440,
+  tablet: 768,
+  mobile: 375,
+}
+
+async function capturePageScreenshot(
+  url: string,
+  viewport: string,
+  iframeContainer: HTMLDivElement
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const width = VIEWPORT_WIDTHS[viewport] || 1440
+    const height = viewport === "mobile" ? 812 : viewport === "tablet" ? 1024 : 900
+
+    // Remove any existing iframe
+    iframeContainer.innerHTML = ""
+
+    const iframe = document.createElement("iframe")
+    iframe.style.width = `${width}px`
+    iframe.style.height = `${height}px`
+    iframe.style.position = "absolute"
+    iframe.style.left = "-9999px"
+    iframe.style.top = "0"
+    iframe.style.border = "none"
+    iframe.style.opacity = "0"
+    iframe.style.pointerEvents = "none"
+    iframeContainer.appendChild(iframe)
+
+    const timeout = setTimeout(() => {
+      iframeContainer.innerHTML = ""
+      reject(new Error("Timeout: Seite hat nicht rechtzeitig geladen"))
+    }, 30000)
+
+    iframe.onload = async () => {
+      try {
+        // Wait for page to settle (animations, lazy loads, etc.)
+        await new Promise((r) => setTimeout(r, 2000))
+
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+        if (!iframeDoc || !iframeDoc.body) {
+          throw new Error("Iframe-Inhalt konnte nicht geladen werden")
+        }
+
+        const canvas = await html2canvas(iframeDoc.body, {
+          width,
+          height,
+          windowWidth: width,
+          windowHeight: height,
+          scale: 1,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+        })
+
+        clearTimeout(timeout)
+        const dataUrl = canvas.toDataURL("image/png", 0.85)
+        iframeContainer.innerHTML = ""
+        resolve(dataUrl)
+      } catch (err) {
+        clearTimeout(timeout)
+        iframeContainer.innerHTML = ""
+        reject(err)
+      }
+    }
+
+    iframe.onerror = () => {
+      clearTimeout(timeout)
+      iframeContainer.innerHTML = ""
+      reject(new Error("Iframe konnte nicht geladen werden"))
+    }
+
+    iframe.src = url
+  })
+}
+
 function statusColor(status: string) {
   switch (status) {
     case "completed": return "text-green-500"
@@ -233,6 +311,7 @@ export function ScreenshotsPageClient() {
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const cancelRef = useRef(false)
+  const iframeContainerRef = useRef<HTMLDivElement>(null)
   const [selectedViewports, setSelectedViewports] = useState<Set<"desktop" | "tablet" | "mobile">>(
     new Set(["desktop"])
   )
@@ -394,14 +473,29 @@ export function ScreenshotsPageClient() {
         prev.map((r) => (r.id === result.id ? { ...r, status: "capturing" } : r))
       )
 
-      // Simulate capture delay
-      await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 400))
+      // Real screenshot capture via iframe + html2canvas
+      let newStatus: "completed" | "failed" = "failed"
+      let imageUrl: string | null = null
+      let errorMsg: string | null = null
 
-      // Simulate success/failure (90% success rate for demo)
-      const success = Math.random() > 0.1
-      const newStatus = success ? "completed" : "failed"
+      try {
+        const fullUrl = `${config.baseUrl}${result.page_path}`
+        if (iframeContainerRef.current) {
+          imageUrl = await capturePageScreenshot(
+            fullUrl,
+            result.viewport,
+            iframeContainerRef.current
+          )
+          newStatus = "completed"
+        } else {
+          throw new Error("Iframe-Container nicht verfuegbar")
+        }
+      } catch (err: unknown) {
+        newStatus = "failed"
+        errorMsg = err instanceof Error ? err.message : "Screenshot konnte nicht erstellt werden"
+      }
 
-      if (success) completedCount++
+      if (newStatus === "completed") completedCount++
       else failedCount++
 
       // Update local state
@@ -410,15 +504,16 @@ export function ScreenshotsPageClient() {
           r.id === result.id
             ? {
                 ...r,
-                status: newStatus as ScreenshotResult["status"],
+                status: newStatus,
+                image_url: imageUrl,
                 captured_at: new Date().toISOString(),
-                error_message: success ? null : "Screenshot konnte nicht erstellt werden",
+                error_message: errorMsg,
               }
             : r
         )
       )
 
-      // Persist to DB (fire-and-forget)
+      // Persist to DB (fire-and-forget, without the large data URL)
       if (runId) {
         fetch(`/api/super-admin/screenshot-runs/${runId}`, {
           method: "PATCH",
@@ -426,7 +521,8 @@ export function ScreenshotsPageClient() {
           body: JSON.stringify({
             resultId: result.id,
             status: newStatus,
-            error: success ? undefined : "Screenshot konnte nicht erstellt werden",
+            imageUrl: imageUrl ? "(captured)" : undefined,
+            error: errorMsg || undefined,
             runUpdate: {
               completedCount,
               failedCount,
@@ -446,6 +542,20 @@ export function ScreenshotsPageClient() {
 
   const stopCapture = useCallback(() => {
     cancelRef.current = true
+    // Clean up any active iframe
+    if (iframeContainerRef.current) {
+      iframeContainerRef.current.innerHTML = ""
+    }
+  }, [])
+
+  const downloadScreenshot = useCallback((result: ScreenshotResult) => {
+    if (!result.image_url) return
+    const link = document.createElement("a")
+    link.href = result.image_url
+    link.download = `${result.page_name.replace(/[^a-zA-Z0-9-]/g, "_")}_${result.viewport}.png`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }, [])
 
   const toggleViewport = (viewport: "desktop" | "tablet" | "mobile") => {
@@ -747,16 +857,19 @@ export function ScreenshotsPageClient() {
                           className="flex items-center justify-between p-3 rounded-lg border bg-card"
                         >
                           <div className="flex items-center gap-3">
-                            {result.status === "completed" && (
+                            {result.status === "completed" && result.image_url ? (
+                              <img
+                                src={result.image_url}
+                                alt={result.page_name}
+                                className="h-10 w-16 rounded border object-cover object-top shrink-0"
+                              />
+                            ) : result.status === "completed" ? (
                               <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                            )}
-                            {result.status === "failed" && (
+                            ) : result.status === "failed" ? (
                               <XCircle className="h-5 w-5 text-red-500 shrink-0" />
-                            )}
-                            {result.status === "capturing" && (
+                            ) : result.status === "capturing" ? (
                               <RefreshCw className="h-5 w-5 text-blue-500 animate-spin shrink-0" />
-                            )}
-                            {result.status === "pending" && (
+                            ) : (
                               <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
                             )}
                             <div className="min-w-0">
@@ -778,8 +891,8 @@ export function ScreenshotsPageClient() {
                               {result.viewport === "mobile" && <Smartphone className="h-3 w-3 mr-1" />}
                               {result.viewport}
                             </Badge>
-                            {result.status === "completed" && (
-                              <Button variant="ghost" size="sm">
+                            {result.status === "completed" && result.image_url && (
+                              <Button variant="ghost" size="sm" onClick={() => downloadScreenshot(result)}>
                                 <Download className="h-4 w-4" />
                               </Button>
                             )}
@@ -798,24 +911,41 @@ export function ScreenshotsPageClient() {
                           key={result.id}
                           className="relative group rounded-lg border overflow-hidden bg-muted"
                         >
-                          <div className="aspect-video flex items-center justify-center">
-                            {result.status === "completed" ? (
+                          <div className="aspect-video flex items-center justify-center bg-muted">
+                            {result.status === "completed" && result.image_url ? (
+                              <img
+                                src={result.image_url}
+                                alt={`${result.page_name} (${result.viewport})`}
+                                className="w-full h-full object-cover object-top"
+                              />
+                            ) : result.status === "completed" ? (
                               <ImageIcon className="h-8 w-8 text-muted-foreground" />
                             ) : result.status === "failed" ? (
-                              <XCircle className="h-8 w-8 text-red-400" />
+                              <div className="flex flex-col items-center gap-1">
+                                <XCircle className="h-8 w-8 text-red-400" />
+                                <span className="text-[10px] text-red-400 max-w-[80%] text-center truncate">
+                                  {result.error_message || "Fehler"}
+                                </span>
+                              </div>
                             ) : result.status === "capturing" ? (
                               <RefreshCw className="h-8 w-8 text-blue-400 animate-spin" />
                             ) : (
                               <Clock className="h-8 w-8 text-muted-foreground/50" />
                             )}
                           </div>
-                          {result.status === "completed" && (
+                          {result.status === "completed" && result.image_url && (
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                              <Button variant="secondary" size="sm">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  window.open(result.image_url!, "_blank")
+                                }}
+                              >
                                 <FolderOpen className="h-4 w-4 mr-1" />
                                 Oeffnen
                               </Button>
-                              <Button variant="secondary" size="sm">
+                              <Button variant="secondary" size="sm" onClick={() => downloadScreenshot(result)}>
                                 <Download className="h-4 w-4" />
                               </Button>
                             </div>
@@ -842,6 +972,21 @@ export function ScreenshotsPageClient() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Hidden container for iframe-based screenshot capture */}
+      <div
+        ref={iframeContainerRef}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: 0,
+          width: "1px",
+          height: "1px",
+          overflow: "hidden",
+          pointerEvents: "none",
+        }}
+      />
     </div>
   )
 }

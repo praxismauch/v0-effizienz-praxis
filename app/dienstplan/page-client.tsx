@@ -42,16 +42,6 @@ export default function DienstplanPageClient({
 }: DienstplanPageClientProps) {
   const { toast } = useToast()
   
-  // Debug logging to understand what data is received
-  console.log("[v0] DienstplanPageClient received:", {
-    hasInitialData: !!initialData,
-    initialWeek: initialWeek,
-    teamMembers: initialData?.teamMembers?.length,
-    shiftTypes: initialData?.shiftTypes?.length,
-    schedules: initialData?.schedules?.length,
-    teams: teams?.length,
-  })
-
   const router = useRouter()
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
@@ -310,40 +300,48 @@ export default function DienstplanPageClient({
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Schichten</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-blue-500/10 p-2">
+              <Calendar className="h-4 w-4 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalShifts}</div>
             <p className="text-xs text-muted-foreground">{stats.coverageRate}% besetzt</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-emerald-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Team</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-emerald-500/10 p-2">
+              <Users className="h-4 w-4 text-emerald-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{teamMembers.length}</div>
             <p className="text-xs text-muted-foreground">Mitarbeiter</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-amber-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tausch-Anfragen</CardTitle>
-            <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-amber-500/10 p-2">
+              <ArrowLeftRight className="h-4 w-4 text-amber-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pendingSwaps}</div>
             <p className="text-xs text-muted-foreground">offen</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-violet-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Schichttypen</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-violet-500/10 p-2">
+              <Clock className="h-4 w-4 text-violet-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{shiftTypes.length}</div>

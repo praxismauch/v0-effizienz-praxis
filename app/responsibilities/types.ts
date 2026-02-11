@@ -100,4 +100,5 @@ export const INITIAL_FORM_DATA: ResponsibilityFormData = {
   link_title: "",
   group_name: "",
   estimated_time_minutes: null,
+  arbeitsplatz_ids: [],
 }

@@ -81,11 +81,8 @@ function StechuhrTab({
   // Real-time elapsed time counter
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
-  console.log("[v0] StechuhrTab render - currentStatus:", currentStatus, "currentBlock:", currentBlock?.id, "start_time:", currentBlock?.start_time)
-
   // Update elapsed time every second when working
   useEffect(() => {
-    console.log("[v0] Timer useEffect - currentStatus:", currentStatus, "hasBlock:", !!currentBlock, "block start:", currentBlock?.start_time)
     if (currentStatus !== "idle" && currentBlock) {
       const startTime = parseISO(currentBlock.start_time)
       const breakSeconds = (currentBlock.break_minutes || 0) * 60

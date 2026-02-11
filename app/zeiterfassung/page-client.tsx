@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader2, Clock, Users, FileText, BarChart3, AlertTriangle, Timer, CalendarCheck } from "lucide-react"
+import { Loader2, Clock, Users, FileText, BarChart3, AlertTriangle, Timer, CalendarCheck, List } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
@@ -63,8 +63,6 @@ export default function ZeiterfassungPageClient() {
     isLoading: statusLoading,
     mutate,
   } = useTimeTrackingStatus(practiceId, user?.id)
-
-  console.log("[v0] ZeiterfassungPage - practiceId:", practiceId, "userId:", user?.id, "currentSession:", currentSession, "currentBlock:", currentBlock?.id, "statusLoading:", statusLoading)
 
   const { blocks: timeBlocks, isLoading: blocksLoading, mutate: mutateBlocks } = useTimeBlocks(
     practiceId, 
@@ -312,10 +310,14 @@ export default function ZeiterfassungPageClient() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1">
           <TabsTrigger value="stechuhr" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">Stechuhr</span>
+          </TabsTrigger>
+          <TabsTrigger value="protokoll" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            <span className="hidden sm:inline">Protokoll</span>
           </TabsTrigger>
           <TabsTrigger value="team" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -349,6 +351,19 @@ export default function ZeiterfassungPageClient() {
             homeofficeCheckResult={null}
             onStamp={openStampDialog}
             onShowPolicyDialog={() => setShowPolicyDialog(true)}
+          />
+        </TabsContent>
+
+        <TabsContent value="protokoll">
+          <ZeitLogsTab
+            timeBlocks={timeBlocks || []}
+            teamMembers={teamMembers || []}
+            teams={[]}
+            isLoading={blocksLoading}
+            selectedMonth={selectedMonth}
+            onMonthChange={setSelectedMonth}
+            onEditBlock={(block) => toast.info("Bearbeitung wird noch implementiert")}
+            onDeleteBlock={(blockId) => toast.info("Loeschen wird noch implementiert")}
           />
         </TabsContent>
 

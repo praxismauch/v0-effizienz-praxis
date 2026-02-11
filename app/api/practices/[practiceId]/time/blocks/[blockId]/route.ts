@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
+import { type NextRequest, NextResponse } from "next/server"
 
 export async function PATCH(
   request: NextRequest,
@@ -7,41 +7,40 @@ export async function PATCH(
 ) {
   try {
     const { practiceId, blockId } = await params
-    const supabase = await createAdminClient()
-    
+    if (!practiceId || !blockId) {
+      return NextResponse.json({ error: "Practice ID and Block ID required" }, { status: 400 })
+    }
+
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
     const body = await request.json()
 
-    // Update time block
+    // Only allow safe fields to be updated
+    const allowedFields = [
+      "start_time", "end_time", "is_open", "status", "notes",
+      "location_type", "break_minutes", "actual_hours", "overtime_minutes",
+      "planned_hours", "updated_at",
+    ]
+    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    for (const field of allowedFields) {
+      if (body[field] !== undefined) updateData[field] = body[field]
+    }
+
     const { data: block, error } = await supabase
       .from("time_blocks")
-      .update(body)
+      .update(updateData)
       .eq("id", blockId)
       .eq("practice_id", practiceId)
       .select()
-      .maybeSingle()
+      .single()
 
     if (error) {
-      console.error("[v0] Error updating time block:", error)
-      return NextResponse.json(
-        { error: "Failed to update time block", details: error.message },
-        { status: 500 }
-      )
-    }
-
-    if (!block) {
-      return NextResponse.json(
-        { error: "Time block not found" },
-        { status: 404 }
-      )
+      console.error("[API] Error updating time block:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ block })
   } catch (error) {
-    console.error("[v0] Error in time block PATCH API:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -51,9 +50,12 @@ export async function DELETE(
 ) {
   try {
     const { practiceId, blockId } = await params
-    const supabase = await createAdminClient()
+    if (!practiceId || !blockId) {
+      return NextResponse.json({ error: "Practice ID and Block ID required" }, { status: 400 })
+    }
 
-    // Delete time block
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+
     const { error } = await supabase
       .from("time_blocks")
       .delete()
@@ -61,19 +63,12 @@ export async function DELETE(
       .eq("practice_id", practiceId)
 
     if (error) {
-      console.error("[v0] Error deleting time block:", error)
-      return NextResponse.json(
-        { error: "Failed to delete time block", details: error.message },
-        { status: 500 }
-      )
+      console.error("[API] Error deleting time block:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Error in time block DELETE API:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

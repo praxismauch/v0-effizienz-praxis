@@ -64,7 +64,7 @@ export default function ZeiterfassungPageClient() {
     mutate,
   } = useTimeTrackingStatus(practiceId, user?.id)
 
-  const { blocks: timeBlocks, isLoading: blocksLoading } = useTimeBlocks(
+  const { blocks: timeBlocks, isLoading: blocksLoading, mutate: mutateBlocks } = useTimeBlocks(
     practiceId, 
     user?.id || null,
     format(selectedMonth, "yyyy-MM-01"),
@@ -110,7 +110,7 @@ export default function ZeiterfassungPageClient() {
           if (!result.success) {
             throw new Error(result.error || "Einstempeln fehlgeschlagen")
           }
-          await mutate()
+          await Promise.all([mutate(), mutateBlocks()])
           toast.success("Erfolgreich eingestempelt")
           break
         case "stop":
@@ -118,7 +118,7 @@ export default function ZeiterfassungPageClient() {
           if (!result.success) {
             throw new Error(result.error || "Ausstempeln fehlgeschlagen")
           }
-          await mutate()
+          await Promise.all([mutate(), mutateBlocks()])
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
@@ -129,7 +129,7 @@ export default function ZeiterfassungPageClient() {
           if (!result.success) {
             throw new Error(result.error || "Pause starten fehlgeschlagen")
           }
-          await mutate()
+          await Promise.all([mutate(), mutateBlocks()])
           toast.success("Pause gestartet")
           break
         case "pause_end":
@@ -140,7 +140,7 @@ export default function ZeiterfassungPageClient() {
           if (!result.success) {
             throw new Error(result.error || "Pause beenden fehlgeschlagen")
           }
-          await mutate()
+          await Promise.all([mutate(), mutateBlocks()])
           toast.success("Pause beendet")
           break
       }

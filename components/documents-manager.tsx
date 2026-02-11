@@ -187,10 +187,15 @@ export function DocumentsManager() {
     toast.success("Ordnerreihenfolge aktualisiert")
   }
 
-  const displayFolders =
+  const baseFolders =
     isEditMode && customFolderOrder.length > 0
       ? (customFolderOrder.map((id) => folders.find((f) => f.id === id)).filter(Boolean) as DocumentFolder[])
       : folders
+
+  // When searching, filter folders by name too
+  const displayFolders = searchQuery.trim()
+    ? baseFolders.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : baseFolders
 
   const [aiAnalysisResult, setAiAnalysisResult] = useState<{
     documentId: string
@@ -783,9 +788,17 @@ export function DocumentsManager() {
     setCurrentFolderId(newPath[newPath.length - 1]?.id || null)
   }
 
-  const filteredDocuments = documents
+  // When searching, search across ALL documents; otherwise only current folder
+  const searchSource = searchQuery.trim() ? allDocuments : documents
+
+  const filteredDocuments = searchSource
     .filter((doc) => {
-      const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+      const query = searchQuery.toLowerCase()
+      const matchesSearch =
+        !query ||
+        doc.name.toLowerCase().includes(query) ||
+        (doc.description && doc.description.toLowerCase().includes(query)) ||
+        (doc.tags && doc.tags.some((tag: string) => tag.toLowerCase().includes(query)))
       const matchesType =
         fileTypeFilter === "all" ||
         (fileTypeFilter === "pdf" && doc.file_type === "application/pdf") ||

@@ -55,7 +55,7 @@ export async function POST(
           practice_id: practiceId,
           stamp_type: "start",
           timestamp: now.toISOString(),
-          location_type: location || "office",
+          location_type: locationNormalized,
           comment: comment || "",
         })
         .select()
@@ -66,27 +66,62 @@ export async function POST(
         return NextResponse.json({ error: stampError.message, success: false }, { status: 500 })
       }
 
-      // Create open time block
-      const { data: block, error: blockError } = await supabase
+      // Check if a completed block already exists for today (unique constraint: user_id + date)
+      const { data: todayBlock } = await supabase
         .from("time_blocks")
-        .insert({
-          user_id,
-          practice_id: practiceId,
-          date: today,
-          start_time: now.toISOString(),
-          end_time: null,
-          location_type: location || "office",
-          status: "active",
-          is_open: true,
-          break_minutes: 0,
-          notes: comment || null,
-        })
-        .select()
-        .single()
+        .select("*")
+        .eq("practice_id", practiceId)
+        .eq("user_id", user_id)
+        .eq("date", today)
+        .maybeSingle()
 
-      if (blockError) {
-        console.error("[API] Error creating time block:", blockError)
-        return NextResponse.json({ error: blockError.message, success: false }, { status: 500 })
+      let block
+      if (todayBlock) {
+        // Reopen existing block for today
+        const { data: reopened, error: reopenError } = await supabase
+          .from("time_blocks")
+          .update({
+            start_time: now.toISOString(),
+            end_time: null,
+            is_open: true,
+            status: "active",
+            location_type: locationNormalized,
+            notes: comment || todayBlock.notes || null,
+            updated_at: now.toISOString(),
+          })
+          .eq("id", todayBlock.id)
+          .select()
+          .single()
+
+        if (reopenError) {
+          console.error("[API] Error reopening time block:", reopenError)
+          return NextResponse.json({ error: reopenError.message, success: false }, { status: 500 })
+        }
+        block = reopened
+      } else {
+        // Create new time block for today
+        const { data: created, error: blockError } = await supabase
+          .from("time_blocks")
+          .insert({
+            user_id,
+            practice_id: practiceId,
+            date: today,
+            start_time: now.toISOString(),
+            end_time: null,
+            location_type: locationNormalized,
+            status: "active",
+            is_open: true,
+            break_minutes: 0,
+            notes: comment || null,
+          })
+          .select()
+          .single()
+
+        if (blockError) {
+          console.error("[API] Error creating time block:", blockError)
+          return NextResponse.json({ error: blockError.message, success: false }, { status: 500 })
+        }
+        block = created
       }
 
       return NextResponse.json({ success: true, stamp, block, status: "working" })
@@ -125,7 +160,7 @@ export async function POST(
           practice_id: practiceId,
           stamp_type: "stop",
           timestamp: now.toISOString(),
-          location_type: openBlock.location_type || "office",
+          location_type: openBlock.location_type || locationNormalized,
           comment: comment || "",
         })
         .select()

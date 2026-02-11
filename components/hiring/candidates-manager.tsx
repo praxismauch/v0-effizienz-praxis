@@ -467,7 +467,8 @@ const CandidatesManager = ({
                             >
                               {candidate.first_name} {candidate.last_name}
                             </span>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              {candidate.status && getStatusBadge(candidate.status)}
                               {candidate.date_of_birth && (
                                 <span className="text-sm text-muted-foreground">
                                   {calculateAge(candidate.date_of_birth)} Jahre

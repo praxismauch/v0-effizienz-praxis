@@ -12,7 +12,6 @@ import { Progress } from "@/components/ui/progress"
 import {
   Camera,
   Play,
-  Download,
   Trash2,
   RefreshCw,
   Monitor,
@@ -22,11 +21,11 @@ import {
   XCircle,
   Clock,
   FolderOpen,
-  Image as ImageIcon,
   History,
   ChevronRight,
   ArrowLeft,
   Square,
+  ExternalLink,
 } from "lucide-react"
 
 // ── Types ──
@@ -206,83 +205,24 @@ function formatDuration(start: string, end: string | null) {
   return `${minutes}m ${remainingSeconds}s`
 }
 
-const VIEWPORT_WIDTHS: Record<string, number> = {
-  desktop: 1440,
-  tablet: 768,
-  mobile: 375,
-}
-
-const VIEWPORT_HEIGHTS: Record<string, number> = {
-  desktop: 900,
-  tablet: 1024,
-  mobile: 812,
-}
-
 /**
- * Loads a page in a hidden iframe and verifies it loaded successfully.
- * Returns the full URL as the "image_url" — the gallery renders live iframe previews.
+ * Checks a page by fetching it server-side via our API route.
+ * Returns the HTTP status code and whether the page loaded successfully.
  */
-async function verifyPageLoad(url: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const iframe = document.createElement("iframe")
-    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;"
-    document.body.appendChild(iframe)
-
-    const timeout = setTimeout(() => {
-      document.body.removeChild(iframe)
-      reject(new Error("Timeout: Seite hat nicht rechtzeitig geladen"))
-    }, 20000)
-
-    iframe.onload = () => {
-      clearTimeout(timeout)
-      document.body.removeChild(iframe)
-      resolve(url)
-    }
-
-    iframe.onerror = () => {
-      clearTimeout(timeout)
-      document.body.removeChild(iframe)
-      reject(new Error("Seite konnte nicht geladen werden"))
-    }
-
-    iframe.src = url
-  })
-}
-
-/**
- * LiveIframePreview — renders a scaled-down live iframe of the actual page.
- * No canvas conversion needed, so modern CSS (oklab, etc.) works perfectly.
- */
-function LiveIframePreview({
-  url,
-  viewport,
-  className,
-}: {
+async function checkPageStatus(
   url: string
-  viewport: string
-  className?: string
-}) {
-  const width = VIEWPORT_WIDTHS[viewport] || 1440
-  const height = VIEWPORT_HEIGHTS[viewport] || 900
-
-  return (
-    <div className={`relative overflow-hidden bg-white ${className || ""}`}>
-      <iframe
-        src={url}
-        title="Screenshot Preview"
-        sandbox="allow-same-origin allow-scripts"
-        loading="lazy"
-        style={{
-          width: `${width}px`,
-          height: `${height}px`,
-          transform: `scale(${1 / (width / 320)})`,
-          transformOrigin: "top left",
-          border: "none",
-          pointerEvents: "none",
-        }}
-      />
-    </div>
-  )
+): Promise<{ status: number; ok: boolean; redirectedTo?: string }> {
+  try {
+    const res = await fetch("/api/super-admin/screenshot-check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    })
+    if (!res.ok) throw new Error("Check-API nicht erreichbar")
+    return await res.json()
+  } catch {
+    return { status: 0, ok: false }
+  }
 }
 
 function statusColor(status: string) {
@@ -473,31 +413,42 @@ export function ScreenshotsPageClient() {
         prev.map((r) => (r.id === result.id ? { ...r, status: "capturing" } : r))
       )
 
-      // Verify page loads successfully via hidden iframe
+      // Check page via server-side HTTP request (avoids iframe/auth/CORS issues)
+      const fullUrl = `${config.baseUrl}${result.page_path}`
+      const checkResult = await checkPageStatus(fullUrl)
+
       let newStatus: "completed" | "failed" = "failed"
-      let imageUrl: string | null = null
       let errorMsg: string | null = null
 
-      try {
-        const fullUrl = `${config.baseUrl}${result.page_path}`
-        imageUrl = await verifyPageLoad(fullUrl)
+      if (checkResult.ok) {
         newStatus = "completed"
-      } catch (err: unknown) {
+      } else if (checkResult.redirectedTo) {
+        // Page redirects (e.g. to login) — still a valid route, mark as completed with info
+        if (checkResult.redirectedTo.includes("/auth/login") || checkResult.redirectedTo.includes("/login")) {
+          newStatus = "completed"
+          errorMsg = `Redirect -> Login (${checkResult.status})`
+        } else {
+          newStatus = "completed"
+          errorMsg = `Redirect -> ${checkResult.redirectedTo} (${checkResult.status})`
+        }
+      } else {
         newStatus = "failed"
-        errorMsg = err instanceof Error ? err.message : "Screenshot konnte nicht erstellt werden"
+        errorMsg = checkResult.status === 0
+          ? "Seite nicht erreichbar (Timeout)"
+          : `HTTP ${checkResult.status}`
       }
 
       if (newStatus === "completed") completedCount++
       else failedCount++
 
-      // Update local state
+      // Update local state with the full URL for opening and status info
       setActiveResults((prev) =>
         prev.map((r) =>
           r.id === result.id
             ? {
                 ...r,
                 status: newStatus,
-                image_url: imageUrl,
+                image_url: fullUrl,
                 captured_at: new Date().toISOString(),
                 error_message: errorMsg,
               }
@@ -505,7 +456,7 @@ export function ScreenshotsPageClient() {
         )
       )
 
-      // Persist to DB (fire-and-forget, without the large data URL)
+      // Persist to DB
       if (runId) {
         fetch(`/api/super-admin/screenshot-runs/${runId}`, {
           method: "PATCH",
@@ -513,7 +464,7 @@ export function ScreenshotsPageClient() {
           body: JSON.stringify({
             resultId: result.id,
             status: newStatus,
-            imageUrl: imageUrl ? "(captured)" : undefined,
+            imageUrl: fullUrl,
             error: errorMsg || undefined,
             runUpdate: {
               completedCount,
@@ -835,16 +786,10 @@ export function ScreenshotsPageClient() {
                           className="flex items-center justify-between p-3 rounded-lg border bg-card"
                         >
                           <div className="flex items-center gap-3">
-                            {result.status === "completed" && result.image_url ? (
-                              <div className="h-10 w-16 rounded border overflow-hidden shrink-0">
-                                <LiveIframePreview
-                                  url={result.image_url}
-                                  viewport={result.viewport}
-                                  className="w-full h-full"
-                                />
-                              </div>
-                            ) : result.status === "completed" ? (
+                            {result.status === "completed" && !result.error_message ? (
                               <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                            ) : result.status === "completed" && result.error_message ? (
+                              <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0" />
                             ) : result.status === "failed" ? (
                               <XCircle className="h-5 w-5 text-red-500 shrink-0" />
                             ) : result.status === "capturing" ? (
@@ -860,7 +805,13 @@ export function ScreenshotsPageClient() {
                                 {result.page_path}
                               </p>
                               {result.error_message && (
-                                <p className="text-xs text-red-500 mt-0.5">{result.error_message}</p>
+                                <p className={`text-xs mt-0.5 ${
+                                  result.error_message.startsWith("Redirect") 
+                                    ? "text-amber-500" 
+                                    : "text-red-500"
+                                }`}>
+                                  {result.error_message}
+                                </p>
                               )}
                             </div>
                           </div>
@@ -876,8 +827,9 @@ export function ScreenshotsPageClient() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => window.open(result.image_url!, "_blank")}
+                                title="Seite oeffnen"
                               >
-                                <FolderOpen className="h-4 w-4" />
+                                <ExternalLink className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
@@ -895,26 +847,27 @@ export function ScreenshotsPageClient() {
                           key={result.id}
                           className="relative group rounded-lg border overflow-hidden bg-muted"
                         >
-                          <div className="aspect-video flex items-center justify-center bg-muted">
-                            {result.status === "completed" && result.image_url ? (
-                              <LiveIframePreview
-                                url={result.image_url}
-                                viewport={result.viewport}
-                                className="w-full h-full"
-                              />
+                          <div className="aspect-video flex flex-col items-center justify-center bg-muted gap-2 p-3">
+                            {result.status === "completed" && !result.error_message ? (
+                              <CheckCircle2 className="h-10 w-10 text-green-500" />
+                            ) : result.status === "completed" && result.error_message ? (
+                              <>
+                                <CheckCircle2 className="h-10 w-10 text-amber-500" />
+                                <span className="text-[10px] text-amber-600 max-w-full text-center truncate">
+                                  {result.error_message}
+                                </span>
+                              </>
                             ) : result.status === "failed" ? (
-                              <div className="flex flex-col items-center gap-1">
-                                <XCircle className="h-8 w-8 text-red-400" />
-                                <span className="text-[10px] text-red-400 max-w-[80%] text-center truncate">
+                              <>
+                                <XCircle className="h-10 w-10 text-red-400" />
+                                <span className="text-[10px] text-red-500 max-w-full text-center truncate">
                                   {result.error_message || "Fehler"}
                                 </span>
-                              </div>
+                              </>
                             ) : result.status === "capturing" ? (
-                              <RefreshCw className="h-8 w-8 text-blue-400 animate-spin" />
-                            ) : result.status === "completed" ? (
-                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                              <RefreshCw className="h-10 w-10 text-blue-400 animate-spin" />
                             ) : (
-                              <Clock className="h-8 w-8 text-muted-foreground/50" />
+                              <Clock className="h-10 w-10 text-muted-foreground/40" />
                             )}
                           </div>
                           {result.status === "completed" && result.image_url && (
@@ -922,9 +875,7 @@ export function ScreenshotsPageClient() {
                               <Button
                                 variant="secondary"
                                 size="sm"
-                                onClick={() => {
-                                  window.open(result.image_url!, "_blank")
-                                }}
+                                onClick={() => window.open(result.image_url!, "_blank")}
                               >
                                 <FolderOpen className="h-4 w-4 mr-1" />
                                 Oeffnen

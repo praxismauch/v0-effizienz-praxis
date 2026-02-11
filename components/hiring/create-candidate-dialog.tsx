@@ -236,15 +236,35 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     setSelectedJobPostingId(value)
   }
 
+  const isDocDuplicate = (file: File) => {
+    return uploadedFiles.some((f) => f.name === file.name && f.size === file.size)
+  }
+
+  const isImageDuplicate = (file: File) => {
+    return uploadedImages.some((img) => img.file.name === file.name && img.file.size === file.size)
+  }
+
   const processFilesForAI = async (files: File[]) => {
     if (files.length === 0) return
 
-    setUploadedFiles((prev) => [...prev, ...files])
+    const newFiles = files.filter((f) => !isDocDuplicate(f))
+    const skippedCount = files.length - newFiles.length
+
+    if (skippedCount > 0) {
+      toast({
+        title: "Duplikate erkannt",
+        description: `${skippedCount} Dokument(e) bereits vorhanden und uebersprungen.`,
+      })
+    }
+
+    if (newFiles.length === 0) return
+
+    setUploadedFiles((prev) => [...prev, ...newFiles])
     setAiExtracting(true)
 
     try {
       const formDataUpload = new FormData()
-      files.forEach((file) => {
+      newFiles.forEach((file) => {
         formDataUpload.append("files", file)
       })
       formDataUpload.append("practiceId", currentPractice?.id || "")
@@ -313,7 +333,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
 
       toast({
         title: "KI-Analyse abgeschlossen",
-        description: `${files.length} Dokument(e) erfolgreich analysiert.`,
+        description: `${newFiles.length} Dokument(e) erfolgreich analysiert.`,
       })
     } catch (error) {
       console.error("Error extracting with AI:", error)
@@ -423,8 +443,20 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     const validFiles = files.filter(validateImageFile)
     if (validFiles.length === 0) return
 
+    const uniqueFiles = validFiles.filter((f) => !isImageDuplicate(f))
+    const skippedImgCount = validFiles.length - uniqueFiles.length
+
+    if (skippedImgCount > 0) {
+      toast({
+        title: "Duplikate erkannt",
+        description: `${skippedImgCount} Bild(er) bereits vorhanden und uebersprungen.`,
+      })
+    }
+
+    if (uniqueFiles.length === 0) return
+
     // Create preview URLs and add to state
-    const newImages = validFiles.map((file) => ({
+    const newImages = uniqueFiles.map((file) => ({
       file,
       previewUrl: URL.createObjectURL(file),
       uploadedUrl: undefined,
@@ -436,10 +468,10 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     setIsUploadingImages(true)
     setImageUploadProgress(0)
     
-    for (let i = 0; i < validFiles.length; i++) {
+    for (let i = 0; i < uniqueFiles.length; i++) {
       try {
         const formData = new FormData()
-        formData.append("file", validFiles[i])
+        formData.append("file", uniqueFiles[i])
         
         const response = await fetch("/api/hiring/candidates/upload-document", {
           method: "POST",
@@ -452,7 +484,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
           // Update the uploaded URL for this image
           setUploadedImages((prev) =>
             prev.map((img) =>
-              img.file === validFiles[i] ? { ...img, uploadedUrl: url } : img
+              img.file === uniqueFiles[i] ? { ...img, uploadedUrl: url } : img
             )
           )
           
@@ -462,21 +494,21 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
             bilder: [
               ...(prev.bilder || []),
               {
-                name: validFiles[i].name,
+                name: uniqueFiles[i].name,
                 url,
-                size: validFiles[i].size,
-                type: validFiles[i].type,
+                size: uniqueFiles[i].size,
+                type: uniqueFiles[i].type,
               },
             ],
           }))
         }
         
-        setImageUploadProgress(Math.round(((i + 1) / validFiles.length) * 100))
+        setImageUploadProgress(Math.round(((i + 1) / uniqueFiles.length) * 100))
       } catch (error) {
         console.error("Error uploading image:", error)
         toast({
           title: "Upload fehlgeschlagen",
-          description: `${validFiles[i].name} konnte nicht hochgeladen werden.`,
+          description: `${uniqueFiles[i].name} konnte nicht hochgeladen werden.`,
           variant: "destructive",
         })
       }
@@ -485,10 +517,10 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     setIsUploadingImages(false)
     setImageUploadProgress(0)
     
-    if (validFiles.length > 0) {
+    if (uniqueFiles.length > 0) {
       toast({
         title: "Bilder hochgeladen",
-        description: `${validFiles.length} Bild(er) erfolgreich hochgeladen.`,
+        description: `${uniqueFiles.length} Bild(er) erfolgreich hochgeladen.`,
       })
     }
   }

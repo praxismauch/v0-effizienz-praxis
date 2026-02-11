@@ -295,7 +295,7 @@ export function EditCandidateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2 lg:grid lg:grid-cols-[1fr_1fr]">
           {/* Left Column */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -626,7 +626,7 @@ export function EditCandidateDialog({
             </div>
           </div>
 
-          <DialogFooter className="col-span-1 md:col-span-2 flex-col sm:flex-row gap-2">
+          <DialogFooter className="lg:col-span-2 flex-col sm:flex-row gap-2">
             <Button
               type="button"
               onClick={() => setShowInterviewGenerator(true)}

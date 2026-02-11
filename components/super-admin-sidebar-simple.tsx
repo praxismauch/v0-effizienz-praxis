@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/context-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useUser } from "@/contexts/user-context"
+import { useFeatureBetaFlags } from "@/hooks/use-feature-beta-flags"
 import {
   ChevronDown,
   ChevronRight,
@@ -92,6 +93,7 @@ interface MenuSection {
 export function SuperAdminSidebarSimple() {
   const pathname = usePathname()
   const { currentUser } = useUser()
+  const betaFlags = useFeatureBetaFlags()
   const [collapsed, setCollapsed] = useState(false)
   const [openSections, setOpenSections] = useState<string[]>(["overview", "management"])
   const [expandedItems, setExpandedItems] = useState<string[]>([])
@@ -586,7 +588,6 @@ export function SuperAdminSidebarSimple() {
           label: "Roadmap & Ideen",
           icon: MapIcon,
           href: "/super-admin/roadmap",
-          beta: true,
         },
       ],
     },
@@ -599,7 +600,6 @@ export function SuperAdminSidebarSimple() {
           label: "Social Media Posts",
           icon: Share2,
           href: "/super-admin/social-media",
-          beta: true,
         },
       ],
     },
@@ -632,7 +632,6 @@ export function SuperAdminSidebarSimple() {
           label: "Screenshots",
           icon: Camera,
           href: "/super-admin/screenshots",
-          beta: true,
         },
       ],
     },
@@ -761,7 +760,7 @@ export function SuperAdminSidebarSimple() {
               <>
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1 truncate text-left">{item.label}</span>
-                {item.beta && (
+                {(item.beta || (item.href && betaFlags.has(item.href))) && (
                   <span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-amber-400">
                     Beta
                   </span>
@@ -804,7 +803,7 @@ export function SuperAdminSidebarSimple() {
           <>
             <Icon className="h-4 w-4 shrink-0" />
             <span className="flex-1 truncate">{item.label}</span>
-            {item.beta && (
+            {(item.beta || (item.href && betaFlags.has(item.href))) && (
               <span className={cn(
                 "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide",
                 active ? "bg-white/20 text-white" : "bg-amber-500/20 text-amber-400"

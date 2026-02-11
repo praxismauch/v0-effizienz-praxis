@@ -16,6 +16,7 @@ import { Star } from "lucide-react"
 import { isSuperAdminRole, isPracticeAdminRole } from "@/lib/auth-utils"
 import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 import Logger from "@/lib/logger"
+import { useFeatureBetaFlags } from "@/hooks/use-feature-beta-flags"
 
 // Extracted components
 import {
@@ -47,6 +48,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const { currentUser } = useUser()
   const { currentPractice } = usePractice()
   const { singleGroupMode } = useSidebarSettings()
+  const betaFlags = useFeatureBetaFlags()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const hasRestoredScroll = useRef(false)
   const [expandedGroups, setExpandedGroups] = useState<string[]>(DEFAULT_EXPANDED_GROUPS)
@@ -502,6 +504,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
                 badgeCounts={badgeCounts}
                 badgeVisibility={badgeVisibility}
                 sidebarPermissions={sidebarPermissions}
+                betaFlags={betaFlags}
                 onToggleGroup={toggleGroup}
                 onNavigate={handleNavigation}
                 onToggleFavorite={toggleFavorite}

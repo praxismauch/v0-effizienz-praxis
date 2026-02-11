@@ -128,6 +128,8 @@ export function DocumentsManager() {
 
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null)
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false)
   const [analyzingDocumentId, setAnalyzingDocumentId] = useState<string | null>(null) // Added state for tracking AI analysis
   const [isAIResultDialogOpen, setIsAIResultDialogOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -854,10 +856,34 @@ export function DocumentsManager() {
     setIsUploadDialogOpen(true)
   }
 
-  const handlePreviewDocument = (doc: Document) => {
+  const handlePreviewDocument = async (doc: Document) => {
     setPreviewDocument(doc)
+    setPreviewBlobUrl(null)
     setIsPreviewDialogOpen(true)
+
+    // Fetch PDF/document as blob to bypass X-Frame-Options restrictions
+    if (doc.file_type === "application/pdf" && doc.file_url) {
+      setIsLoadingPreview(true)
+      try {
+        const response = await fetch(doc.file_url)
+        const blob = await response.blob()
+        const blobUrl = URL.createObjectURL(blob)
+        setPreviewBlobUrl(blobUrl)
+      } catch (error) {
+        console.error("Error loading preview:", error)
+      } finally {
+        setIsLoadingPreview(false)
+      }
+    }
   }
+
+  // Cleanup blob URLs when preview closes
+  useEffect(() => {
+    if (!isPreviewDialogOpen && previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl)
+      setPreviewBlobUrl(null)
+    }
+  }, [isPreviewDialogOpen, previewBlobUrl])
 
   const handleAnalyzeDocument = async (doc: Document) => {
     if (!currentPractice?.id) {
@@ -1773,7 +1799,23 @@ export function DocumentsManager() {
                     />
                   </div>
                 ) : previewDocument.file_type === "application/pdf" ? (
-                  <iframe src={previewDocument.file_url} className="w-full h-full" title={previewDocument.name} />
+                  isLoadingPreview ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-4">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                      <p className="text-sm text-muted-foreground">Vorschau wird geladen...</p>
+                    </div>
+                  ) : previewBlobUrl ? (
+                    <iframe src={previewBlobUrl} className="w-full h-full" title={previewDocument.name} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full gap-4">
+                      <FileText className="h-16 w-16 text-muted-foreground" />
+                      <p className="text-muted-foreground">Vorschau konnte nicht geladen werden</p>
+                      <Button onClick={() => handleDownloadDocument(previewDocument)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        {t("documents.download", "Herunterladen")}
+                      </Button>
+                    </div>
+                  )
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-4">
                     <FileText className="h-16 w-16 text-muted-foreground" />

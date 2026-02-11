@@ -54,7 +54,7 @@ function SystemContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="einstellungen" className="gap-2">
             <Settings className="h-4 w-4" />
             Einstellungen

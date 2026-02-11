@@ -84,7 +84,7 @@ export default function SettingsPageClient() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="inline-flex h-auto flex-wrap justify-start gap-2 bg-muted p-1.5 rounded-lg">
+          <TabsList className="flex w-full h-auto flex-wrap gap-1 bg-muted p-1.5 rounded-lg">
             <TabsTrigger value="practice" className="gap-2 whitespace-nowrap">
               <Building2 className="h-4 w-4" />
               <span>Praxis</span>

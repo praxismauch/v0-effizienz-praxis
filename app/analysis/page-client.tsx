@@ -125,7 +125,7 @@ export default function AnalysisPageClient() {
         </div>
 
         <Tabs defaultValue="current" className="w-full">
-          <TabsList className="grid w-full max-w-xl grid-cols-2 h-12">
+          <TabsList className="grid w-full grid-cols-2 h-12">
             <TabsTrigger value="current" className="gap-2 text-base py-3 px-4">
               <Sparkles className="h-5 w-5" />
               Aktuelle Analyse

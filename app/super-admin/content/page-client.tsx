@@ -71,7 +71,7 @@ function ContentManagementContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="workflows" className="gap-2">
             <Workflow className="h-4 w-4" />
             Workflows

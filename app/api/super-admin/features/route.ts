@@ -87,21 +87,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all feature flags ordered by display_order
-    const { data: features, error } = await adminClient
+    let features = DEFAULT_FEATURE_FLAGS
+    const { data: featureData, error } = await adminClient
       .from("feature_flags")
       .select("*")
       .order("display_order", { ascending: true })
 
     if (error) {
-      // Table may not exist yet — silently fall back to defaults
+      // Table may not exist (PGRST205) or other error — silently use defaults
       if (error.code !== "PGRST205") {
         console.error("Error fetching feature flags:", error)
       }
-      return NextResponse.json({
-        features: DEFAULT_FEATURE_FLAGS,
-        practiceOverrides: {},
-        practices: [{ id: "demo-practice", name: "Demo Praxis" }],
-      })
+      // Use defaults, don't error out
+    } else if (featureData) {
+      features = featureData
     }
 
     // If practice_id is provided, fetch overrides for that practice
@@ -170,11 +169,16 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if feature exists and get its properties
-    const { data: existingFeature } = await adminClient
+    const { data: existingFeature, error: featureError } = await adminClient
       .from("feature_flags")
       .select("is_protected, allow_practice_override")
       .eq("feature_key", feature_key)
       .single()
+
+    if (featureError && featureError.code === "PGRST205") {
+      // Table doesn't exist — feature flags not supported
+      return NextResponse.json({ error: "Feature flags table not configured" }, { status: 503 })
+    }
 
     if (!existingFeature) {
       return NextResponse.json({ error: "Feature not found" }, { status: 404 })
@@ -329,6 +333,16 @@ export async function POST(request: NextRequest) {
     const { action, features, practice_id } = body
 
     if (action === "bulk_update" && Array.isArray(features)) {
+      // First check if the feature_flags table exists
+      const { error: tableCheckError } = await adminClient
+        .from("feature_flags")
+        .select("feature_key")
+        .limit(1)
+
+      if (tableCheckError && tableCheckError.code === "PGRST205") {
+        return NextResponse.json({ error: "Feature flags table not configured" }, { status: 503 })
+      }
+
       const results = []
 
       for (const feature of features) {
@@ -376,7 +390,13 @@ export async function POST(request: NextRequest) {
 
     if (action === "copy_to_practice" && practice_id) {
       // Copy all global settings to a specific practice as overrides
-      const { data: allFeatures } = await adminClient.from("feature_flags").select("feature_key, is_enabled, is_beta")
+      const { data: allFeatures, error: tableError } = await adminClient
+        .from("feature_flags")
+        .select("feature_key, is_enabled, is_beta")
+
+      if (tableError && tableError.code === "PGRST205") {
+        return NextResponse.json({ error: "Feature flags table not configured" }, { status: 503 })
+      }
 
       if (allFeatures) {
         const inserts = allFeatures.map((f) => ({

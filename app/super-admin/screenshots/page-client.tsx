@@ -656,9 +656,22 @@ export function ScreenshotsPageClient() {
                           <span className="text-sm font-medium">
                             {formatDate(run.started_at)}
                           </span>
-                          <Badge variant={statusBadgeVariant(run.status)} className="text-xs">
-                            {run.status === "completed" ? "Fertig" : run.status === "running" ? "Laufend" : run.status === "failed" ? "Fehler" : run.status}
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant={statusBadgeVariant(run.status)} className="text-xs">
+                              {run.status === "completed" ? "Fertig" : run.status === "running" ? "Laufend" : run.status === "failed" ? "Fehler" : run.status}
+                            </Badge>
+                            <button
+                              type="button"
+                              title="Lauf loeschen"
+                              className="p-1 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteRun(run.id)
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>

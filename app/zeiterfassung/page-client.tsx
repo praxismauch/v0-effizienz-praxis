@@ -1,20 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader2, Clock, Users, FileText, BarChart3, AlertTriangle, Timer, CalendarCheck, List } from "lucide-react"
+import { Loader2, Clock, Users, FileText, BarChart3, AlertTriangle, List } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { StatCard, statCardColors } from "@/components/ui/stat-card"
+import { ZeiterfassungStats } from "./components/zeiterfassung-stats"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { useTimeTrackingStatus, useTimeActions, useCorrectionRequests, usePlausibilityIssues, useTeamLiveView, useTimeBlocks, useTimeTracking } from "@/hooks/use-time-tracking"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { submitCorrection } from "@/hooks/use-correction"
 
-// Import types
 import type { StampAction, TimeBlock } from "./types"
 
-// Import tab components
 import StechuhrTab from "./components/stechuhr-tab"
 import TeamLiveTab from "./components/team-live-tab"
 import ZeitkontoTab from "./components/zeitkonto-tab"
@@ -22,7 +20,6 @@ import KorrekturenTab from "./components/korrekturen-tab"
 import AuswertungTab from "./components/auswertung-tab"
 import ZeitLogsTab from "./components/zeit-logs-tab"
 
-// Import dialog components
 import StampDialog from "./components/stamp-dialog"
 import CorrectionDialog from "./components/correction-dialog"
 import PolicyDialog from "./components/policy-dialog"
@@ -32,30 +29,25 @@ export default function ZeiterfassungPageClient() {
   const practiceId = currentPractice?.id?.toString()
   const user = currentUser
 
-  // Main state
   const [activeTab, setActiveTab] = useState("stechuhr")
   const [selectedMonth, setSelectedMonth] = useState(new Date())
   const [isLoading, setIsLoading] = useState(true)
   const [teamFilter, setTeamFilter] = useState("all")
 
-  // Stamp dialog state
   const [showStampDialog, setShowStampDialog] = useState(false)
   const [stampAction, setStampAction] = useState<StampAction>("start")
   const [stampComment, setStampComment] = useState("")
   const [selectedLocation, setSelectedLocation] = useState("office")
   const [isStamping, setIsStamping] = useState(false)
 
-  // Correction dialog state
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
   const [correctionBlock, setCorrectionBlock] = useState<TimeBlock | null>(null)
   const [correctionNewStart, setCorrectionNewStart] = useState("")
   const [correctionNewEnd, setCorrectionNewEnd] = useState("")
   const [correctionReason, setCorrectionReason] = useState("")
 
-  // Policy dialog state
   const [showPolicyDialog, setShowPolicyDialog] = useState(false)
 
-  // Data hooks
   const {
     status: currentSession,
     currentBlock,
@@ -72,74 +64,54 @@ export default function ZeiterfassungPageClient() {
   )
   
   const { members: teamMembers, isLoading: teamLoading } = useTeamLiveView(practiceId)
-
   const { clockIn, clockOut, startBreak, endBreak } = useTimeActions(practiceId, user?.id)
   const { corrections: correctionRequests, mutate: mutateCorrectionRequests } = useCorrectionRequests(practiceId)
   const { issues: plausibilityIssues } = usePlausibilityIssues(practiceId)
   
-  // Placeholder values for missing data
-  const monthlyReport = null
   const homeofficePolicy = null
   const dataLoading = statusLoading || blocksLoading || teamLoading
 
-  // Combined loading state
   useEffect(() => {
     if (practiceId && user?.id) {
-      const timer = setTimeout(() => {
-        setIsLoading(false)
-      }, 1000)
+      const timer = setTimeout(() => setIsLoading(false), 1000)
       return () => clearTimeout(timer)
     } else if (currentUser !== undefined) {
       setIsLoading(false)
     }
   }, [practiceId, user?.id, currentUser])
 
-  // Handle stamp action
   const handleStamp = async () => {
     if (!practiceId || !user?.id) {
       toast.error("Benutzerdaten fehlen. Bitte neu anmelden.")
       return
     }
-
     setIsStamping(true)
     try {
       let result
       switch (stampAction) {
         case "start":
           result = await clockIn(selectedLocation, stampComment)
-          if (!result.success) {
-            throw new Error(result.error || "Einstempeln fehlgeschlagen")
-          }
+          if (!result.success) throw new Error(result.error || "Einstempeln fehlgeschlagen")
           await Promise.all([mutate(), mutateBlocks()])
           toast.success("Erfolgreich eingestempelt")
           break
         case "stop":
           result = await clockOut(undefined, stampComment)
-          if (!result.success) {
-            throw new Error(result.error || "Ausstempeln fehlgeschlagen")
-          }
+          if (!result.success) throw new Error(result.error || "Ausstempeln fehlgeschlagen")
           await Promise.all([mutate(), mutateBlocks()])
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
-          if (!currentBlock?.id) {
-            throw new Error("Kein aktiver Zeitblock gefunden. Bitte zuerst einstempeln.")
-          }
+          if (!currentBlock?.id) throw new Error("Kein aktiver Zeitblock gefunden.")
           result = await startBreak(currentBlock.id)
-          if (!result.success) {
-            throw new Error(result.error || "Pause starten fehlgeschlagen")
-          }
+          if (!result.success) throw new Error(result.error || "Pause starten fehlgeschlagen")
           await Promise.all([mutate(), mutateBlocks()])
           toast.success("Pause gestartet")
           break
         case "pause_end":
-          if (!activeBreak?.id) {
-            throw new Error("Keine aktive Pause gefunden")
-          }
+          if (!activeBreak?.id) throw new Error("Keine aktive Pause gefunden")
           result = await endBreak(activeBreak.id)
-          if (!result.success) {
-            throw new Error(result.error || "Pause beenden fehlgeschlagen")
-          }
+          if (!result.success) throw new Error(result.error || "Pause beenden fehlgeschlagen")
           await Promise.all([mutate(), mutateBlocks()])
           toast.success("Pause beendet")
           break
@@ -148,23 +120,19 @@ export default function ZeiterfassungPageClient() {
       setStampComment("")
     } catch (error) {
       console.error("Stamp error:", error)
-      const errorMessage = error instanceof Error ? error.message : "Fehler beim Stempeln"
-      toast.error(errorMessage)
+      toast.error(error instanceof Error ? error.message : "Fehler beim Stempeln")
     } finally {
       setIsStamping(false)
     }
   }
 
-  // Open stamp dialog with action
   const openStampDialog = (action: StampAction) => {
     setStampAction(action)
     setShowStampDialog(true)
   }
 
-  // Submit correction request
   const submitCorrectionRequest = async () => {
     if (!correctionBlock || !correctionReason.trim()) return
-
     try {
       await submitCorrection({
         timeBlockId: correctionBlock.id,
@@ -184,7 +152,6 @@ export default function ZeiterfassungPageClient() {
     }
   }
 
-  // Open correction dialog for a time block
   const openCorrectionDialog = (block: TimeBlock) => {
     setCorrectionBlock(block)
     setCorrectionNewStart(block.start_time)
@@ -192,15 +159,12 @@ export default function ZeiterfassungPageClient() {
     setShowCorrectionDialog(true)
   }
 
-  // Export monthly report
   const exportMonthlyReport = (exportFormat: "csv" | "pdf") => {
     if (exportFormat === "csv") {
       if (!timeBlocks || timeBlocks.length === 0) {
         toast.error("Keine Daten zum Exportieren vorhanden")
         return
       }
-
-      // Create CSV content
       const headers = ["Datum", "Start", "Ende", "Pause (Min)", "Arbeitszeit (Std)", "Typ", "Standort", "Kommentar"]
       const rows = timeBlocks.map((block: any) => [
         format(new Date(block.start_time), "dd.MM.yyyy"),
@@ -212,10 +176,7 @@ export default function ZeiterfassungPageClient() {
         block.location || "office",
         block.comment || "",
       ])
-
       const csvContent = [headers.join(";"), ...rows.map((row) => row.join(";"))].join("\n")
-
-      // Create download
       const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
       const link = document.createElement("a")
       const url = URL.createObjectURL(blob)
@@ -225,11 +186,9 @@ export default function ZeiterfassungPageClient() {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-
-      toast.success(`CSV-Export erfolgreich (${timeBlocks.length} Einträge)`)
+      toast.success(`CSV-Export erfolgreich (${timeBlocks.length} Eintraege)`)
     } else {
       toast.info("PDF-Export wird vorbereitet...")
-      // PDF export could be implemented later
     }
   }
 
@@ -247,7 +206,7 @@ export default function ZeiterfassungPageClient() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Zugriff nicht möglich</h2>
+            <h2 className="text-xl font-semibold mb-2">Zugriff nicht moeglich</h2>
             <p className="text-muted-foreground text-center">
               {!user?.id 
                 ? "Bitte melden Sie sich an, um die Zeiterfassung zu nutzen." 
@@ -266,62 +225,12 @@ export default function ZeiterfassungPageClient() {
         <p className="text-muted-foreground">Erfassen und verwalten Sie Ihre Arbeitszeiten</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4 mb-6">
-        {(() => {
-          const todayStr = format(new Date(), "yyyy-MM-dd")
-          const completedTodayMinutes = (timeBlocks || [])
-            .filter((b: any) => b.date === todayStr && b.end_time)
-            .reduce((sum: number, b: any) => sum + (b.actual_hours ? b.actual_hours * 60 : 0), 0)
-          const activeMinutes = currentBlock && !currentBlock.end_time
-            ? Math.max(0, Math.floor((Date.now() - new Date(currentBlock.start_time).getTime()) / 60000) - (currentBlock.break_minutes || 0))
-            : 0
-          const totalMinutes = Math.round(completedTodayMinutes + activeMinutes)
-          const h = Math.floor(totalMinutes / 60)
-          const m = totalMinutes % 60
-          const isActive = currentBlock && !currentBlock.end_time
-          return (
-            <StatCard
-              label="Heute"
-              value={`${h}h ${m}min`}
-              icon={Timer}
-              {...statCardColors.info}
-              description={isActive ? "Aktiv" : "Arbeitszeit"}
-              descriptionColor={isActive ? "text-green-600" : undefined}
-            />
-          )
-        })()}
-        {(() => {
-          const monthMinutes = (timeBlocks || [])
-            .reduce((sum: number, b: any) => sum + (b.actual_hours ? b.actual_hours * 60 : 0), 0)
-          const rounded = Math.round(monthMinutes)
-          const h = Math.floor(rounded / 60)
-          const m = rounded % 60
-          return (
-            <StatCard
-              label="Diesen Monat"
-              value={`${h}h ${m}min`}
-              icon={CalendarCheck}
-              {...statCardColors.success}
-              description={`${(timeBlocks || []).length} Eintraege`}
-            />
-          )
-        })()}
-        <StatCard
-          label="Korrekturen"
-          value={(correctionRequests || []).filter((c: any) => c.status === "pending").length}
-          icon={AlertTriangle}
-          {...statCardColors.warning}
-          description="offen"
-        />
-        <StatCard
-          label="Team aktiv"
-          value={(teamMembers || []).filter((m: any) => m.is_clocked_in || m.status === "active").length}
-          icon={Users}
-          {...statCardColors.purple}
-          description={`von ${(teamMembers || []).length} Mitarbeitern`}
-        />
-      </div>
+      <ZeiterfassungStats
+        currentBlock={currentBlock}
+        timeBlocks={timeBlocks || []}
+        correctionRequests={correctionRequests || []}
+        teamMembers={teamMembers || []}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1">
@@ -376,8 +285,8 @@ export default function ZeiterfassungPageClient() {
             isLoading={blocksLoading}
             selectedMonth={selectedMonth}
             onMonthChange={setSelectedMonth}
-            onEditBlock={(block) => toast.info("Bearbeitung wird noch implementiert")}
-            onDeleteBlock={(blockId) => toast.info("Loeschen wird noch implementiert")}
+            onEditBlock={() => toast.info("Bearbeitung wird noch implementiert")}
+            onDeleteBlock={() => toast.info("Loeschen wird noch implementiert")}
           />
         </TabsContent>
 
@@ -395,9 +304,7 @@ export default function ZeiterfassungPageClient() {
             plausibilityIssues={plausibilityIssues || []}
             isLoadingBalance={dataLoading}
             isLoadingIssues={dataLoading}
-            onResolveIssue={(issue) => {
-              toast.info("Funktion wird noch implementiert")
-            }}
+            onResolveIssue={() => toast.info("Funktion wird noch implementiert")}
           />
         </TabsContent>
 
@@ -406,7 +313,7 @@ export default function ZeiterfassungPageClient() {
             corrections={correctionRequests || []}
             isLoading={dataLoading}
             onNewCorrection={() => toast.info("Funktion wird noch implementiert")}
-            onViewCorrection={(correction) => toast.info("Funktion wird noch implementiert")}
+            onViewCorrection={() => toast.info("Funktion wird noch implementiert")}
           />
         </TabsContent>
 
@@ -420,7 +327,6 @@ export default function ZeiterfassungPageClient() {
         </TabsContent>
       </Tabs>
 
-      {/* Dialogs */}
       <StampDialog
         open={showStampDialog}
         onOpenChange={setShowStampDialog}

@@ -83,279 +83,129 @@ export async function getSidebarBadges(practiceId: string) {
     const endOfDay = new Date()
     endOfDay.setHours(23, 59, 59, 999)
 
-    const results = await Promise.all([
-      // Tasks (incomplete)
-      supabase
-        .from("todos")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .eq("completed", false),
-      // Goals (active)
-      supabase
-        .from("goals")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .not("status", "in", "(completed,cancelled)"),
-      // Workflows (active)
-      supabase
-        .from("workflows")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .eq("status", "active"),
-      // Candidates (not archived)
-      supabase
-        .from("candidates")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .neq("status", "Archiv"),
-      // Tickets (open)
-      supabase
-        .from("tickets")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .neq("status", "resolved")
-        .neq("status", "closed"),
-      // Team members (active)
-      supabase
-        .from("team_members")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .eq("status", "active"),
-      // Responsibilities
-      supabase
-        .from("responsibilities")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Survey responses (completed)
-      supabase
-        .from("survey_responses")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .eq("status", "completed")
-        .is("deleted_at", null),
-      // Inventory items
-      supabase
-        .from("inventory_items")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Medical devices
-      supabase
-        .from("medical_devices")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Calendar events (today)
-      supabase
-        .from("calendar_events")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .gte("start_time", today)
-        .lte("start_time", endOfDay.toISOString()),
-      // Documents
-      supabase
-        .from("documents")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // CIRS reports (open/pending)
-      supabase
-        .from("cirs_reports")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .in("status", ["new", "in_progress", "pending"]),
-      // Contacts
-      supabase
-        .from("contacts")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Hygiene tasks (due/overdue)
-      supabase
-        .from("hygiene_tasks")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .eq("status", "pending")
-        .lte("due_date", today),
-      // Training records (upcoming/required)
-      supabase
-        .from("training_records")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .eq("status", "required"),
-      // Protocols (recent)
-      supabase
-        .from("protocols")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Journal entries
-      supabase
-        .from("practice_insights")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Appraisals (scheduled/pending)
-      supabase
-        .from("team_member_appraisals")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .in("status", ["scheduled", "pending", "in_progress"]),
-      // Skills/Competencies
-      supabase
-        .from("skills")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Workplaces
-      supabase
-        .from("workplaces")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Rooms
-      supabase
-        .from("rooms")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Equipment/Arbeitsmittel
-      supabase
-        .from("equipment")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .is("deleted_at", null),
-      // Dienstplan (shift plans for today/this week)
-      supabase
-        .from("shift_plans")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .gte("date", today),
-      // Zeiterfassung (time entries for today)
-      supabase
-        .from("time_entries")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .gte("date", today),
-      // Analytics/KPIs
-      supabase
-        .from("practice_parameters")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId),
-      // Knowledge articles
-      supabase
-        .from("knowledge_articles")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .eq("status", "published"),
-      // Strategy milestones (active)
-      supabase
-        .from("strategy_milestones")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .neq("status", "completed"),
-      // Leadership items
-      supabase
-        .from("leadership_items")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId),
-      // Wellbeing entries
-      supabase
-        .from("wellbeing_entries")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId),
-      // Leitbild elements
-      supabase
-        .from("leitbild_elements")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId),
-      // Self-check entries (pending)
-      supabase
-        .from("self_check_entries")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId)
-        .eq("status", "pending"),
-      // Organigramm nodes
-      supabase
-        .from("organigramm_nodes")
-        .select("*", { count: "exact", head: true })
-        .eq("practice_id", practiceId),
-    ])
+  // Helper to safely run a count query - returns 0 on any error
+  const safeCount = async (query: Promise<{ count: number | null; error: any }>): Promise<number> => {
+    try {
+      const result = await query
+      return Number(result.count) || 0
+    } catch {
+      return 0
+    }
+  }
 
-    const [
-      tasksResult,
-      goalsResult,
-      workflowsResult,
-      candidatesResult,
-      ticketsResult,
-      teamResult,
-      responsibilitiesResult,
-      surveysResult,
-      inventoryResult,
-      devicesResult,
-      calendarResult,
-      documentsResult,
-      cirsResult,
-      contactsResult,
-      hygieneResult,
-      trainingResult,
-      protocolsResult,
-      journalResult,
-      appraisalsResult,
-      skillsResult,
-      workplacesResult,
-      roomsResult,
-      equipmentResult,
-      dienstplanResult,
-      zeiterfassungResult,
-      analyticsResult,
-      knowledgeResult,
-      strategyResult,
-      leadershipResult,
-      wellbeingResult,
-      leitbildResult,
-      selfcheckResult,
-      organigrammResult,
-    ] = results
+  const [
+    tasks, goals, workflows, candidates, tickets, teamMembers,
+    responsibilities, surveys, inventory, devices, calendar, documents,
+    cirs, contacts, hygiene, training, protocols, journal,
+    appraisals, skills, workplaces, rooms, equipment,
+    dienstplan, zeiterfassung, analytics, knowledge,
+    strategy, leadership, wellbeing, leitbild, selfcheck, organigramm,
+  ] = await Promise.all([
+    // Tasks (incomplete)
+    safeCount(supabase.from("todos").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("completed", false)),
+    // Goals (active)
+    safeCount(supabase.from("goals").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).not("status", "in", "(completed,cancelled)")),
+    // Workflows (active)
+    safeCount(supabase.from("workflows").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "active")),
+    // Candidates (not archived)
+    safeCount(supabase.from("candidates").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).neq("status", "Archiv")),
+    // Tickets (open)
+    safeCount(supabase.from("tickets").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).neq("status", "resolved").neq("status", "closed")),
+    // Team members (active)
+    safeCount(supabase.from("team_members").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "active")),
+    // Responsibilities
+    safeCount(supabase.from("responsibilities").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Survey responses (completed)
+    safeCount(supabase.from("survey_responses").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "completed").is("deleted_at", null)),
+    // Inventory items
+    safeCount(supabase.from("inventory_items").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Medical devices
+    safeCount(supabase.from("medical_devices").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Calendar events (today)
+    safeCount(supabase.from("calendar_events").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).gte("start_time", today).lte("start_time", endOfDay.toISOString())),
+    // Documents
+    safeCount(supabase.from("documents").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // CIRS reports (open/pending)
+    safeCount(supabase.from("cirs_reports").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).in("status", ["new", "in_progress", "pending"])),
+    // Contacts
+    safeCount(supabase.from("contacts").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Hygiene tasks (due/overdue)
+    safeCount(supabase.from("hygiene_tasks").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "pending").lte("due_date", today)),
+    // Training records (upcoming/required)
+    safeCount(supabase.from("training_records").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "required")),
+    // Protocols
+    safeCount(supabase.from("protocols").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Journal entries
+    safeCount(supabase.from("practice_insights").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Appraisals (scheduled/pending)
+    safeCount(supabase.from("team_member_appraisals").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).in("status", ["scheduled", "pending", "in_progress"])),
+    // Skills/Competencies
+    safeCount(supabase.from("skills").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Workplaces
+    safeCount(supabase.from("workplaces").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Rooms
+    safeCount(supabase.from("rooms").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Equipment/Arbeitsmittel
+    safeCount(supabase.from("equipment").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    // Dienstplan (shift plans for today/this week)
+    safeCount(supabase.from("shift_plans").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).gte("date", today)),
+    // Zeiterfassung (time entries for today)
+    safeCount(supabase.from("time_entries").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).gte("date", today)),
+    // Analytics/KPIs
+    safeCount(supabase.from("practice_parameters").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
+    // Knowledge articles
+    safeCount(supabase.from("knowledge_articles").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "published")),
+    // Strategy milestones (active)
+    safeCount(supabase.from("strategy_milestones").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).neq("status", "completed")),
+    // Leadership items
+    safeCount(supabase.from("leadership_items").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
+    // Wellbeing entries
+    safeCount(supabase.from("wellbeing_entries").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
+    // Leitbild elements
+    safeCount(supabase.from("leitbild_elements").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
+    // Self-check entries (pending)
+    safeCount(supabase.from("self_check_entries").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "pending")),
+    // Organigramm nodes
+    safeCount(supabase.from("organigramm_nodes").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
+  ])
 
     // Contacts count includes team members (as they are shown merged in the contacts list)
-    const contactsCount = (Number(contactsResult.count) || 0) + (Number(teamResult.count) || 0)
+    const contactsCount = contacts + teamMembers
 
     const badges = {
-      tasks: Number(tasksResult.count) || 0,
-      goals: Number(goalsResult.count) || 0,
-      workflows: Number(workflowsResult.count) || 0,
-      candidates: Number(candidatesResult.count) || 0,
-      tickets: Number(ticketsResult.count) || 0,
-      teamMembers: Number(teamResult.count) || 0,
-      responsibilities: Number(responsibilitiesResult.count) || 0,
-      surveys: Number(surveysResult.count) || 0,
-      inventory: Number(inventoryResult.count) || 0,
-      devices: Number(devicesResult.count) || 0,
-      calendar: Number(calendarResult.count) || 0,
-      documents: Number(documentsResult.count) || 0,
-      cirs: Number(cirsResult.count) || 0,
+      tasks,
+      goals,
+      workflows,
+      candidates,
+      tickets,
+      teamMembers,
+      responsibilities,
+      surveys,
+      inventory,
+      devices,
+      calendar,
+      documents,
+      cirs,
       contacts: contactsCount,
-      hygiene: Number(hygieneResult.count) || 0,
-      training: Number(trainingResult.count) || 0,
-      protocols: Number(protocolsResult.count) || 0,
-      journal: Number(journalResult.count) || 0,
-      appraisals: Number(appraisalsResult.count) || 0,
-      skills: Number(skillsResult.count) || 0,
-      workplaces: Number(workplacesResult.count) || 0,
-      rooms: Number(roomsResult.count) || 0,
-      equipment: Number(equipmentResult.count) || 0,
-      dienstplan: Number(dienstplanResult.count) || 0,
-      zeiterfassung: Number(zeiterfassungResult.count) || 0,
-      analytics: Number(analyticsResult.count) || 0,
-      knowledge: Number(knowledgeResult.count) || 0,
-      strategy: Number(strategyResult.count) || 0,
-      leadership: Number(leadershipResult.count) || 0,
-      wellbeing: Number(wellbeingResult.count) || 0,
-      leitbild: Number(leitbildResult.count) || 0,
-      selfcheck: Number(selfcheckResult.count) || 0,
-      organigramm: Number(organigrammResult.count) || 0,
+      hygiene,
+      training,
+      protocols,
+      journal,
+      appraisals,
+      skills,
+      workplaces,
+      rooms,
+      equipment,
+      dienstplan,
+      zeiterfassung,
+      analytics,
+      knowledge,
+      strategy,
+      leadership,
+      wellbeing,
+      leitbild,
+      selfcheck,
+      organigramm,
     }
 
     return {

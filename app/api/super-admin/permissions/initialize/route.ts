@@ -628,6 +628,43 @@ const DEFAULT_PERMISSIONS = [
     viewer: [true, false, false, false],
     extern: [false, false, false, false],
   },
+  {
+    key: "hygieneplan",
+    category: "Qualitätsmanagement",
+    superadmin: [true, true, true, true],
+    practiceadmin: [true, true, true, true],
+    admin: [true, true, true, false],
+    manager: [true, true, false, false],
+    member: [true, false, false, false],
+    viewer: [true, false, false, false],
+    extern: [false, false, false, false],
+  },
+  {
+    key: "cirs",
+    category: "Qualitätsmanagement",
+    superadmin: [true, true, true, true],
+    practiceadmin: [true, true, true, true],
+    admin: [true, true, true, false],
+    manager: [true, true, true, false],
+    member: [true, true, false, false],
+    viewer: [true, false, false, false],
+    extern: [false, false, false, false],
+  },
+
+  // ============================================
+  // Team & Personal (zusaetzlich)
+  // ============================================
+  {
+    key: "selbst_check",
+    category: "Team & Personal",
+    superadmin: [true, true, true, true],
+    practiceadmin: [true, true, true, true],
+    admin: [true, true, true, false],
+    manager: [true, true, true, false],
+    member: [true, true, false, false],
+    viewer: [true, false, false, false],
+    extern: [false, false, false, false],
+  },
 
   // ============================================
   // Infrastruktur

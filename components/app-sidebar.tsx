@@ -17,6 +17,7 @@ import { isSuperAdminRole, isPracticeAdminRole } from "@/lib/auth-utils"
 import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 import Logger from "@/lib/logger"
 import { useFeatureBetaFlags } from "@/hooks/use-feature-beta-flags"
+import { usePermissions } from "@/hooks/use-permissions"
 
 // Extracted components
 import {
@@ -54,12 +55,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [expandedGroups, setExpandedGroups] = useState<string[]>(DEFAULT_EXPANDED_GROUPS)
   const [lastActivePath, setLastActivePath] = useState<string | null>(null)
   const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar()
-  const [sidebarPermissions, setSidebarPermissions] = useState<Record<string, boolean>>({})
   const [favorites, setFavorites] = useState<string[]>([])
   const [badgeCounts, setBadgeCounts] = useState<Record<BadgeKey, number>>(DEFAULT_BADGE_COUNTS)
   const [badgeVisibility, setBadgeVisibility] = useState<Record<string, boolean>>(DEFAULT_BADGE_VISIBILITY)
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   const initialLoadDone = useRef(false)
+  const { checkPermission } = usePermissions()
   
   // Favorites edit dialog state
 
@@ -68,6 +69,61 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)
   const isSuperAdmin = isSuperAdminRole(currentUser?.role) || currentUser?.is_super_admin === true
   const sidebarGroups = getNavigationGroups(t)
+
+  // Map sidebar navigation keys to permission_key in role_permissions table
+  const SIDEBAR_TO_PERMISSION_KEY: Record<string, string> = {
+    dashboard: "dashboard",
+    aiAnalysis: "ai_analysis",
+    academy: "academy",
+    calendar: "calendar",
+    dienstplan: "dienstplan",
+    zeiterfassung: "zeiterfassung",
+    tasks: "tasks",
+    goals: "goals",
+    workflows: "workflows",
+    responsibilities: "responsibilities",
+    analytics: "analytics",
+    documents: "documents",
+    journal: "practice_journals",
+    knowledge: "knowledge",
+    protocols: "protocols",
+    cirs: "cirs",
+    hygieneplan: "hygieneplan",
+    strategy_journey: "strategy_journey",
+    leadership: "leadership",
+    wellbeing: "wellbeing",
+    leitbild: "leitbild",
+    roi_analysis: "roi_analysis",
+    igel: "igel_analysis",
+    competitor_analysis: "competitor_analysis",
+    wunschpatient: "wunschpatient",
+    hiring: "hiring",
+    team: "team",
+    mitarbeitergespraeche: "mitarbeitergespraeche",
+    selbst_check: "selbst_check",
+    skills: "skills",
+    organigramm: "organigramm",
+    training: "training",
+    contacts: "contacts",
+    surveys: "surveys",
+    arbeitsplaetze: "arbeitsplaetze",
+    rooms: "rooms",
+    arbeitsmittel: "arbeitsmittel",
+    inventory: "inventory",
+    devices: "devices",
+    settings: "settings",
+  }
+
+  // Build sidebarPermissions from role_permissions via usePermissions hook
+  const sidebarPermissions: Record<string, boolean> = {}
+  for (const group of sidebarGroups) {
+    for (const item of group.items) {
+      if (item.key) {
+        const permKey = SIDEBAR_TO_PERMISSION_KEY[item.key] || item.key
+        sidebarPermissions[item.key] = checkPermission(permKey, "can_view")
+      }
+    }
+  }
 
   // Fetch sidebar badge counts
   useEffect(() => {

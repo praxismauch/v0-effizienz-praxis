@@ -645,10 +645,13 @@ export function ScreenshotsPageClient() {
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-2">
                     {runs.map((run) => (
-                      <button
+                      <div
                         key={run.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => loadRunDetail(run.id)}
-                        className={`w-full text-left p-3 rounded-lg border transition-colors hover:bg-accent ${
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") loadRunDetail(run.id) }}
+                        className={`w-full text-left p-3 rounded-lg border transition-colors hover:bg-accent cursor-pointer ${
                           activeRunId === run.id ? "border-primary bg-accent" : ""
                         }`}
                       >
@@ -694,7 +697,7 @@ export function ScreenshotsPageClient() {
                             </Badge>
                           ))}
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </ScrollArea>

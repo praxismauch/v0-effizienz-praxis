@@ -268,31 +268,45 @@ export default function ZeiterfassungPageClient() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
-        <StatCard
-          label="Heute"
-          value={
-            currentBlock && !currentBlock.end_time
-              ? `${Math.floor((Date.now() - new Date(currentBlock.start_time).getTime()) / 60000 / 60)}h ${Math.floor(((Date.now() - new Date(currentBlock.start_time).getTime()) / 60000) % 60)}m`
-              : timeBlocks?.filter((b: any) => {
-                  const d = new Date(b.start_time)
-                  const now = new Date()
-                  return d.toDateString() === now.toDateString()
-                }).reduce((sum: number, b: any) => sum + (b.duration_minutes || 0), 0) > 0
-                ? `${(timeBlocks.filter((b: any) => new Date(b.start_time).toDateString() === new Date().toDateString()).reduce((sum: number, b: any) => sum + (b.duration_minutes || 0), 0) / 60).toFixed(1)}h`
-                : "0h"
-          }
-          icon={Timer}
-          {...statCardColors.info}
-          description={currentBlock && !currentBlock.end_time ? "Aktiv" : "Arbeitszeit"}
-          descriptionColor={currentBlock && !currentBlock.end_time ? "text-green-600" : undefined}
-        />
-        <StatCard
-          label="Diesen Monat"
-          value={`${((timeBlocks || []).reduce((sum: number, b: any) => sum + (b.duration_minutes || 0), 0) / 60).toFixed(1)}h`}
-          icon={CalendarCheck}
-          {...statCardColors.success}
-          description={`${(timeBlocks || []).length} Eintraege`}
-        />
+        {(() => {
+          const todayStr = format(new Date(), "yyyy-MM-dd")
+          const completedTodayMinutes = (timeBlocks || [])
+            .filter((b: any) => b.date === todayStr && b.end_time)
+            .reduce((sum: number, b: any) => sum + (b.actual_hours ? b.actual_hours * 60 : 0), 0)
+          const activeMinutes = currentBlock && !currentBlock.end_time
+            ? Math.max(0, Math.floor((Date.now() - new Date(currentBlock.start_time).getTime()) / 60000) - (currentBlock.break_minutes || 0))
+            : 0
+          const totalMinutes = Math.round(completedTodayMinutes + activeMinutes)
+          const h = Math.floor(totalMinutes / 60)
+          const m = totalMinutes % 60
+          const isActive = currentBlock && !currentBlock.end_time
+          return (
+            <StatCard
+              label="Heute"
+              value={`${h}h ${m}min`}
+              icon={Timer}
+              {...statCardColors.info}
+              description={isActive ? "Aktiv" : "Arbeitszeit"}
+              descriptionColor={isActive ? "text-green-600" : undefined}
+            />
+          )
+        })()}
+        {(() => {
+          const monthMinutes = (timeBlocks || [])
+            .reduce((sum: number, b: any) => sum + (b.actual_hours ? b.actual_hours * 60 : 0), 0)
+          const rounded = Math.round(monthMinutes)
+          const h = Math.floor(rounded / 60)
+          const m = rounded % 60
+          return (
+            <StatCard
+              label="Diesen Monat"
+              value={`${h}h ${m}min`}
+              icon={CalendarCheck}
+              {...statCardColors.success}
+              description={`${(timeBlocks || []).length} Eintraege`}
+            />
+          )
+        })()}
         <StatCard
           label="Korrekturen"
           value={(correctionRequests || []).filter((c: any) => c.status === "pending").length}

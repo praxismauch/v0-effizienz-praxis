@@ -18,7 +18,7 @@ interface PermissionCheck {
 }
 
 export function usePermissions() {
-  const { user } = useUser()
+  const { currentUser: user } = useUser()
   const [state, setState] = useState<PermissionState>({
     permissions: [],
     isLoading: true,

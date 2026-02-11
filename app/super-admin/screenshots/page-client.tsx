@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,7 @@ import {
   History,
   ChevronRight,
   ArrowLeft,
+  Square,
 } from "lucide-react"
 
 // ── Types ──
@@ -209,6 +210,7 @@ function statusColor(status: string) {
   switch (status) {
     case "completed": return "text-green-500"
     case "failed": return "text-red-500"
+    case "cancelled": return "text-amber-500"
     case "running": case "capturing": return "text-blue-500"
     default: return "text-muted-foreground"
   }
@@ -218,6 +220,7 @@ function statusBadgeVariant(status: string): "default" | "secondary" | "destruct
   switch (status) {
     case "completed": return "default"
     case "failed": return "destructive"
+    case "cancelled": return "outline"
     case "running": return "secondary"
     default: return "outline"
   }
@@ -229,6 +232,7 @@ export function ScreenshotsPageClient() {
   const [config, setConfig] = useState<ScreenshotConfig>(defaultConfig)
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)
+  const cancelRef = useRef(false)
   const [selectedViewports, setSelectedViewports] = useState<Set<"desktop" | "tablet" | "mobile">>(
     new Set(["desktop"])
   )
@@ -314,6 +318,7 @@ export function ScreenshotsPageClient() {
 
     setIsRunning(true)
     setProgress(0)
+    cancelRef.current = false
 
     // 1. Create run in DB
     let runId: string | null = null
@@ -355,6 +360,33 @@ export function ScreenshotsPageClient() {
     let failedCount = 0
 
     for (let i = 0; i < results.length; i++) {
+      // Check for cancellation
+      if (cancelRef.current) {
+        // Mark remaining results as pending (cancelled)
+        setActiveResults((prev) =>
+          prev.map((r) =>
+            r.status === "pending" || r.status === "capturing"
+              ? { ...r, status: "pending" }
+              : r
+          )
+        )
+        // Update run status to cancelled in DB
+        if (runId) {
+          fetch(`/api/super-admin/screenshot-runs/${runId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              runUpdate: {
+                completedCount,
+                failedCount,
+                status: "cancelled",
+              },
+            }),
+          }).catch(() => {})
+        }
+        break
+      }
+
       const result = results[i]
 
       // Update to capturing
@@ -411,6 +443,10 @@ export function ScreenshotsPageClient() {
     // Refresh run list so the new run appears in history
     loadRuns()
   }
+
+  const stopCapture = useCallback(() => {
+    cancelRef.current = true
+  }, [])
 
   const toggleViewport = (viewport: "desktop" | "tablet" | "mobile") => {
     setSelectedViewports((prev) => {
@@ -506,21 +542,30 @@ export function ScreenshotsPageClient() {
                 />
               </div>
 
-              <Button onClick={startCapture} disabled={isRunning} className="w-full">
-                {isRunning ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Erfasse... ({Math.round(progress)}%)
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-2" />
-                    Lauf starten ({getPages().length * selectedViewports.size} Screenshots)
-                  </>
-                )}
-              </Button>
-
-              {isRunning && <Progress value={progress} className="h-2" />}
+              {isRunning ? (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Button disabled className="flex-1">
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Erfasse... ({Math.round(progress)}%)
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={stopCapture}
+                      className="shrink-0"
+                    >
+                      <Square className="h-4 w-4 mr-1" />
+                      Stopp
+                    </Button>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                </div>
+              ) : (
+                <Button onClick={startCapture} className="w-full">
+                  <Play className="h-4 w-4 mr-2" />
+                  Lauf starten ({getPages().length * selectedViewports.size} Screenshots)
+                </Button>
+              )}
             </CardContent>
           </Card>
 

@@ -206,22 +206,27 @@ function formatDuration(start: string, end: string | null) {
 }
 
 /**
- * Checks a page by fetching it server-side via our API route.
- * Returns the HTTP status code and whether the page loaded successfully.
+ * Captures a real screenshot via headless browser on the server.
+ * Returns the Vercel Blob URL of the PNG image.
  */
-async function checkPageStatus(
-  url: string
-): Promise<{ status: number; ok: boolean; redirectedTo?: string }> {
+async function captureScreenshot(
+  url: string,
+  viewport: string,
+  pageName: string
+): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
   try {
-    const res = await fetch("/api/super-admin/screenshot-check", {
+    const res = await fetch("/api/super-admin/screenshot-capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, viewport, pageName }),
     })
-    if (!res.ok) throw new Error("Check-API nicht erreichbar")
-    return await res.json()
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || `HTTP ${res.status}` }
+    }
+    return { success: true, imageUrl: data.imageUrl }
   } catch {
-    return { status: 0, ok: false }
+    return { success: false, error: "Screenshot-API nicht erreichbar" }
   }
 }
 
@@ -432,42 +437,25 @@ export function ScreenshotsPageClient() {
         prev.map((r) => (r.id === result.id ? { ...r, status: "capturing" } : r))
       )
 
-      // Check page via server-side HTTP request (avoids iframe/auth/CORS issues)
+      // Capture real screenshot via headless browser -> Vercel Blob PNG
       const fullUrl = `${config.baseUrl}${result.page_path}`
-      const checkResult = await checkPageStatus(fullUrl)
+      const captureResult = await captureScreenshot(fullUrl, result.viewport, result.page_name)
 
-      let newStatus: "completed" | "failed" = "failed"
-      let errorMsg: string | null = null
-
-      if (checkResult.ok) {
-        newStatus = "completed"
-      } else if (checkResult.redirectedTo) {
-        // Page redirects (e.g. to login) — still a valid route, mark as completed with info
-        if (checkResult.redirectedTo.includes("/auth/login") || checkResult.redirectedTo.includes("/login")) {
-          newStatus = "completed"
-          errorMsg = `Redirect -> Login (${checkResult.status})`
-        } else {
-          newStatus = "completed"
-          errorMsg = `Redirect -> ${checkResult.redirectedTo} (${checkResult.status})`
-        }
-      } else {
-        newStatus = "failed"
-        errorMsg = checkResult.status === 0
-          ? "Seite nicht erreichbar (Timeout)"
-          : `HTTP ${checkResult.status}`
-      }
+      const newStatus: "completed" | "failed" = captureResult.success ? "completed" : "failed"
+      const imageUrl = captureResult.imageUrl || null
+      const errorMsg = captureResult.error || null
 
       if (newStatus === "completed") completedCount++
       else failedCount++
 
-      // Update local state with the full URL for opening and status info
+      // Update local state with actual Blob image URL
       setActiveResults((prev) =>
         prev.map((r) =>
           r.id === result.id
             ? {
                 ...r,
                 status: newStatus,
-                image_url: fullUrl,
+                image_url: imageUrl,
                 captured_at: new Date().toISOString(),
                 error_message: errorMsg,
               }
@@ -805,10 +793,14 @@ export function ScreenshotsPageClient() {
                           className="flex items-center justify-between p-3 rounded-lg border bg-card"
                         >
                           <div className="flex items-center gap-3">
-                            {result.status === "completed" && !result.error_message ? (
+                            {result.status === "completed" && result.image_url ? (
+                              <img
+                                src={result.image_url}
+                                alt={result.page_name}
+                                className="h-10 w-16 rounded border object-cover object-top shrink-0"
+                              />
+                            ) : result.status === "completed" ? (
                               <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                            ) : result.status === "completed" && result.error_message ? (
-                              <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0" />
                             ) : result.status === "failed" ? (
                               <XCircle className="h-5 w-5 text-red-500 shrink-0" />
                             ) : result.status === "capturing" ? (
@@ -846,9 +838,9 @@ export function ScreenshotsPageClient() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => window.open(result.image_url!, "_blank")}
-                                title="Seite oeffnen"
+                                title="Screenshot oeffnen"
                               >
-                                <ExternalLink className="h-4 w-4" />
+                                <FolderOpen className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
@@ -866,16 +858,13 @@ export function ScreenshotsPageClient() {
                           key={result.id}
                           className="relative group rounded-lg border overflow-hidden bg-muted"
                         >
-                          <div className="aspect-video flex flex-col items-center justify-center bg-muted gap-2 p-3">
-                            {result.status === "completed" && !result.error_message ? (
-                              <CheckCircle2 className="h-10 w-10 text-green-500" />
-                            ) : result.status === "completed" && result.error_message ? (
-                              <>
-                                <CheckCircle2 className="h-10 w-10 text-amber-500" />
-                                <span className="text-[10px] text-amber-600 max-w-full text-center truncate">
-                                  {result.error_message}
-                                </span>
-                              </>
+                          <div className="aspect-video flex flex-col items-center justify-center bg-muted gap-2 p-3 relative">
+                            {result.status === "completed" && result.image_url ? (
+                              <img
+                                src={result.image_url}
+                                alt={`${result.page_name} (${result.viewport})`}
+                                className="absolute inset-0 w-full h-full object-cover object-top"
+                              />
                             ) : result.status === "failed" ? (
                               <>
                                 <XCircle className="h-10 w-10 text-red-400" />
@@ -884,7 +873,12 @@ export function ScreenshotsPageClient() {
                                 </span>
                               </>
                             ) : result.status === "capturing" ? (
-                              <RefreshCw className="h-10 w-10 text-blue-400 animate-spin" />
+                              <>
+                                <RefreshCw className="h-8 w-8 text-blue-400 animate-spin" />
+                                <span className="text-[10px] text-muted-foreground">Wird aufgenommen...</span>
+                              </>
+                            ) : result.status === "completed" ? (
+                              <CheckCircle2 className="h-10 w-10 text-green-500" />
                             ) : (
                               <Clock className="h-10 w-10 text-muted-foreground/40" />
                             )}
@@ -898,6 +892,16 @@ export function ScreenshotsPageClient() {
                               >
                                 <FolderOpen className="h-4 w-4 mr-1" />
                                 Oeffnen
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                asChild
+                              >
+                                <a href={result.image_url} download={`${result.page_name}_${result.viewport}.png`}>
+                                  <ExternalLink className="h-4 w-4 mr-1" />
+                                  Download
+                                </a>
                               </Button>
                             </div>
                           )}

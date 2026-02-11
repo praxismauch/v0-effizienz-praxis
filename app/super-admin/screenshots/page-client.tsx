@@ -8,6 +8,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Progress } from "@/components/ui/progress"
 import {
   Camera,
@@ -265,6 +275,9 @@ export function ScreenshotsPageClient() {
   // Run history
   const [runs, setRuns] = useState<ScreenshotRun[]>([])
   const [loadingRuns, setLoadingRuns] = useState(true)
+
+  // Delete confirmation
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   // Currently active or selected run
   const [activeRunId, setActiveRunId] = useState<string | null>(null)
@@ -669,7 +682,7 @@ export function ScreenshotsPageClient() {
                               className="p-1 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                deleteRun(run.id)
+                                setDeleteConfirmId(run.id)
                               }}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -770,7 +783,7 @@ export function ScreenshotsPageClient() {
                       variant="ghost"
                       size="sm"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => deleteRun(activeRunId)}
+                      onClick={() => setDeleteConfirmId(activeRunId)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -945,6 +958,31 @@ export function ScreenshotsPageClient() {
       </div>
 
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lauf wirklich loeschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Dieser Screenshot-Lauf und alle zugehoerigen Ergebnisse werden unwiderruflich geloescht.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirmId) {
+                  deleteRun(deleteConfirmId)
+                  setDeleteConfirmId(null)
+                }
+              }}
+            >
+              Loeschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

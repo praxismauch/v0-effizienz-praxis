@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
+import { getRoleLabel } from "@/lib/roles"
 import { Plus, Edit, Trash2, Check, X, Clock, Palmtree, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -173,7 +174,7 @@ export default function AvailabilityTab({
                   <CardTitle className="text-base">
                     {member.first_name} {member.last_name}
                   </CardTitle>
-                  {member.role && <p className="text-sm text-muted-foreground">{member.role}</p>}
+                  {member.role && <p className="text-sm text-muted-foreground">{getRoleLabel(member.role)}</p>}
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={() => onAddAvailability(member.id)}>

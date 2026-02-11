@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
+import { getRoleLabel } from "@/lib/roles"
 import { Clock, Coffee, Moon, Sun, Plus, MoreHorizontal, Edit, Trash2, ArrowLeftRight, Search, Users, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -352,7 +353,7 @@ export default function ScheduleTab({
                         <p className="font-medium text-sm">
                           {member.first_name} {member.last_name}
                         </p>
-                        {member.role && <p className="text-xs text-muted-foreground">{member.role}</p>}
+                        {member.role && <p className="text-xs text-muted-foreground">{getRoleLabel(member.role)}</p>}
                       </div>
                     </div>
                   </td>

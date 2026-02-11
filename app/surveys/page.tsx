@@ -689,16 +689,16 @@ export default function SurveysPage() {
         <div className="border-y bg-muted/30">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
-                  <TabsTrigger value="all">Alle</TabsTrigger>
-                  <TabsTrigger value="draft">Entwürfe</TabsTrigger>
-                  <TabsTrigger value="active">Aktiv</TabsTrigger>
-                  <TabsTrigger value="closed">Beendet</TabsTrigger>
-                  <TabsTrigger value="archived">Archiv</TabsTrigger>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1">
+                <TabsList className="w-full flex h-auto gap-1">
+                  <TabsTrigger value="all" className="flex-1">Alle</TabsTrigger>
+                  <TabsTrigger value="draft" className="flex-1">Entwürfe</TabsTrigger>
+                  <TabsTrigger value="active" className="flex-1">Aktiv</TabsTrigger>
+                  <TabsTrigger value="closed" className="flex-1">Beendet</TabsTrigger>
+                  <TabsTrigger value="archived" className="flex-1">Archiv</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-64 shrink-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Umfrage suchen..."

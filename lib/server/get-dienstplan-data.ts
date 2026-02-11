@@ -71,11 +71,11 @@ export const getDienstplanData = cache(async (
         .order("created_at", { ascending: false })
     ])
 
-    if (teamMembersResult.error) console.error("[Server] Team members error:", teamMembersResult.error)
-    if (shiftTypesResult.error) console.error("[Server] Shift types error:", shiftTypesResult.error)
-    if (schedulesResult.error) console.error("[Server] Schedules error:", schedulesResult.error)
-    if (availabilityResult.error) console.error("[Server] Availability error:", availabilityResult.error)
-    if (swapRequestsResult.error) console.error("[Server] Swap requests error:", swapRequestsResult.error)
+    if (teamMembersResult.error?.message) console.error("[Server] Team members error:", teamMembersResult.error.message)
+    if (shiftTypesResult.error?.message) console.error("[Server] Shift types error:", shiftTypesResult.error.message)
+    if (schedulesResult.error?.message) console.error("[Server] Schedules error:", schedulesResult.error.message)
+    if (availabilityResult.error?.message) console.error("[Server] Availability error:", availabilityResult.error.message)
+    if (swapRequestsResult.error?.message) console.error("[Server] Swap requests error:", swapRequestsResult.error.message)
 
     return {
       teamMembers: teamMembersResult.data || [],

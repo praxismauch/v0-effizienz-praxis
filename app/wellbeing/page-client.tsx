@@ -328,8 +328,8 @@ export default function WellbeingPageClient() {
     try {
       const res = await fetch(`/api/practices/${currentPractice?.id}/team-members`)
       if (res.ok) {
-        const data = await res.json()
-        setTeamMembers(data || [])
+  const data = await res.json()
+  setTeamMembers(Array.isArray(data) ? data : data.teamMembers || [])
         // Debug log removed: Team members loaded:", data?.length)
       } else {
         console.error("[v0] Failed to load team members:", res.status, res.statusText)

@@ -255,13 +255,22 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                     <Separator />
                     <div className="flex items-start gap-3">
                       <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                      <div className="text-sm">
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          [candidate.address, candidate.postal_code, candidate.city, candidate.country]
+                            .filter(Boolean)
+                            .join(", ")
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline"
+                      >
                         {candidate.address && <p>{candidate.address}</p>}
                         <p>
                           {candidate.postal_code} {candidate.city}
                           {candidate.country && `, ${candidate.country}`}
                         </p>
-                      </div>
+                      </a>
                     </div>
                   </>
                 )}

@@ -432,9 +432,9 @@ const CandidatesManager = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {displayedCandidates.map((candidate) => (
+                <Link key={candidate.id} href={`/hiring/candidates/${candidate.id}`} className="block">
                 <Card 
-                  key={candidate.id} 
-                  className="group relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/80 shadow-sm hover:shadow-lg transition-all duration-300"
+                  className="group relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/80 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
                 >
                   {/* Top accent bar based on pipeline stage */}
                   <div 
@@ -462,13 +462,13 @@ const CandidatesManager = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <Link
-                              href={`/hiring/candidates/${candidate.id}`}
-                              className="text-base font-semibold text-foreground hover:text-primary transition-colors block truncate"
+                            <span
+                              className="text-base font-semibold text-foreground group-hover:text-primary transition-colors block truncate"
                             >
                               {candidate.first_name} {candidate.last_name}
-                            </Link>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            </span>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              {candidate.status && getStatusBadge(candidate.status)}
                               {candidate.date_of_birth && (
                                 <span className="text-sm text-muted-foreground">
                                   {calculateAge(candidate.date_of_birth)} Jahre
@@ -487,11 +487,17 @@ const CandidatesManager = ({
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => e.preventDefault()}
                               >
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => setEditingCandidate(candidate)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Bearbeiten
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               {!showArchived && (
                                 <DropdownMenuItem
                                   onClick={() =>
@@ -517,10 +523,6 @@ const CandidatesManager = ({
                                   Als Team-Mitglied
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem onClick={() => setEditingCandidate(candidate)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Bearbeiten
-                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleArchive(candidate.id, showArchived)}>
                                 {showArchived ? (
@@ -639,6 +641,7 @@ const CandidatesManager = ({
                     )}
                   </CardContent>
                 </Card>
+                </Link>
               ))}
             </div>
           )}

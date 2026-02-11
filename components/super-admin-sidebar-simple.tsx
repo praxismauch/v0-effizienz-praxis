@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/context-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useUser } from "@/contexts/user-context"
+import { useFeatureBetaFlags } from "@/hooks/use-feature-beta-flags"
 import {
   ChevronDown,
   ChevronRight,
@@ -78,6 +79,7 @@ interface MenuItem {
   href?: string
   badge?: boolean
   badgeType?: BadgeType
+  beta?: boolean
   subitems?: MenuItem[]
 }
 
@@ -91,6 +93,7 @@ interface MenuSection {
 export function SuperAdminSidebarSimple() {
   const pathname = usePathname()
   const { currentUser } = useUser()
+  const betaFlags = useFeatureBetaFlags()
   const [collapsed, setCollapsed] = useState(false)
   const [openSections, setOpenSections] = useState<string[]>(["overview", "management"])
   const [expandedItems, setExpandedItems] = useState<string[]>([])
@@ -127,74 +130,67 @@ export function SuperAdminSidebarSimple() {
 
   // Load sidebar state (collapsed, sections, expanded items, favorites)
   useEffect(() => {
+    if (!mounted) return
+
     const loadSidebarState = async () => {
-      if (!currentUser?.id) {
+      // Always load from localStorage first for instant restore
+      try {
         const savedSections = localStorage.getItem("superAdminSidebarSections")
         const savedExpanded = localStorage.getItem("superAdminExpandedItems")
         const savedCollapsed = localStorage.getItem("superAdminSidebarCollapsed")
         const savedFavorites = localStorage.getItem("superAdminFavorites")
+        console.log("[v0] Simple sidebar load - localStorage favorites raw:", savedFavorites)
         if (savedSections) {
-          try {
-            const parsed = JSON.parse(savedSections)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setOpenSections(parsed)
-            }
-          } catch (e) {
-            console.warn("[v0] Failed to parse saved sections from localStorage:", e)
-          }
+          const parsed = JSON.parse(savedSections)
+          if (Array.isArray(parsed) && parsed.length > 0) setOpenSections(parsed)
         }
         if (savedExpanded) {
-          try {
-            const parsed = JSON.parse(savedExpanded)
-            if (Array.isArray(parsed)) {
-              setExpandedItems(parsed)
-            }
-          } catch (e) {
-            console.warn("[v0] Failed to parse saved expanded items from localStorage:", e)
-          }
+          const parsed = JSON.parse(savedExpanded)
+          if (Array.isArray(parsed)) setExpandedItems(parsed)
         }
         if (savedCollapsed) {
           setCollapsed(savedCollapsed === "true")
         }
         if (savedFavorites) {
-          try {
-            const parsed = JSON.parse(savedFavorites)
-            if (Array.isArray(parsed)) {
-              setFavorites(parsed)
+          const parsed = JSON.parse(savedFavorites)
+          console.log("[v0] Simple sidebar load - parsed favorites:", parsed)
+          if (Array.isArray(parsed)) setFavorites(parsed)
+        }
+      } catch (e) {
+        console.warn("[v0] Failed to parse sidebar state from localStorage:", e)
+      }
+
+      // Then try API for database-backed state (overrides localStorage if available)
+      if (currentUser?.id) {
+        try {
+          const res = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=super-admin`)
+          console.log("[v0] Simple sidebar API response status:", res.status)
+          if (res.ok) {
+            const data = await res.json()
+            const prefs = data.preferences || data
+            console.log("[v0] Simple sidebar API favorites:", prefs.favorites)
+            if (prefs.expanded_groups && Array.isArray(prefs.expanded_groups)) {
+              setOpenSections(prefs.expanded_groups)
             }
-          } catch (e) {
-            console.warn("[v0] Failed to parse saved favorites from localStorage:", e)
+            if (prefs.expanded_items && Array.isArray(prefs.expanded_items)) {
+              setExpandedItems(prefs.expanded_items)
+            }
+            if (typeof prefs.is_collapsed === "boolean") {
+              setCollapsed(prefs.is_collapsed)
+            }
+            if (prefs.favorites && Array.isArray(prefs.favorites) && prefs.favorites.length > 0) {
+              setFavorites(prefs.favorites)
+              try { localStorage.setItem("superAdminFavorites", JSON.stringify(prefs.favorites)) } catch (e) {}
+            }
           }
+        } catch (error) {
+          console.debug("[v0] Error loading super admin sidebar state:", error)
         }
-        return
-      }
-
-      try {
-        const res = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=super-admin`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.expanded_groups && Array.isArray(data.expanded_groups)) {
-            setOpenSections(data.expanded_groups)
-          }
-          if (data.expanded_items && Array.isArray(data.expanded_items)) {
-            setExpandedItems(data.expanded_items)
-          }
-          if (typeof data.is_collapsed === "boolean") {
-            setCollapsed(data.is_collapsed)
-          }
-          if (data.favorites && Array.isArray(data.favorites)) {
-            setFavorites(data.favorites)
-          }
-        }
-      } catch (error) {
-        console.debug("[v0] Error loading super admin sidebar state:", error)
       }
     }
 
-    if (mounted) {
-      loadSidebarState()
-    }
-  }, [currentUser, mounted])
+    loadSidebarState()
+  }, [currentUser?.id, mounted])
 
   // Load all badge counts
   useEffect(() => {
@@ -404,8 +400,21 @@ export function SuperAdminSidebarSimple() {
   const toggleFavorite = async (href: string) => {
     const isAdding = !favorites.includes(href)
     const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
+    console.log("[v0] Simple toggleFavorite:", href, "newFavorites:", newFavorites)
     setFavorites(newFavorites)
 
+    // Always save to localStorage for reliable persistence
+    if (mounted) {
+      try { 
+        localStorage.setItem("superAdminFavorites", JSON.stringify(newFavorites))
+        console.log("[v0] Simple saved to localStorage:", JSON.stringify(newFavorites))
+        // Verify it was saved
+        const verify = localStorage.getItem("superAdminFavorites")
+        console.log("[v0] Simple localStorage verify:", verify)
+      } catch (e) { console.log("[v0] Simple localStorage save failed:", e) }
+    }
+
+    // Also try to save to database if authenticated
     if (currentUser?.id) {
       try {
         await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
@@ -418,10 +427,7 @@ export function SuperAdminSidebarSimple() {
         })
       } catch (error) {
         console.debug("[v0] Error saving super admin favorites:", error)
-        setFavorites(favorites) // Rollback on error
       }
-    } else if (mounted) {
-      localStorage.setItem("superAdminFavorites", JSON.stringify(newFavorites))
     }
   }
 
@@ -575,8 +581,7 @@ export function SuperAdminSidebarSimple() {
     },
     {
       id: "super-admin-menu",
-      label: "Super Admin",
-      icon: Star,
+      label: "Management",
       items: [
         {
           id: "roadmap",
@@ -755,6 +760,11 @@ export function SuperAdminSidebarSimple() {
               <>
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1 truncate text-left">{item.label}</span>
+                {(item.beta || (item.href && betaFlags.has(item.href))) && (
+                  <span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-amber-400">
+                    Beta
+                  </span>
+                )}
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4 shrink-0" />
                 ) : (
@@ -793,6 +803,14 @@ export function SuperAdminSidebarSimple() {
           <>
             <Icon className="h-4 w-4 shrink-0" />
             <span className="flex-1 truncate">{item.label}</span>
+            {(item.beta || (item.href && betaFlags.has(item.href))) && (
+              <span className={cn(
+                "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide",
+                active ? "bg-white/20 text-white" : "bg-amber-500/20 text-amber-400"
+              )}>
+                Beta
+              </span>
+            )}
             {badgeCount > 0 && (
               <Badge
                 variant={active ? "secondary" : "default"}
@@ -991,7 +1009,7 @@ export function SuperAdminSidebarSimple() {
                   )}
                 </button>
                 {(isSectionOpen || collapsed) && (
-                  <div className="mt-1 space-y-0.5">{section.items.map((item) => renderMenuItem(item))}</div>
+                  <div className="mt-1 ml-2 space-y-0.5">{section.items.map((item) => renderMenuItem(item))}</div>
                 )}
               </div>
             )

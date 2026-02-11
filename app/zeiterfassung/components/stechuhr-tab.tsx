@@ -28,8 +28,9 @@ interface StechuhrTabProps {
 
 // Format Minuten zu Stunden
 const formatMinutes = (minutes: number) => {
-  const h = Math.floor(Math.abs(minutes) / 60)
-  const m = Math.abs(minutes) % 60
+  const rounded = Math.round(Math.abs(minutes))
+  const h = Math.floor(rounded / 60)
+  const m = rounded % 60
   const sign = minutes < 0 ? "-" : ""
   return `${sign}${h}h ${m}min`
 }

@@ -14,6 +14,7 @@ interface SidebarNavGroupProps {
   badgeCounts: Record<BadgeKey, number>
   badgeVisibility: Record<string, boolean>
   sidebarPermissions: Record<string, boolean>
+  betaFlags?: Set<string>
   onToggleGroup: (groupId: string) => void
   onNavigate: (href: string) => void
   onToggleFavorite: (href: string) => void
@@ -28,6 +29,7 @@ export function SidebarNavGroup({
   badgeCounts,
   badgeVisibility,
   sidebarPermissions,
+  betaFlags,
   onToggleGroup,
   onNavigate,
   onToggleFavorite,
@@ -68,6 +70,7 @@ export function SidebarNavGroup({
                 sidebarOpen={sidebarOpen}
                 onNavigate={onNavigate}
                 onToggleFavorite={onToggleFavorite}
+                isBeta={item.beta || betaFlags?.has(item.href) || false}
               />
             )
           })}

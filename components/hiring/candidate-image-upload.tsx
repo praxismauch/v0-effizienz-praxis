@@ -90,7 +90,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
   const [showEditor, setShowEditor] = useState(false)
   const [tempImageUrl, setTempImageUrl] = useState<string | null>(null)
   const [cropSettings, setCropSettings] = useState({
-    zoom: 10,
+    zoom: 3,
     panX: 0,
     panY: 0,
   })
@@ -157,7 +157,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
       reader.onloadend = () => {
         setTempImageUrl(reader.result as string)
         setShowEditor(true)
-        setCropSettings({ zoom: 10, panX: 0, panY: 0 })
+        setCropSettings({ zoom: 3, panX: 0, panY: 0 })
       }
       reader.readAsDataURL(processedFile)
 
@@ -342,7 +342,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
     if (previewUrl) {
       setTempImageUrl(previewUrl)
       setShowEditor(true)
-      setCropSettings({ zoom: 10, panX: 0, panY: 0 })
+      setCropSettings({ zoom: 3, panX: 0, panY: 0 })
     }
   }
 
@@ -564,7 +564,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCropSettings({ zoom: 10, panX: 0, panY: 0 })}
+                    onClick={() => setCropSettings({ zoom: 3, panX: 0, panY: 0 })}
                     className="w-full"
                   >
                     {t("common.reset", "Zurücksetzen")}

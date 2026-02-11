@@ -42,6 +42,7 @@ export interface NavigationItem {
   icon: LucideIcon
   key: string
   badge?: string
+  beta?: boolean
 }
 
 export interface NavigationGroup {

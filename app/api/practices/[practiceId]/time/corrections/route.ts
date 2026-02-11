@@ -1,52 +1,40 @@
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
   try {
-    const { practiceId: practiceIdStr } = await params
-    const practiceId = parseInt(practiceIdStr, 10)
-    
-    if (isNaN(practiceId)) {
-      return NextResponse.json(
-        { error: "Invalid practice ID" },
-        { status: 400 }
-      )
+    const { practiceId } = await params
+    if (!practiceId) {
+      return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
-    
-    const supabase = await createAdminClient()
 
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
     const status = searchParams.get("status")
 
     let query = supabase
       .from("time_correction_requests")
-      .select("*, time_blocks(*)")
+      .select("*, time_blocks:time_block_id(*)")
       .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
-    if (userId) {
-      query = query.eq("user_id", userId)
-    }
-
-    if (status) {
-      query = query.eq("status", status)
-    }
+    if (userId) query = query.eq("user_id", userId)
+    if (status) query = query.eq("status", status)
 
     const { data, error } = await query
 
     if (error) {
-      console.error("[v0] Error fetching corrections:", error)
+      console.error("[API] Error fetching corrections:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json(data || [])
   } catch (error) {
-    console.error("[v0] Corrections GET error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
@@ -55,50 +43,62 @@ export async function POST(
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
   try {
-    const { practiceId: practiceIdStr } = await params
-    const practiceId = parseInt(practiceIdStr, 10)
-    
-    if (isNaN(practiceId)) {
-      return NextResponse.json(
-        { error: "Invalid practice ID" },
-        { status: 400 }
-      )
+    const { practiceId } = await params
+    if (!practiceId) {
+      return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
-    
-    const supabase = await createAdminClient()
+
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
     const body = await request.json()
+    const { user_id, block_id, requested_start, requested_end, reason } = body
 
-    const { userId, timeBlockId, correctionType, requestedChanges, reason } = body
+    if (!user_id || !reason) {
+      return NextResponse.json({ error: "user_id and reason are required" }, { status: 400 })
+    }
 
-    if (!userId || !timeBlockId || !reason) {
-      return NextResponse.json(
-        { error: "Missing required fields: userId, timeBlockId, reason" },
-        { status: 400 }
-      )
+    // Get the original block times if a block is referenced
+    let originalStart = null
+    let originalEnd = null
+    let date = new Date().toISOString().split("T")[0]
+
+    if (block_id) {
+      const { data: block } = await supabase
+        .from("time_blocks")
+        .select("start_time, end_time, date")
+        .eq("id", block_id)
+        .single()
+
+      if (block) {
+        originalStart = block.start_time
+        originalEnd = block.end_time
+        date = block.date
+      }
     }
 
     const { data, error } = await supabase
       .from("time_correction_requests")
       .insert({
         practice_id: practiceId,
-        user_id: userId,
-        time_block_id: timeBlockId,
-        correction_type: correctionType || "modify_time",
-        requested_changes: requestedChanges,
+        user_id,
+        time_block_id: block_id || null,
+        date,
+        original_start: originalStart,
+        original_end: originalEnd,
+        requested_start: requested_start || null,
+        requested_end: requested_end || null,
         reason,
         status: "pending",
       })
       .select()
-      .maybeSingle()
+      .single()
 
     if (error) {
-      console.error("[v0] Error creating correction:", error)
+      console.error("[API] Error creating correction:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data, { status: 201 })
+    return NextResponse.json({ success: true, correction: data }, { status: 201 })
   } catch (error) {
-    console.error("[v0] Corrections POST error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return handleApiError(error)
   }
 }

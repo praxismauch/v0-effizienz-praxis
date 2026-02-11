@@ -27,6 +27,7 @@ export function getStatusColor(status: TicketStatus, configs: TicketStatusConfig
   const fallbackColors: Record<TicketStatus, string> = {
     open: "bg-orange-500",
     in_progress: "bg-blue-500",
+    to_test: "bg-purple-500",
     resolved: "bg-green-500",
     closed: "bg-gray-500",
     wont_fix: "bg-red-500",
@@ -51,6 +52,7 @@ export function getStatusLabel(
   const fallbackLabels: Record<TicketStatus, { de: string; en: string }> = {
     open: { de: "Offen", en: "Open" },
     in_progress: { de: "In Bearbeitung", en: "In Progress" },
+    to_test: { de: "Zu testen", en: "To Test" },
     resolved: { de: "Gelöst", en: "Resolved" },
     closed: { de: "Geschlossen", en: "Closed" },
     wont_fix: { de: "Wird nicht behoben", en: "Won't Fix" },

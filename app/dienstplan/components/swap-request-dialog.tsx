@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
+import { getRoleLabel } from "@/lib/roles"
 import {
   Dialog,
   DialogContent,
@@ -183,7 +184,7 @@ export default function SwapRequestDialog({
                       <p className="font-medium">
                         {currentTeamMember?.first_name} {currentTeamMember?.last_name}
                       </p>
-                      <p className="text-sm text-muted-foreground">{currentTeamMember?.role}</p>
+                      <p className="text-sm text-muted-foreground">{getRoleLabel(currentTeamMember?.role)}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -285,7 +286,7 @@ export default function SwapRequestDialog({
                       <p className="font-medium">
                         {targetTeamMember?.first_name} {targetTeamMember?.last_name}
                       </p>
-                      <p className="text-sm text-muted-foreground">{targetTeamMember?.role}</p>
+                      <p className="text-sm text-muted-foreground">{getRoleLabel(targetTeamMember?.role)}</p>
                     </div>
                   </div>
                   <div className="text-right">

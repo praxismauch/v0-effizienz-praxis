@@ -6,7 +6,7 @@ import { useUser } from "@/contexts/user-context"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
-import { Dialog, DialogContent, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -234,6 +234,7 @@ export function OnboardingWizard() {
     <Dialog open={isOnboardingOpen} onOpenChange={setIsOnboardingOpen}>
       <div className={cn("fixed inset-0 z-50 bg-black/80 backdrop-blur-sm", isOnboardingOpen ? "block" : "hidden")} />
       <DialogContent className="max-w-4xl p-0 bg-background border-border shadow-2xl max-h-[90vh] overflow-y-auto">
+        <DialogTitle className="sr-only">Einrichtungsassistent</DialogTitle>
         <DialogDescription className="sr-only">
           Einrichtungsassistent für Effizienz Praxis - Schritt {currentStep + 1} von {steps.length}
         </DialogDescription>

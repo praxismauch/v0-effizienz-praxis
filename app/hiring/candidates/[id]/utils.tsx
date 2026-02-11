@@ -2,25 +2,33 @@ import { Badge } from "@/components/ui/badge"
 
 export const getStatusBadge = (status: string) => {
   const statusColors: Record<string, string> = {
+    new: "bg-blue-500 text-white dark:bg-blue-600 dark:text-white",
     applied: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
     screening: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+    interviewing: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
     interview: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
     offer: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
     hired: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300",
     rejected: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+    withdrawn: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+    archived: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
   }
 
   const statusLabels: Record<string, string> = {
+    new: "Neu",
     applied: "Beworben",
-    screening: "Prüfung",
+    screening: "Screening",
+    interviewing: "Interview",
     interview: "Interview",
     offer: "Angebot",
     hired: "Eingestellt",
     rejected: "Abgelehnt",
+    withdrawn: "Zurückgezogen",
+    archived: "Archiviert",
   }
 
   return (
-    <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>
+    <Badge className={`${statusColors[status] || "bg-gray-100 text-gray-800"} text-sm px-3 py-1 font-medium`}>
       {statusLabels[status] || status}
     </Badge>
   )

@@ -16,7 +16,27 @@ export function createClient(): SupabaseClient {
   const supabaseAnonKey = getSupabaseAnonKey()
 
   if (!hasSupabaseConfig()) {
-    // Supabase not configured - return mock client
+    // Supabase not configured - return mock client with full method chaining support
+    const mockResult = { data: null, error: null, count: null, status: 200, statusText: "OK" }
+
+    function createChainable(): Record<string, unknown> {
+      const chainable: Record<string, unknown> = { ...mockResult }
+      const handler = () => createChainable()
+      const methods = [
+        "select", "insert", "update", "delete", "upsert",
+        "eq", "neq", "gt", "gte", "lt", "lte",
+        "like", "ilike", "is", "in", "contains", "containedBy",
+        "range", "textSearch", "match", "not", "or", "and", "filter",
+        "order", "limit", "offset", "single", "maybeSingle", "csv",
+        "returns", "throwOnError", "abortSignal", "rollback",
+      ]
+      for (const method of methods) {
+        chainable[method] = handler
+      }
+      chainable.then = (resolve: (value: typeof mockResult) => void) => Promise.resolve(resolve(mockResult))
+      return chainable
+    }
+
     return {
       auth: {
         getUser: async () => ({ data: { user: null }, error: null }),
@@ -26,12 +46,17 @@ export function createClient(): SupabaseClient {
         signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
         signUp: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
       },
-      from: () => ({
-        select: () => ({ data: null, error: { message: "Supabase not configured" } }),
-        insert: () => ({ data: null, error: { message: "Supabase not configured" } }),
-        update: () => ({ data: null, error: { message: "Supabase not configured" } }),
-        delete: () => ({ data: null, error: { message: "Supabase not configured" } }),
-      }),
+      from: () => createChainable(),
+      rpc: async () => mockResult,
+      storage: {
+        from: () => ({
+          upload: async () => ({ data: null, error: null }),
+          download: async () => ({ data: null, error: null }),
+          getPublicUrl: () => ({ data: { publicUrl: "" } }),
+          remove: async () => ({ data: null, error: null }),
+          list: async () => ({ data: null, error: null }),
+        }),
+      },
     } as unknown as SupabaseClient
   }
 

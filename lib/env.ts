@@ -33,8 +33,8 @@ export function validateEnv(): { valid: boolean; missing: string[]; warnings: st
   const missing: string[] = []
   const warnings: string[] = []
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missing.push("NEXT_PUBLIC_SUPABASE_URL")
-  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.SUPABASE_URL) missing.push("NEXT_PUBLIC_SUPABASE_URL")
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !process.env.SUPABASE_ANON_KEY) missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) warnings.push("SUPABASE_SERVICE_ROLE_KEY")
   if (!process.env.SMTP_HOST) warnings.push("SMTP_HOST")
@@ -64,10 +64,10 @@ export function getEnv(key: RequiredEnvVar): string {
   let value: string | undefined
   switch (key) {
     case "NEXT_PUBLIC_SUPABASE_URL":
-      value = process.env.NEXT_PUBLIC_SUPABASE_URL
+      value = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
       break
     case "NEXT_PUBLIC_SUPABASE_ANON_KEY":
-      value = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      value = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
       break
   }
 

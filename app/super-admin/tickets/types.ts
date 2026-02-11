@@ -2,7 +2,7 @@ export interface TicketItem {
   id: string
   title: string
   description: string
-  status: "open" | "in_progress" | "resolved" | "closed" | "wont_fix"
+  status: "open" | "in_progress" | "to_test" | "resolved" | "closed" | "wont_fix"
   priority: "low" | "medium" | "high" | "urgent"
   type: "bug" | "feature_request" | "question" | "other"
   category?: string
@@ -27,6 +27,7 @@ export interface TicketStats {
   total: number
   open: number
   in_progress: number
+  to_test: number
   resolved: number
   closed: number
   avgResolutionDays: number

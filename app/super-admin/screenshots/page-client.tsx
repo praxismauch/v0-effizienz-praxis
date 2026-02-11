@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react"
-import html2canvas from "html2canvas"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -213,75 +212,77 @@ const VIEWPORT_WIDTHS: Record<string, number> = {
   mobile: 375,
 }
 
-async function capturePageScreenshot(
-  url: string,
-  viewport: string,
-  iframeContainer: HTMLDivElement
-): Promise<string> {
+const VIEWPORT_HEIGHTS: Record<string, number> = {
+  desktop: 900,
+  tablet: 1024,
+  mobile: 812,
+}
+
+/**
+ * Loads a page in a hidden iframe and verifies it loaded successfully.
+ * Returns the full URL as the "image_url" — the gallery renders live iframe previews.
+ */
+async function verifyPageLoad(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const width = VIEWPORT_WIDTHS[viewport] || 1440
-    const height = viewport === "mobile" ? 812 : viewport === "tablet" ? 1024 : 900
-
-    // Remove any existing iframe
-    iframeContainer.innerHTML = ""
-
     const iframe = document.createElement("iframe")
-    iframe.style.width = `${width}px`
-    iframe.style.height = `${height}px`
-    iframe.style.position = "absolute"
-    iframe.style.left = "-9999px"
-    iframe.style.top = "0"
-    iframe.style.border = "none"
-    iframe.style.opacity = "0"
-    iframe.style.pointerEvents = "none"
-    iframeContainer.appendChild(iframe)
+    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;"
+    document.body.appendChild(iframe)
 
     const timeout = setTimeout(() => {
-      iframeContainer.innerHTML = ""
+      document.body.removeChild(iframe)
       reject(new Error("Timeout: Seite hat nicht rechtzeitig geladen"))
-    }, 30000)
+    }, 20000)
 
-    iframe.onload = async () => {
-      try {
-        // Wait for page to settle (animations, lazy loads, etc.)
-        await new Promise((r) => setTimeout(r, 2000))
-
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
-        if (!iframeDoc || !iframeDoc.body) {
-          throw new Error("Iframe-Inhalt konnte nicht geladen werden")
-        }
-
-        const canvas = await html2canvas(iframeDoc.body, {
-          width,
-          height,
-          windowWidth: width,
-          windowHeight: height,
-          scale: 1,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          backgroundColor: "#ffffff",
-        })
-
-        clearTimeout(timeout)
-        const dataUrl = canvas.toDataURL("image/png", 0.85)
-        iframeContainer.innerHTML = ""
-        resolve(dataUrl)
-      } catch (err) {
-        clearTimeout(timeout)
-        iframeContainer.innerHTML = ""
-        reject(err)
-      }
+    iframe.onload = () => {
+      clearTimeout(timeout)
+      document.body.removeChild(iframe)
+      resolve(url)
     }
 
     iframe.onerror = () => {
       clearTimeout(timeout)
-      iframeContainer.innerHTML = ""
-      reject(new Error("Iframe konnte nicht geladen werden"))
+      document.body.removeChild(iframe)
+      reject(new Error("Seite konnte nicht geladen werden"))
     }
 
     iframe.src = url
   })
+}
+
+/**
+ * LiveIframePreview — renders a scaled-down live iframe of the actual page.
+ * No canvas conversion needed, so modern CSS (oklab, etc.) works perfectly.
+ */
+function LiveIframePreview({
+  url,
+  viewport,
+  className,
+}: {
+  url: string
+  viewport: string
+  className?: string
+}) {
+  const width = VIEWPORT_WIDTHS[viewport] || 1440
+  const height = VIEWPORT_HEIGHTS[viewport] || 900
+
+  return (
+    <div className={`relative overflow-hidden bg-white ${className || ""}`}>
+      <iframe
+        src={url}
+        title="Screenshot Preview"
+        sandbox="allow-same-origin allow-scripts"
+        loading="lazy"
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+          transform: `scale(${1 / (width / 320)})`,
+          transformOrigin: "top left",
+          border: "none",
+          pointerEvents: "none",
+        }}
+      />
+    </div>
+  )
 }
 
 function statusColor(status: string) {
@@ -311,7 +312,6 @@ export function ScreenshotsPageClient() {
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const cancelRef = useRef(false)
-  const iframeContainerRef = useRef<HTMLDivElement>(null)
   const [selectedViewports, setSelectedViewports] = useState<Set<"desktop" | "tablet" | "mobile">>(
     new Set(["desktop"])
   )
@@ -473,23 +473,15 @@ export function ScreenshotsPageClient() {
         prev.map((r) => (r.id === result.id ? { ...r, status: "capturing" } : r))
       )
 
-      // Real screenshot capture via iframe + html2canvas
+      // Verify page loads successfully via hidden iframe
       let newStatus: "completed" | "failed" = "failed"
       let imageUrl: string | null = null
       let errorMsg: string | null = null
 
       try {
         const fullUrl = `${config.baseUrl}${result.page_path}`
-        if (iframeContainerRef.current) {
-          imageUrl = await capturePageScreenshot(
-            fullUrl,
-            result.viewport,
-            iframeContainerRef.current
-          )
-          newStatus = "completed"
-        } else {
-          throw new Error("Iframe-Container nicht verfuegbar")
-        }
+        imageUrl = await verifyPageLoad(fullUrl)
+        newStatus = "completed"
       } catch (err: unknown) {
         newStatus = "failed"
         errorMsg = err instanceof Error ? err.message : "Screenshot konnte nicht erstellt werden"
@@ -542,20 +534,6 @@ export function ScreenshotsPageClient() {
 
   const stopCapture = useCallback(() => {
     cancelRef.current = true
-    // Clean up any active iframe
-    if (iframeContainerRef.current) {
-      iframeContainerRef.current.innerHTML = ""
-    }
-  }, [])
-
-  const downloadScreenshot = useCallback((result: ScreenshotResult) => {
-    if (!result.image_url) return
-    const link = document.createElement("a")
-    link.href = result.image_url
-    link.download = `${result.page_name.replace(/[^a-zA-Z0-9-]/g, "_")}_${result.viewport}.png`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
   }, [])
 
   const toggleViewport = (viewport: "desktop" | "tablet" | "mobile") => {
@@ -858,11 +836,13 @@ export function ScreenshotsPageClient() {
                         >
                           <div className="flex items-center gap-3">
                             {result.status === "completed" && result.image_url ? (
-                              <img
-                                src={result.image_url}
-                                alt={result.page_name}
-                                className="h-10 w-16 rounded border object-cover object-top shrink-0"
-                              />
+                              <div className="h-10 w-16 rounded border overflow-hidden shrink-0">
+                                <LiveIframePreview
+                                  url={result.image_url}
+                                  viewport={result.viewport}
+                                  className="w-full h-full"
+                                />
+                              </div>
                             ) : result.status === "completed" ? (
                               <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
                             ) : result.status === "failed" ? (
@@ -892,8 +872,12 @@ export function ScreenshotsPageClient() {
                               {result.viewport}
                             </Badge>
                             {result.status === "completed" && result.image_url && (
-                              <Button variant="ghost" size="sm" onClick={() => downloadScreenshot(result)}>
-                                <Download className="h-4 w-4" />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(result.image_url!, "_blank")}
+                              >
+                                <FolderOpen className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
@@ -913,13 +897,11 @@ export function ScreenshotsPageClient() {
                         >
                           <div className="aspect-video flex items-center justify-center bg-muted">
                             {result.status === "completed" && result.image_url ? (
-                              <img
-                                src={result.image_url}
-                                alt={`${result.page_name} (${result.viewport})`}
-                                className="w-full h-full object-cover object-top"
+                              <LiveIframePreview
+                                url={result.image_url}
+                                viewport={result.viewport}
+                                className="w-full h-full"
                               />
-                            ) : result.status === "completed" ? (
-                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
                             ) : result.status === "failed" ? (
                               <div className="flex flex-col items-center gap-1">
                                 <XCircle className="h-8 w-8 text-red-400" />
@@ -929,6 +911,8 @@ export function ScreenshotsPageClient() {
                               </div>
                             ) : result.status === "capturing" ? (
                               <RefreshCw className="h-8 w-8 text-blue-400 animate-spin" />
+                            ) : result.status === "completed" ? (
+                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
                             ) : (
                               <Clock className="h-8 w-8 text-muted-foreground/50" />
                             )}
@@ -944,9 +928,6 @@ export function ScreenshotsPageClient() {
                               >
                                 <FolderOpen className="h-4 w-4 mr-1" />
                                 Oeffnen
-                              </Button>
-                              <Button variant="secondary" size="sm" onClick={() => downloadScreenshot(result)}>
-                                <Download className="h-4 w-4" />
                               </Button>
                             </div>
                           )}
@@ -973,20 +954,7 @@ export function ScreenshotsPageClient() {
         </Card>
       </div>
 
-      {/* Hidden container for iframe-based screenshot capture */}
-      <div
-        ref={iframeContainerRef}
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          left: "-9999px",
-          top: 0,
-          width: "1px",
-          height: "1px",
-          overflow: "hidden",
-          pointerEvents: "none",
-        }}
-      />
+
     </div>
   )
 }

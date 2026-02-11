@@ -295,9 +295,9 @@ export function EditCandidateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2 lg:grid lg:grid-cols-[1fr_1fr]">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2 xl:grid xl:grid-cols-[3fr_2fr]">
           {/* Left Column */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             <div className="space-y-2">
               <Label htmlFor="job_posting">
                 {t("hiring.editCandidateDialog.addJobPosting", "Stellenausschreibung hinzufügen")}
@@ -584,7 +584,7 @@ export function EditCandidateDialog({
           </div>
 
           {/* Right Column */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             {/* Candidate Events Section */}
             <div className="border rounded-lg p-4">
               <CandidateEventsManager 
@@ -626,7 +626,7 @@ export function EditCandidateDialog({
             </div>
           </div>
 
-          <DialogFooter className="lg:col-span-2 flex-col sm:flex-row gap-2">
+          <DialogFooter className="xl:col-span-2 flex-col sm:flex-row gap-2">
             <Button
               type="button"
               onClick={() => setShowInterviewGenerator(true)}

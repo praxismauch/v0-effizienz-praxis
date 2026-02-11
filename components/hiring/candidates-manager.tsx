@@ -493,6 +493,11 @@ const CandidatesManager = ({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => setEditingCandidate(candidate)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Bearbeiten
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               {!showArchived && (
                                 <DropdownMenuItem
                                   onClick={() =>
@@ -518,10 +523,6 @@ const CandidatesManager = ({
                                   Als Team-Mitglied
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem onClick={() => setEditingCandidate(candidate)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Bearbeiten
-                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleArchive(candidate.id, showArchived)}>
                                 {showArchived ? (

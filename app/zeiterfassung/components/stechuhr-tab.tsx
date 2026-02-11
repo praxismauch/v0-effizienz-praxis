@@ -28,8 +28,9 @@ interface StechuhrTabProps {
 
 // Format Minuten zu Stunden
 const formatMinutes = (minutes: number) => {
-  const h = Math.floor(Math.abs(minutes) / 60)
-  const m = Math.abs(minutes) % 60
+  const rounded = Math.round(Math.abs(minutes))
+  const h = Math.floor(rounded / 60)
+  const m = rounded % 60
   const sign = minutes < 0 ? "-" : ""
   return `${sign}${h}h ${m}min`
 }
@@ -55,12 +56,11 @@ const getWeekDayLabel = (day: string) => {
   return days[day] || day
 }
 
-// Format seconds to HH:MM:SS
+// Format seconds to HH:MM
 const formatElapsedTime = (totalSeconds: number) => {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`
 }
 
 function StechuhrTab({

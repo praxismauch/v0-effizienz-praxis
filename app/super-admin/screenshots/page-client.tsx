@@ -339,8 +339,10 @@ export function ScreenshotsPageClient() {
     setProgress(0)
     cancelRef.current = false
 
-    // 1. Create run in DB
+    // 1. Try to create run in DB (non-blocking — works without DB too)
     let runId: string | null = null
+    let results: ScreenshotResult[] = []
+
     try {
       const res = await fetch("/api/super-admin/screenshot-runs", {
         method: "POST",
@@ -352,11 +354,10 @@ export function ScreenshotsPageClient() {
         runId = data.run?.id || null
       }
     } catch (e) {
-      console.error("Failed to create run:", e)
+      console.error("Failed to create run in DB (continuing without persistence):", e)
     }
 
-    // 2. Load the created results
-    let results: ScreenshotResult[] = []
+    // 2. Load DB results or generate in-memory fallback
     if (runId) {
       try {
         const res = await fetch(`/api/super-admin/screenshot-runs/${runId}`)
@@ -367,12 +368,30 @@ export function ScreenshotsPageClient() {
       } catch (e) {
         console.error("Failed to load run results:", e)
       }
-
-      // Show the run detail view
-      setActiveRunId(runId)
-      setActiveResults(results)
-      setView("detail")
     }
+
+    // Fallback: generate results locally if DB failed
+    if (results.length === 0) {
+      results = pages.flatMap((page) =>
+        viewports.map((viewport) => ({
+          id: `local-${page.path}-${viewport}-${Date.now()}`,
+          run_id: runId || "local",
+          page_path: page.path,
+          page_name: page.name,
+          viewport,
+          status: "pending" as const,
+          image_url: null,
+          error_message: null,
+          captured_at: null,
+          created_at: new Date().toISOString(),
+        }))
+      )
+    }
+
+    // Show the run detail view
+    setActiveRunId(runId || "local")
+    setActiveResults(results)
+    setView("detail")
 
     // 3. Process each result (simulate capture)
     let completedCount = 0
@@ -390,7 +409,7 @@ export function ScreenshotsPageClient() {
           )
         )
         // Update run status to cancelled in DB
-        if (runId) {
+        if (runId && runId !== "local") {
           fetch(`/api/super-admin/screenshot-runs/${runId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -456,8 +475,8 @@ export function ScreenshotsPageClient() {
         )
       )
 
-      // Persist to DB
-      if (runId) {
+      // Persist to DB (skip for local-only runs)
+      if (runId && runId !== "local") {
         fetch(`/api/super-admin/screenshot-runs/${runId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

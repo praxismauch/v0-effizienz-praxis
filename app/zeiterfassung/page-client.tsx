@@ -64,6 +64,8 @@ export default function ZeiterfassungPageClient() {
     mutate,
   } = useTimeTrackingStatus(practiceId, user?.id)
 
+  console.log("[v0] ZeiterfassungPage - practiceId:", practiceId, "userId:", user?.id, "currentSession:", currentSession, "currentBlock:", currentBlock?.id, "statusLoading:", statusLoading)
+
   const { blocks: timeBlocks, isLoading: blocksLoading, mutate: mutateBlocks } = useTimeBlocks(
     practiceId, 
     user?.id || null,

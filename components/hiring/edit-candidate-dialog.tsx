@@ -221,7 +221,6 @@ export function EditCandidateDialog({
         rating: formData.rating ? Number.parseInt(formData.rating) : null,
         documents: documents,
         image_url: imageUrl,
-        events: events,
       }
 
       const response = await fetch(`/api/hiring/candidates/${candidate.id}`, {

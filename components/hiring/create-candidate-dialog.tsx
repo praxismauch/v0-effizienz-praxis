@@ -332,6 +332,19 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     await processFilesForAI(files)
   }
 
+  const handleUnifiedFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const allFiles = Array.from(e.target.files || [])
+    const docFiles = allFiles.filter((file) => {
+      const ext = file.name.toLowerCase()
+      return ext.endsWith(".pdf") || ext.endsWith(".doc") || ext.endsWith(".docx") || ext.endsWith(".txt")
+    })
+    const imageFiles = allFiles.filter((file) => file.type.startsWith("image/"))
+    
+    if (docFiles.length > 0) await processFilesForAI(docFiles)
+    if (imageFiles.length > 0) await processImageFiles(imageFiles)
+    e.target.value = ""
+  }
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -349,21 +362,28 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     e.stopPropagation()
     setIsDragging(false)
 
-    const files = Array.from(e.dataTransfer.files).filter((file) => {
+    const allFiles = Array.from(e.dataTransfer.files)
+    
+    const docFiles = allFiles.filter((file) => {
       const ext = file.name.toLowerCase()
       return ext.endsWith(".pdf") || ext.endsWith(".doc") || ext.endsWith(".docx") || ext.endsWith(".txt")
     })
+    
+    const imageFiles = allFiles.filter((file) => {
+      return file.type.startsWith("image/")
+    })
 
-    if (files.length === 0) {
+    if (docFiles.length === 0 && imageFiles.length === 0) {
       toast({
-        title: "Ungültige Dateien",
-        description: "Bitte laden Sie PDF, DOC, DOCX oder TXT Dateien hoch.",
+        title: "Ungueltige Dateien",
+        description: "Bitte laden Sie Dokumente (PDF, DOC, DOCX, TXT) oder Bilder (JPEG, PNG, GIF) hoch.",
         variant: "destructive",
       })
       return
     }
 
-    await processFilesForAI(files)
+    if (docFiles.length > 0) await processFilesForAI(docFiles)
+    if (imageFiles.length > 0) await processImageFiles(imageFiles)
   }
 
   // Image upload handling
@@ -674,7 +694,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
               <h3 className="font-semibold text-purple-900 dark:text-purple-100">KI-Dokumentenanalyse & Medien-Upload</h3>
             </div>
             <p className="text-sm text-purple-700 dark:text-purple-300 mb-4">
-              Laden Sie Dokumente zur automatischen KI-Analyse hoch oder fügen Sie Bilder zum Kandidatenprofil hinzu.
+              Laden Sie Dokumente und Bilder hoch - das System erkennt den Dateityp automatisch und verarbeitet alles fuer Sie.
             </p>
 
             {/* Extraction Button - Always visible when files are uploaded */}
@@ -713,245 +733,155 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
               </div>
             )}
 
-            <Tabs value={activeUploadTab} onValueChange={setActiveUploadTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="documents" className="flex items-center gap-2">
-                  <File className="h-4 w-4" />
-                  Dokumente
-                  {uploadedFiles.length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-purple-200 dark:bg-purple-800 rounded-full">
-                      {uploadedFiles.length}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="images" className="flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  Bilder
-                  {uploadedImages.length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-purple-200 dark:bg-purple-800 rounded-full">
-                      {uploadedImages.length}
-                    </span>
-                  )}
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="documents" className="mt-0">
-                <div
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
-                    isDragging && activeUploadTab === "documents"
-                      ? "border-purple-500 bg-purple-100 dark:bg-purple-900/40"
-                      : "border-purple-300 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-600"
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  {aiExtracting ? (
-                    <div className="flex flex-col items-center gap-3 py-4">
-                      <div className="relative">
-                        <Loader2 className="h-10 w-10 text-purple-600 animate-spin" />
-                        <Sparkles className="h-4 w-4 text-purple-400 absolute -top-1 -right-1 animate-pulse" />
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                          KI analysiert Dokumente...
-                        </span>
-                        <p className="text-xs text-purple-500 dark:text-purple-400">
-                          Kandidatendaten werden extrahiert
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/40">
-                        <Upload className={`h-8 w-8 ${isDragging ? "text-purple-600" : "text-purple-400"}`} />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                          Dateien hierher ziehen
-                        </p>
-                        <p className="text-xs text-purple-500 dark:text-purple-400">
-                          oder klicken zum Auswählen
-                        </p>
-                      </div>
-                      <Input
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.txt"
-                        onChange={handleAIFileUpload}
-                        disabled={aiExtracting}
-                        className="hidden"
-                        id="ai-file-upload"
-                      />
-                      <Label htmlFor="ai-file-upload" className="cursor-pointer">
-                        <Button type="button" variant="secondary" size="sm" disabled={aiExtracting} asChild>
-                          <span>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Dokumente auswählen
-                          </span>
-                        </Button>
-                      </Label>
-                      <span className="text-xs text-purple-500 dark:text-purple-400">
-                        PDF, DOC, DOCX oder TXT (mehrere Dateien möglich)
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                      Analysierte Dokumente ({uploadedFiles.length}):
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {uploadedFiles.map((file, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-md text-xs border border-purple-200 dark:border-purple-800"
-                        >
-                          <FileText className="h-3.5 w-3.5" />
-                          <span className="max-w-[120px] truncate">{file.name}</span>
-                          <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                        </span>
-                      ))}
-                    </div>
+            {/* Unified drop zone for documents and images */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
+                isDragging
+                  ? "border-purple-500 bg-purple-100 dark:bg-purple-900/40"
+                  : "border-purple-300 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-600"
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {aiExtracting || isUploadingImages ? (
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <div className="relative">
+                    <Loader2 className="h-10 w-10 text-purple-600 animate-spin" />
+                    <Sparkles className="h-4 w-4 text-purple-400 absolute -top-1 -right-1 animate-pulse" />
                   </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="images" className="mt-0">
-                <div
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
-                    isDragging && activeUploadTab === "images"
-                      ? "border-purple-500 bg-purple-100 dark:bg-purple-900/40"
-                      : "border-purple-300 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-600"
-                  }`}
-                  onDragOver={handleImageDragOver}
-                  onDragLeave={handleImageDragLeave}
-                  onDrop={handleImageDrop}
-                >
-                  {isUploadingImages ? (
-                    <div className="flex flex-col items-center gap-3 py-4">
-                      <Loader2 className="h-10 w-10 text-purple-600 animate-spin" />
-                      <div className="space-y-2 w-full max-w-xs">
-                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                          Bilder werden hochgeladen...
-                        </span>
-                        <Progress value={imageUploadProgress} className="h-2" />
-                        <span className="text-xs text-purple-500 dark:text-purple-400">
-                          {imageUploadProgress}% abgeschlossen
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/40">
-                        <ImageIcon className={`h-8 w-8 ${isDragging ? "text-purple-600" : "text-purple-400"}`} />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                          Bilder hierher ziehen
-                        </p>
-                        <p className="text-xs text-purple-500 dark:text-purple-400">
-                          oder klicken zum Auswählen
-                        </p>
-                      </div>
-                      <Input
-                        type="file"
-                        multiple
-                        accept="image/jpeg,image/png,image/gif,image/jpg"
-                        onChange={handleImageFileSelect}
-                        disabled={isUploadingImages}
-                        className="hidden"
-                        id="image-file-upload"
-                      />
-                      <Label htmlFor="image-file-upload" className="cursor-pointer">
-                        <Button type="button" variant="secondary" size="sm" disabled={isUploadingImages} asChild>
-                          <span>
-                            <ImageIcon className="h-4 w-4 mr-2" />
-                            Bilder auswählen
-                          </span>
-                        </Button>
-                      </Label>
-                      <span className="text-xs text-purple-500 dark:text-purple-400">
-                        JPEG, PNG oder GIF (max. 10MB pro Bild)
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {uploadedImages.length > 0 && (
-                  <div className="mt-4 space-y-3">
-                    <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                      Hochgeladene Bilder ({uploadedImages.length}):
+                  <div className="space-y-1">
+                    <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                      {aiExtracting ? "KI analysiert Dateien..." : "Dateien werden hochgeladen..."}
                     </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {uploadedImages.map((image, index) => (
-                        <div
-                          key={index}
-                          className="relative group rounded-lg overflow-hidden border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20"
-                        >
-                          <div className="aspect-square">
-                            <img
-                              src={image.previewUrl}
-                              alt={image.file.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          
-                          {/* Upload status indicator */}
-                          <div className="absolute top-2 left-2">
-                            {image.uploadedUrl ? (
-                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white">
-                                <Check className="h-3 w-3" />
-                              </span>
-                            ) : (
-                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-purple-500">
-                                <Loader2 className="h-3 w-3 text-white animate-spin" />
-                              </span>
-                            )}
-                          </div>
-                          
-                          {/* Overlay with actions */}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => openImagePreview(image.previewUrl)}
-                              title="Vorschau"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => removeImage(index)}
-                              title="Entfernen"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          
-                          {/* File name */}
-                          <div className="absolute bottom-0 left-0 right-0 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
-                            <p className="text-xs text-white truncate" title={image.file.name}>
-                              {image.file.name}
-                            </p>
-                            <p className="text-[10px] text-white/70">
-                              {(image.file.size / 1024).toFixed(1)} KB
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {isUploadingImages && (
+                      <Progress value={imageUploadProgress} className="h-2 max-w-xs mx-auto" />
+                    )}
                   </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/40">
+                    <Upload className={`h-8 w-8 ${isDragging ? "text-purple-600" : "text-purple-400"}`} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                      Dateien hierher ziehen
+                    </p>
+                    <p className="text-xs text-purple-500 dark:text-purple-400">
+                      oder klicken zum Auswaehlen
+                    </p>
+                  </div>
+                  <Input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,image/jpeg,image/png,image/gif,image/jpg"
+                    onChange={handleUnifiedFileUpload}
+                    disabled={aiExtracting || isUploadingImages}
+                    className="hidden"
+                    id="unified-file-upload"
+                  />
+                  <Label htmlFor="unified-file-upload" className="cursor-pointer">
+                    <Button type="button" variant="secondary" size="sm" disabled={aiExtracting || isUploadingImages} asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Dateien auswaehlen
+                      </span>
+                    </Button>
+                  </Label>
+                  <span className="text-xs text-purple-500 dark:text-purple-400">
+                    PDF, DOC, DOCX, TXT, JPEG, PNG oder GIF
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Uploaded documents list */}
+            {uploadedFiles.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                  Dokumente ({uploadedFiles.length}):
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {uploadedFiles.map((file, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-md text-xs border border-purple-200 dark:border-purple-800"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      <span className="max-w-[120px] truncate">{file.name}</span>
+                      <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Uploaded images grid */}
+            {uploadedImages.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                  Bilder ({uploadedImages.length}):
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {uploadedImages.map((image, index) => (
+                    <div
+                      key={index}
+                      className="relative group rounded-lg overflow-hidden border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20"
+                    >
+                      <div className="aspect-square">
+                        <img
+                          src={image.previewUrl}
+                          alt={image.file.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="absolute top-2 left-2">
+                        {image.uploadedUrl ? (
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-purple-500">
+                            <Loader2 className="h-3 w-3 text-white animate-spin" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openImagePreview(image.previewUrl)}
+                          title="Vorschau"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => removeImage(index)}
+                          title="Entfernen"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
+                        <p className="text-xs text-white truncate" title={image.file.name}>
+                          {image.file.name}
+                        </p>
+                        <p className="text-[10px] text-white/70">
+                          {(image.file.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </Card>
 
           <div className="space-y-2">

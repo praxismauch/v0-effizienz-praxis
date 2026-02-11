@@ -93,8 +93,10 @@ export async function GET(request: NextRequest) {
       .order("display_order", { ascending: true })
 
     if (error) {
-      console.error("Error fetching feature flags:", error)
-      // If DB query fails, return defaults instead of erroring
+      // Table may not exist yet — silently fall back to defaults
+      if (error.code !== "PGRST205") {
+        console.error("Error fetching feature flags:", error)
+      }
       return NextResponse.json({
         features: DEFAULT_FEATURE_FLAGS,
         practiceOverrides: {},

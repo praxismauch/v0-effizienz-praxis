@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Users, Calendar, Clock, AlertTriangle, ArrowLeftRight, Settings } from "lucide-react"
@@ -42,31 +43,9 @@ export default function DienstplanPageClient({
 }: DienstplanPageClientProps) {
   const { toast } = useToast()
   
-  // Debug logging to understand what data is received
-  console.log("[v0] DienstplanPageClient received:", {
-    hasInitialData: !!initialData,
-    initialWeek: initialWeek,
-    teamMembers: initialData?.teamMembers?.length,
-    shiftTypes: initialData?.shiftTypes?.length,
-    schedules: initialData?.schedules?.length,
-    teams: teams?.length,
-  })
-
-  // Core state - initialize with server data
-  const [activeTab, setActiveTab] = useState("schedule")
-  // Ensure currentWeek is never null - default to current week if initialWeek is invalid
-  const [currentWeek, setCurrentWeek] = useState(() => {
-    if (!initialWeek || isNaN(new Date(initialWeek).getTime())) {
-      console.log("[v0] Invalid initialWeek, using fallback")
-      return startOfWeek(new Date(), { weekStartsOn: 1 })
-    }
-    return initialWeek
-  })
-
   const router = useRouter()
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const { toast } = useToast()
 
   // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")
@@ -322,46 +301,10 @@ export default function DienstplanPageClient({
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Schichten</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalShifts}</div>
-            <p className="text-xs text-muted-foreground">{stats.coverageRate}% besetzt</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{teamMembers.length}</div>
-            <p className="text-xs text-muted-foreground">Mitarbeiter</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tausch-Anfragen</CardTitle>
-            <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingSwaps}</div>
-            <p className="text-xs text-muted-foreground">offen</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Schichttypen</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{shiftTypes.length}</div>
-            <p className="text-xs text-muted-foreground">definiert</p>
-          </CardContent>
-        </Card>
+        <StatCard label="Schichten" value={stats.totalShifts} icon={Calendar} {...statCardColors.info} description={`${stats.coverageRate}% besetzt`} />
+        <StatCard label="Team" value={teamMembers.length} icon={Users} {...statCardColors.success} description="Mitarbeiter" />
+        <StatCard label="Tausch-Anfragen" value={stats.pendingSwaps} icon={ArrowLeftRight} {...statCardColors.warning} description="offen" />
+        <StatCard label="Schichttypen" value={shiftTypes.length} icon={Clock} {...statCardColors.purple} description="definiert" />
       </div>
 
       {/* Tabs */}

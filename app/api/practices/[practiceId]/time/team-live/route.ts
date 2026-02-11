@@ -1,24 +1,19 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
+import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
   try {
-    const { practiceId: practiceIdStr } = await params
-    const practiceId = parseInt(practiceIdStr, 10)
-    
-    if (isNaN(practiceId)) {
-      return NextResponse.json(
-        { error: "Invalid practice ID" },
-        { status: 400 }
-      )
+    const { practiceId } = await params
+    if (!practiceId) {
+      return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
-    
-    const supabase = await createAdminClient()
 
-    // Get all team members for this practice
+    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+
+    // Get active team members
     const { data: teamMembers, error: teamError } = await supabase
       .from("team_members")
       .select("id, user_id, first_name, last_name, email")
@@ -26,58 +21,45 @@ export async function GET(
       .eq("status", "active")
 
     if (teamError) {
-      console.error("[v0] Error fetching team members:", teamError)
-      return NextResponse.json(
-        { error: "Failed to fetch team members", details: teamError.message },
-        { status: 500 }
-      )
+      console.error("[API] Error fetching team members:", teamError)
+      return NextResponse.json({ error: teamError.message }, { status: 500 })
     }
 
     if (!teamMembers || teamMembers.length === 0) {
       return NextResponse.json({ members: [] })
     }
 
-    // Get active time blocks for each team member
+    // Get open time blocks
     const userIds = teamMembers.map((m) => m.user_id).filter(Boolean)
-    
-    const { data: activeBlocks, error: blocksError } = await supabase
+
+    const { data: activeBlocks } = await supabase
       .from("time_blocks")
       .select("*")
       .in("user_id", userIds)
       .eq("practice_id", practiceId)
-      .is("end_time", null)
+      .eq("is_open", true)
       .order("start_time", { ascending: false })
 
-    if (blocksError) {
-      console.error("[v0] Error fetching active blocks:", blocksError)
-      return NextResponse.json(
-        { error: "Failed to fetch active blocks", details: blocksError.message },
-        { status: 500 }
-      )
-    }
+    // Get active breaks
+    const blockIds = (activeBlocks || []).map((b) => b.id)
+    let activeBreaks: Record<string, unknown>[] = []
 
-    // Get active breaks for these blocks
-    const blockIds = activeBlocks?.map((b) => b.id) || []
-    let activeBreaks: any[] = []
-    
     if (blockIds.length > 0) {
-      const { data: breaks, error: breaksError } = await supabase
+      const { data: breaks } = await supabase
         .from("time_block_breaks")
         .select("*")
-        .in("block_id", blockIds)
+        .in("time_block_id", blockIds)
         .is("end_time", null)
 
-      if (breaksError) {
-        console.error("[v0] Error fetching active breaks:", breaksError)
-      } else {
-        activeBreaks = breaks || []
-      }
+      activeBreaks = breaks || []
     }
 
-    // Combine team members with their active blocks and breaks
-    const teamStatus = teamMembers.map((member) => {
-      const activeBlock = activeBlocks?.find((b) => b.user_id === member.user_id)
-      const activeBreak = activeBlock ? activeBreaks.find((br) => br.block_id === activeBlock.id) : null
+    // Combine
+    const members = teamMembers.map((member) => {
+      const activeBlock = (activeBlocks || []).find((b) => b.user_id === member.user_id)
+      const activeBreak = activeBlock
+        ? activeBreaks.find((br: any) => br.time_block_id === activeBlock.id)
+        : null
 
       return {
         ...member,
@@ -87,12 +69,8 @@ export async function GET(
       }
     })
 
-    return NextResponse.json({ members: teamStatus })
+    return NextResponse.json({ members })
   } catch (error) {
-    console.error("[v0] Error in team-live API:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

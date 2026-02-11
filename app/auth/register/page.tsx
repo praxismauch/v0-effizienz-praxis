@@ -1,15 +1,16 @@
 import { redirect } from "next/navigation"
 
-export default function RegisterPage({
+export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const resolvedParams = await searchParams
   // Preserve query parameters when redirecting
   const params = new URLSearchParams()
 
-  if (searchParams) {
-    Object.entries(searchParams).forEach(([key, value]) => {
+  if (resolvedParams) {
+    Object.entries(resolvedParams).forEach(([key, value]) => {
       if (typeof value === "string") {
         params.set(key, value)
       } else if (Array.isArray(value)) {

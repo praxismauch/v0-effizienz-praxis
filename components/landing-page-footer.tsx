@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Mail, Phone, MapPin, Twitter, Linkedin, Youtube } from "lucide-react"
+import { Mail, Phone, MapPin, Instagram, Facebook } from "lucide-react"
 
 export function LandingPageFooter() {
   const currentYear = new Date().getFullYear()
@@ -19,31 +19,22 @@ export function LandingPageFooter() {
             </p>
             <div className="flex gap-4">
               <Link
-                href="https://twitter.com/effizienzpraxis"
+                href="https://instagram.com/effizienzpraxis"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="Twitter"
+                aria-label="Instagram"
               >
-                <Twitter className="h-5 w-5" />
+                <Instagram className="h-5 w-5" />
               </Link>
               <Link
-                href="https://linkedin.com/company/effizienz-praxis"
+                href="https://facebook.com/effizienzpraxis"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="LinkedIn"
+                aria-label="Facebook"
               >
-                <Linkedin className="h-5 w-5" />
-              </Link>
-              <Link
-                href="https://youtube.com/@effizienzpraxis"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="YouTube"
-              >
-                <Youtube className="h-5 w-5" />
+                <Facebook className="h-5 w-5" />
               </Link>
             </div>
           </div>

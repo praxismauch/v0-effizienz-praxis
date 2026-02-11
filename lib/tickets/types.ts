@@ -6,7 +6,7 @@
  */
 
 // Core ticket enum values (from database)
-export type TicketStatus = "open" | "in_progress" | "resolved" | "closed" | "wont_fix"
+export type TicketStatus = "open" | "in_progress" | "to_test" | "resolved" | "closed" | "wont_fix"
 export type TicketPriority = "low" | "medium" | "high" | "urgent"
 export type TicketType = "bug" | "feature_request" | "question" | "other"
 

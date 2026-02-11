@@ -221,7 +221,6 @@ export function EditCandidateDialog({
         rating: formData.rating ? Number.parseInt(formData.rating) : null,
         documents: documents,
         image_url: imageUrl,
-        events: events,
       }
 
       const response = await fetch(`/api/hiring/candidates/${candidate.id}`, {
@@ -287,7 +286,7 @@ export function EditCandidateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1600px] w-[98vw] max-h-[98vh]">
+      <DialogContent className="max-w-[1100px] w-[98vw] max-h-[98vh]">
         <DialogHeader>
           <DialogTitle>{t("hiring.editCandidateDialog.title", "Kandidat bearbeiten")}</DialogTitle>
           <DialogDescription>
@@ -295,9 +294,9 @@ export function EditCandidateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2 xl:grid xl:grid-cols-[3fr_2fr]">
           {/* Left Column */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             <div className="space-y-2">
               <Label htmlFor="job_posting">
                 {t("hiring.editCandidateDialog.addJobPosting", "Stellenausschreibung hinzufügen")}
@@ -328,249 +327,249 @@ export function EditCandidateDialog({
               />
             </div>
 
+              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name">{t("hiring.editCandidateDialog.firstName", "Vorname")} *</Label>
+                <Input
+                  id="first_name"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last_name">{t("hiring.editCandidateDialog.lastName", "Nachname")} *</Label>
+                <Input
+                  id="last_name"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">{t("hiring.editCandidateDialog.email", "E-Mail")}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">{t("hiring.editCandidateDialog.phone", "Telefon")}</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="first_name">{t("hiring.editCandidateDialog.firstName", "Vorname")} *</Label>
+              <Label htmlFor="date_of_birth">{t("hiring.editCandidateDialog.birthday", "Geburtsdatum")}</Label>
               <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                required
+                id="date_of_birth"
+                type="date"
+                value={formData.date_of_birth}
+                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="last_name">{t("hiring.editCandidateDialog.lastName", "Nachname")} *</Label>
+              <Label htmlFor="address">{t("hiring.editCandidateDialog.address", "Straße und Hausnummer")}</Label>
               <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                required
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="z.B. Hauptstraße 123"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="postal_code">{t("hiring.editCandidateDialog.postalCode", "PLZ")}</Label>
+                <Input
+                  id="postal_code"
+                  value={formData.postal_code}
+                  onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                  placeholder="z.B. 12345"
+                />
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="city">{t("hiring.editCandidateDialog.city", "Ort")}</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="z.B. Berlin"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="years_of_experience">
+                  {t("hiring.editCandidateDialog.yearsOfExperience", "Berufserfahrung (Jahre)")}
+                </Label>
+                <Input
+                  id="years_of_experience"
+                  type="number"
+                  value={formData.years_of_experience}
+                  onChange={(e) => setFormData({ ...formData, years_of_experience: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="current_position">
+                  {t("hiring.editCandidateDialog.currentPosition", "Aktuelle Position")}
+                </Label>
+                <Textarea
+                  id="current_position"
+                  value={formData.current_position}
+                  onChange={(e) => setFormData({ ...formData, current_position: e.target.value })}
+                  rows={2}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="email">{t("hiring.editCandidateDialog.email", "E-Mail")}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">{t("hiring.editCandidateDialog.phone", "Telefon")}</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="date_of_birth">{t("hiring.editCandidateDialog.birthday", "Geburtsdatum")}</Label>
-            <Input
-              id="date_of_birth"
-              type="date"
-              value={formData.date_of_birth}
-              onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">{t("hiring.editCandidateDialog.address", "Straße und Hausnummer")}</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="z.B. Hauptstraße 123"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="postal_code">{t("hiring.editCandidateDialog.postalCode", "PLZ")}</Label>
-              <Input
-                id="postal_code"
-                value={formData.postal_code}
-                onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                placeholder="z.B. 12345"
-              />
-            </div>
-
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="city">{t("hiring.editCandidateDialog.city", "Ort")}</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                placeholder="z.B. Berlin"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="years_of_experience">
-                {t("hiring.editCandidateDialog.yearsOfExperience", "Berufserfahrung (Jahre)")}
+              <Label htmlFor="current_company">
+                {t("hiring.editCandidateDialog.currentCompany", "Aktuelles Unternehmen")}
               </Label>
               <Input
-                id="years_of_experience"
-                type="number"
-                value={formData.years_of_experience}
-                onChange={(e) => setFormData({ ...formData, years_of_experience: e.target.value })}
+                id="current_company"
+                value={formData.current_company}
+                onChange={(e) => setFormData({ ...formData, current_company: e.target.value })}
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="salary_expectation">
+                  {t("hiring.editCandidateDialog.salaryExpectation", "Gehaltsvorstellung (€)")}
+                </Label>
+                <Input
+                  id="salary_expectation"
+                  type="number"
+                  value={formData.salary_expectation}
+                  onChange={(e) => setFormData({ ...formData, salary_expectation: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="weekly_hours">{t("hiring.editCandidateDialog.weeklyHours", "Wochenstunden")}</Label>
+                <Input
+                  id="weekly_hours"
+                  type="text"
+                  value={formData.weekly_hours}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // Allow numbers, comma, and dot
+                    if (value === "" || /^[\d,.]+$/.test(value)) {
+                      setFormData({ ...formData, weekly_hours: value })
+                    }
+                  }}
+                  placeholder="z.B. 38,5 oder 40"
+                />
+              </div>
+            </div>
+
+            {hourlyRate && (
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-medium text-blue-900 dark:text-blue-100">Stundenlohn:</div>
+                  <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">{hourlyRate} €/Std.</div>
+                </div>
+                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  Berechnet: ({formData.salary_expectation} € × 12) ÷ ({formData.weekly_hours.replace(",", ".")} Std. ×
+                  52)
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="current_position">
-                {t("hiring.editCandidateDialog.currentPosition", "Aktuelle Position")}
+              <Label htmlFor="rating">{t("hiring.editCandidateDialog.rating", "Bewertung (1-5)")}</Label>
+              <Select value={formData.rating} onValueChange={(value) => setFormData({ ...formData, rating: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("hiring.editCandidateDialog.ratingPlaceholder", "Bewertung")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">{t("hiring.editCandidateDialog.rating1", "1 Stern")}</SelectItem>
+                  <SelectItem value="2">{t("hiring.editCandidateDialog.rating2", "2 Sterne")}</SelectItem>
+                  <SelectItem value="3">{t("hiring.editCandidateDialog.rating3", "3 Sterne")}</SelectItem>
+                  <SelectItem value="4">{t("hiring.editCandidateDialog.rating4", "4 Sterne")}</SelectItem>
+                  <SelectItem value="5">{t("hiring.editCandidateDialog.rating5", "5 Sterne")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="education">
+                {t("hiring.editCandidateDialog.education", "Ausbildung / Abschluss / Note")}
               </Label>
               <Textarea
-                id="current_position"
-                value={formData.current_position}
-                onChange={(e) => setFormData({ ...formData, current_position: e.target.value })}
-                rows={2}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="current_company">
-              {t("hiring.editCandidateDialog.currentCompany", "Aktuelles Unternehmen")}
-            </Label>
-            <Input
-              id="current_company"
-              value={formData.current_company}
-              onChange={(e) => setFormData({ ...formData, current_company: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="salary_expectation">
-                {t("hiring.editCandidateDialog.salaryExpectation", "Gehaltsvorstellung (€)")}
-              </Label>
-              <Input
-                id="salary_expectation"
-                type="number"
-                value={formData.salary_expectation}
-                onChange={(e) => setFormData({ ...formData, salary_expectation: e.target.value })}
+                id="education"
+                value={formData.education}
+                onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                rows={4}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="weekly_hours">{t("hiring.editCandidateDialog.weeklyHours", "Wochenstunden")}</Label>
-              <Input
-                id="weekly_hours"
-                type="text"
-                value={formData.weekly_hours}
-                onChange={(e) => {
-                  const value = e.target.value
-                  // Allow numbers, comma, and dot
-                  if (value === "" || /^[\d,.]+$/.test(value)) {
-                    setFormData({ ...formData, weekly_hours: value })
-                  }
-                }}
-                placeholder="z.B. 38,5 oder 40"
-              />
-            </div>
-          </div>
-
-          {hourlyRate && (
-            <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center gap-2">
-                <div className="text-sm font-medium text-blue-900 dark:text-blue-100">Stundenlohn:</div>
-                <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">{hourlyRate} €/Std.</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">{t("hiring.editCandidateDialog.status", "Status")}</Label>
+                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">{t("hiring.editCandidateDialog.statusNew", "Neu")}</SelectItem>
+                    <SelectItem value="screening">
+                      {t("hiring.editCandidateDialog.statusScreening", "Screening")}
+                    </SelectItem>
+                    <SelectItem value="interviewing">
+                      {t("hiring.editCandidateDialog.statusInterviewing", "Interview")}
+                    </SelectItem>
+                    <SelectItem value="offer">{t("hiring.editCandidateDialog.statusOffer", "Angebot")}</SelectItem>
+                    <SelectItem value="hired">{t("hiring.editCandidateDialog.statusHired", "Eingestellt")}</SelectItem>
+                    <SelectItem value="rejected">
+                      {t("hiring.editCandidateDialog.statusRejected", "Abgelehnt")}
+                    </SelectItem>
+                    <SelectItem value="withdrawn">
+                      {t("hiring.editCandidateDialog.statusWithdrawn", "Zurückgezogen")}
+                    </SelectItem>
+                    <SelectItem value="archived">{t("hiring.editCandidateDialog.statusArchived", "Archiv")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                Berechnet: ({formData.salary_expectation} € × 12) ÷ ({formData.weekly_hours.replace(",", ".")} Std. ×
-                52)
+
+              <div className="space-y-2">
+                <Label htmlFor="source">{t("hiring.editCandidateDialog.source", "Quelle")}</Label>
+                <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("hiring.editCandidateDialog.selectSource", "Wählen Sie eine Quelle")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="direct">
+                      {t("hiring.editCandidateDialog.sourceDirect", "Direktbewerbung")}
+                    </SelectItem>
+                    <SelectItem value="website">{t("hiring.editCandidateDialog.sourceWebsite", "Website")}</SelectItem>
+                    <SelectItem value="referral">
+                      {t("hiring.editCandidateDialog.sourceReferral", "Empfehlung")}
+                    </SelectItem>
+                    <SelectItem value="other">{t("hiring.editCandidateDialog.sourceOther", "Sonstiges")}</SelectItem>
+                    <SelectItem value="linkedin">{t("hiring.editCandidateDialog.sourceLinkedIn", "LinkedIn")}</SelectItem>
+                    <SelectItem value="indeed">{t("hiring.editCandidateDialog.sourceIndeed", "Indeed")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="rating">{t("hiring.editCandidateDialog.rating", "Bewertung (1-5)")}</Label>
-            <Select value={formData.rating} onValueChange={(value) => setFormData({ ...formData, rating: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder={t("hiring.editCandidateDialog.ratingPlaceholder", "Bewertung")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">{t("hiring.editCandidateDialog.rating1", "1 Stern")}</SelectItem>
-                <SelectItem value="2">{t("hiring.editCandidateDialog.rating2", "2 Sterne")}</SelectItem>
-                <SelectItem value="3">{t("hiring.editCandidateDialog.rating3", "3 Sterne")}</SelectItem>
-                <SelectItem value="4">{t("hiring.editCandidateDialog.rating4", "4 Sterne")}</SelectItem>
-                <SelectItem value="5">{t("hiring.editCandidateDialog.rating5", "5 Sterne")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="education">
-              {t("hiring.editCandidateDialog.education", "Ausbildung / Abschluss / Note")}
-            </Label>
-            <Textarea
-              id="education"
-              value={formData.education}
-              onChange={(e) => setFormData({ ...formData, education: e.target.value })}
-              rows={4}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">{t("hiring.editCandidateDialog.status", "Status")}</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">{t("hiring.editCandidateDialog.statusNew", "Neu")}</SelectItem>
-                  <SelectItem value="screening">
-                    {t("hiring.editCandidateDialog.statusScreening", "Screening")}
-                  </SelectItem>
-                  <SelectItem value="interviewing">
-                    {t("hiring.editCandidateDialog.statusInterviewing", "Interview")}
-                  </SelectItem>
-                  <SelectItem value="offer">{t("hiring.editCandidateDialog.statusOffer", "Angebot")}</SelectItem>
-                  <SelectItem value="hired">{t("hiring.editCandidateDialog.statusHired", "Eingestellt")}</SelectItem>
-                  <SelectItem value="rejected">
-                    {t("hiring.editCandidateDialog.statusRejected", "Abgelehnt")}
-                  </SelectItem>
-                  <SelectItem value="withdrawn">
-                    {t("hiring.editCandidateDialog.statusWithdrawn", "Zurückgezogen")}
-                  </SelectItem>
-                  <SelectItem value="archived">{t("hiring.editCandidateDialog.statusArchived", "Archiv")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="source">{t("hiring.editCandidateDialog.source", "Quelle")}</Label>
-              <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("hiring.editCandidateDialog.selectSource", "Wählen Sie eine Quelle")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="direct">
-                    {t("hiring.editCandidateDialog.sourceDirect", "Direktbewerbung")}
-                  </SelectItem>
-                  <SelectItem value="website">{t("hiring.editCandidateDialog.sourceWebsite", "Website")}</SelectItem>
-                  <SelectItem value="referral">
-                    {t("hiring.editCandidateDialog.sourceReferral", "Empfehlung")}
-                  </SelectItem>
-                  <SelectItem value="other">{t("hiring.editCandidateDialog.sourceOther", "Sonstiges")}</SelectItem>
-                  <SelectItem value="linkedin">{t("hiring.editCandidateDialog.sourceLinkedIn", "LinkedIn")}</SelectItem>
-                  <SelectItem value="indeed">{t("hiring.editCandidateDialog.sourceIndeed", "Indeed")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
             <div className="space-y-2">
               <Label htmlFor="notes">{t("hiring.editCandidateDialog.notes", "Notizen")}</Label>
@@ -584,7 +583,7 @@ export function EditCandidateDialog({
           </div>
 
           {/* Right Column */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             {/* Candidate Events Section */}
             <div className="border rounded-lg p-4">
               <CandidateEventsManager 
@@ -626,7 +625,7 @@ export function EditCandidateDialog({
             </div>
           </div>
 
-          <DialogFooter className="col-span-3 flex-col sm:flex-row gap-2">
+          <DialogFooter className="xl:col-span-2 flex-col sm:flex-row gap-2">
             <Button
               type="button"
               onClick={() => setShowInterviewGenerator(true)}

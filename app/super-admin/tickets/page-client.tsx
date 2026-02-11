@@ -52,6 +52,7 @@ export default function SuperAdminTicketManager() {
     total: 0,
     open: 0,
     in_progress: 0,
+    to_test: 0,
     resolved: 0,
     closed: 0,
     avgResolutionDays: 0,
@@ -94,6 +95,7 @@ export default function SuperAdminTicketManager() {
       total: tickets.length,
       open: tickets.filter((t) => t.status === "open").length,
       in_progress: tickets.filter((t) => t.status === "in_progress").length,
+      to_test: tickets.filter((t) => t.status === "to_test").length,
       resolved: tickets.filter((t) => t.status === "resolved").length,
       closed: tickets.filter((t) => t.status === "closed").length,
       avgResolutionDays: 0,
@@ -197,6 +199,7 @@ export default function SuperAdminTicketManager() {
     // Filter by tab
     if (activeTab === "open") filtered = filtered.filter((t) => t.status === "open")
     else if (activeTab === "in_progress") filtered = filtered.filter((t) => t.status === "in_progress")
+    else if (activeTab === "to_test") filtered = filtered.filter((t) => t.status === "to_test")
     else if (activeTab === "resolved") filtered = filtered.filter((t) => t.status === "resolved" || t.status === "closed")
 
     // Search filter
@@ -269,9 +272,10 @@ export default function SuperAdminTicketManager() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto gap-1">
           <TabsTrigger value="open">Offen <Badge variant="secondary" className="ml-2">{stats.open}</Badge></TabsTrigger>
           <TabsTrigger value="in_progress">In Bearbeitung <Badge variant="secondary" className="ml-2">{stats.in_progress}</Badge></TabsTrigger>
+          <TabsTrigger value="to_test">Zu testen <Badge variant="secondary" className="ml-2">{stats.to_test}</Badge></TabsTrigger>
           <TabsTrigger value="resolved">Erledigt <Badge variant="secondary" className="ml-2">{stats.resolved + stats.closed}</Badge></TabsTrigger>
           <TabsTrigger value="all">Alle <Badge variant="secondary" className="ml-2">{stats.total}</Badge></TabsTrigger>
         </TabsList>

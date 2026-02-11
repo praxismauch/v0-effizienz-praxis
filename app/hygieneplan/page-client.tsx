@@ -31,6 +31,7 @@ import {
   Target,
 } from "lucide-react"
 import { toast } from "sonner"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -68,36 +69,42 @@ const CATEGORY_CONFIG = {
     icon: Shield,
     color: "#0ea5e9",
     bgColor: "#e0f2fe",
+    statColor: statCardColors.info,
   },
   sterilization: {
     label: "Sterilisation",
     icon: Droplets,
     color: "#8b5cf6",
     bgColor: "#f3e8ff",
+    statColor: statCardColors.purple,
   },
   cleaning: {
     label: "Reinigung",
     icon: Sparkles,
     color: "#10b981",
     bgColor: "#d1fae5",
+    statColor: statCardColors.success,
   },
   waste_management: {
     label: "Abfallmanagement",
     icon: Trash,
     color: "#f59e0b",
     bgColor: "#fef3c7",
+    statColor: statCardColors.warning,
   },
   occupational_safety: {
     label: "Arbeitsschutz",
     icon: HardHat,
     color: "#ef4444",
     bgColor: "#fee2e2",
+    statColor: statCardColors.danger,
   },
   quality_management: {
     label: "Qualitätsmanagement",
     icon: Target,
     color: "#6366f1",
     bgColor: "#e0e7ff",
+    statColor: statCardColors.purple,
   },
 }
 
@@ -221,23 +228,16 @@ export default function HygienePlanClient() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-          const Icon = config.icon
-          const count = categoryStats[key] || 0
-          return (
-            <Card key={key} className="hover:shadow-md transition-all cursor-pointer" style={{ borderLeftWidth: "4px", borderLeftColor: config.color }}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 rounded-lg" style={{ backgroundColor: config.bgColor }}>
-                    <Icon className="h-5 w-5" style={{ color: config.color }} />
-                  </div>
-                  <span className="text-2xl font-bold">{count}</span>
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">{config.label}</p>
-              </CardContent>
-            </Card>
-          )
-        })}
+        {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+          <StatCard
+            key={key}
+            label={config.label}
+            value={categoryStats[key] || 0}
+            icon={config.icon}
+            {...config.statColor}
+            description={`${categoryStats[key] || 0} Plaene`}
+          />
+        ))}
       </div>
 
       {/* Filters */}

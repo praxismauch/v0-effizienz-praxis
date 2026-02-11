@@ -21,6 +21,12 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
+    ],
   },
   
   // Performance optimizations
@@ -28,7 +34,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
   reactStrictMode: true,
-  serverExternalPackages: ["googleapis", "nodemailer", "bcryptjs"],
+  serverExternalPackages: ["googleapis", "nodemailer", "bcryptjs", "@sparticuz/chromium", "puppeteer-core"],
   
   // Next.js 16: React Compiler (moved from experimental in v16)
   reactCompiler: false, // Enable when ready for React Compiler

@@ -22,6 +22,7 @@ interface SidebarNavItemProps {
   onToggleFavorite: (href: string) => void
   showFavoriteIndicator?: boolean
   indent?: boolean
+  isBeta?: boolean
 }
 
 export function SidebarNavItem({
@@ -34,6 +35,7 @@ export function SidebarNavItem({
   onToggleFavorite,
   showFavoriteIndicator = true,
   indent = true,
+  isBeta = false,
 }: SidebarNavItemProps) {
   const Icon = item.icon
 
@@ -58,6 +60,14 @@ export function SidebarNavItem({
             {sidebarOpen && (
               <span className="flex-1 truncate flex items-center gap-2">
                 {item.name}
+                {isBeta && (
+                  <span className={cn(
+                    "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide",
+                    isActive ? "bg-white/20 text-white" : "bg-amber-500/15 text-amber-500"
+                  )}>
+                    Beta
+                  </span>
+                )}
                 {showFavoriteIndicator && isFavorite && (
                   <Star className="h-3 w-3 fill-amber-500 text-amber-500 flex-shrink-0" />
                 )}

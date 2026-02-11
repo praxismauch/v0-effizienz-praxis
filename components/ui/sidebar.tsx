@@ -126,12 +126,23 @@ function SidebarProvider({
     [state, open, setOpen, effectiveIsMobile, openMobile, setOpenMobile, effectiveToggleSidebar],
   )
 
+  // During SSR, render children without the wrapper div to prevent hydration mismatch
+  // The wrapper div is only needed client-side for sidebar CSS variables and layout
+  if (!isMounted) {
+    return (
+      <SidebarContext.Provider value={contextValue}>
+        <TooltipProvider delayDuration={0}>
+          {children}
+        </TooltipProvider>
+      </SidebarContext.Provider>
+    )
+  }
+
   return (
     <SidebarContext.Provider value={contextValue}>
       <TooltipProvider delayDuration={0}>
         <div
           data-slot="sidebar-wrapper"
-          suppressHydrationWarning
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH,

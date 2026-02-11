@@ -9,8 +9,8 @@ export async function POST() {
   try {
     const cookieStore = await cookies()
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json({ error: "Server configuration error" }, { status: 500 })

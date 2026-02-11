@@ -120,6 +120,7 @@ export function EditTicketDialog({
                 <SelectContent>
                   <SelectItem value="open">Offen</SelectItem>
                   <SelectItem value="in_progress">In Bearbeitung</SelectItem>
+                  <SelectItem value="to_test">Zu testen</SelectItem>
                   <SelectItem value="resolved">Gelöst</SelectItem>
                   <SelectItem value="closed">Geschlossen</SelectItem>
                   <SelectItem value="wont_fix">Wird nicht behoben</SelectItem>

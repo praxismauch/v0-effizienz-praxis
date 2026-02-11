@@ -13,7 +13,8 @@ import { Loader2, Save, Building2, MapPin, Phone, Mail, Globe } from "lucide-rea
 
 interface PracticeSettings {
   name: string
-  address: string
+  street: string
+  zipCity: string
   phone: string
   email: string
   website: string
@@ -29,7 +30,8 @@ export function PracticeSettingsTab() {
   const [isSaving, setIsSaving] = useState(false)
   const [settings, setSettings] = useState<PracticeSettings>({
     name: "",
-    address: "",
+    street: "",
+    zipCity: "",
     phone: "",
     email: "",
     website: "",
@@ -40,9 +42,17 @@ export function PracticeSettingsTab() {
 
   useEffect(() => {
     if (currentPractice) {
+      // Parse address "Straße, Ort, PLZ" into separate fields
+      const addressParts = (currentPractice.address || "").split(", ")
+      const street = addressParts[0] || ""
+      const city = addressParts[1] || ""
+      const zip = addressParts[2] || ""
+      const zipCity = [zip, city].filter(Boolean).join(" ")
+
       setSettings({
         name: currentPractice.name || "",
-        address: currentPractice.address || "",
+        street,
+        zipCity,
         phone: currentPractice.phone || "",
         email: currentPractice.email || "",
         website: currentPractice.website || "",
@@ -58,10 +68,19 @@ export function PracticeSettingsTab() {
 
     setIsSaving(true)
     try {
+      // Rejoin street + zipCity into a single address string for the DB
+      const zipCityParts = settings.zipCity.trim().split(/\s+/)
+      const zip = zipCityParts[0] || ""
+      const city = zipCityParts.slice(1).join(" ") || ""
+      const address = [settings.street, city, zip].filter(Boolean).join(", ")
+
+      const { street, zipCity, ...rest } = settings
+      const payload = { ...rest, address }
+
       const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
@@ -167,14 +186,25 @@ export function PracticeSettingsTab() {
           <CardDescription>Kontaktinformationen und Erreichbarkeit</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="address">Adresse</Label>
-            <Input
-              id="address"
-              value={settings.address}
-              onChange={(e) => setSettings({ ...settings, address: e.target.value })}
-              placeholder="Straße, PLZ Ort"
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="street">Strasse und Hausnummer</Label>
+              <Input
+                id="street"
+                value={settings.street}
+                onChange={(e) => setSettings({ ...settings, street: e.target.value })}
+                placeholder="Musterstrasse 12"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="zipCity">PLZ und Ort</Label>
+              <Input
+                id="zipCity"
+                value={settings.zipCity}
+                onChange={(e) => setSettings({ ...settings, zipCity: e.target.value })}
+                placeholder="87616 Marktoberdorf"
+              />
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">

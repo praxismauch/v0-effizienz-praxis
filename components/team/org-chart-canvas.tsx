@@ -231,52 +231,88 @@ export function OrgChartCanvas({ positions, onEdit, onDelete, onCreate, isAdmin,
     setPan({ x: 0, y: 0 })
   }
 
-  // Draw connections with curved lines
+  // Draw connections with orthogonal (right-angle) lines
   const renderConnections = () => {
     const connections: React.ReactElement[] = []
 
+    // Group children by parent so we can draw a single horizontal bar per parent
+    const childrenByParent = new Map<string, Position[]>()
     positions.forEach((pos) => {
       if (pos.reports_to_position_id) {
-        const parentPos = layoutPositions.get(pos.reports_to_position_id)
-        const childPos = layoutPositions.get(pos.id)
+        if (!childrenByParent.has(pos.reports_to_position_id)) {
+          childrenByParent.set(pos.reports_to_position_id, [])
+        }
+        childrenByParent.get(pos.reports_to_position_id)!.push(pos)
+      }
+    })
 
-        if (parentPos && childPos) {
-          const x1 = parentPos.x
-          const y1 = parentPos.y + 70
-          const x2 = childPos.x
-          const y2 = childPos.y - 10
+    childrenByParent.forEach((children, parentId) => {
+      const parentLayout = layoutPositions.get(parentId)
+      if (!parentLayout) return
 
-          const midY = (y1 + y2) / 2
-          const isHovered = hoveredPosition === pos.id || hoveredPosition === pos.reports_to_position_id
+      const childLayouts = children
+        .map((c) => ({ id: c.id, layout: layoutPositions.get(c.id) }))
+        .filter((c) => c.layout != null)
+
+      if (childLayouts.length === 0) return
+
+      const isHovered = hoveredPosition === parentId || children.some((c) => hoveredPosition === c.id)
+      const strokeColor = isHovered ? "hsl(var(--primary))" : "hsl(var(--border))"
+      const shadowColor = "rgba(0,0,0,0.08)"
+
+      // Parent bottom center
+      const px = parentLayout.x
+      const py = parentLayout.y + 70
+
+      // Midpoint Y between parent bottom and children top
+      const firstChildY = childLayouts[0].layout!.y - 10
+      const midY = py + (firstChildY - py) / 2
+
+      if (childLayouts.length === 1) {
+        // Single child: straight vertical line
+        const cx = childLayouts[0].layout!.x
+        const cy = childLayouts[0].layout!.y - 10
+
+        connections.push(
+          <g key={`conn-${parentId}`}>
+            <path d={`M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`} stroke={shadowColor} strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={`M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`} stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="transition-colors duration-200" />
+          </g>
+        )
+      } else {
+        // Multiple children: vertical from parent, horizontal bar, vertical drops to each child
+        const childXs = childLayouts.map((c) => c.layout!.x).sort((a, b) => a - b)
+        const leftX = childXs[0]
+        const rightX = childXs[childXs.length - 1]
+
+        // Vertical line from parent down to midY
+        connections.push(
+          <g key={`conn-trunk-${parentId}`}>
+            <line x1={px} y1={py} x2={px} y2={midY} stroke={shadowColor} strokeWidth="4" strokeLinecap="round" />
+            <line x1={px} y1={py} x2={px} y2={midY} stroke={strokeColor} strokeWidth="2" strokeLinecap="round" className="transition-colors duration-200" />
+          </g>
+        )
+
+        // Horizontal bar across all children
+        connections.push(
+          <g key={`conn-bar-${parentId}`}>
+            <line x1={leftX} y1={midY} x2={rightX} y2={midY} stroke={shadowColor} strokeWidth="4" strokeLinecap="round" />
+            <line x1={leftX} y1={midY} x2={rightX} y2={midY} stroke={strokeColor} strokeWidth="2" strokeLinecap="round" className="transition-colors duration-200" />
+          </g>
+        )
+
+        // Vertical drops from horizontal bar to each child
+        childLayouts.forEach((child) => {
+          const cx = child.layout!.x
+          const cy = child.layout!.y - 10
 
           connections.push(
-            <g key={`conn-${pos.id}`}>
-              {/* Shadow line */}
-              <path
-                d={`M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`}
-                stroke="rgba(0,0,0,0.1)"
-                strokeWidth="4"
-                fill="none"
-                strokeLinecap="round"
-              />
-              {/* Main line */}
-              <path
-                d={`M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`}
-                stroke={isHovered ? "hsl(var(--primary))" : "hsl(var(--border))"}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                className="transition-colors duration-200"
-              />
-              {/* Arrow */}
-              <polygon
-                points={`${x2},${y2} ${x2 - 6},${y2 - 10} ${x2 + 6},${y2 - 10}`}
-                fill={isHovered ? "hsl(var(--primary))" : "hsl(var(--border))"}
-                className="transition-colors duration-200"
-              />
-            </g>,
+            <g key={`conn-drop-${child.id}`}>
+              <line x1={cx} y1={midY} x2={cx} y2={cy} stroke={shadowColor} strokeWidth="4" strokeLinecap="round" />
+              <line x1={cx} y1={midY} x2={cx} y2={cy} stroke={strokeColor} strokeWidth="2" strokeLinecap="round" className="transition-colors duration-200" />
+            </g>
           )
-        }
+        })
       }
     })
 

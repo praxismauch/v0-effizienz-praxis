@@ -144,7 +144,6 @@ export function PracticeSettingsTab() {
                   <SelectValue placeholder="Praxisart auswählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="allgemeinmedizin">Allgemeinmedizin</SelectItem>
                   <SelectItem value="facharzt">Facharztpraxis</SelectItem>
                   <SelectItem value="zahnarzt">Zahnarztpraxis</SelectItem>
                   <SelectItem value="mvz">MVZ</SelectItem>

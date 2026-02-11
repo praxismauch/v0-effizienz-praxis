@@ -23,11 +23,17 @@ interface PracticeSettings {
   specialization: string
 }
 
+interface SpecialtyGroup {
+  id: string
+  name: string
+}
+
 export function PracticeSettingsTab() {
   const { toast } = useToast()
   const { currentPractice, refreshPractice } = usePractice()
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [specialtyGroups, setSpecialtyGroups] = useState<SpecialtyGroup[]>([])
   const [settings, setSettings] = useState<PracticeSettings>({
     name: "",
     street: "",
@@ -62,6 +68,21 @@ export function PracticeSettingsTab() {
       })
     }
   }, [currentPractice])
+
+  useEffect(() => {
+    async function fetchSpecialtyGroups() {
+      try {
+        const res = await fetch("/api/specialty-groups")
+        if (res.ok) {
+          const data = await res.json()
+          setSpecialtyGroups(data.specialtyGroups || [])
+        }
+      } catch (error) {
+        console.error("Error fetching specialty groups:", error)
+      }
+    }
+    fetchSpecialtyGroups()
+  }, [])
 
   const handleSave = async () => {
     if (!currentPractice?.id) return
@@ -153,15 +174,24 @@ export function PracticeSettingsTab() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="specialization">Fachrichtung</Label>
-            <Input
-              id="specialization"
-              value={settings.specialization}
-              onChange={(e) => setSettings({ ...settings, specialization: e.target.value })}
-              placeholder="z.B. Innere Medizin, Orthopädie"
-            />
-          </div>
+              <div className="space-y-2">
+              <Label htmlFor="specialization">Fachrichtung</Label>
+              <Select
+                value={settings.specialization}
+                onValueChange={(value) => setSettings({ ...settings, specialization: value })}
+              >
+                <SelectTrigger id="specialization">
+                  <SelectValue placeholder="Fachrichtung auswaehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {specialtyGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.name}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Beschreibung</Label>

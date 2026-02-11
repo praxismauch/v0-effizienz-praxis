@@ -70,6 +70,7 @@ export async function PATCH(
         service_description: body.service_description,
         category: body.category,
         one_time_costs: body.one_time_costs,
+        recurring_costs: body.recurring_costs,
         variable_costs: body.variable_costs,
         pricing_scenarios: body.pricing_scenarios,
         profitability_score: body.profitability_score,
@@ -78,6 +79,7 @@ export async function PATCH(
         status: body.status,
         total_one_time_cost: body.total_one_time_cost,
         total_variable_cost: body.total_variable_cost,
+        total_recurring_cost: body.total_recurring_cost,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)

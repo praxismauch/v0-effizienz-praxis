@@ -77,6 +77,10 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
   const [roomHourlyRate, setRoomHourlyRate] = useState(50) // Default room cost per hour
   const [honorarGoal, setHonorarGoal] = useState(500) // Default goal for Honorarstundensatz
 
+  const [recurringCosts, setRecurringCosts] = useState<Cost[]>([
+    { name: "Softwarelizenzen", amount: 0, category: "Recurring" },
+  ])
+
   const [variableCosts, setVariableCosts] = useState<Cost[]>([
     { name: "Materialkosten", amount: 0, category: "Material" },
   ])
@@ -110,12 +114,20 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
     setVariableCosts([...variableCosts, { name: "", amount: 0 }])
   }
 
+  const addRecurringCost = () => {
+    setRecurringCosts([...recurringCosts, { name: "", amount: 0, category: "Recurring" }])
+  }
+
   const removeOneTimeCost = (index: number) => {
     setOneTimeCosts(oneTimeCosts.filter((_, i) => i !== index))
   }
 
   const removeVariableCost = (index: number) => {
     setVariableCosts(variableCosts.filter((_, i) => i !== index))
+  }
+
+  const removeRecurringCost = (index: number) => {
+    setRecurringCosts(recurringCosts.filter((_, i) => i !== index))
   }
 
   // Calculate labor and room costs from time inputs
@@ -129,13 +141,16 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
     return (price * 60) / arztMinutes
   }
 
+  const calculateTotalRecurring = () => recurringCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
+
   const calculateTotals = () => {
     const totalOneTime = oneTimeCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
+    const totalRecurring = calculateTotalRecurring()
     const materialCosts = variableCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0)
     const laborCosts = calculateMfaCost() + calculateArztCost()
     const roomCosts = calculateRoomCost()
     const totalVariable = materialCosts + laborCosts + roomCosts
-    return { totalOneTime, totalVariable, materialCosts, laborCosts, roomCosts }
+    return { totalOneTime, totalVariable, totalRecurring, materialCosts, laborCosts, roomCosts }
   }
 
   const calculateBreakEven = (scenario: PricingScenario, totalOneTime: number, totalVariable: number) => {
@@ -168,14 +183,15 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
     setAnalyzing(true)
 
     try {
-      const { totalOneTime, totalVariable } = calculateTotals()
+      const { totalOneTime, totalVariable, totalRecurring } = calculateTotals()
 
       // Only include scenarios that have a price set
       const validScenarios = scenarios.filter((s) => s.price > 0)
 
       const scenarioAnalysis = validScenarios.map((scenario) => {
         const breakEven = calculateBreakEven(scenario, totalOneTime, totalVariable)
-        const monthlyProfit = scenario.expected_monthly_demand * (scenario.price - totalVariable)
+        const monthlyRevenueFromService = scenario.expected_monthly_demand * (scenario.price - totalVariable)
+        const monthlyProfit = monthlyRevenueFromService - totalRecurring
         const yearlyProfit = monthlyProfit * 12
         const roi = totalOneTime > 0 ? (yearlyProfit / totalOneTime) * 100 : 0
         const honorarStundensatz = calculateHonorarStundensatz(scenario.price)
@@ -187,6 +203,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
           yearlyProfit,
           roi,
           honorarStundensatz,
+          totalRecurring,
         }
       })
 
@@ -218,6 +235,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
           service_description: serviceDescription,
           category,
           one_time_costs: oneTimeCosts,
+          recurring_costs: recurringCosts,
           variable_costs: variableCosts,
           pricing_scenarios: scenarioAnalysis,
           profitability_score: profitabilityScore,
@@ -232,6 +250,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
         service_description: serviceDescription,
         category,
         one_time_costs: oneTimeCosts,
+        recurring_costs: recurringCosts,
         variable_costs: [
           ...variableCosts,
           { name: "Arbeitszeit (MFA)", amount: calculateMfaCost(), category: "Labor", minutes: mfaMinutes, hourlyRate: mfaHourlyRate },
@@ -239,6 +258,7 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
         ],
         total_one_time_cost: totalOneTime,
         total_variable_cost: totalVariable,
+        total_recurring_cost: totalRecurring,
         pricing_scenarios: scenarioAnalysis,
         ai_analysis: aiData.analysis,
         profitability_score: profitabilityScore,
@@ -372,6 +392,59 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
                 </div>
               ))}
               <p className="text-sm font-medium">Gesamt: {calculateTotals().totalOneTime.toFixed(2)} €</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Laufende Kosten (monatlich)</h3>
+                <Button type="button" variant="outline" size="sm" onClick={addRecurringCost}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Hinzufuegen
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Monatlich anfallende Kosten wie Softwarelizenzen, Wartungsvertraege, Leasing etc.
+              </p>
+              {recurringCosts.map((cost, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <Input
+                    placeholder="Kostenart (z.B. Softwarelizenz)"
+                    value={cost.name}
+                    onChange={(e) => {
+                      const updated = [...recurringCosts]
+                      updated[index].name = e.target.value
+                      setRecurringCosts(updated)
+                    }}
+                    className="flex-1"
+                  />
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      placeholder="€/Monat"
+                      value={cost.amount || ""}
+                      onChange={(e) => {
+                        const updated = [...recurringCosts]
+                        updated[index].amount = Math.max(0, Number.parseFloat(e.target.value) || 0)
+                        setRecurringCosts(updated)
+                      }}
+                      className="w-32"
+                      min="0"
+                      step="0.01"
+                    />
+                    <NettoBruttoCalculator
+                      onApply={(brutto) => {
+                        const updated = [...recurringCosts]
+                        updated[index].amount = Math.max(0, brutto)
+                        setRecurringCosts(updated)
+                      }}
+                    />
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeRecurringCost(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <p className="text-sm font-medium">Gesamt: {calculateTotalRecurring().toFixed(2)} €/Monat</p>
             </div>
 
             <div className="space-y-4">

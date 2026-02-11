@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Users, Calendar, Clock, AlertTriangle, ArrowLeftRight, Settings } from "lucide-react"
@@ -300,54 +301,10 @@ export default function DienstplanPageClient({
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Schichten</CardTitle>
-            <div className="rounded-lg bg-blue-500/10 p-2">
-              <Calendar className="h-4 w-4 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalShifts}</div>
-            <p className="text-xs text-muted-foreground">{stats.coverageRate}% besetzt</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team</CardTitle>
-            <div className="rounded-lg bg-emerald-500/10 p-2">
-              <Users className="h-4 w-4 text-emerald-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{teamMembers.length}</div>
-            <p className="text-xs text-muted-foreground">Mitarbeiter</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tausch-Anfragen</CardTitle>
-            <div className="rounded-lg bg-amber-500/10 p-2">
-              <ArrowLeftRight className="h-4 w-4 text-amber-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingSwaps}</div>
-            <p className="text-xs text-muted-foreground">offen</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Schichttypen</CardTitle>
-            <div className="rounded-lg bg-violet-500/10 p-2">
-              <Clock className="h-4 w-4 text-violet-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{shiftTypes.length}</div>
-            <p className="text-xs text-muted-foreground">definiert</p>
-          </CardContent>
-        </Card>
+        <StatCard label="Schichten" value={stats.totalShifts} icon={Calendar} {...statCardColors.info} description={`${stats.coverageRate}% besetzt`} />
+        <StatCard label="Team" value={teamMembers.length} icon={Users} {...statCardColors.success} description="Mitarbeiter" />
+        <StatCard label="Tausch-Anfragen" value={stats.pendingSwaps} icon={ArrowLeftRight} {...statCardColors.warning} description="offen" />
+        <StatCard label="Schichttypen" value={shiftTypes.length} icon={Clock} {...statCardColors.purple} description="definiert" />
       </div>
 
       {/* Tabs */}

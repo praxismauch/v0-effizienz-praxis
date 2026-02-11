@@ -13,6 +13,30 @@ interface Room {
   name: string
   beschreibung: string | null
   created_at: string
+  color?: string | null
+  images?: string | null
+}
+
+const COLOR_MAP: Record<string, string> = {
+  green: "bg-green-500",
+  blue: "bg-blue-500",
+  purple: "bg-purple-500",
+  orange: "bg-orange-500",
+  red: "bg-red-500",
+  teal: "bg-teal-500",
+  pink: "bg-pink-500",
+  yellow: "bg-yellow-500",
+}
+
+const COLOR_MAP_LIGHT: Record<string, string> = {
+  green: "bg-green-50 dark:bg-green-950/30",
+  blue: "bg-blue-50 dark:bg-blue-950/30",
+  purple: "bg-purple-50 dark:bg-purple-950/30",
+  orange: "bg-orange-50 dark:bg-orange-950/30",
+  red: "bg-red-50 dark:bg-red-950/30",
+  teal: "bg-teal-50 dark:bg-teal-950/30",
+  pink: "bg-pink-50 dark:bg-pink-950/30",
+  yellow: "bg-yellow-50 dark:bg-yellow-950/30",
 }
 
 interface RoomsManagementProps {
@@ -72,27 +96,37 @@ export function RoomsManagement({ initialRooms, practiceId }: RoomsManagementPro
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {rooms.map((room) => (
-            <Card key={room.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">{room.name}</CardTitle>
+          {rooms.map((room) => {
+            const colorKey = room.color || "blue"
+            return (
+              <Card
+                key={room.id}
+                className={`overflow-hidden border-2 hover:shadow-md transition-all cursor-pointer ${COLOR_MAP_LIGHT[colorKey] || ""}`}
+                style={{ borderLeftWidth: "6px", borderLeftColor: `var(--color-${colorKey}-500, #3b82f6)` }}
+                onClick={() => setEditRoom(room)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${COLOR_MAP[colorKey] || "bg-blue-500"}`}>
+                        <Building2 className="h-5 w-5 text-white" />
+                      </div>
+                      <CardTitle className="text-lg">{room.name}</CardTitle>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditRoom(room) }}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(room.id) }}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditRoom(room)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(room.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-                {room.beschreibung && <CardDescription className="mt-2">{room.beschreibung}</CardDescription>}
-              </CardHeader>
-            </Card>
-          ))}
+                  {room.beschreibung && <CardDescription className="mt-2">{room.beschreibung}</CardDescription>}
+                </CardHeader>
+              </Card>
+            )
+          })}
         </div>
       )}
 

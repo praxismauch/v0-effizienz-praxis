@@ -23,6 +23,9 @@ export async function POST(
       return NextResponse.json({ error: "action must be 'clock_in' or 'clock_out'" }, { status: 400 })
     }
 
+    // Normalize location to match DB constraint
+    const locationNormalized = location || "office"
+
     const now = new Date()
     const today = now.toISOString().split("T")[0]
 
@@ -49,7 +52,7 @@ export async function POST(
         .insert({
           user_id,
           practice_id: practiceId,
-          stamp_type: "clock_in",
+          stamp_type: "start",
           timestamp: now.toISOString(),
           location_type: location || "office",
           comment: comment || "",
@@ -118,7 +121,7 @@ export async function POST(
         .insert({
           user_id,
           practice_id: practiceId,
-          stamp_type: "clock_out",
+          stamp_type: "stop",
           timestamp: now.toISOString(),
           location_type: openBlock.location_type || "office",
           comment: comment || "",

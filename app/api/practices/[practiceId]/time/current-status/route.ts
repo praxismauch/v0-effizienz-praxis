@@ -19,13 +19,14 @@ export async function GET(
       return NextResponse.json({ error: "userId is required" }, { status: 400 })
     }
 
-    // Find open time block for this user
+    // Find open time block for this user (must have is_open=true AND no end_time)
     const { data: block, error: blockError } = await supabase
       .from("time_blocks")
       .select("*")
       .eq("practice_id", practiceId)
       .eq("user_id", userId)
       .eq("is_open", true)
+      .is("end_time", null)
       .order("start_time", { ascending: false })
       .limit(1)
       .maybeSingle()

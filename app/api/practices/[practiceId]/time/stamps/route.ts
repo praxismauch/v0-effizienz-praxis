@@ -30,13 +30,14 @@ export async function POST(
     const today = now.toISOString().split("T")[0]
 
     if (action === "clock_in") {
-      // Check if there's already an open block
+      // Check if there's already an open block (is_open=true AND no end_time)
       const { data: existingBlock } = await supabase
         .from("time_blocks")
         .select("id")
         .eq("practice_id", practiceId)
         .eq("user_id", user_id)
         .eq("is_open", true)
+        .is("end_time", null)
         .maybeSingle()
 
       if (existingBlock) {
@@ -92,13 +93,14 @@ export async function POST(
     }
 
     if (action === "clock_out") {
-      // Find the open block
+      // Find the open block (is_open=true AND no end_time)
       const { data: openBlock, error: findError } = await supabase
         .from("time_blocks")
         .select("*")
         .eq("practice_id", practiceId)
         .eq("user_id", user_id)
         .eq("is_open", true)
+        .is("end_time", null)
         .order("start_time", { ascending: false })
         .limit(1)
         .maybeSingle()

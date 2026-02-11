@@ -21,7 +21,8 @@ import { FeedbackTab } from "./components/feedback-tab"
 import { SummaryTab } from "./components/summary-tab"
 
 // Import types
-import type { TeamMember, FormData, Goal, DevelopmentPlan } from "./types"
+import type { TeamMember, FormData } from "./types"
+import { DEFAULT_PERFORMANCE_AREAS } from "./types"
 
 export default function NeueMitarbeitergespraechPage() {
   const router = useRouter()
@@ -37,17 +38,26 @@ export default function NeueMitarbeitergespraechPage() {
   const [loadingMembers, setLoadingMembers] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
 
+  const [aiLoading, setAiLoading] = useState(false)
+
   // Form state
   const [formData, setFormData] = useState<FormData>({
-    performance_rating: 3,
-    performance_notes: "",
-    skills: [],
+    performance_areas: DEFAULT_PERFORMANCE_AREAS.map((a) => ({ ...a })),
+    competencies: [],
     goals: [],
     development_plans: [],
-    feedback_employee: "",
-    feedback_manager: "",
-    next_steps: "",
-    next_meeting_date: "",
+    strengths: "",
+    areas_for_improvement: "",
+    achievements: "",
+    challenges: "",
+    employee_self_assessment: "",
+    manager_comments: "",
+    overall_rating: null,
+    summary: "",
+    career_aspirations: "",
+    promotion_readiness: "",
+    next_review_date: "",
+    follow_up_actions: [],
   })
 
   const practiceId = currentPractice?.id?.toString()
@@ -85,40 +95,8 @@ export default function NeueMitarbeitergespraechPage() {
   }
 
   // Handle form field changes
-  const handleFormChange = useCallback((field: keyof FormData, value: any) => {
+  const handleFormChange = useCallback((field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-  }, [])
-
-  // Handle adding a goal
-  const handleAddGoal = useCallback((goal: Goal) => {
-    setFormData((prev) => ({
-      ...prev,
-      goals: [...prev.goals, goal],
-    }))
-  }, [])
-
-  // Handle removing a goal
-  const handleRemoveGoal = useCallback((index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      goals: prev.goals.filter((_, i) => i !== index),
-    }))
-  }, [])
-
-  // Handle adding a development plan
-  const handleAddDevelopmentPlan = useCallback((plan: DevelopmentPlan) => {
-    setFormData((prev) => ({
-      ...prev,
-      development_plans: [...prev.development_plans, plan],
-    }))
-  }, [])
-
-  // Handle removing a development plan
-  const handleRemoveDevelopmentPlan = useCallback((index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      development_plans: prev.development_plans.filter((_, i) => i !== index),
-    }))
   }, [])
 
   // Handle save
@@ -132,11 +110,27 @@ export default function NeueMitarbeitergespraechPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          ...formData,
           employee_id: selectedMember.id,
           appraiser_id: currentUser?.teamMemberId,
+          appraisal_type: "annual",
           appraisal_date: new Date().toISOString().split("T")[0],
           status: "completed",
+          overall_rating: formData.overall_rating,
+          performance_areas: formData.performance_areas,
+          competencies: formData.competencies,
+          new_goals: formData.goals,
+          development_plan: formData.development_plans,
+          strengths: formData.strengths,
+          areas_for_improvement: formData.areas_for_improvement,
+          achievements: formData.achievements,
+          challenges: formData.challenges,
+          employee_self_assessment: formData.employee_self_assessment,
+          manager_comments: formData.manager_comments,
+          career_aspirations: formData.career_aspirations,
+          promotion_readiness: formData.promotion_readiness,
+          next_review_date: formData.next_review_date,
+          summary: formData.summary,
+          follow_up_actions: formData.follow_up_actions,
         }),
       })
 
@@ -226,52 +220,67 @@ export default function NeueMitarbeitergespraechPage() {
 
           <TabsContent value="performance">
             <PerformanceTab
-              rating={formData.performance_rating}
-              notes={formData.performance_notes}
-              onRatingChange={(value) => handleFormChange("performance_rating", value)}
-              onNotesChange={(value) => handleFormChange("performance_notes", value)}
+              performanceAreas={formData.performance_areas}
+              onUpdate={(areas) => handleFormChange("performance_areas", areas)}
             />
           </TabsContent>
 
           <TabsContent value="skills">
             <SkillsTab
-              skills={formData.skills}
-              onSkillsChange={(value) => handleFormChange("skills", value)}
+              competencies={formData.competencies}
+              onUpdate={(comps) => handleFormChange("competencies", comps)}
+              onAIGenerate={() => {}}
+              aiLoading={aiLoading}
             />
           </TabsContent>
 
           <TabsContent value="goals">
             <GoalsTab
-              goals={formData.goals || []}
+              goals={formData.goals}
               onUpdate={(goals) => handleFormChange("goals", goals)}
+              onAIGenerate={() => {}}
+              aiLoading={aiLoading}
+              onAcceptSuggestion={(s) => {
+                handleFormChange("goals", [...formData.goals, { ...s, status: "open" }])
+              }}
             />
           </TabsContent>
 
           <TabsContent value="development">
             <DevelopmentTab
               plans={formData.development_plans}
-              onAddPlan={handleAddDevelopmentPlan}
-              onRemovePlan={handleRemoveDevelopmentPlan}
+              onUpdate={(plans) => handleFormChange("development_plans", plans)}
+              onAIGenerate={() => {}}
+              aiLoading={aiLoading}
+              onAcceptSuggestion={(s) => {
+                handleFormChange("development_plans", [...formData.development_plans, { ...s, status: "planned" }])
+              }}
             />
           </TabsContent>
 
           <TabsContent value="feedback">
             <FeedbackTab
-              employeeFeedback={formData.feedback_employee}
-              managerFeedback={formData.feedback_manager}
-              onEmployeeFeedbackChange={(value) => handleFormChange("feedback_employee", value)}
-              onManagerFeedbackChange={(value) => handleFormChange("feedback_manager", value)}
+              strengths={formData.strengths}
+              areasForImprovement={formData.areas_for_improvement}
+              achievements={formData.achievements}
+              challenges={formData.challenges}
+              employeeSelfAssessment={formData.employee_self_assessment}
+              managerComments={formData.manager_comments}
+              onUpdate={handleFormChange}
             />
           </TabsContent>
 
           <TabsContent value="summary">
             <SummaryTab
-              formData={formData}
-              member={selectedMember}
-              nextSteps={formData.next_steps}
-              nextMeetingDate={formData.next_meeting_date}
-              onNextStepsChange={(value) => handleFormChange("next_steps", value)}
-              onNextMeetingDateChange={(value) => handleFormChange("next_meeting_date", value)}
+              overallRating={formData.overall_rating}
+              summary={formData.summary}
+              careerAspirations={formData.career_aspirations}
+              promotionReadiness={formData.promotion_readiness}
+              nextReviewDate={formData.next_review_date}
+              followUpActions={formData.follow_up_actions}
+              onUpdate={handleFormChange}
+              onAIGenerate={() => {}}
+              aiLoading={aiLoading}
             />
           </TabsContent>
         </Tabs>

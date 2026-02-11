@@ -165,8 +165,8 @@ export default function AvailabilityTab({
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
                   <AvatarFallback>
-                    {member.first_name[0]}
-                    {member.last_name[0]}
+                    {member.first_name?.[0] ?? ""}
+                    {member.last_name?.[0] ?? ""}
                   </AvatarFallback>
                 </Avatar>
                 <div>

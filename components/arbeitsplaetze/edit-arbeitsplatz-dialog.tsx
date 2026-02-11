@@ -21,7 +21,6 @@ import { useUser } from "@/contexts/user-context"
 import { useToast } from "@/hooks/use-toast"
 import { SimpleRichTextEditor } from "./simple-rich-text-editor"
 import { MultiImageUpload } from "@/components/ui/multi-image-upload"
-import { cn } from "@/lib/utils"
 
 interface Room {
   id: string
@@ -66,28 +65,17 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
     }
     return []
   })
-  const [selectedColor, setSelectedColor] = useState<string>(arbeitsplatz.color || "green")
+  const [selectedColor, setSelectedColor] = useState<string>(arbeitsplatz.color || "#22c55e")
   const [useRoomColor, setUseRoomColor] = useState<boolean>(arbeitsplatz.use_room_color !== false)
   const { currentUser } = useUser()
   const { toast } = useToast()
-
-  const COLORS = [
-    { value: "green", label: "Grün", class: "bg-green-500" },
-    { value: "blue", label: "Blau", class: "bg-blue-500" },
-    { value: "purple", label: "Lila", class: "bg-purple-500" },
-    { value: "orange", label: "Orange", class: "bg-orange-500" },
-    { value: "red", label: "Rot", class: "bg-red-500" },
-    { value: "teal", label: "Türkis", class: "bg-teal-500" },
-    { value: "pink", label: "Pink", class: "bg-pink-500" },
-    { value: "yellow", label: "Gelb", class: "bg-yellow-500" },
-  ]
 
   useEffect(() => {
     if (open) {
       setName(arbeitsplatz.name)
       setBeschreibung(arbeitsplatz.beschreibung || "")
       setRaumId(arbeitsplatz.raum_id || "none")
-      setSelectedColor(arbeitsplatz.color || "green")
+      setSelectedColor(arbeitsplatz.color || "#22c55e")
       setUseRoomColor(arbeitsplatz.use_room_color !== false)
       if (arbeitsplatz.image_urls) {
         if (typeof arbeitsplatz.image_urls === "string") {
@@ -250,13 +238,11 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
                   {(() => {
                     const selectedRoom = rooms.find(r => r.id === raumId)
                     if (selectedRoom?.color) {
-                      const roomColorConfig = COLORS.find(c => c.value === selectedRoom.color)
-                      return roomColorConfig ? (
+                      return (
                         <span className="ml-2 inline-flex items-center gap-1.5 text-muted-foreground">
-                          <span className={cn("w-3 h-3 rounded-full inline-block", roomColorConfig.class)} />
-                          ({roomColorConfig.label})
+                          <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: selectedRoom.color }} />
                         </span>
-                      ) : null
+                      )
                     }
                     return null
                   })()}
@@ -271,23 +257,14 @@ export function EditArbeitsplatzDialog({ open, onOpenChange, arbeitsplatz, onSuc
                     ? "Manuelle Farbauswahl (überschreibt die Raumfarbe)" 
                     : "Wählen Sie eine Farbe für diesen Arbeitsplatz"}
                 </p>
-                <div className="grid grid-cols-4 gap-2">
-                  {COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      onClick={() => setSelectedColor(color.value)}
-                      className={cn(
-                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
-                        selectedColor === color.value
-                          ? "border-primary shadow-sm scale-105"
-                          : "border-border hover:border-primary/50",
-                      )}
-                    >
-                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
-                      <span className="text-sm font-medium">{color.label}</span>
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={selectedColor}
+                    onChange={(e) => setSelectedColor(e.target.value)}
+                    className="h-10 w-14 cursor-pointer rounded-lg border border-border p-1"
+                  />
+                  <span className="text-sm text-muted-foreground font-mono">{selectedColor}</span>
                 </div>
               </>
             )}

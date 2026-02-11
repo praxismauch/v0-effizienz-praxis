@@ -97,18 +97,26 @@ export function RoomsManagement({ initialRooms, practiceId }: RoomsManagementPro
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {rooms.map((room) => {
-            const colorKey = room.color || "blue"
-            return (
-              <Card
-                key={room.id}
-                className={`overflow-hidden border-2 hover:shadow-md transition-all cursor-pointer ${COLOR_MAP_LIGHT[colorKey] || ""}`}
-                style={{ borderLeftWidth: "6px", borderLeftColor: `var(--color-${colorKey}-500, #3b82f6)` }}
-                onClick={() => setEditRoom(room)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${COLOR_MAP[colorKey] || "bg-blue-500"}`}>
+                const colorKey = room.color || "blue"
+                const isHex = colorKey.startsWith("#")
+                return (
+                  <Card
+                    key={room.id}
+                    className={`overflow-hidden border-2 hover:shadow-md transition-all cursor-pointer ${!isHex ? (COLOR_MAP_LIGHT[colorKey] || "") : ""}`}
+                    style={{ 
+                      borderLeftWidth: "6px", 
+                      borderLeftColor: isHex ? colorKey : `var(--color-${colorKey}-500, #3b82f6)`,
+                      ...(isHex ? { backgroundColor: `${colorKey}10` } : {}),
+                    }}
+                    onClick={() => setEditRoom(room)}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center ${!isHex ? (COLOR_MAP[colorKey] || "bg-blue-500") : ""}`}
+                            style={isHex ? { backgroundColor: colorKey } : undefined}
+                          >
                         <Building2 className="h-5 w-5 text-white" />
                       </div>
                       <CardTitle className="text-lg">{room.name}</CardTitle>

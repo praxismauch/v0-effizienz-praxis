@@ -25,8 +25,27 @@ export const ARBEITSPLATZ_COLORS: { value: ArbeitsplatzColor; label: string; bg:
   { value: "yellow", label: "Gelb", bg: "bg-yellow-100 dark:bg-yellow-900/30", icon: "text-yellow-600 dark:text-yellow-400", border: "border-t-yellow-500", gradient: "bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30" },
 ]
 
-export function getColorConfig(color: ArbeitsplatzColor | string | null | undefined) {
-  return ARBEITSPLATZ_COLORS.find(c => c.value === color) || ARBEITSPLATZ_COLORS[0]
+export function getColorConfig(color: ArbeitsplatzColor | string | null | undefined): {
+  value: string; label: string; bg: string; icon: string; border: string; gradient: string; hex?: string
+} {
+  // Check named colors first (backward compat with old "blue", "green" etc. values)
+  const named = ARBEITSPLATZ_COLORS.find(c => c.value === color)
+  if (named) return named
+
+  // If it's a hex color, return a config with empty class names but a hex property for inline styles
+  if (color && color.startsWith("#")) {
+    return {
+      value: color,
+      label: color,
+      bg: "",
+      icon: "",
+      border: "",
+      gradient: "",
+      hex: color,
+    }
+  }
+
+  return ARBEITSPLATZ_COLORS[0]
 }
 
 interface Arbeitsplatz {
@@ -86,12 +105,14 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
                   "p-3 rounded-xl shrink-0",
                   arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
                 )}
+                style={arbeitsplatz.is_active && colorConfig.hex ? { backgroundColor: `${colorConfig.hex}20` } : undefined}
               >
                 <Monitor
                   className={cn(
                     "h-5 w-5",
                     arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
                   )}
+                  style={arbeitsplatz.is_active && colorConfig.hex ? { color: colorConfig.hex } : undefined}
                 />
               </div>
             )}
@@ -168,6 +189,7 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
               ? colorConfig.gradient
               : "bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30",
           )}
+          style={arbeitsplatz.is_active && colorConfig.hex ? { background: `linear-gradient(to right, ${colorConfig.hex}10, ${colorConfig.hex}05)` } : undefined}
         >
           <div className="flex items-start gap-3">
             <div
@@ -175,12 +197,14 @@ export function ArbeitsplatzCard({ arbeitsplatz, onEdit, onDelete, viewMode = "g
                 "p-2.5 rounded-xl shrink-0",
                 arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
               )}
+              style={arbeitsplatz.is_active && colorConfig.hex ? { backgroundColor: `${colorConfig.hex}20` } : undefined}
             >
               <Monitor
                 className={cn(
                   "h-5 w-5",
                   arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
                 )}
+                style={arbeitsplatz.is_active && colorConfig.hex ? { color: colorConfig.hex } : undefined}
               />
             </div>
             <div className="flex-1 min-w-0">

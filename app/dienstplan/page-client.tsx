@@ -300,7 +300,7 @@ export default function DienstplanPageClient({
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-l-4 border-l-blue-500">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Schichten</CardTitle>
             <div className="rounded-lg bg-blue-500/10 p-2">
@@ -312,7 +312,7 @@ export default function DienstplanPageClient({
             <p className="text-xs text-muted-foreground">{stats.coverageRate}% besetzt</p>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-emerald-500">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Team</CardTitle>
             <div className="rounded-lg bg-emerald-500/10 p-2">
@@ -324,7 +324,7 @@ export default function DienstplanPageClient({
             <p className="text-xs text-muted-foreground">Mitarbeiter</p>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-amber-500">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tausch-Anfragen</CardTitle>
             <div className="rounded-lg bg-amber-500/10 p-2">
@@ -336,7 +336,7 @@ export default function DienstplanPageClient({
             <p className="text-xs text-muted-foreground">offen</p>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-violet-500">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Schichttypen</CardTitle>
             <div className="rounded-lg bg-violet-500/10 p-2">

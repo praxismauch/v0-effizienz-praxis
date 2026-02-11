@@ -26,6 +26,14 @@ interface CostItem {
   amount: number
 }
 
+function toArray(val: unknown): CostItem[] {
+  if (Array.isArray(val)) return val
+  if (typeof val === "string") {
+    try { const parsed = JSON.parse(val); return Array.isArray(parsed) ? parsed : [] } catch { return [] }
+  }
+  return []
+}
+
 interface ViewRoiAnalysisDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -67,8 +75,8 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
         // Initialize edit form state
         setServiceName(data.service_name || "")
         setDescription(data.description || "")
-        setFixedCosts(data.fixed_costs || [])
-        setVariableCosts(data.variable_costs || [])
+        setFixedCosts(toArray(data.fixed_costs))
+        setVariableCosts(toArray(data.variable_costs))
         setPricePessimistic(data.scenario_pessimistic || 0)
         setPriceRealistic(data.scenario_realistic || 0)
         setPriceOptimistic(data.scenario_optimistic || 0)
@@ -151,8 +159,8 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
     if (analysis) {
       setServiceName(analysis.service_name || "")
       setDescription(analysis.description || "")
-      setFixedCosts(analysis.fixed_costs || [])
-      setVariableCosts(analysis.variable_costs || [])
+      setFixedCosts(toArray(analysis.fixed_costs))
+      setVariableCosts(toArray(analysis.variable_costs))
       setPricePessimistic(analysis.scenario_pessimistic || 0)
       setPriceRealistic(analysis.scenario_realistic || 0)
       setPriceOptimistic(analysis.scenario_optimistic || 0)

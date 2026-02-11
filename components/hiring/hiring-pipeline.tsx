@@ -85,6 +85,19 @@ interface PipelineStage {
   applications: Application[]
 }
 
+const STATUS_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
+  new: { label: "Neu", className: "bg-blue-500 text-white" },
+  contacted: { label: "Kontaktiert", className: "bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-300" },
+  first_interview: { label: "Erstgespraech", className: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300" },
+  trial_work: { label: "Probearbeiten", className: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300" },
+  second_interview: { label: "Zweitgespraech", className: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300" },
+  interviewed: { label: "Interview", className: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300" },
+  offer_extended: { label: "Angebot", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
+  hired: { label: "Eingestellt", className: "bg-emerald-500 text-white" },
+  rejected: { label: "Abgelehnt", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" },
+  archived: { label: "Archiviert", className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
+}
+
 const STATUS_TO_STAGE_MAP: Record<string, string> = {
   new: "Bewerbung eingegangen",
   contacted: "Bewerbung eingegangen",
@@ -618,11 +631,18 @@ export function HiringPipeline() {
                             <p className="font-medium text-sm truncate">
                               {application.candidate.first_name} {application.candidate.last_name}
                             </p>
-                            {application.candidate.date_of_birth && (
-                              <p className="text-xs text-muted-foreground">
-                                {calculateAge(application.candidate.date_of_birth)} Jahre
-                              </p>
-                            )}
+                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                              {application.candidate.date_of_birth && (
+                                <span className="text-xs text-muted-foreground">
+                                  {calculateAge(application.candidate.date_of_birth)} Jahre
+                                </span>
+                              )}
+                              {application.status && STATUS_BADGE_CONFIG[application.status] && (
+                                <Badge className={`${STATUS_BADGE_CONFIG[application.status].className} text-[10px] px-1.5 py-0 font-medium`}>
+                                  {STATUS_BADGE_CONFIG[application.status].label}
+                                </Badge>
+                              )}
+                            </div>
                             {application.job_posting?.title && (
                               <Badge variant="outline" className="text-xs mt-1 max-w-full truncate">
                                 {application.job_posting.title}

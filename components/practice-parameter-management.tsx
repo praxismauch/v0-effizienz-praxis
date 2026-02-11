@@ -272,38 +272,45 @@ export function PracticeParameterManagement() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="border rounded-lg divide-y">
           {filteredParameters.map((param) => (
-            <Card key={param.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle
-                      className="text-base cursor-pointer hover:text-primary transition-colors"
-                      onClick={() => handleEdit(param)}
-                    >
-                      {param.name}
-                    </CardTitle>
-                    {param.description && <CardDescription className="text-sm">{param.description}</CardDescription>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(param)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(param.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+            <div
+              key={param.id}
+              className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => handleEdit(param)}
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{param.name}</p>
+                  {param.description && (
+                    <p className="text-xs text-muted-foreground truncate">{param.description}</p>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className={getCategoryColor(param.category)}>{param.category}</Badge>
-                  <Badge variant="outline">{param.data_type}</Badge>
-                  {param.unit && <Badge variant="secondary">{param.unit}</Badge>}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Badge className={`text-xs ${getCategoryColor(param.category)}`}>{param.category}</Badge>
+                  <Badge variant="outline" className="text-xs">{param.data_type}</Badge>
+                  {param.unit && <Badge variant="secondary" className="text-xs">{param.unit}</Badge>}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="flex items-center gap-1 ml-3 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => { e.stopPropagation(); handleEdit(param) }}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); handleDelete(param.id) }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       )}

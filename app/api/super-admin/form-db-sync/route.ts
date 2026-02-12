@@ -149,8 +149,8 @@ export async function GET() {
       tableColumnsMap[tableName] = cols
     }
 
-    // Filter out internal/system tables
-    const systemTables = new Set(["schema_migrations", "migrations", "buckets", "objects", "s3_multipart_uploads", "s3_multipart_uploads_parts", "secrets", "decrypted_secrets", "refresh_tokens", "instances", "audit_log_entries", "schema_version", "sessions", "mfa_factors", "mfa_challenges", "mfa_amr_claims", "sso_providers", "sso_domains", "saml_providers", "saml_relay_states", "flow_state", "identities", "one_time_tokens"])
+    // Filter out internal/system tables and views
+    const systemTables = new Set(["schema_migrations", "migrations", "buckets", "objects", "s3_multipart_uploads", "s3_multipart_uploads_parts", "secrets", "decrypted_secrets", "refresh_tokens", "instances", "audit_log_entries", "schema_version", "sessions", "mfa_factors", "mfa_challenges", "mfa_amr_claims", "sso_providers", "sso_domains", "saml_providers", "saml_relay_states", "flow_state", "identities", "one_time_tokens", "ticket_stats"])
     
     const filteredTables = Object.keys(tableColumnsMap)
       .filter((t) => !systemTables.has(t) && !t.startsWith("_"))

@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Forbidden - Super admin access required" }, { status: 403 })
       }
     } else {
-      console.log("[v0] Skipping auth check in dev mode")
+      // Dev mode - auth check skipped
     }
 
     const body = await request.json()

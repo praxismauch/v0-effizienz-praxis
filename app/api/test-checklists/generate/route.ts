@@ -3,7 +3,6 @@ import { NextResponse } from "next/server"
 
 export async function POST() {
   try {
-    console.log("[v0] Generate checklist - Starting")
     const supabase = await createServerClient()
 
     // Get current user
@@ -11,47 +10,75 @@ export async function POST() {
       data: { user },
     } = await supabase.auth.getUser()
 
-    console.log("[v0] Generate checklist - User:", { hasUser: !!user, userId: user?.id })
-
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Get user's practice_id from userprofiles
+    const { data: profile } = await supabase
+      .from("userprofiles")
+      .select("practice_id")
+      .eq("id", user.id)
+      .single()
+
+    const practiceId = profile?.practice_id
+
     // Get all active templates
-    console.log("[v0] Generate checklist - Fetching templates")
     const { data: templates, error: templatesError } = await supabase
       .from("test_checklist_templates")
       .select("*")
       .eq("is_active", true)
+      .order("display_order", { ascending: true })
 
-    if (templatesError) {
-      console.error("[v0] Generate checklist - Templates error:", templatesError)
-      throw templatesError
+    if (templatesError) throw templatesError
+
+    if (!templates || templates.length === 0) {
+      return NextResponse.json(
+        { error: "Keine aktiven Vorlagen gefunden. Bitte erstellen Sie zuerst Vorlagen." },
+        { status: 400 },
+      )
     }
 
-    console.log("[v0] Generate checklist - Found templates:", templates?.length || 0)
+    // 1. Create the checklist record in test_checklists
+    const { data: checklist, error: checklistError } = await supabase
+      .from("test_checklists")
+      .insert({
+        title: `Test-Checkliste ${new Date().toLocaleDateString("de-DE")}`,
+        description: `Generiert am ${new Date().toLocaleString("de-DE")} mit ${templates.length} Vorlagen`,
+        status: "open",
+        total_items: templates.length,
+        completed_items: 0,
+        progress: 0,
+        created_by: user.id,
+        practice_id: practiceId,
+      })
+      .select()
+      .single()
 
-    // Return templates directly since we don't have a separate checklists table
-    // The templates themselves serve as the checklist items
-    console.log("[v0] Generate checklist - Returning templates as checklist")
+    if (checklistError) throw checklistError
 
-    const result = {
-      id: crypto.randomUUID(),
-      title: `Test-Checkliste ${new Date().toLocaleDateString("de-DE")}`,
-      description: `Generiert am ${new Date().toLocaleString("de-DE")}`,
-      created_by: user.id,
-      items: templates?.map((template) => ({
-        template_id: template.id,
-        category_id: template.category_id,
-        title: template.title,
-        description: template.description,
-        display_order: template.display_order,
-        completed: false,
-      })) || [],
+    // 2. Create checklist items from templates
+    const itemsToInsert = templates.map((template, index) => ({
+      checklist_id: checklist.id,
+      template_id: template.id,
+      category_id: template.category_id,
+      title: template.title,
+      description: template.description,
+      display_order: template.display_order ?? index,
+      completed: false,
+    }))
+
+    const { error: itemsError } = await supabase
+      .from("test_checklist_items")
+      .insert(itemsToInsert)
+
+    if (itemsError) {
+      // Rollback: delete the checklist if items failed
+      await supabase.from("test_checklists").delete().eq("id", checklist.id)
+      throw itemsError
     }
 
-    console.log("[v0] Generate checklist - Success, items:", result.items.length)
-    return NextResponse.json(result)
+    return NextResponse.json(checklist)
   } catch (error) {
     console.error("[v0] Error generating test checklist:", error)
     return NextResponse.json(

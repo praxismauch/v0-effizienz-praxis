@@ -49,6 +49,10 @@ interface TestChecklist {
   id: string
   title: string
   description: string | null
+  status: string
+  progress: number
+  total_items: number
+  completed_items: number
   completed_at: string | null
   created_at: string
 }
@@ -221,7 +225,12 @@ function TestChecklistManager() {
       const response = await fetch(`/api/test-checklists/${checklistId}/items`)
       if (response.ok) {
         const data = await response.json()
-        setChecklistItems(data)
+        // Map DB field "completed" to component field "is_completed"
+        const mapped = data.map((item: any) => ({
+          ...item,
+          is_completed: item.completed ?? item.is_completed ?? false,
+        }))
+        setChecklistItems(mapped)
       }
     } catch (error) {
       toast({
@@ -246,6 +255,8 @@ function TestChecklistManager() {
         setChecklistItems((items) =>
           items.map((item) => (item.id === itemId ? { ...item, is_completed: isCompleted } : item)),
         )
+        // Refresh checklists to update progress
+        loadData()
       }
     } catch (error) {
       toast({
@@ -610,32 +621,50 @@ function TestChecklistManager() {
             </Button>
           </div>
 
-          <div className="grid gap-3">
-            {checklists.map((checklist) => (
-              <Card
-                key={checklist.id}
-                className="p-4 cursor-pointer hover:bg-accent"
-                onClick={() => openChecklist(checklist.id)}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium">{checklist.title}</h4>
-                      {checklist.completed_at && (
-                        <Badge variant="default" className="bg-green-500">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Abgeschlossen
-                        </Badge>
-                      )}
+          {checklists.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground text-sm">
+              <p>Noch keine Checklisten vorhanden.</p>
+              <p className="text-xs mt-1">Klicken Sie auf &quot;Neue Checkliste generieren&quot;, um eine Checkliste aus Ihren Vorlagen zu erstellen.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {checklists.map((checklist) => (
+                <Card
+                  key={checklist.id}
+                  className="p-4 cursor-pointer hover:bg-accent"
+                  onClick={() => openChecklist(checklist.id)}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium">{checklist.title}</h4>
+                        {checklist.status === "completed" ? (
+                          <Badge variant="default" className="bg-green-500">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Abgeschlossen
+                          </Badge>
+                        ) : checklist.status === "in_progress" ? (
+                          <Badge variant="secondary">
+                            In Bearbeitung
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">
+                            Offen
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span>Erstellt: {new Date(checklist.created_at).toLocaleDateString("de-DE")}</span>
+                        {checklist.total_items > 0 && (
+                          <span>{checklist.completed_items}/{checklist.total_items} Items ({checklist.progress}%)</span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Erstellt: {new Date(checklist.created_at).toLocaleDateString("de-DE")}
-                    </p>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

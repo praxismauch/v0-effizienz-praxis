@@ -27,11 +27,13 @@ export async function GET(
       .order("training_date", { ascending: false })
 
     if (error) {
+      console.log("[v0] device training GET error:", error.message, error.code, error.details, error.hint)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ trainings: trainings || [] })
-  } catch (error) {
+  } catch (error: any) {
+    console.log("[v0] device training GET catch error:", error?.message || error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -76,11 +78,13 @@ export async function POST(
       .single()
 
     if (error) {
+      console.log("[v0] device training insert error:", error.message, error.code, error.details, error.hint)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ training })
-  } catch (error) {
+  } catch (error: any) {
+    console.log("[v0] device training POST catch error:", error?.message || error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

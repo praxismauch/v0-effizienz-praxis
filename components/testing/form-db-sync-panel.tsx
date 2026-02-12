@@ -237,6 +237,66 @@ NOTIFY pgrst, 'reload schema';
 Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
   }
 
+  // Generate a comprehensive v0-chat prompt for ALL warnings and errors
+  const generateAllProblemsPrompt = (): string => {
+    if (!data) return ""
+
+    const problemForms = data.results.filter(
+      (r) => r.status === "warning" || r.status === "error" || r.status === "missing_table"
+    )
+    if (problemForms.length === 0) return ""
+
+    const errorForms = problemForms.filter((r) => r.status === "error" || r.status === "missing_table")
+    const warningForms = problemForms.filter((r) => r.status === "warning")
+
+    let prompt = `## Form-DB Sync Check: ${problemForms.length} Probleme gefunden\n\n`
+    prompt += `Zusammenfassung: ${data.summary.total} Tabellen geprueft, ${data.summary.ok} OK, ${data.summary.warnings} Warnungen, ${data.summary.errors} Fehler.\n\n`
+
+    if (errorForms.length > 0) {
+      prompt += `### Fehler (${errorForms.length})\n\n`
+      errorForms.forEach((form) => {
+        prompt += `**${form.name}** (Tabelle: \`${form.table}\`, Kategorie: ${form.category || "Sonstige"})\n`
+        form.issues.forEach((issue) => {
+          prompt += `- ${issue.severity === "error" ? "FEHLER" : "WARNUNG"}: ${issue.message}\n`
+          if (issue.fix) {
+            prompt += `  Fix: \`${issue.fix}\`\n`
+          }
+        })
+        prompt += `\n`
+      })
+    }
+
+    if (warningForms.length > 0) {
+      prompt += `### Warnungen (${warningForms.length})\n\n`
+      warningForms.forEach((form) => {
+        prompt += `**${form.name}** (Tabelle: \`${form.table}\`, Kategorie: ${form.category || "Sonstige"})\n`
+        form.issues.forEach((issue) => {
+          prompt += `- ${issue.severity === "error" ? "FEHLER" : "WARNUNG"}: ${issue.message}\n`
+          if (issue.fix) {
+            prompt += `  Fix: \`${issue.fix}\`\n`
+          }
+        })
+        prompt += `\n`
+      })
+    }
+
+    // Collect all SQL fixes
+    const allFixes = problemForms.flatMap((form) =>
+      form.issues
+        .filter((i) => i.fix)
+        .map((i) => `-- ${form.name} (${form.table}): ${i.message}\n${i.fix}`)
+    )
+
+    if (allFixes.length > 0) {
+      prompt += `### Alle SQL-Fixes zusammengefasst\n\n`
+      prompt += `\`\`\`sql\n${allFixes.join("\n\n")}\n\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\n`
+    }
+
+    prompt += `Bitte analysiere alle oben genannten Probleme und behebe sie. Fuehre SQL-Fixes direkt mit supabase_execute_sql aus. Fuer Warnungen ohne SQL-Fix schlage bitte Loesungen vor.`
+
+    return prompt
+  }
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     toast({ title: "Kopiert!", description: "v0-Prompt in die Zwischenablage kopiert" })
@@ -347,17 +407,31 @@ Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
               )}
             </Button>
 
-            {data && data.summary.errors > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const prompt = generateAllFixPrompt()
-                  if (prompt) setV0PromptDialog({ open: true, prompt, title: "Alle Probleme beheben" })
-                }}
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                v0-Fix generieren (alle)
-              </Button>
+            {data && (data.summary.errors > 0 || data.summary.warnings > 0) && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const prompt = generateAllProblemsPrompt()
+                    if (prompt) copyToClipboard(prompt)
+                  }}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Alle Probleme kopieren
+                </Button>
+                {data.summary.errors > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const prompt = generateAllFixPrompt()
+                      if (prompt) setV0PromptDialog({ open: true, prompt, title: "Alle Probleme beheben" })
+                    }}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    v0-Fix generieren (alle)
+                  </Button>
+                )}
+              </>
             )}
           </div>
 

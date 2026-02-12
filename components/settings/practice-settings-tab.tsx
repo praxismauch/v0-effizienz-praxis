@@ -120,6 +120,7 @@ export function PracticeSettingsTab() {
 
       if (!response.ok) {
         const error = await response.json()
+        console.log("[v0] Practice settings save error:", JSON.stringify(error))
         throw new Error(error.error || "Failed to update settings")
       }
 

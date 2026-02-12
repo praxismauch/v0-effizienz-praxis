@@ -117,7 +117,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const body = await request.json()
 
-    console.log("[v0] Updating practice info for practice:", practiceId, "by user:", access.user.id)
+    console.log("[v0] Updating practice info for practice:", practiceId, "body keys:", Object.keys(body))
 
     const { data, error } = await supabase
       .from("practices")
@@ -139,7 +139,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .single()
 
     if (error) {
-      console.error("[v0] Error updating practice:", error)
+      console.error("[v0] Error updating practice:", JSON.stringify(error))
       throw error
     }
 

@@ -11,43 +11,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useState, Suspense, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Logo } from "@/components/logo"
-
-async function verifySessionWithRetry(maxRetries = 8, initialDelay = 300): Promise<{ success: boolean; user?: any }> {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    // Exponential backoff: 300ms, 450ms, 675ms, 1012ms, 1518ms, 2277ms, 3416ms, 5124ms
-    const delay = initialDelay * Math.pow(1.5, attempt)
-
-    // Wait before each attempt to let cookies propagate
-    await new Promise((resolve) => setTimeout(resolve, delay))
-
-    try {
-      const response = await fetch("/api/user/me", {
-        credentials: "include",
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.user) {
-          return { success: true, user: data.user }
-        }
-      }
-
-      // 401 means session not ready yet, keep trying
-      if (response.status === 401) {
-        continue
-      }
-    } catch {
-      // Network errors - keep trying
-    }
-  }
-
-  return { success: false }
-}
+import { encryptStorage } from "@/lib/storage-utils"
+import { mapProfileToUser } from "@/lib/user-utils"
 
 function LoginForm() {
   const [email, setEmail] = useState("")
@@ -124,33 +89,38 @@ function LoginForm() {
         throw new Error("Keine Benutzerdaten erhalten")
       }
 
-      console.log("[v0] Login successful, user:", data.user.id)
       setStatus("Sitzung wird eingerichtet...")
       
       // Refresh the session to ensure cookies are properly set
       const { data: { session }, error: refreshError } = await supabase.auth.refreshSession()
-      console.log("[v0] Session refresh:", session ? "Success" : "Failed", refreshError)
       
       if (!session || refreshError) {
-        console.log("[v0] Session refresh failed:", refreshError)
         throw new Error("Sitzung konnte nicht eingerichtet werden")
       }
 
-      setStatus("Sitzung wird verifiziert...")
-      
-      // Verify session is actually accessible before redirecting
-      const verification = await verifySessionWithRetry(5, 200)
-      console.log("[v0] Session verification:", verification.success ? "verified" : "failed")
-      
-      if (!verification.success) {
-        // Session exists in Supabase but API can't see it yet - try redirect anyway
-        console.log("[v0] Session not verified via API, proceeding with redirect")
+      // Fetch user profile and store in sessionStorage BEFORE redirecting
+      // This way UserProvider can restore the user immediately on the next page
+      try {
+        const profileRes = await fetch("/api/user/me", {
+          credentials: "include",
+          cache: "no-store",
+        })
+        if (profileRes.ok) {
+          const profileData = await profileRes.json()
+          if (profileData.user) {
+            // Map to User object format that UserProvider expects from sessionStorage
+            const user = mapProfileToUser(profileData.user, data.user.email)
+            const encrypted = await encryptStorage(user, 86400)
+            sessionStorage.setItem("effizienz_current_user", encrypted)
+          }
+        }
+      } catch {
+        // Profile pre-fetch failed - UserProvider will handle it after redirect
       }
-      
+
       setStatus("Weiterleitung zum Dashboard...")
       
       // Use window.location for a hard navigation to ensure cookies are sent fresh
-      console.log("[v0] Redirecting to:", redirectTo)
       window.location.href = redirectTo
     } catch (error: any) {
       console.log("[v0] Login failed:", error)

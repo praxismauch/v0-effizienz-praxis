@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient, createServerClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 
 export const dynamic = "force-dynamic"
+
+async function getSupabaseClient() {
+  // Use admin client (service role) to bypass RLS for super-admin tools
+  const admin = await createAdminClient()
+  if (admin) return admin
+  // Fallback to regular client
+  return createServerClient()
+}
 
 export async function GET(request: Request) {
   await cookies()
@@ -12,7 +20,7 @@ export async function GET(request: Request) {
     const scanType = searchParams.get("scan_type") || searchParams.get("type") // 'db-schema' | 'form-scan' | 'code-review' | null (all)
     const limit = parseInt(searchParams.get("limit") || "50", 10)
 
-    const supabase = await createServerClient()
+    const supabase = await getSupabaseClient()
 
     let query = supabase
       .from("form_db_sync_history")
@@ -50,7 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ungueltiger scan_type" }, { status: 400 })
     }
 
-    const supabase = await createServerClient()
+    const supabase = await getSupabaseClient()
 
     const { data, error } = await supabase
       .from("form_db_sync_history")

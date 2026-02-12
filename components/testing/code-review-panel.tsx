@@ -430,9 +430,9 @@ export default function CodeReviewPanel() {
       setProgressLabel(`${json.summary.totalFindings} Findings in ${json.summary.filesScanned} Dateien`)
       setData(json)
 
-      // Save to history via client-side POST (fallback in case server-side save fails)
+      // Save to history via client-side POST
       try {
-        await fetch("/api/super-admin/form-db-sync-history", {
+        const histRes = await fetch("/api/super-admin/form-db-sync-history", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -445,12 +445,15 @@ export default function CodeReviewPanel() {
             duration_ms: json.durationMs,
           }),
         })
-      } catch {
-        // Non-critical: history save failed
+        if (!histRes.ok) {
+          console.log("[v0] History save response:", histRes.status, await histRes.text())
+        }
+      } catch (histErr) {
+        console.log("[v0] History save exception:", histErr)
       }
 
-      // Reload history after a brief delay
-      setTimeout(() => loadHistory(), 500)
+      // Reload history
+      await loadHistory()
       toast({
         title: "Code Review abgeschlossen",
         description: `${json.summary.totalFindings} Findings: ${json.summary.critical} kritisch, ${json.summary.warnings} Warnungen, ${json.summary.info} Info`,
@@ -464,7 +467,7 @@ export default function CodeReviewPanel() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast, historyData.length, activeTab, loadHistory])
+  }, [toast, customRules, loadHistory])
 
   // ─── Helpers ───
   const toggleFinding = (id: string) => {

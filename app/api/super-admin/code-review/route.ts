@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import * as fs from "fs"
 import * as path from "path"
 
@@ -659,9 +659,9 @@ async function runCodeReview(customRuleInputs: CustomRuleInput[]) {
 
     const durationMs = Date.now() - startTime
 
-    // Save to history
+    // Save to history (use admin client to bypass RLS)
     try {
-      const supabase = await createServerClient()
+      const supabase = await createAdminClient()
       const { error: histError } = await supabase.from("form_db_sync_history").insert({
         scan_type: "code-review",
         summary,

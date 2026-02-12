@@ -2,6 +2,21 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 /**
+ * Parse a device image_url field which may be a JSON array string or a plain URL.
+ * Returns the first image URL or null.
+ */
+export function parseDeviceImageUrl(imageUrl?: string | null): string | null {
+  if (!imageUrl) return null
+  try {
+    const parsed = JSON.parse(imageUrl)
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0]
+    return imageUrl
+  } catch {
+    return imageUrl
+  }
+}
+
+/**
  * Merge Tailwind CSS classes with proper conflict resolution
  * Combines clsx for conditional classes and tailwind-merge for deduplication
  */

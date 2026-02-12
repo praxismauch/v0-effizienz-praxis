@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Monitor, Calendar, MapPin, Wrench, AlertTriangle, ExternalLink, Settings } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { parseDeviceImageUrl } from "@/lib/utils"
 
 interface MedicalDevice {
   id: string
@@ -184,9 +185,9 @@ export function TeamMemberDevicesTab({ memberId, practiceId, memberName }: TeamM
                 className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                 onClick={() => router.push(`/devices?device=${device.id}`)}
               >
-                {device.image_url ? (
+                {parseDeviceImageUrl(device.image_url) ? (
                   <img
-                    src={device.image_url || "/placeholder.svg"}
+                    src={parseDeviceImageUrl(device.image_url)!}
                     alt={device.name}
                     className="w-16 h-16 rounded-lg object-cover border"
                   />

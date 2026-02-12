@@ -263,28 +263,44 @@ function matchUrlToRoute(normalizedUrl: string, apiRoutes: Map<string, ApiRouteI
   // Direct match
   if (apiRoutes.has(normalizedUrl)) return apiRoutes.get(normalizedUrl)!
 
-  // Try matching with different param names
-  // e.g. /api/practices/[id]/contacts vs /api/practices/[practiceId]/contacts
+  // Try matching with different param names, using a scoring system.
+  // Static segment matches score higher than dynamic-to-literal matches.
+  // This ensures /hygiene-plans/generate matches the "generate" route, not [planId].
   const urlParts = normalizedUrl.split("/")
+  let bestMatch: ApiRouteInfo | null = null
+  let bestScore = -1
+
   for (const [routePath, info] of apiRoutes) {
     const routeParts = routePath.split("/")
     if (urlParts.length !== routeParts.length) continue
 
     let match = true
+    let score = 0
     for (let i = 0; i < urlParts.length; i++) {
       const urlPart = urlParts[i]
       const routePart = routeParts[i]
       // Both are dynamic segments
-      if (urlPart.startsWith("[") && routePart.startsWith("[")) continue
-      // One is dynamic, other is literal  
-      if (urlPart.startsWith("[") || routePart.startsWith("[")) continue
-      // Both are literal and must match
-      if (urlPart !== routePart) { match = false; break }
+      if (urlPart.startsWith("[") && routePart.startsWith("[")) {
+        score += 1
+        continue
+      }
+      // Both are literal and must match exactly
+      if (!urlPart.startsWith("[") && !routePart.startsWith("[")) {
+        if (urlPart !== routePart) { match = false; break }
+        score += 3  // Exact literal match = highest priority
+        continue
+      }
+      // One is dynamic, other is literal - lower priority match
+      // URL has literal "generate" and route has dynamic [planId] -> weak match
+      score += 0
     }
-    if (match) return info
+    if (match && score > bestScore) {
+      bestScore = score
+      bestMatch = info
+    }
   }
 
-  return null
+  return bestMatch
 }
 
 export async function GET(request: Request) {

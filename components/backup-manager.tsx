@@ -88,7 +88,10 @@ export function BackupManager({ userId, practices }: BackupManagerProps) {
     verifyAllBackups,
     restoreBackup,
     createSchedule,
+    updateSchedule,
     toggleSchedule,
+    editingScheduleId,
+    setEditingScheduleId,
     setupAllPracticeSchedules,
     diagnoseSchedules,
     fixStuckSchedules,
@@ -230,8 +233,11 @@ export function BackupManager({ userId, practices }: BackupManagerProps) {
             showScheduleDialog={showScheduleDialog}
             setShowScheduleDialog={setShowScheduleDialog}
             setScheduleForm={setScheduleForm}
-            onCreateSchedule={createSchedule}
-            onToggleSchedule={toggleSchedule}
+  editingScheduleId={editingScheduleId}
+  setEditingScheduleId={setEditingScheduleId}
+  onCreateSchedule={createSchedule}
+  onUpdateSchedule={updateSchedule}
+  onToggleSchedule={toggleSchedule}
             onSetupAllPracticeSchedules={setupAllPracticeSchedules}
             onDiagnoseSchedules={diagnoseSchedules}
             onFixStuckSchedules={fixStuckSchedules}

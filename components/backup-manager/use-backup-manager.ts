@@ -34,6 +34,11 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
   const [googleDriveConnected, setGoogleDriveConnected] = useState(false)
   const [isConnectingGoogleDrive, setIsConnectingGoogleDrive] = useState(false)
   
+  // Dialog state
+  const [showBackupDialog, setShowBackupDialog] = useState(false)
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false)
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null)
+
   // Form state
   const [backupForm, setBackupForm] = useState<BackupFormState>(DEFAULT_BACKUP_FORM)
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(DEFAULT_SCHEDULE_FORM)
@@ -171,6 +176,42 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
       setIsCreatingSchedule(false)
     }
   }, [scheduleForm, toast, fetchSchedules])
+
+  // Update schedule (full edit)
+  const updateSchedule = useCallback(async (scheduleId: string, data: Partial<ScheduleFormState>) => {
+    try {
+      setIsCreatingSchedule(true)
+      const response = await fetch("/api/super-admin/backup-schedules", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: scheduleId, ...data }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        throw new Error(errorData.error || "Failed to update schedule")
+      }
+
+      toast({
+        title: "Erfolg",
+        description: "Backup-Zeitplan wurde aktualisiert",
+      })
+
+      setScheduleForm(DEFAULT_SCHEDULE_FORM)
+      fetchSchedules()
+      return true
+    } catch (error) {
+      console.error("Error updating schedule:", error)
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "Zeitplan konnte nicht aktualisiert werden",
+        variant: "destructive",
+      })
+      return false
+    } finally {
+      setIsCreatingSchedule(false)
+    }
+  }, [toast, fetchSchedules])
 
   // Toggle schedule
   const toggleSchedule = useCallback(async (scheduleId: string, isActive: boolean) => {
@@ -598,18 +639,25 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
     isConnectingGoogleDrive,
     backupForm,
     scheduleForm,
+    showBackupDialog,
+    showScheduleDialog,
+    editingScheduleId,
     
     // Setters
     setFilterPractice,
     setFilterType,
     setBackupForm,
     setScheduleForm,
+    setShowBackupDialog,
+    setShowScheduleDialog,
+    setEditingScheduleId,
     
     // Actions
     fetchBackups,
     fetchSchedules,
     createBackup,
     createSchedule,
+    updateSchedule,
     toggleSchedule,
     deleteBackup,
     downloadBackup,

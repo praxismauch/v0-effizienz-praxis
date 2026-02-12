@@ -51,10 +51,21 @@ interface FormResult {
   id: string
   name: string
   table: string
+  category?: string
   component: string
+  columnCount?: number
+  hasPracticeId?: boolean
+  hasCreatedAt?: boolean
+  hasUpdatedAt?: boolean
+  hasDeletedAt?: boolean
   status: "ok" | "warning" | "error" | "missing_table"
   issues: FieldIssue[]
   fields: FieldResult[]
+}
+
+interface CategoryStat {
+  name: string
+  count: number
 }
 
 interface SyncData {
@@ -64,6 +75,9 @@ interface SyncData {
     ok: number
     warnings: number
     errors: number
+    totalColumns?: number
+    withPracticeId?: number
+    categories?: CategoryStat[]
   }
 }
 
@@ -191,45 +205,75 @@ Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
     <div className="space-y-6">
       {/* Summary Cards */}
       {data && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Formulare gesamt</CardTitle>
-              <Table2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data.summary.total}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">OK</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{data.summary.ok}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fehler</CardTitle>
-              <XCircle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{data.summary.errors}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sync-Rate</CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{successRate.toFixed(0)}%</div>
-              <Progress value={successRate} className="mt-2" />
-            </CardContent>
-          </Card>
-        </div>
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tabellen gesamt</CardTitle>
+                <Table2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.summary.total}</div>
+                <p className="text-xs text-muted-foreground mt-1">{data.summary.totalColumns || 0} Spalten</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">OK</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{data.summary.ok}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Warnungen</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{data.summary.warnings}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Fehler</CardTitle>
+                <XCircle className="h-4 w-4 text-red-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{data.summary.errors}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Sync-Rate</CardTitle>
+                <Database className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{successRate.toFixed(0)}%</div>
+                <Progress value={successRate} className="mt-2" />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Category Breakdown */}
+          {data.summary.categories && data.summary.categories.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Kategorien</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {data.summary.categories.map((cat) => (
+                    <Badge key={cat.name} variant="outline" className="text-xs">
+                      {cat.name}: {cat.count}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Action Card */}
@@ -286,9 +330,24 @@ Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[500px] pr-4">
+            <ScrollArea className="h-[600px] pr-4">
               <div className="space-y-3">
-                {data.results.map((form) => {
+                {(() => {
+                  // Group results by category
+                  const categories = new Map<string, FormResult[]>()
+                  data.results.forEach((form) => {
+                    const cat = form.category || "Sonstige"
+                    if (!categories.has(cat)) categories.set(cat, [])
+                    categories.get(cat)!.push(form)
+                  })
+                  
+                  return Array.from(categories.entries()).map(([category, forms]) => (
+                    <div key={category} className="space-y-2">
+                      <div className="flex items-center gap-2 pt-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground">{category}</h4>
+                        <Badge variant="secondary" className="text-xs">{forms.length}</Badge>
+                      </div>
+                      {forms.map((form) => {
                   const isExpanded = expandedForms.has(form.id)
                   const hasFixes = form.issues.some((i) => i.fix)
 
@@ -309,7 +368,8 @@ Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
                           <div>
                             <p className="font-medium text-sm">{form.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {form.table} &middot; {form.fields.length} Felder
+                              <span className="font-mono">{form.table}</span> &middot; {form.columnCount || form.fields.length} Spalten
+                              {form.hasPracticeId && " \u00B7 multi-tenant"}
                               {form.issues.length > 0 && ` \u00B7 ${form.issues.length} Problem${form.issues.length > 1 ? "e" : ""}`}
                             </p>
                           </div>
@@ -409,6 +469,9 @@ Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
                     </Card>
                   )
                 })}
+                    </div>
+                  ))
+                })()}
               </div>
             </ScrollArea>
           </CardContent>

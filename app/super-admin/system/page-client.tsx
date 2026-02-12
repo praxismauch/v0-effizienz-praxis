@@ -2,8 +2,9 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings, Database, Activity, Key } from "lucide-react"
+import { Settings, Database, Activity, Key, AlertTriangle } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
+import Link from "next/link"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
@@ -84,20 +85,21 @@ function SystemContent() {
         <TabsContent value="logs" className="mt-6 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>System-Logs</CardTitle>
-              <CardDescription>Überwachen Sie System-Aktivitäten und Fehler</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Error Logging
+              </CardTitle>
+              <CardDescription>
+                Die vollstaendige Fehlerverwaltung mit Filtern, Statistiken und Status-Management finden Sie im dedizierten Error Logging Bereich.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg border border-dashed p-8 text-center">
-                <Activity className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Log Viewer</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  System-Logs werden in Echtzeit verfolgt. Integration mit Rollbar für Error-Tracking.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Für detaillierte Logs besuchen Sie das Rollbar Dashboard.
-                </p>
-              </div>
+              <Link href="/super-admin/logging">
+                <Button className="gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Error Logging oeffnen
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </TabsContent>

@@ -3,10 +3,10 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; id: string }> },
+  { params }: { params: Promise<{ practiceId: string; analysisId: string }> },
 ) {
   try {
-    const { practiceId, id: analysisId } = await params
+    const { practiceId, analysisId } = await params
     const supabase = await createClient()
 
     // Mark the analysis for regeneration

@@ -5,10 +5,10 @@ import { createAdminClient } from "@/lib/supabase/admin"
 // GET - Get single IGEL analysis
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; id: string }> }
+  { params }: { params: Promise<{ practiceId: string; analysisId: string }> }
 ) {
   try {
-    const { practiceId, id } = await params
+    const { practiceId, analysisId: id } = await params
 
     const supabase = await createClient()
     const {
@@ -29,13 +29,13 @@ export async function GET(
       .single()
 
     if (error) {
-      console.error("[v0] Error fetching IGEL analysis:", error)
+      console.error(" Error fetching IGEL analysis:", error)
       throw error
     }
 
     return NextResponse.json({ analysis: data })
   } catch (error: any) {
-    console.error("[v0] Error in IGEL GET [id]:", error)
+    console.error(" Error in IGEL GET [id]:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch IGEL analysis" },
       { status: 500 }
@@ -46,10 +46,10 @@ export async function GET(
 // PATCH - Update IGEL analysis
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; id: string }> }
+  { params }: { params: Promise<{ practiceId: string; analysisId: string }> }
 ) {
   try {
-    const { practiceId, id } = await params
+    const { practiceId, analysisId: id } = await params
 
     const supabase = await createClient()
     const {
@@ -88,13 +88,13 @@ export async function PATCH(
       .single()
 
     if (error) {
-      console.error("[v0] Error updating IGEL analysis:", error)
+      console.error(" Error updating IGEL analysis:", error)
       throw error
     }
 
     return NextResponse.json(data)
   } catch (error: any) {
-    console.error("[v0] Error in IGEL PATCH:", error)
+    console.error(" Error in IGEL PATCH:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update IGEL analysis" },
       { status: 500 }
@@ -105,10 +105,10 @@ export async function PATCH(
 // DELETE - Soft delete IGEL analysis
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; id: string }> }
+  { params }: { params: Promise<{ practiceId: string; analysisId: string }> }
 ) {
   try {
-    const { practiceId, id } = await params
+    const { practiceId, analysisId: id } = await params
 
     const supabase = await createClient()
     const {
@@ -128,13 +128,13 @@ export async function DELETE(
       .eq("practice_id", practiceId)
 
     if (error) {
-      console.error("[v0] Error deleting IGEL analysis:", error)
+      console.error(" Error deleting IGEL analysis:", error)
       throw error
     }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error("[v0] Error in IGEL DELETE:", error)
+    console.error(" Error in IGEL DELETE:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete IGEL analysis" },
       { status: 500 }

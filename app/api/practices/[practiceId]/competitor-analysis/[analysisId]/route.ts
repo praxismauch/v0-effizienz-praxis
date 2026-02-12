@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string; analysisId: string }> }) {
   try {
-    const { practiceId, id } = await params
+    const { practiceId, analysisId: id } = await params
     const supabase = await createAdminClient()
 
     const { data, error } = await supabase
@@ -23,9 +23,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string; analysisId: string }> }) {
   try {
-    const { practiceId, id } = await params
+    const { practiceId, analysisId: id } = await params
     const body = await request.json()
     const supabase = await createAdminClient()
 
@@ -51,10 +51,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ practiceId: string; id: string }> },
+  { params }: { params: Promise<{ practiceId: string; analysisId: string }> },
 ) {
   try {
-    const { practiceId, id } = await params
+    const { practiceId, analysisId: id } = await params
     const supabase = await createAdminClient()
 
     const { error } = await supabase

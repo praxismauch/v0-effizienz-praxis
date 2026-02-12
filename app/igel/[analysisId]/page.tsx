@@ -18,13 +18,13 @@ function LoadingSkeleton() {
   )
 }
 
-export default async function IgelAnalysisPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function IgelAnalysisPage({ params }: { params: Promise<{ analysisId: string }> }) {
+  const { analysisId } = await params
   
   return (
     <AppLayout>
       <Suspense fallback={<LoadingSkeleton />}>
-        <IgelAnalysisView analysisId={id} />
+        <IgelAnalysisView analysisId={analysisId} />
       </Suspense>
     </AppLayout>
   )

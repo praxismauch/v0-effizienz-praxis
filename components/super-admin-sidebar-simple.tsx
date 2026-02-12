@@ -140,7 +140,6 @@ export function SuperAdminSidebarSimple() {
         const savedExpanded = localStorage.getItem("superAdminExpandedItems")
         const savedCollapsed = localStorage.getItem("superAdminSidebarCollapsed")
         const savedFavorites = localStorage.getItem("superAdminFavorites")
-        console.log("[v0] Simple sidebar load - localStorage favorites raw:", savedFavorites)
         if (savedSections) {
           const parsed = JSON.parse(savedSections)
           if (Array.isArray(parsed) && parsed.length > 0) setOpenSections(parsed)
@@ -154,22 +153,19 @@ export function SuperAdminSidebarSimple() {
         }
         if (savedFavorites) {
           const parsed = JSON.parse(savedFavorites)
-          console.log("[v0] Simple sidebar load - parsed favorites:", parsed)
           if (Array.isArray(parsed)) setFavorites(parsed)
         }
       } catch (e) {
-        console.warn("[v0] Failed to parse sidebar state from localStorage:", e)
+        console.warn("Failed to parse sidebar state from localStorage:", e)
       }
 
       // Then try API for database-backed state (overrides localStorage if available)
       if (currentUser?.id) {
         try {
           const res = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=super-admin`)
-          console.log("[v0] Simple sidebar API response status:", res.status)
           if (res.ok) {
             const data = await res.json()
             const prefs = data.preferences || data
-            console.log("[v0] Simple sidebar API favorites:", prefs.favorites)
             if (prefs.expanded_groups && Array.isArray(prefs.expanded_groups)) {
               setOpenSections(prefs.expanded_groups)
             }
@@ -401,18 +397,13 @@ export function SuperAdminSidebarSimple() {
   const toggleFavorite = async (href: string) => {
     const isAdding = !favorites.includes(href)
     const newFavorites = isAdding ? [...favorites, href] : favorites.filter((f) => f !== href)
-    console.log("[v0] Simple toggleFavorite:", href, "newFavorites:", newFavorites)
     setFavorites(newFavorites)
 
     // Always save to localStorage for reliable persistence
     if (mounted) {
       try { 
         localStorage.setItem("superAdminFavorites", JSON.stringify(newFavorites))
-        console.log("[v0] Simple saved to localStorage:", JSON.stringify(newFavorites))
-        // Verify it was saved
-        const verify = localStorage.getItem("superAdminFavorites")
-        console.log("[v0] Simple localStorage verify:", verify)
-      } catch (e) { console.log("[v0] Simple localStorage save failed:", e) }
+      } catch (e) { /* localStorage save failed silently */ }
     }
 
     // Also try to save to database if authenticated

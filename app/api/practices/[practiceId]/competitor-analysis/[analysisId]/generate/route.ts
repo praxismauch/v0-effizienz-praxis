@@ -37,9 +37,9 @@ Only respond with the JSON, nothing else.`,
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string; analysisId: string }> }) {
   try {
-    const { practiceId, id } = await params
+    const { practiceId, analysisId: id } = await params
     const supabase = await createAdminClient()
 
     // Get the analysis record

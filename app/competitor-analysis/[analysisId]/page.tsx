@@ -10,9 +10,9 @@ export const metadata = {
 export default async function CompetitorAnalysisPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ analysisId: string }>
 }) {
-  const { id } = await params
+  const { analysisId } = await params
 
   return (
     <Suspense
@@ -22,7 +22,7 @@ export default async function CompetitorAnalysisPage({
         </div>
       }
     >
-      <CompetitorAnalysisDetailClient analysisId={id} />
+      <CompetitorAnalysisDetailClient analysisId={analysisId} />
     </Suspense>
   )
 }

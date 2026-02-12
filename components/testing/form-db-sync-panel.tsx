@@ -37,6 +37,11 @@ import {
   FileCode,
   Search,
   ArrowRight,
+  History,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react"
 
 // ─── DB Schema Check types ───
@@ -130,6 +135,19 @@ interface FormScanData {
   }
 }
 
+// ─── History types ───
+interface HistoryEntry {
+  id: string
+  scan_type: "db-schema" | "form-scan"
+  summary: any
+  total: number
+  ok: number
+  warnings: number
+  errors: number
+  duration_ms: number | null
+  created_at: string
+}
+
 export default function FormDbSyncPanel() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("db-schema")
@@ -159,6 +177,11 @@ export default function FormDbSyncPanel() {
   const [scanProgressLabel, setScanProgressLabel] = useState("")
   const scanProgressInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // ─── History state ───
+  const [historyData, setHistoryData] = useState<HistoryEntry[]>([])
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false)
+  const [historyTypeFilter, setHistoryTypeFilter] = useState<string>("all")
+
   // Cleanup intervals on unmount
   useEffect(() => {
     return () => {
@@ -166,6 +189,28 @@ export default function FormDbSyncPanel() {
       if (scanProgressInterval.current) clearInterval(scanProgressInterval.current)
     }
   }, [])
+
+  // Load history when the history tab is activated
+  const loadHistory = useCallback(async () => {
+    setIsHistoryLoading(true)
+    try {
+      const res = await fetch("/api/super-admin/form-db-sync-history?limit=100")
+      if (!res.ok) throw new Error("Fehler")
+      const json = await res.json()
+      setHistoryData(json.history || [])
+    } catch {
+      toast({ title: "Fehler", description: "Historie konnte nicht geladen werden", variant: "destructive" })
+    } finally {
+      setIsHistoryLoading(false)
+    }
+  }, [toast])
+
+  // Auto-load history when tab changes to history
+  useEffect(() => {
+    if (activeTab === "history") {
+      loadHistory()
+    }
+  }, [activeTab, loadHistory])
 
   // ─── DB Schema Check logic ───
   const runCheck = useCallback(async () => {
@@ -193,6 +238,8 @@ export default function FormDbSyncPanel() {
       setProgress(100)
       setProgressLabel(`${json.summary.total} Tabellen analysiert`)
       setData(json)
+      // Reload history in background after short delay (to let the API save finish)
+      setTimeout(() => { if (historyData.length > 0 || activeTab === "history") loadHistory() }, 1500)
       toast({
         title: "Sync-Check abgeschlossen",
         description: `${json.summary.ok}/${json.summary.total} Tabellen OK, ${json.summary.errors} Fehler, ${json.summary.warnings} Warnungen`,
@@ -206,7 +253,7 @@ export default function FormDbSyncPanel() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [toast, historyData.length, activeTab, loadHistory])
 
   // ─── Form Scan logic ───
   const runFormScan = useCallback(async () => {
@@ -235,6 +282,8 @@ export default function FormDbSyncPanel() {
       setScanProgress(100)
       setScanProgressLabel(`${json.summary.totalSubmissions} Form-Submissions gescannt`)
       setScanData(json)
+      // Reload history in background after short delay
+      setTimeout(() => { if (historyData.length > 0 || activeTab === "history") loadHistory() }, 1500)
       toast({
         title: "Form-Scan abgeschlossen",
         description: `${json.summary.totalSubmissions} Submissions in ${json.summary.uniqueComponents} Dateien, ${json.summary.errors} Fehler, ${json.summary.warnings} Warnungen`,
@@ -248,7 +297,7 @@ export default function FormDbSyncPanel() {
     } finally {
       setIsScanLoading(false)
     }
-  }, [toast])
+  }, [toast, historyData.length, activeTab, loadHistory])
 
   // ─── Common helpers ───
   const toggleForm = (id: string) => {
@@ -405,10 +454,10 @@ export default function FormDbSyncPanel() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="db-schema" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
-            DB-Schema Check
+            DB-Schema
             {data && (data.summary.warnings > 0 || data.summary.errors > 0) && (
               <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
                 {data.summary.warnings + data.summary.errors}
@@ -421,6 +470,15 @@ export default function FormDbSyncPanel() {
             {scanData && (scanData.summary.warnings > 0 || scanData.summary.errors > 0) && (
               <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
                 {scanData.summary.warnings + scanData.summary.errors}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Historie
+            {historyData.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {historyData.length}
               </Badge>
             )}
           </TabsTrigger>
@@ -1057,6 +1115,224 @@ export default function FormDbSyncPanel() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* ═══════════ TAB 3: HISTORY ═══════════ */}
+        <TabsContent value="history" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <History className="h-5 w-5" />
+                    Scan-Historie
+                  </CardTitle>
+                  <CardDescription>
+                    Verlauf aller DB-Schema Checks und Form-Scans mit Trend-Analyse
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={historyTypeFilter} onValueChange={setHistoryTypeFilter}>
+                    <SelectTrigger className="w-[180px] h-9 text-sm">
+                      <SelectValue placeholder="Scan-Typ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle Scan-Typen</SelectItem>
+                      <SelectItem value="db-schema">
+                        <span className="flex items-center gap-2">
+                          <Database className="h-3.5 w-3.5" />
+                          DB-Schema Check
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="form-scan">
+                        <span className="flex items-center gap-2">
+                          <Search className="h-3.5 w-3.5" />
+                          Form-Scan
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" onClick={loadHistory} disabled={isHistoryLoading}>
+                    {isHistoryLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isHistoryLoading && historyData.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">Lade Historie...</span>
+                </div>
+              ) : historyData.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground text-sm">
+                  <History className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                  <p>Noch keine Scan-Ergebnisse vorhanden.</p>
+                  <p className="text-xs mt-1">Fuehre einen DB-Schema Check oder Form-Scan aus, um die Historie zu starten.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Trend Summary Cards */}
+                  {(() => {
+                    const filtered = historyTypeFilter === "all"
+                      ? historyData
+                      : historyData.filter((h) => h.scan_type === historyTypeFilter)
+
+                    if (filtered.length < 2) return null
+
+                    const latest = filtered[0]
+                    const previous = filtered[1]
+                    const errorDiff = latest.errors - previous.errors
+                    const warningDiff = latest.warnings - previous.warnings
+                    const okDiff = latest.ok - previous.ok
+
+                    return (
+                      <div className="grid grid-cols-3 gap-4 mb-6">
+                        <Card className="border-green-200">
+                          <CardContent className="pt-4 pb-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs text-muted-foreground">OK Trend</p>
+                                <p className="text-xl font-bold text-green-600">{latest.ok}</p>
+                              </div>
+                              <div className={`flex items-center gap-1 text-sm ${okDiff > 0 ? "text-green-600" : okDiff < 0 ? "text-red-600" : "text-muted-foreground"}`}>
+                                {okDiff > 0 ? <TrendingUp className="h-4 w-4" /> : okDiff < 0 ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                                {okDiff > 0 ? `+${okDiff}` : okDiff === 0 ? "0" : okDiff}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card className="border-yellow-200">
+                          <CardContent className="pt-4 pb-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Warnungen Trend</p>
+                                <p className="text-xl font-bold text-yellow-600">{latest.warnings}</p>
+                              </div>
+                              <div className={`flex items-center gap-1 text-sm ${warningDiff < 0 ? "text-green-600" : warningDiff > 0 ? "text-red-600" : "text-muted-foreground"}`}>
+                                {warningDiff < 0 ? <TrendingDown className="h-4 w-4" /> : warningDiff > 0 ? <TrendingUp className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                                {warningDiff > 0 ? `+${warningDiff}` : warningDiff === 0 ? "0" : warningDiff}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card className="border-red-200">
+                          <CardContent className="pt-4 pb-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Fehler Trend</p>
+                                <p className="text-xl font-bold text-red-600">{latest.errors}</p>
+                              </div>
+                              <div className={`flex items-center gap-1 text-sm ${errorDiff < 0 ? "text-green-600" : errorDiff > 0 ? "text-red-600" : "text-muted-foreground"}`}>
+                                {errorDiff < 0 ? <TrendingDown className="h-4 w-4" /> : errorDiff > 0 ? <TrendingUp className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                                {errorDiff > 0 ? `+${errorDiff}` : errorDiff === 0 ? "0" : errorDiff}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )
+                  })()}
+
+                  {/* History List */}
+                  <ScrollArea className="h-[500px] pr-4">
+                    <div className="space-y-2">
+                      {(() => {
+                        const filtered = historyTypeFilter === "all"
+                          ? historyData
+                          : historyData.filter((h) => h.scan_type === historyTypeFilter)
+
+                        if (filtered.length === 0) {
+                          return (
+                            <div className="py-8 text-center text-muted-foreground text-sm">
+                              Keine Eintraege fuer diesen Filter.
+                            </div>
+                          )
+                        }
+
+                        // Group by date
+                        const byDate = new Map<string, HistoryEntry[]>()
+                        filtered.forEach((entry) => {
+                          const date = new Date(entry.created_at).toLocaleDateString("de-DE", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                          if (!byDate.has(date)) byDate.set(date, [])
+                          byDate.get(date)!.push(entry)
+                        })
+
+                        return Array.from(byDate.entries()).map(([date, entries]) => (
+                          <div key={date} className="space-y-2">
+                            <div className="flex items-center gap-2 pt-3 pb-1">
+                              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs font-semibold text-muted-foreground">{date}</span>
+                              <Badge variant="secondary" className="text-xs">{entries.length}</Badge>
+                            </div>
+                            {entries.map((entry, idx) => {
+                              const prevEntry = idx < entries.length - 1 ? entries[idx + 1] : null
+                              const errorChange = prevEntry ? entry.errors - prevEntry.errors : 0
+                              const time = new Date(entry.created_at).toLocaleTimeString("de-DE", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              })
+                              const successRate = entry.total > 0 ? ((entry.ok / entry.total) * 100).toFixed(0) : "0"
+
+                              return (
+                                <Card key={entry.id} className="border">
+                                  <div className="flex items-center justify-between p-3">
+                                    <div className="flex items-center gap-3">
+                                      {entry.scan_type === "db-schema" ? (
+                                        <Database className="h-4 w-4 text-muted-foreground" />
+                                      ) : (
+                                        <Search className="h-4 w-4 text-muted-foreground" />
+                                      )}
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <p className="text-sm font-medium">
+                                            {entry.scan_type === "db-schema" ? "DB-Schema Check" : "Form-Scan"}
+                                          </p>
+                                          <span className="text-xs text-muted-foreground font-mono">{time}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                                          <span>{entry.total} gesamt</span>
+                                          <span className="text-green-600">{entry.ok} OK</span>
+                                          {entry.warnings > 0 && <span className="text-yellow-600">{entry.warnings} Warn.</span>}
+                                          {entry.errors > 0 && <span className="text-red-600">{entry.errors} Fehler</span>}
+                                          {entry.duration_ms != null && (
+                                            <span>{entry.duration_ms < 1000 ? `${entry.duration_ms}ms` : `${(entry.duration_ms / 1000).toFixed(1)}s`}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      {/* Trend indicator vs previous run of same day */}
+                                      {prevEntry && errorChange !== 0 && (
+                                        <div className={`flex items-center gap-1 text-xs ${errorChange < 0 ? "text-green-600" : "text-red-600"}`}>
+                                          {errorChange < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                                          {errorChange > 0 ? `+${errorChange}` : errorChange} Fehler
+                                        </div>
+                                      )}
+                                      <div className="text-right">
+                                        <span className="text-sm font-bold">{successRate}%</span>
+                                        <Progress value={Number(successRate)} className="w-16 h-1.5 mt-0.5" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Card>
+                              )
+                            })}
+                          </div>
+                        ))
+                      })()}
+                    </div>
+                  </ScrollArea>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

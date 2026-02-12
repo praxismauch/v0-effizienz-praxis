@@ -286,8 +286,10 @@ function matchUrlToRoute(normalizedUrl: string, apiRoutes: Map<string, ApiRouteI
   return null
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   await cookies()
+
+  const startTime = Date.now()
 
   try {
     const projectRoot = process.cwd()
@@ -472,7 +474,25 @@ export async function GET() {
       scannedApiRoutes: allApiRoutes.length,
     }
 
-    return NextResponse.json({ results, summary })
+    const durationMs = Date.now() - startTime
+
+    // Save to history (fire-and-forget)
+    const origin = new URL(request.url).origin
+    fetch(`${origin}/api/super-admin/form-db-sync-history`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scan_type: "form-scan",
+        summary,
+        total: summary.totalSubmissions,
+        ok: summary.ok,
+        warnings: summary.warnings,
+        errors: summary.errors,
+        duration_ms: durationMs,
+      }),
+    }).catch((err) => console.error("[v0] Failed to save form-scan history:", err))
+
+    return NextResponse.json({ results, summary, duration_ms: durationMs })
   } catch (error: any) {
     console.error("[v0] Form scan error:", error)
     return NextResponse.json(

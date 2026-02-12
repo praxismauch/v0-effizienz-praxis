@@ -109,8 +109,10 @@ function mapPgType(dataType: string, udtName: string): string {
   return dataType
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   await cookies()
+
+  const startTime = Date.now()
 
   try {
     // Use PostgREST OpenAPI schema to discover all tables and columns
@@ -237,7 +239,25 @@ export async function GET() {
       categories: categoryStats,
     }
 
-    return NextResponse.json({ results, summary })
+    const durationMs = Date.now() - startTime
+
+    // Save to history (fire-and-forget)
+    const origin = new URL(request.url).origin
+    fetch(`${origin}/api/super-admin/form-db-sync-history`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scan_type: "db-schema",
+        summary,
+        total: summary.total,
+        ok: summary.ok,
+        warnings: summary.warnings,
+        errors: summary.errors,
+        duration_ms: durationMs,
+      }),
+    }).catch((err) => console.error("[v0] Failed to save db-schema history:", err))
+
+    return NextResponse.json({ results, summary, duration_ms: durationMs })
   } catch (error) {
     console.error("[v0] Form-DB sync check error:", error)
     return NextResponse.json(

@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .maybeSingle()
 
     if (error) {
-      console.error("[v0] Supabase update error:", error)
+      console.error("Supabase update error:", error)
       return NextResponse.json({ error: "Failed to update global KPI" }, { status: 500 })
     }
 
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
   } catch (error) {
-    console.error("[v0] Error updating global KPI:", error)
+    console.error("Error updating global KPI:", error)
     return NextResponse.json(
       {
         error: "Failed to update global KPI",
@@ -102,7 +102,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Error deleting global KPI:", error)
+    console.error("Error deleting global KPI:", error)
     return NextResponse.json({ error: "Failed to delete global KPI" }, { status: 500 })
   }
 }

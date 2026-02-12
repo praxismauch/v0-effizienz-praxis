@@ -136,15 +136,22 @@ function LoginForm() {
         throw new Error("Sitzung konnte nicht eingerichtet werden")
       }
 
+      setStatus("Sitzung wird verifiziert...")
+      
+      // Verify session is actually accessible before redirecting
+      const verification = await verifySessionWithRetry(5, 200)
+      console.log("[v0] Session verification:", verification.success ? "verified" : "failed")
+      
+      if (!verification.success) {
+        // Session exists in Supabase but API can't see it yet - try redirect anyway
+        console.log("[v0] Session not verified via API, proceeding with redirect")
+      }
+      
       setStatus("Weiterleitung zum Dashboard...")
       
-      // Small delay to ensure cookies are written
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
-      // Use router.push with refresh to ensure server components reload with new session
+      // Use window.location for a hard navigation to ensure cookies are sent fresh
       console.log("[v0] Redirecting to:", redirectTo)
-      router.push(redirectTo)
-      router.refresh()
+      window.location.href = redirectTo
     } catch (error: any) {
       console.log("[v0] Login failed:", error)
       let errorMessage = "Ein Fehler ist aufgetreten"

@@ -729,20 +729,20 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           icon: Shield,
           href: "/super-admin/user-rights",
         },
+        {
+          id: "kpi-kategorien",
+          label: "KPI Global",
+          icon: BarChart3,
+          href: "/super-admin/kpi-kategorien",
+          badge: true,
+          badgeType: "kpiCategories" as const,
+        },
       ],
     },
     {
       id: "content",
       label: "Inhalte & Vorlagen",
       items: [
-        {
-          id: "kpi-kategorien",
-          label: "KPI-Kategorien",
-          icon: BarChart3,
-          href: "/super-admin/kpi-kategorien",
-          badge: true,
-          badgeType: "kpiCategories" as const,
-        },
         {
           id: "vorlagen",
           label: "Vorlagen",

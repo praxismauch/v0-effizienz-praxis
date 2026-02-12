@@ -258,6 +258,108 @@ function extractInsertUpdateFields(content: string, startIndex: number): string[
   return []
 }
 
+// Known control/meta fields that are never DB columns.
+// These are action discriminators, nested payloads, AI generation params, etc.
+const CONTROL_FIELDS = new Set([
+  // Action discriminators
+  "action", "type", "event",
+  // Nested payload arrays (sent as JSON but stored in related tables)
+  "items", "contacts", "orders", "entries", "rows", "records",
+  "members", "assignees", "recipients", "attendees", "participants",
+  "questions", "answers", "responses", "options", "choices",
+  "steps", "tasks", "subtasks", "milestones",
+  "skills", "areas", "competencies", "criteria",
+  "goals", "objectives", "targets",
+  "tags", "labels", "categories",
+  "permissions", "roles",
+  "addresses", "phones", "emails",
+  "files", "attachments", "images",
+  // AI generation parameters (sent to AI routes, never stored directly)
+  "prompt", "context", "tone", "length", "style", "format",
+  "systemPrompt", "userPrompt", "instructions", "model",
+  "temperature", "maxTokens", "topP",
+  // Template/reference IDs (used for lookup, not stored as-is)
+  "template", "templateId", "templateName", "sourceId",
+  // Pagination and filtering (used in queries, not stored)
+  "page", "limit", "offset", "sort", "order", "filter", "search", "query",
+  // Common form control fields
+  "confirm", "confirmed", "agree", "accepted", "consent",
+  "redirect", "redirectUrl", "returnUrl", "callbackUrl",
+  "sendNotification", "sendEmail", "notify", "silent",
+  // Relation assignments (stored via junction tables)
+  "teamMemberIds", "teamMembers", "selectedMembers", "selectedItems",
+  "assignedTo", "sharedWith",
+])
+
+// Patterns for fields that are typically control fields based on suffix/prefix
+const CONTROL_FIELD_PATTERNS = [
+  /^is[A-Z]/, // boolean flags like isNew, isTemplate, isDraft (often not persisted)
+  /^should[A-Z]/, // control flow like shouldNotify, shouldRedirect
+  /^send[A-Z]/, // sendEmail, sendNotification
+  /^include[A-Z]/, // includeArchived, includeDeleted
+  /^skip[A-Z]/, // skipValidation, skipNotification
+  /^force[A-Z]/, // forceUpdate, forceDelete
+  /Ids$/, // teamMemberIds, selectedIds -> junction table ops
+  /Items$/, // selectedItems, checkedItems -> nested
+  /List$/, // recipientList, tagList -> nested
+  /Data$/, // formData, responseData -> nested payload
+  /Config$/, // surveyConfig, widgetConfig -> jsonb field
+  /Settings$/, // notificationSettings -> nested
+]
+
+// AI-related route patterns where most body fields are generation params
+const AI_ROUTE_PATTERNS = [
+  /ai-generate/, /ai-optimize/, /ai-analyze/, /generate\//, /regenerate/,
+  /smart-upload/, /ai-response/,
+]
+
+function isControlField(field: string, apiUrl: string): boolean {
+  // Direct match against known control fields
+  if (CONTROL_FIELDS.has(field)) return true
+
+  // Check pattern-based control fields
+  if (CONTROL_FIELD_PATTERNS.some((p) => p.test(field))) return true
+
+  // For AI routes, most fields are generation parameters, not DB columns
+  if (AI_ROUTE_PATTERNS.some((p) => p.test(apiUrl))) {
+    // In AI routes, only practice_id, id-like fields, and common DB fields pass through
+    const dbLikeFields = /^(id|practice_id|practiceId|team_member_id|teamMemberId|user_id|userId|created_at|updated_at)$/
+    if (!dbLikeFields.test(field)) return true
+  }
+
+  return false
+}
+
+// Common field name aliases/mappings (frontend field -> DB column)
+const FIELD_ALIASES: Record<string, string[]> = {
+  date: ["recorded_date", "assessment_date", "protocol_date", "created_at", "start_date", "event_date"],
+  startDate: ["start_date"],
+  endDate: ["end_date"],
+  dueDate: ["due_date"],
+  name: ["title", "first_name", "last_name"],
+  description: ["notes", "content", "reason"],
+  message: ["notes", "content", "description"],
+  text: ["content", "notes", "description"],
+  amount: ["value", "salary", "cost", "budget"],
+  url: ["file_url", "image_url", "website"],
+  email: ["email"],
+  phone: ["phone", "mobile"],
+  color: ["color", "theme_color"],
+  image: ["image_url", "logo_url"],
+  file: ["file_url", "document_url"],
+  rating: ["rating", "score", "overall_score"],
+  score: ["score", "rating", "overall_score"],
+  comment: ["notes", "content", "description"],
+}
+
+function hasFieldAlias(field: string, columns: string[]): boolean {
+  const aliases = FIELD_ALIASES[field]
+  if (aliases) {
+    return aliases.some((alias) => columns.includes(alias))
+  }
+  return false
+}
+
 // Map a normalized component fetch URL to an API route path
 function matchUrlToRoute(normalizedUrl: string, apiRoutes: Map<string, ApiRouteInfo>): ApiRouteInfo | null {
   // Direct match
@@ -414,13 +516,17 @@ export async function GET(request: Request) {
       // Check form fields against DB columns
       if (sub.bodyFields.length > 0 && targetTables.length > 0) {
         for (const field of sub.bodyFields) {
+          // Skip known control/meta fields that are never DB columns
+          if (isControlField(field, sub.apiUrlNormalized)) continue
+
           // Convert camelCase to snake_case for comparison
           const snakeField = field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)
 
           let foundInAnyTable = false
           for (const table of targetTables) {
             const cols = dbColumns[table] || []
-            if (cols.includes(field) || cols.includes(snakeField)) {
+            // Check direct match, snake_case, and common aliases
+            if (cols.includes(field) || cols.includes(snakeField) || hasFieldAlias(field, cols)) {
               foundInAnyTable = true
               break
             }

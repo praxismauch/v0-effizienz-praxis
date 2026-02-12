@@ -204,9 +204,10 @@ export function PracticeSettingsTab() {
                       {settings.specializations.map((spec) => (
                         <Badge key={spec} variant="secondary" className="text-xs">
                           {spec}
-                          <button
-                            type="button"
-                            className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation()
                               setSettings({
@@ -214,10 +215,20 @@ export function PracticeSettingsTab() {
                                 specializations: settings.specializations.filter((s) => s !== spec),
                               })
                             }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setSettings({
+                                  ...settings,
+                                  specializations: settings.specializations.filter((s) => s !== spec),
+                                })
+                              }
+                            }}
                           >
                             <X className="h-3 w-3" />
                             <span className="sr-only">{spec} entfernen</span>
-                          </button>
+                          </span>
                         </Badge>
                       ))}
                     </span>

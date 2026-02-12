@@ -119,21 +119,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     console.log("[v0] Updating practice info for practice:", practiceId, "body keys:", Object.keys(body))
 
+    // Only include defined fields to avoid Supabase rejecting undefined values
+    const updatePayload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    }
+    const allowedFields = ["name", "address", "phone", "fax", "email", "website", "description", "practice_type", "specialization", "logo_url"]
+    for (const field of allowedFields) {
+      if (body[field] !== undefined) {
+        updatePayload[field] = body[field]
+      }
+    }
+
+    console.log("[v0] Update payload fields:", Object.keys(updatePayload))
+
     const { data, error } = await supabase
       .from("practices")
-      .update({
-        name: body.name,
-        address: body.address,
-        phone: body.phone,
-        fax: body.fax,
-        email: body.email,
-        website: body.website,
-        description: body.description,
-        practice_type: body.practice_type,
-        specialization: body.specialization,
-        logo_url: body.logo_url,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", practiceId)
       .select()
       .single()

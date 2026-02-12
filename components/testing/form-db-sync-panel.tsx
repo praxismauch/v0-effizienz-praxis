@@ -13,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import {
   Database,
@@ -91,6 +98,8 @@ export default function FormDbSyncPanel() {
     prompt: "",
     title: "",
   })
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [progress, setProgress] = useState(0)
   const [progressLabel, setProgressLabel] = useState("")
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -369,18 +378,86 @@ Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
       {data && data.results.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Ergebnisse</CardTitle>
-            <CardDescription>
-              Detaillierte Ergebnisse fuer jedes Formular
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle>Ergebnisse</CardTitle>
+                <CardDescription>
+                  {statusFilter !== "all" || categoryFilter !== "all"
+                    ? `Gefiltert: ${data.results.filter((f) => {
+                        const sm = statusFilter === "all" || (statusFilter === "error" && (f.status === "error" || f.status === "missing_table")) || f.status === statusFilter
+                        const cm = categoryFilter === "all" || (f.category || "Sonstige") === categoryFilter
+                        return sm && cm
+                      }).length} von ${data.results.length} Tabellen`
+                    : `Detaillierte Ergebnisse fuer alle ${data.results.length} Tabellen`}
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[150px] h-9 text-sm">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Status</SelectItem>
+                    <SelectItem value="ok">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                        OK
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="warning">
+                      <span className="flex items-center gap-2">
+                        <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />
+                        Warnungen
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="error">
+                      <span className="flex items-center gap-2">
+                        <XCircle className="h-3.5 w-3.5 text-red-500" />
+                        Fehler
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[220px] h-9 text-sm">
+                    <SelectValue placeholder="Kategorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Kategorien</SelectItem>
+                    {data.summary.categories?.map((cat) => (
+                      <SelectItem key={cat.name} value={cat.name}>
+                        {cat.name} ({cat.count})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[600px] pr-4">
               <div className="space-y-3">
                 {(() => {
+                  // Filter results
+                  const filtered = data.results.filter((form) => {
+                    const statusMatch = statusFilter === "all" 
+                      || (statusFilter === "error" && (form.status === "error" || form.status === "missing_table"))
+                      || form.status === statusFilter
+                    const categoryMatch = categoryFilter === "all" || (form.category || "Sonstige") === categoryFilter
+                    return statusMatch && categoryMatch
+                  })
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="py-8 text-center text-muted-foreground text-sm">
+                        Keine Tabellen fuer die ausgewaehlten Filter gefunden.
+                      </div>
+                    )
+                  }
+
                   // Group results by category
                   const categories = new Map<string, FormResult[]>()
-                  data.results.forEach((form) => {
+                  filtered.forEach((form) => {
                     const cat = form.category || "Sonstige"
                     if (!categories.has(cat)) categories.set(cat, [])
                     categories.get(cat)!.push(form)

@@ -299,7 +299,7 @@ const CONTROL_FIELDS = new Set([
   "accountId", "locationId", "placeId",
   "doctorUrl", "doctorName",
   // Nested update/operation params
-  "runUpdate", "resultId",
+  "runUpdate", "resultId", "error",
   // Operation-specific params for duplication/copy routes
   "sourceDay", "targetDay", "deleteExisting",
   // Pricing/billing control params
@@ -336,7 +336,7 @@ const CONTROL_FIELD_PATTERNS = [
 
 // AI-related route patterns where most body fields are generation params
 const AI_ROUTE_PATTERNS = [
-  /ai-generate/, /ai-optimize/, /ai-analyze/, /generate\//, /regenerate/,
+  /ai-generate/, /ai-optimize/, /ai-analyze/, /\/generate$/, /\/generate\//, /regenerate/,
   /smart-upload/, /ai-response/, /ai-extract/, /ai-recommend/,
   /analyze-workload/, /generate-suggestions/,
   /\/optimize$/, /\/fetch$/,
@@ -358,6 +358,17 @@ const SUB_RESOURCE_ROUTES = [
   { pattern: /\/staffing-plan\/duplicate-day/, actualTable: null }, // Operation, not direct insert
 ]
 
+// Routes that contain nested JSON payloads whose sub-fields get picked up by the scanner.
+// Fields listed here are sub-fields of a parent field and should not be checked against the table.
+const NESTED_PAYLOAD_FIELDS: { pattern: RegExp; fields: Set<string> }[] = [
+  // contracts: additional_payments is a JSON array with {name, amount, frequency} objects
+  { pattern: /\/contracts/, fields: new Set(["name", "amount", "frequency"]) },
+  // holiday-requests: teamMemberId is sent but maps to team_member_id
+  { pattern: /\/holiday-requests/, fields: new Set(["teamMemberId"]) },
+  // calendar/subscription-token targets calendar_subscriptions, not practices
+  { pattern: /\/calendar\/subscription-token/, fields: new Set(["name", "ical_url", "color"]) },
+]
+
 function isControlField(field: string, apiUrl: string): boolean {
   // Direct match against known control fields
   if (CONTROL_FIELDS.has(field)) return true
@@ -375,6 +386,13 @@ function isControlField(field: string, apiUrl: string): boolean {
   for (const sr of SUB_RESOURCE_ROUTES) {
     if (sr.pattern.test(apiUrl) && sr.actualTable === null) {
       return true // All fields on this route are operational, skip validation
+    }
+  }
+
+  // Check route-specific nested payload fields
+  for (const np of NESTED_PAYLOAD_FIELDS) {
+    if (np.pattern.test(apiUrl) && np.fields.has(field)) {
+      return true
     }
   }
 
@@ -404,7 +422,8 @@ const FIELD_ALIASES: Record<string, string[]> = {
   min: ["min_value", "minimum", "min"],
   target: ["target_value", "target"],
   userId: ["user_id", "created_by", "author_id"],
-  teamMemberId: ["team_member_id"],
+  teamMemberId: ["team_member_id", "team_member_id"],
+  emoji: ["emoji", "reaction", "type"],
   createdBy: ["created_by"],
   assignedBy: ["assigned_by", "created_by"],
   frequency: ["payment_frequency", "frequency"],
@@ -558,12 +577,20 @@ export async function GET(request: Request) {
         })
       }
 
-      // Get target tables from the API route
-      const targetTables = apiRoute
+      // Get target tables from the API route, with sub-resource override
+      let targetTables = apiRoute
         ? [...new Set(apiRoute.tables
             .filter((t) => ["insert", "update", "upsert"].includes(t.operation))
             .map((t) => t.tableName))]
         : []
+
+      // Override target tables for sub-resource routes
+      for (const sr of SUB_RESOURCE_ROUTES) {
+        if (sr.pattern.test(sub.apiUrlNormalized) && sr.actualTable) {
+          targetTables = [sr.actualTable]
+          break
+        }
+      }
 
       // Get DB columns for target tables
       const dbFieldsMap: Record<string, string[]> = {}

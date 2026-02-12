@@ -1,6 +1,5 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
-import { isSuperAdminRole } from "@/lib/auth-utils"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -20,32 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Ungültige Team-ID" }, { status: 400 })
     }
 
-    const supabase = await createClient()
-
-    // Get current user and check authorization
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
-    }
-
-    // Get user role from database
-    const { data: userData, error: userDataError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    if (userDataError || !userData) {
-      return NextResponse.json({ error: "Benutzer nicht gefunden" }, { status: 404 })
-    }
-
-    // Check if user is super admin
-    if (!isSuperAdminRole(userData.role)) {
-      return NextResponse.json({ error: "Keine Berechtigung - Nur Super-Admins" }, { status: 403 })
-    }
+    const supabase = await createAdminClient()
 
     const { data, error } = await supabase.from("default_teams").select("*").eq("id", id).maybeSingle()
 
@@ -75,32 +49,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Ungültige Team-ID" }, { status: 400 })
     }
 
-    const supabase = await createClient()
-
-    // Get current user and check authorization
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
-    }
-
-    // Get user role from database
-    const { data: userData, error: userDataError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    if (userDataError || !userData) {
-      return NextResponse.json({ error: "Benutzer nicht gefunden" }, { status: 404 })
-    }
-
-    // Check if user is super admin
-    if (!isSuperAdminRole(userData.role)) {
-      return NextResponse.json({ error: "Keine Berechtigung - Nur Super-Admins" }, { status: 403 })
-    }
+    const supabase = await createAdminClient()
 
     const body = await request.json()
     const { name, color, description, display_order, is_active, syncChanges = true } = body
@@ -173,32 +122,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Ungültige Team-ID" }, { status: 400 })
     }
 
-    const supabase = await createClient()
-
-    // Get current user and check authorization
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
-    }
-
-    // Get user role from database
-    const { data: userData, error: userDataError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    if (userDataError || !userData) {
-      return NextResponse.json({ error: "Benutzer nicht gefunden" }, { status: 404 })
-    }
-
-    // Check if user is super admin
-    if (!isSuperAdminRole(userData.role)) {
-      return NextResponse.json({ error: "Keine Berechtigung - Nur Super-Admins" }, { status: 403 })
-    }
+    const supabase = await createAdminClient()
 
     // Get team name before deletion for syncing
     const { data: defaultTeam } = await supabase.from("default_teams").select("name").eq("id", id).maybeSingle()

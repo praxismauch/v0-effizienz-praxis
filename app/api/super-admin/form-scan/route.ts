@@ -261,8 +261,9 @@ function extractInsertUpdateFields(content: string, startIndex: number): string[
 // Known control/meta fields that are never DB columns.
 // These are action discriminators, nested payloads, AI generation params, etc.
 const CONTROL_FIELDS = new Set([
-  // Action discriminators
-  "action", "type", "event",
+  // Action discriminators & boolean action flags
+  "action", "type", "event", "approve", "reject",
+  "generate_ai_suggestions", "add_to_knowledge", "createGoals",
   // Nested payload arrays (sent as JSON but stored in related tables)
   "items", "contacts", "orders", "entries", "rows", "records",
   "members", "assignees", "recipients", "attendees", "participants",
@@ -274,6 +275,8 @@ const CONTROL_FIELDS = new Set([
   "permissions", "roles",
   "addresses", "phones", "emails",
   "files", "attachments", "images",
+  "favorites", "fields", "reviews", "updates",
+  "scores", "painPoints",
   // AI generation parameters (sent to AI routes, never stored directly)
   "prompt", "context", "tone", "length", "style", "format",
   "systemPrompt", "userPrompt", "instructions", "model",
@@ -289,6 +292,22 @@ const CONTROL_FIELDS = new Set([
   // Relation assignments (stored via junction tables)
   "teamMemberIds", "teamMembers", "selectedMembers", "selectedItems",
   "assignedTo", "sharedWith",
+  // MFA/auth verification fields (not stored in users table)
+  "code", "secret", "token", "otp", "verificationCode",
+  // External API credentials & params (used for API calls, not stored as columns)
+  "accessToken", "refreshToken", "apiKey", "apifyApiKey",
+  "accountId", "locationId", "placeId",
+  "doctorUrl", "doctorName",
+  // Nested update/operation params
+  "runUpdate", "resultId",
+  // Operation-specific params for duplication/copy routes
+  "sourceDay", "targetDay", "deleteExisting",
+  // Pricing/billing control params
+  "planId",
+  // JSON payloads stored as jsonb (the field name itself wraps the data)
+  "systemDiagrams", "customDiagrams", "dashboardTiles", "settings",
+  // File/content params for import routes
+  "fileName", "textContent", "imageUrl",
 ])
 
 // Patterns for fields that are typically control fields based on suffix/prefix
@@ -299,18 +318,44 @@ const CONTROL_FIELD_PATTERNS = [
   /^include[A-Z]/, // includeArchived, includeDeleted
   /^skip[A-Z]/, // skipValidation, skipNotification
   /^force[A-Z]/, // forceUpdate, forceDelete
+  /^create[A-Z]/, // createGoals, createNotification
+  /^generate[A-Z_]/, // generate_ai_suggestions
+  /^add_to_/, // add_to_knowledge
   /Ids$/, // teamMemberIds, selectedIds -> junction table ops
   /Items$/, // selectedItems, checkedItems -> nested
   /List$/, // recipientList, tagList -> nested
   /Data$/, // formData, responseData -> nested payload
   /Config$/, // surveyConfig, widgetConfig -> jsonb field
   /Settings$/, // notificationSettings -> nested
+  /Count$/, // failedCount, successCount -> computed
+  /Update$/, // runUpdate, statusUpdate -> nested
+  /Token$/, // accessToken, refreshToken -> auth
+  /Key$/, // apiKey, secretKey -> auth
+  /Url$/, // doctorUrl, callbackUrl -> not stored
 ]
 
 // AI-related route patterns where most body fields are generation params
 const AI_ROUTE_PATTERNS = [
   /ai-generate/, /ai-optimize/, /ai-analyze/, /generate\//, /regenerate/,
-  /smart-upload/, /ai-response/,
+  /smart-upload/, /ai-response/, /ai-extract/, /ai-recommend/,
+  /analyze-workload/, /generate-suggestions/,
+  /\/optimize$/, /\/fetch$/,
+]
+
+// Routes where fields target a sub-resource, not the parent table
+// e.g., /team-members/[id]/skills sends fields for team_member_skills, not team_members
+const SUB_RESOURCE_ROUTES = [
+  { pattern: /\/team-members\/\[.*\]\/skills/, actualTable: "team_member_skills" },
+  { pattern: /\/kudos\/\[.*\]\/react/, actualTable: "kudos_reactions" },
+  { pattern: /\/mfa\//, actualTable: null }, // MFA routes don't target user table columns
+  { pattern: /\/calendar\/subscription-token/, actualTable: "calendar_subscriptions" },
+  { pattern: /\/reviews\/import\//, actualTable: null }, // Import routes process external data
+  { pattern: /\/recruiting-fields/, actualTable: "recruiting_form_fields" },
+  { pattern: /\/pain-points/, actualTable: null }, // Processes pain points into multiple tables
+  { pattern: /\/billing\/subscription/, actualTable: "practice_subscriptions" },
+  { pattern: /\/pricing/, actualTable: "subscription_plans" },
+  { pattern: /\/google-reviews/, actualTable: "google_ratings" },
+  { pattern: /\/staffing-plan\/duplicate-day/, actualTable: null }, // Operation, not direct insert
 ]
 
 function isControlField(field: string, apiUrl: string): boolean {
@@ -320,11 +365,17 @@ function isControlField(field: string, apiUrl: string): boolean {
   // Check pattern-based control fields
   if (CONTROL_FIELD_PATTERNS.some((p) => p.test(field))) return true
 
-  // For AI routes, most fields are generation parameters, not DB columns
+  // For AI/analysis routes, most fields are generation parameters, not DB columns
   if (AI_ROUTE_PATTERNS.some((p) => p.test(apiUrl))) {
-    // In AI routes, only practice_id, id-like fields, and common DB fields pass through
     const dbLikeFields = /^(id|practice_id|practiceId|team_member_id|teamMemberId|user_id|userId|created_at|updated_at)$/
     if (!dbLikeFields.test(field)) return true
+  }
+
+  // For sub-resource routes that don't store directly to the parent table
+  for (const sr of SUB_RESOURCE_ROUTES) {
+    if (sr.pattern.test(apiUrl) && sr.actualTable === null) {
+      return true // All fields on this route are operational, skip validation
+    }
   }
 
   return false
@@ -336,8 +387,8 @@ const FIELD_ALIASES: Record<string, string[]> = {
   startDate: ["start_date"],
   endDate: ["end_date"],
   dueDate: ["due_date"],
-  name: ["title", "first_name", "last_name"],
-  description: ["notes", "content", "reason"],
+  name: ["title", "first_name", "last_name", "name"],
+  description: ["notes", "content", "reason", "description"],
   message: ["notes", "content", "description"],
   text: ["content", "notes", "description"],
   amount: ["value", "salary", "cost", "budget"],
@@ -350,6 +401,20 @@ const FIELD_ALIASES: Record<string, string[]> = {
   rating: ["rating", "score", "overall_score"],
   score: ["score", "rating", "overall_score"],
   comment: ["notes", "content", "description"],
+  min: ["min_value", "minimum", "min"],
+  target: ["target_value", "target"],
+  userId: ["user_id", "created_by", "author_id"],
+  teamMemberId: ["team_member_id"],
+  createdBy: ["created_by"],
+  assignedBy: ["assigned_by", "created_by"],
+  frequency: ["payment_frequency", "frequency"],
+  emoji: ["emoji", "reaction"],
+  candidate_id: ["id"],
+  job_posting_id: ["job_posting_id"],
+  applied_at: ["applied_at", "created_at"],
+  assessment_id: ["assessment_id", "template_id"],
+  products_used: ["products_used"],
+  ical_url: ["ical_url", "calendar_url"],
 }
 
 function hasFieldAlias(field: string, columns: string[]): boolean {

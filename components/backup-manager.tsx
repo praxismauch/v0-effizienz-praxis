@@ -210,9 +210,9 @@ export function BackupManager({ userId, practices }: BackupManagerProps) {
             onDownloadBackup={downloadBackup}
             onVerifyBackup={verifyBackup}
             onVerifyAllBackups={verifyAllBackups}
-            onRefresh={fetchBackups}
+            onFetchBackups={fetchBackups}
             onSyncToGoogleDrive={syncToGoogleDrive}
-            onOpenRestoreDialog={handleOpenRestoreDialog}
+            onRestoreClick={handleOpenRestoreDialog}
           />
         </TabsContent>
 

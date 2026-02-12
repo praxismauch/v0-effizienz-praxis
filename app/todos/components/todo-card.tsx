@@ -495,14 +495,15 @@ export function TodoCard({
           {/* Compact metadata */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {/* Status pill */}
-            <div
-              className={cn(
-                "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
+            <Select
+              value={todo.status}
+              onValueChange={(value) => onStatusChange(todo.id, value)}
+            >
+              <SelectTrigger className={cn(
+                "h-7 w-[140px] rounded-full px-2 py-0.5 text-[10px] font-medium border-0",
                 statusInfo.bgColor,
                 statusInfo.textColor
-              )}
-            >
-              <SelectTrigger className="h-7 w-[140px]">
+              )}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

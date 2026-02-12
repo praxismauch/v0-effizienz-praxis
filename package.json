@@ -7,6 +7,7 @@
     "prebuild": "pnpm run fix:slugs && pnpm run remove-debug && pnpm run clean",
     "build": "next build",
     "clean": "rm -rf .next",
+    "predev": "rm -rf .next && node scripts/fix-dynamic-slugs.mjs",
     "dev": "next dev",
     "fix-uuid": "tsx scripts/fix-uuid-comparisons.ts",
     "fix:slugs": "node scripts/fix-dynamic-slugs.mjs",

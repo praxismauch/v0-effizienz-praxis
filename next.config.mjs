@@ -5,6 +5,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 })
 
 /** @type {import('next').NextConfig} */
+// Force cache invalidation - ghost directory cleanup
 const nextConfig = {
   // NOTE: Re-enable type checking once all `any` types are fixed
   // typescript: {

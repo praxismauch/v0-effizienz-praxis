@@ -20,6 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -109,6 +113,19 @@ interface HistoryEntry {
   created_at: string
 }
 
+interface CustomRule {
+  id: string
+  pattern: string
+  category: Category
+  severity: Severity
+  title: string
+  message: string
+  fix: string
+  fileGlob: string
+  enabled: boolean
+  createdAt: string
+}
+
 // ─── Category metadata ───
 const CATEGORY_META: Record<Category, { label: string; icon: React.ReactNode; color: string }> = {
   security: { label: "Sicherheit", icon: <Shield className="h-4 w-4" />, color: "text-red-600" },
@@ -128,6 +145,164 @@ const SEVERITY_META: Record<Severity, { label: string; icon: React.ReactNode; co
   warning: { label: "Warnung", icon: <AlertTriangle className="h-4 w-4" />, color: "text-yellow-600", bgColor: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100" },
   info: { label: "Info", icon: <Info className="h-4 w-4" />, color: "text-blue-600", bgColor: "bg-blue-100 text-blue-800 hover:bg-blue-100" },
   suggestion: { label: "Vorschlag", icon: <Lightbulb className="h-4 w-4" />, color: "text-purple-600", bgColor: "bg-purple-100 text-purple-800 hover:bg-purple-100" },
+}
+
+// ─── Custom Rule Form ───
+function CustomRuleForm({
+  rule,
+  onSave,
+  onCancel,
+}: {
+  rule: CustomRule | null
+  onSave: (rule: CustomRule) => void
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState(rule?.title || "")
+  const [pattern, setPattern] = useState(rule?.pattern || "")
+  const [category, setCategory] = useState<Category>(rule?.category || "code-quality")
+  const [severity, setSeverity] = useState<Severity>(rule?.severity || "warning")
+  const [message, setMessage] = useState(rule?.message || "")
+  const [fix, setFix] = useState(rule?.fix || "")
+  const [fileGlob, setFileGlob] = useState(rule?.fileGlob || "")
+  const [patternError, setPatternError] = useState("")
+
+  const validatePattern = (p: string) => {
+    try {
+      if (p) new RegExp(p)
+      setPatternError("")
+      return true
+    } catch (e: any) {
+      setPatternError(e.message || "Ungueltiges RegExp-Pattern")
+      return false
+    }
+  }
+
+  const handleSave = () => {
+    if (!title.trim() || !pattern.trim() || !message.trim()) return
+    if (!validatePattern(pattern)) return
+
+    onSave({
+      id: rule?.id || crypto.randomUUID(),
+      title: title.trim(),
+      pattern: pattern.trim(),
+      category,
+      severity,
+      message: message.trim(),
+      fix: fix.trim(),
+      fileGlob: fileGlob.trim(),
+      enabled: rule?.enabled ?? true,
+      createdAt: rule?.createdAt || new Date().toISOString(),
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="rule-title">Titel *</Label>
+        <Input
+          id="rule-title"
+          placeholder='z.B. "TODO-Kommentare finden"'
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="rule-pattern">RegExp Pattern *</Label>
+        <Input
+          id="rule-pattern"
+          placeholder="z.B. \/\/\\s*TODO|FIXME|HACK"
+          value={pattern}
+          onChange={(e) => { setPattern(e.target.value); validatePattern(e.target.value) }}
+          className={`font-mono text-sm ${patternError ? "border-destructive" : ""}`}
+        />
+        {patternError && <p className="text-xs text-destructive">{patternError}</p>}
+        <p className="text-xs text-muted-foreground">
+          JavaScript RegExp-Syntax. Das Pattern wird auf jede Zeile angewendet.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label>Kategorie</Label>
+          <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(CATEGORY_META).map(([key, meta]) => (
+                <SelectItem key={key} value={key}>
+                  <span className="flex items-center gap-2">
+                    <span className={meta.color}>{meta.icon}</span>
+                    {meta.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Schweregrad</Label>
+          <Select value={severity} onValueChange={(v) => setSeverity(v as Severity)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(SEVERITY_META).map(([key, meta]) => (
+                <SelectItem key={key} value={key}>
+                  <span className="flex items-center gap-2">
+                    <span className={meta.color}>{meta.icon}</span>
+                    {meta.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="rule-message">Beschreibung / Fehlermeldung *</Label>
+        <Textarea
+          id="rule-message"
+          placeholder="Was ist das Problem und warum sollte es behoben werden?"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={2}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="rule-fix">Empfohlener Fix</Label>
+        <Textarea
+          id="rule-fix"
+          placeholder="Wie sollte das Problem behoben werden? (optional)"
+          value={fix}
+          onChange={(e) => setFix(e.target.value)}
+          rows={2}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="rule-glob">Datei-Filter (optional)</Label>
+        <Input
+          id="rule-glob"
+          placeholder='z.B. "route.ts" oder "components/" (leer = alle Dateien)'
+          value={fileGlob}
+          onChange={(e) => setFileGlob(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          Nur Dateien pruefen, deren Pfad diesen Text enthaelt.
+        </p>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel}>Abbrechen</Button>
+        <Button
+          onClick={handleSave}
+          disabled={!title.trim() || !pattern.trim() || !message.trim() || !!patternError}
+        >
+          {rule ? "Aktualisieren" : "Hinzufuegen"}
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 export default function CodeReviewPanel() {
@@ -155,6 +330,44 @@ export default function CodeReviewPanel() {
     prompt: "",
     title: "",
   })
+
+  // ─── Custom rules state ───
+  const [customRules, setCustomRules] = useState<CustomRule[]>([])
+  const [editingRule, setEditingRule] = useState<CustomRule | null>(null)
+  const [showRuleForm, setShowRuleForm] = useState(false)
+
+  // Load custom rules from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("code-review-custom-rules")
+      if (saved) setCustomRules(JSON.parse(saved))
+    } catch { /* ignore */ }
+  }, [])
+
+  // Persist custom rules
+  const saveCustomRules = useCallback((rules: CustomRule[]) => {
+    setCustomRules(rules)
+    localStorage.setItem("code-review-custom-rules", JSON.stringify(rules))
+  }, [])
+
+  const addOrUpdateRule = useCallback((rule: CustomRule) => {
+    const updated = customRules.some((r) => r.id === rule.id)
+      ? customRules.map((r) => (r.id === rule.id ? rule : r))
+      : [...customRules, rule]
+    saveCustomRules(updated)
+    setEditingRule(null)
+    setShowRuleForm(false)
+    toast({ title: updated.length > customRules.length ? "Regel hinzugefuegt" : "Regel aktualisiert" })
+  }, [customRules, saveCustomRules, toast])
+
+  const deleteRule = useCallback((id: string) => {
+    saveCustomRules(customRules.filter((r) => r.id !== id))
+    toast({ title: "Regel geloescht" })
+  }, [customRules, saveCustomRules, toast])
+
+  const toggleRule = useCallback((id: string) => {
+    saveCustomRules(customRules.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)))
+  }, [customRules, saveCustomRules])
 
   useEffect(() => {
     return () => {
@@ -204,7 +417,12 @@ export default function CodeReviewPanel() {
     }, 400)
 
     try {
-      const res = await fetch("/api/super-admin/code-review")
+      const enabledCustomRules = customRules.filter((r) => r.enabled)
+      const res = await fetch("/api/super-admin/code-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customRules: enabledCustomRules }),
+      })
       if (!res.ok) throw new Error("Fehler beim Laden")
       const json: ReviewData = await res.json()
       if (progressInterval.current) clearInterval(progressInterval.current)
@@ -452,13 +670,22 @@ export default function CodeReviewPanel() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="review" className="flex items-center gap-2">
             <Code2 className="h-4 w-4" />
             Code Review
             {data && (data.summary.critical > 0 || data.summary.warnings > 0) && (
               <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
                 {data.summary.critical + data.summary.warnings}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="custom-rules" className="flex items-center gap-2">
+            <Search className="h-4 w-4" />
+            Eigene Regeln
+            {customRules.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {customRules.filter((r) => r.enabled).length}/{customRules.length}
               </Badge>
             )}
           </TabsTrigger>
@@ -845,7 +1072,125 @@ export default function CodeReviewPanel() {
           )}
         </TabsContent>
 
-        {/* ═══════════ TAB 2: HISTORY ═══════════ */}
+        {/* ═══════════ TAB 2: CUSTOM RULES ═══════════ */}
+        <TabsContent value="custom-rules" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Search className="h-5 w-5" />
+                    Eigene Review-Regeln
+                  </CardTitle>
+                  <CardDescription>
+                    Manuelle Pruefregeln, die bei jedem Code Review mit angewendet werden
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingRule(null)
+                    setShowRuleForm(true)
+                  }}
+                >
+                  Neue Regel
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {customRules.length === 0 && !showRuleForm ? (
+                <div className="py-12 text-center text-muted-foreground">
+                  <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm font-medium">Keine eigenen Regeln definiert</p>
+                  <p className="text-xs mt-1">Klicke auf &quot;Neue Regel&quot; um eine eigene Pruefregel hinzuzufuegen.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {customRules.map((rule) => (
+                    <div
+                      key={rule.id}
+                      className={`border rounded-lg p-4 transition-colors ${rule.enabled ? "bg-background" : "bg-muted/50 opacity-60"}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="font-medium text-sm">{rule.title}</span>
+                            <Badge variant="secondary" className={`text-xs ${SEVERITY_META[rule.severity]?.bgColor || ""}`}>
+                              {SEVERITY_META[rule.severity]?.label || rule.severity}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {CATEGORY_META[rule.category]?.label || rule.category}
+                            </Badge>
+                            {!rule.enabled && (
+                              <Badge variant="outline" className="text-xs text-muted-foreground">Deaktiviert</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-1">{rule.message}</p>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{rule.pattern}</code>
+                            {rule.fileGlob && (
+                              <span>Dateien: <code className="bg-muted px-1 py-0.5 rounded">{rule.fileGlob}</code></span>
+                            )}
+                          </div>
+                          {rule.fix && (
+                            <p className="text-xs text-green-700 dark:text-green-400 mt-1">Fix: {rule.fix}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0"
+                            title={rule.enabled ? "Deaktivieren" : "Aktivieren"}
+                            onClick={() => toggleRule(rule.id)}
+                          >
+                            {rule.enabled ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <XCircle className="h-3.5 w-3.5 text-muted-foreground" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0"
+                            title="Bearbeiten"
+                            onClick={() => { setEditingRule(rule); setShowRuleForm(true) }}
+                          >
+                            <FileCode className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                            title="Loeschen"
+                            onClick={() => deleteRule(rule.id)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Rule Form Dialog */}
+          <Dialog open={showRuleForm} onOpenChange={setShowRuleForm}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>{editingRule ? "Regel bearbeiten" : "Neue Pruefregel"}</DialogTitle>
+                <DialogDescription>
+                  Definiere ein RegExp-Pattern, das bei jedem Code Review geprueft wird.
+                </DialogDescription>
+              </DialogHeader>
+              <CustomRuleForm
+                rule={editingRule}
+                onSave={addOrUpdateRule}
+                onCancel={() => { setShowRuleForm(false); setEditingRule(null) }}
+              />
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        {/* ═══════════ TAB 3: HISTORY ═══════════ */}
         <TabsContent value="history" className="space-y-6">
           <Card>
             <CardHeader>

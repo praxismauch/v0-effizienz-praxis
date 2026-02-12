@@ -399,11 +399,11 @@ const REVIEW_RULES: ReviewRule[] = [
 ]
 
 // ─── Multi-line rule checker ───
-function checkMultilineRules(content: string, filePath: string, projectRoot: string): ReviewFinding[] {
+function checkMultilineRules(content: string, filePath: string, projectRoot: string, rules: ReviewRule[] = REVIEW_RULES): ReviewFinding[] {
   const findings: ReviewFinding[] = []
   const relativePath = path.relative(projectRoot, filePath)
 
-  for (const rule of REVIEW_RULES) {
+  for (const rule of rules) {
     if (!rule.multiline) continue
     if (rule.fileFilter && !rule.fileFilter(filePath)) continue
 
@@ -432,11 +432,11 @@ function checkMultilineRules(content: string, filePath: string, projectRoot: str
 }
 
 // ─── Single-line rule checker ───
-function checkSingleLineRules(lines: string[], filePath: string, projectRoot: string): ReviewFinding[] {
+function checkSingleLineRules(lines: string[], filePath: string, projectRoot: string, rules: ReviewRule[] = REVIEW_RULES): ReviewFinding[] {
   const findings: ReviewFinding[] = []
   const relativePath = path.relative(projectRoot, filePath)
 
-  const singleLineRules = REVIEW_RULES.filter((r) => !r.multiline)
+  const singleLineRules = rules.filter((r) => !r.multiline)
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
@@ -525,11 +525,62 @@ function deduplicateFindings(findings: ReviewFinding[]): ReviewFinding[] {
   })
 }
 
+// Accept both GET and POST - POST carries custom rules
 export async function GET() {
-  const startTime = Date.now()
+  return runCodeReview([])
+}
 
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => ({}))
+    const customRules = body.customRules || []
+    return runCodeReview(customRules)
+  } catch {
+    return runCodeReview([])
+  }
+}
+
+interface CustomRuleInput {
+  id: string
+  pattern: string
+  category: Category
+  severity: Severity
+  title: string
+  message: string
+  fix: string
+  fileGlob: string
+}
+
+async function runCodeReview(customRuleInputs: CustomRuleInput[]) {
+  try {
+    const startTime = Date.now()
     const projectRoot = process.cwd()
+
+    // Convert custom rules to ReviewRule format
+    const customRules: ReviewRule[] = customRuleInputs
+      .filter((r) => r.pattern)
+      .map((r) => {
+        let regex: RegExp
+        try {
+          regex = new RegExp(r.pattern)
+        } catch {
+          return null
+        }
+        return {
+          id: `custom-${r.id}`,
+          category: r.category,
+          severity: r.severity,
+          title: `[Eigene] ${r.title}`,
+          pattern: regex,
+          message: r.message,
+          fix: r.fix || undefined,
+          fileFilter: r.fileGlob ? (f: string) => f.includes(r.fileGlob) : undefined,
+        } as ReviewRule
+      })
+      .filter(Boolean) as ReviewRule[]
+
+    // Combine built-in and custom rules
+    const allRules = [...REVIEW_RULES, ...customRules]
     const allFiles = findFiles(projectRoot, CODE_EXTENSIONS)
 
     let allFindings: ReviewFinding[] = []
@@ -556,10 +607,10 @@ export async function GET() {
         allFindings.push(...checkFileLevel(filePath, content, projectRoot))
 
         // Single-line rule checks
-        allFindings.push(...checkSingleLineRules(lines, filePath, projectRoot))
+        allFindings.push(...checkSingleLineRules(lines, filePath, projectRoot, allRules))
 
         // Multi-line rule checks
-        allFindings.push(...checkMultilineRules(content, filePath, projectRoot))
+        allFindings.push(...checkMultilineRules(content, filePath, projectRoot, allRules))
 
       } catch { /* read error, skip */ }
     }

@@ -435,22 +435,52 @@ export default function CodeReviewPanel() {
                   <CardTitle className="text-base">Findings nach Kategorie</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {Object.entries(data.summary.byCategory)
                       .sort((a, b) => b[1] - a[1])
                       .map(([cat, count]) => {
                         const meta = CATEGORY_META[cat as Category]
                         if (!meta) return null
+                        const percentage = data.summary.totalFindings > 0
+                          ? Math.round((count / data.summary.totalFindings) * 100)
+                          : 0
                         return (
-                          <button
+                          <div
                             key={cat}
-                            className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors hover:bg-muted/50 ${categoryFilter === cat ? "bg-muted border-foreground/20" : ""}`}
-                            onClick={() => setCategoryFilter(categoryFilter === cat ? "all" : cat)}
+                            className={`flex items-center gap-3 p-3 rounded-lg border transition-colors hover:bg-muted/50 ${categoryFilter === cat ? "bg-muted border-foreground/20" : ""}`}
                           >
-                            <span className={meta.color}>{meta.icon}</span>
-                            <span className="text-sm">{meta.label}</span>
-                            <Badge variant="secondary" className="ml-auto text-xs">{count}</Badge>
-                          </button>
+                            <button
+                              className="flex items-center gap-2 flex-1 min-w-0"
+                              onClick={() => setCategoryFilter(categoryFilter === cat ? "all" : cat)}
+                            >
+                              <span className={`shrink-0 ${meta.color}`}>{meta.icon}</span>
+                              <div className="flex-1 min-w-0 text-left">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium truncate">{meta.label}</span>
+                                  <span className="text-xs text-muted-foreground ml-2 shrink-0">{count} ({percentage}%)</span>
+                                </div>
+                                <Progress
+                                  value={percentage}
+                                  className="h-1.5"
+                                />
+                              </div>
+                            </button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 shrink-0"
+                              title={`${meta.label}-Empfehlungen kopieren`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const prompt = generateCategoryPrompt(cat as Category)
+                                if (prompt) {
+                                  setPromptDialog({ open: true, prompt, title: `${meta.label} Fixes` })
+                                }
+                              }}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         )
                       })}
                   </div>

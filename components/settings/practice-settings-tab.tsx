@@ -12,13 +12,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
-import { Loader2, Save, Building2, MapPin, Phone, Mail, Globe, X, ChevronsUpDown } from "lucide-react"
+import { Loader2, Save, Building2, MapPin, Phone, Mail, Globe, X, ChevronsUpDown, Printer } from "lucide-react"
 
 interface PracticeSettings {
   name: string
   street: string
   zipCity: string
   phone: string
+  fax: string
   email: string
   website: string
   description: string
@@ -43,6 +44,7 @@ export function PracticeSettingsTab() {
     street: "",
     zipCity: "",
     phone: "",
+    fax: "",
     email: "",
     website: "",
     description: "",
@@ -71,6 +73,7 @@ export function PracticeSettingsTab() {
         street,
         zipCity,
         phone: currentPractice.phone || "",
+        fax: currentPractice.fax || "",
         email: currentPractice.email || "",
         website: currentPractice.website || "",
         description: currentPractice.description || "",
@@ -303,7 +306,7 @@ export function PracticeSettingsTab() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="phone" className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
@@ -314,6 +317,18 @@ export function PracticeSettingsTab() {
                 value={settings.phone}
                 onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
                 placeholder="+49 123 456789"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fax" className="flex items-center gap-2">
+                <Printer className="h-4 w-4" />
+                Fax
+              </Label>
+              <Input
+                id="fax"
+                value={settings.fax}
+                onChange={(e) => setSettings({ ...settings, fax: e.target.value })}
+                placeholder="+49 123 456780"
               />
             </div>
             <div className="space-y-2">

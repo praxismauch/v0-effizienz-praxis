@@ -11,8 +11,6 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useState, Suspense, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Logo } from "@/components/logo"
-import { encryptStorage } from "@/lib/storage-utils"
-import { mapProfileToUser } from "@/lib/user-utils"
 
 function LoginForm() {
   const [email, setEmail] = useState("")
@@ -71,59 +69,26 @@ function LoginForm() {
     }
 
     try {
-      console.log("[v0] Starting login process")
-      
-      // Direct login without clearing session first
+      // Direct login
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (authError) {
-        console.log("[v0] Login error:", authError)
         throw authError
       }
 
-      if (!data.user) {
-        console.log("[v0] No user data received")
+      if (!data.user || !data.session) {
         throw new Error("Keine Benutzerdaten erhalten")
-      }
-
-      setStatus("Sitzung wird eingerichtet...")
-      
-      // Refresh the session to ensure cookies are properly set
-      const { data: { session }, error: refreshError } = await supabase.auth.refreshSession()
-      
-      if (!session || refreshError) {
-        throw new Error("Sitzung konnte nicht eingerichtet werden")
-      }
-
-      // Fetch user profile and store in sessionStorage BEFORE redirecting
-      // This way UserProvider can restore the user immediately on the next page
-      try {
-        const profileRes = await fetch("/api/user/me", {
-          credentials: "include",
-          cache: "no-store",
-        })
-        if (profileRes.ok) {
-          const profileData = await profileRes.json()
-          if (profileData.user) {
-            // Map to User object format that UserProvider expects from sessionStorage
-            const user = mapProfileToUser(profileData.user, data.user.email)
-            const encrypted = await encryptStorage(user, 86400)
-            sessionStorage.setItem("effizienz_current_user", encrypted)
-          }
-        }
-      } catch {
-        // Profile pre-fetch failed - UserProvider will handle it after redirect
       }
 
       setStatus("Weiterleitung zum Dashboard...")
       
-      // Use window.location for a hard navigation to ensure cookies are sent fresh
+      // Hard navigation to ensure fresh cookies are sent to server
       window.location.href = redirectTo
+      return // Prevent any further code execution
     } catch (error: any) {
-      console.log("[v0] Login failed:", error)
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.message) {
         const msg = error.message.toLowerCase()

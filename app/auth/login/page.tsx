@@ -12,6 +12,43 @@ import { useState, Suspense, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Logo } from "@/components/logo"
 
+async function verifySessionWithRetry(maxRetries = 8, initialDelay = 300): Promise<{ success: boolean; user?: any }> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    // Exponential backoff: 300ms, 450ms, 675ms, 1012ms, 1518ms, 2277ms, 3416ms, 5124ms
+    const delay = initialDelay * Math.pow(1.5, attempt)
+
+    // Wait before each attempt to let cookies propagate
+    await new Promise((resolve) => setTimeout(resolve, delay))
+
+    try {
+      const response = await fetch("/api/user/me", {
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.user) {
+          return { success: true, user: data.user }
+        }
+      }
+
+      // 401 means session not ready yet, keep trying
+      if (response.status === 401) {
+        continue
+      }
+    } catch {
+      // Network errors - keep trying
+    }
+  }
+
+  return { success: false }
+}
+
 function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -69,26 +106,47 @@ function LoginForm() {
     }
 
     try {
-      // Direct login
+      console.log("[v0] Starting login process")
+      
+      // Direct login without clearing session first
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (authError) {
+        console.log("[v0] Login error:", authError)
         throw authError
       }
 
-      if (!data.user || !data.session) {
+      if (!data.user) {
+        console.log("[v0] No user data received")
         throw new Error("Keine Benutzerdaten erhalten")
+      }
+
+      console.log("[v0] Login successful, user:", data.user.id)
+      setStatus("Sitzung wird eingerichtet...")
+      
+      // Refresh the session to ensure cookies are properly set
+      const { data: { session }, error: refreshError } = await supabase.auth.refreshSession()
+      console.log("[v0] Session refresh:", session ? "Success" : "Failed", refreshError)
+      
+      if (!session || refreshError) {
+        console.log("[v0] Session refresh failed:", refreshError)
+        throw new Error("Sitzung konnte nicht eingerichtet werden")
       }
 
       setStatus("Weiterleitung zum Dashboard...")
       
-      // Hard navigation to ensure fresh cookies are sent to server
-      window.location.href = redirectTo
-      return // Prevent any further code execution
+      // Small delay to ensure cookies are written
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Use router.push with refresh to ensure server components reload with new session
+      console.log("[v0] Redirecting to:", redirectTo)
+      router.push(redirectTo)
+      router.refresh()
     } catch (error: any) {
+      console.log("[v0] Login failed:", error)
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.message) {
         const msg = error.message.toLowerCase()

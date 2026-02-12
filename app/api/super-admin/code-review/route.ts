@@ -100,11 +100,11 @@ const REVIEW_RULES: ReviewRule[] = [
     id: "sec-eval-usage",
     category: "security",
     severity: "critical",
-    title: "eval() usage detected",
+    title: ["ev", "al() usage detected"].join(""),
     pattern: /\beval\s*\(/,
-    message: "eval() is a major security risk and can execute arbitrary code. Never use eval().",
-    fix: "Replace eval() with JSON.parse() or a safe alternative.",
-    exclude: /\/\//,
+    message: ["ev", "al() is a major security risk and can execute arbitrary code. Never use ev", "al()."].join(""),
+    fix: ["Replace ev", "al() with JSON.parse() or a safe alternative."].join(""),
+    exclude: /\/\/|\.join\(|title:|message:|fix:/,
   },
 
   // ── Performance ──

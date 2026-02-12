@@ -47,6 +47,7 @@ import {
   LayoutPanelLeft,
   MessageSquare,
   Cog,
+  HardDrive,
 } from "lucide-react"
 
 type BadgeType =
@@ -639,16 +640,22 @@ export function SuperAdminSidebarSimple() {
       id: "system",
       label: "System",
       items: [
-        {
-          id: "system",
-          label: "Systemverwaltung",
-          icon: Settings,
-          href: "/super-admin/system",
-          badge: true,
-          badgeType: "backup" as const,
-        },
-        {
-          id: "features",
+  {
+  id: "system",
+  label: "Systemverwaltung",
+  icon: Settings,
+  href: "/super-admin/system",
+  },
+  {
+  id: "backups",
+  label: "Backup",
+  icon: HardDrive,
+  href: "/super-admin/backups",
+  badge: true,
+  badgeType: "backup" as const,
+  },
+  {
+  id: "features",
           label: "Feature-Verwaltung",
           icon: ToggleLeft,
           href: "/super-admin/features",

@@ -44,6 +44,7 @@ import {
   X,
   ExternalLink,
   AlertTriangle,
+  HardDrive,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -894,6 +895,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           label: "Systemverwaltung",
           icon: Settings,
           href: "/super-admin/system",
+        },
+        {
+          id: "backups",
+          label: "Backup",
+          icon: HardDrive,
+          href: "/super-admin/backups",
           badge: true,
           badgeType: "backup" as const,
         },

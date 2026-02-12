@@ -211,7 +211,28 @@ export default function CodeReviewPanel() {
       setProgress(100)
       setProgressLabel(`${json.summary.totalFindings} Findings in ${json.summary.filesScanned} Dateien`)
       setData(json)
-      setTimeout(() => { if (historyData.length > 0 || activeTab === "history") loadHistory() }, 1500)
+
+      // Save to history via client-side POST (fallback in case server-side save fails)
+      try {
+        await fetch("/api/super-admin/form-db-sync-history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            scan_type: "code-review",
+            summary: json.summary,
+            total: json.summary.totalFindings,
+            ok: json.summary.filesScanned - (json.summary.topFiles?.length || 0),
+            warnings: json.summary.warnings,
+            errors: json.summary.critical,
+            duration_ms: json.durationMs,
+          }),
+        })
+      } catch {
+        // Non-critical: history save failed
+      }
+
+      // Reload history after a brief delay
+      setTimeout(() => loadHistory(), 500)
       toast({
         title: "Code Review abgeschlossen",
         description: `${json.summary.totalFindings} Findings: ${json.summary.critical} kritisch, ${json.summary.warnings} Warnungen, ${json.summary.info} Info`,

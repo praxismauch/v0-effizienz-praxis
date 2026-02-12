@@ -611,7 +611,7 @@ export async function GET() {
     // Save to history
     try {
       const supabase = await createServerClient()
-      await supabase.from("form_db_sync_history").insert({
+      const { error: histError } = await supabase.from("form_db_sync_history").insert({
         scan_type: "code-review",
         summary,
         total: summary.totalFindings,
@@ -620,7 +620,12 @@ export async function GET() {
         errors: summary.critical,
         duration_ms: durationMs,
       })
-    } catch { /* history save error, non-critical */ }
+      if (histError) {
+        console.error("Code review history save failed:", histError.message)
+      }
+    } catch (histSaveErr: any) {
+      console.error("Code review history save exception:", histSaveErr?.message)
+    }
 
     return NextResponse.json({
       findings: allFindings,

@@ -27,13 +27,13 @@ export async function GET(request: Request) {
     const { data, error } = await query
 
     if (error) {
-      console.error("[v0] History fetch error:", error)
+      console.error("History fetch error:", error)
       return NextResponse.json({ error: "Fehler beim Laden der Historie" }, { status: 500 })
     }
 
     return NextResponse.json({ history: data || [] })
   } catch (error) {
-    console.error("[v0] History API error:", error)
+    console.error("History API error:", error)
     return NextResponse.json({ error: "Fehler beim Laden der Historie" }, { status: 500 })
   }
 }
@@ -67,13 +67,13 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.error("[v0] History save error:", error)
+      console.error("History save error:", error)
       return NextResponse.json({ error: "Fehler beim Speichern" }, { status: 500 })
     }
 
     return NextResponse.json({ entry: data })
   } catch (error) {
-    console.error("[v0] History POST error:", error)
+    console.error("History POST error:", error)
     return NextResponse.json({ error: "Fehler beim Speichern" }, { status: 500 })
   }
 }

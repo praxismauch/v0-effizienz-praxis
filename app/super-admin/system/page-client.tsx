@@ -1,14 +1,12 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings, Activity, Key, AlertTriangle } from "lucide-react"
+
+import { Settings, Key } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
-import Link from "next/link"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 const SystemSettingsTabs = dynamic(() => import("@/components/system-settings-tabs"), {
   loading: () => (
@@ -43,18 +41,14 @@ function SystemContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Systemverwaltung</h1>
-        <p className="text-muted-foreground mt-2">Verwalten Sie System-Einstellungen, Logs und APIs</p>
+        <p className="text-muted-foreground mt-2">Verwalten Sie System-Einstellungen und APIs</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="einstellungen" className="gap-2">
             <Settings className="h-4 w-4" />
             Einstellungen
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-2">
-            <Activity className="h-4 w-4" />
-            Logs
           </TabsTrigger>
           <TabsTrigger value="api" className="gap-2">
             <Key className="h-4 w-4" />
@@ -64,28 +58,6 @@ function SystemContent() {
 
         <TabsContent value="einstellungen" className="mt-6 space-y-4">
           <SystemSettingsTabs />
-        </TabsContent>
-
-        <TabsContent value="logs" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Error Logging
-              </CardTitle>
-              <CardDescription>
-                Die vollstaendige Fehlerverwaltung mit Filtern, Statistiken und Status-Management finden Sie im dedizierten Error Logging Bereich.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/super-admin/logging">
-                <Button className="gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Error Logging oeffnen
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="api" className="mt-6 space-y-4">

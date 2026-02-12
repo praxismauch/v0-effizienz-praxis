@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -91,21 +91,55 @@ export default function FormDbSyncPanel() {
     prompt: "",
     title: "",
   })
+  const [progress, setProgress] = useState(0)
+  const [progressLabel, setProgressLabel] = useState("")
+  const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (progressInterval.current) clearInterval(progressInterval.current)
+    }
+  }, [])
 
   const runCheck = useCallback(async () => {
     setIsLoading(true)
+    setProgress(0)
+    setProgressLabel("Verbinde mit Datenbank...")
+
+    // Simulate progress while the API processes
+    let currentProgress = 0
+    progressInterval.current = setInterval(() => {
+      currentProgress += Math.random() * 8 + 2
+      if (currentProgress > 90) currentProgress = 90
+      setProgress(currentProgress)
+
+      if (currentProgress < 20) setProgressLabel("Verbinde mit Datenbank...")
+      else if (currentProgress < 40) setProgressLabel("Lade Tabellen-Schema...")
+      else if (currentProgress < 60) setProgressLabel("Analysiere Spalten...")
+      else if (currentProgress < 80) setProgressLabel("Kategorisiere Tabellen...")
+      else setProgressLabel("Erstelle Bericht...")
+    }, 300)
+
     try {
       const res = await fetch("/api/super-admin/form-db-sync")
       if (!res.ok) throw new Error("Fehler beim Laden")
       const json = await res.json()
+
+      if (progressInterval.current) clearInterval(progressInterval.current)
+      setProgress(100)
+      setProgressLabel(`${json.summary.total} Tabellen analysiert`)
       setData(json)
 
       toast({
         title: "Sync-Check abgeschlossen",
-        description: `${json.summary.ok}/${json.summary.total} Formulare OK, ${json.summary.errors} Fehler, ${json.summary.warnings} Warnungen`,
+        description: `${json.summary.ok}/${json.summary.total} Tabellen OK, ${json.summary.errors} Fehler, ${json.summary.warnings} Warnungen`,
         variant: json.summary.errors > 0 ? "destructive" : "default",
       })
     } catch (error) {
+      if (progressInterval.current) clearInterval(progressInterval.current)
+      setProgress(0)
+      setProgressLabel("")
       toast({
         title: "Fehler",
         description: "Form-DB Sync-Check konnte nicht ausgefuehrt werden",
@@ -317,6 +351,17 @@ Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
               </Button>
             )}
           </div>
+
+          {/* Progress Bar */}
+          {(isLoading || progress > 0) && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{progressLabel}</span>
+                <span className="font-mono text-muted-foreground">{Math.round(progress)}%</span>
+              </div>
+              <Progress value={progress} className="h-2 transition-all duration-300" />
+            </div>
+          )}
         </CardContent>
       </Card>
 

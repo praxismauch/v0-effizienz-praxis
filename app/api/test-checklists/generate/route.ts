@@ -31,51 +31,27 @@ export async function POST() {
 
     console.log("[v0] Generate checklist - Found templates:", templates?.length || 0)
 
-    // Create checklist
-    console.log("[v0] Generate checklist - Creating checklist")
-    const { data: checklist, error: checklistError } = await supabase
-      .from("test_checklists")
-      .insert({
-        title: `Test-Checkliste ${new Date().toLocaleDateString("de-DE")}`,
-        description: `Generiert am ${new Date().toLocaleString("de-DE")}`,
-        created_by: user.id,
-      })
-      .select()
-      .single()
+    // Return templates directly since we don't have a separate checklists table
+    // The templates themselves serve as the checklist items
+    console.log("[v0] Generate checklist - Returning templates as checklist")
 
-    if (checklistError) {
-      console.error("[v0] Generate checklist - Checklist error:", checklistError)
-      throw checklistError
-    }
-
-    console.log("[v0] Generate checklist - Checklist created:", checklist.id)
-
-    // Create checklist items from templates
-    if (templates && templates.length > 0) {
-      console.log("[v0] Generate checklist - Creating items from templates")
-      const items = templates.map((template) => ({
-        checklist_id: checklist.id,
+    const result = {
+      id: crypto.randomUUID(),
+      title: `Test-Checkliste ${new Date().toLocaleDateString("de-DE")}`,
+      description: `Generiert am ${new Date().toLocaleString("de-DE")}`,
+      created_by: user.id,
+      items: templates?.map((template) => ({
         template_id: template.id,
         category_id: template.category_id,
         title: template.title,
         description: template.description,
         display_order: template.display_order,
-      }))
-
-      const { error: itemsError } = await supabase.from("test_checklist_items").insert(items)
-
-      if (itemsError) {
-        console.error("[v0] Generate checklist - Items error:", itemsError)
-        throw itemsError
-      }
-
-      console.log("[v0] Generate checklist - Items created:", items.length)
-    } else {
-      console.log("[v0] Generate checklist - No templates found, creating empty checklist")
+        completed: false,
+      })) || [],
     }
 
-    console.log("[v0] Generate checklist - Success")
-    return NextResponse.json(checklist)
+    console.log("[v0] Generate checklist - Success, items:", result.items.length)
+    return NextResponse.json(result)
   } catch (error) {
     console.error("[v0] Error generating test checklist:", error)
     return NextResponse.json(

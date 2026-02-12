@@ -1,15 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
-import { Loader2, Save, Building2, MapPin, Phone, Mail, Globe } from "lucide-react"
+import { Loader2, Save, Building2, MapPin, Phone, Mail, Globe, X, ChevronsUpDown } from "lucide-react"
 
 interface PracticeSettings {
   name: string
@@ -20,7 +23,7 @@ interface PracticeSettings {
   website: string
   description: string
   practice_type: string
-  specialization: string
+  specializations: string[]
 }
 
 interface SpecialtyGroup {
@@ -34,6 +37,7 @@ export function PracticeSettingsTab() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [specialtyGroups, setSpecialtyGroups] = useState<SpecialtyGroup[]>([])
+  const [specialtyOpen, setSpecialtyOpen] = useState(false)
   const [settings, setSettings] = useState<PracticeSettings>({
     name: "",
     street: "",
@@ -43,7 +47,7 @@ export function PracticeSettingsTab() {
     website: "",
     description: "",
     practice_type: "",
-    specialization: "",
+    specializations: [],
   })
 
   useEffect(() => {
@@ -55,6 +59,13 @@ export function PracticeSettingsTab() {
       const zip = addressParts[2] || ""
       const zipCity = [zip, city].filter(Boolean).join(" ")
 
+      // Parse specialization: stored as comma-separated string in DB
+      const rawSpec = currentPractice.specialization || ""
+      const specs = rawSpec
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+
       setSettings({
         name: currentPractice.name || "",
         street,
@@ -64,7 +75,7 @@ export function PracticeSettingsTab() {
         website: currentPractice.website || "",
         description: currentPractice.description || "",
         practice_type: currentPractice.practice_type || "",
-        specialization: currentPractice.specialization || "",
+        specializations: specs,
       })
     }
   }, [currentPractice])
@@ -95,8 +106,8 @@ export function PracticeSettingsTab() {
       const city = zipCityParts.slice(1).join(" ") || ""
       const address = [settings.street, city, zip].filter(Boolean).join(", ")
 
-      const { street, zipCity, ...rest } = settings
-      const payload = { ...rest, address }
+      const { street, zipCity, specializations, ...rest } = settings
+      const payload = { ...rest, address, specialization: specializations.join(", ") }
 
       const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
         method: "PATCH",
@@ -174,24 +185,80 @@ export function PracticeSettingsTab() {
             </div>
           </div>
 
-              <div className="space-y-2">
-              <Label htmlFor="specialization">Fachrichtung</Label>
-              <Select
-                value={settings.specialization}
-                onValueChange={(value) => setSettings({ ...settings, specialization: value })}
-              >
-                <SelectTrigger id="specialization">
-                  <SelectValue placeholder="Fachrichtung auswaehlen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {specialtyGroups.map((group) => (
-                    <SelectItem key={group.id} value={group.name}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              </div>
+          <div className="space-y-2">
+            <Label>Fachrichtungen</Label>
+            <Popover open={specialtyOpen} onOpenChange={setSpecialtyOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={specialtyOpen}
+                  className="w-full justify-between font-normal h-auto min-h-10"
+                >
+                  {settings.specializations.length > 0 ? (
+                    <span className="flex flex-wrap gap-1">
+                      {settings.specializations.map((spec) => (
+                        <Badge key={spec} variant="secondary" className="text-xs">
+                          {spec}
+                          <button
+                            type="button"
+                            className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSettings({
+                                ...settings,
+                                specializations: settings.specializations.filter((s) => s !== spec),
+                              })
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                            <span className="sr-only">{spec} entfernen</span>
+                          </button>
+                        </Badge>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Fachrichtungen auswahlen...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <div className="max-h-60 overflow-y-auto p-2 space-y-1">
+                  {specialtyGroups.map((group) => {
+                    const isSelected = settings.specializations.includes(group.name)
+                    return (
+                      <label
+                        key={group.id}
+                        className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSettings({
+                                ...settings,
+                                specializations: [...settings.specializations, group.name],
+                              })
+                            } else {
+                              setSettings({
+                                ...settings,
+                                specializations: settings.specializations.filter((s) => s !== group.name),
+                              })
+                            }
+                          }}
+                        />
+                        {group.name}
+                      </label>
+                    )
+                  })}
+                  {specialtyGroups.length === 0 && (
+                    <p className="text-sm text-muted-foreground px-2 py-1.5">Keine Fachrichtungen gefunden</p>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Beschreibung</Label>

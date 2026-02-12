@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch all global KPI categories
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Fetch global KPI categories (templates without practice_id)
     const { data: categories, error } = await supabase
@@ -62,7 +62,7 @@ export async function GET() {
 // POST - Create a new global KPI category
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
     const { name, description, parameters, color, isActive, isTemplate } = body
 

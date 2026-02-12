@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // PUT - Update a global KPI template
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +22,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       groupIds,
     } = body
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     const now = new Date().toISOString()
 
     const { data, error } = await supabase
@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Check if parameter is being used by any practices
     const { data: usage, error: usageError } = await supabase

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // PUT - Update a global KPI category
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -8,7 +8,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
     const { name, description, parameters, color, isActive, isTemplate } = body
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     const { data, error } = await supabase
       .from("global_parameter_groups")
@@ -26,7 +26,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .maybeSingle()
 
     if (error) {
-      console.error("[v0] Error updating global KPI category:", error)
+      console.error("Error updating global KPI category:", error)
       return NextResponse.json({ error: "Failed to update global KPI category" }, { status: 500 })
     }
 
@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
   } catch (error) {
-    console.error("[v0] Error updating global KPI category:", error)
+    console.error("Error updating global KPI category:", error)
     return NextResponse.json({ error: "Failed to update global KPI category" }, { status: 500 })
   }
 }
@@ -62,12 +62,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     const { data, error } = await supabase.from("global_parameter_groups").delete().eq("id", id).select()
 
     if (error) {
-      console.error("[v0] Supabase delete error:", {
+      console.error("Supabase delete error:", {
         message: error.message,
         code: error.code,
         details: error.details,
@@ -78,7 +78,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true, deleted: data })
   } catch (error: any) {
-    console.error("[v0] Error deleting global KPI category:", {
+    console.error("Error deleting global KPI category:", {
       message: error?.message,
       stack: error?.stack,
     })

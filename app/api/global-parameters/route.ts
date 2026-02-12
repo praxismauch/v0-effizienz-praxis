@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // GET - Fetch all global KPI templates
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     const {
       data: { user },
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 // POST - Create a new global KPI template
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     const {
       data: { user },

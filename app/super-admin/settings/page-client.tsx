@@ -22,7 +22,7 @@ import {
   Users,
   Star,
   FileText,
-
+  Target,
   Workflow,
   Briefcase,
   TrendingUp,

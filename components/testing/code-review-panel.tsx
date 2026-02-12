@@ -242,6 +242,28 @@ export default function CodeReviewPanel() {
     toast({ title: "Kopiert!", description: "Empfehlungen in die Zwischenablage kopiert" })
   }
 
+  // ─── Format a single finding into a clean text block ───
+  const formatFinding = (f: Finding, index: number, showSeverity = false): string => {
+    const lines: string[] = []
+    const severityTag = showSeverity ? ` [${SEVERITY_META[f.severity].label}]` : ""
+    lines.push(`${index}. ${f.title}${severityTag}`)
+    lines.push(`   Datei: ${f.file} (Zeile ${f.line})`)
+    lines.push(`   Problem: ${f.message}`)
+    if (f.code) lines.push(`   Code: ${f.code.trim()}`)
+    if (f.fix) lines.push(`   Loesung: ${f.fix}`)
+    return lines.join("\n")
+  }
+
+  // ─── Group findings by file for grouped output ───
+  const groupByFile = (findings: Finding[]): Map<string, Finding[]> => {
+    const map = new Map<string, Finding[]>()
+    for (const f of findings) {
+      if (!map.has(f.file)) map.set(f.file, [])
+      map.get(f.file)!.push(f)
+    }
+    return map
+  }
+
   // ─── Generate v0 prompt from all findings ───
   const generateAllRecommendationsPrompt = (): string => {
     if (!data) return ""
@@ -250,66 +272,88 @@ export default function CodeReviewPanel() {
     const warningFindings = data.findings.filter((f) => f.severity === "warning")
     const infoFindings = data.findings.filter((f) => f.severity === "info")
 
-    let prompt = `## Code Review Ergebnisse: ${data.summary.totalFindings} Findings\n\n`
-    prompt += `Zusammenfassung: ${data.summary.filesScanned} Dateien gescannt in ${(data.durationMs / 1000).toFixed(1)}s.\n`
-    prompt += `${data.summary.critical} kritisch, ${data.summary.warnings} Warnungen, ${data.summary.info} Info.\n\n`
+    const lines: string[] = []
+
+    lines.push("## KRITISCHE Code-Probleme sofort beheben!")
+    lines.push("")
+    lines.push(`Scan-Ergebnis: ${data.summary.totalFindings} Findings in ${data.summary.filesScanned} Dateien (${(data.durationMs / 1000).toFixed(1)}s)`)
+    lines.push(`  - ${data.summary.critical} Kritisch | ${data.summary.warnings} Warnungen | ${data.summary.info} Info`)
+    lines.push("")
 
     if (criticalFindings.length > 0) {
-      prompt += `### KRITISCH (${criticalFindings.length}) - Sofort beheben!\n\n`
-      criticalFindings.forEach((f) => {
-        prompt += `**${f.title}** in \`${f.file}\` (Zeile ${f.line})\n`
-        prompt += `- ${f.message}\n`
-        if (f.code) prompt += `- Code: \`${f.code}\`\n`
-        if (f.fix) prompt += `- Fix: ${f.fix}\n`
-        prompt += `\n`
+      lines.push(`${"=".repeat(60)}`)
+      lines.push(`  KRITISCH (${criticalFindings.length}) - Sofort beheben!`)
+      lines.push(`${"=".repeat(60)}`)
+      lines.push("")
+      const byFile = groupByFile(criticalFindings)
+      let idx = 1
+      byFile.forEach((findings, file) => {
+        lines.push(`  Datei: ${file}`)
+        lines.push(`  ${"-".repeat(50)}`)
+        for (const f of findings) {
+          lines.push(formatFinding(f, idx++))
+          lines.push("")
+        }
       })
     }
 
     if (warningFindings.length > 0) {
-      prompt += `### WARNUNGEN (${warningFindings.length})\n\n`
-      // Group by category for cleaner output
-      const byCategory = new Map<string, typeof warningFindings>()
+      lines.push(`${"=".repeat(60)}`)
+      lines.push(`  WARNUNGEN (${warningFindings.length})`)
+      lines.push(`${"=".repeat(60)}`)
+      lines.push("")
+      // Group by category, then by file
+      const byCategory = new Map<string, Finding[]>()
       warningFindings.forEach((f) => {
         if (!byCategory.has(f.category)) byCategory.set(f.category, [])
         byCategory.get(f.category)!.push(f)
       })
+      let idx = 1
       byCategory.forEach((findings, category) => {
         const meta = CATEGORY_META[category as Category]
-        prompt += `#### ${meta?.label || category} (${findings.length})\n\n`
-        findings.forEach((f) => {
-          prompt += `- **${f.title}** in \`${f.file}\` (Zeile ${f.line}): ${f.message}\n`
-          if (f.fix) prompt += `  - Fix: ${f.fix}\n`
-        })
-        prompt += `\n`
+        lines.push(`  --- ${meta?.label || category} (${findings.length}) ---`)
+        lines.push("")
+        for (const f of findings) {
+          lines.push(formatFinding(f, idx++))
+          lines.push("")
+        }
       })
     }
 
     if (infoFindings.length > 0) {
-      prompt += `### INFO/VORSCHLAEGE (${infoFindings.length})\n\n`
-      const byCategory = new Map<string, typeof infoFindings>()
+      lines.push(`${"=".repeat(60)}`)
+      lines.push(`  INFO & VORSCHLAEGE (${infoFindings.length})`)
+      lines.push(`${"=".repeat(60)}`)
+      lines.push("")
+      const byCategory = new Map<string, Finding[]>()
       infoFindings.forEach((f) => {
         if (!byCategory.has(f.category)) byCategory.set(f.category, [])
         byCategory.get(f.category)!.push(f)
       })
+      let idx = 1
       byCategory.forEach((findings, category) => {
         const meta = CATEGORY_META[category as Category]
-        prompt += `#### ${meta?.label || category} (${findings.length})\n\n`
-        // Limit info findings per category to keep prompt manageable
+        lines.push(`  --- ${meta?.label || category} (${findings.length}) ---`)
+        lines.push("")
         const shown = findings.slice(0, 10)
-        shown.forEach((f) => {
-          prompt += `- **${f.title}** in \`${f.file}\` (Zeile ${f.line}): ${f.message}\n`
-          if (f.fix) prompt += `  - Fix: ${f.fix}\n`
-        })
-        if (findings.length > 10) prompt += `- ... und ${findings.length - 10} weitere\n`
-        prompt += `\n`
+        for (const f of shown) {
+          lines.push(formatFinding(f, idx++))
+          lines.push("")
+        }
+        if (findings.length > 10) {
+          lines.push(`  ... und ${findings.length - 10} weitere Findings in dieser Kategorie`)
+          lines.push("")
+        }
       })
     }
 
-    prompt += `\n---\n\nBitte analysiere und behebe die oben genannten Code Review Findings. `
-    prompt += `Priorisiere kritische Sicherheitsprobleme, dann Warnungen. `
-    prompt += `Fuer Info-Findings schlage Verbesserungen vor, die die Code-Qualitaet steigern.`
+    lines.push(`${"=".repeat(60)}`)
+    lines.push("")
+    lines.push("Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitaetsprobleme.")
+    lines.push("Danach die Warnungen nach Prioritaet abarbeiten.")
+    lines.push("Info-Findings sind Verbesserungsvorschlaege fuer hoehere Code-Qualitaet.")
 
-    return prompt
+    return lines.join("\n")
   }
 
   // ─── Generate prompt for a specific category ───
@@ -319,17 +363,53 @@ export default function CodeReviewPanel() {
     if (findings.length === 0) return ""
 
     const meta = CATEGORY_META[category]
-    let prompt = `## Code Review: ${meta.label} (${findings.length} Findings)\n\n`
-    findings.forEach((f) => {
-      prompt += `**${f.title}** in \`${f.file}\` (Zeile ${f.line})\n`
-      prompt += `- Schwere: ${SEVERITY_META[f.severity].label}\n`
-      prompt += `- ${f.message}\n`
-      if (f.code) prompt += `- Code: \`${f.code}\`\n`
-      if (f.fix) prompt += `- Fix: ${f.fix}\n`
-      prompt += `\n`
-    })
-    prompt += `Bitte behebe alle oben genannten ${meta.label}-Probleme.`
-    return prompt
+    const lines: string[] = []
+
+    lines.push(`## Code Review: ${meta.label} Fixes`)
+    lines.push("")
+    lines.push(`${findings.length} Findings in der Kategorie "${meta.label}" gefunden.`)
+    lines.push("")
+    lines.push(`${"=".repeat(60)}`)
+    lines.push("")
+
+    // Group by severity
+    const critical = findings.filter((f) => f.severity === "critical")
+    const warnings = findings.filter((f) => f.severity === "warning")
+    const info = findings.filter((f) => f.severity === "info")
+
+    let idx = 1
+    if (critical.length > 0) {
+      lines.push(`  KRITISCH (${critical.length}):`)
+      lines.push("")
+      for (const f of critical) {
+        lines.push(formatFinding(f, idx++, true))
+        lines.push("")
+      }
+    }
+
+    if (warnings.length > 0) {
+      lines.push(`  WARNUNGEN (${warnings.length}):`)
+      lines.push("")
+      for (const f of warnings) {
+        lines.push(formatFinding(f, idx++, true))
+        lines.push("")
+      }
+    }
+
+    if (info.length > 0) {
+      lines.push(`  VORSCHLAEGE (${info.length}):`)
+      lines.push("")
+      for (const f of info) {
+        lines.push(formatFinding(f, idx++, true))
+        lines.push("")
+      }
+    }
+
+    lines.push(`${"=".repeat(60)}`)
+    lines.push("")
+    lines.push(`Bitte behebe alle oben genannten ${meta.label}-Probleme.`)
+
+    return lines.join("\n")
   }
 
   // ─── Filtered findings ───

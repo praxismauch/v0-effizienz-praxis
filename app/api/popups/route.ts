@@ -47,19 +47,11 @@ export async function POST(request: Request) {
       process.env.NEXT_PUBLIC_VERCEL_ENV !== "production" ||
       process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
 
-    console.log("[v0] POST /api/popups - isDevMode:", isDevMode, {
-      vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV,
-      autoLogin: process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN,
-      hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    })
-
     if (!isDevMode) {
       const authSupabase = await createServerClient()
       const {
         data: { user },
       } = await authSupabase.auth.getUser()
-
-      console.log("[v0] User check:", { hasUser: !!user, userId: user?.id })
 
       if (!user) {
         return NextResponse.json({ error: "Unauthorized - Authentication required" }, { status: 401 })

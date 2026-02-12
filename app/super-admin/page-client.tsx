@@ -237,6 +237,13 @@ export default function SuperAdminPageClient() {
   const { isSuperAdmin, loading, currentUser } = useUser()
   const router = useRouter()
 
+  // Redirect if not super admin - use useEffect to avoid setState during render
+  useEffect(() => {
+    if (!loading && !isSuperAdmin) {
+      router.push("/dashboard?error=access_denied")
+    }
+  }, [isSuperAdmin, loading, router])
+
   // Show loading skeleton while checking auth
   if (loading) {
     return (
@@ -258,9 +265,8 @@ export default function SuperAdminPageClient() {
     )
   }
 
-  // Redirect if not super admin
+  // Show access denied while redirecting
   if (!isSuperAdmin) {
-    router.push("/dashboard?error=access_denied")
     return (
       <div className="flex h-full items-center justify-center">
         <Card className="max-w-md">

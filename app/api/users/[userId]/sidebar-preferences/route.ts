@@ -112,6 +112,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites, single_group_mode } = body
 
+    // For super-admin context, don't try to persist to database (practice_id won't exist in practices table)
+    if (practice_id === "super-admin" || practice_id === "super_admin") {
+      return NextResponse.json({ 
+        preferences: { 
+          expanded_groups: expanded_groups || [],
+          expanded_items: expanded_items || {},
+          is_collapsed: is_collapsed || false,
+          favorites: favorites || [],
+          single_group_mode: single_group_mode ?? true,
+          collapsed_sections: []
+        },
+        note: "Super-admin preferences stored in localStorage only"
+      })
+    }
+
     const effectivePracticeId = String(practice_id || "1")
 
     const adminClient = await createAdminClient()

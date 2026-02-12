@@ -3,12 +3,29 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { FolderPlus, Plus, Pencil, Trash2, GripVertical, Sparkles, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { useState, useEffect } from "react"
 import type { OrgaCategory } from "@/types/orgaCategory"
+
+const DEFAULT_COLORS = [
+  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+  "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
+]
 
 export function OrgaCategoriesManager() {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
@@ -18,8 +35,85 @@ export function OrgaCategoriesManager() {
   const [isLoading, setIsLoading] = useState(true)
   const [isInitializing, setIsInitializing] = useState(false)
   const [editingCategory, setEditingCategory] = useState<OrgaCategory | null>(null)
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
+
+  // Form state
+  const [formName, setFormName] = useState("")
+  const [formDescription, setFormDescription] = useState("")
+  const [formColor, setFormColor] = useState("#3b82f6")
+  const [formIsActive, setFormIsActive] = useState(true)
+
+  const openCreateDialog = () => {
+    setEditingCategory(null)
+    setFormName("")
+    setFormDescription("")
+    setFormColor("#3b82f6")
+    setFormIsActive(true)
+    setIsDialogOpen(true)
+  }
+
+  const openEditDialog = (category: OrgaCategory) => {
+    setEditingCategory(category)
+    setFormName(category.name)
+    setFormDescription(category.description || "")
+    setFormColor(category.color || "#3b82f6")
+    setFormIsActive(category.is_active)
+    setIsDialogOpen(true)
+  }
+
+  const handleSubmit = async () => {
+    if (!formName.trim() || !practiceId) return
+
+    setIsSaving(true)
+    try {
+      const url = editingCategory
+        ? `/api/practices/${practiceId}/orga-categories/${editingCategory.id}`
+        : `/api/practices/${practiceId}/orga-categories`
+      const method = editingCategory ? "PATCH" : "POST"
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formName.trim(),
+          description: formDescription.trim(),
+          color: formColor,
+          is_active: formIsActive,
+        }),
+      })
+
+      if (!response.ok) throw new Error("Request failed")
+
+      toast.success(editingCategory ? "Kategorie aktualisiert" : "Kategorie erstellt")
+      setIsDialogOpen(false)
+      await fetchCategories()
+    } catch (error) {
+      console.error("Error saving category:", error)
+      toast.error("Fehler beim Speichern der Kategorie")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async (categoryId: string) => {
+    if (!practiceId) return
+
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/orga-categories/${categoryId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) throw new Error("Delete failed")
+
+      toast.success("Kategorie geloescht")
+      await fetchCategories()
+    } catch (error) {
+      console.error("Error deleting category:", error)
+      toast.error("Fehler beim Loeschen der Kategorie")
+    }
+  }
 
   useEffect(() => {
     if (practiceId && !practiceLoading) {
@@ -154,7 +248,7 @@ export function OrgaCategoriesManager() {
               </>
             )}
           </Button>
-          <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline">
+          <Button onClick={openCreateDialog} variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Neue Kategorie
           </Button>
@@ -170,7 +264,7 @@ export function OrgaCategoriesManager() {
           <h2 className="text-lg font-semibold">Organisationskategorien</h2>
           <p className="text-sm text-muted-foreground">Verwalten Sie Ihre Aufgabenkategorien</p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={openCreateDialog}>
           <Plus className="h-4 w-4 mr-2" />
           Neue Kategorie
         </Button>
@@ -180,12 +274,13 @@ export function OrgaCategoriesManager() {
         {categories.map((category) => (
           <Card
             key={category.id}
-            className="group relative overflow-hidden border-2 hover:shadow-md transition-all duration-200"
+            className="group relative overflow-hidden border-2 hover:shadow-md transition-all duration-200 cursor-pointer"
             style={{ borderLeftWidth: "6px", borderLeftColor: category.color || "#3b82f6" }}
+            onClick={() => openEditDialog(category)}
           >
             <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="cursor-grab active:cursor-grabbing">
+                <div className="cursor-grab active:cursor-grabbing" onClick={(e) => e.stopPropagation()}>
                   <GripVertical className="h-5 w-5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                 </div>
                 <div
@@ -213,15 +308,21 @@ export function OrgaCategoriesManager() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => setEditingCategory(category)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openEditDialog(category)
+                  }}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(category.id)
+                  }}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -230,6 +331,86 @@ export function OrgaCategoriesManager() {
           </Card>
         ))}
       </div>
+
+      {/* Create / Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCategory ? "Kategorie bearbeiten" : "Neue Kategorie"}</DialogTitle>
+            <DialogDescription>
+              {editingCategory
+                ? "Bearbeiten Sie die Eigenschaften dieser Kategorie"
+                : "Erstellen Sie eine neue Organisationskategorie"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="cat-name">Name</Label>
+              <Input
+                id="cat-name"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="z.B. Patientenversorgung"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cat-description">Beschreibung</Label>
+              <Textarea
+                id="cat-description"
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+                placeholder="Kurze Beschreibung der Kategorie"
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Farbe</Label>
+              <div className="flex flex-wrap gap-2">
+                {DEFAULT_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className="w-8 h-8 rounded-lg border-2 transition-all"
+                    style={{
+                      backgroundColor: color,
+                      borderColor: formColor === color ? "var(--foreground)" : "transparent",
+                      transform: formColor === color ? "scale(1.15)" : "scale(1)",
+                    }}
+                    onClick={() => setFormColor(color)}
+                  />
+                ))}
+                <Input
+                  type="color"
+                  value={formColor}
+                  onChange={(e) => setFormColor(e.target.value)}
+                  className="w-8 h-8 p-0 border-0 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="cat-active">Aktiv</Label>
+              <Switch
+                id="cat-active"
+                checked={formIsActive}
+                onCheckedChange={setFormIsActive}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSubmit} disabled={!formName.trim() || isSaving}>
+              {isSaving ? "Speichern..." : editingCategory ? "Aktualisieren" : "Erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

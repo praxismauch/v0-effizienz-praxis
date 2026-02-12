@@ -16,13 +16,17 @@ import { FAQTab } from "./components/faq-tab"
 import { AIAssistantTab } from "./components/ai-assistant-tab"
 
 // Import data and types
-import { helpCategories, helpArticles, videoTutorials, faqs, learningPaths, suggestedQuestions } from "./data"
+import { helpCategories, helpArticles, videoTutorials, faqs, learningPaths, suggestedQuestions, quickActions } from "./data"
 import type { HelpArticle, VideoTutorial, FAQ, LearningPath, HelpCategory } from "./types"
 
 export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("overview")
+  const [sortBy, setSortBy] = useState<"popular" | "recent" | "alphabetical">("popular")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [selectedArticle, setSelectedArticle] = useState<HelpArticle | null>(null)
+  const [selectedVideo, setSelectedVideo] = useState<VideoTutorial | null>(null)
 
   // Filter articles based on search and category
   const filteredArticles = helpArticles.filter((article) => {
@@ -131,8 +135,11 @@ export default function HelpPage() {
               <OverviewTab
                 categories={helpCategories}
                 articles={helpArticles}
+                quickActions={quickActions}
+                selectedCategory={selectedCategory}
                 onCategorySelect={handleCategorySelect}
-                onArticleSelect={() => setActiveTab("articles")}
+                onArticleSelect={(article) => setSelectedArticle(article)}
+                onTabChange={setActiveTab}
               />
             </TabsContent>
 
@@ -142,14 +149,18 @@ export default function HelpPage() {
                 articles={filteredArticles}
                 categories={helpCategories}
                 selectedCategory={selectedCategory}
-                onCategorySelect={setSelectedCategory}
-                searchQuery={searchQuery}
+                onCategoryChange={setSelectedCategory}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                onArticleSelect={(article) => setSelectedArticle(article)}
               />
             </TabsContent>
 
             {/* Videos Tab */}
             <TabsContent value="videos">
-              <VideosTab videos={filteredVideos} />
+              <VideosTab videos={filteredVideos} onSelectVideo={(video) => setSelectedVideo(video)} />
             </TabsContent>
 
             {/* Learning Paths Tab */}

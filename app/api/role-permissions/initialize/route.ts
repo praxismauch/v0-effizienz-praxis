@@ -21,320 +21,107 @@ interface PermissionDef {
 }
 
 const permissionDefinitions: PermissionDef[] = [
-  // Übersicht
-  {
-    key: "dashboard",
-    category: "Übersicht",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, false],
-    manager: [true, false, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "analytics",
-    category: "Übersicht",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, false],
-    manager: [true, false, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
+  // ============================================
+  // Uebersicht
+  // ============================================
+  { key: "dashboard", category: "Übersicht", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [true, false, false, false] },
+  { key: "ai_analysis", category: "Übersicht", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "academy", category: "Übersicht", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [true, false, false, false] },
+  { key: "analytics", category: "Übersicht", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
 
-  // Praxismanagement
-  {
-    key: "leitbild",
-    category: "Praxismanagement",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, false, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "wunschpatient",
-    category: "Praxismanagement",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "profile",
-    category: "Praxismanagement",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, false],
-    manager: [true, false, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-
-  // Team & Personal
-  {
-    key: "team",
-    category: "Team & Personal",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, true, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "hiring",
-    category: "Team & Personal",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, false, false, false],
-    member: [false, false, false, false],
-    viewer: [false, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "training",
-    category: "Team & Personal",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, true, false],
-    member: [true, true, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "skills",
-    category: "Team & Personal",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "responsibilities",
-    category: "Team & Personal",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, true, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-
+  // ============================================
   // Planung & Organisation
-  {
-    key: "calendar",
-    category: "Planung & Organisation",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, true, false],
-    member: [true, true, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "tasks",
-    category: "Planung & Organisation",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, true, false],
-    member: [true, true, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "goals",
-    category: "Planung & Organisation",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "workflows",
-    category: "Planung & Organisation",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, false, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
+  // ============================================
+  { key: "calendar", category: "Planung & Organisation", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [true, false, false, false] },
+  { key: "dienstplan", category: "Planung & Organisation", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "zeiterfassung", category: "Planung & Organisation", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [true, true, false, false] },
+  { key: "tasks", category: "Planung & Organisation", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "goals", category: "Planung & Organisation", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "workflows", category: "Planung & Organisation", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "responsibilities", category: "Planung & Organisation", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
 
+  // ============================================
   // Daten & Dokumente
-  {
-    key: "documents",
-    category: "Daten & Dokumente",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, true, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "knowledge",
-    category: "Daten & Dokumente",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "contacts",
-    category: "Daten & Dokumente",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, true, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "kpi",
-    category: "Daten & Dokumente",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
+  // ============================================
+  { key: "practice_journals", category: "Daten & Dokumente", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "documents", category: "Daten & Dokumente", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [true, false, false, false] },
+  { key: "knowledge", category: "Daten & Dokumente", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "protocols", category: "Daten & Dokumente", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "contacts", category: "Daten & Dokumente", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
 
-  // Infrastruktur
-  {
-    key: "rooms",
-    category: "Infrastruktur",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, false, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "workplaces",
-    category: "Infrastruktur",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, false, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "equipment",
-    category: "Infrastruktur",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
+  // ============================================
+  // Strategie & Fuehrung
+  // ============================================
+  { key: "strategy_journey", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "leadership", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "wellbeing", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "qualitaetszirkel", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "leitbild", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "roi_analysis", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "igel_analysis", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "competitor_analysis", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "wunschpatient", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
 
-  // Finanzen & Abrechnung
-  {
-    key: "billing",
-    category: "Finanzen & Abrechnung",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, false, false, false],
-    member: [false, false, false, false],
-    viewer: [false, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "reports",
-    category: "Finanzen & Abrechnung",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, false],
-    manager: [true, false, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
+  // ============================================
+  // Team & Personal
+  // ============================================
+  { key: "team", category: "Team & Personal", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "hiring", category: "Team & Personal", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "mitarbeitergespraeche", category: "Team & Personal", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "selbst_check", category: "Team & Personal", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "skills", category: "Team & Personal", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "organigramm", category: "Team & Personal", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "training", category: "Team & Personal", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
 
+  // ============================================
+  // Praxismanagement
+  // ============================================
+  { key: "surveys", category: "Praxismanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [true, true, false, false] },
+  { key: "arbeitsplaetze", category: "Praxismanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "rooms", category: "Praxismanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "arbeitsmittel", category: "Praxismanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "inventory", category: "Praxismanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "devices", category: "Praxismanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "locations", category: "Praxismanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+
+  // ============================================
   // Administration
-  {
-    key: "settings",
-    category: "Administration",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, false, true, false],
-    manager: [true, false, false, false],
-    member: [false, false, false, false],
-    viewer: [false, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "security",
-    category: "Administration",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, false, true, false],
-    manager: [false, false, false, false],
-    member: [false, false, false, false],
-    viewer: [false, false, false, false],
-    extern: [false, false, false, false],
-  },
-  {
-    key: "user_management",
-    category: "Administration",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, false],
-    manager: [true, false, false, false],
-    member: [false, false, false, false],
-    viewer: [false, false, false, false],
-    extern: [false, false, false, false],
-  },
+  // ============================================
+  { key: "settings", category: "Administration", superadmin: [true, true, true, true], practiceadmin: [true, false, true, false], admin: [true, false, true, false], manager: [true, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "users", category: "Administration", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "security", category: "Administration", superadmin: [true, true, true, true], practiceadmin: [true, false, true, false], admin: [true, false, true, false], manager: [false, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "super_admin_panel", category: "Administration", superadmin: [true, true, true, true], practiceadmin: [false, false, false, false], admin: [false, false, false, false], manager: [false, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
 
-  // Qualitätsmanagement
-  {
-    key: "qm",
-    category: "Qualitätsmanagement",
-    superadmin: [true, true, true, true],
-    practiceadmin: [true, true, true, true],
-    admin: [true, true, true, true],
-    manager: [true, true, false, false],
-    member: [true, false, false, false],
-    viewer: [true, false, false, false],
-    extern: [false, false, false, false],
-  },
+  // ============================================
+  // Finanzen & Abrechnung
+  // ============================================
+  { key: "billing", category: "Finanzen & Abrechnung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "reports", category: "Finanzen & Abrechnung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "invoices", category: "Finanzen & Abrechnung", superadmin: [true, true, true, true], practiceadmin: [true, true, false, false], admin: [true, true, false, false], manager: [false, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "subscription", category: "Finanzen & Abrechnung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, false, false, false], manager: [false, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "kv_abrechnung", category: "Finanzen & Abrechnung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+  { key: "bank_transactions", category: "Finanzen & Abrechnung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, false, false], manager: [false, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+
+  // ============================================
+  // Marketing
+  // ============================================
+  { key: "marketing", category: "Marketing", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "reviews", category: "Marketing", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "waitlist", category: "Marketing", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "seo", category: "Marketing", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, false, false], manager: [false, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
+
+  // ============================================
+  // Qualitaetsmanagement
+  // ============================================
+  { key: "qm", category: "Qualitätsmanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "hygieneplan", category: "Qualitätsmanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "cirs", category: "Qualitätsmanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+
+  // ============================================
+  // Infrastruktur
+  // ============================================
+  { key: "urlaub", category: "Infrastruktur", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, true, false], member: [true, true, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
+  { key: "homeoffice", category: "Infrastruktur", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, true, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
 ]
 
 export async function POST() {

@@ -44,9 +44,10 @@ export function HomeofficeTab() {
       const response = await fetch(`/api/practices/${practiceId}/team-members`)
       if (response.ok) {
         const data = await response.json()
-        const formatted = data.map((member: any) => ({
+        const members = Array.isArray(data) ? data : (data.teamMembers || [])
+        const formatted = members.map((member: any) => ({
           id: member.user_id || member.id,
-          name: `${member.first_name || ""} ${member.last_name || ""}`.trim() || "Unbekannt"
+          name: member.name || `${member.first_name || ""} ${member.last_name || ""}`.trim() || "Unbekannt"
         }))
         setTeamMembers(formatted)
       }

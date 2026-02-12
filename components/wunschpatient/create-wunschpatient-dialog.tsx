@@ -297,7 +297,16 @@ export function CreateWunschpatientDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col gap-4">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0" showCloseButton={false}>
+        <div className="flex flex-col max-h-[90vh] p-6 gap-4">
+        {/* Close button */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 z-10"
+        >
+          <span className="sr-only">Close</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
         {(generatingProfile || generatingImage) && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
             <div className="flex flex-col items-center gap-4 p-8 text-center">
@@ -767,6 +776,7 @@ export function CreateWunschpatientDialog({
               </Button>
             )}
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

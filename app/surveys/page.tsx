@@ -171,7 +171,9 @@ export default function SurveysPage() {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false)
   const [showAIDialog, setShowAIDialog] = useState(false)
   const [showResultsDialog, setShowResultsDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null)
+  const [editSurveyData, setEditSurveyData] = useState<{ title: string; description: string; target_audience: string; is_anonymous: boolean; start_date: string; end_date: string }>({ title: "", description: "", target_audience: "all", is_anonymous: false, start_date: "", end_date: "" })
   const [isCreating, setIsCreating] = useState(false)
   const [aiPrompt, setAIPrompt] = useState("")
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
@@ -272,7 +274,6 @@ export default function SurveysPage() {
       })
 
       if (response.ok) {
-        const data = await response.json()
         toast({ title: "Umfrage erstellt", description: "Die Umfrage wurde erfolgreich erstellt." })
         setShowCreateDialog(false)
         setNewSurvey({
@@ -285,7 +286,7 @@ export default function SurveysPage() {
           end_date: "",
           notify_admin_on_response: false,
         })
-        router.push(`/surveys/${data.survey.id}/edit`)
+        fetchSurveys()
       } else {
         throw new Error(`Failed to create survey: ${response.status}`)
       }
@@ -329,10 +330,9 @@ export default function SurveysPage() {
       })
 
       if (response.ok) {
-        const data = await response.json()
         toast({ title: "Umfrage erstellt", description: "Die Umfrage wurde aus der Vorlage erstellt." })
         setShowTemplateDialog(false)
-        router.push(`/surveys/${data.survey.id}/edit`)
+        fetchSurveys()
       } else {
         toast({
           title: "Fehler",
@@ -426,14 +426,13 @@ export default function SurveysPage() {
         body: JSON.stringify({ prompt: aiPrompt }),
       })
       if (response.ok) {
-        const data = await response.json()
         toast({
           title: "Umfrage generiert",
           description: "Die KI hat eine Umfrage basierend auf Ihrer Beschreibung erstellt.",
         })
         setShowAIDialog(false)
         setAIPrompt("")
-        router.push(`/surveys/${data.survey.id}/edit`)
+        fetchSurveys()
       }
     } catch (error) {
       toast({ title: "Fehler", description: "Die Umfrage konnte nicht generiert werden.", variant: "destructive" })
@@ -490,6 +489,43 @@ export default function SurveysPage() {
       }
     } catch (error) {
       toast({ title: "Fehler", variant: "destructive" })
+    }
+  }
+
+  const openEditDialog = (survey: Survey) => {
+    setSelectedSurvey(survey)
+    setEditSurveyData({
+      title: survey.title,
+      description: survey.description || "",
+      target_audience: survey.target_audience,
+      is_anonymous: survey.is_anonymous || false,
+      start_date: survey.start_date || "",
+      end_date: survey.end_date || "",
+    })
+    setShowEditDialog(true)
+  }
+
+  const handleEditSurvey = async () => {
+    if (!currentPractice?.id || !selectedSurvey) return
+    setIsCreating(true)
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/surveys/${selectedSurvey.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(editSurveyData),
+      })
+      if (response.ok) {
+        toast({ title: "Umfrage aktualisiert", description: "Die Änderungen wurden gespeichert." })
+        setShowEditDialog(false)
+        fetchSurveys()
+      } else {
+        throw new Error("Update failed")
+      }
+    } catch (error) {
+      toast({ title: "Fehler", description: "Die Umfrage konnte nicht aktualisiert werden.", variant: "destructive" })
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -689,16 +725,16 @@ export default function SurveysPage() {
         <div className="border-y bg-muted/30">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1">
-                  <TabsTrigger value="all">Alle</TabsTrigger>
-                  <TabsTrigger value="draft">Entwürfe</TabsTrigger>
-                  <TabsTrigger value="active">Aktiv</TabsTrigger>
-                  <TabsTrigger value="closed">Beendet</TabsTrigger>
-                  <TabsTrigger value="archived">Archiv</TabsTrigger>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1">
+                <TabsList className="w-full flex h-auto gap-1">
+                  <TabsTrigger value="all" className="flex-1">Alle</TabsTrigger>
+                  <TabsTrigger value="draft" className="flex-1">Entwürfe</TabsTrigger>
+                  <TabsTrigger value="active" className="flex-1">Aktiv</TabsTrigger>
+                  <TabsTrigger value="closed" className="flex-1">Beendet</TabsTrigger>
+                  <TabsTrigger value="archived" className="flex-1">Archiv</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-64 shrink-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Umfrage suchen..."
@@ -866,7 +902,7 @@ export default function SurveysPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/surveys/${survey.id}/edit`)}>
+                          <DropdownMenuItem onClick={() => openEditDialog(survey)}>
                             <Edit2 className="h-4 w-4 mr-2" />
                             Bearbeiten
                           </DropdownMenuItem>
@@ -965,7 +1001,7 @@ export default function SurveysPage() {
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        onClick={() => router.push(`/surveys/${survey.id}/edit`)}
+                        onClick={() => openEditDialog(survey)}
                       >
                         <Edit2 className="h-4 w-4 mr-1" />
                         Bearbeiten
@@ -1265,6 +1301,88 @@ export default function SurveysPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Survey Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Umfrage bearbeiten</DialogTitle>
+            <DialogDescription>Passen Sie die Umfrageeinstellungen an.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Titel *</Label>
+              <Input
+                id="edit-title"
+                value={editSurveyData.title}
+                onChange={(e) => setEditSurveyData({ ...editSurveyData, title: e.target.value })}
+                placeholder="Titel der Umfrage"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Beschreibung</Label>
+              <Textarea
+                id="edit-description"
+                value={editSurveyData.description}
+                onChange={(e) => setEditSurveyData({ ...editSurveyData, description: e.target.value })}
+                placeholder="Beschreibung der Umfrage"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Zielgruppe</Label>
+              <Select
+                value={editSurveyData.target_audience}
+                onValueChange={(v) => setEditSurveyData({ ...editSurveyData, target_audience: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Mitarbeiter</SelectItem>
+                  <SelectItem value="team">Team</SelectItem>
+                  <SelectItem value="patients">Patienten</SelectItem>
+                  <SelectItem value="anonymous">Anonym</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-start">Startdatum</Label>
+                <Input
+                  id="edit-start"
+                  type="date"
+                  value={editSurveyData.start_date}
+                  onChange={(e) => setEditSurveyData({ ...editSurveyData, start_date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-end">Enddatum</Label>
+                <Input
+                  id="edit-end"
+                  type="date"
+                  value={editSurveyData.end_date}
+                  onChange={(e) => setEditSurveyData({ ...editSurveyData, end_date: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <Label htmlFor="edit-anon" className="cursor-pointer">Anonyme Umfrage</Label>
+              <Switch
+                id="edit-anon"
+                checked={editSurveyData.is_anonymous}
+                onCheckedChange={(v) => setEditSurveyData({ ...editSurveyData, is_anonymous: v })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Abbrechen</Button>
+            <Button onClick={handleEditSurvey} disabled={isCreating || !editSurveyData.title.trim()}>
+              {isCreating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Speichern
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppLayout>

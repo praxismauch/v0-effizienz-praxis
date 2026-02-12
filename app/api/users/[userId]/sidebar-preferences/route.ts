@@ -23,6 +23,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { searchParams } = new URL(request.url)
     const practiceId = searchParams.get("practice_id")
 
+    // For super-admin context, return defaults only (don't query database)
+    if (practiceId === "super-admin" || practiceId === "super_admin") {
+      return NextResponse.json({
+        preferences: {
+          expanded_groups: ["overview", "management"],
+          expanded_items: [],
+          is_collapsed: false,
+          favorites: [],
+          collapsed_sections: [],
+          single_group_mode: true,
+        },
+        note: "Super-admin preferences use localStorage"
+      })
+    }
+
     const adminClient = await createAdminClient()
     
     // If Supabase isn't configured, return defaults (localStorage handles the actual data)
@@ -111,6 +126,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites, single_group_mode } = body
+
+    // For super-admin context, don't try to persist to database (practice_id won't exist in practices table)
+    if (practice_id === "super-admin" || practice_id === "super_admin") {
+      return NextResponse.json({ 
+        preferences: { 
+          expanded_groups: expanded_groups || [],
+          expanded_items: expanded_items || {},
+          is_collapsed: is_collapsed || false,
+          favorites: favorites || [],
+          single_group_mode: single_group_mode ?? true,
+          collapsed_sections: []
+        },
+        note: "Super-admin preferences stored in localStorage only"
+      })
+    }
 
     const effectivePracticeId = String(practice_id || "1")
 

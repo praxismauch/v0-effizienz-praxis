@@ -338,12 +338,14 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
                   "p-3 rounded-xl",
                   arbeitsplatz.is_active ? colorConfig.bg : "bg-gray-100 dark:bg-gray-800",
                 )}
+                style={arbeitsplatz.is_active && colorConfig.hex ? { backgroundColor: `${colorConfig.hex}20` } : undefined}
               >
                 <Monitor
                   className={cn(
                     "h-6 w-6",
                     arbeitsplatz.is_active ? colorConfig.icon : "text-gray-500",
                   )}
+                  style={arbeitsplatz.is_active && colorConfig.hex ? { color: colorConfig.hex } : undefined}
                 />
               </div>
               <div>

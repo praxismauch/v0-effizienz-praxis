@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Clock, User, Users } from "lucide-react"
+import { Edit, Trash2, Clock, User, Users, Building2 } from "lucide-react"
 import { formatGermanNumber } from "@/lib/utils/number-format"
 
 interface ResponsibilityCardProps {
@@ -204,6 +204,16 @@ export function ResponsibilityCard({ responsibility, onEdit, onDelete, isAdmin }
               </div>
             )}
         </div>
+
+        {/* Arbeitsplätze if assigned */}
+        {responsibility.arbeitsplatz_names && responsibility.arbeitsplatz_names.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <Building2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <span className="text-xs text-muted-foreground truncate">
+              {responsibility.arbeitsplatz_names.join(", ")}
+            </span>
+          </div>
+        )}
 
         {/* Description preview if exists */}
         {responsibility.description && (

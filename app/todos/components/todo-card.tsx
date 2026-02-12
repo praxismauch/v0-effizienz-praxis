@@ -449,10 +449,8 @@ export function TodoCard({
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        "group relative overflow-hidden cursor-move transition-all duration-200",
-        isDragging
-          ? "opacity-40 scale-95 rotate-2 shadow-2xl"
-          : "hover:shadow-md hover:-translate-y-0.5"
+        "p-4 cursor-move transition-all duration-200 bg-white dark:bg-slate-900",
+        isDragging ? "opacity-50 scale-95 rotate-2 shadow-2xl" : "hover:shadow-md hover:scale-[1.02]"
       )}
     >
       {/* Left priority bar */}
@@ -492,69 +490,6 @@ export function TodoCard({
                 </p>
               )}
             </div>
-            {/* Compact actions */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity flex-shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onEdit(todo)
-                  }}
-                >
-                  <Edit className="h-3.5 w-3.5 mr-2" />
-                  Bearbeiten
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onStatusChange(todo.id, "offen")
-                  }}
-                >
-                  <div className="h-2 w-2 rounded-full bg-primary mr-2" />
-                  Offen
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onStatusChange(todo.id, "in_bearbeitung")
-                  }}
-                >
-                  <div className="h-2 w-2 rounded-full bg-warning mr-2" />
-                  In Bearbeitung
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onStatusChange(todo.id, "erledigt")
-                  }}
-                >
-                  <div className="h-2 w-2 rounded-full bg-success mr-2" />
-                  Erledigt
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onDelete(todo.id)
-                  }}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-2" />
-                  Loschen
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
           {/* Compact metadata */}
@@ -567,11 +502,46 @@ export function TodoCard({
                 statusInfo.textColor
               )}
             >
-              <div
-                className={cn("h-1 w-1 rounded-full", statusInfo.dotColor)}
-              />
-              {statusInfo.label}
-            </div>
+              <SelectTrigger className="h-7 w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="offen">Offen</SelectItem>
+                <SelectItem value="in_bearbeitung">In Bearbeitung</SelectItem>
+                <SelectItem value="erledigt">Erledigt</SelectItem>
+                <SelectItem value="abgebrochen">Abgebrochen</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => onEdit(todo)}
+            >
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+              onClick={() => onDelete(todo.id)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
+          <TodoMetadata
+            todo={todo}
+            teamMembers={teamMembers}
+            isOverdue={isOverdue}
+            getPriorityLabel={getPriorityLabel}
+            compact
+          />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
             {/* Due date */}
             {todo.due_date && (

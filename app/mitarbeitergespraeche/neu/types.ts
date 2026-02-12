@@ -14,6 +14,30 @@ export interface Skill {
   comment?: string
 }
 
+export interface PerformanceArea {
+  name: string
+  rating: number
+  weight: number
+}
+
+export interface Competency {
+  skill_id?: string
+  name: string
+  currentLevel: number
+  targetLevel: number
+  previousLevel?: number
+  gap?: number
+}
+
+export interface NewGoal {
+  title: string
+  description: string
+  measurable?: string
+  deadline?: string
+  priority: string
+  status: string
+}
+
 export interface Goal {
   goal: string
   target_date?: string
@@ -23,23 +47,41 @@ export interface Goal {
 }
 
 export interface DevelopmentPlan {
-  action: string
+  title: string
+  description: string
+  type: string
   timeline?: string
   resources?: string
-  status?: string
+  status: string
+  skill_id?: string
+  action?: string
   responsible?: string
 }
 
+export interface FollowUpAction {
+  action: string
+  responsible: string
+  deadline?: string
+  status: string
+}
+
 export interface FormData {
-  performance_rating: number
-  performance_notes: string
-  skills: Skill[]
-  goals: Goal[]
+  performance_areas: PerformanceArea[]
+  competencies: Competency[]
+  goals: NewGoal[]
   development_plans: DevelopmentPlan[]
-  feedback_employee: string
-  feedback_manager: string
-  next_steps: string
-  next_meeting_date: string
+  strengths: string
+  areas_for_improvement: string
+  achievements: string
+  challenges: string
+  employee_self_assessment: string
+  manager_comments: string
+  overall_rating: number | null
+  summary: string
+  career_aspirations: string
+  promotion_readiness: string
+  next_review_date: string
+  follow_up_actions: FollowUpAction[]
 }
 
 export interface SkillDefinition {
@@ -105,6 +147,14 @@ export interface Appraisal {
 
 export interface AISuggestions {
   goals?: Array<{ title: string; description: string; measurable: string; deadline: string; priority: string }>
+  development?: Array<{
+    title: string
+    description: string
+    type: string
+    timeline: string
+    resources: string
+    skill_id?: string
+  }>
   developmentActions?: Array<{
     title: string
     description: string

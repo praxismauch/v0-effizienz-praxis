@@ -30,7 +30,7 @@ function LandingpagesContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="uebersicht" className="gap-2">
             <LayoutPanelLeft className="h-4 w-4" />
             Übersicht

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Bug, Upload, X, Loader2, FileText } from "lucide-react"
+import { Bug, Upload, X, Loader2, FileText, Sparkles, Copy, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
 import { useTicketConfig } from "@/lib/tickets/hooks"
@@ -75,6 +75,10 @@ function ReportBugDialog({
   const [batchImportOpen, setBatchImportOpen] = useState(false)
   const [batchText, setBatchText] = useState("")
   const [batchImporting, setBatchImporting] = useState(false)
+  const [aiActionText, setAiActionText] = useState("")
+  const [aiActionLoading, setAiActionLoading] = useState(false)
+  const [aiActionDialogOpen, setAiActionDialogOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
   const { toast } = useToast()
   const { currentUser } = useUser()
 
@@ -269,12 +273,18 @@ function ReportBugDialog({
 
       toast({
         title: "Erfolg",
-        description: "Ihr Ticket wurde erfolgreich erstellt",
+        description: "Ihr Ticket wurde erfolgreich erstellt. KI-Aktion wird generiert...",
       })
 
       window.dispatchEvent(new CustomEvent("ticketCreated", { detail: data.ticket }))
 
       onTicketCreated?.()
+
+      // Auto-generate AI action item for v0 chat
+      const createdTicket = data.ticket
+      if (createdTicket?.id) {
+        generateAiAction(createdTicket.id, title, description, type, priority)
+      }
 
       setOpen?.(false)
       setTitle("")
@@ -294,6 +304,51 @@ function ReportBugDialog({
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const generateAiAction = async (ticketId: string, ticketTitle: string, ticketDescription: string, ticketType: string, ticketPriority: string) => {
+    setAiActionLoading(true)
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/ai-action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: ticketTitle,
+          description: ticketDescription,
+          type: ticketType,
+          priority: ticketPriority,
+          screenshots: screenshots,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setAiActionText(data.actionItem || "")
+        setAiActionDialogOpen(true)
+      }
+    } catch (error) {
+      console.error("[v0] Error generating AI action:", error)
+    } finally {
+      setAiActionLoading(false)
+    }
+  }
+
+  const handleCopyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(aiActionText)
+      setCopied(true)
+      toast({
+        title: "Kopiert",
+        description: "v0 Anweisung in die Zwischenablage kopiert",
+      })
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast({
+        title: "Fehler",
+        description: "Kopieren fehlgeschlagen",
+        variant: "destructive",
+      })
     }
   }
 
@@ -613,6 +668,66 @@ function ReportBugDialog({
               {batchImporting
                 ? "Erstelle..."
                 : `${batchText.split("\n").filter((line) => line.trim() !== "").length} Bugs erstellen`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Action Item Dialog */}
+      <Dialog open={aiActionDialogOpen} onOpenChange={setAiActionDialogOpen}>
+        <DialogContent className="sm:max-w-[650px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              v0 Entwicklungsanweisung
+            </DialogTitle>
+            <DialogDescription>
+              Diese Anweisung wurde automatisch generiert und kann direkt in den v0 Chat kopiert werden.
+            </DialogDescription>
+          </DialogHeader>
+
+          {aiActionLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">KI generiert Anweisung...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="relative">
+                <div className="bg-muted/50 border rounded-lg p-4 max-h-[400px] overflow-y-auto">
+                  <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-foreground">{aiActionText}</pre>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Kopieren Sie den Text und fugen Sie ihn in den v0 Chat ein, um das Problem automatisch losen zu lassen.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiActionDialogOpen(false)}>
+              Schliessen
+            </Button>
+            <Button
+              onClick={handleCopyToClipboard}
+              disabled={aiActionLoading || !aiActionText}
+              className="gap-2"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Kopiert
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  In Zwischenablage kopieren
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -41,8 +41,13 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
     }
 
     const formatInlineText = (text: string) => {
-      // Convert **bold** to <strong>
-      return text.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
+      return text
+        // Convert **bold** to <strong>
+        .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
+        // Convert *italic* to <em> (but not inside **)
+        .replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>')
+        // Convert `code` to <code>
+        .replace(/`([^`]+?)`/g, '<code class="px-1 py-0.5 rounded bg-muted text-xs font-mono">$1</code>')
     }
 
     displayLines.forEach((line, index) => {
@@ -51,6 +56,54 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
       // Empty line
       if (!trimmed) {
         flushList()
+        return
+      }
+
+      // Markdown H1 (# Header)
+      if (/^#\s+(.+)$/.test(trimmed)) {
+        flushList()
+        const text = trimmed.replace(/^#\s+/, "")
+        result.push(
+          <div key={`h1-${index}`} className="mt-6 first:mt-0 mb-3 pb-2 border-b-2 border-primary/30">
+            <h1 className="text-lg font-bold text-primary leading-tight">{text}</h1>
+          </div>,
+        )
+        return
+      }
+
+      // Markdown H2 (## Header)
+      if (/^##\s+(.+)$/.test(trimmed)) {
+        flushList()
+        const text = trimmed.replace(/^##\s+/, "")
+        result.push(
+          <div key={`h2-${index}`} className="mt-5 first:mt-0 mb-2">
+            <h2 className="text-base font-bold text-primary border-l-4 border-primary/70 pl-3 py-1 leading-tight">{text}</h2>
+          </div>,
+        )
+        return
+      }
+
+      // Markdown H3 (### Header)
+      if (/^###\s+(.+)$/.test(trimmed)) {
+        flushList()
+        const text = trimmed.replace(/^###\s+/, "")
+        result.push(
+          <div key={`h3-${index}`} className="mt-4 first:mt-0 mb-2">
+            <h3 className="text-sm font-semibold text-foreground">{text}</h3>
+          </div>,
+        )
+        return
+      }
+
+      // Markdown H4 (#### Header)
+      if (/^####\s+(.+)$/.test(trimmed)) {
+        flushList()
+        const text = trimmed.replace(/^####\s+/, "")
+        result.push(
+          <div key={`h4-${index}`} className="mt-3 first:mt-0 mb-1">
+            <h4 className="text-sm font-medium text-muted-foreground">{text}</h4>
+          </div>,
+        )
         return
       }
 
@@ -122,7 +175,7 @@ export function FormattedInterviewContent({ content, className, maxLines }: Form
       result.push(
         <p
           key={`p-${index}`}
-          className="text-xs leading-relaxed mb-2 text-muted-foreground"
+          className="text-sm leading-relaxed mb-2 text-muted-foreground"
           dangerouslySetInnerHTML={{ __html: formatInlineText(trimmed) }}
         />,
       )

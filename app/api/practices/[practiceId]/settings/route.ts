@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS = {
   system_settings: null,
   display_settings: null,
   calendar_settings: null,
+  working_hours_settings: null,
   notification_settings: null,
   security_settings: null,
 }
@@ -58,8 +59,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({
         settings: {
           system_settings: settings.system_settings,
-          display_settings: null,
-          calendar_settings: null,
+          display_settings: settings.display_settings || null,
+          calendar_settings: settings.calendar_settings || null,
+          working_hours_settings: settings.working_hours_settings || null,
           notification_settings: settings.notification_settings,
           security_settings: settings.security_settings,
         },
@@ -178,14 +180,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (existingSettings) {
       // Update practice_settings table
+      const updatePayload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      }
+      if (body.system_settings !== undefined) updatePayload.system_settings = body.system_settings
+      if (body.notification_settings !== undefined) updatePayload.notification_settings = body.notification_settings
+      if (body.security_settings !== undefined) updatePayload.security_settings = body.security_settings
+      if (body.working_hours_settings !== undefined) updatePayload.working_hours_settings = body.working_hours_settings
+      if (body.calendar_settings !== undefined) updatePayload.calendar_settings = body.calendar_settings
+      if (body.display_settings !== undefined) updatePayload.display_settings = body.display_settings
+
       const { data, error } = await supabase
         .from("practice_settings")
-        .update({
-          system_settings: body.system_settings || null,
-          notification_settings: body.notification_settings || null,
-          security_settings: body.security_settings || null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq("practice_id", practiceId)
         .select()
         .single()
@@ -198,6 +205,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({
         settings: {
           system_settings: data.system_settings,
+          display_settings: data.display_settings,
+          calendar_settings: data.calendar_settings,
+          working_hours_settings: data.working_hours_settings,
           notification_settings: data.notification_settings,
           security_settings: data.security_settings,
         },
@@ -211,6 +221,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           system_settings: body.system_settings || null,
           notification_settings: body.notification_settings || null,
           security_settings: body.security_settings || null,
+          working_hours_settings: body.working_hours_settings || null,
+          calendar_settings: body.calendar_settings || null,
+          display_settings: body.display_settings || null,
         })
         .select()
         .single()
@@ -224,6 +237,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({
         settings: {
           system_settings: data.system_settings,
+          display_settings: data.display_settings,
+          calendar_settings: data.calendar_settings,
+          working_hours_settings: data.working_hours_settings,
           notification_settings: data.notification_settings,
           security_settings: data.security_settings,
         },

@@ -105,9 +105,11 @@ export function PracticeParameterManagement() {
 
       toast({
         title: editingParameter
-          ? t("common.parameter_updated", "Parameter Updated")
-          : t("common.parameter_created", "Parameter Created"),
-        description: `Successfully ${editingParameter ? t("common.updated", "updated") : t("common.created", "created")} the parameter.`,
+          ? t("common.parameter_updated", "Parameter aktualisiert")
+          : t("common.parameter_created", "Parameter erstellt"),
+        description: editingParameter
+          ? "Der Parameter wurde erfolgreich aktualisiert."
+          : "Der Parameter wurde erfolgreich erstellt.",
       })
 
       setIsDialogOpen(false)
@@ -116,9 +118,9 @@ export function PracticeParameterManagement() {
     } catch (err) {
       console.error("Error saving parameter:", err)
       toast({
-        title: t("common.error", "Error"),
+        title: t("common.error", "Fehler"),
         description:
-          err instanceof Error ? err.message : t("common.failed_to_save_parameter", "Failed to save parameter"),
+          err instanceof Error ? err.message : t("common.failed_to_save_parameter", "Parameter konnte nicht gespeichert werden"),
         variant: "destructive",
       })
     } finally {
@@ -128,7 +130,7 @@ export function PracticeParameterManagement() {
 
   const handleDelete = async (id: string) => {
     if (!currentPractice) return
-    if (!confirm(t("common.confirm_delete", "Are you sure you want to delete this parameter?"))) return
+    if (!confirm(t("common.confirm_delete", "Sind Sie sicher, dass Sie diesen Parameter loeschen moechten?"))) return
 
     try {
       const response = await fetch(`/api/practices/${currentPractice.id}/parameters/${id}`, {
@@ -141,25 +143,23 @@ export function PracticeParameterManagement() {
       }
 
       toast({
-        title: t("common.parameter_deleted", "Parameter Deleted"),
-        description: t("common.successfully_deleted", "Successfully deleted the parameter."),
+        title: t("common.parameter_deleted", "Parameter geloescht"),
+        description: t("common.successfully_deleted", "Der Parameter wurde erfolgreich geloescht."),
       })
 
       fetchParameters()
     } catch (err) {
       console.error("Error deleting parameter:", err)
       toast({
-        title: t("common.error", "Error"),
+        title: t("common.error", "Fehler"),
         description:
-          err instanceof Error ? err.message : t("common.failed_to_delete_parameter", "Failed to delete parameter"),
+          err instanceof Error ? err.message : t("common.failed_to_delete_parameter", "Parameter konnte nicht geloescht werden"),
         variant: "destructive",
       })
     }
   }
 
   const handleEdit = (param: PracticeParameter) => {
-    console.log("[v0] handleEdit called with param:", param)
-    console.log("[v0] data_collection_start value:", (param as any).data_collection_start)
     setEditingParameter(param)
     setFormData({
       name: param.name,
@@ -169,10 +169,6 @@ export function PracticeParameterManagement() {
       unit: param.unit || "",
       dataCollectionStart: (param as any).data_collection_start || new Date().toISOString().split("T")[0],
     })
-    console.log(
-      "[v0] formData.dataCollectionStart set to:",
-      (param as any).data_collection_start || new Date().toISOString().split("T")[0],
-    )
     setIsDialogOpen(true)
   }
 
@@ -212,7 +208,7 @@ export function PracticeParameterManagement() {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          {t("kpi.select_practice", "Please select a practice to manage parameters.")}
+          {t("kpi.select_practice", "Bitte waehlen Sie eine Praxis aus, um Parameter zu verwalten.")}
         </AlertDescription>
       </Alert>
     )
@@ -222,9 +218,9 @@ export function PracticeParameterManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">{t("kpi.practice_specific", "Practice-Specific KPIs")}</h3>
+          <h3 className="text-lg font-semibold">{t("kpi.practice_specific", "Praxisspezifische KPIs")}</h3>
           <p className="text-sm text-muted-foreground">
-            {t("kpi.custom_parameters_for", "Custom parameters for")} {currentPractice.name}
+            {t("kpi.custom_parameters_for", "Individuelle Kennzahlen fuer")} {currentPractice.name}
           </p>
         </div>
         <Button
@@ -235,18 +231,18 @@ export function PracticeParameterManagement() {
           className="gap-2"
         >
           <Plus className="h-4 w-4" />
-          {t("kpi.add_parameter", "Add Parameter")}
+          {t("kpi.add_parameter", "Parameter hinzufuegen")}
         </Button>
       </div>
 
       <div className="flex items-center gap-4">
-        <Label>{t("kpi.filter_by_category", "Filter by Category:")}</Label>
+        <Label>{t("kpi.filter_by_category", "Filtern nach Kategorie:")}</Label>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t("kpi.all_categories", "All Categories")}</SelectItem>
+            <SelectItem value="all">{t("kpi.all_categories", "Alle Kategorien")}</SelectItem>
             {allCategories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
@@ -264,50 +260,57 @@ export function PracticeParameterManagement() {
       )}
 
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading parameters...</div>
+        <div className="text-center py-8 text-muted-foreground">Parameter werden geladen...</div>
       ) : filteredParameters.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
             <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>{t("kpi.no_parameters_yet", "No practice-specific KPIs yet.")}</p>
+            <p>{t("kpi.no_parameters_yet", "Noch keine praxisspezifischen KPIs vorhanden.")}</p>
             <p className="text-sm">
-              {t("kpi.click_to_create", 'Click "Add Parameter" to create your first custom parameter.')}
+              {t("kpi.click_to_create", "Klicken Sie auf \"Parameter hinzufuegen\", um Ihren ersten individuellen Parameter zu erstellen.")}
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="border rounded-lg divide-y">
           {filteredParameters.map((param) => (
-            <Card key={param.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle
-                      className="text-base cursor-pointer hover:text-primary transition-colors"
-                      onClick={() => handleEdit(param)}
-                    >
-                      {param.name}
-                    </CardTitle>
-                    {param.description && <CardDescription className="text-sm">{param.description}</CardDescription>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(param)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(param.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+            <div
+              key={param.id}
+              className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => handleEdit(param)}
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{param.name}</p>
+                  {param.description && (
+                    <p className="text-xs text-muted-foreground truncate">{param.description}</p>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className={getCategoryColor(param.category)}>{param.category}</Badge>
-                  <Badge variant="outline">{param.data_type}</Badge>
-                  {param.unit && <Badge variant="secondary">{param.unit}</Badge>}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Badge className={`text-xs ${getCategoryColor(param.category)}`}>{param.category}</Badge>
+                  <Badge variant="outline" className="text-xs">{param.data_type}</Badge>
+                  {param.unit && <Badge variant="secondary" className="text-xs">{param.unit}</Badge>}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="flex items-center gap-1 ml-3 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => { e.stopPropagation(); handleEdit(param) }}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); handleDelete(param.id) }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -317,42 +320,42 @@ export function PracticeParameterManagement() {
           <DialogHeader>
             <DialogTitle>
               {editingParameter
-                ? t("common.edit_parameter", "Edit Parameter")
-                : t("common.add_new_parameter", "Add New Parameter")}
+                ? t("common.edit_parameter", "Parameter bearbeiten")
+                : t("common.add_new_parameter", "Neuer Parameter")}
             </DialogTitle>
             <DialogDescription>
               {editingParameter
-                ? t("common.update_details", "Update the parameter details")
-                : t("common.create_new_kpi", "Create a new practice-specific KPI")}
+                ? t("common.update_details", "Aktualisieren Sie die Parameterdetails")
+                : t("common.create_new_kpi", "Erstellen Sie einen neuen praxisspezifischen KPI")}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="name">{t("common.parameter_name", "Parameter Name")} *</Label>
+              <Label htmlFor="name">{t("common.parameter_name", "Parametername")} *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Monthly Revenue"
+                placeholder="z.B. Monatlicher Umsatz"
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="description">{t("common.description", "Description")}</Label>
+              <Label htmlFor="description">{t("common.description", "Beschreibung")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional description"
+                placeholder="Optionale Beschreibung"
                 rows={2}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="category">{t("common.category", "Category")} *</Label>
+                <Label htmlFor="category">{t("common.category", "Kategorie")} *</Label>
                 <Select
                   value={formData.category}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
@@ -371,7 +374,7 @@ export function PracticeParameterManagement() {
               </div>
 
               <div>
-                <Label htmlFor="dataType">{t("common.data_type", "Data Type")} *</Label>
+                <Label htmlFor="dataType">{t("common.data_type", "Datentyp")} *</Label>
                 <Select
                   value={formData.dataType}
                   onValueChange={(value: any) => setFormData((prev) => ({ ...prev, dataType: value }))}
@@ -380,28 +383,27 @@ export function PracticeParameterManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="number">{t("common.number", "Number")}</SelectItem>
+                    <SelectItem value="number">{t("common.number", "Zahl")}</SelectItem>
                     <SelectItem value="text">{t("common.text", "Text")}</SelectItem>
-                    <SelectItem value="date">{t("common.date", "Date")}</SelectItem>
-                    <SelectItem value="boolean">{t("common.boolean", "Boolean")}</SelectItem>
+                    <SelectItem value="date">{t("common.date", "Datum")}</SelectItem>
+                    <SelectItem value="boolean">{t("common.boolean", "Ja/Nein")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div>
-              <Label htmlFor="unit">{t("common.unit", "Unit")}</Label>
+              <Label htmlFor="unit">{t("common.unit", "Einheit")}</Label>
               <Input
                 id="unit"
                 value={formData.unit}
                 onChange={(e) => setFormData((prev) => ({ ...prev, unit: e.target.value }))}
-                placeholder="e.g., EUR, Minutes, Count"
+                placeholder="z.B. EUR, Minuten, Anzahl"
               />
             </div>
 
             <div>
               <Label htmlFor="dataCollectionStart">{t("kpi.data_collection_start", "Beginn der Datensammlung")}</Label>
-              {console.log("[v0] Rendering dataCollectionStart field with value:", formData.dataCollectionStart)}
               <Input
                 id="dataCollectionStart"
                 type="date"
@@ -419,10 +421,10 @@ export function PracticeParameterManagement() {
                   resetForm()
                 }}
               >
-                {t("common.cancel", "Cancel")}
+                {t("common.cancel", "Abbrechen")}
               </Button>
               <Button type="submit" disabled={loading}>
-                {editingParameter ? t("common.update", "Update") : t("common.create", "Create")}
+                {editingParameter ? t("common.update", "Aktualisieren") : t("common.create", "Erstellen")}
               </Button>
             </div>
           </form>

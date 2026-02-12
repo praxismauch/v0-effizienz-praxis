@@ -103,12 +103,17 @@ const FALLBACK_COLORS = [
   { bg: "bg-emerald-50", border: "border-l-4 border-l-emerald-500", icon: "text-emerald-600" },
 ]
 
-function getRoomColor(room: Room, index: number) {
+function getRoomColor(room: Room, index: number): { bg: string; border: string; icon: string; hex?: string } {
   // If room has a custom color set, use it
   if (room.color) {
+    // Check named colors first (backward compat)
     const customColor = ROOM_COLOR_OPTIONS.find(c => c.value === room.color)
     if (customColor) {
       return { bg: customColor.bg, border: customColor.border, icon: customColor.icon }
+    }
+    // Hex color support
+    if (room.color.startsWith("#")) {
+      return { bg: "", border: "border-l-4", icon: "", hex: room.color }
     }
   }
 
@@ -147,7 +152,7 @@ export default function PageClient(_props: PageClientProps) {
   // Form states
   const [formName, setFormName] = useState("")
   const [formBeschreibung, setFormBeschreibung] = useState("")
-  const [formColor, setFormColor] = useState("blue")
+  const [formColor, setFormColor] = useState("#3b82f6")
   const [formImages, setFormImages] = useState<string[]>([])
 
   // Get upload endpoint for images
@@ -320,7 +325,7 @@ export default function PageClient(_props: PageClientProps) {
     setSelectedRoom(room)
     setFormName(room.name)
     setFormBeschreibung(room.beschreibung || "")
-    setFormColor(room.color || "blue")
+    setFormColor(room.color || "#3b82f6")
     setFormImages(room.images || [])
     setIsEditOpen(true)
   }
@@ -333,7 +338,7 @@ export default function PageClient(_props: PageClientProps) {
   const resetForm = () => {
     setFormName("")
     setFormBeschreibung("")
-    setFormColor("blue")
+    setFormColor("#3b82f6")
     setFormImages([])
   }
 
@@ -417,11 +422,12 @@ export default function PageClient(_props: PageClientProps) {
                     <Card
                       key={room.id}
                       className={`group relative transition-all hover:shadow-md ${colors.bg} ${colors.border}`}
+                      style={colors.hex ? { backgroundColor: `${colors.hex}10`, borderLeftColor: colors.hex } : undefined}
                     >
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2">
-                            <DoorOpen className={`h-5 w-5 ${colors.icon}`} />
+                            <DoorOpen className={`h-5 w-5 ${colors.icon}`} style={colors.hex ? { color: colors.hex } : undefined} />
                             <CardTitle className="text-lg">{room.name}</CardTitle>
                           </div>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -554,23 +560,14 @@ export default function PageClient(_props: PageClientProps) {
               <div className="space-y-2">
                 <Label>Farbe</Label>
                 <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {ROOM_COLOR_OPTIONS.map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      onClick={() => setFormColor(color.value)}
-                      className={cn(
-                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
-                        formColor === color.value
-                          ? "border-primary shadow-sm scale-105"
-                          : "border-border hover:border-primary/50",
-                      )}
-                    >
-                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
-                      <span className="text-sm font-medium">{color.label}</span>
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={formColor}
+                    onChange={(e) => setFormColor(e.target.value)}
+                    className="h-10 w-14 cursor-pointer rounded-lg border border-border p-1"
+                  />
+                  <span className="text-sm text-muted-foreground font-mono">{formColor}</span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -630,23 +627,14 @@ export default function PageClient(_props: PageClientProps) {
               <div className="space-y-2">
                 <Label>Farbe</Label>
                 <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {ROOM_COLOR_OPTIONS.map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      onClick={() => setFormColor(color.value)}
-                      className={cn(
-                        "flex items-center gap-2 p-3 rounded-lg border-2 transition-all hover:scale-105",
-                        formColor === color.value
-                          ? "border-primary shadow-sm scale-105"
-                          : "border-border hover:border-primary/50",
-                      )}
-                    >
-                      <div className={cn("w-5 h-5 rounded-full", color.class)} />
-                      <span className="text-sm font-medium">{color.label}</span>
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={formColor}
+                    onChange={(e) => setFormColor(e.target.value)}
+                    className="h-10 w-14 cursor-pointer rounded-lg border border-border p-1"
+                  />
+                  <span className="text-sm text-muted-foreground font-mono">{formColor}</span>
                 </div>
               </div>
               <div className="space-y-2">

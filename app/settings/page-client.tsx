@@ -16,8 +16,7 @@ import {
   MapPin,
   Loader2,
   Target,
-  Link2,
-  Cog
+  Link2
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/contexts/user-context"
@@ -39,7 +38,6 @@ import { OrgaCategoriesManager } from "@/components/settings/orga-categories-man
 import { TeamRoleOrderSettings } from "@/components/settings/team-role-order-settings"
 import { PracticeParameterManagement } from "@/components/practice-parameter-management"
 import { InterfacesTab } from "@/components/settings/interfaces-tab"
-import { SystemSettingsTab } from "@/components/settings/system-settings-tab"
 
 export default function SettingsPageClient() {
   const { currentUser } = useUser()
@@ -86,7 +84,7 @@ export default function SettingsPageClient() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="inline-flex h-auto flex-wrap justify-start gap-2 bg-muted p-1.5 rounded-lg">
+          <TabsList className="flex w-full h-auto flex-wrap gap-1 bg-muted p-1.5 rounded-lg">
             <TabsTrigger value="practice" className="gap-2 whitespace-nowrap">
               <Building2 className="h-4 w-4" />
               <span>Praxis</span>
@@ -145,10 +143,6 @@ export default function SettingsPageClient() {
                 <span>Schnittstellen</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="system" className="gap-2 whitespace-nowrap">
-              <Cog className="h-4 w-4" />
-              <span>System</span>
-            </TabsTrigger>
           </TabsList>
 
           {/* Practice Settings Tab */}
@@ -222,10 +216,6 @@ export default function SettingsPageClient() {
             </TabsContent>
           )}
 
-          {/* System Settings Tab */}
-          <TabsContent value="system">
-            <SystemSettingsTab />
-          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>

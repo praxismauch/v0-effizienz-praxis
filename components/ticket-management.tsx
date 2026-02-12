@@ -40,6 +40,9 @@ import {
   ShieldAlert,
   Loader2,
   Bug,
+  Sparkles,
+  Copy,
+  Check,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { useUser } from "@/contexts/user-context"
@@ -80,6 +83,10 @@ export default function TicketManagement() {
   const [editedValues, setEditedValues] = useState<any>({})
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [ticketToDelete, setTicketToDelete] = useState<string | null>(null)
+  const [aiActionText, setAiActionText] = useState("")
+  const [aiActionLoading, setAiActionLoading] = useState<string | null>(null)
+  const [aiActionDialogOpen, setAiActionDialogOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const { toast } = useToast()
   const { user } = useUser()
@@ -271,6 +278,47 @@ export default function TicketManagement() {
     } finally {
       setDeleteDialogOpen(false)
       setTicketToDelete(null)
+    }
+  }
+
+  const generateAiAction = async (ticket: TicketItem) => {
+    setAiActionLoading(ticket.id)
+    try {
+      const response = await fetch(`/api/tickets/${ticket.id}/ai-action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: ticket.title,
+          description: ticket.description,
+          type: ticket.type,
+          priority: ticket.priority,
+          screenshots: ticket.screenshot_urls || [],
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setAiActionText(data.actionItem || "")
+        setAiActionDialogOpen(true)
+      } else {
+        toast({ title: "Fehler", description: "KI-Aktion konnte nicht generiert werden", variant: "destructive" })
+      }
+    } catch (error) {
+      console.error("[v0] Error generating AI action:", error)
+      toast({ title: "Fehler", description: "KI-Aktion konnte nicht generiert werden", variant: "destructive" })
+    } finally {
+      setAiActionLoading(null)
+    }
+  }
+
+  const handleCopyAiAction = async () => {
+    try {
+      await navigator.clipboard.writeText(aiActionText)
+      setCopied(true)
+      toast({ title: "Kopiert", description: "v0 Anweisung in die Zwischenablage kopiert" })
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast({ title: "Fehler", description: "Kopieren fehlgeschlagen", variant: "destructive" })
     }
   }
 
@@ -594,6 +642,20 @@ export default function TicketManagement() {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => generateAiAction(ticket)}
+                          disabled={aiActionLoading === ticket.id}
+                          className="text-primary border-primary/30 hover:bg-primary/5"
+                        >
+                          {aiActionLoading === ticket.id ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4 mr-1" />
+                          )}
+                          v0 Aktion
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => startEditing(ticket)}>
                           <Pencil className="h-4 w-4 mr-1" />
                           Bearbeiten
@@ -725,6 +787,74 @@ export default function TicketManagement() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDetails(false)}>
               Schließen
+            </Button>
+            {selectedTicket && (
+              <Button
+                onClick={() => generateAiAction(selectedTicket)}
+                disabled={aiActionLoading === selectedTicket.id}
+                className="gap-2"
+              >
+                {aiActionLoading === selectedTicket.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                v0 Aktion generieren
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Action Item Dialog */}
+      <Dialog open={aiActionDialogOpen} onOpenChange={setAiActionDialogOpen}>
+        <DialogContent className="sm:max-w-[650px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              v0 Entwicklungsanweisung
+            </DialogTitle>
+            <DialogDescription>
+              Diese Anweisung wurde automatisch generiert und kann direkt in den v0 Chat kopiert werden.
+            </DialogDescription>
+          </DialogHeader>
+
+          {aiActionLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">KI generiert Anweisung...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-muted/50 border rounded-lg p-4 max-h-[400px] overflow-y-auto">
+                <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-foreground">{aiActionText}</pre>
+              </div>
+
+              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Kopieren Sie den Text und fugen Sie ihn in den v0 Chat ein, um das Problem automatisch losen zu lassen.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiActionDialogOpen(false)}>
+              Schliessen
+            </Button>
+            <Button onClick={handleCopyAiAction} disabled={!aiActionText} className="gap-2">
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Kopiert
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  In Zwischenablage kopieren
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

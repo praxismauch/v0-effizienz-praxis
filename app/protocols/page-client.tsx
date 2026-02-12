@@ -432,7 +432,7 @@ export default function PageClient(_props: PageClientProps) {
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1">
           <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
             <TabsTrigger value="all">Alle ({protocols.length})</TabsTrigger>
             <TabsTrigger value="published">Veröffentlicht ({publishedCount})</TabsTrigger>

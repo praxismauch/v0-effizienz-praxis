@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTranslation } from "@/contexts/translation-context"
 import { CandidateImageUpload } from "./candidate-image-upload"
 import { CandidateDocumentsUpload } from "./candidate-documents-upload"
+import { CandidateEventsManager, type CandidateEvent } from "./candidate-events-manager"
 import { useToast } from "@/hooks/use-toast"
 import { Sparkles, Upload, Loader2, FileText, Check, ImageIcon, X, Eye, File } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -53,6 +54,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
   const [selectedJobPostingId, setSelectedJobPostingId] = useState<string>("none")
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [firstStage, setFirstStage] = useState<string | null>(null)
+  const [events, setEvents] = useState<CandidateEvent[]>([])
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -137,6 +139,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
           weekly_hours: weeklyHoursValue,
           documents: documents,
           image_url: imageUrl,
+          events: events,
         }),
       })
 
@@ -215,6 +218,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
       setCandidateId(null)
       setSelectedJobPostingId("none")
       setImageUrl(null)
+      setEvents([])
       // Clean up image previews and reset state
       uploadedImages.forEach((img) => URL.revokeObjectURL(img.previewUrl))
       setUploadedImages([])
@@ -1174,6 +1178,15 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
           <div className="space-y-2">
             <Label>{t("hiring.createCandidateDialog.documents", "Dokumente")}</Label>
             <CandidateDocumentsUpload documents={documents} onDocumentsChange={setDocuments} />
+          </div>
+
+          {/* Termine & Ereignisse */}
+          <div className="border rounded-lg p-4">
+            <CandidateEventsManager
+              events={events}
+              onChange={setEvents}
+              candidateName={`${formData.first_name} ${formData.last_name}`.trim()}
+            />
           </div>
 
           <div className="space-y-2">

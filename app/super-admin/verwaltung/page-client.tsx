@@ -42,7 +42,7 @@ function VerwaltungContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="practices" className="gap-2">
             <Building2 className="h-4 w-4" />
             Praxen

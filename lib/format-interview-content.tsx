@@ -33,6 +33,38 @@ export function formatInterviewContentForPrint(content: string): string {
       return
     }
 
+    // Markdown H1 (# Header)
+    if (/^#\s+(.+)$/.test(trimmed)) {
+      flushList()
+      const text = trimmed.replace(/^#\s+/, "")
+      result.push(`<h1 style="font-size: 22px; font-weight: 700; color: #1e40af; margin-top: 28px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #93c5fd;">${formatInlineText(text)}</h1>`)
+      return
+    }
+
+    // Markdown H2 (## Header)
+    if (/^##\s+(.+)$/.test(trimmed)) {
+      flushList()
+      const text = trimmed.replace(/^##\s+/, "")
+      result.push(`<h2 style="font-size: 18px; font-weight: 700; color: #1e40af; margin-top: 24px; margin-bottom: 12px; border-left: 4px solid #2563eb; padding-left: 12px;">${formatInlineText(text)}</h2>`)
+      return
+    }
+
+    // Markdown H3 (### Header)
+    if (/^###\s+(.+)$/.test(trimmed)) {
+      flushList()
+      const text = trimmed.replace(/^###\s+/, "")
+      result.push(`<h3 style="font-size: 16px; font-weight: 600; color: #374151; margin-top: 20px; margin-bottom: 10px;">${formatInlineText(text)}</h3>`)
+      return
+    }
+
+    // Markdown H4 (#### Header)
+    if (/^####\s+(.+)$/.test(trimmed)) {
+      flushList()
+      const text = trimmed.replace(/^####\s+/, "")
+      result.push(`<h4 style="font-size: 14px; font-weight: 600; color: #6b7280; margin-top: 16px; margin-bottom: 8px;">${formatInlineText(text)}</h4>`)
+      return
+    }
+
     // Main section headers (e.g., **1. EINLEITUNG & KENNENLERNEN**)
     if (/^\*\*\d+\.\s+[A-ZÄÖÜ\s&]+\*\*$/.test(trimmed)) {
       flushList()

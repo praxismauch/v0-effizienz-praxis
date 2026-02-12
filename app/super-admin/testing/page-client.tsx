@@ -2,8 +2,9 @@
 
 import { useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TestTube, FolderCheck, Tags, Monitor } from "lucide-react"
+import { TestTube, FolderCheck, Tags, Monitor, Database } from "lucide-react"
 import UnitTestsPanel from "@/components/testing/unit-tests-panel"
+import FormDbSyncPanel from "@/components/testing/form-db-sync-panel"
 import TestChecklistManager from "@/components/test-checklist-manager"
 import TestingCategoriesManager from "@/components/testing-categories-manager"
 import UIItemsTestManager from "@/components/super-admin/ui-items-test-manager"
@@ -22,10 +23,14 @@ export default function TestingPageClient() {
       </div>
 
       <Tabs defaultValue={initialTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+        <TabsList className="grid w-full grid-cols-5 lg:w-[750px]">
           <TabsTrigger value="unit-tests" className="flex items-center gap-2">
             <TestTube className="h-4 w-4" />
             <span className="hidden sm:inline">Unit Tests</span>
+          </TabsTrigger>
+          <TabsTrigger value="form-db-sync" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            <span className="hidden sm:inline">Form-DB Sync</span>
           </TabsTrigger>
           <TabsTrigger value="ui-items" className="flex items-center gap-2">
             <Monitor className="h-4 w-4" />
@@ -43,6 +48,10 @@ export default function TestingPageClient() {
 
         <TabsContent value="unit-tests" className="space-y-6">
           <UnitTestsPanel />
+        </TabsContent>
+
+        <TabsContent value="form-db-sync" className="space-y-6">
+          <FormDbSyncPanel />
         </TabsContent>
 
         <TabsContent value="ui-items" className="space-y-6">

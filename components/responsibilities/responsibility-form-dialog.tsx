@@ -69,10 +69,11 @@ interface ResponsibilityFormDialogProps {
   formData: {
     name: string
     description: string
-    category: string
-    responsible_user_id: string
-    deputy_user_id?: string
-    suggested_hours_per_week: string
+    category?: string
+    group_name?: string
+    responsible_user_id: string | null
+    deputy_user_id?: string | null
+    suggested_hours_per_week: string | number | null
     cannot_complete_during_consultation: boolean
     optimization_suggestions?: string
     calculate_time_automatically?: boolean
@@ -81,6 +82,7 @@ interface ResponsibilityFormDialogProps {
     link_url?: string
     link_title?: string
     assigned_arbeitsplaetze?: string[]
+    arbeitsplatz_ids?: string[]
     assigned_shifts?: string[]
     assigned_teams?: string[]
   }
@@ -296,10 +298,20 @@ export function ResponsibilityFormDialog({
     }
   }
 
+  // Bridge between dialog field names and hook field names
+  const getCategory = () => formData.category || formData.group_name || ""
+  const setCategory = (value: string) => {
+    setFormData({ ...formData, category: value, group_name: value })
+  }
+  const getArbeitsplaetze = () => formData.assigned_arbeitsplaetze || formData.arbeitsplatz_ids || []
+  const setArbeitsplaetze = (ids: string[]) => {
+    setFormData({ ...formData, assigned_arbeitsplaetze: ids, arbeitsplatz_ids: ids })
+  }
+
   const toggleArbeitsplatz = (id: string) => {
-    const current = formData.assigned_arbeitsplaetze || []
+    const current = getArbeitsplaetze()
     const updated = current.includes(id) ? current.filter((a) => a !== id) : [...current, id]
-    setFormData({ ...formData, assigned_arbeitsplaetze: updated })
+    setArbeitsplaetze(updated)
   }
 
   const toggleShift = (id: string) => {
@@ -396,8 +408,8 @@ export function ResponsibilityFormDialog({
               </div>
             ) : (
               <Select
-                value={formData.category || "none"}
-                onValueChange={(value) => setFormData({ ...formData, category: value === "none" ? "" : value })}
+                value={getCategory() || "none"}
+                onValueChange={(value) => setCategory(value === "none" ? "" : value)}
               >
                 <SelectTrigger id="category">
                   <SelectValue placeholder="Keine Kategorie" />
@@ -665,7 +677,7 @@ export function ResponsibilityFormDialog({
                         <div key={ap.id} className="flex items-center space-x-3">
                           <Checkbox
                             id={`ap-${ap.id}`}
-                            checked={(formData.assigned_arbeitsplaetze || []).includes(ap.id)}
+                            checked={getArbeitsplaetze().includes(ap.id)}
                             onCheckedChange={() => toggleArbeitsplatz(ap.id)}
                           />
                           <label htmlFor={`ap-${ap.id}`} className="flex flex-col cursor-pointer flex-1">
@@ -676,9 +688,9 @@ export function ResponsibilityFormDialog({
                       ))}
                     </div>
                   )}
-                  {(formData.assigned_arbeitsplaetze || []).length > 0 && (
+                  {getArbeitsplaetze().length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      {(formData.assigned_arbeitsplaetze || []).length} Arbeitsplatz/plätze ausgewählt
+                      {getArbeitsplaetze().length} Arbeitsplatz/plätze ausgewählt
                     </p>
                   )}
                 </div>

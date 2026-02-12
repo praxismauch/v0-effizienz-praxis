@@ -463,9 +463,24 @@ Bitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
                                   <p className="font-medium">{issue.label} ({issue.field})</p>
                                   <p className="text-xs mt-0.5">{issue.message}</p>
                                   {issue.fix && (
-                                    <pre className="mt-2 p-2 bg-background/50 rounded text-xs font-mono overflow-x-auto">
-                                      {issue.fix}
-                                    </pre>
+                                    <div className="mt-2 space-y-1">
+                                      <pre className="p-2 bg-background/50 rounded text-xs font-mono overflow-x-auto">
+                                        {issue.fix}
+                                      </pre>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          const fixPrompt = `Bitte fuehre folgendes SQL aus, um das Problem "${issue.message}" in Tabelle "${form.table}" zu beheben:\n\n\`\`\`sql\n${issue.fix}\n\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\nBitte fuehre das SQL-Statement direkt mit supabase_execute_sql aus.`
+                                          copyToClipboard(fixPrompt)
+                                        }}
+                                      >
+                                        <Copy className="h-3 w-3 mr-1" />
+                                        Fix in v0 einfuegen
+                                      </Button>
+                                    </div>
                                   )}
                                 </div>
                               ))}

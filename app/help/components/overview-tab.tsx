@@ -32,7 +32,7 @@ export function OverviewTab({
       {/* Categories Grid */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Kategorien durchsuchen</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {categories.map((category) => {
             const Icon = category.icon
             return (
@@ -112,7 +112,7 @@ export function OverviewTab({
       {/* Quick Actions */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Schnellaktionen</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {quickActions.map((action) => {
             const Icon = action.icon
             return (
@@ -145,7 +145,7 @@ export function OverviewTab({
                 kann personalisierte Hilfe basierend auf Ihrer Praxiskonfiguration geben.
               </p>
               <Button
-                onClick={() => onTabChange("ai-assistant")}
+                onClick={() => onTabChange("ai")}
                 className="bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
               >
                 <Sparkles className="h-4 w-4 mr-2" />

@@ -871,7 +871,7 @@ export function GlobalParameterManagement() {
       </div>
 
   <Tabs defaultValue="categories" className="space-y-6">
-  <TabsList>
+  <TabsList className="grid w-full grid-cols-2">
   <TabsTrigger value="categories" className="gap-2">
   <Globe className="h-4 w-4" />
   KPI-Kategorien

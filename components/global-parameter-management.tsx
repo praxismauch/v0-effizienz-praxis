@@ -940,43 +940,48 @@ export function GlobalParameterManagement() {
                           rows={3}
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="new-group-color">Farbe</Label>
-                          <Select
-                            value={newGroup.color}
-                            onValueChange={(value) => setNewGroup({ ...newGroup, color: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="bg-blue-500">Blau</SelectItem>
-                              <SelectItem value="bg-green-500">Gruen</SelectItem>
-                              <SelectItem value="bg-purple-500">Lila</SelectItem>
-                              <SelectItem value="bg-orange-500">Orange</SelectItem>
-                              <SelectItem value="bg-red-500">Rot</SelectItem>
-                              <SelectItem value="bg-pink-500">Pink</SelectItem>
-                              <SelectItem value="bg-yellow-500">Gelb</SelectItem>
-                              <SelectItem value="bg-indigo-500">Indigo</SelectItem>
-                              <SelectItem value="bg-teal-500">Teal</SelectItem>
-                              <SelectItem value="bg-cyan-500">Cyan</SelectItem>
-                              <SelectItem value="bg-lime-500">Lime</SelectItem>
-                              <SelectItem value="bg-amber-500">Amber</SelectItem>
-                              <SelectItem value="bg-rose-500">Rose</SelectItem>
-                              <SelectItem value="bg-emerald-500">Smaragd</SelectItem>
-                              <SelectItem value="bg-gray-500">Grau</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      <div>
+                        <Label>Projektfarbe</Label>
+                        <div className="grid grid-cols-8 gap-2 mt-2">
+                          {[
+                            { value: "bg-blue-500", color: "bg-blue-500", label: "Blau" },
+                            { value: "bg-green-500", color: "bg-green-500", label: "Gruen" },
+                            { value: "bg-purple-500", color: "bg-purple-500", label: "Lila" },
+                            { value: "bg-orange-500", color: "bg-orange-500", label: "Orange" },
+                            { value: "bg-red-500", color: "bg-red-500", label: "Rot" },
+                            { value: "bg-pink-500", color: "bg-pink-500", label: "Pink" },
+                            { value: "bg-yellow-500", color: "bg-yellow-500", label: "Gelb" },
+                            { value: "bg-indigo-500", color: "bg-indigo-500", label: "Indigo" },
+                            { value: "bg-teal-500", color: "bg-teal-500", label: "Teal" },
+                            { value: "bg-cyan-500", color: "bg-cyan-500", label: "Cyan" },
+                            { value: "bg-lime-500", color: "bg-lime-500", label: "Lime" },
+                            { value: "bg-amber-500", color: "bg-amber-500", label: "Amber" },
+                            { value: "bg-rose-500", color: "bg-rose-500", label: "Rose" },
+                            { value: "bg-emerald-500", color: "bg-emerald-500", label: "Smaragd" },
+                            { value: "bg-violet-500", color: "bg-violet-500", label: "Violett" },
+                            { value: "bg-gray-500", color: "bg-gray-500", label: "Grau" },
+                          ].map((c) => (
+                            <button
+                              key={c.value}
+                              type="button"
+                              title={c.label}
+                              className={`h-8 w-8 rounded-full ${c.color} transition-all hover:scale-110 ${
+                                newGroup.color === c.value
+                                  ? "ring-2 ring-offset-2 ring-primary scale-110"
+                                  : "ring-1 ring-black/10"
+                              }`}
+                              onClick={() => setNewGroup({ ...newGroup, color: c.value })}
+                            />
+                          ))}
                         </div>
-                        <div className="flex items-center space-x-2 pt-6">
-                          <Switch
-                            id="new-group-active"
-                            checked={newGroup.isActive}
-                            onCheckedChange={(checked) => setNewGroup({ ...newGroup, isActive: checked })}
-                          />
-                          <Label htmlFor="new-group-active">Aktiv</Label>
-                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="new-group-active"
+                          checked={newGroup.isActive}
+                          onCheckedChange={(checked) => setNewGroup({ ...newGroup, isActive: checked })}
+                        />
+                        <Label htmlFor="new-group-active">Aktiv</Label>
                       </div>
                     </div>
                     <DialogFooter>
@@ -1583,79 +1588,82 @@ export function GlobalParameterManagement() {
         <Dialog open={isEditGroupOpen} onOpenChange={setIsEditGroupOpen}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{t("kpi.edit_category", "Globale KPI-Kategorie bearbeiten")}</DialogTitle>
+              <DialogTitle>Globale KPI-Kategorie bearbeiten</DialogTitle>
               <DialogDescription>
-                Update the category details and assigned parameters. Changes will be available to all practices.
+                Bearbeiten Sie die Kategorie-Details. Aenderungen stehen allen Praxen zur Verfuegung.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">
-              {/* Same content as Create Group Dialog */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="edit-group-name">Category Name</Label>
+                  <Label htmlFor="edit-group-name">Name *</Label>
                   <Input
                     id="edit-group-name"
                     value={newGroup.name || ""}
                     onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
-                    placeholder="e.g. Essential Practice Metrics"
+                    placeholder="z.B. Finanzkennzahlen"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-group-description">Description</Label>
+                  <Label htmlFor="edit-group-description">Beschreibung</Label>
                   <Textarea
                     id="edit-group-description"
                     value={newGroup.description || ""}
                     onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-                    placeholder="Description of the KPI category template..."
+                    placeholder="Beschreibung der KPI-Kategorie..."
                     rows={3}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-group-color">Color</Label>
-                    <Select
-                      value={newGroup.color}
-                      onValueChange={(value) => setNewGroup({ ...newGroup, color: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bg-blue-500">Blue</SelectItem>
-                        <SelectItem value="bg-green-500">Green</SelectItem>
-                        <SelectItem value="bg-purple-500">Purple</SelectItem>
-                        <SelectItem value="bg-orange-500">Orange</SelectItem>
-                        <SelectItem value="bg-red-500">Red</SelectItem>
-                        <SelectItem value="bg-pink-500">Pink</SelectItem>
-                        <SelectItem value="bg-yellow-500">Yellow</SelectItem>
-                        <SelectItem value="bg-indigo-500">Indigo</SelectItem>
-                        <SelectItem value="bg-teal-500">Teal</SelectItem>
-                        <SelectItem value="bg-cyan-500">Cyan</SelectItem>
-                        <SelectItem value="bg-lime-500">Lime</SelectItem>
-                        <SelectItem value="bg-amber-500">Amber</SelectItem>
-                        <SelectItem value="bg-rose-500">Rose</SelectItem>
-                        <SelectItem value="bg-violet-500">Violet</SelectItem>
-                        <SelectItem value="bg-emerald-500">Emerald</SelectItem>
-                        <SelectItem value="bg-gray-500">Gray</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <Label>Projektfarbe</Label>
+                  <div className="grid grid-cols-8 gap-2 mt-2">
+                    {[
+                      { value: "bg-blue-500", color: "bg-blue-500", label: "Blau" },
+                      { value: "bg-green-500", color: "bg-green-500", label: "Gruen" },
+                      { value: "bg-purple-500", color: "bg-purple-500", label: "Lila" },
+                      { value: "bg-orange-500", color: "bg-orange-500", label: "Orange" },
+                      { value: "bg-red-500", color: "bg-red-500", label: "Rot" },
+                      { value: "bg-pink-500", color: "bg-pink-500", label: "Pink" },
+                      { value: "bg-yellow-500", color: "bg-yellow-500", label: "Gelb" },
+                      { value: "bg-indigo-500", color: "bg-indigo-500", label: "Indigo" },
+                      { value: "bg-teal-500", color: "bg-teal-500", label: "Teal" },
+                      { value: "bg-cyan-500", color: "bg-cyan-500", label: "Cyan" },
+                      { value: "bg-lime-500", color: "bg-lime-500", label: "Lime" },
+                      { value: "bg-amber-500", color: "bg-amber-500", label: "Amber" },
+                      { value: "bg-rose-500", color: "bg-rose-500", label: "Rose" },
+                      { value: "bg-emerald-500", color: "bg-emerald-500", label: "Smaragd" },
+                      { value: "bg-violet-500", color: "bg-violet-500", label: "Violett" },
+                      { value: "bg-gray-500", color: "bg-gray-500", label: "Grau" },
+                    ].map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        title={c.label}
+                        className={`h-8 w-8 rounded-full ${c.color} transition-all hover:scale-110 ${
+                          newGroup.color === c.value
+                            ? "ring-2 ring-offset-2 ring-primary scale-110"
+                            : "ring-1 ring-black/10"
+                        }`}
+                        onClick={() => setNewGroup({ ...newGroup, color: c.value })}
+                      />
+                    ))}
                   </div>
-                  <div className="flex items-center space-x-2 pt-6">
-                    <Switch
-                      id="edit-group-active"
-                      checked={newGroup.isActive}
-                      onCheckedChange={(checked) => setNewGroup({ ...newGroup, isActive: checked })}
-                    />
-                    <Label htmlFor="edit-group-active">Active</Label>
-                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="edit-group-active"
+                    checked={newGroup.isActive}
+                    onCheckedChange={(checked) => setNewGroup({ ...newGroup, isActive: checked })}
+                  />
+                  <Label htmlFor="edit-group-active">Aktiv</Label>
                 </div>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsEditGroupOpen(false)}>
-                Cancel
+                Abbrechen
               </Button>
-              <Button onClick={handleUpdateGroup}>Update Category</Button>
+              <Button onClick={handleUpdateGroup}>Kategorie speichern</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

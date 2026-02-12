@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect, useCallback } from "react"
 import useSWR from "swr"
 import {
@@ -13,22 +12,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useTranslation } from "@/contexts/translation-context"
-import { Link, ChevronDown, ChevronUp, X, Upload, Type as type, File, Users, Loader2, Settings } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Loader2 } from "lucide-react"
 import { useTeam } from "@/contexts/team-context"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
-import { isActiveMember } from "@/lib/utils/team-member-filter"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
-import OrgaCategorySelect from "@/components/orga-category-select" // Import OrgaCategorySelect
+import { GoalFormFields } from "@/components/goals/goal-form-fields"
+import { GoalTeamAssignment } from "@/components/goals/goal-team-assignment"
+import { GoalExtendedSettings } from "@/components/goals/goal-extended-settings"
 
 interface CreateGoalDialogProps {
   open: boolean
@@ -91,13 +85,11 @@ export function CreateGoalDialog({
     swrFetcher,
   )
 
-  // Derive state from SWR data
   const availableGoals = goalsData?.goals || []
   const availableParameters = parametersData?.parameters || []
   const rawTeams = Array.isArray(teamsData) ? teamsData : []
   const teams: Team[] = rawTeams.filter((t: Team) => t.isActive !== false)
 
-  // Process categories with deduplication
   const orgaCategories = (() => {
     const categories = categoriesData?.categories || []
     const seen = new Set<string>()
@@ -111,7 +103,6 @@ export function CreateGoalDialog({
     })
   })()
 
-  const [loading, setLoading] = useState(false)
   const [createAsSubgoal, setCreateAsSubgoal] = useState(!!parentGoalId)
   const [showExtended, setShowExtended] = useState(false)
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([])
@@ -120,7 +111,6 @@ export function CreateGoalDialog({
   const [isUploading, setIsUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Use context team members directly (already SWR-enabled from Batch SWR-1)
   const teamMembers = contextTeamMembers || []
   const isTeamLoading = teamLoading
 
@@ -153,9 +143,6 @@ export function CreateGoalDialog({
     const percentage = Math.round((current / target) * 100)
     return Math.min(100, Math.max(0, percentage))
   })()
-
-  const displayProgress =
-    calculatedProgress !== null ? calculatedProgress : Number.parseInt(formData.progressPercentage, 10)
 
   useEffect(() => {
     if (initialData && open) {
@@ -370,7 +357,6 @@ export function CreateGoalDialog({
     }
   }
 
-  // ... existing code for handlePaste, uploadImage, handleDrop, handleDragOver, removeImage ...
   const handlePaste = useCallback(
     async (e: React.ClipboardEvent) => {
       const items = e.clipboardData?.items
@@ -410,12 +396,12 @@ export function CreateGoalDialog({
 
     setIsUploading(true)
     try {
-      const formData = new FormData()
-      formData.append("file", file)
+      const formDataUpload = new FormData()
+      formDataUpload.append("file", file)
 
       const response = await fetch(`/api/upload`, {
         method: "POST",
-        body: formData,
+        body: formDataUpload,
       })
 
       if (response.ok) {
@@ -465,7 +451,6 @@ export function CreateGoalDialog({
     setUploadedImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  // Added onPaste to DialogContent
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl" onPaste={handlePaste}>
@@ -476,392 +461,41 @@ export function CreateGoalDialog({
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">{t("goals.form.title", "Titel")} *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">{t("goals.form.description", "Beschreibung")}</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="goalType">{t("goals.form.goalType", "Zieltyp")}</Label>
-                <Select
-                  value={formData.goalType}
-                  onValueChange={(value: any) => setFormData({ ...formData, goalType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">{t("goals.type.personal", "Persönlich")}</SelectItem>
-                    <SelectItem value="team">{t("goals.type.team", "Team")}</SelectItem>
-                    <SelectItem value="practice">{t("goals.type.practice", "Praxis")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priority">{t("goals.form.priority", "Priorität")}</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value: any) => setFormData({ ...formData, priority: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">{t("goals.priority.low", "Niedrig")}</SelectItem>
-                    <SelectItem value="medium">{t("goals.priority.medium", "Mittel")}</SelectItem>
-                    <SelectItem value="high">{t("goals.priority.high", "Hoch")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentValue">{t("goals.form.currentValue", "Aktueller Wert")}</Label>
-                <Input
-                  id="currentValue"
-                  type="number"
-                  step="any"
-                  value={formData.currentValue}
-                  onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
-                  placeholder="z.B. 5"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="targetValue">{t("goals.form.targetValue", "Zielwert")} *</Label>
-                <Input
-                  id="targetValue"
-                  type="number"
-                  step="any"
-                  value={formData.targetValue}
-                  onChange={(e) => setFormData({ ...formData, targetValue: e.target.value })}
-                  required
-                  placeholder="z.B. 10"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unit">{t("goals.form.unit", "Einheit")} *</Label>
-                <Input
-                  id="unit"
-                  value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  required
-                  placeholder="z.B. Stunden, %, kg"
-                />
-              </div>
-            </div>
-
-            {calculatedProgress === null && (
-              <div className="space-y-2">
-                <Label htmlFor="progress">{t("goals.form.progress", "Fortschritt (%)")}</Label>
-                <Input
-                  id="progress"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.progressPercentage}
-                  onChange={(e) => setFormData({ ...formData, progressPercentage: e.target.value })}
-                />
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Startdatum</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endDate">Enddatum</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {/* Category Selection */}
-            <OrgaCategorySelect
-              value={formData.category}
-              onValueChange={(value) => setFormData({ ...formData, category: value })}
-              categories={orgaCategories}
-              showLabel={true}
-              label="Kategorie"
+            <GoalFormFields
+              formData={formData}
+              setFormData={setFormData}
+              calculatedProgress={calculatedProgress}
+              orgaCategories={orgaCategories}
             />
 
-            {/* Team Assignment */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Teams zuweisen
-              </Label>
-              {loadingTeams ? (
-                <div className="flex items-center gap-2 h-16 px-3 border rounded-md bg-muted/50">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">Lade Teams...</span>
-                </div>
-              ) : teams.length > 0 ? (
-                <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-2">
-                  {teams.map((team) => (
-                    <div key={team.id} className="flex items-center space-x-3">
-                      <Checkbox
-                        id={`team-${team.id}`}
-                        checked={selectedTeams.includes(team.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedTeams([...selectedTeams, team.id])
-                          } else {
-                            setSelectedTeams(selectedTeams.filter((id) => id !== team.id))
-                          }
-                        }}
-                      />
-                      <label htmlFor={`team-${team.id}`} className="flex items-center space-x-2 cursor-pointer flex-1">
-                        <div
-                          className="w-4 h-4 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: team.color || "#64748b" }}
-                        />
-                        <span className="text-sm font-medium">{team.name}</span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground border rounded-md p-3">Keine Teams verfügbar</p>
-              )}
-            </div>
+            <GoalTeamAssignment
+              teams={teams}
+              teamMembers={teamMembers}
+              selectedTeams={selectedTeams}
+              setSelectedTeams={setSelectedTeams}
+              selectedTeamMembers={selectedTeamMembers}
+              setSelectedTeamMembers={setSelectedTeamMembers}
+              loadingTeams={loadingTeams}
+              isTeamLoading={isTeamLoading}
+            />
 
-            {/* Team Members Assignment */}
-            <div className="space-y-2">
-              <Label>Zugewiesene Teammitglieder</Label>
-              <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-                {isTeamLoading ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    <span className="text-sm text-muted-foreground">Lade Teammitglieder...</span>
-                  </div>
-                ) : teamMembers && teamMembers.length > 0 ? (
-                  teamMembers.filter(isActiveMember).map((member) => (
-                    <div key={member.id} className="flex items-center space-x-3">
-                      <Checkbox
-                        id={`member-${member.id}`}
-                        checked={selectedTeamMembers.includes(member.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedTeamMembers([...selectedTeamMembers, member.id])
-                          } else {
-                            setSelectedTeamMembers(selectedTeamMembers.filter((id) => id !== member.id))
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor={`member-${member.id}`}
-                        className="flex items-center space-x-2 cursor-pointer flex-1"
-                      >
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={member.avatar || ""} />
-                          <AvatarFallback className="text-xs">
-                            {member.name?.split(" ")[0]?.[0]?.toUpperCase() || ""}
-                            {member.name?.split(" ")[1]?.[0]?.toUpperCase() || ""}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{member.name || member.email}</span>
-                      </label>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">Keine Teammitglieder verfügbar</p>
-                )}
-              </div>
-              {selectedTeamMembers.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  {selectedTeamMembers.length} Teammitglied(er) ausgewählt
-                </p>
-              )}
-            </div>
-
-            {/* Extended Settings */}
-            <div className="border-t pt-4">
-              <button
-                type="button"
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all duration-200 ${
-                  showExtended 
-                    ? "bg-primary/5 border-primary/20 shadow-sm" 
-                    : "bg-muted/30 border-border hover:bg-muted/50 hover:border-muted-foreground/20"
-                }`}
-                onClick={() => setShowExtended(!showExtended)}
-              >
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-md transition-colors ${showExtended ? "bg-primary/10" : "bg-muted"}`}>
-                    <Settings className={`h-4 w-4 transition-colors ${showExtended ? "text-primary" : "text-muted-foreground"}`} />
-                  </div>
-                  <span className={`font-medium transition-colors ${showExtended ? "text-primary" : "text-foreground"}`}>
-                    {t("goals.form.extendedSettings", "Erweiterte Einstellungen")}
-                  </span>
-                </div>
-                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showExtended ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
-              </button>
-
-              {showExtended && (
-                <div className="space-y-4 mt-4 pl-2 border-l-2 border-primary/20">
-                  <div className="space-y-2">
-                    <Label htmlFor="unit">{t("goals.form.unit", "Einheit")}</Label>
-                    <Input
-                      id="unit"
-                      value={formData.unit}
-                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                      placeholder={t("goals.form.unitPlaceholder", "z.B. Patienten, €")}
-                    />
-                  </div>
-
-                  {/* Parent Goal Selection */}
-                  {!parentGoalId && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="createAsSubgoal"
-                          checked={createAsSubgoal}
-                          onCheckedChange={(checked) => setCreateAsSubgoal(!!checked)}
-                        />
-                        <Label htmlFor="createAsSubgoal">Als Unterziel erstellen</Label>
-                      </div>
-
-                      {createAsSubgoal && (
-                        <Select
-                          value={formData.parentGoalId}
-                          onValueChange={(value) => setFormData({ ...formData, parentGoalId: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Übergeordnetes Ziel wählen..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableGoals.map((goal: any) => (
-                              <SelectItem key={goal.id} value={goal.id}>
-                                {goal.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Parameter Link */}
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedParameter">
-                      <Link className="h-4 w-4 inline mr-2" />
-                      Mit Kennzahl verknüpfen
-                    </Label>
-                    <Select
-                      value={formData.linkedParameterId}
-                      onValueChange={(value) => {
-                        setFormData({ ...formData, linkedParameterId: value })
-                        if (value && value !== "none") {
-                          fetchLatestParameterValue(value)
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Kennzahl wählen..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Keine Verknüpfung</SelectItem>
-                        {availableParameters.map((param: any) => (
-                          <SelectItem key={param.id} value={param.id}>
-                            {param.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between space-x-2">
-                    <Label htmlFor="isPrivate" className="flex-1">
-                      {t("goals.form.private", "Privates Ziel")}
-                      <p className="text-sm text-muted-foreground font-normal">
-                        {t(
-                          "goals.form.privateDescription",
-                          "Nur Sie und Praxisadministratoren können dieses Ziel sehen",
-                        )}
-                      </p>
-                    </Label>
-                    <Switch
-                      id="isPrivate"
-                      checked={formData.isPrivate}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isPrivate: checked })}
-                    />
-                  </div>
-
-                  {/* Image Upload */}
-                  <div className="space-y-2">
-                    <Label>Bilder anhängen</Label>
-                    <div
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                      className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors"
-                    >
-                      {isUploading ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Wird hochgeladen...</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <Upload className="h-8 w-8 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">Bilder hier ablegen oder Strg+V zum Einfügen</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {uploadedImages.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {uploadedImages.map((img, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={img.url || "/placeholder.svg"}
-                              alt={img.fileName}
-                              className="w-16 h-16 object-cover rounded border"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <GoalExtendedSettings
+              showExtended={showExtended}
+              setShowExtended={setShowExtended}
+              formData={formData}
+              setFormData={setFormData}
+              createAsSubgoal={createAsSubgoal}
+              setCreateAsSubgoal={setCreateAsSubgoal}
+              parentGoalId={parentGoalId}
+              availableGoals={availableGoals}
+              availableParameters={availableParameters}
+              fetchLatestParameterValue={fetchLatestParameterValue}
+              uploadedImages={uploadedImages}
+              isUploading={isUploading}
+              handleDrop={handleDrop}
+              handleDragOver={handleDragOver}
+              removeImage={removeImage}
+            />
           </div>
 
           <DialogFooter>

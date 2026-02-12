@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +14,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { List, Columns3, LayoutGrid, Loader2 } from "lucide-react"
+import {
+  List,
+  Columns3,
+  LayoutGrid,
+  Loader2,
+  Plus,
+  ClipboardList,
+  Search,
+  X,
+} from "lucide-react"
 import { useTodos, type Todo } from "@/contexts/todo-context"
 import { useTeam } from "@/contexts/team-context"
 import { usePractice } from "@/contexts/practice-context"
@@ -24,6 +32,8 @@ import CreateTodoDialog from "@/components/create-todo-dialog"
 import { TodoCard } from "./components/todo-card"
 import { KanbanColumn } from "./components/kanban-column"
 import { MatrixQuadrant } from "./components/matrix-quadrant"
+import { TodoStatsHeader } from "./components/todo-stats-header"
+import { cn } from "@/lib/utils"
 
 interface PageClientProps {
   initialTodos: any[]
@@ -65,6 +75,14 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   const activeTodos = useMemo(() => todos || initialTodos || [], [todos, initialTodos])
+
+  // Overdue count
+  const overdueCount = useMemo(() => {
+    return activeTodos.filter((t) => {
+      if (!t.due_date || t.status === "erledigt" || t.completed) return false
+      return new Date(t.due_date) < new Date()
+    }).length
+  }, [activeTodos])
 
   // Available assignees for filters
   const availableAssignees = useMemo(() => {
@@ -297,49 +315,21 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
     [teamMembers]
   )
 
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Aufgaben</h1>
-          <p className="text-muted-foreground">Verwalten Sie Ihre To-dos und Aufgaben</p>
-        </div>
-      </div>
+  const viewModes = [
+    { key: "list" as const, icon: List, label: "Liste" },
+    { key: "kanban" as const, icon: Columns3, label: "Kanban" },
+    { key: "matrix" as const, icon: LayoutGrid, label: "Matrix" },
+  ]
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter("alle")}>
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-muted-foreground">Gesamt</p>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter("offen")}>
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-muted-foreground">Offen</p>
-            <p className="text-2xl font-bold text-blue-600">{stats.offen}</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter("in_bearbeitung")}>
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-muted-foreground">In Bearbeitung</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.in_bearbeitung}</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter("erledigt")}>
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-muted-foreground">Erledigt</p>
-            <p className="text-2xl font-bold text-green-600">{stats.erledigt}</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter("abgebrochen")}>
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-muted-foreground">Abgebrochen</p>
-            <p className="text-2xl font-bold text-red-600">{stats.abgebrochen}</p>
-          </CardContent>
-        </Card>
-      </div>
+  return (
+    <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-7xl">
+      {/* Stats Header with progress ring */}
+      <TodoStatsHeader
+        stats={stats}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        overdueCount={overdueCount}
+      />
 
       {/* Menu Bar with Filters */}
       <TodoMenuBar
@@ -366,78 +356,118 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
         onViewModeChange={setViewMode}
       />
 
-      {/* View Mode Toggle */}
+      {/* View controls bar */}
       <div className="flex items-center justify-between">
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-          <TabsList>
-            <TabsTrigger value="alle">
-              Alle <Badge variant="secondary" className="ml-2">{stats.total}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="offen">
-              Offen <Badge variant="secondary" className="ml-2">{stats.offen}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="in_bearbeitung">
-              In Bearbeitung <Badge variant="secondary" className="ml-2">{stats.in_bearbeitung}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="erledigt">
-              Erledigt <Badge variant="secondary" className="ml-2">{stats.erledigt}</Badge>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Result count and active search indicator */}
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground tabular-nums">{filteredTodos.length}</span>{" "}
+            {filteredTodos.length === 1 ? "Aufgabe" : "Aufgaben"}
+            {statusFilter !== "alle" && (
+              <span className="text-muted-foreground">
+                {" "}in &quot;{statusFilter === "offen" ? "Offen" : statusFilter === "in_bearbeitung" ? "In Bearbeitung" : statusFilter === "erledigt" ? "Erledigt" : "Abgebrochen"}&quot;
+              </span>
+            )}
+          </p>
+          {(searchQuery || activeFiltersCount > 0) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchQuery("")
+                clearFilters()
+                setStatusFilter("alle")
+              }}
+              className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+              Zurucksetzen
+            </Button>
+          )}
+        </div>
 
-        <div className="flex items-center gap-1 border rounded-lg p-1">
-          <Button
-            variant={viewMode === "list" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("list")}
-            title="Listenansicht"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === "kanban" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("kanban")}
-            title="Kanban-Ansicht"
-          >
-            <Columns3 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === "matrix" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("matrix")}
-            title="Eisenhower-Matrix"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
+        {/* View mode switcher */}
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
+          {viewModes.map(({ key, icon: Icon, label }) => (
+            <Button
+              key={key}
+              variant={viewMode === key ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode(key)}
+              className={cn(
+                "h-8 gap-1.5 text-xs",
+                viewMode === key
+                  ? ""
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{label}</span>
+            </Button>
+          ))}
         </div>
       </div>
 
       {/* Content */}
       {isLoading ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-lg font-medium">Aufgaben werden geladen...</p>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="relative">
+              <div className="h-12 w-12 rounded-full border-4 border-muted" />
+              <Loader2 className="h-12 w-12 animate-spin text-primary absolute inset-0" />
+            </div>
+            <p className="text-base font-medium mt-4 text-foreground">Aufgaben werden geladen...</p>
+            <p className="text-sm text-muted-foreground mt-1">Einen Moment bitte</p>
           </CardContent>
         </Card>
       ) : filteredTodos.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <p className="text-lg font-medium mb-2">Keine Aufgaben gefunden</p>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || activeFiltersCount > 0
-                ? "Versuchen Sie andere Filter oder Suchbegriffe"
-                : "Erstellen Sie Ihre erste Aufgabe"}
-            </p>
-            {(searchQuery || activeFiltersCount > 0) ? (
-              <Button variant="outline" onClick={clearFilters}>
-                Filter zurucksetzen
-              </Button>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            {searchQuery || activeFiltersCount > 0 ? (
+              <>
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
+                  <Search className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-base font-semibold text-foreground">
+                  Keine Ergebnisse
+                </p>
+                <p className="text-sm text-muted-foreground mt-1 text-center max-w-sm">
+                  Fur Ihre aktuellen Filter und Suchbegriffe wurden keine Aufgaben gefunden
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchQuery("")
+                    clearFilters()
+                    setStatusFilter("alle")
+                  }}
+                >
+                  Filter zurucksetzen
+                </Button>
+              </>
             ) : (
-              <Button onClick={() => { setEditTodo(null); setShowCreateDialog(true) }}>
-                Neue Aufgabe erstellen
-              </Button>
+              <>
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+                  <ClipboardList className="h-6 w-6 text-primary" />
+                </div>
+                <p className="text-base font-semibold text-foreground">
+                  Noch keine Aufgaben
+                </p>
+                <p className="text-sm text-muted-foreground mt-1 text-center max-w-sm">
+                  Erstellen Sie Ihre erste Aufgabe, um mit der Organisation zu beginnen
+                </p>
+                <Button
+                  className="mt-4 gap-2"
+                  onClick={() => {
+                    setEditTodo(null)
+                    setShowCreateDialog(true)
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Erste Aufgabe erstellen
+                </Button>
+              </>
             )}
           </CardContent>
         </Card>
@@ -467,7 +497,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
         </div>
       ) : viewMode === "kanban" ? (
         /* Kanban View */
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <KanbanColumn
             title="Hohe Prioritat"
             priority="high"
@@ -519,7 +549,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
         </div>
       ) : (
         /* Matrix View (Eisenhower) */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MatrixQuadrant
             type="urgentImportant"
             todos={matrixGroups.urgentImportant}

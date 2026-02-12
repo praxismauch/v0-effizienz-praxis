@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const scanType = searchParams.get("type") // 'db-schema' | 'form-scan' | null (all)
+    const scanType = searchParams.get("scan_type") || searchParams.get("type") // 'db-schema' | 'form-scan' | 'code-review' | null (all)
     const limit = parseInt(searchParams.get("limit") || "50", 10)
 
     const supabase = await createServerClient()
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { scan_type, summary, total, ok, warnings, errors, duration_ms } = body
 
-    if (!scan_type || !["db-schema", "form-scan"].includes(scan_type)) {
+    if (!scan_type || !["db-schema", "form-scan", "code-review"].includes(scan_type)) {
       return NextResponse.json({ error: "Ungueltiger scan_type" }, { status: 400 })
     }
 

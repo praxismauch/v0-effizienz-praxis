@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { createServerClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 
@@ -241,12 +242,10 @@ export async function GET(request: Request) {
 
     const durationMs = Date.now() - startTime
 
-    // Save to history (fire-and-forget)
-    const origin = new URL(request.url).origin
-    fetch(`${origin}/api/super-admin/form-db-sync-history`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    // Save to history directly via Supabase
+    try {
+      const historySupabase = await createServerClient()
+      await historySupabase.from("form_db_sync_history").insert({
         scan_type: "db-schema",
         summary,
         total: summary.total,
@@ -254,8 +253,10 @@ export async function GET(request: Request) {
         warnings: summary.warnings,
         errors: summary.errors,
         duration_ms: durationMs,
-      }),
-    }).catch((err) => console.error("[v0] Failed to save db-schema history:", err))
+      })
+    } catch (err) {
+      console.error("[v0] Failed to save db-schema history:", err)
+    }
 
     return NextResponse.json({ results, summary, duration_ms: durationMs })
   } catch (error) {

@@ -125,6 +125,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         name: body.name,
         address: body.address,
         phone: body.phone,
+        fax: body.fax,
         email: body.email,
         website: body.website,
         description: body.description,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BadgeEarnedPopup } from "@/components/badge-earned-popup"
 import { Lock } from "lucide-react"
@@ -8,9 +8,10 @@ import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { AppLayout } from "@/components/app-layout"
 import { LandingPageLayout } from "@/components/landing-page-layout"
+import { useAcademyUserData } from "./hooks/use-academy-user-data"
 
 // Import types
-import type { Course, Enrollment, UserStats, UserBadge, LeaderboardEntry } from "./types"
+import type { UserStats } from "./types"
 import { DEFAULT_STATS } from "./types"
 
 // Import components
@@ -24,128 +25,27 @@ import { AcademyHeader } from "./components/academy-header"
 export function AcademyPageClient() {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { currentUser, loading: userLoading } = useUser()
-  const [courses, setCourses] = useState<Course[]>([])
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
-  const [userStats, setUserStats] = useState<UserStats | null>(null)
-  const [userBadges, setUserBadges] = useState<UserBadge[]>([])
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("courses")
-  const [pendingBadge, setPendingBadge] = useState<any>(null)
 
   const isAuthenticated = !!currentUser?.id
   const hasPractice = !!currentPractice?.id
 
-  useEffect(() => {
-    fetchAcademyData()
-  }, [currentPractice?.id, currentUser?.id])
-
-  const fetchAcademyData = async () => {
-    setIsLoading(true)
-    try {
-      const coursesPromise = fetch(`/api/public/academy/courses`)
-        .then((res) => (res.ok ? res.json() : []))
-        .catch(() => [])
-
-      let enrollmentsPromise = Promise.resolve([])
-      let statsPromise = Promise.resolve(null)
-      let badgesPromise = Promise.resolve([])
-      let leaderboardPromise = Promise.resolve([])
-
-      if (isAuthenticated && hasPractice && currentPractice?.id) {
-        enrollmentsPromise = fetch(`/api/practices/${currentPractice.id}/academy/enrollments`)
-          .then((res) => (res.ok ? res.json() : []))
-          .catch(() => [])
-
-        statsPromise = fetch(
-          `/api/practices/${currentPractice.id}/academy/stats${currentUser?.id ? `?user_id=${currentUser.id}` : ""}`,
-        )
-          .then((res) => (res.ok ? res.json() : null))
-          .catch(() => null)
-
-        badgesPromise = fetch(
-          `/api/practices/${currentPractice.id}/academy/badges${currentUser?.id ? `?user_id=${currentUser.id}` : ""}`,
-        )
-          .then((res) => (res.ok ? res.json() : []))
-          .catch(() => [])
-
-        leaderboardPromise = fetch(`/api/practices/${currentPractice.id}/academy/leaderboard`)
-          .then((res) => (res.ok ? res.json() : []))
-          .catch(() => [])
-      }
-
-      const [coursesData, enrollmentsData, statsData, badgesData, leaderboardData] = await Promise.all([
-        coursesPromise,
-        enrollmentsPromise,
-        statsPromise,
-        badgesPromise,
-        leaderboardPromise,
-      ])
-
-      setCourses(coursesData || [])
-      setEnrollments(enrollmentsData || [])
-      setUserStats(statsData)
-      setUserBadges(badgesData || [])
-      setLeaderboard(leaderboardData || [])
-    } catch (error) {
-      console.error("Error fetching academy data:", error)
-      // Only show toast for authenticated users as public data may fail silently
-      if (isAuthenticated && hasPractice) {
-        const errorMessage = error instanceof Error ? error.message : "Akademie-Daten konnten nicht geladen werden"
-        // Note: You may need to add a toast system here (e.g., sonner, react-hot-toast)
-        // For now, we'll log it prominently
-        console.error("[v0] Academy data fetch failed:", errorMessage)
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    const checkUnseenBadges = async () => {
-      if (!currentUser?.id) return
-
-      try {
-        const response = await fetch(`/api/badges/unseen?userId=${currentUser.id}`)
-        if (response.ok) {
-          const unseenBadges = await response.json()
-          if (unseenBadges.length > 0) {
-            const firstBadge = unseenBadges[0]
-            setPendingBadge({
-              id: firstBadge.badge?.badge_id,
-              name: firstBadge.badge?.name,
-              description: firstBadge.badge?.description,
-              icon_name: firstBadge.badge?.icon_name,
-              color: firstBadge.badge?.color,
-              rarity: firstBadge.badge?.rarity,
-              points: firstBadge.badge?.points,
-              userBadgeId: firstBadge.id,
-            })
-          }
-        }
-      } catch (error) {
-        console.error("Error checking unseen badges:", error)
-      }
-    }
-
-    checkUnseenBadges()
-  }, [currentUser?.id])
-
-  const handleBadgePopupClose = async () => {
-    if (pendingBadge?.userBadgeId) {
-      try {
-        await fetch("/api/badges/unseen", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ badgeIds: [pendingBadge.userBadgeId] }),
-        })
-      } catch (error) {
-        console.error("Error marking badge as seen:", error)
-      }
-    }
-    setPendingBadge(null)
-    fetchAcademyData()
-  }
+  const {
+    courses,
+    enrollments,
+    userStats,
+    userBadges,
+    leaderboard,
+    isLoading,
+    pendingBadge,
+    handleBadgePopupClose,
+    refetch,
+  } = useAcademyUserData({
+    practiceId: currentPractice?.id,
+    userId: currentUser?.id,
+    isAuthenticated,
+    hasPractice,
+  })
 
   const displayStats: UserStats = userStats || DEFAULT_STATS
 

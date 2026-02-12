@@ -870,8 +870,17 @@ export function GlobalParameterManagement() {
         </Badge>
       </div>
 
-  <Tabs defaultValue="parameters" className="space-y-6">
+  <Tabs defaultValue="categories" className="space-y-6">
   <TabsList>
+  <TabsTrigger value="categories" className="gap-2">
+  <Globe className="h-4 w-4" />
+  KPI-Kategorien
+  {groups.length > 0 && (
+    <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 text-xs">
+      {groups.length}
+    </Badge>
+  )}
+  </TabsTrigger>
   <TabsTrigger value="parameters" className="gap-2">
   <Database className="h-4 w-4" />
   {t("kpi.global_kpis", "Globale KPIs")}
@@ -883,6 +892,149 @@ export function GlobalParameterManagement() {
   </TabsTrigger>
   </TabsList>
 
+        {/* ═══════════ KPI-KATEGORIEN TAB ═══════════ */}
+        <TabsContent value="categories" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    Globale KPI-Kategorien
+                  </CardTitle>
+                  <CardDescription>
+                    Erstellen und verwalten Sie thematische Gruppen fuer Kennzahlen. Praxen koennen diese Kategorien uebernehmen.
+                  </CardDescription>
+                </div>
+                <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Neue Kategorie
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Neue KPI-Kategorie erstellen</DialogTitle>
+                      <DialogDescription>
+                        Erstellen Sie eine neue thematische Gruppe fuer Kennzahlen.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div>
+                        <Label htmlFor="new-group-name">Name *</Label>
+                        <Input
+                          id="new-group-name"
+                          value={newGroup.name || ""}
+                          onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+                          placeholder="z.B. Finanzkennzahlen"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="new-group-desc">Beschreibung</Label>
+                        <Textarea
+                          id="new-group-desc"
+                          value={newGroup.description || ""}
+                          onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+                          placeholder="Beschreibung der Kategorie..."
+                          rows={3}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="new-group-color">Farbe</Label>
+                          <Select
+                            value={newGroup.color}
+                            onValueChange={(value) => setNewGroup({ ...newGroup, color: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bg-blue-500">Blau</SelectItem>
+                              <SelectItem value="bg-green-500">Gruen</SelectItem>
+                              <SelectItem value="bg-purple-500">Lila</SelectItem>
+                              <SelectItem value="bg-orange-500">Orange</SelectItem>
+                              <SelectItem value="bg-red-500">Rot</SelectItem>
+                              <SelectItem value="bg-pink-500">Pink</SelectItem>
+                              <SelectItem value="bg-yellow-500">Gelb</SelectItem>
+                              <SelectItem value="bg-indigo-500">Indigo</SelectItem>
+                              <SelectItem value="bg-teal-500">Teal</SelectItem>
+                              <SelectItem value="bg-cyan-500">Cyan</SelectItem>
+                              <SelectItem value="bg-lime-500">Lime</SelectItem>
+                              <SelectItem value="bg-amber-500">Amber</SelectItem>
+                              <SelectItem value="bg-rose-500">Rose</SelectItem>
+                              <SelectItem value="bg-emerald-500">Smaragd</SelectItem>
+                              <SelectItem value="bg-gray-500">Grau</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex items-center space-x-2 pt-6">
+                          <Switch
+                            id="new-group-active"
+                            checked={newGroup.isActive}
+                            onCheckedChange={(checked) => setNewGroup({ ...newGroup, isActive: checked })}
+                          />
+                          <Label htmlFor="new-group-active">Aktiv</Label>
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsCreateGroupOpen(false)}>
+                        Abbrechen
+                      </Button>
+                      <Button onClick={handleCreateGroup} disabled={!newGroup.name?.trim()}>
+                        Kategorie erstellen
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+                    <p className="text-sm text-muted-foreground">Kategorien werden geladen...</p>
+                  </div>
+                </div>
+              ) : groups.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground">
+                  <Globe className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm font-medium">Keine KPI-Kategorien vorhanden</p>
+                  <p className="text-xs mt-1">Erstellen Sie eine neue Kategorie, um Kennzahlen thematisch zu gruppieren.</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {groups.map((group) => (
+                    <GroupCard
+                      key={group.id}
+                      group={group}
+                      onEdit={(g) => {
+                        setEditingGroup(g)
+                        setNewGroup({
+                          name: g.name,
+                          description: g.description,
+                          parameters: g.parameters,
+                          color: g.color,
+                          isActive: g.isActive,
+                          isTemplate: g.isTemplate,
+                        })
+                        setIsEditGroupOpen(true)
+                      }}
+                      onDuplicate={handleDuplicateGroup}
+                      onDelete={handleDeleteGroup}
+                      isDeletingGroup={isDeletingGroup}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ═══════════ GLOBALE KPIs TAB ═══════════ */}
         <TabsContent value="parameters" className="space-y-6">
           <Card>
             <CardHeader>

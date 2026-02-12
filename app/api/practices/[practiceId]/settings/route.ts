@@ -111,8 +111,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { practiceId: rawPracticeId } = await params
     const practiceId = getEffectivePracticeId(rawPracticeId)
+    console.log("[v0] PATCH settings route hit, practiceId:", practiceId)
 
-    const access = await requirePracticeAccess(practiceId)
+    let access
+    try {
+      access = await requirePracticeAccess(practiceId)
+    } catch (authError: any) {
+      console.error("[v0] PATCH auth error:", authError.message)
+      return NextResponse.json({ error: authError.message || "Authentication failed" }, { status: authError.status || 401 })
+    }
     const supabase = access.adminClient
 
     const body = await request.json()

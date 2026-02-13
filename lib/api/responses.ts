@@ -313,7 +313,7 @@ export function withErrorHandler(handler: (req: Request, ...args: unknown[]) => 
     try {
       return await handler(req, ...args)
     } catch (error) {
-      console.error("[v0] API Error:", error)
+      console.error("[api] Unhandled error:", error)
 
       if (error instanceof Error) {
         // Check for specific error types

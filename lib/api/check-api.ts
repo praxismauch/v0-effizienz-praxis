@@ -6,7 +6,7 @@ export async function checkAPI(): Promise<{ status: string; message: string }> {
       message: "API is available and responding",
     }
   } catch (error) {
-    console.error("[v0] API check failed:", error)
+    console.error("[api] API check failed:", error)
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error",

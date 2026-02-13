@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users, Star, MoreVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -87,7 +88,8 @@ export default function ContactsPage() {
     category: true,
   })
   const { toast } = useToast()
-  const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const router = useRouter()
+
   const { currentUser, loading: userLoading } = useUser()
   const { teamMembers, loading: teamLoading } = useTeam()
 
@@ -422,7 +424,15 @@ export default function ContactsPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredContacts.map((contact) => (
-<TableRow key={contact.id}>
+<TableRow
+                          key={contact.id}
+                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => {
+                            if (!contact.id.startsWith("team-")) {
+                              router.push(`/contacts/${contact.id}`)
+                            }
+                          }}
+                        >
                                           {visibleColumns.company && (
                                             <TableCell>
                                               {contact.company && (
@@ -465,6 +475,7 @@ export default function ContactsPage() {
                                     <a
                                       href={`mailto:${contact.email}`}
                                       className="hover:underline truncate max-w-[150px]"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
                                       {contact.email}
                                     </a>
@@ -491,6 +502,7 @@ export default function ContactsPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-sm text-blue-600 hover:underline block"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   {contact.street && (
                                     <div className="whitespace-nowrap">
@@ -524,7 +536,7 @@ export default function ContactsPage() {
                               )}
                             </TableCell>
                           )}
-                          <TableCell className="text-right">
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             {contact.id.startsWith("team-") ? (
                               <span className="text-xs text-muted-foreground italic">Teammitglied</span>
                             ) : (

@@ -1246,18 +1246,6 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     placeholder="service@example.com"
                   />
                 </div>
-                <div className="col-span-2">
-                  <Label>Kontakt auswählen</Label>
-                  <Button
-                    type="button"
-                    onClick={() => setShowContactSelector(true)}
-                    disabled={contactsLoading}
-                    className="flex items-center gap-2"
-                  >
-                    <Contact className="h-4 w-4" />
-                    Kontakt auswählen
-                  </Button>
-                </div>
               </div>
             </TabsContent>
 

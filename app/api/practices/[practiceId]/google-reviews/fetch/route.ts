@@ -25,7 +25,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single()
 
     if (practiceError || !practice) {
-      console.error("[v0] Failed to fetch practice:", practiceError)
       return NextResponse.json({ error: "Practice not found" }, { status: 404 })
     }
 
@@ -41,7 +40,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     let apiKey = process.env.GOOGLE_PLACES_API_KEY
-    console.log("[v0] GOOGLE_PLACES_API_KEY from env:", apiKey ? `Set (${apiKey.substring(0, 8)}...)` : "Not set")
 
     // Try to get practice-specific API key from practice_settings using admin client
     const { data: practiceSettingsData, error: settingsError } = await adminClient
@@ -50,19 +48,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .eq("practice_id", practiceId)
       .single()
 
-    if (settingsError) {
-      console.log("[v0] practice_settings query error (may not exist):", settingsError.message)
-    }
-
     const practiceApiKey = practiceSettingsData?.system_settings?.google_places_api_key
     if (practiceApiKey && practiceApiKey.trim().length > 10) {
       apiKey = practiceApiKey.trim()
-      console.log("[v0] Using practice-specific API key")
     }
 
     if (!apiKey) {
       // Fallback: Return data from local database if no API key
-      console.warn("[v0] No Google Places API key configured (neither env nor practice_settings)")
 
       const { data: localRatings, error: localError } = await adminClient
         .from("google_ratings")
@@ -73,7 +65,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .limit(10)
 
       if (localError) {
-        console.error("[v0] Error fetching local ratings:", localError)
         return NextResponse.json({
           reviews: [],
           totalReviews: 0,
@@ -101,7 +92,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Fetch from Google Places API (new)
-    console.log("[v0] Fetching from Google Places API for placeId:", placeId)
     try {
       const response = await fetch(`${GOOGLE_PLACES_API_URL}/${placeId}`, {
         method: "GET",
@@ -113,9 +103,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("[v0] Google Places API error:", response.status, errorText)
-
         // Fallback to local data
         const { data: localRatings } = await adminClient
           .from("google_ratings")
@@ -140,11 +127,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
 
       const placeData = await response.json()
-      console.log("[v0] Google Places API response:", {
-        rating: placeData.rating,
-        reviewCount: placeData.userRatingCount,
-        reviewsReturned: placeData.reviews?.length || 0,
-      })
 
       // Store/update reviews in database
       if (placeData.reviews && placeData.reviews.length > 0) {
@@ -177,8 +159,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         placeId,
       })
     } catch (apiError: any) {
-      console.error("[v0] Google Places API fetch error:", apiError)
-
       // Fallback to local data
       const { data: localRatings } = await adminClient
         .from("google_ratings")
@@ -202,7 +182,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
     }
   } catch (error: any) {
-    console.error("[v0] Error in google-reviews/fetch:", error)
     return NextResponse.json(
       {
         error: error.message || "Failed to fetch reviews",

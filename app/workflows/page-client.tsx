@@ -2,25 +2,26 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AppLayout } from "@/components/app-layout"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { useToast } from "@/hooks/use-toast"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Plus, Search, GitBranch, Sparkles, List, Grid } from "lucide-react"
 import { WorkflowDetailDialog } from "@/components/workflow-detail-dialog"
 import type { Workflow, WorkflowFormData } from "./workflow-types"
-import { statusConfig, defaultFormData } from "./workflow-types"
+import { defaultFormData, statusConfig } from "./workflow-types"
+import { WorkflowStats } from "./components/workflow-stats"
 import { WorkflowCard } from "./components/workflow-card"
 import { WorkflowFormDialog } from "./components/workflow-form-dialog"
 
 export default function WorkflowsPageClient() {
-  const { currentPractice, isLoading: practiceLoading } = usePractice()
-  const { currentUser: user, loading: authLoading } = useUser()
+  const { currentPractice } = usePractice()
+  const { currentUser: user } = useUser()
   const { isAiEnabled } = useAiEnabled()
   const { toast } = useToast()
 
@@ -34,7 +35,7 @@ export default function WorkflowsPageClient() {
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedWorkflowForDetail, setSelectedWorkflowForDetail] = useState<Workflow | null>(null)
-  const [formData, setFormData] = useState<WorkflowFormData>(defaultFormData)
+  const [formData, setFormData] = useState<WorkflowFormData>({ ...defaultFormData })
   const [isSaving, setIsSaving] = useState(false)
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
 
@@ -70,9 +71,11 @@ export default function WorkflowsPageClient() {
       if (response.ok) {
         toast({ title: "Workflow erstellt", description: "Der Workflow wurde erfolgreich erstellt." })
         setIsCreateDialogOpen(false)
-        setFormData(defaultFormData)
+        setFormData({ ...defaultFormData })
         loadWorkflows()
-      } else throw new Error()
+      } else {
+        throw new Error("Failed to create workflow")
+      }
     } catch {
       toast({ title: "Fehler", description: "Der Workflow konnte nicht erstellt werden.", variant: "destructive" })
     } finally {
@@ -84,18 +87,23 @@ export default function WorkflowsPageClient() {
     if (!currentPractice?.id || !selectedWorkflow?.id) return
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/workflows/${selectedWorkflow.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
+      const response = await fetch(
+        `/api/practices/${currentPractice.id}/workflows/${selectedWorkflow.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        },
+      )
       if (response.ok) {
         toast({ title: "Workflow aktualisiert", description: "Der Workflow wurde erfolgreich aktualisiert." })
         setIsEditDialogOpen(false)
         setSelectedWorkflow(null)
-        setFormData(defaultFormData)
+        setFormData({ ...defaultFormData })
         loadWorkflows()
-      } else throw new Error()
+      } else {
+        throw new Error("Failed to update workflow")
+      }
     } catch {
       toast({ title: "Fehler", description: "Der Workflow konnte nicht aktualisiert werden.", variant: "destructive" })
     } finally {
@@ -104,9 +112,13 @@ export default function WorkflowsPageClient() {
   }
 
   const handleDelete = async (workflow: Workflow) => {
-    if (!currentPractice?.id || !confirm("Sind Sie sicher, dass Sie diesen Workflow löschen möchten?")) return
+    if (!currentPractice?.id) return
+    if (!confirm("Sind Sie sicher, dass Sie diesen Workflow löschen möchten?")) return
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/workflows/${workflow.id}`, { method: "DELETE" })
+      const response = await fetch(
+        `/api/practices/${currentPractice.id}/workflows/${workflow.id}`,
+        { method: "DELETE" },
+      )
       if (response.ok) {
         setWorkflows((prev) => prev.filter((w) => w.id !== workflow.id))
         toast({ title: "Workflow gelöscht", description: "Der Workflow wurde erfolgreich gelöscht." })
@@ -120,14 +132,22 @@ export default function WorkflowsPageClient() {
     if (!currentPractice?.id) return
     const newStatus = workflow.status === "active" ? "paused" : "active"
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/workflows/${workflow.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      })
+      const response = await fetch(
+        `/api/practices/${currentPractice.id}/workflows/${workflow.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        },
+      )
       if (response.ok) {
-        setWorkflows((prev) => prev.map((w) => (w.id === workflow.id ? { ...w, status: newStatus } : w)))
-        toast({ title: "Status geändert", description: `Workflow ist jetzt ${statusConfig[newStatus].label}.` })
+        setWorkflows((prev) =>
+          prev.map((w) => (w.id === workflow.id ? { ...w, status: newStatus } : w)),
+        )
+        toast({
+          title: "Status geändert",
+          description: `Workflow ist jetzt ${statusConfig[newStatus].label}.`,
+        })
       }
     } catch {
       toast({ title: "Fehler", description: "Status konnte nicht geändert werden.", variant: "destructive" })
@@ -138,14 +158,21 @@ export default function WorkflowsPageClient() {
     if (!currentPractice?.id) return
     setIsGeneratingAI(true)
     try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/workflows/ai-generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: formData.category }),
-      })
+      const response = await fetch(
+        `/api/practices/${currentPractice.id}/workflows/ai-generate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category: formData.category }),
+        },
+      )
       if (response.ok) {
         const data = await response.json()
-        setFormData((prev) => ({ ...prev, name: data.name || prev.name, description: data.description || prev.description }))
+        setFormData((prev) => ({
+          ...prev,
+          name: data.name || prev.name,
+          description: data.description || prev.description,
+        }))
         toast({ title: "KI-Vorschlag", description: "Workflow-Vorschlag wurde generiert." })
       }
     } catch {
@@ -157,28 +184,32 @@ export default function WorkflowsPageClient() {
 
   const openEditDialog = (workflow: Workflow) => {
     setSelectedWorkflow(workflow)
-    setFormData({ name: workflow.name, description: workflow.description || "", category: workflow.category, status: workflow.status, priority: workflow.priority || "medium" })
+    setFormData({
+      name: workflow.name,
+      description: workflow.description || "",
+      category: workflow.category,
+      status: workflow.status,
+      priority: workflow.priority || "medium",
+    })
     setIsEditDialogOpen(true)
   }
 
-  const filteredWorkflows = workflows.filter((w) => {
-    const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase()) || w.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesSearch && (activeTab === "all" || w.status === activeTab)
+  const filteredWorkflows = workflows.filter((workflow) => {
+    const matchesSearch =
+      workflow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      workflow.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesTab = activeTab === "all" || workflow.status === activeTab
+    return matchesSearch && matchesTab
   })
-
-  const stats = {
-    total: workflows.length,
-    active: workflows.filter((w) => w.status === "active").length,
-    draft: workflows.filter((w) => w.status === "draft").length,
-    completed: workflows.filter((w) => w.status === "completed").length,
-  }
 
   if (!user || !currentPractice) {
     return (
       <div className="p-6 space-y-6">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
         </div>
       </div>
     )
@@ -190,13 +221,18 @@ export default function WorkflowsPageClient() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Workflows</h1>
-            <p className="text-muted-foreground">Verwalten Sie Ihre Praxis-Arbeitsabläufe</p>
+            <p className="text-muted-foreground">
+              Verwalten Sie Ihre Praxis-Arbeitsabläufe
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {isAiEnabled && (
               <Button
                 variant="outline"
-                onClick={() => { setFormData(defaultFormData); setIsCreateDialogOpen(true) }}
+                onClick={() => {
+                  setFormData({ ...defaultFormData })
+                  setIsCreateDialogOpen(true)
+                }}
                 className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white border-0"
               >
                 <Sparkles className="h-4 w-4" />
@@ -210,29 +246,18 @@ export default function WorkflowsPageClient() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          {[
-            { label: "Gesamt", value: stats.total, color: "" },
-            { label: "Aktiv", value: stats.active, color: "text-green-600" },
-            { label: "Entwürfe", value: stats.draft, color: "text-yellow-600" },
-            { label: "Abgeschlossen", value: stats.completed, color: "text-blue-600" },
-          ].map((stat) => (
-            <Card key={stat.label}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <WorkflowStats workflows={workflows} />
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Workflows durchsuchen..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+              <Input
+                placeholder="Workflows durchsuchen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-4">
@@ -244,10 +269,18 @@ export default function WorkflowsPageClient() {
             </Tabs>
           </div>
           <div className="flex items-center gap-1.5 p-1 bg-muted rounded-lg">
-            <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("list")}>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+            >
               <List className="h-4 w-4" />
             </Button>
-            <Button variant={viewMode === "grid" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("grid")}>
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+            >
               <Grid className="h-4 w-4" />
             </Button>
           </div>
@@ -255,14 +288,18 @@ export default function WorkflowsPageClient() {
 
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-48" />)}
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-48" />
+            ))}
           </div>
         ) : filteredWorkflows.length === 0 ? (
           <Card className="p-12 text-center">
             <GitBranch className="mx-auto h-12 w-12 text-muted-foreground/50" />
             <h3 className="mt-4 text-lg font-semibold">Keine Workflows gefunden</h3>
             <p className="mt-2 text-muted-foreground">
-              {searchTerm ? "Versuchen Sie eine andere Suche." : "Erstellen Sie Ihren ersten Workflow."}
+              {searchTerm
+                ? "Versuchen Sie eine andere Suche."
+                : "Erstellen Sie Ihren ersten Workflow."}
             </p>
             {!searchTerm && (
               <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
@@ -272,7 +309,13 @@ export default function WorkflowsPageClient() {
             )}
           </Card>
         ) : (
-          <div className={viewMode === "list" ? "space-y-4" : "grid gap-4 md:grid-cols-2 lg:grid-cols-3"}>
+          <div
+            className={
+              viewMode === "list"
+                ? "space-y-4"
+                : "grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            }
+          >
             {filteredWorkflows.map((workflow) => (
               <WorkflowCard
                 key={workflow.id}
@@ -281,7 +324,10 @@ export default function WorkflowsPageClient() {
                 onEdit={openEditDialog}
                 onDelete={handleDelete}
                 onToggleStatus={handleToggleStatus}
-                onViewDetails={(w) => { setSelectedWorkflowForDetail(w); setDetailDialogOpen(true) }}
+                onViewDetails={(w) => {
+                  setSelectedWorkflowForDetail(w)
+                  setDetailDialogOpen(true)
+                }}
               />
             ))}
           </div>
@@ -289,7 +335,10 @@ export default function WorkflowsPageClient() {
 
         <WorkflowFormDialog
           open={isCreateDialogOpen}
-          onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) setFormData(defaultFormData) }}
+          onOpenChange={(open) => {
+            setIsCreateDialogOpen(open)
+            if (!open) setFormData({ ...defaultFormData })
+          }}
           formData={formData}
           onFormDataChange={setFormData}
           onSubmit={handleCreate}
@@ -301,7 +350,13 @@ export default function WorkflowsPageClient() {
 
         <WorkflowFormDialog
           open={isEditDialogOpen}
-          onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) { setSelectedWorkflow(null); setFormData(defaultFormData) } }}
+          onOpenChange={(open) => {
+            setIsEditDialogOpen(open)
+            if (!open) {
+              setSelectedWorkflow(null)
+              setFormData({ ...defaultFormData })
+            }
+          }}
           formData={formData}
           onFormDataChange={setFormData}
           onSubmit={handleUpdate}
@@ -317,7 +372,10 @@ export default function WorkflowsPageClient() {
               description: selectedWorkflowForDetail.description,
               category: selectedWorkflowForDetail.category,
               priority: selectedWorkflowForDetail.priority || "medium",
-              status: selectedWorkflowForDetail.status === "archived" ? "draft" : selectedWorkflowForDetail.status,
+              status:
+                selectedWorkflowForDetail.status === "archived"
+                  ? "draft"
+                  : selectedWorkflowForDetail.status,
               createdBy: "",
               createdAt: selectedWorkflowForDetail.created_at,
               updatedAt: selectedWorkflowForDetail.updated_at,
@@ -329,7 +387,10 @@ export default function WorkflowsPageClient() {
             open={detailDialogOpen}
             onOpenChange={(open) => {
               setDetailDialogOpen(open)
-              if (!open) { setSelectedWorkflowForDetail(null); loadWorkflows() }
+              if (!open) {
+                setSelectedWorkflowForDetail(null)
+                loadWorkflows()
+              }
             }}
           />
         )}

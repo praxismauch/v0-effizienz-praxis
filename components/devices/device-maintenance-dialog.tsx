@@ -161,6 +161,8 @@ export function DeviceMaintenanceDialog({ open, onOpenChange, device, onSuccess 
         return "Inspektion"
       case "calibration":
         return "Kalibrierung"
+      case "cleaning":
+        return "Reinigung"
       default:
         return type
     }
@@ -198,6 +200,7 @@ export function DeviceMaintenanceDialog({ open, onOpenChange, device, onSuccess 
                         <SelectItem value="repair">Reparatur</SelectItem>
                         <SelectItem value="inspection">Inspektion</SelectItem>
                         <SelectItem value="calibration">Kalibrierung</SelectItem>
+                        <SelectItem value="cleaning">Reinigung</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

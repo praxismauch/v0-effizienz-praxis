@@ -476,10 +476,12 @@ export function DocumentsManager() {
     let successCount = 0
 
     try {
+      const { compressImageIfLarge } = await import("@/lib/image-compression")
       for (const file of uploadFormData.files) {
         try {
+          const processedFile = file.type.startsWith("image/") ? await compressImageIfLarge(file) : file
           const formData = new FormData()
-          formData.append("file", file)
+          formData.append("file", processedFile)
 
           const uploadResponse = await fetch(`/api/practices/${currentPractice.id}/upload`, {
             method: "POST",

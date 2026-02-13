@@ -472,10 +472,12 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     setIsUploadingImages(true)
     setImageUploadProgress(0)
     
+    const { compressImageIfLarge } = await import("@/lib/image-compression")
     for (let i = 0; i < uniqueFiles.length; i++) {
       try {
+        const processedFile = uniqueFiles[i].type.startsWith("image/") ? await compressImageIfLarge(uniqueFiles[i]) : uniqueFiles[i]
         const formData = new FormData()
-        formData.append("file", uniqueFiles[i])
+        formData.append("file", processedFile)
         
         const response = await fetch("/api/hiring/candidates/upload-document", {
           method: "POST",

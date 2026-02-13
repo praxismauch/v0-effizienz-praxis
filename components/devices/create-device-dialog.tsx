@@ -430,10 +430,10 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
         return
       }
 
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 50 * 1024 * 1024) {
         toast({
           title: "Fehler",
-          description: "Das Bild darf maximal 5MB groß sein.",
+          description: "Das Bild darf maximal 50MB groß sein.",
           variant: "destructive",
         })
         return
@@ -442,8 +442,10 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
       setImageUploading(true)
 
       try {
+        const { compressImageIfLarge } = await import("@/lib/image-compression")
+        const compressedFile = await compressImageIfLarge(file)
         const uploadFormData = new FormData()
-        uploadFormData.append("file", file)
+        uploadFormData.append("file", compressedFile)
 
         const response = await fetch(`/api/practices/${practiceId}/devices/upload-image`, {
           method: "POST",

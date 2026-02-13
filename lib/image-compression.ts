@@ -140,6 +140,17 @@ export async function compressImageToFile(file: File, options: CompressionOption
 }
 
 /**
+ * Compress image only if file size exceeds threshold (default 10MB)
+ * Returns the original file if under the threshold or not a compressible image
+ */
+export async function compressImageIfLarge(file: File, thresholdBytes = 10 * 1024 * 1024): Promise<File> {
+  if (!isCompressibleImage(file) || file.size <= thresholdBytes) {
+    return file
+  }
+  return compressImageToFile(file, { quality: 0.85 })
+}
+
+/**
  * Check if a file is an image that can be compressed
  */
 export function isCompressibleImage(file: File): boolean {

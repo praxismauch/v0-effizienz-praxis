@@ -25,8 +25,10 @@ import { typesToOptions, prioritiesToOptions } from "@/lib/tickets/utils"
 
 // Helper function to upload file via API
 async function uploadFileToServer(file: File): Promise<string> {
+  const { compressImageIfLarge } = await import("@/lib/image-compression")
+  const processedFile = file.type.startsWith("image/") ? await compressImageIfLarge(file) : file
   const formData = new FormData()
-  formData.append("file", file)
+  formData.append("file", processedFile)
   formData.append("type", "general")
 
   const response = await fetch("/api/upload/unified", {

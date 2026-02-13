@@ -17,64 +17,9 @@ import {
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { compressImageIfLarge } from "@/lib/image-compression"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const TARGET_FILE_SIZE = 2 * 1024 * 1024 // 2MB target after compression
-
-// Compress image if needed
-const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    // If file is already small enough, return as-is
-    if (file.size <= TARGET_FILE_SIZE) {
-      resolve(file)
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement("canvas")
-        let width = img.width
-        let height = img.height
-
-        // Scale down if needed
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width
-          width = maxWidth
-        }
-
-        canvas.width = width
-        canvas.height = height
-
-        const ctx = canvas.getContext("2d")
-        if (!ctx) {
-          reject(new Error("Could not get canvas context"))
-          return
-        }
-
-        ctx.drawImage(img, 0, 0, width, height)
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error("Could not compress image"))
-              return
-            }
-            const compressedFile = new File([blob], file.name, { type: "image/jpeg" })
-            resolve(compressedFile)
-          },
-          "image/jpeg",
-          quality,
-        )
-      }
-      img.onerror = () => reject(new Error("Could not load image"))
-      img.src = e.target?.result as string
-    }
-    reader.onerror = () => reject(new Error("Could not read file"))
-    reader.readAsDataURL(file)
-  })
-}
 
 interface CandidateImageUploadProps {
   imageUrl: string | null
@@ -151,7 +96,7 @@ export function CandidateImageUpload({ imageUrl, onImageChange, candidateName }:
 
     setIsCompressing(true)
     try {
-      const processedFile = await compressImage(file)
+      const processedFile = await compressImageIfLarge(file)
 
       const reader = new FileReader()
       reader.onloadend = () => {

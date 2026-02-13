@@ -182,8 +182,10 @@ export function AIPracticeChatDialog({
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
       setUploadingImage(true)
+      const { compressImageIfLarge } = await import("@/lib/image-compression")
+      const compressedFile = file.type.startsWith("image/") ? await compressImageIfLarge(file) : file
       const formData = new FormData()
-      formData.append("file", file)
+      formData.append("file", compressedFile)
       formData.append("type", "chatImage")
 
       const response = await fetch("/api/upload/unified", {

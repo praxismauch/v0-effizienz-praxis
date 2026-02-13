@@ -67,9 +67,12 @@ export function TodoAttachmentUpload({
     try {
       const newAttachments: TodoAttachment[] = []
 
+      const { compressImageIfLarge } = await import("@/lib/image-compression")
       for (const file of files) {
+        // Compress images above 10MB before uploading
+        const processedFile = file.type.startsWith("image/") ? await compressImageIfLarge(file) : file
         // Upload to Vercel Blob
-        const blob = await put(`todos/${practiceId}/${Date.now()}-${file.name}`, file, {
+        const blob = await put(`todos/${practiceId}/${Date.now()}-${processedFile.name}`, processedFile, {
           access: "public",
         })
 

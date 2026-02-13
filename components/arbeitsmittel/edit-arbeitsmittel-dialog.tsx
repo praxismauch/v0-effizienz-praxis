@@ -90,15 +90,17 @@ export function EditArbeitsmittelDialog({
       toast({ title: "Fehler", description: "Nur Bilddateien sind erlaubt", variant: "destructive" })
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "Fehler", description: "Bild darf maximal 5MB groß sein", variant: "destructive" })
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "Fehler", description: "Bild darf maximal 50MB groß sein", variant: "destructive" })
       return
     }
 
     setImageUploading(true)
     try {
+      const { compressImageIfLarge } = await import("@/lib/image-compression")
+      const compressedFile = await compressImageIfLarge(file)
       const formData = new FormData()
-      formData.append("file", file)
+      formData.append("file", compressedFile)
 
       const response = await fetch(`/api/practices/${item.practice_id}/arbeitsmittel/upload-image`, {
         method: "POST",

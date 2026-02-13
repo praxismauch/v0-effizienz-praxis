@@ -434,8 +434,12 @@ export function KVAbrechnungManager() {
         results: [],
       })
 
+      const { compressImageIfLarge } = await import("@/lib/image-compression")
       const formData = new FormData()
-      Array.from(files).forEach((file) => formData.append("files", file))
+      for (const file of Array.from(files)) {
+        const processedFile = file.type.startsWith("image/") ? await compressImageIfLarge(file) : file
+        formData.append("files", processedFile)
+      }
 
       const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung/smart-upload`, {
         method: "POST",

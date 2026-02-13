@@ -339,9 +339,11 @@ function ResponsibilityFormDialog({
   const uploadFiles = async (files: File[]) => {
     setUploadingFiles(true)
     try {
+      const { compressImageIfLarge } = await import("@/lib/image-compression")
       const uploadPromises = files.map(async (file) => {
+        const processedFile = file.type.startsWith("image/") ? await compressImageIfLarge(file) : file
         const formData = new FormData()
-        formData.append("file", file)
+        formData.append("file", processedFile)
 
         const response = await fetch(`/api/practices/${currentPractice!.id}/responsibilities/upload-file`, {
           method: "POST",

@@ -135,7 +135,7 @@ export function ScreenshotResultsPanel({
             <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <Tabs defaultValue="list">
+          <Tabs defaultValue="grid">
             <TabsList className="mb-4">
               <TabsTrigger value="list">Liste</TabsTrigger>
               <TabsTrigger value="grid">Galerie</TabsTrigger>

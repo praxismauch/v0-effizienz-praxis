@@ -199,18 +199,10 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                   />
                 </div>
                 <div>
-                  <Label>Einweiser</Label>
-                  <Input
-                    value={formData.trainer_name}
-                    onChange={(e) => setFormData({ ...formData, trainer_name: e.target.value })}
-                    placeholder="Name des Einweisenden"
-                  />
-                </div>
-                <div>
                   <Label>Einweiser-Typ</Label>
                   <Select
                     value={formData.trainer_role}
-                    onValueChange={(value) => setFormData({ ...formData, trainer_role: value })}
+                    onValueChange={(value) => setFormData({ ...formData, trainer_role: value, trainer_name: "" })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -221,6 +213,35 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                       <SelectItem value="external">Extern</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div>
+                  <Label>Einweiser</Label>
+                  {formData.trainer_role === "internal" ? (
+                    <Select
+                      value={formData.trainer_name}
+                      onValueChange={(value) => setFormData({ ...formData, trainer_name: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Teammitglied auswählen" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" className="max-h-[300px]">
+                        {activeMembers.map((member) => {
+                          const fullName = `${member.first_name} ${member.last_name}`.trim()
+                          return (
+                            <SelectItem key={member.id} value={fullName}>
+                              {fullName}
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      value={formData.trainer_name}
+                      onChange={(e) => setFormData({ ...formData, trainer_name: e.target.value })}
+                      placeholder="Name des Einweisenden"
+                    />
+                  )}
                 </div>
                 <div>
                   <Label>Einweisungsart</Label>

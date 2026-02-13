@@ -225,14 +225,16 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                         <SelectValue placeholder="Teammitglied auswählen" />
                       </SelectTrigger>
                       <SelectContent position="popper" className="max-h-[300px]">
-                        {activeMembers.map((member) => {
-                          const fullName = `${member.first_name} ${member.last_name}`.trim()
-                          return (
-                            <SelectItem key={member.id} value={fullName}>
-                              {fullName}
-                            </SelectItem>
-                          )
-                        })}
+                        {activeMembers
+                          .filter((m) => (m.first_name || m.last_name))
+                          .map((member) => {
+                            const fullName = `${member.first_name || ""} ${member.last_name || ""}`.trim()
+                            return (
+                              <SelectItem key={member.id} value={fullName || member.id}>
+                                {fullName || member.email || "Unbenannt"}
+                              </SelectItem>
+                            )
+                          })}
                       </SelectContent>
                     </Select>
                   ) : (

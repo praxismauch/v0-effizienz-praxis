@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -477,12 +478,16 @@ export default function PageClient(_props: PageClientProps) {
                         {/* Devices section */}
                         {devices.length > 0 && (
                           <div className="pt-2 border-t border-border/50">
-                            <div className="flex items-center gap-1.5 mb-2">
+                            <Link
+                              href="/devices"
+                              className="flex items-center gap-1.5 mb-2 hover:opacity-80 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs font-medium text-muted-foreground">
+                              <span className="text-xs font-medium text-muted-foreground underline underline-offset-2">
                                 Geräte ({devices.length})
                               </span>
-                            </div>
+                            </Link>
                             <div className="flex flex-wrap gap-1.5">
                               {devices.slice(0, 4).map((device) => (
                                 <Badge

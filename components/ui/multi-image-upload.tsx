@@ -106,23 +106,19 @@ export function MultiImageUpload({
         const formData = new FormData()
         formData.append("file", compressedFile)
 
-        console.log("[v0] Uploading image to:", uploadEndpoint, "file:", compressedFile.name, compressedFile.type, compressedFile.size, "(original:", file.size, ")")
         const response = await fetch(uploadEndpoint, {
           method: "POST",
           body: formData,
         })
 
-        console.log("[v0] Upload response status:", response.status)
         if (response.ok) {
           const data = await response.json()
           onImagesChange([...images, data.url])
         } else {
-          const errorData = await response.text()
-          console.log("[v0] Upload failed:", response.status, errorData)
           toast.error("Upload fehlgeschlagen", { description: `Status: ${response.status}` })
         }
       } catch (error) {
-        console.error("[v0] Error uploading image:", error)
+        console.error("Error uploading image:", error)
         toast.error("Upload fehlgeschlagen", { description: "Verbindungsfehler beim Hochladen" })
       } finally {
         setIsUploading(false)

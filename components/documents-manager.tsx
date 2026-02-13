@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ColorPicker } from "@/components/color-picker"
 import { useRouter } from "next/navigation"
 import {
   Upload,
@@ -2093,15 +2094,12 @@ export function DocumentsManager() {
                 onChange={(e) => setFolderFormData({ ...folderFormData, description: e.target.value })}
               />
             </div>
-            <div>
-              <Label htmlFor="folder-color">{t("documents.color", "Farbe")}</Label>
-              <Input
-                id="folder-color"
-                type="color"
-                value={folderFormData.color}
-                onChange={(e) => setFolderFormData({ ...folderFormData, color: e.target.value })}
-              />
-            </div>
+            <ColorPicker
+              id="folder-color"
+              label={t("documents.color", "Farbe")}
+              value={folderFormData.color}
+              onChange={(color) => setFolderFormData({ ...folderFormData, color })}
+            />
           </div>
           <DialogFooter>
             <Button

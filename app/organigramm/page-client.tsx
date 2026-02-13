@@ -48,8 +48,13 @@ interface TreeNode {
 
 interface TeamMember {
   id: string
+  user_id?: string | null
+  team_member_id?: string
   first_name: string
   last_name: string
+  name?: string
+  avatar?: string | null
+  avatar_url?: string | null
 }
 
 interface Team {

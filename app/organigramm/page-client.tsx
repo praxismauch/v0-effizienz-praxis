@@ -77,14 +77,6 @@ export default function OrganigrammClient() {
   const { user } = useAuth()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
 
-  console.log("[v0] Organigramm state:", {
-    loading,
-    practiceLoading,
-    currentPracticeId: currentPractice?.id,
-    currentPracticeName: currentPractice?.name,
-    positionsCount: positions.length,
-  })
-
   const { data: positionsData, error: positionsError } = useSWR<{ positions: Position[] }>(
     currentPractice?.id ? `/api/practices/${currentPractice.id}/org-chart-positions` : null,
     swrFetcher,
@@ -271,17 +263,46 @@ export default function OrganigrammClient() {
     const displayName = position.position_title
     const displayRole = position.department || ""
 
+    // Find assigned team member by user_id
+    const assignedMember = position.user_id
+      ? teamMembers.find(
+          (m) => m.user_id === position.user_id || m.id === position.user_id || m.team_member_id === position.user_id,
+        )
+      : null
+    const memberName = assignedMember
+      ? `${assignedMember.first_name || ""} ${assignedMember.last_name || ""}`.trim() || assignedMember.name || ""
+      : ""
+    const memberAvatar = assignedMember?.avatar || assignedMember?.avatar_url || null
+
     return (
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            "relative group bg-[#4F7CBA] text-white rounded-md px-4 py-3 min-w-[140px] max-w-[200px] text-center shadow-md transition-all hover:shadow-lg cursor-pointer",
+            "relative group bg-[#4F7CBA] text-white rounded-md px-4 py-3 min-w-[140px] max-w-[220px] text-center shadow-md transition-all hover:shadow-lg cursor-pointer",
             isRoot && "bg-[#3A5F8A] min-w-[180px]",
           )}
           onClick={() => setEditingPosition(position)}
         >
           <p className="font-semibold text-sm leading-tight break-words">{displayName}</p>
           {displayRole && <p className="text-xs text-white/80 mt-0.5 leading-tight">({displayRole})</p>}
+          {memberName && (
+            <div className="flex items-center justify-center gap-1.5 mt-2 pt-2 border-t border-white/20">
+              {memberAvatar ? (
+                <img
+                  src={memberAvatar}
+                  alt={memberName}
+                  className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-bold text-white">
+                    {memberName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <span className="text-xs text-white/90 leading-tight truncate">{memberName}</span>
+            </div>
+          )}
           <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
             <button
               className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-100"

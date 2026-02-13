@@ -243,11 +243,11 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
                   }}
                 />
                 <div className="flex gap-3 justify-center">
-                  <Button type="button" variant="outline" onClick={() => document.getElementById("image-upload")?.click()}>
+                  <Button type="button" onClick={() => document.getElementById("image-upload")?.click()}>
                     <Upload className="h-4 w-4 mr-2" />
                     Bild hochladen
                   </Button>
-                  <Button type="button" onClick={startCamera} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button type="button" variant="outline" onClick={startCamera}>
                     <Camera className="h-4 w-4 mr-2" />
                     Foto aufnehmen
                   </Button>

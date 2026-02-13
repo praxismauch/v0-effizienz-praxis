@@ -55,7 +55,7 @@ export async function POST(
           practice_id: practiceId,
           stamp_type: "start",
           timestamp: now.toISOString(),
-          location_type: locationNormalized,
+          work_location: locationNormalized,
           comment: comment || "",
         })
         .select()
@@ -84,8 +84,7 @@ export async function POST(
             start_time: now.toISOString(),
             end_time: null,
             is_open: true,
-            status: "active",
-            location_type: locationNormalized,
+            work_location: locationNormalized,
             notes: comment || todayBlock.notes || null,
             updated_at: now.toISOString(),
           })
@@ -108,8 +107,7 @@ export async function POST(
             date: today,
             start_time: now.toISOString(),
             end_time: null,
-            location_type: locationNormalized,
-            status: "active",
+            work_location: locationNormalized,
             is_open: true,
             break_minutes: 0,
             notes: comment || null,
@@ -160,7 +158,7 @@ export async function POST(
           practice_id: practiceId,
           stamp_type: "stop",
           timestamp: now.toISOString(),
-          location_type: openBlock.location_type || locationNormalized,
+          work_location: openBlock.work_location || locationNormalized,
           comment: comment || "",
         })
         .select()
@@ -183,7 +181,6 @@ export async function POST(
         .update({
           end_time: now.toISOString(),
           is_open: false,
-          status: "completed",
           actual_hours: actualHours,
           updated_at: now.toISOString(),
         })

@@ -85,6 +85,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
   const [contactsLoading, setContactsLoading] = useState(false)
   const [showContactSelector, setShowContactSelector] = useState(false)
   const [showConsumablesContactSelector, setShowConsumablesContactSelector] = useState(false)
+  const [showSupplierContactSelector, setShowSupplierContactSelector] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
 
   const [formData, setFormData] = useState({
@@ -661,6 +662,15 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
     setShowContactSelector(false)
   }
 
+  const handleSupplierContactSelect = (contact: ContactOption) => {
+    setFormData((prev) => ({
+      ...prev,
+      supplier_name: contact.company || `${contact.first_name || ""} ${contact.last_name || ""}`.trim(),
+      supplier_contact: contact.phone || contact.email || "",
+    }))
+    setShowSupplierContactSelector(false)
+  }
+
   const handleConsumablesContactSelect = (contact: ContactOption) => {
     setFormData((prev) => ({
       ...prev,
@@ -1128,21 +1138,70 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     placeholder="0.00"
                   />
                 </div>
-                <div>
-                  <Label>Lieferant</Label>
-                  <Input
-                    value={formData.supplier_name}
-                    onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
-                    placeholder="Name des Lieferanten"
-                  />
-                </div>
-                <div>
-                  <Label>Lieferant Kontakt</Label>
-                  <Input
-                    value={formData.supplier_contact}
-                    onChange={(e) => setFormData({ ...formData, supplier_contact: e.target.value })}
-                    placeholder="Telefon oder E-Mail"
-                  />
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Lieferant</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSupplierContactSelector(!showSupplierContactSelector)}
+                      className="h-7 text-xs gap-1"
+                    >
+                      <Contact className="h-3 w-3" />
+                      Aus Kontakten wählen
+                    </Button>
+                  </div>
+
+                  {showSupplierContactSelector && (
+                    <div className="mb-3 p-3 border rounded-lg bg-muted/30">
+                      <Label className="text-xs text-muted-foreground mb-2 block">
+                        Kontakt auswählen zum Übernehmen der Daten
+                      </Label>
+                      {contactsLoading ? (
+                        <div className="text-sm text-muted-foreground py-2">Laden...</div>
+                      ) : contacts.length === 0 ? (
+                        <div className="text-sm text-muted-foreground py-2">Keine Kontakte vorhanden</div>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto space-y-1">
+                          {contacts.map((contact) => (
+                            <button
+                              key={contact.id}
+                              type="button"
+                              onClick={() => handleSupplierContactSelect(contact)}
+                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent transition-colors text-sm"
+                            >
+                              <div className="font-medium">
+                                {contact.company || `${contact.first_name || ""} ${contact.last_name || ""}`.trim()}
+                              </div>
+                              {contact.company && (contact.first_name || contact.last_name) && (
+                                <div className="text-xs text-muted-foreground">
+                                  {`${contact.first_name || ""} ${contact.last_name || ""}`.trim()}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        value={formData.supplier_name}
+                        onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
+                        placeholder="Name des Lieferanten"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        value={formData.supplier_contact}
+                        onChange={(e) => setFormData({ ...formData, supplier_contact: e.target.value })}
+                        placeholder="Telefon oder E-Mail"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <Label>Garantie bis</Label>

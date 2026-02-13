@@ -29,47 +29,21 @@ export async function POST(request: NextRequest) {
 
     // Forward the caller's auth cookies to Puppeteer so the browser session is authenticated
     const cookieHeader = request.headers.get("cookie") || ""
-    console.log("[v0] Screenshot capture - cookie header length:", cookieHeader.length)
-    console.log("[v0] Screenshot capture - has cookies:", cookieHeader.length > 0)
-    console.log("[v0] Screenshot capture - targetUrl:", targetUrl)
 
     // Dynamic import to avoid bundling issues
-    let chromium: typeof import("@sparticuz/chromium")
-    let puppeteer: typeof import("puppeteer-core")
-    try {
-      chromium = await import("@sparticuz/chromium")
-      puppeteer = await import("puppeteer-core")
-      console.log("[v0] Screenshot capture - chromium and puppeteer loaded successfully")
-    } catch (importError) {
-      console.error("[v0] Screenshot capture - failed to import chromium/puppeteer:", importError)
-      return NextResponse.json({ 
-        success: false, 
-        error: "Chromium/Puppeteer konnte nicht geladen werden. Bitte überprüfen Sie die Abhängigkeiten." 
-      }, { status: 500 })
-    }
+    const chromium = await import("@sparticuz/chromium")
+    const puppeteer = await import("puppeteer-core")
 
     // Launch headless browser
-    let browser
-    try {
-      const execPath = await chromium.default.executablePath()
-      console.log("[v0] Screenshot capture - chromium executablePath:", execPath)
-      browser = await puppeteer.default.launch({
-        args: chromium.default.args,
-        defaultViewport: {
-          width: size.width,
-          height: size.height,
-        },
-        executablePath: execPath,
-        headless: true,
-      })
-      console.log("[v0] Screenshot capture - browser launched successfully")
-    } catch (launchError) {
-      console.error("[v0] Screenshot capture - browser launch failed:", launchError)
-      return NextResponse.json({ 
-        success: false, 
-        error: "Browser konnte nicht gestartet werden: " + (launchError instanceof Error ? launchError.message : String(launchError))
-      }, { status: 500 })
-    }
+    const browser = await puppeteer.default.launch({
+      args: chromium.default.args,
+      defaultViewport: {
+        width: size.width,
+        height: size.height,
+      },
+      executablePath: await chromium.default.executablePath(),
+      headless: true,
+    })
 
     const page = await browser.newPage()
 
@@ -102,15 +76,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Navigate to the target page (now authenticated via forwarded cookies)
-    console.log("[v0] Screenshot capture - navigating to:", targetUrl)
+    // Use domcontentloaded first (fast), then wait for network to settle
     try {
       await page.goto(targetUrl, {
-        waitUntil: "networkidle2",
-        timeout: 25000,
+        waitUntil: "domcontentloaded",
+        timeout: 45000,
       })
-      console.log("[v0] Screenshot capture - navigation successful, current URL:", page.url())
     } catch (navError) {
-      console.error("[v0] Screenshot capture - navigation failed:", navError)
+      // If even domcontentloaded fails, the page is truly unreachable
       await browser.close()
       return NextResponse.json({
         success: false,
@@ -118,7 +91,14 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Wait for any animations/lazy content
+    // Wait for network to become mostly idle (but don't fail if it doesn't fully settle)
+    try {
+      await page.waitForNetworkIdle({ idleTime: 1500, timeout: 15000 })
+    } catch {
+      // Some pages have long-running requests (SSE, analytics, etc.) -- that's OK
+    }
+
+    // Extra wait for client-side rendering / animations
     await new Promise((r) => setTimeout(r, 2000))
 
     // Scroll through the entire page to trigger lazy-loaded content

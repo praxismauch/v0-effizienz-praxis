@@ -6,13 +6,11 @@ import { swrFetcher } from "@/lib/swr-fetcher"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Award, AlertCircle, History, Filter, Users, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { SkillDefinition, SkillHistoryEntry, Team } from "./skills/types"
-import { LEVEL_CONFIG } from "./skills/types"
 import { SkillCard } from "./skills/skill-card"
 import { SkillsStatsOverview } from "./skills/skills-stats-overview"
 import { EditSkillDialog } from "./skills/edit-skill-dialog"
@@ -47,11 +45,6 @@ export function TeamMemberSkillsTab({
   const { data: teams = [] } = useSWR<Team[]>(practiceId ? SWR_KEYS.teams(practiceId) : null, swrFetcher)
 
   const [editingSkill, setEditingSkill] = useState<SkillDefinition | null>(null)
-  const [editLevel, setEditLevel] = useState<number>(0)
-  const [editTargetLevel, setEditTargetLevel] = useState<number | null>(null)
-  const [editNotes, setEditNotes] = useState("")
-  const [editReason, setEditReason] = useState("")
-  const [saving, setSaving] = useState(false)
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<string>("all")
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory] = useState<SkillHistoryEntry[]>([])
@@ -80,53 +73,12 @@ export function TeamMemberSkillsTab({
 
   const handleEditSkill = (skill: SkillDefinition) => {
     setEditingSkill(skill)
-    setEditLevel(skill.current_level ?? 0)
-    setEditTargetLevel(skill.target_level)
-    setEditNotes(skill.notes || "")
-    setEditReason("")
   }
 
   const handleShowHistory = (skillId?: string) => {
     setSelectedHistorySkill(skillId || null)
     setShowHistory(true)
     fetchHistory(skillId)
-  }
-
-  const handleSaveSkill = async () => {
-    if (!editingSkill || !practiceId || !memberId) return
-    try {
-      setSaving(true)
-      const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}/skills`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          skill_id: editingSkill.id,
-          current_level: editLevel,
-          target_level: editTargetLevel,
-          assessed_by: currentUserId,
-          notes: editNotes,
-          change_reason: editReason,
-        }),
-      })
-      if (res.ok) {
-        await mutateSkills()
-        setEditingSkill(null)
-        toast({
-          title: "Skill aktualisiert",
-          description: `${editingSkill.name} wurde erfolgreich aktualisiert.`,
-        })
-      } else {
-        throw new Error("Failed to save")
-      }
-    } catch {
-      toast({
-        title: "Fehler",
-        description: "Skill konnte nicht gespeichert werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setSaving(false)
-    }
   }
 
   // Filter skills by team
@@ -238,26 +190,10 @@ export function TeamMemberSkillsTab({
         <SkillsStatsOverview
           assessedCount={assessedSkills.length}
           totalCount={filteredSkills.length}
-          expertSkills={expertSkills}
+          expertCount={expertSkills}
           averageLevel={averageLevel}
           targetsMet={targetsMet}
         />
-
-        {/* Overall Progress */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Gesamtfortschritt</span>
-              <span className="text-sm text-muted-foreground">{Math.round((averageLevel / 3) * 100)}%</span>
-            </div>
-            <Progress value={(averageLevel / 3) * 100} className="h-3" />
-            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-              {LEVEL_CONFIG.map((config) => (
-                <span key={config.level}>{config.shortTitle}</span>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Skills by Category */}
         {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
@@ -305,16 +241,34 @@ export function TeamMemberSkillsTab({
         <EditSkillDialog
           skill={editingSkill}
           memberName={memberName}
-          editLevel={editLevel}
-          editTargetLevel={editTargetLevel}
-          editNotes={editNotes}
-          editReason={editReason}
-          saving={saving}
-          onEditLevelChange={setEditLevel}
-          onEditTargetLevelChange={setEditTargetLevel}
-          onEditNotesChange={setEditNotes}
-          onEditReasonChange={setEditReason}
-          onSave={handleSaveSkill}
+          onSave={async (data) => {
+            try {
+              const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}/skills`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  ...data,
+                  assessed_by: currentUserId,
+                }),
+              })
+              if (res.ok) {
+                await mutateSkills()
+                toast({
+                  title: "Skill aktualisiert",
+                  description: `${editingSkill?.name} wurde erfolgreich aktualisiert.`,
+                })
+                return true
+              }
+              throw new Error("Failed to save")
+            } catch {
+              toast({
+                title: "Fehler",
+                description: "Skill konnte nicht gespeichert werden.",
+                variant: "destructive",
+              })
+              return false
+            }
+          }}
           onClose={() => setEditingSkill(null)}
         />
 
@@ -324,9 +278,11 @@ export function TeamMemberSkillsTab({
           onOpenChange={setShowHistory}
           history={history}
           loading={loadingHistory}
-          skills={skills}
-          memberName={memberName}
-          selectedSkillId={selectedHistorySkill}
+          title={
+            selectedHistorySkill
+              ? `Änderungsverlauf: ${skills.find((s) => s.id === selectedHistorySkill)?.name || "Skill"}`
+              : `Änderungsverlauf: ${memberName}`
+          }
         />
       </div>
     </TooltipProvider>

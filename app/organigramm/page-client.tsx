@@ -94,7 +94,6 @@ export default function OrganigrammClient() {
 
   useEffect(() => {
     if (positionsData?.positions) {
-      console.log("[v0] Organigramm: SWR data loaded, positions:", positionsData.positions.length)
       setPositions(positionsData.positions)
     }
   }, [positionsData])
@@ -113,7 +112,6 @@ export default function OrganigrammClient() {
 
   useEffect(() => {
     if (positionsError) {
-      console.error("[v0] Organigramm: SWR error:", positionsError)
       toast({
         title: "Fehler",
         description: "Organigramm konnte nicht geladen werden",

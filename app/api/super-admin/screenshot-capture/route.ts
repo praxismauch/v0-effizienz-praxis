@@ -17,14 +17,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "URL ist erforderlich" }, { status: 400 })
     }
 
-    // Inject practice_id into the URL so app pages load with the correct practice context
+    // Inject practice_id into the URL
     const urlObj = new URL(url)
     if (!urlObj.searchParams.has("practice_id")) {
       urlObj.searchParams.set("practice_id", practiceId)
     }
     const targetUrl = urlObj.toString()
+    const origin = urlObj.origin
 
     const size = VIEWPORT_SIZES[viewport] || VIEWPORT_SIZES.desktop
+
+    // Forward the caller's auth cookies to Puppeteer so the browser session is authenticated
+    const cookieHeader = request.headers.get("cookie") || ""
 
     // Dynamic import to avoid bundling issues
     const chromium = await import("@sparticuz/chromium")
@@ -50,14 +54,35 @@ export async function POST(request: NextRequest) {
       deviceScaleFactor: 1,
     })
 
-    // Navigate to the page with practice_id injected
+    // Parse and inject the caller's auth cookies into Puppeteer
+    // This forwards the logged-in super admin's session to the headless browser
+    const domain = new URL(origin).hostname
+    const cookies = cookieHeader.split(";").map((c) => c.trim()).filter(Boolean)
+    const puppeteerCookies = cookies.map((cookie) => {
+      const [nameVal, ...rest] = cookie.split("=")
+      return {
+        name: nameVal.trim(),
+        value: [rest.join("=")].join("").trim(),
+        domain,
+        path: "/",
+        httpOnly: false,
+        secure: domain !== "localhost",
+        sameSite: "Lax" as const,
+      }
+    })
+
+    if (puppeteerCookies.length > 0) {
+      await page.setCookie(...puppeteerCookies)
+    }
+
+    // Navigate to the target page (now authenticated via forwarded cookies)
     await page.goto(targetUrl, {
       waitUntil: "networkidle2",
       timeout: 25000,
     })
 
-    // Wait a bit for any animations/lazy content
-    await new Promise((r) => setTimeout(r, 1500))
+    // Wait for any animations/lazy content
+    await new Promise((r) => setTimeout(r, 2000))
 
     // Scroll through the entire page to trigger lazy-loaded content
     await page.evaluate(async () => {

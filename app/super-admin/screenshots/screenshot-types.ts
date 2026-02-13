@@ -185,6 +185,7 @@ export async function captureScreenshot(
     const res = await fetch("/api/super-admin/screenshot-capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ url, viewport, pageName, practiceId }),
     })
     const data = await res.json()

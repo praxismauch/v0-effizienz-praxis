@@ -24,7 +24,10 @@ import { ScreenshotRunHistory } from "./components/screenshot-run-history"
 import { ScreenshotResultsPanel } from "./components/screenshot-results-panel"
 
 export function ScreenshotsPageClient() {
-  const [config, setConfig] = useState<ScreenshotConfig>(defaultConfig)
+  const [config, setConfig] = useState<ScreenshotConfig>(() => ({
+    ...defaultConfig,
+    baseUrl: typeof window !== "undefined" ? window.location.origin : defaultConfig.baseUrl,
+  }))
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const cancelRef = useRef(false)

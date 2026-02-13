@@ -17,8 +17,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "URL ist erforderlich" }, { status: 400 })
     }
 
+    // Ensure absolute URL
+    let absoluteUrl = url
+    if (!url.startsWith("http")) {
+      const host = request.headers.get("host") || "localhost:3000"
+      const protocol = request.headers.get("x-forwarded-proto") || "http"
+      absoluteUrl = `${protocol}://${host}${url.startsWith("/") ? "" : "/"}${url}`
+    }
+
     // Inject practice_id into the URL
-    const urlObj = new URL(url)
+    const urlObj = new URL(absoluteUrl)
     if (!urlObj.searchParams.has("practice_id")) {
       urlObj.searchParams.set("practice_id", practiceId)
     }

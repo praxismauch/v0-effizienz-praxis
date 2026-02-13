@@ -194,8 +194,14 @@ export async function captureScreenshot(
   practiceId: string = "1"
 ): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
   try {
+    // Ensure we have an absolute URL (handle relative paths and empty baseUrl)
+    let absoluteUrl = url
+    if (!url.startsWith("http")) {
+      absoluteUrl = `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`
+    }
+
     // Inject practice_id into URL
-    const urlObj = new URL(url)
+    const urlObj = new URL(absoluteUrl)
     if (!urlObj.searchParams.has("practice_id")) {
       urlObj.searchParams.set("practice_id", practiceId)
     }

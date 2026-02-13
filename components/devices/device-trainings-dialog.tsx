@@ -165,13 +165,13 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
               <div className="p-4">
                 <h4 className="font-medium mb-4">Neue Einweisung dokumentieren</h4>
                 <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="overflow-hidden">
                   <Label>Mitarbeiter *</Label>
                   <Select
                     value={formData.team_member_id}
                     onValueChange={(value) => setFormData({ ...formData, team_member_id: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="truncate">
                       <SelectValue placeholder="Mitarbeiter auswählen" />
                     </SelectTrigger>
                     <SelectContent position="popper" className="max-h-[300px]">
@@ -219,10 +219,16 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                   {formData.trainer_role === "internal" ? (
                     <Select
                       value={formData.trainer_name}
-                      onValueChange={(value) => setFormData({ ...formData, trainer_name: value })}
+                      onValueChange={(value) => {
+                        const member = activeMembers.find((m) => m.id === value)
+                        const name = member ? `${member.first_name || ""} ${member.last_name || ""}`.trim() : value
+                        setFormData({ ...formData, trainer_name: name })
+                      }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Teammitglied auswählen" />
+                        <SelectValue placeholder="Teammitglied auswählen">
+                          {formData.trainer_name || "Teammitglied auswählen"}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent position="popper" className="max-h-[300px]">
                         {activeMembers
@@ -230,7 +236,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                           .map((member) => {
                             const fullName = `${member.first_name || ""} ${member.last_name || ""}`.trim()
                             return (
-                              <SelectItem key={member.id} value={fullName || member.id}>
+                              <SelectItem key={member.id} value={member.id}>
                                 {fullName || member.email || "Unbenannt"}
                               </SelectItem>
                             )

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users, Star } from "lucide-react"
+import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users, Star, MoreVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -11,6 +11,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -296,30 +297,32 @@ export default function ContactsPage() {
               <Sparkles className="h-4 w-4" />
               KI-Extraktion
             </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setShowAISearchDialog(true)}
-            >
-              <Search className="h-4 w-4" />
-              KI-Suche
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2 border-primary/50 text-primary hover:bg-primary/10"
-              onClick={() => setShowRecommendedDialog(true)}
-            >
-              <Phone className="h-4 w-4" />
-              Empfohlene Nummern
-            </Button>
-            <Button variant="outline" onClick={() => setShowBatchDialog(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Batch Import
-            </Button>
             <Button onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Neuer Kontakt
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowAISearchDialog(true)}>
+                  <Search className="h-4 w-4 mr-2" />
+                  KI-Suche
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowRecommendedDialog(true)}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Empfohlene Nummern
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowBatchDialog(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Batch Import
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

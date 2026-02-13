@@ -172,11 +172,11 @@ export function DeviceMaintenanceDialog({ open, onOpenChange, device, onSuccess 
           <DialogDescription>Dokumentieren Sie Wartungen und Reparaturen</DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {/* Add Form */}
           {showAddForm ? (
-            <div className="flex-1 flex flex-col overflow-hidden border rounded-lg">
-              <ScrollArea className="flex-1 p-4">
+            <div className="flex-1 flex flex-col overflow-hidden border rounded-lg min-h-0">
+              <ScrollArea className="flex-1 min-h-0 p-4">
                 <h4 className="font-medium mb-4">Neuen Wartungsbericht erstellen</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -292,7 +292,7 @@ export function DeviceMaintenanceDialog({ open, onOpenChange, device, onSuccess 
                   </div>
                 </div>
               </ScrollArea>
-              <div className="flex justify-end gap-2 p-4 border-t">
+              <div className="flex justify-end gap-2 p-4 border-t flex-shrink-0">
                 <Button variant="outline" onClick={() => setShowAddForm(false)}>
                   Abbrechen
                 </Button>

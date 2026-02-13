@@ -10,8 +10,6 @@ import { ChevronLeft, ChevronRight, Users, Calendar, Clock, AlertTriangle, Arrow
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from "date-fns"
 import { de } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/contexts/user-context"
-import { usePractice } from "@/contexts/practice-context"
 
 import ScheduleTab from "./components/schedule-tab"
 import AvailabilityTab from "./components/availability-tab"
@@ -42,10 +40,7 @@ export default function DienstplanPageClient({
   userId,
 }: DienstplanPageClientProps) {
   const { toast } = useToast()
-  
   const router = useRouter()
-  const { currentUser } = useUser()
-  const { currentPractice, isLoading: practiceLoading } = usePractice()
 
   // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")

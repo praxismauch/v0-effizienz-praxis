@@ -87,10 +87,6 @@ export async function POST(request: NextRequest) {
       `,
     })
 
-    if (!emailResult.success) {
-      console.error("[v0] Failed to send 404 notification email:", emailResult.error)
-    }
-
     return NextResponse.json({ success: emailResult.success })
   } catch (error) {
     console.error("[v0] Error in 404 notification handler:", error)

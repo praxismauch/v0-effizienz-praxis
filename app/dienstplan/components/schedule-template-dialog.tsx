@@ -120,7 +120,7 @@ export default function ScheduleTemplateDialog({
   const handleAddShift = () => {
     const newShift: ScheduleTemplateShift = {
       day_of_week: 0,
-      shift_type_id: shiftTypes[0]?.id || "",
+      shift_type_id: (shiftTypes && shiftTypes.length > 0 && shiftTypes[0]?.id) || "",
       role_filter: undefined,
     }
     setTemplateShifts([...templateShifts, newShift])
@@ -443,17 +443,23 @@ export default function ScheduleTemplateDialog({
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {shiftTypes.map((st) => (
-                                    <SelectItem key={st.id} value={st.id}>
-                                      <div className="flex items-center gap-2">
-                                        <div
-                                          className="w-3 h-3 rounded-full"
-                                          style={{ backgroundColor: st.color }}
-                                        />
-                                        {st.name}
-                                      </div>
+                                  {shiftTypes && shiftTypes.length > 0 ? (
+                                    shiftTypes.map((st) => (
+                                      <SelectItem key={st.id} value={st.id}>
+                                        <div className="flex items-center gap-2">
+                                          <div
+                                            className="w-3 h-3 rounded-full"
+                                            style={{ backgroundColor: st.color }}
+                                          />
+                                          {st.name}
+                                        </div>
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="" disabled>
+                                      Keine Schichttypen verfügbar
                                     </SelectItem>
-                                  ))}
+                                  )}
                                 </SelectContent>
                               </Select>
                             </TableCell>

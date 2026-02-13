@@ -91,6 +91,7 @@ export default function ContactsPage() {
   const router = useRouter()
 
   const { currentUser, loading: userLoading } = useUser()
+  const { currentPractice } = usePractice()
   const { teamMembers, loading: teamLoading } = useTeam()
 
   const hasLoadedRef = useRef(false)

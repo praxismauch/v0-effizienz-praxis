@@ -313,17 +313,15 @@ export default function ArbeitsmittelPage() {
                       <TableRow>
                         <TableHead className="min-w-[100px]">Typ</TableHead>
                         <TableHead className="min-w-[120px]">Name</TableHead>
-                        <TableHead className="min-w-[120px]">Seriennummer</TableHead>
                         <TableHead className="min-w-[100px]">Status</TableHead>
                         <TableHead className="min-w-[140px]">Zugewiesen an</TableHead>
-                        <TableHead className="min-w-[100px]">Zustand</TableHead>
                         <TableHead className="text-right min-w-[80px]">Aktionen</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredItems.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">
                             Keine Arbeitsmittel gefunden
                           </TableCell>
                         </TableRow>
@@ -342,7 +340,6 @@ export default function ArbeitsmittelPage() {
                                 </div>
                               </TableCell>
                               <TableCell className="font-medium">{item.name}</TableCell>
-                              <TableCell>{item.serial_number || "-"}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className={statusColors[item.status]}>
                                   {statusLabels[item.status]}
@@ -351,7 +348,6 @@ export default function ArbeitsmittelPage() {
                               <TableCell>
                                 {assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "-"}
                               </TableCell>
-                              <TableCell>{item.condition || "-"}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button

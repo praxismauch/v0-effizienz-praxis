@@ -880,7 +880,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>{editDevice ? "Gerät bearbeiten" : "Neues Gerät"}</DialogTitle>
           <DialogDescription>
@@ -890,8 +890,8 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col min-h-0 flex-1">
+          <TabsList className="grid w-full grid-cols-6 flex-shrink-0">
             <TabsTrigger value="basic">Basis</TabsTrigger>
             <TabsTrigger value="purchase">Kauf</TabsTrigger>
             <TabsTrigger value="maintenance">Wartung</TabsTrigger>
@@ -900,7 +900,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
             <TabsTrigger value="details">Details</TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto py-4">
+          <div className="flex-1 overflow-y-auto py-4 min-h-0">
             <TabsContent value="basic" className="mt-0 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -1678,7 +1678,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Abbrechen
           </Button>

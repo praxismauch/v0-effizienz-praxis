@@ -111,7 +111,9 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
           notes: "",
         })
       } else {
-        throw new Error("Failed to save training")
+        const errorData = await response.json().catch(() => null)
+        console.log("[v0] Training save failed:", response.status, errorData)
+        throw new Error(errorData?.error || "Failed to save training")
       }
     } catch (error) {
       toast({ title: "Fehler", description: "Die Einweisung konnte nicht gespeichert werden.", variant: "destructive" })

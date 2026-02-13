@@ -54,18 +54,22 @@ export async function POST(
     const body = await request.json()
     const adminClient = await createAdminClient()
 
+    const insertData = {
+      device_id: deviceId,
+      team_member_id: body.team_member_id,
+      team_member_name: body.team_member_name || null,
+      training_date: body.training_date,
+      trainer: body.trainer_name || body.trainer || null,
+      zertifikat_vorhanden: body.zertifikat_vorhanden || false,
+      ablaufdatum: body.valid_until || body.ablaufdatum || null,
+      notizen: body.notes || body.notizen || null,
+    }
+
+    console.log("[v0] Inserting device training:", JSON.stringify(insertData))
+
     const { data: training, error } = await adminClient
       .from("device_trainings")
-      .insert({
-        device_id: deviceId,
-        team_member_id: body.team_member_id,
-        team_member_name: body.team_member_name,
-        training_date: body.training_date,
-        trainer: body.trainer_name || body.trainer,
-        zertifikat_vorhanden: body.zertifikat_vorhanden || false,
-        ablaufdatum: body.valid_until || body.ablaufdatum || null,
-        notizen: body.notes || body.notizen || null,
-      })
+      .insert(insertData)
       .select()
       .single()
 

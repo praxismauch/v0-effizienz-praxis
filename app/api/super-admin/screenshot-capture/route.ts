@@ -11,11 +11,18 @@ const VIEWPORT_SIZES: Record<string, { width: number; height: number }> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, viewport = "desktop", pageName = "page" } = await request.json()
+    const { url, viewport = "desktop", pageName = "page", practiceId = "1" } = await request.json()
 
     if (!url) {
       return NextResponse.json({ error: "URL ist erforderlich" }, { status: 400 })
     }
+
+    // Inject practice_id into the URL so app pages load with the correct practice context
+    const urlObj = new URL(url)
+    if (!urlObj.searchParams.has("practice_id")) {
+      urlObj.searchParams.set("practice_id", practiceId)
+    }
+    const targetUrl = urlObj.toString()
 
     const size = VIEWPORT_SIZES[viewport] || VIEWPORT_SIZES.desktop
 
@@ -43,8 +50,8 @@ export async function POST(request: NextRequest) {
       deviceScaleFactor: 1,
     })
 
-    // Navigate to the page
-    await page.goto(url, {
+    // Navigate to the page with practice_id injected
+    await page.goto(targetUrl, {
       waitUntil: "networkidle2",
       timeout: 25000,
     })

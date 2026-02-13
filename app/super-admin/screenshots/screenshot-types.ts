@@ -178,13 +178,14 @@ export function formatDuration(start: string, end: string | null) {
 export async function captureScreenshot(
   url: string,
   viewport: string,
-  pageName: string
+  pageName: string,
+  practiceId: string = "1"
 ): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
   try {
     const res = await fetch("/api/super-admin/screenshot-capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, viewport, pageName }),
+      body: JSON.stringify({ url, viewport, pageName, practiceId }),
     })
     const data = await res.json()
     if (!res.ok || !data.success) {

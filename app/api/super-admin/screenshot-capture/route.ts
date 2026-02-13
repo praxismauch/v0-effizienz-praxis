@@ -29,21 +29,47 @@ export async function POST(request: NextRequest) {
 
     // Forward the caller's auth cookies to Puppeteer so the browser session is authenticated
     const cookieHeader = request.headers.get("cookie") || ""
+    console.log("[v0] Screenshot capture - cookie header length:", cookieHeader.length)
+    console.log("[v0] Screenshot capture - has cookies:", cookieHeader.length > 0)
+    console.log("[v0] Screenshot capture - targetUrl:", targetUrl)
 
     // Dynamic import to avoid bundling issues
-    const chromium = await import("@sparticuz/chromium")
-    const puppeteer = await import("puppeteer-core")
+    let chromium: typeof import("@sparticuz/chromium")
+    let puppeteer: typeof import("puppeteer-core")
+    try {
+      chromium = await import("@sparticuz/chromium")
+      puppeteer = await import("puppeteer-core")
+      console.log("[v0] Screenshot capture - chromium and puppeteer loaded successfully")
+    } catch (importError) {
+      console.error("[v0] Screenshot capture - failed to import chromium/puppeteer:", importError)
+      return NextResponse.json({ 
+        success: false, 
+        error: "Chromium/Puppeteer konnte nicht geladen werden. Bitte überprüfen Sie die Abhängigkeiten." 
+      }, { status: 500 })
+    }
 
     // Launch headless browser
-    const browser = await puppeteer.default.launch({
-      args: chromium.default.args,
-      defaultViewport: {
-        width: size.width,
-        height: size.height,
-      },
-      executablePath: await chromium.default.executablePath(),
-      headless: true,
-    })
+    let browser
+    try {
+      const execPath = await chromium.default.executablePath()
+      console.log("[v0] Screenshot capture - chromium executablePath:", execPath)
+      browser = await puppeteer.default.launch({
+        args: chromium.default.args,
+        defaultViewport: {
+          width: size.width,
+          height: size.height,
+        },
+        executablePath: execPath,
+        headless: true,
+      })
+      console.log("[v0] Screenshot capture - browser launched successfully")
+    } catch (launchError) {
+      console.error("[v0] Screenshot capture - browser launch failed:", launchError)
+      return NextResponse.json({ 
+        success: false, 
+        error: "Browser konnte nicht gestartet werden: " + (launchError instanceof Error ? launchError.message : String(launchError))
+      }, { status: 500 })
+    }
 
     const page = await browser.newPage()
 
@@ -76,10 +102,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Navigate to the target page (now authenticated via forwarded cookies)
-    await page.goto(targetUrl, {
-      waitUntil: "networkidle2",
-      timeout: 25000,
-    })
+    console.log("[v0] Screenshot capture - navigating to:", targetUrl)
+    try {
+      await page.goto(targetUrl, {
+        waitUntil: "networkidle2",
+        timeout: 25000,
+      })
+      console.log("[v0] Screenshot capture - navigation successful, current URL:", page.url())
+    } catch (navError) {
+      console.error("[v0] Screenshot capture - navigation failed:", navError)
+      await browser.close()
+      return NextResponse.json({
+        success: false,
+        error: "Navigation fehlgeschlagen: " + (navError instanceof Error ? navError.message : String(navError))
+      }, { status: 500 })
+    }
 
     // Wait for any animations/lazy content
     await new Promise((r) => setTimeout(r, 2000))

@@ -333,65 +333,46 @@ export default function DienstplanPageClient({
           </TabsTrigger>
         </TabsList>
 
-          <TabsContent value="schedule">
-            <ScheduleTab
-              weekDays={weekDays}
-              schedules={schedules}
-              teamMembers={teamMembers}
-              shiftTypes={shiftTypes}
-              practiceId={practiceId}
-              onRefresh={fetchData}
-              setSchedules={setSchedules}
-            />
-          </TabsContent>
-
-          <TabsContent value="availability">
-            <AvailabilityTab
-              availability={availability}
-              teamMembers={teamMembers}
-              currentWeek={currentWeek}
-              practiceId={practiceId}
-              onRefresh={fetchData}
-            />
-          </TabsContent>
+        <TabsContent value="schedule">
+          <ScheduleTab
+            weekDays={weekDays}
+            schedules={schedules}
+            teamMembers={teamMembers}
+            shiftTypes={shiftTypes}
+            practiceId={practiceId}
+            onRefresh={fetchData}
+            setSchedules={setSchedules}
+          />
+        </TabsContent>
 
         <TabsContent value="availability">
           <AvailabilityTab
             availability={availability}
             teamMembers={teamMembers}
-            practiceId={currentPractice.id}
+            currentWeek={currentWeek}
+            practiceId={practiceId}
             onRefresh={fetchData}
           />
         </TabsContent>
 
-          <TabsContent value="swaps">
-            <SwapRequestsTab
-              swapRequests={swapRequests}
-              teamMembers={teamMembers}
-              schedules={schedules}
-              practiceId={practiceId}
-              onApprove={handleApproveSwap}
-              onReject={handleRejectSwap}
-            />
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <ShiftTypesTab
-              shiftTypes={shiftTypes}
-              practiceId={practiceId}
-              onAdd={handleAddShiftType}
-              onEdit={handleEditShiftType}
-              onDelete={handleDeleteShiftType}
-            />
-          </TabsContent>
+        <TabsContent value="swaps">
+          <SwapRequestsTab
+            swapRequests={swapRequests}
+            teamMembers={teamMembers}
+            schedules={schedules}
+            practiceId={practiceId}
+            onApprove={handleApproveSwap}
+            onReject={handleRejectSwap}
+          />
+        </TabsContent>
 
         <TabsContent value="settings">
           <ShiftTypesTab
             shiftTypes={shiftTypes}
+            practiceId={practiceId}
             onAdd={handleAddShiftType}
             onEdit={handleEditShiftType}
             onDelete={handleDeleteShiftType}
-            isLoading={isLoading}
           />
         </TabsContent>
       </Tabs>

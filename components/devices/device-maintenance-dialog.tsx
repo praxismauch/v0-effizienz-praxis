@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { usePractice } from "@/contexts/practice-context"
+import { useTeam } from "@/contexts/team-context"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,14 +42,18 @@ interface MaintenanceReport {
 
 export function DeviceMaintenanceDialog({ open, onOpenChange, device, onSuccess }: DeviceMaintenanceDialogProps) {
   const { currentPractice } = usePractice()
+  const { teamMembers } = useTeam()
   const [reports, setReports] = useState<MaintenanceReport[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
 
+  const activeMembers = teamMembers.filter((m) => m.status === "active" && (m.first_name || m.last_name))
+
   const [formData, setFormData] = useState({
     maintenance_type: "routine",
     maintenance_date: format(new Date(), "yyyy-MM-dd"),
+    performer_type: "external" as "internal" | "external",
     performed_by: "",
     performed_by_company: device?.maintenance_service_partner || "",
     title: "",
@@ -206,20 +211,72 @@ export function DeviceMaintenanceDialog({ open, onOpenChange, device, onSuccess 
                   </div>
                   <div>
                     <Label>Durchgeführt von</Label>
-                    <Input
-                      value={formData.performed_by}
-                      onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
-                      placeholder="Name"
-                    />
+                    <Select
+                      value={formData.performer_type}
+                      onValueChange={(value: "internal" | "external") =>
+                        setFormData({ ...formData, performer_type: value, performed_by: "", performed_by_company: "" })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="internal">Intern</SelectItem>
+                        <SelectItem value="external">Extern</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
-                    <Label>Firma</Label>
-                    <Input
-                      value={formData.performed_by_company}
-                      onChange={(e) => setFormData({ ...formData, performed_by_company: e.target.value })}
-                      placeholder="Servicefirma"
-                    />
+                    {formData.performer_type === "internal" ? (
+                      <>
+                        <Label>Teammitglied</Label>
+                        <Select
+                          value={formData.performed_by}
+                          onValueChange={(value) => {
+                            const member = activeMembers.find((m: any) => m.team_member_id === value || m.id === value)
+                            const name = member ? `${member.first_name || ""} ${member.last_name || ""}`.trim() : value
+                            setFormData({ ...formData, performed_by: name })
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Teammitglied auswählen">
+                              {formData.performed_by || "Teammitglied auswählen"}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activeMembers.map((member: any) => {
+                              const fullName = `${member.first_name || ""} ${member.last_name || ""}`.trim()
+                              const mId = member.team_member_id || member.id
+                              return (
+                                <SelectItem key={mId} value={mId}>
+                                  {fullName || member.email || "Unbenannt"}
+                                </SelectItem>
+                              )
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </>
+                    ) : (
+                      <>
+                        <Label>Name</Label>
+                        <Input
+                          value={formData.performed_by}
+                          onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
+                          placeholder="Name"
+                        />
+                      </>
+                    )}
                   </div>
+                  {formData.performer_type === "external" && (
+                    <div className="col-span-2">
+                      <Label>Firma</Label>
+                      <Input
+                        value={formData.performed_by_company}
+                        onChange={(e) => setFormData({ ...formData, performed_by_company: e.target.value })}
+                        placeholder="Servicefirma"
+                      />
+                    </div>
+                  )}
                   <div className="col-span-2">
                     <Label>Titel</Label>
                     <Input

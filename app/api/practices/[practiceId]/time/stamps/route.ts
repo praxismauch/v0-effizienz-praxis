@@ -1,10 +1,12 @@
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { type NextRequest, NextResponse } from "next/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
+  console.log("[v0] Stamps API - Starting POST handler")
   try {
     const { practiceId } = await params
     console.log("[v0] Stamps API - practiceId:", practiceId)
@@ -20,7 +22,15 @@ export async function POST(
       console.log("[v0] Stamps API - Auth successful")
     } catch (authError) {
       console.error("[v0] Stamps API - Auth failed:", authError)
-      throw authError
+      // Use admin client directly if auth fails for debugging
+      const supabase = await createAdminClient()
+      const body = await request.json()
+      console.log("[v0] Stamps API - Using admin client fallback, body:", body)
+      return NextResponse.json({ 
+        error: "Auth failed but continuing with admin client for debugging", 
+        authError: authError instanceof Error ? authError.message : String(authError),
+        success: false 
+      }, { status: 401 })
     }
     
     const { adminClient: supabase } = authResult

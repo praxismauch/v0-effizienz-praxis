@@ -1,5 +1,3 @@
-import { Badge } from "@/components/ui/badge"
-
 export interface ScreenshotRun {
   id: string
   started_at: string
@@ -42,6 +40,12 @@ export const defaultConfig: ScreenshotConfig = {
     tablet: { width: 768, height: 1024 },
     mobile: { width: 375, height: 812 },
   },
+}
+
+export const VIEWPORT_SIZES: Record<string, { width: number; height: number }> = {
+  desktop: { width: 1440, height: 900 },
+  tablet: { width: 768, height: 1024 },
+  mobile: { width: 375, height: 812 },
 }
 
 export const defaultPages = [
@@ -175,6 +179,14 @@ export function formatDuration(start: string, end: string | null) {
   return `${minutes}m ${remainingSeconds}s`
 }
 
+/**
+ * Capture a screenshot by loading the page in a hidden iframe,
+ * rendering it to a canvas via html2canvas, converting to PNG,
+ * and uploading to Vercel Blob.
+ * 
+ * This runs entirely client-side, inheriting the user's auth session.
+ * practice_id=1 is always appended.
+ */
 export async function captureScreenshot(
   url: string,
   viewport: string,
@@ -182,20 +194,126 @@ export async function captureScreenshot(
   practiceId: string = "1"
 ): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
   try {
-    const res = await fetch("/api/super-admin/screenshot-capture", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ url, viewport, pageName, practiceId }),
-    })
-    const data = await res.json()
-    if (!res.ok || !data.success) {
-      return { success: false, error: data.error || `HTTP ${res.status}` }
+    // Inject practice_id into URL
+    const urlObj = new URL(url)
+    if (!urlObj.searchParams.has("practice_id")) {
+      urlObj.searchParams.set("practice_id", practiceId)
     }
-    return { success: true, imageUrl: data.imageUrl }
-  } catch {
-    return { success: false, error: "Screenshot-API nicht erreichbar" }
+    const targetUrl = urlObj.toString()
+
+    const size = VIEWPORT_SIZES[viewport] || VIEWPORT_SIZES.desktop
+
+    // Load html2canvas dynamically
+    const html2canvasModule = await import("html2canvas")
+    const html2canvas = html2canvasModule.default
+
+    // Create a hidden iframe to load the page
+    const iframe = document.createElement("iframe")
+    iframe.style.position = "fixed"
+    iframe.style.top = "-10000px"
+    iframe.style.left = "-10000px"
+    iframe.style.width = `${size.width}px`
+    iframe.style.height = `${size.height}px`
+    iframe.style.border = "none"
+    iframe.style.opacity = "0"
+    iframe.style.pointerEvents = "none"
+    document.body.appendChild(iframe)
+
+    try {
+      // Load the page in the iframe (same-origin, inherits session cookies)
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error("Seite konnte nicht geladen werden (Timeout)"))
+        }, 30000)
+
+        iframe.onload = () => {
+          clearTimeout(timeout)
+          resolve()
+        }
+        iframe.onerror = () => {
+          clearTimeout(timeout)
+          reject(new Error("Iframe-Laden fehlgeschlagen"))
+        }
+        iframe.src = targetUrl
+      })
+
+      // Wait for page content to settle (lazy loading, animations)
+      await new Promise((r) => setTimeout(r, 3000))
+
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+      if (!iframeDoc || !iframeDoc.body) {
+        throw new Error("Iframe-Inhalt nicht zugreifbar")
+      }
+
+      // Use html2canvas to capture the full iframe document
+      const canvas = await html2canvas(iframeDoc.body, {
+        width: size.width,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        windowWidth: size.width,
+        windowHeight: size.height,
+        scrollX: 0,
+        scrollY: 0,
+      })
+
+      // Convert canvas to PNG blob
+      const pngBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob)
+            else reject(new Error("Canvas-zu-PNG-Konvertierung fehlgeschlagen"))
+          },
+          "image/png",
+          1.0
+        )
+      })
+
+      // Upload to Vercel Blob via the upload API
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
+      const safeName = pageName.replace(/[^a-zA-Z0-9-]/g, "_").toLowerCase()
+      const filename = `screenshots/${safeName}_${viewport}_${timestamp}.png`
+
+      const uploadRes = await fetch(`/api/super-admin/screenshot-upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          filename,
+          contentType: "image/png",
+          imageBase64: await blobToBase64(pngBlob),
+        }),
+      })
+
+      const uploadData = await uploadRes.json()
+      if (!uploadRes.ok || !uploadData.url) {
+        throw new Error(uploadData.error || "Upload fehlgeschlagen")
+      }
+
+      return { success: true, imageUrl: uploadData.url }
+    } finally {
+      // Clean up iframe
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe)
+      }
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Screenshot fehlgeschlagen"
+    return { success: false, error: message }
   }
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const result = reader.result as string
+      // Strip the data URL prefix to get just the base64 string
+      resolve(result.split(",")[1])
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
 }
 
 export function statusBadgeVariant(status: string): "default" | "secondary" | "destructive" | "outline" {

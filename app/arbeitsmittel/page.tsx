@@ -95,8 +95,9 @@ export default function ArbeitsmittelPage() {
     const response = await fetch(url)
     if (!response.ok) throw new Error("Failed to fetch team members")
     const data = await response.json()
-    // Ensure we always return an array
-    return Array.isArray(data) ? data : []
+    // API returns { teamMembers: [...] } - extract the array
+    const members = data?.teamMembers || data
+    return Array.isArray(members) ? members : []
   })
 
   

@@ -1,6 +1,5 @@
-import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 
 export async function POST(
   request: NextRequest,
@@ -15,25 +14,8 @@ export async function POST(
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
-    console.log("[v0] Stamps API - About to call requirePracticeAccess")
-    let authResult
-    try {
-      authResult = await requirePracticeAccess(practiceId)
-      console.log("[v0] Stamps API - Auth successful")
-    } catch (authError) {
-      console.error("[v0] Stamps API - Auth failed:", authError)
-      // Use admin client directly if auth fails for debugging
-      const supabase = await createAdminClient()
-      const body = await request.json()
-      console.log("[v0] Stamps API - Using admin client fallback, body:", body)
-      return NextResponse.json({ 
-        error: "Auth failed but continuing with admin client for debugging", 
-        authError: authError instanceof Error ? authError.message : String(authError),
-        success: false 
-      }, { status: 401 })
-    }
-    
-    const { adminClient: supabase } = authResult
+    // Use regular Supabase client instead of admin
+    const supabase = await createClient()
     const body = await request.json()
     const { user_id, action, location, comment } = body
     
@@ -223,6 +205,9 @@ export async function POST(
     return NextResponse.json({ error: "Invalid action", success: false }, { status: 400 })
   } catch (error) {
     console.error("[v0] Stamps API error:", error)
-    return handleApiError(error)
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : "Internal server error",
+      success: false 
+    }, { status: 500 })
   }
 }

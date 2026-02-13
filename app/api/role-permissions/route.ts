@@ -4,11 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server"
 // GET /api/role-permissions - Fetch all role permissions
 export async function GET(request: NextRequest) {
   try {
-    console.log("[v0] GET /api/role-permissions - Starting")
-
     const supabaseAdmin = await createAdminClient()
-
-    console.log("[v0] Admin client created, querying permissions")
 
     const { data: permissions, error } = await supabaseAdmin
       .from("role_permissions")
@@ -16,14 +12,7 @@ export async function GET(request: NextRequest) {
       .order("role", { ascending: true })
       .order("permission_category", { ascending: true })
 
-    console.log("[v0] Query result:", {
-      hasPermissions: !!permissions,
-      count: permissions?.length,
-      error: error?.message,
-    })
-
     if (error) {
-      console.error("[v0] Database error:", error)
       return NextResponse.json(
         { error: "Failed to fetch permissions", details: error.message },
         {
@@ -33,7 +22,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log("[v0] Successfully fetched permissions:", permissions?.length || 0)
     return NextResponse.json(
       { permissions: permissions || [] },
       {
@@ -42,7 +30,6 @@ export async function GET(request: NextRequest) {
       },
     )
   } catch (error) {
-    console.error("[v0] GET /api/role-permissions - Error:", error)
     return NextResponse.json(
       {
         error: "Internal server error",
@@ -59,7 +46,6 @@ export async function GET(request: NextRequest) {
 // PUT /api/role-permissions - Update role permission
 export async function PUT(request: NextRequest) {
   try {
-    console.log("[v0] PUT /api/role-permissions - Starting")
     const body = await request.json()
     const { role, permission_key, ...updates } = body
 
@@ -84,7 +70,6 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("[v0] Database error:", error)
       return NextResponse.json(
         { error: "Failed to update permission", details: error.message },
         {
@@ -94,7 +79,6 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    console.log("[v0] Successfully updated permission")
     return NextResponse.json(
       { permission: data },
       {
@@ -103,7 +87,6 @@ export async function PUT(request: NextRequest) {
       },
     )
   } catch (error) {
-    console.error("[v0] PUT /api/role-permissions - Error:", error)
     return NextResponse.json(
       {
         error: "Internal server error",

@@ -130,7 +130,6 @@ export async function sendEmail({
     const transporter = await getTransporter()
 
     if (!transporter) {
-      console.warn("SMTP not configured - skipping email send")
       return {
         success: false,
         error: "E-Mail-Service nicht konfiguriert. Bitte SMTP-Einstellungen in den Systemeinstellungen konfigurieren.",

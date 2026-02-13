@@ -1,11 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sendEmail } from "@/lib/email/send-email"
+import { sendEmail, isEmailConfigured } from "@/lib/email/send-email"
 import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
+    // Skip entirely if email is not configured
+    const emailConfigured = await isEmailConfigured()
+    if (!emailConfigured) {
+      return NextResponse.json({ success: false, message: "Email not configured" })
+    }
+
     const body = await request.json()
     const { timestamp, url, referrer } = body
 
@@ -88,8 +94,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ success: emailResult.success })
-  } catch (error) {
-    console.error("[v0] Error in 404 notification handler:", error)
+  } catch {
     return NextResponse.json({ success: false, error: "Internal error" }, { status: 500 })
   }
 }

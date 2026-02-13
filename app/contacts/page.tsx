@@ -546,42 +546,21 @@ export default function ContactsPage() {
                             {contact.id.startsWith("team-") ? (
                               <span className="text-xs text-muted-foreground italic">Teammitglied</span>
                             ) : (
-                              <div className="flex justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-9 w-9 p-0"
-                                  onClick={() => toggleFavorite(contact)}
-                                  title={contact.is_favorite ? "Aus Favoriten entfernen" : "Als Favorit markieren"}
-                                >
-                                  <Star
-                                    className={`h-4 w-4 ${
-                                      contact.is_favorite
-                                        ? "fill-amber-400 text-amber-400"
-                                        : "text-muted-foreground hover:text-amber-400"
-                                    }`}
-                                  />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-9 w-9 p-0"
-                                  onClick={() => {
-                                    setSelectedContact(contact)
-                                    setShowEditDialog(true)
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-9 w-9 p-0"
-                                  onClick={() => setContactToDelete(contact)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-9 p-0"
+                                onClick={() => toggleFavorite(contact)}
+                                title={contact.is_favorite ? "Aus Favoriten entfernen" : "Als Favorit markieren"}
+                              >
+                                <Star
+                                  className={`h-4 w-4 ${
+                                    contact.is_favorite
+                                      ? "fill-amber-400 text-amber-400"
+                                      : "text-muted-foreground hover:text-amber-400"
+                                  }`}
+                                />
+                              </Button>
                             )}
                           </TableCell>
                         </TableRow>

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Plus, Pencil, Trash2 } from "lucide-react"
+import { Building2, Plus, Pencil, Trash2, ImageIcon } from "lucide-react"
 import { CreateRoomDialog } from "./create-room-dialog"
 import { EditRoomDialog } from "./edit-room-dialog"
 import { toast } from "sonner"
@@ -102,7 +102,7 @@ export function RoomsManagement({ initialRooms, practiceId }: RoomsManagementPro
                 return (
                   <Card
                     key={room.id}
-                    className={`overflow-hidden border-2 hover:shadow-md transition-all cursor-pointer ${!isHex ? (COLOR_MAP_LIGHT[colorKey] || "") : ""}`}
+                    className={`overflow-hidden border-2 hover:shadow-md transition-all cursor-pointer group ${!isHex ? (COLOR_MAP_LIGHT[colorKey] || "") : ""}`}
                     style={{ 
                       borderLeftWidth: "6px", 
                       borderLeftColor: isHex ? colorKey : `var(--color-${colorKey}-500, #3b82f6)`,
@@ -110,6 +110,27 @@ export function RoomsManagement({ initialRooms, practiceId }: RoomsManagementPro
                     }}
                     onClick={() => setEditRoom(room)}
                   >
+                    {(() => {
+                      const images = room.images ? (typeof room.images === "string" ? JSON.parse(room.images) : room.images) : []
+                      return images.length > 0 ? (
+                        <div className="relative aspect-video overflow-hidden">
+                          <img
+                            src={images[0]}
+                            alt={room.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          {images.length > 1 && (
+                            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+                              +{images.length - 1}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="aspect-video flex items-center justify-center bg-muted/30">
+                          <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
+                        </div>
+                      )
+                    })()}
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">

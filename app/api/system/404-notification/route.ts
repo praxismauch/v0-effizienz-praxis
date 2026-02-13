@@ -9,16 +9,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { timestamp, url, referrer } = body
 
-    // Get super admin emails
+    // Get super admin emails from the users table
     const supabase = await createClient()
     const { data: superAdmins, error } = await supabase
-      .from("super_admins")
+      .from("users")
       .select("email")
+      .eq("role", "superadmin")
       .eq("is_active", true)
       .not("email", "is", null)
 
     if (error || !superAdmins || superAdmins.length === 0) {
-      console.warn("[v0] No super admins found for 404 notification")
       return NextResponse.json({ success: false, message: "No recipients" })
     }
 

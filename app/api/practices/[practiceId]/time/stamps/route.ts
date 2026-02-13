@@ -62,7 +62,7 @@ export async function POST(
           stamp_type: "start",
           timestamp: now.toISOString(),
           work_location: locationNormalized,
-          comment: comment || "",
+          comment: comment || null,
         })
         .select()
         .single()
@@ -165,7 +165,7 @@ export async function POST(
           stamp_type: "stop",
           timestamp: now.toISOString(),
           work_location: openBlock.work_location || locationNormalized,
-          comment: comment || "",
+          comment: comment || null,
         })
         .select()
         .single()

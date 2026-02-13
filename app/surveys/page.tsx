@@ -79,10 +79,7 @@ export default function SurveysPage() {
       const response = await fetch(`/api/practices/${currentPractice.id}/surveys`, { credentials: "include" })
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Fetched surveys count:", data.surveys?.length, "surveys:", data.surveys?.map((s: any) => ({ id: s.id, title: s.title, status: s.status })))
         setSurveys(data.surveys || [])
-      } else {
-        console.log("[v0] Fetch surveys failed:", response.status)
       }
     } catch (error) {
       Logger.error("api", "Error fetching surveys", error)
@@ -144,15 +141,13 @@ export default function SurveysPage() {
         credentials: "include",
         body: JSON.stringify(newSurvey),
       })
-      console.log("[v0] Create survey response status:", response.status)
-      const responseData = await response.json()
-      console.log("[v0] Create survey response data:", responseData)
       if (response.ok) {
         toast({ title: "Umfrage erstellt", description: "Die Umfrage wurde erfolgreich erstellt." })
         setShowCreateDialog(false)
         setNewSurvey(DEFAULT_NEW_SURVEY)
         await fetchSurveys()
       } else {
+        const responseData = await response.json()
         throw new Error(`Failed to create survey: ${response.status} - ${responseData?.error || "Unknown error"}`)
       }
     } catch (error) {

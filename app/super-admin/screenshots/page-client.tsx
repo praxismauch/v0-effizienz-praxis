@@ -209,6 +209,7 @@ export function ScreenshotsPageClient() {
 
       // Capture real screenshot
       const fullUrl = `${config.baseUrl}${result.page_path}`
+      console.log("[v0] Screenshot capture - baseUrl:", config.baseUrl, "page_path:", result.page_path, "fullUrl:", fullUrl)
       const captureResult = await captureScreenshot(fullUrl, result.viewport, result.page_name)
 
       const newStatus: "completed" | "failed" = captureResult.success ? "completed" : "failed"

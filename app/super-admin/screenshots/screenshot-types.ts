@@ -197,8 +197,11 @@ export async function captureScreenshot(
     // Ensure we have an absolute URL (handle relative paths and empty baseUrl)
     let absoluteUrl = url
     if (!url.startsWith("http")) {
-      absoluteUrl = `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`
+      const origin = typeof window !== "undefined" ? window.location.origin : ""
+      absoluteUrl = `${origin}${url.startsWith("/") ? "" : "/"}${url}`
     }
+
+    console.log("[v0] captureScreenshot input url:", url, "absoluteUrl:", absoluteUrl)
 
     // Inject practice_id into URL
     const urlObj = new URL(absoluteUrl)

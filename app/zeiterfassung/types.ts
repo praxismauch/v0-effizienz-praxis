@@ -6,13 +6,12 @@ export interface TimeStamp {
   practice_id: string
   stamp_type: "start" | "stop" | "pause_start" | "pause_end"
   timestamp: string
-  location_type: string
+  work_location: string
   device_fingerprint?: string
   ip_address?: string
   latitude?: number
   longitude?: number
-  notes?: string
-  is_manual: boolean
+  comment?: string
   created_at: string
   updated_at: string
 }
@@ -27,9 +26,10 @@ export interface TimeBlock {
   planned_hours?: number
   actual_hours?: number
   break_minutes: number
-  overtime_minutes: number
-  location_type: string
-  status: "active" | "completed" | "cancelled"
+  gross_minutes?: number
+  net_minutes?: number
+  work_location: string
+  is_open: boolean
   notes?: string
   created_at: string
   updated_at: string

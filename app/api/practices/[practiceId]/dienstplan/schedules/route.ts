@@ -44,7 +44,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
     const body = await request.json()
-    console.log("[v0] API POST /schedules - practiceId:", practiceId, "body:", body)
     const supabase = await createClient()
 
     const { data: schedule, error } = await supabase
@@ -65,14 +64,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single()
 
     if (error) {
-      console.error("[v0] Database error creating schedule:", error)
+      console.error("Database error creating schedule:", error)
       throw error
     }
 
-    console.log("[v0] Schedule created successfully:", schedule)
     return NextResponse.json({ schedule })
   } catch (error) {
-    console.error("[v0] Error creating schedule:", error)
+    console.error("Error creating schedule:", error)
     return NextResponse.json({ error: "Failed to create schedule" }, { status: 500 })
   }
 }

@@ -22,10 +22,11 @@ export async function POST(
     const { data: breakRecord, error } = await supabase
       .from("time_block_breaks")
       .insert({
-        time_block_id: blockId,
+        block_id: blockId,
+        user_id: body.userId,
+        practice_id: practiceId,
         start_time: startTime,
         end_time: endTime || null,
-        break_type: "regular",
       })
       .select()
       .single()

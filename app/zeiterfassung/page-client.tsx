@@ -5,7 +5,6 @@ import { Loader2, Clock, Users, FileText, BarChart3, AlertTriangle, List } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { ZeiterfassungStats } from "./components/zeiterfassung-stats"
-import { useCurrentUser } from "@/hooks/use-current-user"
 import { useTimeTrackingStatus, useTimeActions, useCorrectionRequests, usePlausibilityIssues, useTeamLiveView, useTimeBlocks, useTimeTracking } from "@/hooks/use-time-tracking"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -24,10 +23,13 @@ import StampDialog from "./components/stamp-dialog"
 import CorrectionDialog from "./components/correction-dialog"
 import PolicyDialog from "./components/policy-dialog"
 
-export default function ZeiterfassungPageClient() {
-  const { currentUser, currentPractice } = useCurrentUser()
-  const practiceId = currentPractice?.id?.toString()
-  const user = currentUser
+interface ZeiterfassungPageClientProps {
+  practiceId: string | null | undefined
+  userId: string
+}
+
+export default function ZeiterfassungPageClient({ practiceId, userId }: ZeiterfassungPageClientProps) {
+  const user = { id: userId }
 
   const [activeTab, setActiveTab] = useState("stechuhr")
   const [selectedMonth, setSelectedMonth] = useState(new Date())
@@ -72,13 +74,13 @@ export default function ZeiterfassungPageClient() {
   const dataLoading = statusLoading || blocksLoading || teamLoading
 
   useEffect(() => {
-    if (practiceId && user?.id) {
+    if (practiceId && userId) {
       const timer = setTimeout(() => setIsLoading(false), 1000)
       return () => clearTimeout(timer)
-    } else if (currentUser !== undefined) {
+    } else {
       setIsLoading(false)
     }
-  }, [practiceId, user?.id, currentUser])
+  }, [practiceId, userId])
 
   const handleStamp = async () => {
     if (!practiceId || !user?.id) {

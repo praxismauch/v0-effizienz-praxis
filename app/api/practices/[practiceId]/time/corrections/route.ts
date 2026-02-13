@@ -17,8 +17,8 @@ export async function GET(
     const status = searchParams.get("status")
 
     let query = supabase
-      .from("time_correction_requests")
-      .select("*, time_blocks:time_block_id(*)")
+      .from("time_corrections")
+      .select("*, time_blocks:block_id(*)")
       .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
@@ -59,33 +59,30 @@ export async function POST(
     // Get the original block times if a block is referenced
     let originalStart = null
     let originalEnd = null
-    let date = new Date().toISOString().split("T")[0]
 
     if (block_id) {
       const { data: block } = await supabase
         .from("time_blocks")
-        .select("start_time, end_time, date")
+        .select("start_time, end_time")
         .eq("id", block_id)
         .single()
 
       if (block) {
         originalStart = block.start_time
         originalEnd = block.end_time
-        date = block.date
       }
     }
 
     const { data, error } = await supabase
-      .from("time_correction_requests")
+      .from("time_corrections")
       .insert({
         practice_id: practiceId,
         user_id,
-        time_block_id: block_id || null,
-        date,
+        block_id: block_id || null,
         original_start: originalStart,
         original_end: originalEnd,
-        requested_start: requested_start || null,
-        requested_end: requested_end || null,
+        requested_start: requested_start || new Date().toISOString(),
+        requested_end: requested_end || new Date().toISOString(),
         reason,
         status: "pending",
       })

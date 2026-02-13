@@ -54,7 +54,7 @@ export default function StampDialog({
   })()
 
   // Comment is required for remote work locations OR overtime when stopping
-  const requiresCommentForLocation = selectedLocation === "aussentermin" || selectedLocation === "homeoffice"
+  const requiresCommentForLocation = selectedLocation === "mobile" || selectedLocation === "homeoffice"
   const requiresComment = requiresCommentForLocation || isOvertime
   const isCommentValid = !requiresComment || stampComment.trim().length > 0
 

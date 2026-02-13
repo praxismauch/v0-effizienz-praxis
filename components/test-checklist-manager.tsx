@@ -1,25 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Pencil, Trash2, Play, CheckCircle2, Sparkles, Loader2, X } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,256 +15,53 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Navigation, LayoutGrid, ChevronDown, FileText, CheckCircle } from "lucide-react"
-
-interface TestingCategory {
-  id: string
-  name: string
-  description: string | null
-  color: string
-}
-
-interface ChecklistTemplate {
-  id: string
-  title: string
-  description: string | null
-  category_id: string | null
-  is_active: boolean
-  testing_categories?: TestingCategory
-}
-
-interface TestChecklist {
-  id: string
-  title: string
-  description: string | null
-  status: string
-  progress: number
-  total_items: number
-  completed_items: number
-  completed_at: string | null
-  created_at: string
-}
-
-interface ChecklistItem {
-  id: string
-  title: string
-  description: string | null
-  is_completed: boolean
-  category_id: string | null
-  testing_categories?: TestingCategory
-  notes: string | null
-}
+import type { ChecklistTemplate } from "./test-checklist/types"
+import { useChecklistData } from "./test-checklist/use-checklist-data"
+import { TemplateDialog } from "./test-checklist/template-dialog"
+import { ChecklistExecutionDialog } from "./test-checklist/checklist-execution-dialog"
+import { AiSuggestionsDialog } from "./test-checklist/ai-suggestions-dialog"
 
 function TestChecklistManager() {
   const [activeTab, setActiveTab] = useState<"templates" | "checklists">("templates")
-  const [categories, setCategories] = useState<TestingCategory[]>([])
-  const [templates, setTemplates] = useState<ChecklistTemplate[]>([])
-  const [checklists, setChecklists] = useState<TestChecklist[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<ChecklistTemplate | null>(null)
-  const [templateFormData, setTemplateFormData] = useState({
-    title: "",
-    description: "",
-    category_id: "",
-  })
-
-  // Checklist execution state
-  const [selectedChecklist, setSelectedChecklist] = useState<string | null>(null)
-  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
+  const [templateFormData, setTemplateFormData] = useState({ title: "", description: "", category_id: "" })
   const [isChecklistDialogOpen, setIsChecklistDialogOpen] = useState(false)
-
-  // AI suggestion state
   const [isAiSuggesting, setIsAiSuggesting] = useState(false)
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([])
-  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set())
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false)
   const [customPrompt, setCustomPrompt] = useState("")
   const [showPromptInput, setShowPromptInput] = useState(false)
-
-  const { toast } = useToast()
-
   const [isGeneratingSidebar, setIsGeneratingSidebar] = useState(false)
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  const {
+    categories,
+    templates,
+    checklists,
+    isLoading,
+    checklistItems,
+    loadChecklistItems,
+    setSelectedChecklist,
+    handleSubmitTemplate,
+    handleDeleteTemplate,
+    handleGenerateChecklist,
+    handleToggleItem,
+    handleUpdateNotes,
+    handleGenerateSidebarTemplates,
+    handleAiSuggestItems,
+    handleAddAiSuggestions,
+  } = useChecklistData()
 
-  const loadData = async () => {
-    try {
-      const [categoriesRes, templatesRes, checklistsRes] = await Promise.all([
-        fetch("/api/testing-categories"),
-        fetch("/api/test-templates"),
-        fetch("/api/test-checklists"),
-      ])
-
-      if (categoriesRes.ok) {
-        setCategories(await categoriesRes.json())
-      }
-      if (templatesRes.ok) {
-        setTemplates(await templatesRes.json())
-      }
-      if (checklistsRes.ok) {
-        setChecklists(await checklistsRes.json())
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Daten konnten nicht geladen werden",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  const resetTemplateForm = () => {
+    setEditingTemplate(null)
+    setTemplateFormData({ title: "", description: "", category_id: "" })
   }
 
-  const handleSubmitTemplate = async () => {
-    try {
-      const url = editingTemplate ? `/api/test-templates/${editingTemplate.id}` : "/api/test-templates"
-      const method = editingTemplate ? "PATCH" : "POST"
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(templateFormData),
-      })
-
-      if (response.ok) {
-        toast({
-          title: "Erfolg",
-          description: editingTemplate ? "Vorlage wurde aktualisiert" : "Vorlage wurde erstellt",
-        })
-        loadData()
-        setIsTemplateDialogOpen(false)
-        resetTemplateForm()
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Vorlage konnte nicht gespeichert werden",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleDeleteTemplate = async (id: string) => {
-    if (!confirm("Möchten Sie diese Vorlage wirklich löschen?")) return
-
-    try {
-      const response = await fetch(`/api/test-templates/${id}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        toast({
-          title: "Erfolg",
-          description: "Vorlage wurde gelöscht",
-        })
-        loadData()
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Vorlage konnte nicht gelöscht werden",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleGenerateChecklist = async () => {
-    try {
-      console.log("[v0] Generating checklist...")
-      const response = await fetch("/api/test-checklists/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
-
-      console.log("[v0] Generate response status:", response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
-        console.error("[v0] Generate error:", errorData)
-        throw new Error(errorData.error || "Failed to generate checklist")
-      }
-
-      const data = await response.json()
-      console.log("[v0] Generated checklist:", data.id)
-
-      toast({
-        title: "Erfolg",
-        description: "Checkliste wurde erstellt",
-      })
-      loadData()
-      setSelectedChecklist(data.id)
-      loadChecklistItems(data.id)
-      setIsChecklistDialogOpen(true)
-    } catch (error) {
-      console.error("[v0] Error in handleGenerateChecklist:", error)
-      toast({
-        title: "Fehler",
-        description: error instanceof Error ? error.message : "Checkliste konnte nicht erstellt werden",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const loadChecklistItems = async (checklistId: string) => {
-    try {
-      const response = await fetch(`/api/test-checklists/${checklistId}/items`)
-      if (response.ok) {
-        const data = await response.json()
-        // Map DB field "completed" to component field "is_completed"
-        const mapped = data.map((item: any) => ({
-          ...item,
-          is_completed: item.completed ?? item.is_completed ?? false,
-        }))
-        setChecklistItems(mapped)
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Checklist-Items konnten nicht geladen werden",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleToggleItem = async (itemId: string, isCompleted: boolean) => {
-    if (!selectedChecklist) return
-
-    try {
-      const response = await fetch(`/api/test-checklists/${selectedChecklist}/items/${itemId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_completed: isCompleted }),
-      })
-
-      if (response.ok) {
-        setChecklistItems((items) =>
-          items.map((item) => (item.id === itemId ? { ...item, is_completed: isCompleted } : item)),
-        )
-        // Refresh checklists to update progress
-        loadData()
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Status konnte nicht aktualisiert werden",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleUpdateNotes = async (itemId: string, notes: string) => {
-    if (!selectedChecklist) return
-
-    try {
-      await fetch(`/api/test-checklists/${selectedChecklist}/items/${itemId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes }),
-      })
-    } catch (error) {
-      console.error("Failed to update notes:", error)
+  const onSubmitTemplate = async () => {
+    const success = await handleSubmitTemplate(templateFormData, editingTemplate?.id)
+    if (success) {
+      setIsTemplateDialogOpen(false)
+      resetTemplateForm()
     }
   }
 
@@ -291,144 +75,34 @@ function TestChecklistManager() {
     setIsTemplateDialogOpen(true)
   }
 
-  const resetTemplateForm = () => {
-    setEditingTemplate(null)
-    setTemplateFormData({
-      title: "",
-      description: "",
-      category_id: "",
-    })
-  }
-
   const openChecklist = (checklistId: string) => {
     setSelectedChecklist(checklistId)
     loadChecklistItems(checklistId)
     setIsChecklistDialogOpen(true)
   }
 
-  // AI suggestion function
-  const handleAiSuggestItems = async () => {
-    setIsAiSuggesting(true)
-    try {
-      console.log("[v0] Fetching AI suggestions with:", {
-        templates: templates.length,
-        categories: categories.length,
-        customPrompt: customPrompt || "none",
-      })
-
-      const response = await fetch("/api/test-templates/ai-suggest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          existingTemplates: templates.map((t) => t.title),
-          categories: categories.map((c) => ({ id: c.id, name: c.name })),
-          customPrompt: customPrompt.trim() || undefined,
-        }),
-      })
-
-      console.log("[v0] AI suggestions response status:", response.status)
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log("[v0] AI suggestions received:", data.suggestions?.length)
-        setAiSuggestions(data.suggestions)
-        setSelectedSuggestions(new Set(data.suggestions.map((_: any, i: number) => i)))
-        setIsAiDialogOpen(true)
-        setShowPromptInput(false)
-        setCustomPrompt("")
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error("[v0] AI suggestions failed:", response.status, errorData)
-        throw new Error(`API returned ${response.status}: ${errorData.error || "Unknown error"}`)
-      }
-    } catch (error) {
-      console.error("[v0] Error generating AI suggestions:", error)
-      toast({
-        title: "Fehler",
-        description: "KI-Vorschläge konnten nicht generiert werden",
-        variant: "destructive",
-      })
-    } finally {
-      setIsAiSuggesting(false)
-    }
+  const onGenerateChecklist = async () => {
+    const id = await handleGenerateChecklist()
+    if (id) setIsChecklistDialogOpen(true)
   }
 
-  // Function to add selected AI suggestions
-  const handleAddAiSuggestions = async () => {
-    const suggestionsToAdd = aiSuggestions.filter((_, index) => selectedSuggestions.has(index))
-
-    try {
-      for (const suggestion of suggestionsToAdd) {
-        await fetch("/api/test-templates", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(suggestion),
-        })
-      }
-
-      toast({
-        title: "Erfolg",
-        description: `${suggestionsToAdd.length} Vorlage(n) wurden hinzugefügt`,
-      })
-      loadData()
-      setIsAiDialogOpen(false)
-      setSelectedSuggestions(new Set())
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Vorlagen konnten nicht hinzugefügt werden",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleGenerateSidebarTemplates = async (includeAdminOnly: boolean) => {
+  const onGenerateSidebar = async (includeAdminOnly: boolean) => {
     setIsGeneratingSidebar(true)
-    try {
-      const response = await fetch("/api/test-templates/generate-from-sidebar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ includeAdminOnly }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast({
-          title: "Erfolg",
-          description: data.message,
-        })
-        loadData()
-      } else {
-        throw new Error(data.error)
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Sidebar-Vorlagen konnten nicht generiert werden",
-        variant: "destructive",
-      })
-    } finally {
-      setIsGeneratingSidebar(false)
-    }
+    await handleGenerateSidebarTemplates(includeAdminOnly)
+    setIsGeneratingSidebar(false)
   }
 
-  // Group items by category
-  const groupedItems = checklistItems.reduce(
-    (acc, item) => {
-      const categoryName = item.testing_categories?.name || "Ohne Kategorie"
-      if (!acc[categoryName]) {
-        acc[categoryName] = []
-      }
-      acc[categoryName].push(item)
-      return acc
-    },
-    {} as Record<string, ChecklistItem[]>,
-  )
-
-  const completionPercentage = checklistItems.length
-    ? Math.round((checklistItems.filter((i) => i.is_completed).length / checklistItems.length) * 100)
-    : 0
+  const onAiSuggest = async () => {
+    setIsAiSuggesting(true)
+    const suggestions = await handleAiSuggestItems(customPrompt)
+    if (suggestions) {
+      setAiSuggestions(suggestions)
+      setIsAiDialogOpen(true)
+      setShowPromptInput(false)
+      setCustomPrompt("")
+    }
+    setIsAiSuggesting(false)
+  }
 
   if (isLoading) {
     return <div className="text-center py-8">Laden...</div>
@@ -460,14 +134,14 @@ function TestChecklistManager() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuItem onClick={() => handleGenerateSidebarTemplates(true)} className="gap-2">
+                  <DropdownMenuItem onClick={() => onGenerateSidebar(true)} className="gap-2">
                     <Navigation className="h-4 w-4" />
                     <div className="flex flex-col">
                       <span>Sidebar-Navigation (Alle)</span>
                       <span className="text-xs text-muted-foreground">Inkl. Admin-Menüpunkte</span>
                     </div>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleGenerateSidebarTemplates(false)} className="gap-2">
+                  <DropdownMenuItem onClick={() => onGenerateSidebar(false)} className="gap-2">
                     <Navigation className="h-4 w-4" />
                     <div className="flex flex-col">
                       <span>Sidebar-Navigation (Standard)</span>
@@ -499,7 +173,7 @@ function TestChecklistManager() {
           )}
 
           {activeTab === "checklists" && (
-            <Button onClick={handleGenerateChecklist} className="gap-2">
+            <Button onClick={onGenerateChecklist} className="gap-2">
               <Play className="h-4 w-4" />
               Neue Checkliste generieren
             </Button>
@@ -530,9 +204,8 @@ function TestChecklistManager() {
                       onChange={(e) => setCustomPrompt(e.target.value)}
                       className="w-[300px]"
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleAiSuggestItems()
-                        } else if (e.key === "Escape") {
+                        if (e.key === "Enter") onAiSuggest()
+                        else if (e.key === "Escape") {
                           setShowPromptInput(false)
                           setCustomPrompt("")
                         }
@@ -540,7 +213,7 @@ function TestChecklistManager() {
                       autoFocus
                     />
                     <Button
-                      onClick={handleAiSuggestItems}
+                      onClick={onAiSuggest}
                       disabled={isAiSuggesting}
                       className="bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white shadow-lg"
                     >
@@ -615,7 +288,7 @@ function TestChecklistManager() {
             <p className="text-sm text-muted-foreground">
               {checklists.length} Checkliste{checklists.length !== 1 ? "n" : ""}
             </p>
-            <Button onClick={handleGenerateChecklist}>
+            <Button onClick={onGenerateChecklist}>
               <Play className="h-4 w-4 mr-2" />
               Neue Checkliste generieren
             </Button>
@@ -624,7 +297,9 @@ function TestChecklistManager() {
           {checklists.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground text-sm">
               <p>Noch keine Checklisten vorhanden.</p>
-              <p className="text-xs mt-1">Klicken Sie auf &quot;Neue Checkliste generieren&quot;, um eine Checkliste aus Ihren Vorlagen zu erstellen.</p>
+              <p className="text-xs mt-1">
+                Klicken Sie auf &quot;Neue Checkliste generieren&quot;, um eine Checkliste aus Ihren Vorlagen zu erstellen.
+              </p>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -644,19 +319,17 @@ function TestChecklistManager() {
                             Abgeschlossen
                           </Badge>
                         ) : checklist.status === "in_progress" ? (
-                          <Badge variant="secondary">
-                            In Bearbeitung
-                          </Badge>
+                          <Badge variant="secondary">In Bearbeitung</Badge>
                         ) : (
-                          <Badge variant="outline">
-                            Offen
-                          </Badge>
+                          <Badge variant="outline">Offen</Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <span>Erstellt: {new Date(checklist.created_at).toLocaleDateString("de-DE")}</span>
                         {checklist.total_items > 0 && (
-                          <span>{checklist.completed_items}/{checklist.total_items} Items ({checklist.progress}%)</span>
+                          <span>
+                            {checklist.completed_items}/{checklist.total_items} Items ({checklist.progress}%)
+                          </span>
                         )}
                       </div>
                     </div>
@@ -668,210 +341,37 @@ function TestChecklistManager() {
         </TabsContent>
       </Tabs>
 
-      {/* Template Dialog */}
-      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingTemplate ? "Vorlage bearbeiten" : "Neue Vorlage"}</DialogTitle>
-            <DialogDescription>
-              Erstellen Sie eine Test-Item-Vorlage, die in Checklisten verwendet wird
-            </DialogDescription>
-          </DialogHeader>
+      <TemplateDialog
+        open={isTemplateDialogOpen}
+        onOpenChange={setIsTemplateDialogOpen}
+        formData={templateFormData}
+        onFormDataChange={setTemplateFormData}
+        categories={categories}
+        isEditing={!!editingTemplate}
+        onSubmit={onSubmitTemplate}
+        onCancel={() => {
+          setIsTemplateDialogOpen(false)
+          resetTemplateForm()
+        }}
+      />
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="template-title">Titel</Label>
-              <Input
-                id="template-title"
-                value={templateFormData.title}
-                onChange={(e) => setTemplateFormData({ ...templateFormData, title: e.target.value })}
-                placeholder="z.B. Login-Funktionalität testen"
-              />
-            </div>
+      <ChecklistExecutionDialog
+        open={isChecklistDialogOpen}
+        onOpenChange={setIsChecklistDialogOpen}
+        items={checklistItems}
+        onToggleItem={handleToggleItem}
+        onUpdateNotes={handleUpdateNotes}
+      />
 
-            <div className="space-y-2">
-              <Label htmlFor="template-description">Beschreibung</Label>
-              <Textarea
-                id="template-description"
-                value={templateFormData.description}
-                onChange={(e) =>
-                  setTemplateFormData({
-                    ...templateFormData,
-                    description: e.target.value,
-                  })
-                }
-                placeholder="Detaillierte Testanweisungen..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="template-category">Kategorie</Label>
-              <Select
-                value={templateFormData.category_id}
-                onValueChange={(value) => setTemplateFormData({ ...templateFormData, category_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Kategorie wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
-                        {category.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsTemplateDialogOpen(false)
-                resetTemplateForm()
-              }}
-            >
-              Abbrechen
-            </Button>
-            <Button onClick={handleSubmitTemplate}>{editingTemplate ? "Aktualisieren" : "Erstellen"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Checklist Execution Dialog */}
-      <Dialog open={isChecklistDialogOpen} onOpenChange={setIsChecklistDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Test-Checkliste durchführen</DialogTitle>
-            <DialogDescription>Fortschritt: {completionPercentage}% abgeschlossen</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {Object.entries(groupedItems).map(([categoryName, items]) => (
-              <div key={categoryName} className="space-y-3">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  {items[0]?.testing_categories && (
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{
-                        backgroundColor: items[0].testing_categories.color,
-                      }}
-                    />
-                  )}
-                  {categoryName}
-                </h3>
-                <div className="space-y-2">
-                  {items.map((item) => (
-                    <Card key={item.id} className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={item.is_completed}
-                            onCheckedChange={(checked) => handleToggleItem(item.id, checked as boolean)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <h4
-                              className={`font-medium ${item.is_completed ? "line-through text-muted-foreground" : ""}`}
-                            >
-                              {item.title}
-                            </h4>
-                            {item.description && (
-                              <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                            )}
-                          </div>
-                        </div>
-                        <Textarea
-                          placeholder="Notizen hinzufügen..."
-                          value={item.notes || ""}
-                          onChange={(e) => handleUpdateNotes(item.id, e.target.value)}
-                          rows={2}
-                          className="text-sm"
-                        />
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsChecklistDialogOpen(false)}>
-              Schließen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* AI Suggestions Dialog */}
-      <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>KI-Vorschläge für Test-Items</DialogTitle>
-            <DialogDescription>
-              Wählen Sie die Test-Items aus, die Sie zu Ihren Vorlagen hinzufügen möchten
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            {aiSuggestions.map((suggestion, index) => {
-              const category = categories.find((c) => c.id === suggestion.category_id)
-              return (
-                <Card key={index} className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={selectedSuggestions.has(index)}
-                      onCheckedChange={(checked) => {
-                        const newSelected = new Set(selectedSuggestions)
-                        if (checked) {
-                          newSelected.add(index)
-                        } else {
-                          newSelected.delete(index)
-                        }
-                        setSelectedSuggestions(newSelected)
-                      }}
-                      className="mt-1"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium">{suggestion.title}</h4>
-                        {category && (
-                          <Badge
-                            variant="secondary"
-                            style={{
-                              backgroundColor: `${category.color}20`,
-                              color: category.color,
-                              borderColor: category.color,
-                            }}
-                          >
-                            {category.name}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{suggestion.description}</p>
-                    </div>
-                  </div>
-                </Card>
-              )
-            })}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAiDialogOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleAddAiSuggestions} disabled={selectedSuggestions.size === 0}>
-              {selectedSuggestions.size} Vorlage(n) hinzufügen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {aiSuggestions.length > 0 && (
+        <AiSuggestionsDialog
+          open={isAiDialogOpen}
+          onOpenChange={setIsAiDialogOpen}
+          suggestions={aiSuggestions}
+          categories={categories}
+          onAddSuggestions={handleAddAiSuggestions}
+        />
+      )}
     </div>
   )
 }

@@ -52,10 +52,31 @@ export async function POST(request: NextRequest) {
     // Wait a bit for any animations/lazy content
     await new Promise((r) => setTimeout(r, 1500))
 
-    // Take screenshot as PNG buffer
+    // Scroll through the entire page to trigger lazy-loaded content
+    await page.evaluate(async () => {
+      await new Promise<void>((resolve) => {
+        let totalHeight = 0
+        const distance = 400
+        const timer = setInterval(() => {
+          const scrollHeight = document.body.scrollHeight
+          window.scrollBy(0, distance)
+          totalHeight += distance
+          if (totalHeight >= scrollHeight) {
+            clearInterval(timer)
+            window.scrollTo(0, 0)
+            resolve()
+          }
+        }, 100)
+      })
+    })
+
+    // Wait for any lazy images/content triggered by scrolling
+    await new Promise((r) => setTimeout(r, 1000))
+
+    // Take full-page screenshot as PNG buffer
     const screenshotBuffer = await page.screenshot({
       type: "png",
-      fullPage: false,
+      fullPage: true,
     })
 
     await browser.close()

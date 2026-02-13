@@ -42,6 +42,23 @@ export default function DienstplanPageClient({
   const { toast } = useToast()
   const router = useRouter()
 
+  console.log("[v0] DienstplanPageClient received:", {
+    hasInitialData: !!initialData,
+    initialWeek: initialWeek instanceof Date ? initialWeek.toISOString() : initialWeek,
+    teamMembers: initialData?.teamMembers?.length || 0,
+    teams: teams?.length || 0,
+    practiceId,
+  })
+
+  // Safety check - ensure initialData is never null/undefined
+  const safeInitialData = initialData || {
+    teamMembers: [],
+    shiftTypes: [],
+    schedules: [],
+    availability: [],
+    swapRequests: [],
+  }
+
   // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")
   // Ensure currentWeek is never null - default to current week if initialWeek is invalid
@@ -54,11 +71,11 @@ export default function DienstplanPageClient({
   const [isLoading, setIsLoading] = useState(false) // No initial loading needed
 
   // Data state - initialize with server-fetched data with fallbacks
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData?.teamMembers || [])
-  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(initialData?.shiftTypes || [])
-  const [schedules, setSchedules] = useState<Shift[]>(initialData?.schedules || [])
-  const [availability, setAvailability] = useState<Availability[]>(initialData?.availability || [])
-  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(initialData?.swapRequests || [])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(safeInitialData.teamMembers || [])
+  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(safeInitialData.shiftTypes || [])
+  const [schedules, setSchedules] = useState<Shift[]>(safeInitialData.schedules || [])
+  const [availability, setAvailability] = useState<Availability[]>(safeInitialData.availability || [])
+  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(safeInitialData.swapRequests || [])
   const [violations, setViolations] = useState<Violation[]>([])
 
   // Dialog state for shift types

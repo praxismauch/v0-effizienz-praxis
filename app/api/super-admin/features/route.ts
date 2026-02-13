@@ -153,11 +153,33 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user is super admin
+    // Check if user is super admin (handle missing is_super_admin column)
     const adminClient = await createAdminClient()
-    const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
+    let isSuperAdmin = false
+    try {
+      const { data: userData, error: userError } = await adminClient
+        .from("users")
+        .select("is_super_admin, role")
+        .eq("id", user.id)
+        .single()
 
-    if (!userData?.is_super_admin && userData?.role !== "superadmin") {
+      if (userError && userError.code === "42703") {
+        const { data: userRoleData } = await adminClient
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+        isSuperAdmin = userRoleData?.role === "superadmin" || userRoleData?.role === "super_admin"
+      } else {
+        isSuperAdmin = userData?.is_super_admin === true ||
+                       userData?.role === "superadmin" ||
+                       userData?.role === "super_admin"
+      }
+    } catch {
+      return NextResponse.json({ error: "Auth check failed" }, { status: 500 })
+    }
+
+    if (!isSuperAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -274,11 +296,33 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user is super admin
+    // Check if user is super admin (handle missing is_super_admin column)
     const adminClient = await createAdminClient()
-    const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
+    let isSuperAdmin = false
+    try {
+      const { data: userData, error: userError } = await adminClient
+        .from("users")
+        .select("is_super_admin, role")
+        .eq("id", user.id)
+        .single()
 
-    if (!userData?.is_super_admin && userData?.role !== "superadmin") {
+      if (userError && userError.code === "42703") {
+        const { data: userRoleData } = await adminClient
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+        isSuperAdmin = userRoleData?.role === "superadmin" || userRoleData?.role === "super_admin"
+      } else {
+        isSuperAdmin = userData?.is_super_admin === true ||
+                       userData?.role === "superadmin" ||
+                       userData?.role === "super_admin"
+      }
+    } catch {
+      return NextResponse.json({ error: "Auth check failed" }, { status: 500 })
+    }
+
+    if (!isSuperAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -321,11 +365,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if user is super admin
+    // Check if user is super admin (handle missing is_super_admin column)
     const adminClient = await createAdminClient()
-    const { data: userData } = await adminClient.from("users").select("is_super_admin, role").eq("id", user.id).single()
+    let isSuperAdmin = false
+    try {
+      const { data: userData, error: userError } = await adminClient
+        .from("users")
+        .select("is_super_admin, role")
+        .eq("id", user.id)
+        .single()
 
-    if (!userData?.is_super_admin && userData?.role !== "superadmin") {
+      if (userError && userError.code === "42703") {
+        const { data: userRoleData } = await adminClient
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+        isSuperAdmin = userRoleData?.role === "superadmin" || userRoleData?.role === "super_admin"
+      } else {
+        isSuperAdmin = userData?.is_super_admin === true ||
+                       userData?.role === "superadmin" ||
+                       userData?.role === "super_admin"
+      }
+    } catch {
+      return NextResponse.json({ error: "Auth check failed" }, { status: 500 })
+    }
+
+    if (!isSuperAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

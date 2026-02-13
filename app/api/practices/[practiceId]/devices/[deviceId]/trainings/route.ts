@@ -65,8 +65,6 @@ export async function POST(
       notizen: body.notes || body.notizen || null,
     }
 
-    console.log("[v0] Inserting device training:", JSON.stringify(insertData))
-
     const { data: training, error } = await adminClient
       .from("device_trainings")
       .insert(insertData)

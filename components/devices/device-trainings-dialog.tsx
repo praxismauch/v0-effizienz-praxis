@@ -86,7 +86,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
 
     setSaving(true)
     try {
-      const member = teamMembers.find((m) => m.id === formData.team_member_id || m.user_id === formData.team_member_id)
+      const member = teamMembers.find((m: any) => m.team_member_id === formData.team_member_id || m.id === formData.team_member_id || m.user_id === formData.team_member_id)
 
       const response = await fetch(`/api/practices/${currentPractice.id}/devices/${device.id}/trainings`, {
         method: "POST",
@@ -112,7 +112,6 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
         })
       } else {
         const errorData = await response.json().catch(() => null)
-        console.log("[v0] Training save failed:", response.status, errorData)
         throw new Error(errorData?.error || "Failed to save training")
       }
     } catch (error) {
@@ -178,12 +177,13 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                     </SelectTrigger>
                     <SelectContent position="popper" className="max-h-[300px]">
                       {activeMembers.map((member) => {
-                        const memberId = member.user_id || member.id || member.team_member_id
-                        if (!memberId) return null
+                        const tmId = (member as any).team_member_id || member.id
+                        if (!tmId) return null
+                        const userId = member.user_id || member.id
                         return (
-                          <SelectItem key={memberId} value={memberId}>
+                          <SelectItem key={tmId} value={tmId}>
                             {member.first_name} {member.last_name}
-                            {!trainedMemberIds.has(memberId) && !trainedMemberIds.has(member.user_id || "") && (
+                            {!trainedMemberIds.has(tmId) && !trainedMemberIds.has(userId || "") && (
                               <span className="text-yellow-600 ml-2">(nicht eingewiesen)</span>
                             )}
                           </SelectItem>

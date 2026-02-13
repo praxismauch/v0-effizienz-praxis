@@ -7,13 +7,27 @@ export async function POST(
 ) {
   try {
     const { practiceId } = await params
+    console.log("[v0] Stamps API - practiceId:", practiceId)
+    
     if (!practiceId) {
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
     }
 
-    const { adminClient: supabase } = await requirePracticeAccess(practiceId)
+    console.log("[v0] Stamps API - About to call requirePracticeAccess")
+    let authResult
+    try {
+      authResult = await requirePracticeAccess(practiceId)
+      console.log("[v0] Stamps API - Auth successful")
+    } catch (authError) {
+      console.error("[v0] Stamps API - Auth failed:", authError)
+      throw authError
+    }
+    
+    const { adminClient: supabase } = authResult
     const body = await request.json()
     const { user_id, action, location, comment } = body
+    
+    console.log("[v0] Stamps API - body:", { user_id, action, location, comment })
 
     if (!user_id) {
       return NextResponse.json({ error: "user_id is required" }, { status: 400 })
@@ -198,6 +212,7 @@ export async function POST(
 
     return NextResponse.json({ error: "Invalid action", success: false }, { status: 400 })
   } catch (error) {
+    console.error("[v0] Stamps API error:", error)
     return handleApiError(error)
   }
 }

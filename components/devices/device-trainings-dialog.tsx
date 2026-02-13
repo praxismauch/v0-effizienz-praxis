@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "@/hooks/use-toast"
-import { Plus, Loader2, GraduationCap, CheckCircle, AlertTriangle, User, Calendar } from "lucide-react"
+import { Plus, Loader2, GraduationCap, CheckCircle, AlertTriangle, User, Calendar, Pencil, Trash2 } from "lucide-react"
 import { format, parseISO, isBefore } from "date-fns"
 import { de } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -44,6 +44,8 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
+
+  const [editingTraining, setEditingTraining] = useState<Training | null>(null)
 
   const [formData, setFormData] = useState({
     team_member_id: "",
@@ -121,6 +123,71 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
     }
   }
 
+  const handleDeleteTraining = async (trainingId: string) => {
+    if (!currentPractice?.id || !device?.id) return
+    try {
+      const response = await fetch(
+        `/api/practices/${currentPractice.id}/devices/${device.id}/trainings?trainingId=${trainingId}`,
+        { method: "DELETE" },
+      )
+      if (response.ok) {
+        toast({ title: "Einweisung gelöscht" })
+        loadTrainings()
+      } else {
+        toast({ title: "Fehler", description: "Einweisung konnte nicht gelöscht werden.", variant: "destructive" })
+      }
+    } catch {
+      toast({ title: "Fehler", description: "Einweisung konnte nicht gelöscht werden.", variant: "destructive" })
+    }
+  }
+
+  const handleEditTraining = (training: Training) => {
+    setEditingTraining(training)
+    setFormData({
+      team_member_id: training.team_member_id,
+      training_date: training.training_date,
+      trainer_name: training.trainer_name || "",
+      trainer_role: training.trainer_type || "internal",
+      training_type: training.training_type || "initial",
+      valid_until: training.valid_until || "",
+      notes: training.notes || "",
+    })
+    setShowAddForm(true)
+  }
+
+  const handleUpdateTraining = async () => {
+    if (!editingTraining || !currentPractice?.id || !device?.id) return
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/devices/${device.id}/trainings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingTraining.id,
+          training_date: formData.training_date,
+          trainer_name: formData.trainer_name,
+          training_type: formData.training_type,
+          valid_until: formData.valid_until,
+          notes: formData.notes,
+        }),
+      })
+
+      if (response.ok) {
+        toast({ title: "Einweisung aktualisiert" })
+        setShowAddForm(false)
+        setEditingTraining(null)
+        loadTrainings()
+      } else {
+        toast({ title: "Fehler", description: "Einweisung konnte nicht aktualisiert werden.", variant: "destructive" })
+      }
+    } catch {
+      toast({ title: "Fehler", description: "Einweisung konnte nicht aktualisiert werden.", variant: "destructive" })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const activeMembers = teamMembers.filter(isActiveMember)
 
   // Check which members have valid training
@@ -164,7 +231,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
           {showAddForm ? (
             <div className="border rounded-lg mb-4">
               <div className="p-4">
-                <h4 className="font-medium mb-4">Neue Einweisung dokumentieren</h4>
+                <h4 className="font-medium mb-4">{editingTraining ? "Einweisung bearbeiten" : "Neue Einweisung dokumentieren"}</h4>
                 <div className="grid grid-cols-2 gap-4">
                 <div className="overflow-hidden">
                   <Label>Mitarbeiter *</Label>
@@ -289,12 +356,12 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
               </div>
               </div>
               <div className="flex justify-end gap-2 p-4 border-t">
-                <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                <Button variant="outline" onClick={() => { setShowAddForm(false); setEditingTraining(null) }}>
                   Abbrechen
                 </Button>
-                <Button onClick={handleAddTraining} disabled={saving}>
+                <Button onClick={editingTraining ? handleUpdateTraining : handleAddTraining} disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Speichern
+                  {editingTraining ? "Aktualisieren" : "Speichern"}
                 </Button>
               </div>
             </div>
@@ -325,8 +392,8 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                     <div
                       key={training.id}
                       className={cn(
-                        "flex items-center justify-between p-3 border rounded-lg",
-                        isExpired && "border-red-200 bg-red-50",
+                        "group flex items-center justify-between p-3 border rounded-lg transition-colors hover:bg-muted/30",
+                        isExpired && "border-red-200 bg-red-50 hover:bg-red-50/80",
                       )}
                     >
                       <div className="flex items-center gap-3">
@@ -377,6 +444,24 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                             {isExpired ? "Abgelaufen" : `bis ${format(parseISO(training.valid_until), "dd.MM.yyyy")}`}
                           </Badge>
                         )}
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleEditTraining(training)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteTraining(training.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )

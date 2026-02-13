@@ -144,7 +144,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
           <DialogDescription>Dokumentieren Sie Geräteeinweisungen für Ihre Teammitglieder</DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {/* Stats */}
           <div className="flex gap-4 mb-4">
             <div className="flex items-center gap-2 text-sm">
@@ -161,8 +161,8 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
 
           {/* Add Form */}
           {showAddForm ? (
-            <div className="flex-1 flex flex-col overflow-hidden border rounded-lg mb-4">
-              <ScrollArea className="flex-1 p-4">
+            <div className="border rounded-lg mb-4">
+              <div className="p-4">
                 <h4 className="font-medium mb-4">Neue Einweisung dokumentieren</h4>
                 <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -279,7 +279,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                   />
                 </div>
               </div>
-              </ScrollArea>
+              </div>
               <div className="flex justify-end gap-2 p-4 border-t">
                 <Button variant="outline" onClick={() => setShowAddForm(false)}>
                   Abbrechen
@@ -298,7 +298,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
           )}
 
           {/* Trainings List */}
-          <ScrollArea className="flex-1">
+          <div>
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin" />
@@ -375,7 +375,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                 })}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

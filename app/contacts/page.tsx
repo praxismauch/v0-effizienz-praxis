@@ -484,7 +484,13 @@ export default function ContactsPage() {
                                 {(contact.phone || contact.mobile) && (
                                   <div className="flex items-center gap-2 text-sm">
                                     <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                    <span className="whitespace-nowrap">{contact.phone || contact.mobile}</span>
+                                    <a
+                                      href={`tel:${contact.phone || contact.mobile}`}
+                                      className="hover:underline whitespace-nowrap"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {contact.phone || contact.mobile}
+                                    </a>
                                   </div>
                                 )}
                               </div>

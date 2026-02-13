@@ -68,7 +68,8 @@ export const DEFAULT_FEATURE_FLAGS: DefaultFeatureFlag[] = [
   flag("frontend_data", "Daten & Dokumente", "frontend", null, "FileText", null, 3, "Daten- und Dokumentenverwaltung"),
   flag("frontend_strategy", "Strategie & Führung", "frontend", null, "Compass", null, 4, "Strategische Planung und Führungstools"),
   flag("frontend_team", "Team & Personal", "frontend", null, "Users", null, 5, "Team- und Personalverwaltung"),
-  flag("frontend_praxis", "Praxis & Einstellungen", "frontend", null, "Settings", null, 6, "Praxiseinstellungen und Ressourcen"),
+  flag("frontend_quality", "Qualitäts-Management", "frontend", null, "Shield", null, 6, "Qualitätsmanagement und Hygiene"),
+  flag("frontend_praxis", "Praxis & Einstellungen", "frontend", null, "Settings", null, 7, "Praxiseinstellungen und Ressourcen"),
 
   // Backend Feature Groups
   flag("backend_api", "API-Funktionen", "backend", null, "Server", null, 1, "Backend API-Funktionalitäten", { protected: true }),
@@ -92,8 +93,13 @@ export const DEFAULT_FEATURE_FLAGS: DefaultFeatureFlag[] = [
   // Daten & Dokumente Items
   flag("analytics", "Kennzahlen", "frontend", "frontend_data", "LineChart", "/analytics", 1, "Praxis-Kennzahlen und Statistiken"),
   flag("documents", "Dokumente", "frontend", "frontend_data", "FileText", "/documents", 2, "Dokumentenverwaltung"),
-  flag("knowledge", "Wissen", "frontend", "frontend_data", "BookOpen", "/knowledge", 3, "Wissensdatenbank"),
-  flag("protocols", "Protokolle", "frontend", "frontend_data", "MessageSquare", "/protocols", 4, "Besprechungsprotokolle"),
+  flag("journal", "Journal", "frontend", "frontend_data", "TrendingUp", "/practice-insights", 3, "Praxis-Journal und Insights"),
+  flag("knowledge", "Wissen", "frontend", "frontend_data", "BookOpen", "/knowledge", 4, "Wissensdatenbank"),
+  flag("protocols", "Protokolle", "frontend", "frontend_data", "FileCheck", "/protocols", 5, "Besprechungsprotokolle"),
+  flag("cirs", "Verbesserungsmeldung", "frontend", "frontend_data", "Shield", "/cirs", 6, "CIRS-Meldungen und Verbesserungsvorschläge"),
+
+  // Qualitäts-Management Items
+  flag("hygieneplan", "Hygieneplan", "frontend", "frontend_quality", "Shield", "/hygieneplan", 1, "Hygieneplan und QM-Dokumentation"),
 
   // Strategie & Führung Items
   flag("strategy_journey", "Strategiepfad", "frontend", "frontend_strategy", "Compass", "/strategy-journey", 1, "Strategische Planung"),
@@ -113,6 +119,7 @@ export const DEFAULT_FEATURE_FLAGS: DefaultFeatureFlag[] = [
   flag("selbst_check", "Selbst-Check", "frontend", "frontend_team", "Heart", "/selbst-check", 4, "Selbsteinschätzung", { beta: true }),
   flag("skills", "Kompetenzen", "frontend", "frontend_team", "Award", "/skills", 5, "Kompetenzmanagement"),
   flag("organigramm", "Organigramm", "frontend", "frontend_team", "FolderKanban", "/organigramm", 6, "Organisationsstruktur"),
+  flag("training", "Fortbildung", "frontend", "frontend_team", "Award", "/training", 7, "Fortbildungsverwaltung"),
 
   // Praxis & Einstellungen Items
   flag("contacts", "Kontakte", "frontend", "frontend_praxis", "Contact", "/contacts", 1, "Kontaktverwaltung"),

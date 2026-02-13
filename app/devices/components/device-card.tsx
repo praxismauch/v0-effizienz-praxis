@@ -20,6 +20,7 @@ import {
   Building2,
   FileText,
   Users,
+  MapPin,
   CheckCircle,
   AlertTriangle,
   Settings2,
@@ -156,6 +157,19 @@ export function DeviceCard({
               {maintenanceStatus.label}
             </Badge>
           )}
+          {device.rooms && device.rooms.length > 0 ? (
+            device.rooms.map((room: { id: string; name: string }) => (
+              <Badge key={room.id} variant="outline" className="text-xs">
+                <MapPin className="h-3 w-3 mr-1" />
+                {room.name}
+              </Badge>
+            ))
+          ) : device.room ? (
+            <Badge variant="outline" className="text-xs">
+              <MapPin className="h-3 w-3 mr-1" />
+              {device.room}
+            </Badge>
+          ) : null}
         </div>
 
         <div className="space-y-1 text-sm text-muted-foreground">

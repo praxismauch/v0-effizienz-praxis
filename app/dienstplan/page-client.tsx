@@ -10,8 +10,6 @@ import { ChevronLeft, ChevronRight, Users, Calendar, Clock, AlertTriangle, Arrow
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from "date-fns"
 import { de } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/contexts/user-context"
-import { usePractice } from "@/contexts/practice-context"
 
 import ScheduleTab from "./components/schedule-tab"
 import AvailabilityTab from "./components/availability-tab"
@@ -42,10 +40,7 @@ export default function DienstplanPageClient({
   userId,
 }: DienstplanPageClientProps) {
   const { toast } = useToast()
-  
   const router = useRouter()
-  const { currentUser } = useUser()
-  const { currentPractice, isLoading: practiceLoading } = usePractice()
 
   // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")
@@ -333,65 +328,46 @@ export default function DienstplanPageClient({
           </TabsTrigger>
         </TabsList>
 
-          <TabsContent value="schedule">
-            <ScheduleTab
-              weekDays={weekDays}
-              schedules={schedules}
-              teamMembers={teamMembers}
-              shiftTypes={shiftTypes}
-              practiceId={practiceId}
-              onRefresh={fetchData}
-              setSchedules={setSchedules}
-            />
-          </TabsContent>
-
-          <TabsContent value="availability">
-            <AvailabilityTab
-              availability={availability}
-              teamMembers={teamMembers}
-              currentWeek={currentWeek}
-              practiceId={practiceId}
-              onRefresh={fetchData}
-            />
-          </TabsContent>
+        <TabsContent value="schedule">
+          <ScheduleTab
+            weekDays={weekDays}
+            schedules={schedules}
+            teamMembers={teamMembers}
+            shiftTypes={shiftTypes}
+            practiceId={practiceId}
+            onRefresh={fetchData}
+            setSchedules={setSchedules}
+          />
+        </TabsContent>
 
         <TabsContent value="availability">
           <AvailabilityTab
             availability={availability}
             teamMembers={teamMembers}
-            practiceId={currentPractice.id}
+            currentWeek={currentWeek}
+            practiceId={practiceId}
             onRefresh={fetchData}
           />
         </TabsContent>
 
-          <TabsContent value="swaps">
-            <SwapRequestsTab
-              swapRequests={swapRequests}
-              teamMembers={teamMembers}
-              schedules={schedules}
-              practiceId={practiceId}
-              onApprove={handleApproveSwap}
-              onReject={handleRejectSwap}
-            />
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <ShiftTypesTab
-              shiftTypes={shiftTypes}
-              practiceId={practiceId}
-              onAdd={handleAddShiftType}
-              onEdit={handleEditShiftType}
-              onDelete={handleDeleteShiftType}
-            />
-          </TabsContent>
+        <TabsContent value="swaps">
+          <SwapRequestsTab
+            swapRequests={swapRequests}
+            teamMembers={teamMembers}
+            schedules={schedules}
+            practiceId={practiceId}
+            onApprove={handleApproveSwap}
+            onReject={handleRejectSwap}
+          />
+        </TabsContent>
 
         <TabsContent value="settings">
           <ShiftTypesTab
             shiftTypes={shiftTypes}
+            practiceId={practiceId}
             onAdd={handleAddShiftType}
             onEdit={handleEditShiftType}
             onDelete={handleDeleteShiftType}
-            isLoading={isLoading}
           />
         </TabsContent>
       </Tabs>

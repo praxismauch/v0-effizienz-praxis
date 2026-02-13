@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
       parameterValues,
       teamMembers,
       goals,
+      workflows,
+      selfCheckData,
     } = body
 
     if (!practiceId || practiceId === "null" || practiceId === "undefined") {
@@ -106,6 +108,20 @@ export async function POST(request: NextRequest) {
         ? (goals as Goal[]).map((g) => `- ${g.title}: ${g.status}`).join("\n")
         : "Keine Ziele definiert"
 
+    const workflowsSummary =
+      workflows?.length > 0 ? `${workflows.length} aktive Workflows implementiert` : "Keine Workflows definiert"
+
+    const selfCheckSummary =
+      selfCheckData
+        ? `Selbst-Check durchgeführt:
+- Energielevel: ${selfCheckData.energyLevel}/10
+- Stresslevel: ${selfCheckData.stressLevel}/10
+- Arbeitszufriedenheit: ${selfCheckData.jobSatisfaction}/10
+- Team-Harmonie: ${selfCheckData.teamHarmony}/10
+- Work-Life-Balance: ${selfCheckData.workLifeBalance}/10
+- Gesamtbewertung: ${selfCheckData.overallScore}/10`
+        : ""
+
     const prompt = `Du bist ein erfahrener Praxisberater für medizinische Praxen. Erstelle einen professionellen Praxis-Journalbericht für den Zeitraum ${effectivePeriodStart} bis ${effectivePeriodEnd}.
 
 VERFÜGBARE DATEN:
@@ -114,9 +130,11 @@ ${kpiSummary}
 
 - Datenpunkte: ${valuesSummary}
 - Team: ${teamSummary}
+- Workflows: ${workflowsSummary}
 - Ziele:
 ${goalsSummary}
 
+${selfCheckSummary ? `WOHLBEFINDEN & SELBSTEINSCHÄTZUNG:\n${selfCheckSummary}\n` : ""}
 ${userNotes ? `NOTIZEN DES PRAXISMANAGERS:\n${userNotes}` : ""}
 
 Erstelle einen strukturierten Bericht mit:

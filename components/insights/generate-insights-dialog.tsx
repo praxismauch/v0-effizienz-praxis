@@ -248,7 +248,7 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
       setProgress(70)
 
       // Generate AI analysis
-      const response = await fetch("/api/practice-journals/generate", {
+      const response = await fetch("/api/practice-insights/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

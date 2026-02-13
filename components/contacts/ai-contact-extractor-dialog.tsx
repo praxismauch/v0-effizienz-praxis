@@ -42,11 +42,23 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
 
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
+  // Detect mobile device for native camera fallback
+  const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
   const startCamera = useCallback(async () => {
-    // First check if getUserMedia is available (not blocked by iframe/permissions policy)
-    if (!navigator.mediaDevices?.getUserMedia) {
-      // Fallback: use native file input with capture attribute (works on mobile)
+    // On mobile, always prefer native capture (more reliable, works in iframes)
+    if (isMobile) {
       cameraInputRef.current?.click()
+      return
+    }
+
+    // On desktop, try getUserMedia for live viewfinder
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast({
+        title: "Kamera nicht verfügbar",
+        description: "Ihr Browser unterstützt keinen Kamerazugriff. Bitte laden Sie ein Bild hoch.",
+        variant: "destructive",
+      })
       return
     }
     try {
@@ -61,13 +73,14 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
       requestAnimationFrame(() => {
         if (videoRef.current) videoRef.current.srcObject = stream
       })
-    } catch (err) {
-      // getUserMedia failed (permission denied, iframe restriction, etc.)
-      // Fallback: use native file input with capture attribute
-      console.log("[v0] getUserMedia failed, falling back to native capture:", err)
-      cameraInputRef.current?.click()
+    } catch {
+      toast({
+        title: "Kamera nicht verfügbar",
+        description: "Kamerazugriff wurde verweigert oder ist in dieser Umgebung nicht möglich. Bitte laden Sie ein Bild hoch.",
+        variant: "destructive",
+      })
     }
-  }, [facingMode])
+  }, [facingMode, isMobile, toast])
 
   const switchCamera = useCallback(async () => {
     const newMode = facingMode === "environment" ? "user" : "environment"

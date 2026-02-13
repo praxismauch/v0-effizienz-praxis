@@ -96,6 +96,11 @@ export default function ScheduleTab({
       const newShifts: any[] = []
       
       for (const templateShift of template.shifts) {
+        // Check if weekDays array has the required day
+        if (!weekDays || weekDays.length <= templateShift.day_of_week) {
+          console.error("Invalid day_of_week:", templateShift.day_of_week, "weekDays length:", weekDays?.length)
+          continue
+        }
         const dayDate = weekDays[templateShift.day_of_week]
         if (!dayDate) continue
 

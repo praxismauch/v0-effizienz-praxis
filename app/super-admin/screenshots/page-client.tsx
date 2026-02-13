@@ -230,7 +230,7 @@ export function ScreenshotsPageClient() {
         )
       )
 
-      // Persist to DB
+      // Persist to DB - store the actual PNG blob URL, not the page URL
       if (runId && runId !== "local") {
         fetch(`/api/super-admin/screenshot-runs/${runId}`, {
           method: "PATCH",
@@ -238,7 +238,7 @@ export function ScreenshotsPageClient() {
           body: JSON.stringify({
             resultId: result.id,
             status: newStatus,
-            imageUrl: fullUrl,
+            imageUrl: imageUrl || undefined,
             error: errorMsg || undefined,
             runUpdate: {
               completedCount,

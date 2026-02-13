@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS shift_types (
 CREATE TABLE IF NOT EXISTS shift_schedules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   practice_id TEXT NOT NULL,
-  team_member_id UUID NOT NULL REFERENCES team_members(id) ON DELETE CASCADE,
+  team_member_id TEXT NOT NULL REFERENCES team_members(id) ON DELETE CASCADE,
   shift_type_id UUID NOT NULL REFERENCES shift_types(id) ON DELETE RESTRICT,
   shift_date DATE NOT NULL,
   start_time TIME NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS shift_schedules (
 CREATE TABLE IF NOT EXISTS team_availability (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   practice_id TEXT NOT NULL,
-  team_member_id UUID NOT NULL REFERENCES team_members(id) ON DELETE CASCADE,
+  team_member_id TEXT NOT NULL REFERENCES team_members(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   available BOOLEAN DEFAULT true,
   reason TEXT,
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS shift_swap_requests (
   practice_id TEXT NOT NULL,
   requester_schedule_id UUID NOT NULL REFERENCES shift_schedules(id) ON DELETE CASCADE,
   target_schedule_id UUID REFERENCES shift_schedules(id) ON DELETE SET NULL,
-  requester_id UUID NOT NULL REFERENCES team_members(id) ON DELETE CASCADE,
-  target_id UUID REFERENCES team_members(id) ON DELETE SET NULL,
+  requester_id TEXT NOT NULL REFERENCES team_members(id) ON DELETE CASCADE,
+  target_id TEXT REFERENCES team_members(id) ON DELETE SET NULL,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled')),
   reason TEXT,
   admin_notes TEXT,

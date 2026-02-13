@@ -40,7 +40,15 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
     }
   }, [open, stopCamera])
 
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+
   const startCamera = useCallback(async () => {
+    // First check if getUserMedia is available (not blocked by iframe/permissions policy)
+    if (!navigator.mediaDevices?.getUserMedia) {
+      // Fallback: use native file input with capture attribute (works on mobile)
+      cameraInputRef.current?.click()
+      return
+    }
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop())
@@ -53,10 +61,13 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
       requestAnimationFrame(() => {
         if (videoRef.current) videoRef.current.srcObject = stream
       })
-    } catch {
-      toast({ title: "Kamera-Fehler", description: "Kamera konnte nicht gestartet werden. Bitte erlauben Sie den Kamerazugriff.", variant: "destructive" })
+    } catch (err) {
+      // getUserMedia failed (permission denied, iframe restriction, etc.)
+      // Fallback: use native file input with capture attribute
+      console.log("[v0] getUserMedia failed, falling back to native capture:", err)
+      cameraInputRef.current?.click()
     }
-  }, [facingMode, toast])
+  }, [facingMode])
 
   const switchCamera = useCallback(async () => {
     const newMode = facingMode === "environment" ? "user" : "environment"
@@ -214,6 +225,18 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
                   accept="image/*"
                   className="hidden"
                   id="image-upload"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleImageUpload(file)
+                  }}
+                />
+                {/* Native camera capture fallback for mobile or when getUserMedia is blocked */}
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0]
                     if (file) handleImageUpload(file)

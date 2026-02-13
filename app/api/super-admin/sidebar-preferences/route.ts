@@ -32,7 +32,7 @@ export async function GET() {
     if (error) {
       console.error("Error fetching sidebar preferences:", error)
       return NextResponse.json({
-        expanded_groups: ["overview", "management"],
+        expanded_groups: ["overview", "praxen-benutzer"],
         sidebar_collapsed: false,
         expanded_items: [],
         favorites: [],
@@ -40,7 +40,7 @@ export async function GET() {
     }
 
     return NextResponse.json(data || {
-      expanded_groups: ["overview", "management"],
+      expanded_groups: ["overview", "praxen-benutzer"],
       sidebar_collapsed: false,
       expanded_items: [],
       favorites: [],

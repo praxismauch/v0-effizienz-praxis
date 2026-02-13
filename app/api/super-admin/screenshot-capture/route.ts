@@ -11,13 +11,32 @@ const VIEWPORT_SIZES: Record<string, { width: number; height: number }> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, viewport = "desktop", pageName = "page" } = await request.json()
+    const { url, viewport = "desktop", pageName = "page", practiceId = "1" } = await request.json()
 
     if (!url) {
       return NextResponse.json({ error: "URL ist erforderlich" }, { status: 400 })
     }
 
+    // Ensure absolute URL
+    let absoluteUrl = url
+    if (!url.startsWith("http")) {
+      const host = request.headers.get("host") || "localhost:3000"
+      const protocol = request.headers.get("x-forwarded-proto") || "http"
+      absoluteUrl = `${protocol}://${host}${url.startsWith("/") ? "" : "/"}${url}`
+    }
+
+    // Inject practice_id into the URL
+    const urlObj = new URL(absoluteUrl)
+    if (!urlObj.searchParams.has("practice_id")) {
+      urlObj.searchParams.set("practice_id", practiceId)
+    }
+    const targetUrl = urlObj.toString()
+    const origin = urlObj.origin
+
     const size = VIEWPORT_SIZES[viewport] || VIEWPORT_SIZES.desktop
+
+    // Forward the caller's auth cookies to Puppeteer so the browser session is authenticated
+    const cookieHeader = request.headers.get("cookie") || ""
 
     // Dynamic import to avoid bundling issues
     const chromium = await import("@sparticuz/chromium")
@@ -43,19 +62,78 @@ export async function POST(request: NextRequest) {
       deviceScaleFactor: 1,
     })
 
-    // Navigate to the page
-    await page.goto(url, {
-      waitUntil: "networkidle2",
-      timeout: 25000,
+    // Parse and inject the caller's auth cookies into Puppeteer
+    // This forwards the logged-in super admin's session to the headless browser
+    const domain = new URL(origin).hostname
+    const cookies = cookieHeader.split(";").map((c) => c.trim()).filter(Boolean)
+    const puppeteerCookies = cookies.map((cookie) => {
+      const [nameVal, ...rest] = cookie.split("=")
+      return {
+        name: nameVal.trim(),
+        value: [rest.join("=")].join("").trim(),
+        domain,
+        path: "/",
+        httpOnly: false,
+        secure: domain !== "localhost",
+        sameSite: "Lax" as const,
+      }
     })
 
-    // Wait a bit for any animations/lazy content
-    await new Promise((r) => setTimeout(r, 1500))
+    if (puppeteerCookies.length > 0) {
+      await page.setCookie(...puppeteerCookies)
+    }
 
-    // Take screenshot as PNG buffer
+    // Navigate to the target page (now authenticated via forwarded cookies)
+    // Use domcontentloaded first (fast), then wait for network to settle
+    try {
+      await page.goto(targetUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: 45000,
+      })
+    } catch (navError) {
+      // If even domcontentloaded fails, the page is truly unreachable
+      await browser.close()
+      return NextResponse.json({
+        success: false,
+        error: "Navigation fehlgeschlagen: " + (navError instanceof Error ? navError.message : String(navError))
+      }, { status: 500 })
+    }
+
+    // Wait for network to become mostly idle (but don't fail if it doesn't fully settle)
+    try {
+      await page.waitForNetworkIdle({ idleTime: 1500, timeout: 15000 })
+    } catch {
+      // Some pages have long-running requests (SSE, analytics, etc.) -- that's OK
+    }
+
+    // Extra wait for client-side rendering / animations
+    await new Promise((r) => setTimeout(r, 2000))
+
+    // Scroll through the entire page to trigger lazy-loaded content
+    await page.evaluate(async () => {
+      await new Promise<void>((resolve) => {
+        let totalHeight = 0
+        const distance = 400
+        const timer = setInterval(() => {
+          const scrollHeight = document.body.scrollHeight
+          window.scrollBy(0, distance)
+          totalHeight += distance
+          if (totalHeight >= scrollHeight) {
+            clearInterval(timer)
+            window.scrollTo(0, 0)
+            resolve()
+          }
+        }, 100)
+      })
+    })
+
+    // Wait for any lazy images/content triggered by scrolling
+    await new Promise((r) => setTimeout(r, 1000))
+
+    // Take full-page screenshot as PNG buffer
     const screenshotBuffer = await page.screenshot({
       type: "png",
-      fullPage: false,
+      fullPage: true,
     })
 
     await browser.close()

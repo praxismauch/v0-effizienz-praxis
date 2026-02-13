@@ -96,7 +96,7 @@ export function SuperAdminSidebarSimple() {
   const { currentUser } = useUser()
   const betaFlags = useFeatureBetaFlags()
   const [collapsed, setCollapsed] = useState(false)
-  const [openSections, setOpenSections] = useState<string[]>(["overview", "management"])
+  const [openSections, setOpenSections] = useState<string[]>(["overview", "praxen-benutzer"])
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
   const [favorites, setFavorites] = useState<string[]>([])
@@ -437,17 +437,9 @@ export function SuperAdminSidebarSimple() {
       ],
     },
     {
-      id: "management",
-      label: "Verwaltung",
+      id: "praxen-benutzer",
+      label: "Praxen & Benutzer",
       items: [
-        {
-          id: "tickets",
-          label: "Tickets",
-          icon: Mail,
-          href: "/super-admin/tickets",
-          badge: true,
-          badgeType: "tickets" as const,
-        },
         {
           id: "practices",
           label: "Praxen",
@@ -471,12 +463,12 @@ export function SuperAdminSidebarSimple() {
           href: "/super-admin/user-rights",
         },
         {
-          id: "kpi-kategorien",
-          label: "KPI Global",
-          icon: BarChart3,
-          href: "/super-admin/kpi-kategorien",
+          id: "waitlist",
+          label: "Warteliste",
+          icon: ListTodo,
+          href: "/super-admin/waitlist",
           badge: true,
-          badgeType: "kpiCategories" as const,
+          badgeType: "waitlist" as const,
         },
       ],
     },
@@ -499,18 +491,18 @@ export function SuperAdminSidebarSimple() {
           badgeType: "academy" as const,
         },
         {
-          id: "waitlist",
-          label: "Warteliste",
-          icon: ListTodo,
-          href: "/super-admin/waitlist",
+          id: "kpi-kategorien",
+          label: "KPI Global",
+          icon: BarChart3,
+          href: "/super-admin/kpi-kategorien",
           badge: true,
-          badgeType: "waitlist" as const,
+          badgeType: "kpiCategories" as const,
         },
       ],
     },
     {
       id: "marketing",
-      label: "Marketing & Seiten",
+      label: "Marketing",
       items: [
         {
           id: "landingpages",
@@ -536,7 +528,7 @@ export function SuperAdminSidebarSimple() {
     },
     {
       id: "finance",
-      label: "Finanzen & Analyse",
+      label: "Finanzen",
       items: [
         {
           id: "zahlungen",
@@ -545,6 +537,20 @@ export function SuperAdminSidebarSimple() {
           href: "/super-admin/zahlungen",
           badge: true,
           badgeType: "subscriptions" as const,
+        },
+      ],
+    },
+    {
+      id: "monitoring",
+      label: "Monitoring & Logs",
+      items: [
+        {
+          id: "tickets",
+          label: "Tickets",
+          icon: Mail,
+          href: "/super-admin/tickets",
+          badge: true,
+          badgeType: "tickets" as const,
         },
         {
           id: "chat-logs",
@@ -566,7 +572,7 @@ export function SuperAdminSidebarSimple() {
     },
     {
       id: "system",
-      label: "System",
+      label: "System & Einstellungen",
       items: [
         {
           id: "system",

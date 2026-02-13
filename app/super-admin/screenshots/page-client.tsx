@@ -24,7 +24,10 @@ import { ScreenshotRunHistory } from "./components/screenshot-run-history"
 import { ScreenshotResultsPanel } from "./components/screenshot-results-panel"
 
 export function ScreenshotsPageClient() {
-  const [config, setConfig] = useState<ScreenshotConfig>(defaultConfig)
+  const [config, setConfig] = useState<ScreenshotConfig>(() => ({
+    ...defaultConfig,
+    baseUrl: typeof window !== "undefined" ? window.location.origin : defaultConfig.baseUrl,
+  }))
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const cancelRef = useRef(false)
@@ -206,6 +209,7 @@ export function ScreenshotsPageClient() {
 
       // Capture real screenshot
       const fullUrl = `${config.baseUrl}${result.page_path}`
+      console.log("[v0] Screenshot capture - baseUrl:", config.baseUrl, "page_path:", result.page_path, "fullUrl:", fullUrl)
       const captureResult = await captureScreenshot(fullUrl, result.viewport, result.page_name)
 
       const newStatus: "completed" | "failed" = captureResult.success ? "completed" : "failed"
@@ -230,7 +234,7 @@ export function ScreenshotsPageClient() {
         )
       )
 
-      // Persist to DB
+      // Persist to DB - store the actual PNG blob URL, not the page URL
       if (runId && runId !== "local") {
         fetch(`/api/super-admin/screenshot-runs/${runId}`, {
           method: "PATCH",
@@ -238,7 +242,7 @@ export function ScreenshotsPageClient() {
           body: JSON.stringify({
             resultId: result.id,
             status: newStatus,
-            imageUrl: fullUrl,
+            imageUrl: imageUrl || undefined,
             error: errorMsg || undefined,
             runUpdate: {
               completedCount,

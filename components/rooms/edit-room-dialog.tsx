@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
 import { MultiImageUpload } from "@/components/ui/multi-image-upload"
+import { ColorPicker } from "@/components/color-picker"
 
 interface EditRoomDialogProps {
   open: boolean
@@ -101,20 +102,12 @@ export function EditRoomDialog({ open, onOpenChange, room, onSuccess }: EditRoom
               rows={3}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-room-color">Farbe</Label>
-            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                id="edit-room-color"
-                value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
-                className="h-10 w-14 cursor-pointer rounded-lg border border-border p-1"
-              />
-              <span className="text-sm text-muted-foreground font-mono">{selectedColor}</span>
-            </div>
-          </div>
+          <ColorPicker
+            value={selectedColor}
+            onChange={setSelectedColor}
+            label="Farbe"
+            id="edit-room-color"
+          />
           <div className="space-y-2">
             <Label>Bilder</Label>
             <MultiImageUpload

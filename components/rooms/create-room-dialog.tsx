@@ -19,6 +19,7 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { MultiImageUpload } from "@/components/ui/multi-image-upload"
+import { ColorPicker } from "@/components/color-picker"
 
 interface CreateRoomDialogProps {
   open: boolean
@@ -122,20 +123,12 @@ export function CreateRoomDialog({ open, onOpenChange, practiceId, onSuccess }: 
               rows={3}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="room-color">Farbe</Label>
-            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                id="room-color"
-                value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
-                className="h-10 w-14 cursor-pointer rounded-lg border border-border p-1"
-              />
-              <span className="text-sm text-muted-foreground font-mono">{selectedColor}</span>
-            </div>
-          </div>
+          <ColorPicker
+            value={selectedColor}
+            onChange={setSelectedColor}
+            label="Farbe"
+            id="room-color"
+          />
           <div className="space-y-2">
             <Label>Bilder</Label>
             <MultiImageUpload

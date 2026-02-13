@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users, Star } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Plus, Upload, Search, Mail, Phone, Building2, Trash2, Edit, Sparkles, Settings2, Users, Star, MoreVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -11,6 +12,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -86,8 +88,10 @@ export default function ContactsPage() {
     category: true,
   })
   const { toast } = useToast()
-  const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const router = useRouter()
+
   const { currentUser, loading: userLoading } = useUser()
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { teamMembers, loading: teamLoading } = useTeam()
 
   const hasLoadedRef = useRef(false)
@@ -296,30 +300,32 @@ export default function ContactsPage() {
               <Sparkles className="h-4 w-4" />
               KI-Extraktion
             </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setShowAISearchDialog(true)}
-            >
-              <Search className="h-4 w-4" />
-              KI-Suche
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2 border-primary/50 text-primary hover:bg-primary/10"
-              onClick={() => setShowRecommendedDialog(true)}
-            >
-              <Phone className="h-4 w-4" />
-              Empfohlene Nummern
-            </Button>
-            <Button variant="outline" onClick={() => setShowBatchDialog(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Batch Import
-            </Button>
             <Button onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Neuer Kontakt
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowAISearchDialog(true)}>
+                  <Search className="h-4 w-4 mr-2" />
+                  KI-Suche
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowRecommendedDialog(true)}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Empfohlene Nummern
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowBatchDialog(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Batch Import
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -419,7 +425,15 @@ export default function ContactsPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredContacts.map((contact) => (
-<TableRow key={contact.id}>
+<TableRow
+                          key={contact.id}
+                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => {
+                            if (!contact.id.startsWith("team-")) {
+                              router.push(`/contacts/${contact.id}`)
+                            }
+                          }}
+                        >
                                           {visibleColumns.company && (
                                             <TableCell>
                                               {contact.company && (
@@ -462,6 +476,7 @@ export default function ContactsPage() {
                                     <a
                                       href={`mailto:${contact.email}`}
                                       className="hover:underline truncate max-w-[150px]"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
                                       {contact.email}
                                     </a>
@@ -470,7 +485,13 @@ export default function ContactsPage() {
                                 {(contact.phone || contact.mobile) && (
                                   <div className="flex items-center gap-2 text-sm">
                                     <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                    <span className="whitespace-nowrap">{contact.phone || contact.mobile}</span>
+                                    <a
+                                      href={`tel:${contact.phone || contact.mobile}`}
+                                      className="hover:underline whitespace-nowrap"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {contact.phone || contact.mobile}
+                                    </a>
                                   </div>
                                 )}
                               </div>
@@ -488,6 +509,7 @@ export default function ContactsPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-sm text-blue-600 hover:underline block"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   {contact.street && (
                                     <div className="whitespace-nowrap">
@@ -521,46 +543,25 @@ export default function ContactsPage() {
                               )}
                             </TableCell>
                           )}
-                          <TableCell className="text-right">
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             {contact.id.startsWith("team-") ? (
                               <span className="text-xs text-muted-foreground italic">Teammitglied</span>
                             ) : (
-                              <div className="flex justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-9 w-9 p-0"
-                                  onClick={() => toggleFavorite(contact)}
-                                  title={contact.is_favorite ? "Aus Favoriten entfernen" : "Als Favorit markieren"}
-                                >
-                                  <Star
-                                    className={`h-4 w-4 ${
-                                      contact.is_favorite
-                                        ? "fill-amber-400 text-amber-400"
-                                        : "text-muted-foreground hover:text-amber-400"
-                                    }`}
-                                  />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-9 w-9 p-0"
-                                  onClick={() => {
-                                    setSelectedContact(contact)
-                                    setShowEditDialog(true)
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-9 w-9 p-0"
-                                  onClick={() => setContactToDelete(contact)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-9 p-0"
+                                onClick={() => toggleFavorite(contact)}
+                                title={contact.is_favorite ? "Aus Favoriten entfernen" : "Als Favorit markieren"}
+                              >
+                                <Star
+                                  className={`h-4 w-4 ${
+                                    contact.is_favorite
+                                      ? "fill-amber-400 text-amber-400"
+                                      : "text-muted-foreground hover:text-amber-400"
+                                  }`}
+                                />
+                              </Button>
                             )}
                           </TableCell>
                         </TableRow>

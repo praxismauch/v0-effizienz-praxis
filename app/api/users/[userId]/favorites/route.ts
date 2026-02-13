@@ -112,7 +112,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       const { error } = await supabase.from("user_favorites").upsert(
         upsertData,
-        { onConflict: "user_id,favorite_path" }
+        { onConflict: "user_id,practice_id,favorite_path" }
       )
 
       if (error) {

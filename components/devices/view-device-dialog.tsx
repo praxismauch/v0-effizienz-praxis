@@ -44,6 +44,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 function ViewDeviceDialog({ open, onOpenChange, device, onEdit, onRefresh }: ViewDeviceDialogProps) {
   const { teamMembers } = useTeam()
   const [activeTab, setActiveTab] = useState("overview")
+  const [showImagePreview, setShowImagePreview] = useState(false)
 
   if (!device) return null
 
@@ -76,11 +77,17 @@ function ViewDeviceDialog({ open, onOpenChange, device, onEdit, onRefresh }: Vie
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               {firstImage ? (
-                <img
-                  src={firstImage}
-                  alt={device.name}
-                  className="h-16 w-16 rounded-lg object-cover"
-                />
+                <button
+                  type="button"
+                  onClick={() => setShowImagePreview(true)}
+                  className="h-16 w-16 rounded-lg overflow-hidden cursor-zoom-in hover:ring-2 hover:ring-primary/50 transition-all flex-shrink-0"
+                >
+                  <img
+                    src={firstImage}
+                    alt={device.name}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
               ) : (
                 <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
                   <ImageIcon className="h-8 w-8 text-muted-foreground" />
@@ -374,6 +381,24 @@ function ViewDeviceDialog({ open, onOpenChange, device, onEdit, onRefresh }: Vie
           </ScrollArea>
         </Tabs>
       </DialogContent>
+
+      {/* Full image preview overlay */}
+      {showImagePreview && firstImage && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center cursor-zoom-out"
+          onClick={() => setShowImagePreview(false)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowImagePreview(false) }}
+        >
+          <img
+            src={firstImage}
+            alt={device.name}
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            crossOrigin="anonymous"
+          />
+        </div>
+      )}
     </Dialog>
   )
 }

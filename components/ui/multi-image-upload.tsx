@@ -5,6 +5,67 @@ import { Button } from "./button"
 import { Input } from "./input"
 import { X, ImageIcon, Loader2, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
+
+const MAX_FILE_SIZE = 4 * 1024 * 1024 // 4MB - stay under serverless limit
+const MAX_DIMENSION = 1920
+
+async function compressImage(file: File): Promise<File> {
+  // Skip non-compressible formats or already small files
+  if (!file.type.startsWith("image/") || file.type === "image/svg+xml" || file.type === "image/gif") {
+    return file
+  }
+  if (file.size <= MAX_FILE_SIZE) {
+    return file
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      const canvas = document.createElement("canvas")
+      let { width, height } = img
+
+      // Scale down if needed
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
+
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext("2d")!
+      ctx.drawImage(img, 0, 0, width, height)
+
+      // Try progressively lower quality until under size limit
+      const tryQuality = (quality: number) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file)
+              return
+            }
+            if (blob.size > MAX_FILE_SIZE && quality > 0.3) {
+              tryQuality(quality - 0.1)
+            } else {
+              const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                type: "image/jpeg",
+              })
+              resolve(compressedFile)
+            }
+          },
+          "image/jpeg",
+          quality,
+        )
+      }
+
+      tryQuality(0.85)
+    }
+    img.onerror = () => resolve(file)
+    img.src = URL.createObjectURL(file)
+  })
+}
 
 interface MultiImageUploadProps {
   images: string[]
@@ -39,8 +100,11 @@ export function MultiImageUpload({
       setIsUploading(true)
 
       try {
+        // Compress image client-side to stay under serverless payload limit
+        const compressedFile = await compressImage(file)
+
         const formData = new FormData()
-        formData.append("file", file)
+        formData.append("file", compressedFile)
 
         const response = await fetch(uploadEndpoint, {
           method: "POST",
@@ -50,9 +114,12 @@ export function MultiImageUpload({
         if (response.ok) {
           const data = await response.json()
           onImagesChange([...images, data.url])
+        } else {
+          toast.error("Upload fehlgeschlagen", { description: `Status: ${response.status}` })
         }
       } catch (error) {
         console.error("Error uploading image:", error)
+        toast.error("Upload fehlgeschlagen", { description: "Verbindungsfehler beim Hochladen" })
       } finally {
         setIsUploading(false)
       }
@@ -169,7 +236,13 @@ export function MultiImageUpload({
               : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30",
             disabled || isUploading ? "opacity-50 cursor-not-allowed" : "",
           )}
-          onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (!disabled && !isUploading) {
+              fileInputRef.current?.click()
+            }
+          }}
         >
           <div className="flex flex-col items-center gap-2">
             {isUploading ? (

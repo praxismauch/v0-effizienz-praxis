@@ -2,8 +2,15 @@ import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
 import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js"
 import { getSupabaseUrl, getSupabaseAnonKey, getSupabaseServiceRoleKey, hasSupabaseConfig, hasSupabaseAdminConfig } from "./config"
 
-// Cache for admin client (service role) - this is safe to cache as it doesn't use cookies
-let adminClientCache: SupabaseClient | null = null
+// Increase max listeners to prevent warnings from parallel Supabase connections
+import { EventEmitter } from "events"
+EventEmitter.defaultMaxListeners = 30
+
+// Cache for admin client (service role) using globalThis to persist across hot reloads
+declare global {
+  var __supabaseAdminClient: SupabaseClient | undefined
+}
+const adminClientCache: SupabaseClient | null = globalThis.__supabaseAdminClient || null
 
 /**
  * Create a server client for use in Server Components and Route Handlers.
@@ -105,14 +112,14 @@ export async function createAdminClient() {
     return null as unknown as SupabaseClient
   }
 
-  adminClientCache = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+  globalThis.__supabaseAdminClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   })
 
-  return adminClientCache
+  return globalThis.__supabaseAdminClient
 }
 
 export async function getServiceRoleClient() {

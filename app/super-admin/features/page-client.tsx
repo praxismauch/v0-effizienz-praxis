@@ -432,12 +432,12 @@ export default function FeaturesClient() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Beta</span>
+                  <span className="text-xs font-medium text-muted-foreground">Beta</span>
                   <Switch
                     checked={effectiveBeta}
                     onCheckedChange={(checked) => updateFeature(feature.feature_key, { is_beta: checked })}
                     disabled={saving === feature.feature_key}
-                    className="data-[state=checked]:bg-violet-500"
+                    className="data-[state=checked]:bg-violet-500 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600"
                   />
                 </div>
               </TooltipTrigger>

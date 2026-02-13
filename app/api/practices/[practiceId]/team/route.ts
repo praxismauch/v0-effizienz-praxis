@@ -64,6 +64,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const teamMembers = filteredMembers.map((member: any) => ({
       id: member.user_id || member.id,
+      team_member_id: member.id,
       name: member.users?.name || `${member.first_name || ""} ${member.last_name || ""}`.trim(),
       email: member.users?.email || member.email || "",
       role: member.role || "user",

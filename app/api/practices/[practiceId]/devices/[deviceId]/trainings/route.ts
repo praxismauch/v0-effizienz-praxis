@@ -22,8 +22,6 @@ export async function GET(
       .from("device_trainings")
       .select("*")
       .eq("device_id", deviceId)
-      .eq("practice_id", practiceId)
-      .is("deleted_at", null)
       .order("training_date", { ascending: false })
 
     if (error) {
@@ -56,24 +54,20 @@ export async function POST(
     const body = await request.json()
     const adminClient = await createAdminClient()
 
+    const insertData = {
+      device_id: deviceId,
+      team_member_id: body.team_member_id,
+      team_member_name: body.team_member_name || null,
+      training_date: body.training_date,
+      trainer: body.trainer_name || body.trainer || null,
+      zertifikat_vorhanden: body.zertifikat_vorhanden || false,
+      ablaufdatum: body.valid_until || body.ablaufdatum || null,
+      notizen: body.notes || body.notizen || null,
+    }
+
     const { data: training, error } = await adminClient
       .from("device_trainings")
-      .insert({
-        practice_id: practiceId,
-        device_id: deviceId,
-        team_member_id: body.team_member_id,
-        team_member_name: body.team_member_name,
-        training_date: body.training_date,
-        trainer_name: body.trainer_name,
-        trainer_role: body.trainer_role,
-        training_type: body.training_type || "initial",
-        certificate_url: body.certificate_url,
-        signature_url: body.signature_url,
-        notes: body.notes,
-        valid_until: body.valid_until,
-        is_valid: body.is_valid !== false,
-        created_by: user.id,
-      })
+      .insert(insertData)
       .select()
       .single()
 

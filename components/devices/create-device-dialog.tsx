@@ -84,6 +84,8 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
   const [contacts, setContacts] = useState<ContactOption[]>([])
   const [contactsLoading, setContactsLoading] = useState(false)
   const [showContactSelector, setShowContactSelector] = useState(false)
+  const [showConsumablesContactSelector, setShowConsumablesContactSelector] = useState(false)
+  const [showSupplierContactSelector, setShowSupplierContactSelector] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
 
   const [formData, setFormData] = useState({
@@ -239,10 +241,13 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
         setHandbookFileName(fileName)
       }
       // Load instruction documents if they exist
-      if (editDevice.instruction_documents && Array.isArray(editDevice.instruction_documents)) {
-        setInstructionDocuments(editDevice.instruction_documents)
-      }
-    } else {
+  if (editDevice.instruction_documents && Array.isArray(editDevice.instruction_documents)) {
+  setInstructionDocuments(editDevice.instruction_documents)
+  }
+  if (editDevice.purchase_receipt_url) {
+  setPurchaseReceiptUrl(editDevice.purchase_receipt_url)
+  }
+  } else {
       setFormData({
         name: "",
         description: "",
@@ -282,8 +287,10 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
       setSelectedRoomIds([])
       setHandbookFile(null)
       setHandbookFileName(null)
-      setInstructionDocuments([])
-      setIsUploadingInstructionDocs(false)
+  setInstructionDocuments([])
+  setPurchaseReceiptUrl(null)
+  setIsUploadingReceipt(false)
+  setIsUploadingInstructionDocs(false)
       setIsDraggingInstructionDocs(false)
     }
     setActiveTab("basic")
@@ -304,6 +311,8 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
     }>
   >([])
   const [isUploadingInstructionDocs, setIsUploadingInstructionDocs] = useState(false)
+  const [purchaseReceiptUrl, setPurchaseReceiptUrl] = useState<string | null>(null)
+  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false)
   const [isDraggingInstructionDocs, setIsDraggingInstructionDocs] = useState(false)
 
   const handleSubmit = async () => {
@@ -353,7 +362,8 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
         maintenance_service_contact: formData.maintenance_service_contact || null,
         maintenance_service_phone: formData.maintenance_service_phone || null,
         maintenance_service_email: formData.maintenance_service_email || null,
-        instruction_documents: instructionDocuments, // Include instruction documents
+        purchase_receipt_url: purchaseReceiptUrl || null,
+  instruction_documents: instructionDocuments, // Include instruction documents
       }
       console.log("[v0] Submitting device:", { url, payload })
 
@@ -660,6 +670,23 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
     setShowContactSelector(false)
   }
 
+  const handleSupplierContactSelect = (contact: ContactOption) => {
+    setFormData((prev) => ({
+      ...prev,
+      supplier_name: contact.company || `${contact.first_name || ""} ${contact.last_name || ""}`.trim(),
+      supplier_contact: contact.phone || contact.email || "",
+    }))
+    setShowSupplierContactSelector(false)
+  }
+
+  const handleConsumablesContactSelect = (contact: ContactOption) => {
+    setFormData((prev) => ({
+      ...prev,
+      consumables_supplier: contact.company || `${contact.first_name || ""} ${contact.last_name || ""}`.trim(),
+    }))
+    setShowConsumablesContactSelector(false)
+  }
+
   const handleInstructionDocsUpload = async (files: FileList | File[]) => {
     if (!currentPractice?.id) return
 
@@ -741,6 +768,63 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
       })
     } finally {
       setIsUploadingInstructionDocs(false)
+    }
+  }
+
+  const handleReceiptUpload = async (file: File) => {
+    if (!currentPractice?.id) return
+
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+    ]
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Ungültiger Dateityp",
+        description: "Nur PDF und Bilder sind erlaubt",
+        variant: "destructive",
+      })
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Datei zu groß",
+        description: "Maximale Dateigröße: 10MB",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsUploadingReceipt(true)
+    try {
+      const uploadData = new FormData()
+      uploadData.append("file", file)
+      uploadData.append("type", "general")
+      uploadData.append("practiceId", currentPractice.id)
+
+      const response = await fetch("/api/upload/unified", {
+        method: "POST",
+        body: uploadData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPurchaseReceiptUrl(data.url)
+        toast({ title: "Kaufbeleg hochgeladen" })
+      } else {
+        throw new Error("Upload failed")
+      }
+    } catch (error) {
+      console.error("Error uploading receipt:", error)
+      toast({
+        title: "Upload fehlgeschlagen",
+        description: "Fehler beim Hochladen des Kaufbelegs",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingReceipt(false)
     }
   }
 
@@ -871,7 +955,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>{editDevice ? "Gerät bearbeiten" : "Neues Gerät"}</DialogTitle>
           <DialogDescription>
@@ -881,8 +965,8 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col min-h-0 flex-1">
+          <TabsList className="grid w-full grid-cols-6 flex-shrink-0">
             <TabsTrigger value="basic">Basis</TabsTrigger>
             <TabsTrigger value="purchase">Kauf</TabsTrigger>
             <TabsTrigger value="maintenance">Wartung</TabsTrigger>
@@ -891,7 +975,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
             <TabsTrigger value="details">Details</TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto py-4">
+          <div className="flex-1 overflow-y-auto py-4 min-h-0">
             <TabsContent value="basic" className="mt-0 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -1119,21 +1203,70 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     placeholder="0.00"
                   />
                 </div>
-                <div>
-                  <Label>Lieferant</Label>
-                  <Input
-                    value={formData.supplier_name}
-                    onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
-                    placeholder="Name des Lieferanten"
-                  />
-                </div>
-                <div>
-                  <Label>Lieferant Kontakt</Label>
-                  <Input
-                    value={formData.supplier_contact}
-                    onChange={(e) => setFormData({ ...formData, supplier_contact: e.target.value })}
-                    placeholder="Telefon oder E-Mail"
-                  />
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Lieferant</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSupplierContactSelector(!showSupplierContactSelector)}
+                      className="h-7 text-xs gap-1"
+                    >
+                      <Contact className="h-3 w-3" />
+                      Aus Kontakten wählen
+                    </Button>
+                  </div>
+
+                  {showSupplierContactSelector && (
+                    <div className="mb-3 p-3 border rounded-lg bg-muted/30">
+                      <Label className="text-xs text-muted-foreground mb-2 block">
+                        Kontakt auswählen zum Übernehmen der Daten
+                      </Label>
+                      {contactsLoading ? (
+                        <div className="text-sm text-muted-foreground py-2">Laden...</div>
+                      ) : contacts.length === 0 ? (
+                        <div className="text-sm text-muted-foreground py-2">Keine Kontakte vorhanden</div>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto space-y-1">
+                          {contacts.map((contact) => (
+                            <button
+                              key={contact.id}
+                              type="button"
+                              onClick={() => handleSupplierContactSelect(contact)}
+                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent transition-colors text-sm"
+                            >
+                              <div className="font-medium">
+                                {contact.company || `${contact.first_name || ""} ${contact.last_name || ""}`.trim()}
+                              </div>
+                              {contact.company && (contact.first_name || contact.last_name) && (
+                                <div className="text-xs text-muted-foreground">
+                                  {`${contact.first_name || ""} ${contact.last_name || ""}`.trim()}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        value={formData.supplier_name}
+                        onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
+                        placeholder="Name des Lieferanten"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        value={formData.supplier_contact}
+                        onChange={(e) => setFormData({ ...formData, supplier_contact: e.target.value })}
+                        placeholder="Telefon oder E-Mail"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <Label>Garantie bis</Label>
@@ -1142,6 +1275,59 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     value={formData.warranty_end_date}
                     onChange={(e) => setFormData({ ...formData, warranty_end_date: e.target.value })}
                   />
+                </div>
+
+                {/* Kaufbeleg Upload */}
+                <div className="col-span-2 pt-2 border-t">
+                  <Label className="mb-2 block">Kaufbeleg</Label>
+                  {purchaseReceiptUrl ? (
+                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                      <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <a
+                        href={purchaseReceiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline truncate flex-1"
+                      >
+                        Kaufbeleg anzeigen
+                      </a>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPurchaseReceiptUrl(null)}
+                        className="h-7 text-xs text-destructive hover:text-destructive"
+                      >
+                        Entfernen
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".pdf,image/*"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleReceiptUpload(file)
+                          e.target.value = ""
+                        }}
+                        disabled={isUploadingReceipt}
+                      />
+                      <div className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg hover:border-primary/50 transition-colors cursor-pointer">
+                        {isUploadingReceipt ? (
+                          <span className="text-sm text-muted-foreground">Wird hochgeladen...</span>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              PDF oder Bild hochladen (max. 10MB)
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -1246,25 +1432,59 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
                     placeholder="service@example.com"
                   />
                 </div>
-                <div className="col-span-2">
-                  <Label>Kontakt auswählen</Label>
-                  <Button
-                    type="button"
-                    onClick={() => setShowContactSelector(true)}
-                    disabled={contactsLoading}
-                    className="flex items-center gap-2"
-                  >
-                    <Contact className="h-4 w-4" />
-                    Kontakt auswählen
-                  </Button>
-                </div>
               </div>
             </TabsContent>
 
             <TabsContent value="consumables" className="mt-0 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <Label>Verbrauchsmaterial-Lieferant</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Verbrauchsmaterial-Lieferant</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowConsumablesContactSelector(!showConsumablesContactSelector)}
+                      className="h-7 text-xs gap-1"
+                    >
+                      <Contact className="h-3 w-3" />
+                      Aus Kontakten wählen
+                    </Button>
+                  </div>
+
+                  {showConsumablesContactSelector && (
+                    <div className="mb-3 p-3 border rounded-lg bg-muted/30">
+                      <Label className="text-xs text-muted-foreground mb-2 block">
+                        Kontakt auswählen zum Übernehmen der Daten
+                      </Label>
+                      {contactsLoading ? (
+                        <div className="text-sm text-muted-foreground py-2">Laden...</div>
+                      ) : contacts.length === 0 ? (
+                        <div className="text-sm text-muted-foreground py-2">Keine Kontakte vorhanden</div>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto space-y-1">
+                          {contacts.map((contact) => (
+                            <button
+                              key={contact.id}
+                              type="button"
+                              onClick={() => handleConsumablesContactSelect(contact)}
+                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent transition-colors text-sm"
+                            >
+                              <div className="font-medium">
+                                {contact.company || `${contact.first_name || ""} ${contact.last_name || ""}`.trim()}
+                              </div>
+                              {contact.company && (contact.first_name || contact.last_name) && (
+                                <div className="text-xs text-muted-foreground">
+                                  {`${contact.first_name || ""} ${contact.last_name || ""}`.trim()}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <Input
                     value={formData.consumables_supplier}
                     onChange={(e) => setFormData({ ...formData, consumables_supplier: e.target.value })}
@@ -1635,7 +1855,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Abbrechen
           </Button>

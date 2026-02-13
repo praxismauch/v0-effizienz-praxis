@@ -20,6 +20,7 @@ import {
   Building2,
   FileText,
   Users,
+  MapPin,
   CheckCircle,
   AlertTriangle,
   Settings2,
@@ -85,33 +86,35 @@ export function DeviceCard({
 
   return (
     <Card
-      className="group cursor-pointer hover:shadow-md transition-shadow"
+      className="group cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
       onClick={onView}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            {firstImage ? (
-              <img
-                src={firstImage}
-                alt={device.name}
-                className="h-12 w-12 rounded-lg object-cover"
-              />
-            ) : (
-              <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                <ImageIcon className="h-6 w-6 text-muted-foreground" />
-              </div>
-            )}
-            <div>
-              <CardTitle className="text-base line-clamp-1">{device.name}</CardTitle>
-              <CardDescription className="text-xs">
-                {device.manufacturer} {device.model && `- ${device.model}`}
-              </CardDescription>
-            </div>
+      {/* Image on top, full width */}
+      {firstImage ? (
+        <div className="w-full h-32 overflow-hidden">
+          <img
+            src={firstImage}
+            alt={device.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+      ) : (
+        <div className="w-full h-20 bg-muted flex items-center justify-center">
+          <ImageIcon className="h-8 w-8 text-muted-foreground" />
+        </div>
+      )}
+
+      <CardHeader className="pb-2 pt-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-base truncate">{device.name}</CardTitle>
+            <CardDescription className="text-xs truncate">
+              {device.manufacturer} {device.model && `- ${device.model}`}
+            </CardDescription>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -154,6 +157,19 @@ export function DeviceCard({
               {maintenanceStatus.label}
             </Badge>
           )}
+          {device.rooms && device.rooms.length > 0 ? (
+            device.rooms.map((room: { id: string; name: string }) => (
+              <Badge key={room.id} variant="outline" className="text-xs">
+                <MapPin className="h-3 w-3 mr-1" />
+                {room.name}
+              </Badge>
+            ))
+          ) : device.room ? (
+            <Badge variant="outline" className="text-xs">
+              <MapPin className="h-3 w-3 mr-1" />
+              {device.room}
+            </Badge>
+          ) : null}
         </div>
 
         <div className="space-y-1 text-sm text-muted-foreground">

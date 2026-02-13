@@ -86,7 +86,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
 
     setSaving(true)
     try {
-      const member = teamMembers.find((m) => m.id === formData.team_member_id || m.user_id === formData.team_member_id)
+      const member = teamMembers.find((m: any) => m.team_member_id === formData.team_member_id || m.id === formData.team_member_id || m.user_id === formData.team_member_id)
 
       const response = await fetch(`/api/practices/${currentPractice.id}/devices/${device.id}/trainings`, {
         method: "POST",
@@ -111,7 +111,8 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
           notes: "",
         })
       } else {
-        throw new Error("Failed to save training")
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || "Failed to save training")
       }
     } catch (error) {
       toast({ title: "Fehler", description: "Die Einweisung konnte nicht gespeichert werden.", variant: "destructive" })
@@ -144,7 +145,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
           <DialogDescription>Dokumentieren Sie Geräteeinweisungen für Ihre Teammitglieder</DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {/* Stats */}
           <div className="flex gap-4 mb-4">
             <div className="flex items-center gap-2 text-sm">
@@ -161,27 +162,28 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
 
           {/* Add Form */}
           {showAddForm ? (
-            <div className="flex-1 flex flex-col overflow-hidden border rounded-lg mb-4">
-              <ScrollArea className="flex-1 p-4">
+            <div className="border rounded-lg mb-4">
+              <div className="p-4">
                 <h4 className="font-medium mb-4">Neue Einweisung dokumentieren</h4>
                 <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="overflow-hidden">
                   <Label>Mitarbeiter *</Label>
                   <Select
                     value={formData.team_member_id}
                     onValueChange={(value) => setFormData({ ...formData, team_member_id: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="truncate">
                       <SelectValue placeholder="Mitarbeiter auswählen" />
                     </SelectTrigger>
                     <SelectContent position="popper" className="max-h-[300px]">
                       {activeMembers.map((member) => {
-                        const memberId = member.user_id || member.id || member.team_member_id
-                        if (!memberId) return null
+                        const tmId = (member as any).team_member_id || member.id
+                        if (!tmId) return null
+                        const userId = member.user_id || member.id
                         return (
-                          <SelectItem key={memberId} value={memberId}>
+                          <SelectItem key={tmId} value={tmId}>
                             {member.first_name} {member.last_name}
-                            {!trainedMemberIds.has(memberId) && !trainedMemberIds.has(member.user_id || "") && (
+                            {!trainedMemberIds.has(tmId) && !trainedMemberIds.has(userId || "") && (
                               <span className="text-yellow-600 ml-2">(nicht eingewiesen)</span>
                             )}
                           </SelectItem>
@@ -199,18 +201,10 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                   />
                 </div>
                 <div>
-                  <Label>Einweiser</Label>
-                  <Input
-                    value={formData.trainer_name}
-                    onChange={(e) => setFormData({ ...formData, trainer_name: e.target.value })}
-                    placeholder="Name des Einweisenden"
-                  />
-                </div>
-                <div>
                   <Label>Einweiser-Typ</Label>
                   <Select
                     value={formData.trainer_role}
-                    onValueChange={(value) => setFormData({ ...formData, trainer_role: value })}
+                    onValueChange={(value) => setFormData({ ...formData, trainer_role: value, trainer_name: "" })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -221,6 +215,43 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                       <SelectItem value="external">Extern</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div>
+                  <Label>Einweiser</Label>
+                  {formData.trainer_role === "internal" ? (
+                    <Select
+                      value={formData.trainer_name}
+                      onValueChange={(value) => {
+                        const member = activeMembers.find((m) => m.id === value)
+                        const name = member ? `${member.first_name || ""} ${member.last_name || ""}`.trim() : value
+                        setFormData({ ...formData, trainer_name: name })
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Teammitglied auswählen">
+                          {formData.trainer_name || "Teammitglied auswählen"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent position="popper" className="max-h-[300px]">
+                        {activeMembers
+                          .filter((m) => (m.first_name || m.last_name))
+                          .map((member) => {
+                            const fullName = `${member.first_name || ""} ${member.last_name || ""}`.trim()
+                            return (
+                              <SelectItem key={member.id} value={member.id}>
+                                {fullName || member.email || "Unbenannt"}
+                              </SelectItem>
+                            )
+                          })}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      value={formData.trainer_name}
+                      onChange={(e) => setFormData({ ...formData, trainer_name: e.target.value })}
+                      placeholder="Name des Einweisenden"
+                    />
+                  )}
                 </div>
                 <div>
                   <Label>Einweisungsart</Label>
@@ -256,7 +287,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                   />
                 </div>
               </div>
-              </ScrollArea>
+              </div>
               <div className="flex justify-end gap-2 p-4 border-t">
                 <Button variant="outline" onClick={() => setShowAddForm(false)}>
                   Abbrechen
@@ -275,7 +306,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
           )}
 
           {/* Trainings List */}
-          <ScrollArea className="flex-1">
+          <div>
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin" />
@@ -352,7 +383,7 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                 })}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

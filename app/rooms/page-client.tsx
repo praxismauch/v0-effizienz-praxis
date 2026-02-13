@@ -421,9 +421,27 @@ export default function PageClient(_props: PageClientProps) {
                   return (
                     <Card
                       key={room.id}
-                      className={`group relative transition-all hover:shadow-md ${colors.bg} ${colors.border}`}
+                      className={`group relative transition-all hover:shadow-md overflow-hidden ${colors.bg} ${colors.border}`}
                       style={colors.hex ? { backgroundColor: `${colors.hex}10`, borderLeftColor: colors.hex } : undefined}
                     >
+                      {room.images && room.images.length > 0 ? (
+                        <div className="relative aspect-video overflow-hidden">
+                          <img
+                            src={room.images[0]}
+                            alt={room.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          {room.images.length > 1 && (
+                            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+                              +{room.images.length - 1}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="aspect-video flex items-center justify-center bg-muted/30">
+                          <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
+                        </div>
+                      )}
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2">
@@ -451,24 +469,6 @@ export default function PageClient(_props: PageClientProps) {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        {room.images && room.images.length > 0 && (
-                          <div className="flex gap-2 overflow-x-auto pb-1">
-                            {room.images.slice(0, 3).map((image, imgIndex) => (
-                              <div key={imgIndex} className="relative flex-shrink-0">
-                                <img
-                                  src={image}
-                                  alt={`${room.name} Bild ${imgIndex + 1}`}
-                                  className="h-16 w-24 object-cover rounded-md border border-border"
-                                />
-                              </div>
-                            ))}
-                            {room.images.length > 3 && (
-                              <div className="flex-shrink-0 h-16 w-16 rounded-md bg-muted flex items-center justify-center text-sm text-muted-foreground">
-                                +{room.images.length - 3}
-                              </div>
-                            )}
-                          </div>
-                        )}
                         {room.beschreibung ? (
                           <p className="text-sm text-muted-foreground line-clamp-2">{room.beschreibung}</p>
                         ) : (

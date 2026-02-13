@@ -16,6 +16,7 @@ export interface MedicalDevice {
   warranty_end_date?: string
   location?: string
   room?: string
+  rooms?: { id: string; name: string }[]
   responsible_user_id?: string
   image_url?: string
   handbook_url?: string

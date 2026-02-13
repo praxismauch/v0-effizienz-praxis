@@ -15,6 +15,7 @@ export interface Protocol {
   status: "draft" | "published" | "archived"
   steps?: any[]
   action_items?: ProtocolItem[]
+  attendees?: string[]
   protocol_date?: string
   created_at: string
   updated_at: string
@@ -35,6 +36,7 @@ export interface ProtocolFormData {
   content: string
   protocolDate: Date
   actionItems: ProtocolItem[]
+  attendees: string[]
 }
 
 export const PROTOCOL_CATEGORIES = [

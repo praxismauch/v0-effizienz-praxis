@@ -8,14 +8,13 @@ export async function GET() {
     const { count, error } = await supabase.from("users").select("*", { count: "exact", head: true })
 
     if (error) {
-      console.error("[v0] Users count API - Error:", error)
+      console.error("Users count API - Error:", error)
       return NextResponse.json({ count: 0 }, { status: 200 })
     }
 
-    console.log("[v0] Total users count:", count)
     return NextResponse.json({ count: count || 0 })
   } catch (error) {
-    console.error("[v0] Users count API - Exception:", error)
+    console.error("Users count API - Exception:", error)
     return NextResponse.json({ count: 0 }, { status: 200 })
   }
 }

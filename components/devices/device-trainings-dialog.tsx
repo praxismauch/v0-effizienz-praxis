@@ -161,9 +161,10 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
 
           {/* Add Form */}
           {showAddForm ? (
-            <div className="border rounded-lg p-4 mb-4 space-y-4">
-              <h4 className="font-medium">Neue Einweisung dokumentieren</h4>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="flex-1 flex flex-col overflow-hidden border rounded-lg mb-4">
+              <ScrollArea className="flex-1 p-4">
+                <h4 className="font-medium mb-4">Neue Einweisung dokumentieren</h4>
+                <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Mitarbeiter *</Label>
                   <Select
@@ -255,7 +256,8 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
+              </ScrollArea>
+              <div className="flex justify-end gap-2 p-4 border-t">
                 <Button variant="outline" onClick={() => setShowAddForm(false)}>
                   Abbrechen
                 </Button>

@@ -1,49 +1,17 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { format, formatDistanceToNow } from "date-fns"
-import { de } from "date-fns/locale"
+import { useState } from "react"
+import { format } from "date-fns"
 import useSWR from "swr"
 import {
-  AlertTriangle,
-  Bug,
-  Info,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  Clock,
   Search,
-  Filter,
   RefreshCw,
-  Trash2,
-  Eye,
-  ChevronDown,
-  ChevronRight,
-  Monitor,
-  Server,
-  Globe,
-  Zap,
-  Database,
-  Shield,
-  Mail,
-  Bot,
-  Layers,
-  Activity,
-  BarChart3,
-  TrendingUp,
-  Calendar,
   Download,
   Settings,
-  CheckSquare,
-  Square,
-  MoreHorizontal,
-  Copy,
-  ExternalLink,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -51,14 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -71,95 +31,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
-
-interface ErrorLog {
-  id: string
-  created_at: string
-  level: "debug" | "info" | "warn" | "error" | "critical"
-  category: string
-  message: string
-  error_name: string | null
-  error_message: string | null
-  stack_trace: string | null
-  source: string | null
-  url: string | null
-  method: string | null
-  user_agent: string | null
-  ip_address: string | null
-  user_id: string | null
-  practice_id: number | null
-  request_id: string | null
-  metadata: Record<string, any>
-  status: "new" | "acknowledged" | "investigating" | "resolved" | "ignored"
-  resolved_at: string | null
-  resolved_by: string | null
-  resolution_notes: string | null
-  fingerprint: string | null
-}
-
-interface Stats {
-  total: number
-  byLevel: Record<string, number>
-  byStatus: Record<string, number>
-  byCategory: Record<string, number>
-  bySource: Record<string, number>
-  last24h: number
-  lastWeek: number
-}
+import { type ErrorLog, type Stats, statusConfig } from "./logging-types"
+import { LoggingStats } from "./components/logging-stats"
+import { LogsTable } from "./components/logs-table"
+import { LogDetailDialog } from "./components/log-detail-dialog"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
-
-const levelConfig = {
-  debug: { icon: Bug, color: "text-slate-500", bg: "bg-slate-500/10", label: "Debug" },
-  info: { icon: Info, color: "text-blue-500", bg: "bg-blue-500/10", label: "Info" },
-  warn: { icon: AlertTriangle, color: "text-yellow-500", bg: "bg-yellow-500/10", label: "Warnung" },
-  error: { icon: AlertCircle, color: "text-red-500", bg: "bg-red-500/10", label: "Fehler" },
-  critical: { icon: XCircle, color: "text-red-700", bg: "bg-red-700/10", label: "Kritisch" },
-}
-
-const statusConfig = {
-  new: { icon: AlertCircle, color: "text-red-500", bg: "bg-red-500/10", label: "Neu" },
-  acknowledged: { icon: Eye, color: "text-yellow-500", bg: "bg-yellow-500/10", label: "Bestätigt" },
-  investigating: { icon: Search, color: "text-blue-500", bg: "bg-blue-500/10", label: "In Bearbeitung" },
-  resolved: { icon: CheckCircle2, color: "text-green-500", bg: "bg-green-500/10", label: "Gelöst" },
-  ignored: { icon: XCircle, color: "text-slate-400", bg: "bg-slate-400/10", label: "Ignoriert" },
-}
-
-const categoryIcons: Record<string, any> = {
-  api: Globe,
-  database: Database,
-  auth: Shield,
-  ui: Monitor,
-  email: Mail,
-  ai: Bot,
-  cron: Clock,
-  middleware: Layers,
-  security: Shield,
-  performance: Zap,
-  other: Activity,
-}
-
-const sourceIcons: Record<string, any> = {
-  client: Monitor,
-  server: Server,
-  api: Globe,
-  cron: Clock,
-}
 
 export default function ErrorLogsPageClient() {
   const { toast } = useToast()
@@ -195,7 +78,7 @@ export default function ErrorLogsPageClient() {
     ...(filters.endDate && { endDate: filters.endDate }),
   })
 
-  const { data, error, isLoading, mutate } = useSWR<{
+  const { data, isLoading, mutate } = useSWR<{
     logs: ErrorLog[]
     pagination: { page: number; limit: number; total: number; totalPages: number }
     stats: Stats
@@ -234,7 +117,7 @@ export default function ErrorLogsPageClient() {
   const handleUpdateStatus = async (logId: string | string[], status: string, notes?: string) => {
     setIsUpdating(true)
     try {
-      const body: any = { status }
+      const body: Record<string, unknown> = { status }
       if (notes) body.resolution_notes = notes
       
       if (Array.isArray(logId)) {
@@ -255,7 +138,7 @@ export default function ErrorLogsPageClient() {
       mutate()
       setShowStatusDialog(false)
       setSelectedLogs([])
-    } catch (error) {
+    } catch {
       toast({ title: "Fehler", description: "Status konnte nicht aktualisiert werden", variant: "destructive" })
     } finally {
       setIsUpdating(false)
@@ -269,7 +152,7 @@ export default function ErrorLogsPageClient() {
   }
 
   const handleDeleteOldLogs = async (days: number) => {
-    if (!confirm(`Alle Logs älter als ${days} Tage löschen?`)) return
+    if (!confirm(`Alle Logs alter als ${days} Tage loschen?`)) return
 
     try {
       const response = await fetch(`/api/super-admin/error-logs?olderThan=${days}`, {
@@ -278,10 +161,10 @@ export default function ErrorLogsPageClient() {
       if (!response.ok) throw new Error("Failed to delete logs")
       
       const result = await response.json()
-      toast({ title: "Erfolg", description: `${result.deleted || 0} Logs gelöscht` })
+      toast({ title: "Erfolg", description: `${result.deleted || 0} Logs geloscht` })
       mutate()
-    } catch (error) {
-      toast({ title: "Fehler", description: "Logs konnten nicht gelöscht werden", variant: "destructive" })
+    } catch {
+      toast({ title: "Fehler", description: "Logs konnten nicht geloscht werden", variant: "destructive" })
     }
   }
 
@@ -321,7 +204,7 @@ export default function ErrorLogsPageClient() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Error Logging</h1>
           <p className="text-muted-foreground">
-            Systemweite Fehlerüberwachung und Analyse
+            Systemweite Fehleruberwachung und Analyse
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -351,130 +234,21 @@ export default function ErrorLogsPageClient() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => handleDeleteOldLogs(7)}>
-                Älter als 7 Tage löschen
+                {"Alter als 7 Tage loschen"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDeleteOldLogs(30)}>
-                Älter als 30 Tage löschen
+                {"Alter als 30 Tage loschen"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDeleteOldLogs(90)}>
-                Älter als 90 Tage löschen
+                {"Alter als 90 Tage loschen"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gesamt Logs</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.last24h} in den letzten 24h
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fehler</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-500">
-                {((stats.byLevel.error || 0) + (stats.byLevel.critical || 0)).toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {stats.byLevel.critical || 0} kritisch
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ungelöst</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-500">
-                {((stats.byStatus.new || 0) + (stats.byStatus.acknowledged || 0) + (stats.byStatus.investigating || 0)).toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {stats.byStatus.new || 0} neue
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gelöst</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-500">
-                {(stats.byStatus.resolved || 0).toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {stats.byStatus.ignored || 0} ignoriert
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Category & Source Distribution */}
-      {stats && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Nach Kategorie</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(stats.byCategory).map(([category, count]) => {
-                  const Icon = categoryIcons[category] || Activity
-                  return (
-                    <Badge
-                      key={category}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-muted"
-                      onClick={() => handleFilterChange("category", category)}
-                    >
-                      <Icon className="h-3 w-3 mr-1" />
-                      {category}: {count}
-                    </Badge>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Nach Quelle</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(stats.bySource).map(([source, count]) => {
-                  const Icon = sourceIcons[source] || Activity
-                  return (
-                    <Badge
-                      key={source}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-muted"
-                      onClick={() => handleFilterChange("source", source)}
-                    >
-                      <Icon className="h-3 w-3 mr-1" />
-                      {source}: {count}
-                    </Badge>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Stats */}
+      {stats && <LoggingStats stats={stats} onFilterChange={handleFilterChange} />}
 
       {/* Filters */}
       <Card>
@@ -511,9 +285,9 @@ export default function ErrorLogsPageClient() {
               <SelectContent>
                 <SelectItem value="all">Alle Status</SelectItem>
                 <SelectItem value="new">Neu</SelectItem>
-                <SelectItem value="acknowledged">Bestätigt</SelectItem>
+                <SelectItem value="acknowledged">{"Bestatigt"}</SelectItem>
                 <SelectItem value="investigating">In Bearbeitung</SelectItem>
-                <SelectItem value="resolved">Gelöst</SelectItem>
+                <SelectItem value="resolved">{"Gelost"}</SelectItem>
                 <SelectItem value="ignored">Ignoriert</SelectItem>
               </SelectContent>
             </Select>
@@ -561,7 +335,7 @@ export default function ErrorLogsPageClient() {
                   })
                 }
               >
-                Filter zurücksetzen
+                {"Filter zurucksetzen"}
               </Button>
             )}
           </div>
@@ -574,17 +348,17 @@ export default function ErrorLogsPageClient() {
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
-                {selectedLogs.length} Log(s) ausgewählt
+                {selectedLogs.length} {"Log(s) ausgewahlt"}
               </span>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("acknowledged")}>
-                  Bestätigen
+                  {"Bestatigen"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("investigating")}>
                   In Bearbeitung
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("resolved")}>
-                  Gelöst
+                  {"Gelost"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("ignored")}>
                   Ignorieren
@@ -599,141 +373,15 @@ export default function ErrorLogsPageClient() {
       )}
 
       {/* Logs Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40px]">
-                  <Checkbox
-                    checked={selectedLogs.length === logs.length && logs.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
-                <TableHead className="w-[160px]">Zeit</TableHead>
-                <TableHead className="w-[100px]">Level</TableHead>
-                <TableHead className="w-[100px]">Kategorie</TableHead>
-                <TableHead>Nachricht</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[80px]">Quelle</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
-                    <RefreshCw className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              ) : logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Keine Logs gefunden
-                  </TableCell>
-                </TableRow>
-              ) : (
-                logs.map((log) => {
-                  const levelCfg = levelConfig[log.level] || levelConfig.info
-                  const statusCfg = statusConfig[log.status] || statusConfig.new
-                  const LevelIcon = levelCfg.icon
-                  const StatusIcon = statusCfg.icon
-                  const CategoryIcon = categoryIcons[log.category] || Activity
-                  const SourceIcon = sourceIcons[log.source || ""] || Activity
-
-                  return (
-                    <TableRow
-                      key={log.id}
-                      className={cn(
-                        "cursor-pointer hover:bg-muted/50",
-                        selectedLogs.includes(log.id) && "bg-muted/50"
-                      )}
-                      onClick={() => handleViewDetails(log)}
-                    >
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={selectedLogs.includes(log.id)}
-                          onCheckedChange={() => handleSelectLog(log.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        <div>{format(new Date(log.created_at), "dd.MM.yyyy HH:mm:ss")}</div>
-                        <div className="text-muted-foreground">
-                          {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: de })}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn(levelCfg.bg, levelCfg.color)}>
-                          <LevelIcon className="h-3 w-3 mr-1" />
-                          {levelCfg.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <CategoryIcon className="h-3 w-3 text-muted-foreground" />
-                          {log.category}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[400px] truncate font-medium">
-                          {log.message}
-                        </div>
-                        {log.url && (
-                          <div className="text-xs text-muted-foreground truncate max-w-[400px]">
-                            {log.url}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn(statusCfg.bg, statusCfg.color)}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {statusCfg.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {log.source && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <SourceIcon className="h-3 w-3" />
-                            {log.source}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewDetails(log)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Details anzeigen
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(log.id, "acknowledged")}>
-                              Bestätigen
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(log.id, "investigating")}>
-                              In Bearbeitung
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(log.id, "resolved")}>
-                              Gelöst
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(log.id, "ignored")}>
-                              Ignorieren
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <LogsTable
+        logs={logs}
+        isLoading={isLoading}
+        selectedLogs={selectedLogs}
+        onSelectAll={handleSelectAll}
+        onSelectLog={handleSelectLog}
+        onViewDetails={handleViewDetails}
+        onUpdateStatus={handleUpdateStatus}
+      />
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
@@ -748,7 +396,7 @@ export default function ErrorLogsPageClient() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
-              Zurück
+              {"Zuruck"}
             </Button>
             <span className="flex items-center px-3 text-sm">
               Seite {page} von {pagination.totalPages}
@@ -766,198 +414,13 @@ export default function ErrorLogsPageClient() {
       )}
 
       {/* Detail Dialog */}
-      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedLog && (
-                <>
-                  {(() => {
-                    const cfg = levelConfig[selectedLog.level]
-                    const Icon = cfg.icon
-                    return <Icon className={cn("h-5 w-5", cfg.color)} />
-                  })()}
-                  Error Details
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedLog && format(new Date(selectedLog.created_at), "dd.MM.yyyy HH:mm:ss")}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedLog && (
-            <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-4">
-                {/* Status & Actions */}
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Status:</span>
-                    <Badge variant="outline" className={cn(statusConfig[selectedLog.status].bg, statusConfig[selectedLog.status].color)}>
-                      {statusConfig[selectedLog.status].label}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <Select
-                      value={selectedLog.status}
-                      onValueChange={(value) => {
-                        handleUpdateStatus(selectedLog.id, value)
-                        setSelectedLog({ ...selectedLog, status: value as any })
-                      }}
-                    >
-                      <SelectTrigger className="w-[160px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new">Neu</SelectItem>
-                        <SelectItem value="acknowledged">Bestätigt</SelectItem>
-                        <SelectItem value="investigating">In Bearbeitung</SelectItem>
-                        <SelectItem value="resolved">Gelöst</SelectItem>
-                        <SelectItem value="ignored">Ignoriert</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Message */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Nachricht</Label>
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="font-medium">{selectedLog.message}</p>
-                    {selectedLog.error_message && selectedLog.error_message !== selectedLog.message && (
-                      <p className="text-sm text-muted-foreground mt-1">{selectedLog.error_message}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Metadata Grid */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Kategorie</Label>
-                    <p className="text-sm">{selectedLog.category}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Quelle</Label>
-                    <p className="text-sm">{selectedLog.source || "-"}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Benutzer ID</Label>
-                    <p className="text-sm font-mono">{selectedLog.user_id || "-"}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Praxis ID</Label>
-                    <p className="text-sm">{selectedLog.practice_id || "-"}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Request ID</Label>
-                    <p className="text-sm font-mono">{selectedLog.request_id || "-"}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">IP Adresse</Label>
-                    <p className="text-sm font-mono">{selectedLog.ip_address || "-"}</p>
-                  </div>
-                </div>
-
-                {/* URL */}
-                {selectedLog.url && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">URL</Label>
-                    <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                      {selectedLog.method && (
-                        <Badge variant="outline">{selectedLog.method}</Badge>
-                      )}
-                      <code className="text-sm flex-1 truncate">{selectedLog.url}</code>
-                      <Button size="sm" variant="ghost" onClick={() => copyToClipboard(selectedLog.url || "")}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Stack Trace */}
-                {selectedLog.stack_trace && (
-                  <Collapsible>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between">
-                        Stack Trace
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="mt-2 p-3 bg-slate-900 text-slate-100 rounded-lg overflow-x-auto">
-                        <pre className="text-xs whitespace-pre-wrap">{selectedLog.stack_trace}</pre>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-
-                {/* User Agent */}
-                {selectedLog.user_agent && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">User Agent</Label>
-                    <p className="text-xs text-muted-foreground bg-muted p-2 rounded-lg">
-                      {selectedLog.user_agent}
-                    </p>
-                  </div>
-                )}
-
-                {/* Metadata */}
-                {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
-                  <Collapsible>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between">
-                        Zusätzliche Daten
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="mt-2 p-3 bg-muted rounded-lg overflow-x-auto">
-                        <pre className="text-xs">{JSON.stringify(selectedLog.metadata, null, 2)}</pre>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-
-                {/* Resolution Notes */}
-                {selectedLog.resolution_notes && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Lösungsnotizen</Label>
-                    <p className="text-sm bg-green-500/10 text-green-700 p-3 rounded-lg">
-                      {selectedLog.resolution_notes}
-                    </p>
-                  </div>
-                )}
-
-                {/* Fingerprint */}
-                {selectedLog.fingerprint && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>Fingerprint:</span>
-                    <code>{selectedLog.fingerprint}</code>
-                    <Button
-                      size="sm"
-                      variant="link"
-                      className="text-xs h-auto p-0"
-                      onClick={() => {
-                        handleFilterChange("search", "")
-                        setShowDetailDialog(false)
-                        // Would need fingerprint filter support
-                      }}
-                    >
-                      Ähnliche anzeigen
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
-              Schließen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LogDetailDialog
+        log={selectedLog}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        onUpdateStatus={handleUpdateStatus}
+        onCopy={copyToClipboard}
+      />
 
       {/* Bulk Status Update Dialog */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
@@ -965,14 +428,14 @@ export default function ErrorLogsPageClient() {
           <DialogHeader>
             <DialogTitle>Status aktualisieren</DialogTitle>
             <DialogDescription>
-              Status für {selectedLogs.length} Log(s) auf "{statusConfig[newStatus as keyof typeof statusConfig]?.label}" setzen
+              {"Status fur"} {selectedLogs.length} {"Log(s) auf"} &quot;{statusConfig[newStatus as keyof typeof statusConfig]?.label}&quot; setzen
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Lösungsnotizen (optional)</Label>
+              <Label>{"Losungsnotizen (optional)"}</Label>
               <Textarea
-                placeholder="Notizen zur Lösung oder Erklärung..."
+                placeholder={"Notizen zur Losung oder Erklarung..."}
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
               />

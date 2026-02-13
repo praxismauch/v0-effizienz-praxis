@@ -270,61 +270,64 @@ export function OrgaCategoriesManager() {
         </Button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-2">
         {categories.map((category) => (
           <Card
             key={category.id}
-            className="group relative overflow-hidden border-2 hover:shadow-md transition-all duration-200 cursor-pointer"
-            style={{ borderLeftWidth: "6px", borderLeftColor: category.color || "#3b82f6" }}
+            className="group relative overflow-hidden border hover:shadow-sm transition-all duration-200 cursor-pointer"
+            style={{ borderLeftWidth: "4px", borderLeftColor: category.color || "#3b82f6" }}
             onClick={() => openEditDialog(category)}
           >
-            <div className="flex items-center justify-between p-5">
-              <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex items-center justify-between px-3 py-2">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="cursor-grab active:cursor-grabbing" onClick={(e) => e.stopPropagation()}>
-                  <GripVertical className="h-5 w-5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                  <GripVertical className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                 </div>
                 <div
-                  className="flex items-center justify-center w-12 h-12 rounded-xl shrink-0"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
                   style={{ backgroundColor: `${category.color || "#3b82f6"}15` }}
                 >
                   <div
-                    className="w-6 h-6 rounded-md"
+                    className="w-4 h-4 rounded"
                     style={{ backgroundColor: category.color || "#3b82f6" }}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-base mb-1">{category.name}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-1">{category.description}</p>
+                  <h3 className="font-medium text-sm">{category.name}</h3>
+                  {category.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1">{category.description}</p>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 ml-4">
+              <div className="flex items-center gap-1 ml-3">
                 {category.is_active ? (
-                  <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">
+                  <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-xs px-2 py-0">
                     Aktiv
                   </Badge>
                 ) : (
-                  <Badge variant="secondary">Inaktiv</Badge>
+                  <Badge variant="secondary" className="text-xs px-2 py-0">Inaktiv</Badge>
                 )}
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="h-7 w-7"
                   onClick={(e) => {
                     e.stopPropagation()
                     openEditDialog(category)
                   }}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-destructive hover:text-destructive"
+                  className="h-7 w-7 text-destructive hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleDelete(category.id)
                   }}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>

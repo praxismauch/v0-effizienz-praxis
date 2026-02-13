@@ -1,18 +1,21 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { usePractice } from "@/contexts/practice-context"
 import { useAuth } from "@/contexts/auth-context"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Bell, MessageSquare, RefreshCw, Search, Plus } from "lucide-react"
+import { format, formatDistanceToNow } from "date-fns"
+import { de } from "date-fns/locale"
+import { toast } from "sonner"
+import { isActiveMember } from "@/lib/utils/team-member-filter"
+import { NotificationList } from "@/components/communication/notification-list"
+import { MessageList } from "@/components/communication/message-list"
+import { MessageDetail } from "@/components/communication/message-detail"
 import {
   Dialog,
   DialogContent,
@@ -23,33 +26,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  Bell,
-  MessageSquare,
-  Send,
-  Plus,
-  Search,
-  Trash2,
-  CheckCheck,
-  MoreHorizontal,
-  Inbox,
-  SendHorizontal,
-  RefreshCw,
-  ExternalLink,
-  Mail,
-  MailOpen,
-  Clock,
-  AlertCircle,
-  Info,
-  CheckCircle,
-  XCircle,
-} from "lucide-react"
-import { format, formatDistanceToNow } from "date-fns"
-import { de } from "date-fns/locale"
-import { toast } from "sonner"
-import { isActiveMember } from "@/lib/utils/team-member-filter"
-import { cn } from "@/lib/utils"
+import { Textarea } from "@/components/ui/textarea"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Send } from "lucide-react"
 
 // Types
 interface Notification {
@@ -102,15 +81,6 @@ interface TeamMember {
   status?: string
 }
 
-// Notification type config
-const notificationTypeConfig = {
-  info: { icon: Info, color: "bg-blue-500", bgColor: "bg-blue-50 dark:bg-blue-950" },
-  success: { icon: CheckCircle, color: "bg-green-500", bgColor: "bg-green-50 dark:bg-green-950" },
-  warning: { icon: AlertCircle, color: "bg-amber-500", bgColor: "bg-amber-50 dark:bg-amber-950" },
-  error: { icon: XCircle, color: "bg-red-500", bgColor: "bg-red-50 dark:bg-red-950" },
-  system: { icon: Bell, color: "bg-purple-500", bgColor: "bg-purple-50 dark:bg-purple-950" },
-}
-
 export default function CommunicationPage() {
   const { currentPractice } = usePractice()
   const { user } = useAuth()
@@ -140,8 +110,6 @@ export default function CommunicationPage() {
     subject: "",
     content: "",
   })
-
-  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Computed counts
   const unreadNotificationCount = notifications.filter((n) => !n.is_read).length
@@ -188,9 +156,7 @@ export default function CommunicationPage() {
       if (response.ok) {
         const data = await response.json()
         const members = data.teamMembers || []
-        setTeamMembers(
-          members.filter((m: TeamMember) => m.user_id !== user?.id && isActiveMember(m)),
-        )
+        setTeamMembers(members.filter((m: TeamMember) => m.user_id !== user?.id && isActiveMember(m)))
       }
     } catch (error) {
       console.error("Error fetching team members:", error)
@@ -220,11 +186,6 @@ export default function CommunicationPage() {
       setThreadMessages(thread)
     }
   }, [selectedMessage, messages])
-
-  // Scroll to bottom of thread
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [threadMessages])
 
   // Notification handlers
   const markNotificationAsRead = async (id: string) => {
@@ -316,8 +277,7 @@ export default function CommunicationPage() {
 
     setIsSending(true)
     try {
-      const recipientId =
-        selectedMessage.sender_id === user?.id ? selectedMessage.recipient_id : selectedMessage.sender_id
+      const recipientId = selectedMessage.sender_id === user?.id ? selectedMessage.recipient_id : selectedMessage.sender_id
 
       const response = await fetch("/api/messages", {
         method: "POST",
@@ -387,30 +347,6 @@ export default function CommunicationPage() {
     }
     return format(date, "dd.MM.yyyy HH:mm", { locale: de })
   }
-
-  const getMessagePerson = (message: Message) => {
-    const person = activeMessageTab === "sent" ? message.recipient : message.sender
-    return {
-      name: person ? `${person.first_name || ""} ${person.last_name || ""}`.trim() : "Unbekannt",
-      initials: person?.first_name?.[0] || "?",
-      avatar: person?.avatar,
-    }
-  }
-
-  // Loading skeleton
-  const LoadingSkeleton = () => (
-    <div className="space-y-3 p-4">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-start gap-3">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-4 w-1/3" />
-            <Skeleton className="h-3 w-full" />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
 
   return (
     <AppLayout>
@@ -516,12 +452,7 @@ export default function CommunicationPage() {
         {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Suchen..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <Input placeholder="Suchen..." className="pl-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </div>
 
         {/* Main Content */}
@@ -553,321 +484,42 @@ export default function CommunicationPage() {
 
           {/* Notifications Tab */}
           <TabsContent value="notifications" className="flex-1 min-h-0">
-            <Card className="h-full flex flex-col">
-              <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
-                <div>
-                  <CardTitle className="text-lg">Benachrichtigungen</CardTitle>
-                  <CardDescription>{filteredNotifications.length} Einträge</CardDescription>
-                </div>
-                {unreadNotificationCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={markAllNotificationsAsRead}>
-                    <CheckCheck className="h-4 w-4 mr-1" />
-                    Alle gelesen
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent className="flex-1 p-0 min-h-0">
-                <ScrollArea className="h-full">
-                  {isLoadingNotifications ? (
-                    <LoadingSkeleton />
-                  ) : filteredNotifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-12 text-center">
-                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                        <Bell className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-muted-foreground font-medium">Keine Benachrichtigungen</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Neue Benachrichtigungen werden hier angezeigt
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="divide-y">
-                      {filteredNotifications.map((notification) => {
-                        const config =
-                          notificationTypeConfig[notification.type as keyof typeof notificationTypeConfig] ||
-                          notificationTypeConfig.info
-                        const Icon = config.icon
-
-                        return (
-                          <div
-                            key={notification.id}
-                            className={cn(
-                              "p-4 hover:bg-muted/50 transition-colors cursor-pointer",
-                              !notification.is_read && config.bgColor,
-                            )}
-                            onClick={() => {
-                              if (!notification.is_read) markNotificationAsRead(notification.id)
-                              if (notification.link) window.location.href = notification.link
-                            }}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div
-                                className={cn(
-                                  "h-9 w-9 rounded-full flex items-center justify-center text-white",
-                                  config.color,
-                                )}
-                              >
-                                <Icon className="h-4 w-4" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className={cn(
-                                      "text-sm truncate",
-                                      !notification.is_read ? "font-semibold" : "font-medium",
-                                    )}
-                                  >
-                                    {notification.title}
-                                  </span>
-                                  {!notification.is_read && (
-                                    <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
-                                  )}
-                                </div>
-                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                  {notification.message}
-                                </p>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Clock className="h-3 w-3 text-muted-foreground" />
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatTime(notification.created_at)}
-                                  </span>
-                                </div>
-                              </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  {!notification.is_read && (
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        markNotificationAsRead(notification.id)
-                                      }}
-                                    >
-                                      <CheckCheck className="h-4 w-4 mr-2" />
-                                      Als gelesen markieren
-                                    </DropdownMenuItem>
-                                  )}
-                                  {notification.link && (
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        window.location.href = notification.link!
-                                      }}
-                                    >
-                                      <ExternalLink className="h-4 w-4 mr-2" />
-                                      Öffnen
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      deleteNotification(notification.id)
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Löschen
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            <NotificationList
+              notifications={filteredNotifications}
+              isLoading={isLoadingNotifications}
+              onMarkAsRead={markNotificationAsRead}
+              onMarkAllAsRead={markAllNotificationsAsRead}
+              onDelete={deleteNotification}
+              formatTime={formatTime}
+            />
           </TabsContent>
 
           {/* Messages Tab */}
           <TabsContent value="messages" className="flex-1 min-h-0">
             <div className="flex h-full gap-4">
-              {/* Message List */}
-              <Card className="w-full md:w-96 flex flex-col">
-                <CardHeader className="pb-3">
-                  <div className="flex border-b -mx-6 -mt-2 px-2">
-                    <button
-                      onClick={() => setActiveMessageTab("inbox")}
-                      className={cn(
-                        "flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors",
-                        activeMessageTab === "inbox"
-                          ? "border-b-2 border-primary text-primary"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      <Inbox className="h-4 w-4" />
-                      Posteingang
-                    </button>
-                    <button
-                      onClick={() => setActiveMessageTab("sent")}
-                      className={cn(
-                        "flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors",
-                        activeMessageTab === "sent"
-                          ? "border-b-2 border-primary text-primary"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      <SendHorizontal className="h-4 w-4" />
-                      Gesendet
-                    </button>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 p-0 min-h-0">
-                  <ScrollArea className="h-full">
-                    {isLoadingMessages ? (
-                      <LoadingSkeleton />
-                    ) : filteredMessages.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center p-8 text-center">
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                          <Mail className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <p className="text-muted-foreground">Keine Nachrichten</p>
-                      </div>
-                    ) : (
-                      <div className="divide-y">
-                        {filteredMessages.map((message) => {
-                          const person = getMessagePerson(message)
-                          const isSelected = selectedMessage?.id === message.id
+              <MessageList
+                messages={filteredMessages}
+                isLoading={isLoadingMessages}
+                activeTab={activeMessageTab}
+                selectedMessageId={selectedMessage?.id || null}
+                userId={user?.id}
+                onSelectMessage={handleSelectMessage}
+                onTabChange={setActiveMessageTab}
+                formatTime={formatTime}
+              />
 
-                          return (
-                            <div
-                              key={message.id}
-                              onClick={() => handleSelectMessage(message)}
-                              className={cn(
-                                "p-4 cursor-pointer transition-colors",
-                                isSelected ? "bg-primary/10" : "hover:bg-muted/50",
-                                !message.is_read && message.recipient_id === user?.id && "bg-blue-50 dark:bg-blue-950",
-                              )}
-                            >
-                              <div className="flex items-start gap-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">
-                                    {person.initials}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={cn(
-                                        "text-sm truncate",
-                                        !message.is_read && message.recipient_id === user?.id
-                                          ? "font-semibold"
-                                          : "font-medium",
-                                      )}
-                                    >
-                                      {person.name}
-                                    </span>
-                                    {!message.is_read && message.recipient_id === user?.id && (
-                                      <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
-                                    )}
-                                  </div>
-                                  <p className="text-sm font-medium truncate mt-0.5">{message.subject}</p>
-                                  <p className="text-xs text-muted-foreground truncate mt-1">{message.content}</p>
-                                  <p className="text-xs text-muted-foreground mt-2">{formatTime(message.created_at)}</p>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-
-              {/* Message Detail */}
-              <Card className="hidden md:flex flex-1 flex-col">
-                {selectedMessage ? (
-                  <>
-                    <CardHeader className="pb-3 border-b">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{selectedMessage.subject}</CardTitle>
-                          <CardDescription className="mt-1">
-                            {activeMessageTab === "inbox" ? "Von" : "An"}: {getMessagePerson(selectedMessage).name} •{" "}
-                            {formatTime(selectedMessage.created_at)}
-                          </CardDescription>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteMessage(selectedMessage.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Löschen
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
-                      <ScrollArea className="flex-1 p-4">
-                        <div className="space-y-4">
-                          {threadMessages.map((msg) => {
-                            const isOwnMessage = msg.sender_id === user?.id
-                            return (
-                              <div key={msg.id} className={cn("flex", isOwnMessage ? "justify-end" : "justify-start")}>
-                                <div
-                                  className={cn(
-                                    "max-w-[80%] rounded-lg p-3",
-                                    isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted",
-                                  )}
-                                >
-                                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                  <p
-                                    className={cn(
-                                      "text-xs mt-2",
-                                      isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground",
-                                    )}
-                                  >
-                                    {formatTime(msg.created_at)}
-                                  </p>
-                                </div>
-                              </div>
-                            )
-                          })}
-                          <div ref={messagesEndRef} />
-                        </div>
-                      </ScrollArea>
-                      {/* Reply */}
-                      <div className="p-4 border-t">
-                        <div className="flex gap-2">
-                          <Textarea
-                            placeholder="Antwort schreiben..."
-                            value={replyContent}
-                            onChange={(e) => setReplyContent(e.target.value)}
-                            rows={2}
-                            className="resize-none"
-                          />
-                          <Button onClick={handleReply} disabled={isSending || !replyContent.trim()}>
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                      <MailOpen className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <p className="text-muted-foreground font-medium">Keine Nachricht ausgewählt</p>
-                    <p className="text-sm text-muted-foreground mt-1">Wählen Sie eine Nachricht aus der Liste</p>
-                  </div>
-                )}
-              </Card>
+              <MessageDetail
+                selectedMessage={selectedMessage}
+                threadMessages={threadMessages}
+                replyContent={replyContent}
+                isSending={isSending}
+                userId={user?.id}
+                activeTab={activeMessageTab}
+                onReplyChange={setReplyContent}
+                onReply={handleReply}
+                onDelete={deleteMessage}
+                formatTime={formatTime}
+              />
             </div>
           </TabsContent>
         </Tabs>

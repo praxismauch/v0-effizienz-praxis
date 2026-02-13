@@ -495,14 +495,15 @@ export function TodoCard({
           {/* Compact metadata */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {/* Status pill */}
-            <div
-              className={cn(
-                "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
+            <Select
+              value={todo.status}
+              onValueChange={(value) => onStatusChange(todo.id, value)}
+            >
+              <SelectTrigger className={cn(
+                "h-7 w-[140px] rounded-full px-2 py-0.5 text-[10px] font-medium border-0",
                 statusInfo.bgColor,
                 statusInfo.textColor
-              )}
-            >
-              <SelectTrigger className="h-7 w-[140px]">
+              )}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -537,78 +538,6 @@ export function TodoCard({
             getPriorityLabel={getPriorityLabel}
             compact
           />
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-            {/* Due date */}
-            {todo.due_date && (
-              <div
-                className={cn(
-                  "flex items-center gap-1 text-[10px]",
-                  overdue
-                    ? "text-destructive font-semibold"
-                    : "text-muted-foreground"
-                )}
-              >
-                <Calendar className="h-2.5 w-2.5" />
-                {formatDateDE(new Date(todo.due_date))}
-              </div>
-            )}
-
-            {overdue && (
-              <AlertTriangle className="h-3 w-3 text-destructive" />
-            )}
-
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Assignees */}
-            {todo.assigned_user_ids && todo.assigned_user_ids.length > 0 && (
-              <div className="flex -space-x-1">
-                {todo.assigned_user_ids.slice(0, 2).map((userId) => {
-                  const member = teamMembers.find((m) => m.id === userId)
-                  if (!member) return null
-                  const initials = member.name
-                    ? member.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase()
-                    : member.email?.[0]?.toUpperCase() || "?"
-
-                  return (
-                    <TooltipProvider key={userId}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Avatar className="h-5 w-5 ring-1 ring-card">
-                            <AvatarImage
-                              src={member.avatar_url || "/placeholder.svg"}
-                            />
-                            <AvatarFallback className="text-[8px] bg-primary/10 text-primary font-medium">
-                              {initials}
-                            </AvatarFallback>
-                          </Avatar>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            {member.name || member.email}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )
-                })}
-                {todo.assigned_user_ids.length > 2 && (
-                  <div className="flex items-center justify-center h-5 w-5 rounded-full ring-1 ring-card bg-muted text-[8px] font-medium text-muted-foreground">
-                    +{todo.assigned_user_ids.length - 2}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </CardContent>
     </Card>

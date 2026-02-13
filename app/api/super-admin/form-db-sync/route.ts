@@ -1,395 +1,222 @@
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
+import { createServerClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 
-// Form schema definitions: what each form/dialog sends to the database
-const FORM_SCHEMAS: FormSchema[] = [
-  {
-    id: "create-room",
-    name: "Raum erstellen",
-    table: "rooms",
-    component: "components/rooms/create-room-dialog.tsx",
-    fields: [
-      { name: "name", type: "string", required: true, label: "Raumname" },
-      { name: "description", type: "string", required: false, label: "Beschreibung" },
-      { name: "room_type", type: "string", required: false, label: "Raumtyp" },
-      { name: "floor", type: "string", required: false, label: "Etage" },
-      { name: "capacity", type: "number", required: false, label: "Kapazität" },
-      { name: "color", type: "string", required: false, label: "Farbe" },
-      { name: "images", type: "json", required: false, label: "Bilder" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-  {
-    id: "create-contact",
-    name: "Kontakt erstellen",
-    table: "contacts",
-    component: "app/contacts/page.tsx",
-    fields: [
-      { name: "name", type: "string", required: true, label: "Name" },
-      { name: "company", type: "string", required: false, label: "Firma" },
-      { name: "email", type: "string", required: false, label: "E-Mail" },
-      { name: "phone", type: "string", required: false, label: "Telefon" },
-      { name: "mobile", type: "string", required: false, label: "Mobil" },
-      { name: "fax", type: "string", required: false, label: "Fax" },
-      { name: "address", type: "string", required: false, label: "Adresse" },
-      { name: "city", type: "string", required: false, label: "Stadt" },
-      { name: "postal_code", type: "string", required: false, label: "PLZ" },
-      { name: "website", type: "string", required: false, label: "Website" },
-      { name: "notes", type: "string", required: false, label: "Notizen" },
-      { name: "category", type: "string", required: false, label: "Kategorie" },
-      { name: "is_favorite", type: "boolean", required: false, label: "Favorit" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-  {
-    id: "create-arbeitsplatz",
-    name: "Arbeitsplatz erstellen",
-    table: "arbeitsplaetze",
-    component: "components/rooms/create-arbeitsplatz-dialog.tsx",
-    fields: [
-      { name: "name", type: "string", required: true, label: "Arbeitsplatzname" },
-      { name: "description", type: "string", required: false, label: "Beschreibung" },
-      { name: "arbeitsplatz_type", type: "string", required: false, label: "Typ" },
-      { name: "room_id", type: "string", required: false, label: "Raum-ID" },
-      { name: "color", type: "string", required: false, label: "Farbe" },
-      { name: "use_room_color", type: "boolean", required: false, label: "Raumfarbe verwenden" },
-      { name: "images", type: "json", required: false, label: "Bilder" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-  {
-    id: "create-medical-device",
-    name: "Medizingerät erstellen",
-    table: "medical_devices",
-    component: "components/inventory/create-device-dialog.tsx",
-    fields: [
-      { name: "name", type: "string", required: true, label: "Gerätename" },
-      { name: "manufacturer", type: "string", required: false, label: "Hersteller" },
-      { name: "serial_number", type: "string", required: false, label: "Seriennummer" },
-      { name: "device_type", type: "string", required: false, label: "Gerätetyp" },
-      { name: "model_number", type: "string", required: false, label: "Modellnummer" },
-      { name: "room_id", type: "string", required: false, label: "Raum-ID" },
-      { name: "status", type: "string", required: false, label: "Status" },
-      { name: "purchase_date", type: "string", required: false, label: "Kaufdatum" },
-      { name: "warranty_end", type: "string", required: false, label: "Garantie bis" },
-      { name: "next_maintenance", type: "string", required: false, label: "Nächste Wartung" },
-      { name: "responsible_user_id", type: "string", required: false, label: "Verantwortlicher" },
-      { name: "notes", type: "string", required: false, label: "Notizen" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-  {
-    id: "create-survey",
-    name: "Umfrage erstellen",
-    table: "surveys",
-    component: "app/surveys/page.tsx",
-    fields: [
-      { name: "title", type: "string", required: true, label: "Titel" },
-      { name: "description", type: "string", required: false, label: "Beschreibung" },
-      { name: "survey_type", type: "string", required: false, label: "Umfragetyp" },
-      { name: "status", type: "string", required: false, label: "Status" },
-      { name: "is_anonymous", type: "boolean", required: false, label: "Anonym" },
-      { name: "questions", type: "json", required: false, label: "Fragen" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-  {
-    id: "create-org-chart-position",
-    name: "Organigramm-Position erstellen",
-    table: "org_chart_positions",
-    component: "app/organigramm/page-client.tsx",
-    fields: [
-      { name: "title", type: "string", required: true, label: "Positionsbezeichnung" },
-      { name: "department", type: "string", required: false, label: "Abteilung" },
-      { name: "parent_id", type: "string", required: false, label: "Übergeordnete Position" },
-      { name: "assigned_user_id", type: "string", required: false, label: "Zugewiesene Person" },
-      { name: "team_id", type: "string", required: false, label: "Team-ID" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-  {
-    id: "create-certification",
-    name: "Zertifizierung erstellen",
-    table: "certifications",
-    component: "app/training/page.tsx",
-    fields: [
-      { name: "name", type: "string", required: true, label: "Name" },
-      { name: "description", type: "string", required: false, label: "Beschreibung" },
-      { name: "category", type: "string", required: false, label: "Kategorie" },
-      { name: "validity_months", type: "number", required: false, label: "Gültigkeit (Monate)" },
-      { name: "is_mandatory", type: "boolean", required: false, label: "Pflicht" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-  {
-    id: "create-training-event",
-    name: "Schulungstermin erstellen",
-    table: "training_events",
-    component: "app/training/page.tsx",
-    fields: [
-      { name: "title", type: "string", required: true, label: "Titel" },
-      { name: "description", type: "string", required: false, label: "Beschreibung" },
-      { name: "event_type", type: "string", required: false, label: "Veranstaltungstyp" },
-      { name: "location", type: "string", required: false, label: "Ort" },
-      { name: "start_date", type: "string", required: false, label: "Startdatum" },
-      { name: "end_date", type: "string", required: false, label: "Enddatum" },
-      { name: "max_participants", type: "number", required: false, label: "Max. Teilnehmer" },
-      { name: "cost_per_person", type: "number", required: false, label: "Kosten pro Person" },
-      { name: "is_mandatory", type: "boolean", required: false, label: "Pflicht" },
-      { name: "status", type: "string", required: false, label: "Status" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-  {
-    id: "create-inventory-bill",
-    name: "Rechnung hochladen",
-    table: "inventory_bills",
-    component: "app/inventory/bills/page.tsx",
-    fields: [
-      { name: "file_name", type: "string", required: true, label: "Dateiname" },
-      { name: "file_url", type: "string", required: false, label: "Datei-URL" },
-      { name: "file_type", type: "string", required: false, label: "Dateityp" },
-      { name: "supplier_name", type: "string", required: false, label: "Lieferant" },
-      { name: "bill_date", type: "string", required: false, label: "Rechnungsdatum" },
-      { name: "bill_number", type: "string", required: false, label: "Rechnungsnummer" },
-      { name: "total_amount", type: "number", required: false, label: "Gesamtbetrag" },
-      { name: "status", type: "string", required: false, label: "Status" },
-      { name: "practice_id", type: "string", required: true, label: "Praxis-ID" },
-    ],
-  },
-]
-
-interface FormField {
-  name: string
-  type: string
-  required: boolean
-  label: string
+// Human-readable German labels for known tables
+const TABLE_LABELS: Record<string, string> = {
+  users: "Benutzer",
+  practices: "Praxen",
+  practice_members: "Praxis-Mitglieder",
+  practice_settings: "Praxis-Einstellungen",
+  rooms: "Räume",
+  arbeitsplaetze: "Arbeitsplätze",
+  contacts: "Kontakte",
+  tasks: "Aufgaben",
+  task_comments: "Aufgaben-Kommentare",
+  documents: "Dokumente",
+  document_folders: "Dokumenten-Ordner",
+  appointments: "Termine",
+  surveys: "Umfragen",
+  survey_responses: "Umfrage-Antworten",
+  medical_devices: "Medizingeräte",
+  inventory_items: "Inventar-Artikel",
+  inventory_bills: "Rechnungen",
+  equipment: "Arbeitsmittel",
+  certifications: "Zertifizierungen",
+  training_events: "Schulungstermine",
+  training_participants: "Schulungsteilnehmer",
+  org_chart_positions: "Organigramm-Positionen",
+  teams: "Teams",
+  team_members: "Team-Mitglieder",
+  goals: "Ziele",
+  milestones: "Meilensteine",
+  protocols: "Protokolle",
+  protocol_items: "Protokoll-Punkte",
+  absences: "Abwesenheiten",
+  absence_requests: "Abwesenheitsanträge",
+  working_hours: "Arbeitszeiten",
+  time_entries: "Zeiteinträge",
+  shifts: "Schichten",
+  shift_templates: "Schichtvorlagen",
+  locations: "Standorte",
+  notifications: "Benachrichtigungen",
+  audit_logs: "Audit-Logs",
+  specialty_groups: "Fachrichtungen",
+  orga_categories: "Organisations-Kategorien",
+  checklists: "Checklisten",
+  checklist_items: "Checklisten-Einträge",
+  test_checklist_templates: "Test-Checklisten-Vorlagen",
+  workflows: "Workflows",
+  workflow_steps: "Workflow-Schritte",
+  homeoffice_policies: "Homeoffice-Richtlinien",
+  kpi_definitions: "KPI-Definitionen",
+  kpi_values: "KPI-Werte",
+  practice_parameters: "Praxis-Parameter",
+  sidebar_preferences: "Sidebar-Einstellungen",
+  dashboard_widget_settings: "Dashboard-Widget-Einstellungen",
+  weekly_summary_settings: "Wochen-Report-Einstellungen",
+  calendar_events: "Kalender-Termine",
+  messages: "Nachrichten",
+  message_threads: "Nachrichtenverläufe",
+  files: "Dateien",
+  tags: "Tags",
+  notes: "Notizen",
+  templates: "Vorlagen",
+  suppliers: "Lieferanten",
+  patients: "Patienten",
+  patient_records: "Patientenakten",
+  prescriptions: "Rezepte",
+  invoices: "Rechnungen",
+  payments: "Zahlungen",
+  reports: "Berichte",
+  feedback: "Feedback",
+  announcements: "Ankündigungen",
+  maintenance_records: "Wartungsprotokollen",
+  device_inspections: "Geräteprüfungen",
+  quality_reports: "Qualitätsberichte",
 }
 
-interface FormSchema {
-  id: string
-  name: string
-  table: string
-  component: string
-  fields: FormField[]
+// Categorize tables by function
+function categorizeTable(tableName: string): string {
+  if (tableName.match(/^(users|practice_members|teams|team_members|org_chart)/)) return "Personal & Organisation"
+  if (tableName.match(/^(task|checklist|workflow)/)) return "Aufgaben & Workflows"
+  if (tableName.match(/^(document|file|template)/)) return "Dokumente & Dateien"
+  if (tableName.match(/^(appointment|calendar|schedule|shift|absence|working_hour|time_entr)/)) return "Termine & Zeiten"
+  if (tableName.match(/^(room|arbeitspl|location|equipment)/)) return "Räume & Ausstattung"
+  if (tableName.match(/^(medical_device|inventory|maintenance|device_inspection)/)) return "Inventar & Geräte"
+  if (tableName.match(/^(survey|feedback|quality)/)) return "Umfragen & Qualität"
+  if (tableName.match(/^(training|certification)/)) return "Schulungen & Zertifizierungen"
+  if (tableName.match(/^(practice|setting|sidebar|dashboard|homeoffice|kpi|parameter|weekly)/)) return "Einstellungen & Konfiguration"
+  if (tableName.match(/^(contact|message|notification|announcement)/)) return "Kommunikation"
+  if (tableName.match(/^(invoice|payment|bill|supplier)/)) return "Finanzen"
+  if (tableName.match(/^(protocol|audit|report|log)/)) return "Protokolle & Berichte"
+  if (tableName.match(/^(goal|milestone)/)) return "Ziele & Meilensteine"
+  if (tableName.match(/^(patient|prescription)/)) return "Patienten"
+  if (tableName.match(/^(tag|note|specialty)/)) return "Stammdaten"
+  return "Sonstige"
 }
 
-interface DbColumn {
-  column_name: string
-  data_type: string
-  is_nullable: string
-  column_default: string | null
-  udt_name: string
+// Map Postgres types to simple type labels
+function mapPgType(dataType: string, udtName: string): string {
+  if (["text", "character varying", "varchar", "char", "character", "name", "citext"].includes(udtName)) return "string"
+  if (["int4", "int8", "int2", "numeric", "float4", "float8"].includes(udtName)) return "number"
+  if (["bool"].includes(udtName)) return "boolean"
+  if (["jsonb", "json"].includes(udtName)) return "json"
+  if (["uuid"].includes(udtName)) return "uuid"
+  if (["timestamp", "timestamptz", "date"].includes(udtName)) return "date"
+  if (["ARRAY"].includes(dataType)) return "array"
+  return dataType
 }
 
-interface FieldIssue {
-  field: string
-  label: string
-  severity: "error" | "warning"
-  message: string
-  fix?: string
-}
-
-interface FormResult {
-  id: string
-  name: string
-  table: string
-  component: string
-  status: "ok" | "warning" | "error" | "missing_table"
-  issues: FieldIssue[]
-  fields: {
-    name: string
-    label: string
-    type: string
-    required: boolean
-    existsInDb: boolean
-    dbType?: string
-    dbNullable?: boolean
-  }[]
-}
-
-// Map form types to compatible Postgres types
-const TYPE_COMPAT: Record<string, string[]> = {
-  string: ["text", "character varying", "varchar", "char", "uuid", "character", "name", "citext", "USER-DEFINED"],
-  number: ["integer", "bigint", "smallint", "numeric", "real", "double precision", "int4", "int8", "float4", "float8"],
-  boolean: ["boolean", "bool"],
-  json: ["jsonb", "json"],
-  date: ["date", "timestamp without time zone", "timestamp with time zone", "timestamptz", "timestamp"],
-}
-
-function isTypeCompatible(formType: string, dbDataType: string, dbUdtName: string): boolean {
-  const compatible = TYPE_COMPAT[formType] || []
-  return compatible.some(
-    (t) => dbDataType.toLowerCase().includes(t.toLowerCase()) || dbUdtName.toLowerCase().includes(t.toLowerCase()),
-  )
-}
-
-export async function GET() {
+export async function GET(request: Request) {
   await cookies()
 
+  const startTime = Date.now()
+
   try {
-    const supabase = await createServerClient()
+    // Use PostgREST OpenAPI schema to discover all tables and columns
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 
-    // Collect all unique table names
-    const tableNames = [...new Set(FORM_SCHEMAS.map((s) => s.table))]
-
-    // Use RPC to introspect the database schema
-    const { data: columnsData, error: rpcError } = await supabase.rpc("get_table_columns", {
-      table_names: tableNames,
+    const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Accept: "application/openapi+json",
+      },
     })
 
-    // If RPC fails, try direct query via admin client
-    let dbColumns: Record<string, DbColumn[]> = {}
-
-    if (rpcError || !columnsData) {
-      // Fallback: try each table individually via .from() to see if it exists
-      for (const table of tableNames) {
-        try {
-          const { data, error } = await supabase.from(table).select("*").limit(0)
-          if (!error) {
-            // Table exists but we can't get column info without RPC
-            dbColumns[table] = []
-          }
-        } catch {
-          // Table doesn't exist
-        }
-      }
-    } else {
-      // Group columns by table
-      for (const col of columnsData as any[]) {
-        const table = col.table_name
-        if (!dbColumns[table]) dbColumns[table] = []
-        dbColumns[table].push({
-          column_name: col.column_name,
-          data_type: col.data_type,
-          is_nullable: col.is_nullable,
-          column_default: col.column_default,
-          udt_name: col.udt_name,
-        })
-      }
+    if (!response.ok) {
+      throw new Error(`PostgREST schema fetch failed: ${response.status}`)
     }
 
-    // Validate each form schema against DB
-    const results: FormResult[] = FORM_SCHEMAS.map((schema) => {
-      const tableCols = dbColumns[schema.table]
+    const schema = await response.json()
+    const tableColumnsMap: Record<string, any[]> = {}
 
-      if (!tableCols) {
-        return {
-          id: schema.id,
-          name: schema.name,
-          table: schema.table,
-          component: schema.component,
-          status: "missing_table" as const,
-          issues: [
-            {
-              field: "*",
-              label: "Tabelle",
-              severity: "error" as const,
-              message: `Tabelle "${schema.table}" existiert nicht in der Datenbank`,
-              fix: `CREATE TABLE ${schema.table} (\n  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,\n  ${schema.fields.map((f) => `${f.name} ${f.type === "json" ? "jsonb" : f.type === "number" ? "numeric" : f.type === "boolean" ? "boolean" : "text"}${f.required ? " NOT NULL" : ""}`).join(",\n  ")},\n  created_at timestamp DEFAULT now(),\n  updated_at timestamp DEFAULT now()\n);`,
-            },
-          ],
-          fields: schema.fields.map((f) => ({
-            name: f.name,
-            label: f.label,
-            type: f.type,
-            required: f.required,
-            existsInDb: false,
-          })),
-        }
+    // Parse OpenAPI definitions into our table/column format
+    const definitions = schema.definitions || {}
+    for (const [tableName, def] of Object.entries(definitions) as [string, any][]) {
+      const props = def.properties || {}
+      const requiredFields = def.required || []
+      
+      const cols = Object.entries(props).map(([name, prop]: [string, any]) => ({
+        column_name: name,
+        data_type: prop.format || prop.type || "text",
+        is_nullable: requiredFields.includes(name) ? "NO" : "YES",
+        column_default: prop.default || null,
+        udt_name: prop.format || prop.type || "text",
+      }))
+      
+      tableColumnsMap[tableName] = cols
+    }
+
+    // Filter out internal/system tables and views
+    const systemTables = new Set(["schema_migrations", "migrations", "buckets", "objects", "s3_multipart_uploads", "s3_multipart_uploads_parts", "secrets", "decrypted_secrets", "refresh_tokens", "instances", "audit_log_entries", "schema_version", "sessions", "mfa_factors", "mfa_challenges", "mfa_amr_claims", "sso_providers", "sso_domains", "saml_providers", "saml_relay_states", "flow_state", "identities", "one_time_tokens", "ticket_stats"])
+    
+    const filteredTables = Object.keys(tableColumnsMap)
+      .filter((t) => !systemTables.has(t) && !t.startsWith("_"))
+      .sort()
+
+    // Build results for each table
+    const results = filteredTables.map((tableName) => {
+      const columns = tableColumnsMap[tableName] || []
+      const label = TABLE_LABELS[tableName] || tableName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      const category = categorizeTable(tableName)
+
+      // Count row data via columns analysis
+      const hasId = columns.some((c: any) => c.column_name === "id")
+      const hasPracticeId = columns.some((c: any) => c.column_name === "practice_id")
+      const hasCreatedAt = columns.some((c: any) => c.column_name === "created_at")
+      const hasUpdatedAt = columns.some((c: any) => c.column_name === "updated_at")
+      const hasDeletedAt = columns.some((c: any) => c.column_name === "deleted_at")
+
+      const issues: any[] = []
+
+      // Check for common best-practice columns
+      if (!hasId) {
+        issues.push({
+          field: "id",
+          label: "ID",
+          severity: "warning",
+          message: "Tabelle hat keine 'id' Spalte",
+        })
       }
 
-      if (tableCols.length === 0) {
-        // Table exists but we couldn't get column info (RPC failed)
-        return {
-          id: schema.id,
-          name: schema.name,
-          table: schema.table,
-          component: schema.component,
-          status: "warning" as const,
-          issues: [
-            {
-              field: "*",
-              label: "Schema",
-              severity: "warning" as const,
-              message: "Spalteninformationen konnten nicht abgerufen werden (RPC-Funktion fehlt)",
-            },
-          ],
-          fields: schema.fields.map((f) => ({
-            name: f.name,
-            label: f.label,
-            type: f.type,
-            required: f.required,
-            existsInDb: true,
-          })),
-        }
+      if (!hasCreatedAt) {
+        issues.push({
+          field: "created_at",
+          label: "Erstellt am",
+          severity: "warning",
+          message: "Tabelle hat keine 'created_at' Spalte",
+        })
       }
 
-      const colMap = new Map(tableCols.map((c) => [c.column_name, c]))
-      const issues: FieldIssue[] = []
+      const fields = columns.map((col: any) => ({
+        name: col.column_name,
+        label: col.column_name.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()),
+        type: mapPgType(col.data_type, col.udt_name),
+        required: col.is_nullable === "NO" && !col.column_default,
+        existsInDb: true,
+        dbType: `${col.data_type} (${col.udt_name})`,
+        dbNullable: col.is_nullable === "YES",
+      }))
 
-      const fields = schema.fields.map((f) => {
-        const dbCol = colMap.get(f.name)
-        if (!dbCol) {
-          const pgType = f.type === "json" ? "jsonb" : f.type === "number" ? "numeric" : f.type === "boolean" ? "boolean" : "text"
-          issues.push({
-            field: f.name,
-            label: f.label,
-            severity: "error",
-            message: `Spalte "${f.name}" fehlt in Tabelle "${schema.table}"`,
-            fix: `ALTER TABLE ${schema.table} ADD COLUMN IF NOT EXISTS ${f.name} ${pgType};`,
-          })
-          return {
-            name: f.name,
-            label: f.label,
-            type: f.type,
-            required: f.required,
-            existsInDb: false,
-          }
-        }
-
-        // Check type compatibility
-        if (!isTypeCompatible(f.type, dbCol.data_type, dbCol.udt_name)) {
-          issues.push({
-            field: f.name,
-            label: f.label,
-            severity: "warning",
-            message: `Typ-Mismatch: Form erwartet "${f.type}", DB hat "${dbCol.data_type}" (${dbCol.udt_name})`,
-          })
-        }
-
-        // Check required vs nullable
-        if (f.required && dbCol.is_nullable === "YES" && !dbCol.column_default) {
-          issues.push({
-            field: f.name,
-            label: f.label,
-            severity: "warning",
-            message: `Feld ist Pflicht im Formular, aber NULL-bar in der DB ohne Default-Wert`,
-          })
-        }
-
-        return {
-          name: f.name,
-          label: f.label,
-          type: f.type,
-          required: f.required,
-          existsInDb: true,
-          dbType: `${dbCol.data_type} (${dbCol.udt_name})`,
-          dbNullable: dbCol.is_nullable === "YES",
-        }
-      })
-
-      const hasErrors = issues.some((i) => i.severity === "error")
-      const hasWarnings = issues.some((i) => i.severity === "warning")
+      const hasErrors = issues.some((i: any) => i.severity === "error")
+      const hasWarnings = issues.some((i: any) => i.severity === "warning")
 
       return {
-        id: schema.id,
-        name: schema.name,
-        table: schema.table,
-        component: schema.component,
+        id: tableName,
+        name: label,
+        table: tableName,
+        category,
+        component: "",
+        columnCount: columns.length,
+        hasPracticeId,
+        hasCreatedAt,
+        hasUpdatedAt,
+        hasDeletedAt,
         status: hasErrors ? "error" : hasWarnings ? "warning" : "ok",
         issues,
         fields,
@@ -397,14 +224,41 @@ export async function GET() {
     })
 
     // Summary stats
+    const categories = [...new Set(results.map((r) => r.category))].sort()
+    const categoryStats = categories.map((cat) => ({
+      name: cat,
+      count: results.filter((r) => r.category === cat).length,
+    }))
+
     const summary = {
       total: results.length,
       ok: results.filter((r) => r.status === "ok").length,
       warnings: results.filter((r) => r.status === "warning").length,
-      errors: results.filter((r) => r.status === "error" || r.status === "missing_table").length,
+      errors: results.filter((r) => r.status === "error").length,
+      totalColumns: results.reduce((sum, r) => sum + r.columnCount, 0),
+      withPracticeId: results.filter((r) => r.hasPracticeId).length,
+      categories: categoryStats,
     }
 
-    return NextResponse.json({ results, summary })
+    const durationMs = Date.now() - startTime
+
+    // Save to history directly via Supabase
+    try {
+      const historySupabase = await createServerClient()
+      await historySupabase.from("form_db_sync_history").insert({
+        scan_type: "db-schema",
+        summary,
+        total: summary.total,
+        ok: summary.ok,
+        warnings: summary.warnings,
+        errors: summary.errors,
+        duration_ms: durationMs,
+      })
+    } catch (err) {
+      console.error("[v0] Failed to save db-schema history:", err)
+    }
+
+    return NextResponse.json({ results, summary, duration_ms: durationMs })
   } catch (error) {
     console.error("[v0] Form-DB sync check error:", error)
     return NextResponse.json(

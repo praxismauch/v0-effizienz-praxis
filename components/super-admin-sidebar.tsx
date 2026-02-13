@@ -44,6 +44,7 @@ import {
   X,
   ExternalLink,
   AlertTriangle,
+  HardDrive,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -730,73 +731,24 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
         },
         {
           id: "kpi-kategorien",
-          label: "KPI-Kategorien",
+          label: "KPI Global",
           icon: BarChart3,
           href: "/super-admin/kpi-kategorien",
           badge: true,
           badgeType: "kpiCategories" as const,
         },
-        {
-          id: "vorlagen",
-          label: "Vorlagen",
-          icon: FolderKanban,
-          subitems: [
-            {
-              id: "skills",
-              label: "Skills",
-              icon: Award,
-              href: "/super-admin/content?tab=skills",
-              badge: true,
-              badgeType: "skills" as const,
-            },
-            {
-              id: "workflows",
-              label: "Workflows",
-              icon: Workflow,
-              href: "/super-admin/content?tab=workflows",
-              badge: true,
-              badgeType: "workflows" as const,
-            },
-            {
-              id: "checklisten",
-              label: "Checklisten",
-              icon: ClipboardCheck,
-              href: "/super-admin/content?tab=checklisten",
-              badge: true,
-              badgeType: "checklists" as const,
-            },
-            {
-              id: "dokumente",
-              label: "Dokumente",
-              icon: FileText,
-              href: "/super-admin/content?tab=dokumente",
-              badge: true,
-              badgeType: "documents" as const,
-            },
-            {
-              id: "teams",
-              label: "Teams / Gruppen",
-              icon: Users,
-              href: "/super-admin/content?tab=teams",
-              badge: true,
-              badgeType: "teams" as const,
-            },
-            {
-              id: "event-types",
-              label: "Event-Typen",
-              icon: ClipboardCheck,
-              href: "/super-admin/content?tab=event-types",
-              badge: true,
-              badgeType: "eventTypes" as const,
-            },
-          ],
-        },
       ],
     },
     {
       id: "content",
-      label: "Content",
+      label: "Inhalte & Vorlagen",
       items: [
+        {
+          id: "vorlagen",
+          label: "Vorlagen",
+          icon: FolderKanban,
+          href: "/super-admin/content",
+        },
         {
           id: "academy",
           label: "Academy",
@@ -816,46 +768,8 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       ],
     },
     {
-      id: "finance",
-      label: "Finanzen",
-      items: [
-        {
-          id: "zahlungen",
-          label: "Zahlungen",
-          icon: CreditCard,
-          href: "/super-admin/zahlungen",
-          badge: true,
-          badgeType: "subscriptions" as const,
-        },
-      ],
-    },
-    {
-      id: "super-admin-menu",
-      label: "Management",
-      items: [
-        {
-          id: "roadmap",
-          label: "Roadmap & Ideen",
-          icon: MapIcon,
-          href: "/super-admin/roadmap",
-        },
-      ],
-    },
-    {
       id: "marketing",
-      label: "Marketing",
-      items: [
-        {
-          id: "social-media",
-          label: "Social Media Posts",
-          icon: Share2,
-          href: "/super-admin/social-media",
-        },
-      ],
-    },
-    {
-      id: "pages",
-      label: "Seiten",
+      label: "Marketing & Seiten",
       items: [
         {
           id: "landingpages",
@@ -865,45 +779,31 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           badge: true,
           badgeType: "landingpages" as const,
         },
-      ],
-    },
-  {
-  id: "testing",
-  label: "Testing",
-  items: [
-  {
-  id: "testing",
-  label: "UI-Tests",
-  icon: TestTube,
-  href: "/super-admin/testing",
-  },
-  {
-  id: "screenshots",
-  label: "Screenshots",
-  icon: Camera,
-  href: "/super-admin/screenshots",
-  },
-  ],
-  },
-    {
-      id: "system",
-      label: "System",
-      items: [
         {
-          id: "system",
-          label: "Systemverwaltung",
-          icon: Settings,
-          href: "/super-admin/system",
-          badge: true,
-          badgeType: "backup" as const,
+          id: "social-media",
+          label: "Social Media Posts",
+          icon: Share2,
+          href: "/super-admin/social-media",
         },
         {
-          id: "features",
-          label: "Feature-Verwaltung",
-          icon: ToggleLeft,
-          href: "/super-admin/features",
+          id: "roadmap",
+          label: "Roadmap & Ideen",
+          icon: MapIcon,
+          href: "/super-admin/roadmap",
+        },
+      ],
+    },
+    {
+      id: "finance",
+      label: "Finanzen & Analyse",
+      items: [
+        {
+          id: "zahlungen",
+          label: "Zahlungen",
+          icon: CreditCard,
+          href: "/super-admin/zahlungen",
           badge: true,
-          badgeType: "features" as const,
+          badgeType: "subscriptions" as const,
         },
         {
           id: "chat-logs",
@@ -921,11 +821,51 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           badge: true,
           badgeType: "criticalLogs" as const,
         },
+      ],
+    },
+    {
+      id: "system",
+      label: "System",
+      items: [
+        {
+          id: "system",
+          label: "Systemverwaltung",
+          icon: Settings,
+          href: "/super-admin/system",
+        },
+        {
+          id: "backups",
+          label: "Backup",
+          icon: HardDrive,
+          href: "/super-admin/backups",
+          badge: true,
+          badgeType: "backup" as const,
+        },
+        {
+          id: "features",
+          label: "Feature-Verwaltung",
+          icon: ToggleLeft,
+          href: "/super-admin/features",
+          badge: true,
+          badgeType: "features" as const,
+        },
         {
           id: "admin-settings",
           label: "Admin-Einstellungen",
           icon: Cog,
           href: "/super-admin/settings",
+        },
+        {
+          id: "testing",
+          label: "UI-Tests",
+          icon: TestTube,
+          href: "/super-admin/testing",
+        },
+        {
+          id: "screenshots",
+          label: "Screenshots",
+          icon: Camera,
+          href: "/super-admin/screenshots",
         },
       ],
     },

@@ -43,7 +43,7 @@ import {
 } from "lucide-react"
 import { format, parseISO, isBefore, addDays } from "date-fns"
 import { de } from "date-fns/locale"
-import { cn } from "@/lib/utils"
+import { cn, parseDeviceImageUrl } from "@/lib/utils"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 
 interface Training {
@@ -765,9 +765,9 @@ export function DeviceTrainingManagement({ devices }: { devices: Device[] }) {
               <Card key={device.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
-                    {device.image_url ? (
+                    {parseDeviceImageUrl(device.image_url) ? (
                       <img
-                        src={device.image_url || "/placeholder.svg"}
+                        src={parseDeviceImageUrl(device.image_url)!}
                         alt={device.name}
                         className="h-12 w-12 rounded-lg object-cover"
                       />

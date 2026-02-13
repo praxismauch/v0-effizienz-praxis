@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import { format, parseISO, differenceInDays } from "date-fns"
 import { de } from "date-fns/locale"
-import { cn } from "@/lib/utils"
+import { cn, parseDeviceImageUrl } from "@/lib/utils"
 
 interface ViewDeviceDialogProps {
   open: boolean
@@ -67,15 +67,17 @@ function ViewDeviceDialog({ open, onOpenChange, device, onEdit, onRefresh }: Vie
 
   const maintenanceDays = getMaintenanceDaysUntil()
 
+  const firstImage = parseDeviceImageUrl(device.image_url)
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              {device.image_url ? (
+              {firstImage ? (
                 <img
-                  src={device.image_url || "/placeholder.svg"}
+                  src={firstImage}
                   alt={device.name}
                   className="h-16 w-16 rounded-lg object-cover"
                 />

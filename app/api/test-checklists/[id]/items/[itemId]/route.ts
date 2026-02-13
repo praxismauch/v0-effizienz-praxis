@@ -5,12 +5,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const supabase = await createServerClient()
     const body = await request.json()
-    const { itemId } = await params
+    const { id: checklistId, itemId } = await params
 
     const updateData: any = {}
 
     if ("is_completed" in body) {
-      updateData.is_completed = body.is_completed
+      updateData.completed = body.is_completed
       if (body.is_completed) {
         updateData.completed_at = new Date().toISOString()
         const {
@@ -37,6 +37,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       .single()
 
     if (error) throw error
+
+    // Update checklist progress
+    const { data: allItems } = await supabase
+      .from("test_checklist_items")
+      .select("completed")
+      .eq("checklist_id", checklistId)
+
+    if (allItems) {
+      const total = allItems.length
+      const completedCount = allItems.filter((i: any) => i.completed).length
+      const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0
+      const status = completedCount === total ? "completed" : completedCount > 0 ? "in_progress" : "open"
+
+      await supabase
+        .from("test_checklists")
+        .update({
+          completed_items: completedCount,
+          progress,
+          status,
+          updated_at: new Date().toISOString(),
+          ...(status === "completed" ? { completed_at: new Date().toISOString() } : {}),
+        })
+        .eq("id", checklistId)
+    }
 
     return NextResponse.json(data)
   } catch (error) {

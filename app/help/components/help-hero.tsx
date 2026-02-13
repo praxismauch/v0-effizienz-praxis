@@ -7,11 +7,17 @@ import { motion } from "framer-motion"
 
 interface HelpHeroProps {
   searchQuery: string
-  onSearchChange: (value: string) => void
-  searchInputRef: React.RefObject<HTMLInputElement>
+  setSearchQuery?: (value: string) => void
+  onSearchChange?: (value: string) => void
+  onSearch?: (e: React.FormEvent) => void
+  searchInputRef?: React.RefObject<HTMLInputElement>
 }
 
-export function HelpHero({ searchQuery, onSearchChange, searchInputRef }: HelpHeroProps) {
+export function HelpHero({ searchQuery, setSearchQuery, onSearchChange, onSearch, searchInputRef }: HelpHeroProps) {
+  const handleChange = (value: string) => {
+    if (setSearchQuery) setSearchQuery(value)
+    if (onSearchChange) onSearchChange(value)
+  }
   return (
     <div className="relative overflow-hidden border-b bg-gradient-to-br from-primary/5 via-background to-purple-500/5">
       <div className="absolute inset-0 bg-grid-pattern opacity-5" />
@@ -59,10 +65,10 @@ export function HelpHero({ searchQuery, onSearchChange, searchInputRef }: HelpHe
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
-                ref={searchInputRef}
+                ref={searchInputRef || null}
                 placeholder="Suchen Sie nach Artikeln, Videos oder Themen..."
                 value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={(e) => handleChange(e.target.value)}
                 className="pl-12 pr-24 h-14 text-base rounded-2xl border-2 focus:border-primary shadow-lg shadow-primary/5 bg-background/80 backdrop-blur-sm"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -82,11 +88,11 @@ export function HelpHero({ searchQuery, onSearchChange, searchInputRef }: HelpHe
           >
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              <span>120+ Artikel</span>
+              <span>35+ Artikel</span>
             </div>
             <div className="flex items-center gap-2">
               <Video className="h-4 w-4" />
-              <span>45+ Videos</span>
+              <span>6+ Videos</span>
             </div>
             <div className="flex items-center gap-2">
               <Bot className="h-4 w-4" />

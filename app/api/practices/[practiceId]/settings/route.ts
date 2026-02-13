@@ -111,34 +111,43 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { practiceId: rawPracticeId } = await params
     const practiceId = getEffectivePracticeId(rawPracticeId)
+    console.log("[v0] PATCH settings route hit, practiceId:", practiceId)
 
-    const access = await requirePracticeAccess(practiceId)
+    let access
+    try {
+      access = await requirePracticeAccess(practiceId)
+    } catch (authError: any) {
+      console.error("[v0] PATCH auth error:", authError.message)
+      return NextResponse.json({ error: authError.message || "Authentication failed" }, { status: authError.status || 401 })
+    }
     const supabase = access.adminClient
 
     const body = await request.json()
 
-    console.log("[v0] Updating practice info for practice:", practiceId, "by user:", access.user.id)
+    console.log("[v0] Updating practice info for practice:", practiceId, "body keys:", Object.keys(body))
+
+    // Only include defined fields to avoid Supabase rejecting undefined values
+    const updatePayload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    }
+    const allowedFields = ["name", "address", "phone", "fax", "email", "website", "description", "practice_type", "specialization", "logo_url"]
+    for (const field of allowedFields) {
+      if (body[field] !== undefined) {
+        updatePayload[field] = body[field]
+      }
+    }
+
+    console.log("[v0] Update payload fields:", Object.keys(updatePayload))
 
     const { data, error } = await supabase
       .from("practices")
-      .update({
-        name: body.name,
-        address: body.address,
-        phone: body.phone,
-        email: body.email,
-        website: body.website,
-        description: body.description,
-        practice_type: body.practice_type,
-        specialization: body.specialization,
-        logo_url: body.logo_url,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", practiceId)
       .select()
       .single()
 
     if (error) {
-      console.error("[v0] Error updating practice:", error)
+      console.error("[v0] Error updating practice:", JSON.stringify(error))
       throw error
     }
 

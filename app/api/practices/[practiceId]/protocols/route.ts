@@ -40,7 +40,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     console.log("[v0] Creating protocol for practice:", practiceId, "by user:", access.user.id)
 
-    const { title, description, content, category, status, protocol_date, action_items } = body
+    const { title, description, content, category, status, protocol_date, action_items, attendees } = body
 
     if (!title?.trim()) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
@@ -57,6 +57,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         status: status || "draft",
         protocol_date: protocol_date || new Date().toISOString(),
         action_items: action_items || [],
+        attendees: attendees || [],
         created_by: access.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

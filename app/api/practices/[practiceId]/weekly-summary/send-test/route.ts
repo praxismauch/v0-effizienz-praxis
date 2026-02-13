@@ -200,16 +200,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Build recipients list
     const recipients: string[] = []
 
-    if (settings.send_to_admins) {
-      const { data: admins } = await supabase
-        .from("practice_users")
-        .select("users(email)")
-        .eq("practice_id", Number.parseInt(practiceId))
-        .eq("role", "admin")
+    if (settings.send_to_admins || settings.send_to_managers) {
+      // Get practice members and join with users to get email and role
+      const { data: members } = await supabase
+        .from("practice_members")
+        .select("user_id")
+        .eq("practice_id", practiceId)
 
-      admins?.forEach((a: any) => {
-        if (a.users?.email) recipients.push(a.users.email)
-      })
+      if (members && members.length > 0) {
+        const userIds = members.map((m: any) => m.user_id)
+        const rolesToInclude: string[] = []
+        if (settings.send_to_admins) rolesToInclude.push("practiceadmin", "superadmin")
+        if (settings.send_to_managers) rolesToInclude.push("manager")
+
+        const { data: users } = await supabase
+          .from("users")
+          .select("email, role")
+          .in("id", userIds)
+          .in("role", rolesToInclude)
+
+        users?.forEach((u: any) => {
+          if (u.email && !recipients.includes(u.email)) recipients.push(u.email)
+        })
+      }
     }
 
     settings.recipients?.forEach((r: any) => {

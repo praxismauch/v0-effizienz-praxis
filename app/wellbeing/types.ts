@@ -1,3 +1,9 @@
+import {
+  Users, Lightbulb, Heart, Shield, Sparkles, Target, TrendingUp,
+  Coffee, Brain, MessageSquare, Award, Clock, Activity,
+  type LucideIcon,
+} from "lucide-react"
+
 export interface MoodSurvey {
   id: string
   title: string
@@ -31,11 +37,7 @@ export interface WorkloadAnalysis {
   burnout_risk_score: number
   risk_factors: string[]
   ai_insights: string
-  ai_recommendations: Array<{
-    title: string
-    description: string
-    priority: string
-  }>
+  ai_recommendations: Array<{ title: string; description: string; priority: string }>
 }
 
 export interface WellbeingSuggestion {
@@ -79,3 +81,52 @@ export interface KudosForm {
   message: string
   is_anonymous: boolean
 }
+
+interface CategoryItem { value: string; label: string; icon: LucideIcon; color?: string }
+
+export const KUDOS_CATEGORIES: CategoryItem[] = [
+  { value: "teamwork", label: "Teamarbeit", icon: Users, color: "bg-blue-500" },
+  { value: "innovation", label: "Innovation", icon: Lightbulb, color: "bg-purple-500" },
+  { value: "helpfulness", label: "Hilfsbereitschaft", icon: Heart, color: "bg-pink-500" },
+  { value: "customer_service", label: "Patientenservice", icon: Heart, color: "bg-red-500" },
+  { value: "reliability", label: "Zuverlaessigkeit", icon: Shield, color: "bg-green-500" },
+  { value: "positivity", label: "Positive Energie", icon: Sparkles, color: "bg-yellow-500" },
+  { value: "leadership", label: "Fuehrung", icon: Target, color: "bg-indigo-500" },
+  { value: "growth", label: "Weiterentwicklung", icon: TrendingUp, color: "bg-teal-500" },
+]
+
+export const SUGGESTION_CATEGORIES: Omit<CategoryItem, "color">[] = [
+  { value: "work_life_balance", label: "Work-Life-Balance", icon: Coffee },
+  { value: "stress_reduction", label: "Stressreduktion", icon: Brain },
+  { value: "team_building", label: "Teambuilding", icon: Users },
+  { value: "communication", label: "Kommunikation", icon: MessageSquare },
+  { value: "recognition", label: "Anerkennung", icon: Award },
+  { value: "flexibility", label: "Flexibilitaet", icon: Clock },
+  { value: "health", label: "Gesundheit", icon: Activity },
+  { value: "growth", label: "Entwicklung", icon: TrendingUp },
+]
+
+export function getMoodColor(value: number) {
+  if (value >= 4) return "text-green-500"
+  if (value >= 3) return "text-yellow-500"
+  return "text-red-500"
+}
+
+export function getBurnoutRiskColor(score: number) {
+  if (score >= 70) return "bg-red-500"
+  if (score >= 40) return "bg-yellow-500"
+  return "bg-green-500"
+}
+
+export function getBurnoutRiskLabel(score: number) {
+  if (score >= 70) return "Hohes Risiko"
+  if (score >= 40) return "Mittleres Risiko"
+  return "Geringes Risiko"
+}
+
+export const MOOD_DIMENSIONS = [
+  { key: "work_satisfaction" as const, label: "Arbeitszufriedenheit" },
+  { key: "stress_level" as const, label: "Stress-Level" },
+  { key: "team_harmony" as const, label: "Team-Harmonie" },
+  { key: "work_life_balance" as const, label: "Work-Life-Balance" },
+]

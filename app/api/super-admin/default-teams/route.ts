@@ -1,35 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
-import { isSuperAdminRole } from "@/lib/auth-utils"
 
 // GET /api/super-admin/default-teams - Get all default teams
 export async function GET() {
   try {
-    const supabase = await createClient()
-
-    // Get current user and check authorization
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
-    }
-
-    // Get user role from database
-    const { data: userData, error: userDataError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    if (userDataError || !userData) {
-      return NextResponse.json({ error: "Benutzer nicht gefunden" }, { status: 404 })
-    }
-
-    if (!isSuperAdminRole(userData.role)) {
-      return NextResponse.json({ error: "Keine Berechtigung - Nur Super-Admins" }, { status: 403 })
-    }
+    const supabase = await createAdminClient()
 
     const { data: defaultTeams, error } = await supabase
       .from("default_teams")
@@ -83,31 +58,7 @@ export async function GET() {
 // POST /api/super-admin/default-teams - Create a new default team
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-
-    // Get current user and check authorization
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
-    }
-
-    // Get user role from database
-    const { data: userData, error: userDataError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    if (userDataError || !userData) {
-      return NextResponse.json({ error: "Benutzer nicht gefunden" }, { status: 404 })
-    }
-
-    if (!isSuperAdminRole(userData.role)) {
-      return NextResponse.json({ error: "Keine Berechtigung - Nur Super-Admins" }, { status: 403 })
-    }
+    const supabase = await createAdminClient()
 
     const body = await request.json()
     const { name, color, description, display_order, syncToPractices = true } = body

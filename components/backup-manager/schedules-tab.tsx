@@ -31,9 +31,12 @@ interface SchedulesTabProps {
   googleDriveConnected: boolean
   scheduleForm: ScheduleFormState
   showScheduleDialog: boolean
+  editingScheduleId: string | null
   setShowScheduleDialog: (show: boolean) => void
   setScheduleForm: (form: ScheduleFormState) => void
+  setEditingScheduleId: (id: string | null) => void
   onCreateSchedule: () => Promise<boolean>
+  onUpdateSchedule: (id: string, data: Partial<ScheduleFormState>) => Promise<boolean>
   onToggleSchedule: (scheduleId: string, isActive: boolean) => void
   onSetupAllPracticeSchedules: () => void
   onDiagnoseSchedules: () => void
@@ -51,19 +54,58 @@ export function SchedulesTab({
   googleDriveConnected,
   scheduleForm,
   showScheduleDialog,
+  editingScheduleId,
   setShowScheduleDialog,
   setScheduleForm,
+  setEditingScheduleId,
   onCreateSchedule,
+  onUpdateSchedule,
   onToggleSchedule,
   onSetupAllPracticeSchedules,
   onDiagnoseSchedules,
   onFixStuckSchedules,
 }: SchedulesTabProps) {
-  const handleCreateSchedule = async () => {
-    const success = await onCreateSchedule()
+  const handleSaveSchedule = async () => {
+    let success: boolean
+    if (editingScheduleId) {
+      success = await onUpdateSchedule(editingScheduleId, scheduleForm)
+    } else {
+      success = await onCreateSchedule()
+    }
     if (success) {
       setShowScheduleDialog(false)
+      setEditingScheduleId(null)
     }
+  }
+
+  const handleEditSchedule = (schedule: BackupSchedule) => {
+    setScheduleForm({
+      practiceId: schedule.practice_id || "all",
+      scheduleType: schedule.schedule_type,
+      backupScope: schedule.backup_scope,
+      timeOfDay: schedule.time_of_day,
+      dayOfWeek: schedule.day_of_week ?? 1,
+      dayOfMonth: schedule.day_of_month ?? 1,
+      retentionDays: schedule.retention_days,
+      syncToGoogleDrive: schedule.syncToGoogleDrive ?? false,
+    })
+    setEditingScheduleId(schedule.id)
+    setShowScheduleDialog(true)
+  }
+
+  const handleOpenCreate = () => {
+    setEditingScheduleId(null)
+    setScheduleForm({
+      practiceId: "",
+      scheduleType: "daily",
+      backupScope: "full",
+      timeOfDay: "02:00",
+      dayOfWeek: 1,
+      dayOfMonth: 1,
+      retentionDays: 30,
+      syncToGoogleDrive: false,
+    })
+    setShowScheduleDialog(true)
   }
 
   return (
@@ -76,17 +118,18 @@ export function SchedulesTab({
               Konfigurieren Sie automatische Backups für tägliche, wöchentliche oder monatliche Ausführung
             </CardDescription>
           </div>
-          <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Zeitplan erstellen
-              </Button>
-            </DialogTrigger>
+          <Button onClick={handleOpenCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Zeitplan erstellen
+          </Button>
+          <Dialog open={showScheduleDialog} onOpenChange={(open) => {
+            setShowScheduleDialog(open)
+            if (!open) setEditingScheduleId(null)
+          }}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Neuen Backup-Zeitplan erstellen</DialogTitle>
-                <DialogDescription>Richten Sie automatische Backups ein</DialogDescription>
+                <DialogTitle>{editingScheduleId ? "Backup-Zeitplan bearbeiten" : "Neuen Backup-Zeitplan erstellen"}</DialogTitle>
+                <DialogDescription>{editingScheduleId ? "Ändern Sie die Einstellungen dieses Zeitplans" : "Richten Sie automatische Backups ein"}</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -225,8 +268,10 @@ export function SchedulesTab({
                   />
                 </div>
 
-                <Button onClick={handleCreateSchedule} disabled={isLoading || isCreatingSchedule} className="w-full">
-                  {isCreatingSchedule ? "Wird erstellt..." : "Zeitplan erstellen"}
+                <Button onClick={handleSaveSchedule} disabled={isLoading || isCreatingSchedule} className="w-full">
+                  {isCreatingSchedule
+                    ? (editingScheduleId ? "Wird gespeichert..." : "Wird erstellt...")
+                    : (editingScheduleId ? "Zeitplan speichern" : "Zeitplan erstellen")}
                 </Button>
               </div>
             </DialogContent>
@@ -328,7 +373,7 @@ export function SchedulesTab({
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleEditSchedule(schedule)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </TableCell>

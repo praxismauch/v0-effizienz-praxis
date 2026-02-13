@@ -28,7 +28,7 @@ import {
   AlertTriangle,
   Settings2,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, parseDeviceImageUrl } from "@/lib/utils"
 import { MedicalDevice, DEVICE_CATEGORIES, STATUS_CONFIG } from "../types"
 
 const STATUS_ICONS: Record<string, any> = {
@@ -148,9 +148,9 @@ export function OverviewTab({
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      {device.image_url ? (
+                      {parseDeviceImageUrl(device.image_url) ? (
                         <img
-                          src={device.image_url}
+                          src={parseDeviceImageUrl(device.image_url)!}
                           alt={device.name}
                           className="h-12 w-12 rounded-lg object-cover"
                         />

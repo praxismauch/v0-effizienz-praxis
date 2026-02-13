@@ -10,100 +10,91 @@ const SYSTEM_PROMPT = `Du bist ein hochintelligenter KI-Assistent für die Softw
 - Nutze deutsche Fachbegriffe, wo angemessen
 - Sei proaktiv mit hilfreichen Tipps und Best Practices
 - Gib konkrete Schritt-für-Schritt Anleitungen wenn möglich
+- Verweise auf die konkrete Navigation in der App (z.B. "Gehen Sie zu /team")
 
-## Dein Wissen über die Software
+## Dein Wissen über die Software und ihre Funktionsbereiche
 
-### 1. Dashboard & Übersicht
-- Personalisiertes Dashboard mit Widgets
+### 1. Dashboard (/dashboard)
+- Personalisiertes Dashboard mit konfigurierbaren Widgets
 - KPIs und wichtige Kennzahlen auf einen Blick
 - Schnellzugriff auf häufig genutzte Funktionen
-- Benachrichtigungen und Aktivitätsübersicht
+- Benachrichtigungen, Aufgaben und Aktivitätsübersicht
+- Favoriten-System für schnellen Zugriff
 
-### 2. Team-Verwaltung
-- Mitarbeiter einladen per E-Mail oder Einladungslink
-- Rollen: Admin, Praxisleitung, Mitarbeiter, Extern
-- Feinkörnige Berechtigungen für jeden Bereich
-- Schichtplanung und Arbeitszeiterfassung
-- Urlaubsanträge und Abwesenheitsmanagement
-- Mitarbeiterprofile mit Qualifikationen
+### 2. Team-Verwaltung (/team)
+- Mitarbeiter einladen per E-Mail (/team/add)
+- Rollen: Praxisinhaber, Arzt, Praxismanager, MFA, Auszubildende
+- Feinkörnige Berechtigungen pro Bereich
+- Skills-Management (/skills): Kompetenzen, Zertifizierungen, Fortbildungen verfolgen
+- Organigramm (/organigramm): Interaktive Visualisierung der Teamstruktur
+- Mitarbeitergespräche (/mitarbeitergespraeche): Strukturierte Feedbackgespräche mit Vorlagen
+- Recruiting (/hiring): Stellenausschreibungen, Bewerbermanagement, Kandidatenprofile
 
-### 3. Kalender & Terminplanung
-- Verschiedene Ansichten: Tag, Woche, Monat
-- Termine mit Drag & Drop verschieben
-- Wiederkehrende Termine mit flexiblen Regeln
-- Ressourcenverwaltung (Räume, Geräte)
-- Terminbenachrichtigungen per E-Mail
-- Kalenderfreigabe und Export (iCal)
+### 3. Kalender & Zeitmanagement
+- Kalender (/calendar): Tages-, Wochen-, Monatsansicht, Drag & Drop, wiederkehrende Termine
+- Zeiterfassung (/zeiterfassung): Arbeitszeitenstempeln, Berichte (/zeiterfassung/reports)
+- Dienstplan (/dienstplan): Schichtplanung, Urlaubsverwaltung, automatische Besetzungsvorschläge
 
 ### 4. Aufgaben & Ziele
-- SMART-Ziele mit Meilensteinen erstellen
-- Aufgaben zuweisen und Fortschritt verfolgen
-- Kanban-Board für Aufgabenverwaltung
-- Fälligkeitsbenachrichtigungen
-- Team-Ziele vs. persönliche Ziele
+- Aufgaben (/todos): Erstellen, zuweisen, priorisieren (hoch/mittel/niedrig), Fristen setzen
+- Ziele (/goals): SMART-Ziele mit messbaren KPIs und Fortschrittsverfolgung
+- Zuständigkeiten (/responsibilities): Verantwortungsbereiche klar definieren
 
-### 5. Dokumentenverwaltung
-- Dokumente hochladen und kategorisieren
-- Vorlagen erstellen und wiederverwenden
-- Digitale Signaturen (DSGVO-konform)
-- Versionskontrolle und Änderungshistorie
-- Automatische Kategorisierung durch KI
+### 5. Workflows & Checklisten (/workflows)
+- Workflow-Vorlagen erstellen (/workflows/new-template) mit Schritten, Verantwortlichen und Fristen
+- Checklisten für wiederkehrende Prozesse (z.B. Praxisöffnung, Gerätewartung)
+- Automatische Aufgabenerstellung und Benachrichtigungen
 
-### 6. Workflows & Automatisierung
-- Visuelle Workflow-Erstellung
-- Trigger-basierte Automatisierungen
-- Checklisten und Protokollvorlagen
-- Automatische Aufgabenerstellung
-- Benachrichtigungsregeln konfigurieren
+### 6. Dokumente & Wissen
+- Dokumentenverwaltung (/documents): Upload, Ordnerstruktur, Tags, Versionierung
+- Wissensdatenbank (/knowledge): SOPs, Arbeitsanweisungen, QM-Handbuch
+- Gesprächsprotokolle (/protocols): Besprechungen, Teamsitzungen dokumentieren
+- Hygieneplan (/hygieneplan) & Hygiene (/hygiene): Reinigungspläne, Begehungsprotokolle
 
-### 7. Wissensdatenbank (Praxis-Handbuch)
-- SOPs und Arbeitsanweisungen erstellen
-- Kategorien und Tags zur Organisation
-- Versionshistorie für Dokumente
-- KI-gestützte Suche und Vorschläge
-- Schulungsmaterialien verwalten
+### 7. KI-Funktionen & Analyse
+- KI-Praxisanalyse (/practice-insights): Automatische SWOT-Analyse, Optimierungsvorschläge
+- Effizienz-Check (/selbst-check): Strukturierter Fragebogen mit KI-Auswertung
+- Praxisauswertung (/analytics): KPIs, Trends, Benchmarks, individuelle Berichte
+- Konkurrenzanalyse (/competitor-analysis): Mitbewerber vergleichen, SWOT, Empfehlungen
+- IGeL-Analyse (/igel) & ROI-Analyse (/roi-analysis): Wirtschaftlichkeit von IGeL-Leistungen bewerten
+- Wunschpatient (/wunschpatient): Zielgruppen-Profile erstellen
+- Bewertungsmanagement: Online-Bewertungen (Google, Jameda) zentral verwalten
 
-### 8. Kommunikation
-- Internes Nachrichtensystem
-- @Mentions für direkte Kommunikation
-- Lesebestätigungen
-- Dateianhänge in Nachrichten
-- Benachrichtigungseinstellungen
+### 8. Strategie & Entwicklung
+- Strategiepfad (/strategy-journey): Geführter Strategieentwicklungsprozess
+- Leitbild (/leitbild): Vision, Mission und Werte mit KI-Unterstützung erstellen
+- Academy (/academy): Online-Fortbildungskurse mit Zertifikaten
+- Perma-V (/perma-v): Mitarbeiter-Wellbeing-Framework
 
-### 9. Analysen & Berichte
-- Grafische Auswertungen und Charts
-- Export nach Excel/PDF
-- Benutzerdefinierte Berichte erstellen
-- Trendanalysen und Prognosen
-- Team-Performance Metriken
+### 9. Kommunikation & Wellbeing
+- Nachrichten (/messages): Interne Chat-Plattform, Direktnachrichten, Gruppenchats
+- Umfragen (/surveys): Anonyme Mitarbeiterbefragungen erstellen und auswerten
+- Wellbeing (/wellbeing): Stimmungsbarometer, Kudos, Arbeitsbelastungsanzeige
+- Tickets (/tickets): Support-Anfragen erstellen und verfolgen
 
-### 10. KI-Funktionen
-- Textgenerierung für Dokumente
-- Dokumentenanalyse und Zusammenfassungen
-- Intelligente Vorschläge und Empfehlungen
-- Automatische Kategorisierung
-- Praxisoptimierungsempfehlungen
-- KI-gestützte Protokollerstellung
+### 10. Ressourcen & Inventar
+- Geräte (/devices): Medizingeräte mit Wartungszyklen, Einweisungen, MPBetreibV
+- Räume (/rooms): Raumplan, Ausstattung, Kapazitäten
+- Arbeitsplätze (/arbeitsplaetze): Arbeitsplätze verwalten und zuordnen
+- Arbeitsmittel (/arbeitsmittel): Arbeitsmittel erfassen und verwalten
+- Materialverwaltung (/inventory): Bestandsführung, Mindestbestände, Bestellvorschläge
 
 ### 11. Einstellungen & Sicherheit
-- Praxisdaten und Logo anpassen
-- Benutzereinstellungen individualisieren
-- Zwei-Faktor-Authentifizierung (2FA)
-- DSGVO-konforme Datenverarbeitung
-- Backup und Datenexport
-- Audit-Log für alle Aktivitäten
+- Einstellungen (/settings): Praxisdaten, Öffnungszeiten, Benachrichtigungen, Design
+- Profil (/profile): Persönliche Daten, Passwort, 2FA
+- CIRS (/cirs): Anonymes Fehlermeldesystem für Patientensicherheit
+- DSGVO-konforme Datenspeicherung auf europäischen Servern
+- Kontakte (/contacts): Praxiskontakte verwalten
 
-### 12. Personalsuche (Recruiting)
-- Stellenausschreibungen erstellen
-- Bewerbermanagement
-- KI-gestützte Kandidatenanalyse
-- Interview-Vorlagen
-- Onboarding neuer Mitarbeiter
+### 12. Weitere Funktionen
+- Favoriten: Schnellzugriff auf häufig genutzte Bereiche
+- Alle Funktionen (/alle-funktionen): Komplette Feature-Übersicht
+- What's New (/whats-new): Neuigkeiten und Updates
 
 ## Antwortformat
 - Halte Antworten präzise aber vollständig
 - Nummeriere Schritte bei Anleitungen
-- Erwähne relevante Tastenkürzel wenn passend
+- Verweise auf die genaue Seite/URL (z.B. "unter /team")
 - Verweise auf verwandte Funktionen
 - Nutze Aufzählungen für bessere Übersichtlichkeit
 - Bei komplexen Themen: Gib erst eine Zusammenfassung, dann Details
@@ -116,7 +107,7 @@ Wenn du Kontextinformationen über die Praxis des Nutzers erhältst:
 
 ## Wichtige Regeln
 - Antworte IMMER auf Deutsch
-- Bei technischen Problemen: Empfehle konkreten Support-Kontakt
+- Bei technischen Problemen: Empfehle ein Ticket unter /tickets zu erstellen
 - Bei Sicherheitsfragen: Betone DSGVO-Konformität und beste Praktiken
 - Spekuliere nicht über nicht existierende Features
 - Wenn du etwas nicht weißt, sag das ehrlich`
@@ -214,20 +205,24 @@ Nutze diese Informationen um personalisierte und relevante Antworten zu geben.`
 
 function generateSuggestions(question: string, answer: string): string[] {
   const suggestions: string[] = []
+  const q = question.toLowerCase()
 
-  // Topic-based suggestions
-  if (question.toLowerCase().includes("team") || question.toLowerCase().includes("mitarbeiter")) {
-    suggestions.push("Wie vergebe ich Berechtigungen?", "Wie erstelle ich Schichtpläne?")
-  } else if (question.toLowerCase().includes("kalender") || question.toLowerCase().includes("termin")) {
-    suggestions.push("Wie erstelle ich wiederkehrende Termine?", "Wie exportiere ich meinen Kalender?")
-  } else if (question.toLowerCase().includes("dokument")) {
-    suggestions.push("Wie nutze ich digitale Signaturen?", "Wie erstelle ich Vorlagen?")
-  } else if (question.toLowerCase().includes("ki") || question.toLowerCase().includes("ai")) {
-    suggestions.push("Welche KI-Funktionen gibt es?", "Wie aktiviere ich KI-Features?")
-  } else if (question.toLowerCase().includes("workflow") || question.toLowerCase().includes("automatisierung")) {
-    suggestions.push("Wie erstelle ich einen Workflow?", "Welche Trigger gibt es?")
+  if (q.includes("team") || q.includes("mitarbeiter")) {
+    suggestions.push("Wie vergebe ich Berechtigungen?", "Wie nutze ich das Skills-Management?", "Wie erstelle ich einen Dienstplan?")
+  } else if (q.includes("kalender") || q.includes("termin")) {
+    suggestions.push("Wie erstelle ich wiederkehrende Termine?", "Wie funktioniert die Zeiterfassung?", "Wie erstelle ich einen Dienstplan?")
+  } else if (q.includes("dokument") || q.includes("protokoll")) {
+    suggestions.push("Wie erstelle ich ein Gesprächsprotokoll?", "Wie nutze ich die Wissensdatenbank?", "Wie verwalte ich Hygienepläne?")
+  } else if (q.includes("ki") || q.includes("ai") || q.includes("analyse")) {
+    suggestions.push("Was kann die KI-Praxisanalyse?", "Wie starte ich eine Konkurrenzanalyse?", "Wie funktioniert die IGeL-Analyse?")
+  } else if (q.includes("workflow") || q.includes("aufgabe") || q.includes("checkliste")) {
+    suggestions.push("Wie erstelle ich eine Workflow-Vorlage?", "Wie definiere ich Zuständigkeiten?", "Wie setze ich Ziele?")
+  } else if (q.includes("gerät") || q.includes("wartung") || q.includes("raum") || q.includes("inventar")) {
+    suggestions.push("Wie verwalte ich Geräte?", "Wie richte ich Wartungserinnerungen ein?", "Wie nutze ich die Materialverwaltung?")
+  } else if (q.includes("wellbeing") || q.includes("stimmung") || q.includes("umfrage")) {
+    suggestions.push("Wie erstelle ich eine Mitarbeiterumfrage?", "Wie funktioniert das Stimmungsbarometer?", "Wie nutze ich Kudos?")
   } else {
-    suggestions.push("Was sind die wichtigsten Funktionen?", "Wie kann ich effizienter arbeiten?")
+    suggestions.push("Was sind die wichtigsten Funktionen?", "Wie starte ich die KI-Praxisanalyse?", "Wie erstelle ich Workflows?")
   }
 
   return suggestions.slice(0, 3)
@@ -235,27 +230,82 @@ function generateSuggestions(question: string, answer: string): string[] {
 
 function identifySources(question: string, answer: string): { title: string; url: string; type: string }[] {
   const sources: { title: string; url: string; type: string }[] = []
-
-  // Identify relevant documentation based on keywords
   const keywords = question.toLowerCase()
 
-  if (keywords.includes("team") || keywords.includes("mitarbeiter")) {
-    sources.push({ title: "Team-Verwaltung", url: "/help#team", type: "article" })
+  if (keywords.includes("team") || keywords.includes("mitarbeiter") || keywords.includes("personal")) {
+    sources.push({ title: "Team-Verwaltung", url: "/team", type: "page" })
+  }
+  if (keywords.includes("skill") || keywords.includes("kompetenz") || keywords.includes("qualifikation")) {
+    sources.push({ title: "Skills-Management", url: "/skills", type: "page" })
   }
   if (keywords.includes("kalender") || keywords.includes("termin")) {
-    sources.push({ title: "Kalender & Termine", url: "/help#calendar", type: "article" })
+    sources.push({ title: "Kalender & Termine", url: "/calendar", type: "page" })
   }
-  if (keywords.includes("dokument") || keywords.includes("signatur")) {
-    sources.push({ title: "Dokumentenverwaltung", url: "/help#documents", type: "article" })
+  if (keywords.includes("zeiterfassung") || keywords.includes("arbeitszeit") || keywords.includes("stempeln")) {
+    sources.push({ title: "Zeiterfassung", url: "/zeiterfassung", type: "page" })
   }
-  if (keywords.includes("workflow") || keywords.includes("automatisierung")) {
-    sources.push({ title: "Workflows & Automatisierung", url: "/help#workflows", type: "article" })
+  if (keywords.includes("dienstplan") || keywords.includes("schicht")) {
+    sources.push({ title: "Dienstplan", url: "/dienstplan", type: "page" })
+  }
+  if (keywords.includes("dokument") || keywords.includes("datei")) {
+    sources.push({ title: "Dokumentenverwaltung", url: "/documents", type: "page" })
+  }
+  if (keywords.includes("workflow") || keywords.includes("automatisierung") || keywords.includes("checkliste")) {
+    sources.push({ title: "Workflows & Checklisten", url: "/workflows", type: "page" })
+  }
+  if (keywords.includes("aufgabe") || keywords.includes("todo")) {
+    sources.push({ title: "Aufgaben", url: "/todos", type: "page" })
+  }
+  if (keywords.includes("ziel") || keywords.includes("goal")) {
+    sources.push({ title: "Ziele", url: "/goals", type: "page" })
+  }
+  if (keywords.includes("ki") || keywords.includes("ai") || keywords.includes("praxisanalyse")) {
+    sources.push({ title: "KI-Praxisanalyse", url: "/practice-insights", type: "page" })
+  }
+  if (keywords.includes("konkurrenz") || keywords.includes("wettbewerb")) {
+    sources.push({ title: "Konkurrenzanalyse", url: "/competitor-analysis", type: "page" })
+  }
+  if (keywords.includes("igel") || keywords.includes("roi") || keywords.includes("selbstzahler")) {
+    sources.push({ title: "IGeL-Analyse", url: "/igel", type: "page" })
+  }
+  if (keywords.includes("leitbild") || keywords.includes("vision") || keywords.includes("mission")) {
+    sources.push({ title: "Leitbild", url: "/leitbild", type: "page" })
+  }
+  if (keywords.includes("strategie")) {
+    sources.push({ title: "Strategiepfad", url: "/strategy-journey", type: "page" })
+  }
+  if (keywords.includes("gerät") || keywords.includes("wartung") || keywords.includes("einweisung")) {
+    sources.push({ title: "Gerätemanagement", url: "/devices", type: "page" })
+  }
+  if (keywords.includes("raum") || keywords.includes("arbeitsplatz")) {
+    sources.push({ title: "Räume & Arbeitsplätze", url: "/rooms", type: "page" })
+  }
+  if (keywords.includes("material") || keywords.includes("inventar") || keywords.includes("bestand")) {
+    sources.push({ title: "Materialverwaltung", url: "/inventory", type: "page" })
+  }
+  if (keywords.includes("wellbeing") || keywords.includes("stimmung")) {
+    sources.push({ title: "Wellbeing", url: "/wellbeing", type: "page" })
+  }
+  if (keywords.includes("umfrage")) {
+    sources.push({ title: "Umfragen", url: "/surveys", type: "page" })
+  }
+  if (keywords.includes("nachricht") || keywords.includes("chat") || keywords.includes("kommunikation")) {
+    sources.push({ title: "Nachrichten", url: "/messages", type: "page" })
+  }
+  if (keywords.includes("hygiene") || keywords.includes("reinigung") || keywords.includes("begehung")) {
+    sources.push({ title: "Hygieneplan", url: "/hygieneplan", type: "page" })
   }
   if (keywords.includes("sicherheit") || keywords.includes("2fa") || keywords.includes("passwort")) {
-    sources.push({ title: "Sicherheitseinstellungen", url: "/help#security", type: "article" })
+    sources.push({ title: "Einstellungen & Sicherheit", url: "/settings", type: "page" })
   }
-  if (keywords.includes("ki") || keywords.includes("ai") || keywords.includes("intelligent")) {
-    sources.push({ title: "KI-Funktionen", url: "/help#ai", type: "article" })
+  if (keywords.includes("cirs") || keywords.includes("fehler") || keywords.includes("zwischenfall")) {
+    sources.push({ title: "CIRS-Fehlermanagement", url: "/cirs", type: "page" })
+  }
+  if (keywords.includes("bewertung") || keywords.includes("google") || keywords.includes("review")) {
+    sources.push({ title: "Bewertungsmanagement", url: "/features/bewertungsmanagement", type: "page" })
+  }
+  if (keywords.includes("academy") || keywords.includes("fortbildung") || keywords.includes("kurs")) {
+    sources.push({ title: "Academy", url: "/academy", type: "page" })
   }
 
   return sources.slice(0, 3)

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 // PUT - Update a global KPI template
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +22,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       groupIds,
     } = body
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     const now = new Date().toISOString()
 
     const { data, error } = await supabase
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .maybeSingle()
 
     if (error) {
-      console.error("[v0] Supabase update error:", error)
+      console.error("Supabase update error:", error)
       return NextResponse.json({ error: "Failed to update global KPI" }, { status: 500 })
     }
 
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
   } catch (error) {
-    console.error("[v0] Error updating global KPI:", error)
+    console.error("Error updating global KPI:", error)
     return NextResponse.json(
       {
         error: "Failed to update global KPI",
@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Check if parameter is being used by any practices
     const { data: usage, error: usageError } = await supabase
@@ -102,7 +102,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Error deleting global KPI:", error)
+    console.error("Error deleting global KPI:", error)
     return NextResponse.json({ error: "Failed to delete global KPI" }, { status: 500 })
   }
 }

@@ -8,7 +8,7 @@ export async function GET() {
     const supabase = await createServerClient()
 
     const { data: checklists, error } = await supabase
-      .from("test_checklist_templates")
+      .from("test_checklists")
       .select("*")
       .order("created_at", { ascending: false })
 

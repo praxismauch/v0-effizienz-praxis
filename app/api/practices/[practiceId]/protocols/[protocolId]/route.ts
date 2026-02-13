@@ -54,7 +54,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { title, description, content, category, status, protocolDate, actionItems } = body
+    const { title, description, content, category, status, protocolDate, actionItems, attendees } = body
 
     const adminClient = await createAdminClient()
 
@@ -70,6 +70,7 @@ export async function PATCH(
     if (status !== undefined) updateData.status = status
     if (protocolDate !== undefined) updateData.protocol_date = protocolDate
     if (actionItems !== undefined) updateData.action_items = actionItems
+    if (attendees !== undefined) updateData.attendees = attendees
 
     const { data: protocol, error } = await adminClient
       .from("practice_journals")

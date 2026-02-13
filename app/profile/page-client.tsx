@@ -1,63 +1,26 @@
 "use client"
 
-import { CardDescription } from "@/components/ui/card"
-import { CardTitle } from "@/components/ui/card"
-import { CardHeader } from "@/components/ui/card"
-import { CardContent } from "@/components/ui/card"
-import { Card } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 import { AppLayout } from "@/components/app-layout"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ProfileImageEditor } from "@/components/profile-image-editor"
+import { ProfileOverviewCard } from "@/components/profile/profile-overview-card"
+import { ProfileInfoTab } from "@/components/profile/profile-info-tab"
+import { NotificationSettingsTab } from "@/components/profile/notification-settings-tab"
+import { SecurityTab } from "@/components/profile/security-tab"
+import { TwoFactorSetupDialog } from "@/components/profile/two-factor-setup-dialog"
+import { TwoFactorDisableDialog } from "@/components/profile/two-factor-disable-dialog"
 import { DataManagementSection } from "@/components/profile/data-management-section"
 import { BadgeVisibilitySettings } from "@/components/profile/badge-visibility-settings"
 import { FavoritesManager } from "@/components/profile/favorites-manager"
 import { useToast } from "@/hooks/use-toast"
 import { useRoleColors } from "@/lib/use-role-colors"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp"
-import {
-  User,
-  Mail,
-  Building2,
-  Calendar,
-  Shield,
-  Camera,
-  Bell,
-  Globe,
-  Save,
-  Loader2,
-  CheckCircle,
-  Settings,
-  Lock,
-  Database,
-  Smartphone,
-  Key,
-  ShieldCheck,
-  ShieldOff,
-  Copy,
-  Check,
-  Monitor,
-  PanelLeft,
-} from "lucide-react"
+import { User, Settings, Monitor, Lock, Database, PanelLeft } from "lucide-react"
 
 export default function ProfilePageClient() {
   const { currentUser, setCurrentUser } = useUser()
@@ -94,6 +57,10 @@ export default function ProfilePageClient() {
     teamUpdates: true,
     marketingEmails: false,
   })
+
+  const handleNotificationChange = (key: string, value: boolean) => {
+    setNotifications((prev) => ({ ...prev, [key]: value }))
+  }
 
   const [show2FADialog, setShow2FADialog] = useState(false)
   const [show2FADisableDialog, setShow2FADisableDialog] = useState(false)
@@ -322,82 +289,14 @@ export default function ProfilePageClient() {
         </div>
 
         {/* Profile Overview Card */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <div className="relative">
-                <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                  <AvatarImage
-                    src={formData.avatar || "/placeholder.svg"}
-                    alt={formData.name}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                    {formData.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <ProfileImageEditor
-                  currentAvatar={formData.avatar}
-                  userName={formData.name}
-                  onAvatarChange={handleAvatarChange}
-                  trigger={
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-md"
-                    >
-                      <Camera className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-              </div>
-              <div className="flex-1 text-center sm:text-left space-y-2">
-                <h2 className="text-2xl font-semibold">{currentUser.name}</h2>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <Badge className={roleColors[currentUser.role] || "bg-gray-500"}>
-                    {getRoleLabel(currentUser.role)}
-                  </Badge>
-                  {currentUser.isActive ? (
-                    <Badge variant="outline" className="border-green-500 text-green-600">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Aktiv
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="border-red-500 text-red-600">
-                      Inaktiv
-                    </Badge>
-                  )}
-                  {currentUser.mfa_enabled && (
-                    <Badge variant="outline" className="border-emerald-500 text-emerald-600">
-                      <ShieldCheck className="h-3 w-3 mr-1" />
-                      2FA
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Mail className="h-4 w-4" />
-                    {currentUser.email}
-                  </span>
-                  {currentPractice && (
-                    <span className="flex items-center gap-1">
-                      <Building2 className="h-4 w-4" />
-                      {currentPractice.name}
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Mitglied seit {new Date(currentUser.joinedAt).toLocaleDateString("de-DE")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ProfileOverviewCard
+          currentUser={currentUser}
+          formData={formData}
+          currentPractice={currentPractice}
+          roleColors={roleColors}
+          onAvatarChange={handleAvatarChange}
+          getRoleLabel={getRoleLabel}
+        />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

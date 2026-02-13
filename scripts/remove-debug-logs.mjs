@@ -6,122 +6,93 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, "..")
 
-// Mode: "v0-only" removes only [v0] prefixed logs, "all" removes all console.log/debug/info
-const mode = process.argv[2] || "v0-only"
-
-// Patterns for v0-only mode
-const v0DebugPatterns = [
-  /^\s*console\.log\(\s*["']\[v0\].*?\)\s*;?\s*$/gm,
-  /^\s*console\.debug\(\s*["']\[v0\].*?\)\s*;?\s*$/gm,
-  /^\s*console\.info\(\s*["']\[v0\].*?\)\s*;?\s*$/gm,
-]
-
-// Patterns for all mode - removes ALL console.log/debug statements (keeps console.error/warn)
-const allDebugPatterns = [
-  /^\s*console\.log\([\s\S]*?\)\s*;?\s*$/gm,
-  /^\s*console\.debug\([\s\S]*?\)\s*;?\s*$/gm,
-  /^\s*console\.info\([\s\S]*?\)\s*;?\s*$/gm,
-]
-
-// Additional multi-line pattern for template literals
-const v0MultiLinePattern = /^\s*console\.log\(\s*`\[v0\][^`]*`[^)]*\)\s*;?\s*$/gm
-
 let totalRemoved = 0
 let filesModified = 0
 
-// Files/patterns to skip (important logs we want to keep)
-const skipPatterns = [
-  /console\.(error|warn)\(/,  // Keep errors and warnings
-  /\.catch\(/,                 // Keep catch block logs
-]
+const skipDirs = new Set(["node_modules", ".next", "dist", "build", ".git", ".vercel", "scripts"])
+const extensions = new Set([".ts", ".tsx", ".js", ".jsx"])
 
-function removeDebugLogs(filePath) {
+function processFile(filePath) {
   const content = fs.readFileSync(filePath, "utf8")
-  let modified = content
-  let localRemoved = 0
+  const lines = content.split("\n")
+  const filtered = []
+  let removed = 0
+  let skipUntilClosing = false
+  let braceDepth = 0
 
-  const patterns = mode === "all" ? allDebugPatterns : v0DebugPatterns
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
 
-  // Apply all patterns
-  for (const pattern of patterns) {
-    const matches = modified.match(pattern)
-    if (matches) {
-      // Filter out matches we want to keep
-      const filteredMatches = matches.filter(match => 
-        !skipPatterns.some(skip => skip.test(match))
-      )
-      localRemoved += filteredMatches.length
-      modified = modified.replace(pattern, (match) => {
-        if (skipPatterns.some(skip => skip.test(match))) {
-          return match // Keep this one
-        }
-        return "" // Remove
-      })
-    }
-  }
-
-  // Apply multi-line pattern (v0 only)
-  if (mode === "v0-only") {
-    const multiMatches = modified.match(v0MultiLinePattern)
-    if (multiMatches) {
-      localRemoved += multiMatches.length
-      modified = modified.replace(v0MultiLinePattern, "")
-    }
-  }
-
-  // Remove excessive blank lines (more than 2 consecutive)
-  modified = modified.replace(/\n\n\n+/g, "\n\n")
-
-  if (modified !== content) {
-    fs.writeFileSync(filePath, modified, "utf8")
-    totalRemoved += localRemoved
-    filesModified++
-    console.log(`✓ ${filePath}: Removed ${localRemoved} debug log(s)`)
-  }
-}
-
-function walkDirectory(dir, extensions = [".ts", ".tsx", ".js", ".jsx"]) {
-  const files = fs.readdirSync(dir)
-
-  for (const file of files) {
-    const filePath = path.join(dir, file)
-    const stat = fs.statSync(filePath)
-
-    if (stat.isDirectory()) {
-      // Skip node_modules, .next, etc.
-      if (!["node_modules", ".next", "dist", "build", ".git"].includes(file)) {
-        walkDirectory(filePath, extensions)
+    // Handle continuation of multi-line console.log("[v0]...", { ... })
+    if (skipUntilClosing) {
+      for (const ch of lines[i]) {
+        if (ch === "{") braceDepth++
+        if (ch === "}") braceDepth--
       }
-    } else if (extensions.some((ext) => file.endsWith(ext))) {
-      removeDebugLogs(filePath)
+      // Check for closing paren too
+      if (braceDepth <= 0 || trimmed.endsWith(")") || trimmed.endsWith(");")) {
+        skipUntilClosing = false
+        braceDepth = 0
+      }
+      removed++
+      continue
+    }
+
+    // Match: console.log("[v0] ..."), console.debug("[v0] ..."), console.info("[v0] ...")
+    if (trimmed.match(/^console\.(log|debug|info)\(\s*["'`]\[v0\]/)) {
+      // Check if statement spans multiple lines (unbalanced braces/parens)
+      const openBraces = (lines[i].match(/[{(]/g) || []).length
+      const closeBraces = (lines[i].match(/[})]/g) || []).length
+      if (openBraces > closeBraces) {
+        skipUntilClosing = true
+        braceDepth = openBraces - closeBraces
+      }
+      removed++
+      continue
+    }
+
+    filtered.push(lines[i])
+  }
+
+  if (removed > 0) {
+    // Clean up consecutive blank lines left behind
+    const cleaned = []
+    for (let i = 0; i < filtered.length; i++) {
+      if (i > 0 && filtered[i].trim() === "" && filtered[i - 1].trim() === "") {
+        continue
+      }
+      cleaned.push(filtered[i])
+    }
+    fs.writeFileSync(filePath, cleaned.join("\n"), "utf8")
+    totalRemoved += removed
+    filesModified++
+  }
+}
+
+function walkDir(dir) {
+  let entries
+  try {
+    entries = fs.readdirSync(dir)
+  } catch {
+    return
+  }
+
+  for (const entry of entries) {
+    if (skipDirs.has(entry)) continue
+    const fullPath = path.join(dir, entry)
+    try {
+      const stat = fs.statSync(fullPath)
+      if (stat.isDirectory()) {
+        walkDir(fullPath)
+      } else if (stat.isFile() && extensions.has(path.extname(fullPath))) {
+        processFile(fullPath)
+      }
+    } catch {
+      // skip inaccessible
     }
   }
 }
 
-console.log(`Starting debug log removal (mode: ${mode})...`)
-console.log(`Mode "v0-only" removes only [v0] prefixed logs`)
-console.log(`Mode "all" removes ALL console.log/debug/info (keeps errors/warnings)`)
-console.log(`Usage: node scripts/remove-debug-logs.mjs [v0-only|all]`)
-console.log("")
-console.log("Scanning directories: app/api, lib, components")
-console.log("")
-
-// Process specific directories
-const dirsToProcess = [
-  path.join(rootDir, "app", "api"),
-  path.join(rootDir, "lib"),
-  path.join(rootDir, "components"),
-]
-
-for (const dir of dirsToProcess) {
-  if (fs.existsSync(dir)) {
-    walkDirectory(dir)
-  }
-}
-
-console.log("")
-console.log("=" .repeat(50))
-console.log(`✓ Complete!`)
-console.log(`  Files modified: ${filesModified}`)
-console.log(`  Debug logs removed: ${totalRemoved}`)
-console.log("=" .repeat(50))
+console.log('Removing console.log("[v0]...") debug statements...')
+walkDir(rootDir)
+console.log(`Removed ${totalRemoved} debug log(s) from ${filesModified} file(s).`)

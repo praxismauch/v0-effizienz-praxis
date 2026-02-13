@@ -119,8 +119,7 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        practice:practices(id, name),
-        creator:users!backups_created_by_fkey(id, name, email)
+        practice:practices!backups_practice_id_fkey(id, name)
       `,
       )
       .order("created_at", { ascending: false })

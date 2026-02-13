@@ -19,7 +19,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, Mail, MoreVertical, CheckCircle2, XCircle, Clock, Download } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Search, Mail, MoreVertical, CheckCircle2, XCircle, Clock, Download, Trash2 } from "lucide-react"
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
@@ -42,6 +53,7 @@ export default function WartlistePageClient() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [deleteTarget, setDeleteTarget] = useState<WaitlistEntry | null>(null)
 
   useEffect(() => {
     loadWaitlist()
@@ -88,6 +100,33 @@ export default function WartlistePageClient() {
         description: "Status konnte nicht aktualisiert werden",
         variant: "destructive",
       })
+    }
+  }
+
+  const deleteEntry = async (entry: WaitlistEntry) => {
+    try {
+      const response = await fetch(`/api/admin/waitlist/${entry.id}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Eintrag geloescht",
+          description: `${entry.email} wurde von der Warteliste entfernt`,
+        })
+        loadWaitlist()
+      } else {
+        throw new Error("Delete failed")
+      }
+    } catch (error) {
+      console.error("Error deleting entry:", error)
+      toast({
+        title: "Fehler",
+        description: "Eintrag konnte nicht geloescht werden",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
@@ -297,6 +336,14 @@ export default function WartlistePageClient() {
                             <DropdownMenuItem onClick={() => updateStatus(entry.id, "rejected")}>
                               Als Abgelehnt markieren
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setDeleteTarget(entry)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eintrag loeschen
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -308,6 +355,30 @@ export default function WartlistePageClient() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eintrag loeschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Moechten Sie <span className="font-semibold text-foreground">{deleteTarget?.email}</span>
+              {deleteTarget?.name ? ` (${deleteTarget.name})` : ""} wirklich von der Warteliste entfernen?
+              Diese Aktion kann nicht rueckgaengig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteEntry(deleteTarget)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Endgueltig loeschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

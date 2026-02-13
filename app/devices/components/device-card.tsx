@@ -24,7 +24,7 @@ import {
   AlertTriangle,
   Settings2,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, parseDeviceImageUrl } from "@/lib/utils"
 import { differenceInDays, parseISO } from "date-fns"
 import type { MedicalDevice } from "../types"
 import { DEVICE_CATEGORIES } from "../types"
@@ -81,6 +81,8 @@ export function DeviceCard({
 
   const maintenanceStatus = getMaintenanceStatus()
 
+  const firstImage = parseDeviceImageUrl(device.image_url)
+
   return (
     <Card
       className="group cursor-pointer hover:shadow-md transition-shadow"
@@ -89,9 +91,9 @@ export function DeviceCard({
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            {device.image_url ? (
+            {firstImage ? (
               <img
-                src={device.image_url}
+                src={firstImage}
                 alt={device.name}
                 className="h-12 w-12 rounded-lg object-cover"
               />

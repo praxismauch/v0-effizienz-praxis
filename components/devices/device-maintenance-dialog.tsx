@@ -175,9 +175,9 @@ export function DeviceMaintenanceDialog({ open, onOpenChange, device, onSuccess 
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Add Form */}
           {showAddForm ? (
-            <ScrollArea className="flex-1 pr-4">
-              <div className="border rounded-lg p-4 space-y-4">
-                <h4 className="font-medium">Neuen Wartungsbericht erstellen</h4>
+            <div className="flex-1 flex flex-col overflow-hidden border rounded-lg">
+              <ScrollArea className="flex-1 p-4">
+                <h4 className="font-medium mb-4">Neuen Wartungsbericht erstellen</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Wartungsart *</Label>
@@ -291,17 +291,17 @@ export function DeviceMaintenanceDialog({ open, onOpenChange, device, onSuccess 
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setShowAddForm(false)}>
-                    Abbrechen
-                  </Button>
-                  <Button onClick={handleAddReport} disabled={saving}>
-                    {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    Bericht speichern
-                  </Button>
-                </div>
+              </ScrollArea>
+              <div className="flex justify-end gap-2 p-4 border-t">
+                <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                  Abbrechen
+                </Button>
+                <Button onClick={handleAddReport} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Bericht speichern
+                </Button>
               </div>
-            </ScrollArea>
+            </div>
           ) : (
             <>
               <Button onClick={() => setShowAddForm(true)} className="mb-4">

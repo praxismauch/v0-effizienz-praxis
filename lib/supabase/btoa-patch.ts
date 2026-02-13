@@ -11,12 +11,12 @@ export function ensureBtoaPatched(): void {
 
   // Check if the global polyfill was loaded
   if (window.__btoaPatched === true) {
-    console.log("[v0] btoa polyfill already loaded from global script")
+    // btoa polyfill already loaded from global script
     return
   }
 
   // If not patched yet, log warning (should not happen)
-  console.warn("[v0] btoa polyfill not found - global script may not have loaded yet")
+  console.warn("btoa polyfill not found - global script may not have loaded yet")
 
   // Emergency fallback: Patch it now
   emergencyPatch()
@@ -51,12 +51,12 @@ function emergencyPatch(): void {
         const binString = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("")
         return originalBtoa(binString)
       } catch (encodeError) {
-        console.error("[v0-emergency] btoa encoding failed, stripping non-ASCII", encodeError)
+        console.error("[btoa-patch] btoa encoding failed, stripping non-ASCII", encodeError)
         const asciiOnly = str.replace(/[^\x00-\x7F]/g, "")
         return originalBtoa(asciiOnly || "")
       }
     } catch (error) {
-      console.error("[v0-emergency] btoa fatal error:", error)
+      console.error("[btoa-patch] btoa fatal error:", error)
       return originalBtoa("")
     }
   }
@@ -77,13 +77,13 @@ function emergencyPatch(): void {
         return decoded
       }
     } catch (error) {
-      console.error("[v0-emergency] atob error:", error)
+      console.error("[btoa-patch] atob error:", error)
       return originalAtob("")
     }
   }
 
   window.__btoaPatched = true
-  console.log("[v0] Emergency btoa polyfill applied")
+  // Emergency btoa polyfill applied
 }
 
 // Auto-execute immediately when this module loads

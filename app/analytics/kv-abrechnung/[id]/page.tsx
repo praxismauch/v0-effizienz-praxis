@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import useSWR from "swr"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,7 +18,6 @@ import {
   CheckCircle2,
   Loader2,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 
 interface ExtractedData {
   quarter?: string
@@ -38,13 +38,16 @@ interface KVAbrechnungData {
   created_at: string
 }
 
+const fetcher = (url: string) =>
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error("Failed to fetch")
+    return res.json()
+  })
+
 export default function KVAbrechnungDetailsPage() {
   const params = useParams()
   const router = useRouter()
-  const { toast } = useToast()
-  const [abrechnung, setAbrechnung] = useState<KVAbrechnungData | null>(null)
   const [aiInsights, setAiInsights] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
   const [loadingInsights, setLoadingInsights] = useState(false)
 
   const newIntl = new Intl.NumberFormat("de-DE", {
@@ -52,35 +55,17 @@ export default function KVAbrechnungDetailsPage() {
     currency: "EUR",
   })
 
-  useEffect(() => {
-    const fetchAbrechnung = async () => {
-      try {
-        const response = await fetch(`/api/kv-abrechnung/${params.id}`)
-        if (!response.ok) throw new Error("Failed to fetch KV-Abrechnung")
-
-        const data = await response.json()
-        setAbrechnung(data)
-
-        // Fetch AI insights if extracted data exists
-        if (data.extracted_data) {
+  const { data: abrechnung, isLoading: loading } = useSWR<KVAbrechnungData>(
+    params.id ? `/api/kv-abrechnung/${params.id}` : null,
+    fetcher,
+    {
+      onSuccess: (data) => {
+        if (data?.extracted_data && !aiInsights && !loadingInsights) {
           fetchAIInsights(data)
         }
-      } catch (error) {
-        console.error("[v0] Failed to fetch KV-Abrechnung:", error)
-        toast({
-          title: "Fehler",
-          description: "KV-Abrechnung konnte nicht geladen werden",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
+      },
     }
-
-    if (params.id) {
-      fetchAbrechnung()
-    }
-  }, [params.id])
+  )
 
   const fetchAIInsights = async (abrechnungData: KVAbrechnungData) => {
     if (!abrechnungData.extracted_data) return
@@ -102,12 +87,7 @@ export default function KVAbrechnungDetailsPage() {
       const data = await response.json()
       setAiInsights(data.insights)
     } catch (error) {
-      console.error("[v0] Failed to fetch AI insights:", error)
-      toast({
-        title: "Fehler",
-        description: "KI-Analyse konnte nicht geladen werden",
-        variant: "destructive",
-      })
+      console.error("Failed to fetch AI insights:", error)
     } finally {
       setLoadingInsights(false)
     }

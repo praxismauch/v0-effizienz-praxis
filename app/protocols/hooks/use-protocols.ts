@@ -15,6 +15,7 @@ const initialFormData: ProtocolFormData = {
   content: "",
   protocolDate: new Date(),
   actionItems: [],
+  attendees: [],
 }
 
 export function useProtocols() {
@@ -187,6 +188,7 @@ export function useProtocols() {
           content: formData.content,
           protocol_date: formData.protocolDate.toISOString(),
           action_items: formData.actionItems,
+          attendees: formData.attendees,
           status: "draft",
         }),
       })
@@ -267,6 +269,7 @@ export function useProtocols() {
       content: protocol.content || "",
       protocolDate: new Date(protocol.protocol_date || Date.now()),
       actionItems: protocol.action_items || [],
+      attendees: protocol.attendees || [],
     })
     setEditDialogOpen(true)
   }
@@ -278,6 +281,7 @@ export function useProtocols() {
       content: transcript,
       protocolDate: new Date(),
       actionItems: [],
+      attendees: [],
     }))
     setCreateDialogOpen(true)
   }

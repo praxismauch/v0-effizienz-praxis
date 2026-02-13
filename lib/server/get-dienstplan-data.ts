@@ -48,23 +48,23 @@ export const getDienstplanData = cache(async (
       
       // Schedules for the week
       supabase
-        .from("schedules")
+        .from("shift_schedules")
         .select("*")
         .eq("practice_id", practiceIdNum)
-        .gte("date", weekStartStr)
-        .lte("date", weekEndStr)
-        .order("date"),
+        .gte("shift_date", weekStartStr)
+        .lte("shift_date", weekEndStr)
+        .order("shift_date"),
       
       // Availability
       supabase
-        .from("availability")
+        .from("team_availability")
         .select("*")
         .eq("practice_id", practiceIdNum)
         .order("date"),
       
       // Pending swap requests
       supabase
-        .from("swap_requests")
+        .from("shift_swap_requests")
         .select("*")
         .eq("practice_id", practiceIdNum)
         .eq("status", "pending")

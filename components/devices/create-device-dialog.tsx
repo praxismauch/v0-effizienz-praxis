@@ -84,6 +84,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
   const [contacts, setContacts] = useState<ContactOption[]>([])
   const [contactsLoading, setContactsLoading] = useState(false)
   const [showContactSelector, setShowContactSelector] = useState(false)
+  const [showConsumablesContactSelector, setShowConsumablesContactSelector] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
 
   const [formData, setFormData] = useState({
@@ -658,6 +659,14 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
       maintenance_service_email: contact.email || "",
     }))
     setShowContactSelector(false)
+  }
+
+  const handleConsumablesContactSelect = (contact: ContactOption) => {
+    setFormData((prev) => ({
+      ...prev,
+      consumables_supplier: contact.company || `${contact.first_name || ""} ${contact.last_name || ""}`.trim(),
+    }))
+    setShowConsumablesContactSelector(false)
   }
 
   const handleInstructionDocsUpload = async (files: FileList | File[]) => {
@@ -1252,7 +1261,53 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
             <TabsContent value="consumables" className="mt-0 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <Label>Verbrauchsmaterial-Lieferant</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Verbrauchsmaterial-Lieferant</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowConsumablesContactSelector(!showConsumablesContactSelector)}
+                      className="h-7 text-xs gap-1"
+                    >
+                      <Contact className="h-3 w-3" />
+                      Aus Kontakten wählen
+                    </Button>
+                  </div>
+
+                  {showConsumablesContactSelector && (
+                    <div className="mb-3 p-3 border rounded-lg bg-muted/30">
+                      <Label className="text-xs text-muted-foreground mb-2 block">
+                        Kontakt auswählen zum Übernehmen der Daten
+                      </Label>
+                      {contactsLoading ? (
+                        <div className="text-sm text-muted-foreground py-2">Laden...</div>
+                      ) : contacts.length === 0 ? (
+                        <div className="text-sm text-muted-foreground py-2">Keine Kontakte vorhanden</div>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto space-y-1">
+                          {contacts.map((contact) => (
+                            <button
+                              key={contact.id}
+                              type="button"
+                              onClick={() => handleConsumablesContactSelect(contact)}
+                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent transition-colors text-sm"
+                            >
+                              <div className="font-medium">
+                                {contact.company || `${contact.first_name || ""} ${contact.last_name || ""}`.trim()}
+                              </div>
+                              {contact.company && (contact.first_name || contact.last_name) && (
+                                <div className="text-xs text-muted-foreground">
+                                  {`${contact.first_name || ""} ${contact.last_name || ""}`.trim()}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <Input
                     value={formData.consumables_supplier}
                     onChange={(e) => setFormData({ ...formData, consumables_supplier: e.target.value })}

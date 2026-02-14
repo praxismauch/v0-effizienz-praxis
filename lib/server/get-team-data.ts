@@ -133,6 +133,7 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
     // Convert practiceId to number since database stores it as integer
     const practiceIdNum = parseInt(practiceId, 10)
     
+    // First try to find by team_members.id
     const { data, error } = await supabase
       .from("team_members")
       .select("*")
@@ -143,10 +144,26 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
 
     if (error) {
       console.error("Error fetching team member by ID:", error)
+    }
+
+    if (data) return data
+
+    // Fallback: the card list uses user_id as the id field,
+    // so also try to find by user_id
+    const { data: dataByUserId, error: error2 } = await supabase
+      .from("team_members")
+      .select("*")
+      .eq("user_id", memberId)
+      .eq("practice_id", practiceIdNum)
+      .is("deleted_at", null)
+      .maybeSingle()
+
+    if (error2) {
+      console.error("Error fetching team member by user_id:", error2)
       return null
     }
 
-    return data
+    return dataByUserId
   } catch (error) {
     console.error("Error getting team member by ID:", error)
     return null

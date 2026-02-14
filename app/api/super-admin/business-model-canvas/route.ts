@@ -11,18 +11,35 @@ export async function GET(request: Request) {
     }
 
     const supabase = await createAdminClient()
+
+    // Note: business_model_canvas table may not exist yet
+    // Return empty structure gracefully if table is missing
     const { data, error } = await supabase
       .from("business_model_canvas")
       .select("*")
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
       .single()
 
-    if (error && error.code !== "PGRST116") {
+    if (error) {
+      // PGRST116 = no rows, 42P01 = table doesn't exist - both return empty
+      if (error.code === "PGRST116" || error.code === "42P01" || error.message?.includes("does not exist")) {
+        return NextResponse.json({
+          keyPartners: [],
+          keyActivities: [],
+          keyResources: [],
+          valuePropositions: [],
+          customerRelationships: [],
+          channels: [],
+          customerSegments: [],
+          costStructure: [],
+          revenueStreams: [],
+          lastModified: null,
+        })
+      }
       console.error("Error fetching BMC:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Return empty BMC structure if none exists
     if (!data) {
       return NextResponse.json({
         keyPartners: [],
@@ -70,7 +87,7 @@ export async function POST(request: Request) {
 
     // Transform camelCase to snake_case for database
     const dbData = {
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
       key_partners: bmcData.keyPartners || [],
       key_activities: bmcData.keyActivities || [],
       key_resources: bmcData.keyResources || [],

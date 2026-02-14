@@ -111,7 +111,7 @@ Ensure the plan is:
     const { data: hygienePlan, error } = await supabase
       .from("hygiene_plans")
       .insert({
-        practice_id: parseInt(practiceId),
+        practice_id: practiceId,
         title: parsedPlan.title,
         description: parsedPlan.description,
         category: parsedPlan.category || category,

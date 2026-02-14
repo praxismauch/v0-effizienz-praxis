@@ -88,14 +88,8 @@ export default function MembersTab({ teamMembers, teams = [], onAddMember, onEdi
             className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02]"
             onClick={() => onEditMember(member)}
           >
-            <CardHeader className="pb-3 relative">
-              <Badge 
-                variant="outline" 
-                className={`absolute top-3 right-3 text-xs ${getStatusColor(member.status)}`}
-              >
-                {getStatusLabel(member.status)}
-              </Badge>
-              <div className="flex items-start gap-4 pr-16">
+            <CardHeader className="pb-3">
+              <div className="flex items-start gap-4">
                 <Avatar className="h-12 w-12 flex-shrink-0">
                   {member.avatar_url && (
                     <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} />
@@ -105,9 +99,17 @@ export default function MembersTab({ teamMembers, teams = [], onAddMember, onEdi
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-base truncate">
-                    {member.first_name} {member.last_name}
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-base truncate">
+                      {member.first_name} {member.last_name}
+                    </CardTitle>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs flex-shrink-0 ${getStatusColor(member.status)}`}
+                    >
+                      {getStatusLabel(member.status)}
+                    </Badge>
+                  </div>
                   <CardDescription className="truncate mt-0.5">{member.position || getRoleLabel(member.role)}</CardDescription>
                 </div>
               </div>

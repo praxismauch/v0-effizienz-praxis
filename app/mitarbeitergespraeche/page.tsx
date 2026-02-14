@@ -459,7 +459,7 @@ export default function MitarbeitergespraechePage() {
                                 </Badge>
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                {appraisal.employee?.role} •{" "}
+                                {getRoleLabel(appraisal.employee?.role)} •{" "}
                                 {format(parseISO(appraisal.appraisal_date), "dd.MM.yyyy", { locale: de })}
                               </p>
                             </div>

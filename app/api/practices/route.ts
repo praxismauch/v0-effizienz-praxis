@@ -155,6 +155,11 @@ export async function POST(request: NextRequest) {
 
     const address = [street, city, zipCode].filter(Boolean).join(", ")
 
+    // Get current user to set created_by
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     const practiceData = {
       // Remove id - let database auto-generate UUID
       name,
@@ -166,6 +171,8 @@ export async function POST(request: NextRequest) {
       timezone: timezone || "Europe/Berlin",
       currency: currency || "EUR",
       color: assignedColor,
+      approval_status: "approved", // Super admin creates are auto-approved
+      created_by: user?.id || null,
       settings: {
         isActive: isActive !== false,
       },

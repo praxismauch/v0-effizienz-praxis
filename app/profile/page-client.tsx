@@ -5,22 +5,20 @@ import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 import { AppLayout } from "@/components/app-layout"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ProfileOverviewCard } from "@/components/profile/profile-overview-card"
-import { ProfileInfoTab } from "@/components/profile/profile-info-tab"
-import { NotificationSettingsTab } from "@/components/profile/notification-settings-tab"
-import { SecurityTab } from "@/components/profile/security-tab"
-import { TwoFactorSetupDialog } from "@/components/profile/two-factor-setup-dialog"
-import { TwoFactorDisableDialog } from "@/components/profile/two-factor-disable-dialog"
 import { DataManagementSection } from "@/components/profile/data-management-section"
 import { BadgeVisibilitySettings } from "@/components/profile/badge-visibility-settings"
 import { FavoritesManager } from "@/components/profile/favorites-manager"
 import { useToast } from "@/hooks/use-toast"
 import { useRoleColors } from "@/lib/use-role-colors"
 import { User, Settings, Monitor, Lock, Database, PanelLeft } from "lucide-react"
+import { ProfileFormTab } from "./profile-form-tab"
+import { NotificationsTab } from "./notifications-tab"
+import { SecuritySection } from "./security-section"
 
 export default function ProfilePageClient() {
   const { currentUser, setCurrentUser } = useUser()
@@ -30,9 +28,7 @@ export default function ProfilePageClient() {
   const { singleGroupMode, setSingleGroupMode } = useSidebarSettings()
 
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("profile") // Changed default tab from "selfcheck" to "profile"
-
-  // Form states - initialize empty, will be set in useEffect
+  const [activeTab, setActiveTab] = useState("profile")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -51,29 +47,6 @@ export default function ProfilePageClient() {
     }
   }, [currentUser])
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    taskReminders: true,
-    teamUpdates: true,
-    marketingEmails: false,
-  })
-
-  const handleNotificationChange = (key: string, value: boolean) => {
-    setNotifications((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const [show2FADialog, setShow2FADialog] = useState(false)
-  const [show2FADisableDialog, setShow2FADisableDialog] = useState(false)
-  const [mfaSetupData, setMfaSetupData] = useState<{
-    secret: string
-    otpauthUrl: string
-    qrCodeUrl: string
-  } | null>(null)
-  const [mfaCode, setMfaCode] = useState("")
-  const [disableCode, setDisableCode] = useState("")
-  const [isMfaLoading, setIsMfaLoading] = useState(false)
-  const [secretCopied, setSecretCopied] = useState(false)
-
   if (!currentUser) {
     return (
       <AppLayout loading={true} loadingMessage="Lade Profil...">
@@ -86,7 +59,7 @@ export default function ProfilePageClient() {
     setIsLoading(true)
     try {
       const response = await fetch(`/api/users/${currentUser.id}`, {
-        method: "PUT", // Use PUT instead of PATCH to match the API
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
@@ -95,13 +68,8 @@ export default function ProfilePageClient() {
           preferred_language: formData.preferred_language,
         }),
       })
-
-      if (!response.ok) {
-        throw new Error("Fehler beim Speichern")
-      }
-
+      if (!response.ok) throw new Error("Fehler beim Speichern")
       const data = await response.json()
-
       if (data.user) {
         setCurrentUser({
           ...currentUser,
@@ -111,18 +79,10 @@ export default function ProfilePageClient() {
           preferred_language: data.user.preferred_language,
         })
       }
-
-      toast({
-        title: "Profil aktualisiert",
-        description: "Ihre Änderungen wurden erfolgreich gespeichert.",
-      })
+      toast({ title: "Profil aktualisiert", description: "Ihre Anderungen wurden erfolgreich gespeichert." })
     } catch (error) {
       console.error("Error saving profile:", error)
-      toast({
-        title: "Fehler",
-        description: "Profil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
-        variant: "destructive",
-      })
+      toast({ title: "Fehler", description: "Profil konnte nicht gespeichert werden.", variant: "destructive" })
     } finally {
       setIsLoading(false)
     }
@@ -132,148 +92,16 @@ export default function ProfilePageClient() {
     setFormData((prev) => ({ ...prev, avatar: avatarUrl }))
   }
 
-  const handleStart2FASetup = async () => {
-    setIsMfaLoading(true)
-    try {
-      const response = await fetch(`/api/users/${currentUser.id}/mfa/setup`, {
-        method: "POST",
-        credentials: "include",
-      })
-
-      if (!response.ok) {
-        throw new Error("Fehler beim Generieren des 2FA-Geheimnisses")
-      }
-
-      const data = await response.json()
-      setMfaSetupData(data)
-      setShow2FADialog(true)
-    } catch (error) {
-      console.error("[v0] Error starting 2FA setup:", error)
-      toast({
-        title: "Fehler",
-        description: "2FA-Einrichtung konnte nicht gestartet werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsMfaLoading(false)
-    }
-  }
-
-  const handleVerify2FA = async () => {
-    if (mfaCode.length !== 6 || !mfaSetupData) return
-
-    setIsMfaLoading(true)
-    try {
-      const response = await fetch(`/api/users/${currentUser.id}/mfa/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          code: mfaCode,
-          secret: mfaSetupData.secret,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Verifizierung fehlgeschlagen")
-      }
-
-      const userResponse = await fetch(`/api/users/${currentUser.id}`)
-      if (userResponse.ok) {
-        const userData = await userResponse.json()
-        if (userData.user) {
-          setCurrentUser({ ...currentUser, ...userData.user })
-        }
-      }
-
-      setShow2FADialog(false)
-      setMfaSetupData(null)
-      setMfaCode("")
-
-      toast({
-        title: "2FA aktiviert",
-        description: "Zwei-Faktor-Authentifizierung wurde erfolgreich aktiviert.",
-      })
-    } catch (error: any) {
-      console.error("Error verifying 2FA:", error)
-      toast({
-        title: "Fehler",
-        description: error.message || "Der Verifizierungscode ist ungültig.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsMfaLoading(false)
-    }
-  }
-
-  const handleDisable2FA = async () => {
-    setIsMfaLoading(true)
-    try {
-      const response = await fetch(`/api/users/${currentUser.id}/mfa/disable`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          code: disableCode,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Deaktivierung fehlgeschlagen")
-      }
-
-      const userResponse = await fetch(`/api/users/${currentUser.id}`)
-      if (userResponse.ok) {
-        const userData = await userResponse.json()
-        if (userData.user) {
-          setCurrentUser({ ...currentUser, ...userData.user })
-        }
-      }
-
-      setShow2FADisableDialog(false)
-      setDisableCode("")
-
-      toast({
-        title: "2FA deaktiviert",
-        description: "Zwei-Faktor-Authentifizierung wurde deaktiviert.",
-      })
-    } catch (error: any) {
-      console.error("Error disabling 2FA:", error)
-      toast({
-        title: "Fehler",
-        description: error.message || "2FA konnte nicht deaktiviert werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsMfaLoading(false)
-    }
-  }
-
-  const copySecretToClipboard = () => {
-    if (mfaSetupData?.secret) {
-      navigator.clipboard.writeText(mfaSetupData.secret)
-      setSecretCopied(true)
-      setTimeout(() => setSecretCopied(false), 2000)
-    }
-  }
-
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
       superadmin: "Super Admin",
       admin: "Administrator",
-      doctor: "Arzt/Ärztin",
+      doctor: "Arzt/Arztin",
       nurse: "MFA/Pflege",
       receptionist: "Empfang",
     }
     return labels[role] || role
   }
-
-  // Assuming teams are fetched from another context or API call
-  const userTeams = [] // Placeholder for user teams logic
 
   return (
     <AppLayout>
@@ -283,7 +111,7 @@ export default function ProfilePageClient() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Mein Profil</h1>
             <p className="text-muted-foreground mt-1">
-              Verwalten Sie Ihre persönlichen Informationen und Einstellungen
+              Verwalten Sie Ihre personlichen Informationen und Einstellungen
             </p>
           </div>
         </div>
@@ -323,159 +151,19 @@ export default function ProfilePageClient() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Persönliche Informationen
-                </CardTitle>
-                <CardDescription>Aktualisieren Sie Ihre grundlegenden Profilinformationen</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Vollständiger Name</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                      placeholder="Ihr Name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-Mail-Adresse</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                      placeholder="ihre@email.de"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label htmlFor="language">Bevorzugte Sprache</Label>
-                  <Select
-                    value={formData.preferred_language}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, preferred_language: value }))}
-                  >
-                    <SelectTrigger className="w-full md:w-[200px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="de">Deutsch</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveProfile} disabled={isLoading} className="gap-2">
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Speichere...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        Änderungen speichern
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Teams */}
-            {userTeams.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    Meine Teams
-                  </CardTitle>
-                  <CardDescription>Teams, denen Sie zugewiesen sind</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {userTeams.map((team) => (
-                      <Badge key={team.id} variant="secondary" className="py-1.5 px-3">
-                        {team.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <ProfileFormTab
+              formData={formData}
+              setFormData={setFormData}
+              onSave={handleSaveProfile}
+              isLoading={isLoading}
+            />
           </TabsContent>
 
-          {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Benachrichtigungen
-                </CardTitle>
-                <CardDescription>Verwalten Sie Ihre Benachrichtigungseinstellungen</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>E-Mail-Benachrichtigungen</Label>
-                    <p className="text-sm text-muted-foreground">Erhalten Sie wichtige Updates per E-Mail</p>
-                  </div>
-                  <Switch
-                    checked={notifications.emailNotifications}
-                    onCheckedChange={(checked) =>
-                      setNotifications((prev) => ({ ...prev, emailNotifications: checked }))
-                    }
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Aufgaben-Erinnerungen</Label>
-                    <p className="text-sm text-muted-foreground">Erinnerungen für anstehende Aufgaben</p>
-                  </div>
-                  <Switch
-                    checked={notifications.taskReminders}
-                    onCheckedChange={(checked) => setNotifications((prev) => ({ ...prev, taskReminders: checked }))}
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Team-Updates</Label>
-                    <p className="text-sm text-muted-foreground">Benachrichtigungen über Team-Änderungen</p>
-                  </div>
-                  <Switch
-                    checked={notifications.teamUpdates}
-                    onCheckedChange={(checked) => setNotifications((prev) => ({ ...prev, teamUpdates: checked }))}
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Marketing-E-Mails</Label>
-                    <p className="text-sm text-muted-foreground">Produktneuheiten und Tipps</p>
-                  </div>
-                  <Switch
-                    checked={notifications.marketingEmails}
-                    onCheckedChange={(checked) => setNotifications((prev) => ({ ...prev, marketingEmails: checked }))}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <NotificationsTab />
           </TabsContent>
 
-          {/* Display Tab */}
           <TabsContent value="display" className="space-y-4">
             <Card>
               <CardHeader>
@@ -488,282 +176,32 @@ export default function ProfilePageClient() {
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Einzelne Gruppe öffnen</Label>
+                    <Label>Einzelne Gruppe offnen</Label>
                     <p className="text-sm text-muted-foreground">
-                      Wenn aktiviert, wird beim Öffnen einer Menügruppe die vorherige automatisch geschlossen
+                      Wenn aktiviert, wird beim Offnen einer Menugruppe die vorherige automatisch geschlossen
                     </p>
                   </div>
-                  <Switch
-                    checked={singleGroupMode}
-                    onCheckedChange={setSingleGroupMode}
-                  />
+                  <Switch checked={singleGroupMode} onCheckedChange={setSingleGroupMode} />
                 </div>
               </CardContent>
             </Card>
-
-            {/* Favorites Manager */}
             <FavoritesManager />
-
-            {/* Badge Visibility Settings */}
             <BadgeVisibilitySettings />
           </TabsContent>
 
-          {/* Security Tab */}
           <TabsContent value="security" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="h-5 w-5" />
-                  Passwort ändern
-                </CardTitle>
-                <CardDescription>Aktualisieren Sie Ihr Passwort regelmäßig für mehr Sicherheit</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="current-password">Aktuelles Passwort</Label>
-                  <Input id="current-password" type="password" placeholder="••••••••" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">Neues Passwort</Label>
-                    <Input id="new-password" type="password" placeholder="••••••••" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Passwort bestätigen</Label>
-                    <Input id="confirm-password" type="password" placeholder="��•••••••" />
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <Button variant="outline" className="gap-2 bg-transparent">
-                    <Lock className="h-4 w-4" />
-                    Passwort ändern
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className={currentUser.mfa_enabled ? "border-emerald-500/50" : ""}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Zwei-Faktor-Authentifizierung
-                  {currentUser.mfa_enabled && (
-                    <Badge className="bg-emerald-500 text-white ml-2">
-                      <ShieldCheck className="h-3 w-3 mr-1" />
-                      Aktiv
-                    </Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  {currentUser.mfa_enabled
-                    ? "Ihr Konto ist durch 2FA geschützt"
-                    : "Erhöhen Sie die Sicherheit Ihres Kontos mit 2FA"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {currentUser.mfa_enabled ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                      <ShieldCheck className="h-8 w-8 text-emerald-600" />
-                      <div>
-                        <p className="font-medium text-emerald-700 dark:text-emerald-400">2FA ist aktiviert</p>
-                        <p className="text-sm text-emerald-600 dark:text-emerald-500">
-                          Ihr Konto ist durch eine Authenticator-App geschützt
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      className="text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 bg-transparent"
-                      onClick={() => setShow2FADisableDialog(true)}
-                    >
-                      <ShieldOff className="h-4 w-4 mr-2" />
-                      2FA deaktivieren
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
-                      <Shield className="h-8 w-8 text-amber-600" />
-                      <div>
-                        <p className="font-medium text-amber-700 dark:text-amber-400">2FA nicht aktiviert</p>
-                        <p className="text-sm text-amber-600 dark:text-amber-500">
-                          Aktivieren Sie 2FA für zusätzliche Sicherheit
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Authenticator-App erforderlich</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Verwenden Sie Google Authenticator, Microsoft Authenticator oder eine andere TOTP-kompatible
-                          App
-                        </p>
-                      </div>
-                      <Button onClick={handleStart2FASetup} disabled={isMfaLoading}>
-                        {isMfaLoading ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Key className="h-4 w-4 mr-2" />
-                        )}
-                        2FA einrichten
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <SecuritySection
+              currentUser={currentUser}
+              setCurrentUser={setCurrentUser}
+              toast={toast}
+            />
           </TabsContent>
 
-          {/* Data Management Tab */}
           <TabsContent value="data">
             <DataManagementSection />
           </TabsContent>
         </Tabs>
       </div>
-
-      <Dialog open={show2FADialog} onOpenChange={setShow2FADialog}>
-        <DialogContent className="sm:max-w-md" aria-describedby="2fa-setup-description">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              2FA einrichten
-            </DialogTitle>
-            <DialogDescription id="2fa-setup-description">
-              Scannen Sie den QR-Code mit Ihrer Authenticator-App
-            </DialogDescription>
-          </DialogHeader>
-
-          {mfaSetupData && (
-            <div className="space-y-6">
-              {/* QR Code */}
-              <div className="flex flex-col items-center space-y-4">
-                <div className="p-4 bg-white rounded-lg shadow-inner">
-                  <img src={mfaSetupData.qrCodeUrl || "/placeholder.svg"} alt="2FA QR Code" className="w-48 h-48" />
-                </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Scannen Sie diesen QR-Code mit Ihrer Authenticator-App
-                </p>
-              </div>
-
-              {/* Manual Secret */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Oder manuell eingeben:</Label>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 p-2 bg-muted rounded text-sm font-mono break-all">{mfaSetupData.secret}</code>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={copySecretToClipboard}
-                    className="shrink-0 bg-transparent"
-                  >
-                    {secretCopied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Verification Code Input */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Verifizierungscode eingeben:</Label>
-                <div className="flex justify-center">
-                  <InputOTP maxLength={6} value={mfaCode} onChange={setMfaCode}>
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                    </InputOTPGroup>
-                    <InputOTPSeparator />
-                    <InputOTPGroup>
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein
-                </p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShow2FADialog(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleVerify2FA} disabled={mfaCode.length !== 6 || isMfaLoading}>
-              {isMfaLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <ShieldCheck className="h-4 w-4 mr-2" />
-              )}
-              Verifizieren & Aktivieren
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={show2FADisableDialog} onOpenChange={setShow2FADisableDialog}>
-        <DialogContent className="sm:max-w-md" aria-describedby="2fa-disable-description">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <ShieldOff className="h-5 w-5" />
-              2FA deaktivieren
-            </DialogTitle>
-            <DialogDescription id="2fa-disable-description">
-              Geben Sie Ihren aktuellen 2FA-Code ein, um die Zwei-Faktor-Authentifizierung zu deaktivieren
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
-              <p className="text-sm text-red-600 dark:text-red-400">
-                <strong>Warnung:</strong> Das Deaktivieren von 2FA verringert die Sicherheit Ihres Kontos.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Aktuellen 2FA-Code eingeben:</Label>
-              <div className="flex justify-center">
-                <InputOTP maxLength={6} value={disableCode} onChange={setDisableCode}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShow2FADisableDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDisable2FA}
-              disabled={disableCode.length !== 6 || isMfaLoading}
-            >
-              {isMfaLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <ShieldOff className="h-4 w-4 mr-2" />
-              )}
-              2FA deaktivieren
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppLayout>
   )
 }

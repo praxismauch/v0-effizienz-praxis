@@ -134,6 +134,7 @@ export function CreateDeviceDialog({ open, onOpenChange, onSuccess, editDevice }
         maintenance_instructions: editDevice.maintenance_instructions || "",
         short_sop: editDevice.short_sop || "",
         status: editDevice.status || "active",
+        software_version: editDevice.software_version || "",
         mpg_class: editDevice.mpg_class || "",
         ce_marking: editDevice.ce_marking || false,
         safety_relevant: editDevice.safety_relevant || false,

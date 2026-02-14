@@ -59,6 +59,7 @@ export interface DeviceFormData {
   short_sop: string
   status: string
   mpg_class: string
+  software_version: string
   ce_marking: boolean
   safety_relevant: boolean
 }
@@ -95,6 +96,7 @@ export const EMPTY_FORM_DATA: DeviceFormData = {
   short_sop: "",
   status: "active",
   mpg_class: "",
+  software_version: "",
   ce_marking: false,
   safety_relevant: false,
 }

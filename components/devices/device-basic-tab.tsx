@@ -128,6 +128,14 @@ export function DeviceBasicTab({
         />
       </div>
       <div>
+        <Label>Software-Version</Label>
+        <Input
+          value={formData.software_version}
+          onChange={(e) => updateField("software_version", e.target.value)}
+          placeholder="z.B. v2.4.1"
+        />
+      </div>
+      <div>
         <Label>Abteilung</Label>
         <Select value={formData.location} onValueChange={(value) => updateField("location", value)}>
           <SelectTrigger>

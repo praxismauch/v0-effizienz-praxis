@@ -144,6 +144,10 @@ function ViewDeviceDialog({ open, onOpenChange, device, onEdit, onRefresh }: Vie
                       <span>{device.inventory_number || "-"}</span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-muted-foreground">Software-Version</span>
+                      <span>{device.software_version || "-"}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-muted-foreground">Standort</span>
                       <span>{device.location || "-"}</span>
                     </div>

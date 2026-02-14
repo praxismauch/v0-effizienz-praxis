@@ -114,6 +114,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         cleaning_instructions: deviceData.cleaning_instructions,
         maintenance_instructions: deviceData.maintenance_instructions,
         short_sop: deviceData.short_sop,
+        software_version: deviceData.software_version || null,
         status: deviceData.status || "active",
         is_active: deviceData.is_active !== false,
         created_by: userId,

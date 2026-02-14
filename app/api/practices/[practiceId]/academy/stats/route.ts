@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ? Number.parseInt(HARDCODED_PRACTICE_ID)
         : Number.parseInt(rawPracticeId)
 
-    console.log("[v0] Academy stats - Practice ID:", practiceId)
+
 
     // Get total courses
     const { count: totalCourses } = await supabase
@@ -80,19 +80,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Calculate completion rate
     const completionRate = totalEnrollments > 0 ? Math.round((completedEnrollments / totalEnrollments) * 100) : 0
 
-    // Calculate average rating from course reviews if available
-    const { data: reviewsData } = await supabase
-      .from("reviews")
-      .select("rating")
-      .eq("practice_id", practiceId)
-      .eq("entity_type", "course")
-      .not("rating", "is", null)
-
-    let avgRating = 0
-    if (reviewsData && reviewsData.length > 0) {
-      const totalRating = reviewsData.reduce((sum, review) => sum + (review.rating || 0), 0)
-      avgRating = Math.round((totalRating / reviewsData.length) * 10) / 10 // Round to 1 decimal
-    }
+    // Average rating placeholder - no academy review/rating table exists yet
+    // When a course review system is added, query it here
+    const avgRating = 0
 
     const stats = {
       totalCourses: totalCourses || 0,
@@ -108,7 +98,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       averageRating: avgRating,
     }
 
-    console.log("[v0] Academy stats result:", stats)
     return NextResponse.json(stats)
   } catch (error: any) {
     console.error("[v0] Error fetching academy stats:", error)

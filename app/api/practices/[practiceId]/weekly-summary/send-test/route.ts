@@ -169,27 +169,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         })
       }
 
-      // 5. Get training/certifications expiring next week (team_member_skills uses TEXT practice_id)
+      // 5. Get certifications expiring next week
       const { data: expiringCerts } = await supabase
-        .from("team_member_skills")
-        .select("id, certification_expires_at, skills(name), team_members(users(first_name, last_name))")
+        .from("team_member_certifications")
+        .select("id, expiry_date, certification_id, team_member_id")
         .eq("practice_id", practiceId)
-        .gte("certification_expires_at", nextWeekStart.toISOString().split("T")[0])
-        .lte("certification_expires_at", nextWeekEnd.toISOString().split("T")[0])
+        .gte("expiry_date", nextWeekStart.toISOString().split("T")[0])
+        .lte("expiry_date", nextWeekEnd.toISOString().split("T")[0])
         .limit(5)
 
       if (expiringCerts) {
         expiringCerts.forEach((cert: any) => {
-          if (cert.skills?.name && cert.team_members?.users) {
             forecastItems.push({
               type: "training",
-              date: new Date(cert.certification_expires_at),
-              title: `Zertifikat läuft ab: ${cert.skills.name}`,
-              description: `${cert.team_members.users.first_name} ${cert.team_members.users.last_name}`,
+              date: new Date(cert.expiry_date),
+              title: `Zertifikat läuft ab: ${cert.certification_id || "Zertifizierung"}`,
+              description: `Mitarbeiter ${cert.team_member_id}`,
               priority: "high",
               icon: "📜",
             })
-          }
         })
       }
 

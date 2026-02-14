@@ -72,7 +72,15 @@ function walkDir(dir, extensions, exclude = []) {
   return files;
 }
 
-const codeFiles = walkDir('.', ['.ts', '.tsx'], ['node_modules', '.next', 'user_read_only_context', 'scripts']);
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, '..');
+
+console.log("Scanning from:", projectRoot);
+const codeFiles = walkDir(projectRoot, ['.ts', '.tsx'], ['node_modules', '.next', 'user_read_only_context', 'scripts']);
 const codeTableUsage = new Map();
 
 for (const file of codeFiles) {

@@ -323,7 +323,7 @@ export default function TrainingPageClient() {
         </TabsContent>
 
         <TabsContent value="budgets">
-          <BudgetsTab budgets={budgets} />
+          <BudgetsTab budgets={budgets} practiceId={practiceId!} onBudgetsChange={setBudgets} />
         </TabsContent>
       </Tabs>
 

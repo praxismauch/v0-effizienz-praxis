@@ -141,9 +141,12 @@ export default function UsersManager() {
       setShowCreateDialog(false)
       resetForm()
     } catch (error) {
+      console.error("[v0] User creation error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Database error creating new user"
+      console.error("[v0] Error message:", errorMessage)
       toast({
         title: "Fehler",
-        description: error instanceof Error ? error.message : "Benutzer konnte nicht erstellt werden.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

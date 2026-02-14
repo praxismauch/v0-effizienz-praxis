@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Practice ID is required" }, { status: 400 })
     }
 
-    // Fetch all published knowledge articles
+    // Fetch all published knowledge base articles
     const { data: articles, error } = await supabase
-      .from("knowledge_articles")
+      .from("knowledge_base_articles")
       .select("*")
       .eq("practice_id", practiceId)
       .eq("status", "published")

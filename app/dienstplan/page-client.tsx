@@ -48,6 +48,7 @@ export default function DienstplanPageClient({
   const router = useRouter()
 
   // Safety check - ensure initialData is never null/undefined
+  console.log("[v0] Dienstplan initialData:", initialData)
   const safeInitialData = initialData || {
     teamMembers: [],
     shiftTypes: [],
@@ -57,6 +58,7 @@ export default function DienstplanPageClient({
     holidayRequests: [],
     sickLeaves: [],
   }
+  console.log("[v0] Dienstplan safeInitialData:", safeInitialData)
 
   // Core state - initialize with server data
   const [activeTab, setActiveTab] = useState("schedule")
@@ -70,13 +72,13 @@ export default function DienstplanPageClient({
   const [isLoading, setIsLoading] = useState(false) // No initial loading needed
 
   // Data state - initialize with server-fetched data with fallbacks
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(safeInitialData.teamMembers || [])
-  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(safeInitialData.shiftTypes || [])
-  const [schedules, setSchedules] = useState<Shift[]>(safeInitialData.schedules || [])
-  const [availability, setAvailability] = useState<Availability[]>(safeInitialData.availability || [])
-  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(safeInitialData.swapRequests || [])
-  const [holidayRequests, setHolidayRequests] = useState<HolidayRequest[]>(safeInitialData.holidayRequests || [])
-  const [sickLeaves, setSickLeaves] = useState<SickLeave[]>(safeInitialData.sickLeaves || [])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(Array.isArray(safeInitialData.teamMembers) ? safeInitialData.teamMembers : [])
+  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>(Array.isArray(safeInitialData.shiftTypes) ? safeInitialData.shiftTypes : [])
+  const [schedules, setSchedules] = useState<Shift[]>(Array.isArray(safeInitialData.schedules) ? safeInitialData.schedules : [])
+  const [availability, setAvailability] = useState<Availability[]>(Array.isArray(safeInitialData.availability) ? safeInitialData.availability : [])
+  const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(Array.isArray(safeInitialData.swapRequests) ? safeInitialData.swapRequests : [])
+  const [holidayRequests, setHolidayRequests] = useState<HolidayRequest[]>(Array.isArray(safeInitialData.holidayRequests) ? safeInitialData.holidayRequests : [])
+  const [sickLeaves, setSickLeaves] = useState<SickLeave[]>(Array.isArray(safeInitialData.sickLeaves) ? safeInitialData.sickLeaves : [])
   const [violations, setViolations] = useState<Violation[]>([])
 
   // Dialog state for shift types
@@ -127,31 +129,31 @@ export default function DienstplanPageClient({
       // Use functional updates to ensure state changes are detected
       if (teamRes.ok) {
         const data = await teamRes.json()
-        setTeamMembers(() => data.teamMembers || [])
+        setTeamMembers(() => Array.isArray(data.teamMembers) ? data.teamMembers : [])
       }
       if (shiftTypesRes.ok) {
         const data = await shiftTypesRes.json()
-        setShiftTypes(() => data.shiftTypes || [])
+        setShiftTypes(() => Array.isArray(data.shiftTypes) ? data.shiftTypes : [])
       }
       if (schedulesRes.ok) {
         const data = await schedulesRes.json()
-        setSchedules(() => data.schedules || [])
+        setSchedules(() => Array.isArray(data.schedules) ? data.schedules : [])
       }
       if (availabilityRes.ok) {
         const data = await availabilityRes.json()
-        setAvailability(() => data.availability || [])
+        setAvailability(() => Array.isArray(data.availability) ? data.availability : [])
       }
       if (swapRes.ok) {
         const data = await swapRes.json()
-        setSwapRequests(() => data.swapRequests || [])
+        setSwapRequests(() => Array.isArray(data.swapRequests) ? data.swapRequests : [])
       }
       if (holidaysRes.ok) {
         const data = await holidaysRes.json()
-        setHolidayRequests(() => data.holidayRequests || [])
+        setHolidayRequests(() => Array.isArray(data.holidayRequests) ? data.holidayRequests : [])
       }
       if (sickLeavesRes.ok) {
         const data = await sickLeavesRes.json()
-        setSickLeaves(() => data.sickLeaves || [])
+        setSickLeaves(() => Array.isArray(data.sickLeaves) ? data.sickLeaves : [])
       }
     } catch (error) {
       console.error("Error fetching dienstplan data:", error)

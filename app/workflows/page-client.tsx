@@ -51,9 +51,16 @@ export default function WorkflowsPageClient() {
       if (response.ok) {
         const data = await response.json()
         setWorkflows(data.workflows || [])
+      } else if (response.status === 401) {
+        console.log("[v0] Workflows: 401 unauthorized - session may not be ready")
+        setWorkflows([])
+      } else {
+        throw new Error(`HTTP ${response.status}`)
       }
-    } catch {
+    } catch (error) {
+      console.error("[v0] Workflows fetch error:", error)
       toast({ title: "Fehler", description: "Workflows konnten nicht geladen werden.", variant: "destructive" })
+      setWorkflows([])
     } finally {
       setIsLoading(false)
     }

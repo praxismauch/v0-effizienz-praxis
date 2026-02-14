@@ -38,13 +38,16 @@ export async function authenticateApiRequest(): Promise<ApiAuthResult> {
   if (error) {
     // AuthSessionMissingError is expected for unauthenticated requests
     if (error.message === "Auth session missing!" || error.name === "AuthSessionMissingError") {
+      console.log("[v0] API Auth: Session missing (expected for unauth requests)")
       throw new ApiError("Nicht authentifiziert", 401)
     }
     // Other auth errors should be logged and treated as server errors
+    console.error("[v0] API Auth error:", error)
     throw new ApiError("Authentifizierungsfehler", 500)
   }
   
   if (!user) {
+    console.log("[v0] API Auth: No user found in session")
     throw new ApiError("Nicht authentifiziert", 401)
   }
 

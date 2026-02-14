@@ -49,7 +49,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { data: hygienePlan, error } = await supabase
       .from("hygiene_plans")
       .insert({
-        practice_id: parseInt(practiceId),
+        practice_id: practiceId,
         title,
         description,
         category,

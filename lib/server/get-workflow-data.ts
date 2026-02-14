@@ -7,25 +7,21 @@ import { createServerClient } from "@/lib/supabase/server"
 export const getWorkflowsByPractice = cache(async (practiceId: string) => {
   try {
     const supabase = await createServerClient()
-    const practiceIdNum = parseInt(practiceId, 10)
-    
-    console.log("[v0] Fetching workflows for practice:", practiceIdNum)
     
     const { data, error } = await supabase
       .from("workflows")
       .select("*")
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("[v0] Error fetching workflows:", error)
+      console.error("Error fetching workflows:", error)
       return []
     }
 
-    console.log("[v0] Found", data?.length || 0, "workflows")
     return data || []
   } catch (error) {
-    console.error("[v0] Error getting workflows:", error)
+    console.error("Error getting workflows:", error)
     return []
   }
 })
@@ -36,26 +32,22 @@ export const getWorkflowsByPractice = cache(async (practiceId: string) => {
 export const getWorkflowById = cache(async (workflowId: string, practiceId: string) => {
   try {
     const supabase = await createServerClient()
-    const practiceIdNum = parseInt(practiceId, 10)
-    
-    console.log("[v0] Fetching workflow:", workflowId, "for practice:", practiceIdNum)
     
     const { data, error } = await supabase
       .from("workflows")
       .select("*")
       .eq("id", workflowId)
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .single()
 
     if (error) {
-      console.error("[v0] Error fetching workflow by ID:", error)
+      console.error("Error fetching workflow by ID:", error)
       return null
     }
 
-    console.log("[v0] Found workflow:", data ? "yes" : "no")
     return data
   } catch (error) {
-    console.error("[v0] Error getting workflow by ID:", error)
+    console.error("Error getting workflow by ID:", error)
     return null
   }
 })

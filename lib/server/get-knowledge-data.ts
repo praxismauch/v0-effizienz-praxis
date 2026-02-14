@@ -7,25 +7,21 @@ import { createServerClient } from "@/lib/supabase/server"
 export const getDocumentsByPractice = cache(async (practiceId: string) => {
   try {
     const supabase = await createServerClient()
-    const practiceIdNum = parseInt(practiceId, 10)
-    
-    console.log("[v0] Fetching documents for practice:", practiceIdNum)
     
     const { data, error } = await supabase
       .from("documents")
       .select("*")
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("[v0] Error fetching documents:", error)
+      console.error("Error fetching documents:", error)
       return []
     }
 
-    console.log("[v0] Found", data?.length || 0, "documents")
     return data || []
   } catch (error) {
-    console.error("[v0] Error getting documents:", error)
+    console.error("Error getting documents:", error)
     return []
   }
 })
@@ -36,26 +32,22 @@ export const getDocumentsByPractice = cache(async (practiceId: string) => {
 export const getDocumentById = cache(async (documentId: string, practiceId: string) => {
   try {
     const supabase = await createServerClient()
-    const practiceIdNum = parseInt(practiceId, 10)
-    
-    console.log("[v0] Fetching document:", documentId, "for practice:", practiceIdNum)
     
     const { data, error } = await supabase
       .from("documents")
       .select("*")
       .eq("id", documentId)
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .single()
 
     if (error) {
-      console.error("[v0] Error fetching document by ID:", error)
+      console.error("Error fetching document by ID:", error)
       return null
     }
 
-    console.log("[v0] Found document:", data ? "yes" : "no")
     return data
   } catch (error) {
-    console.error("[v0] Error getting document by ID:", error)
+    console.error("Error getting document by ID:", error)
     return null
   }
 })

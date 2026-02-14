@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: courses, error } = await supabase
       .from("academy_courses")
       .select("*")
-      .eq("practice_id", Number.parseInt(effectivePracticeId))
+      .eq("practice_id", effectivePracticeId)
       .is("deleted_at", null)
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: false })
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { practiceId } = await params
     const effectivePracticeId =
       practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId)
+        ? HARDCODED_PRACTICE_ID
+        : practiceId
 
     const body = await request.json()
     const supabase = await createAdminClient()

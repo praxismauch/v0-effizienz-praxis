@@ -101,13 +101,10 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
   try {
     const supabase = await createServerClient()
     
-    // Convert practiceId to number since database stores it as integer
-    const practiceIdNum = parseInt(practiceId, 10)
-    
     const { data, error } = await supabase
       .from("team_members")
       .select("*")
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .order("created_at")
 
@@ -130,15 +127,12 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
   try {
     const supabase = await createServerClient()
     
-    // Convert practiceId to number since database stores it as integer
-    const practiceIdNum = parseInt(practiceId, 10)
-    
     // First try to find by team_members.id
     const { data, error } = await supabase
       .from("team_members")
       .select("*")
       .eq("id", memberId)
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .maybeSingle()
 
@@ -154,7 +148,7 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
       .from("team_members")
       .select("*")
       .eq("user_id", memberId)
-      .eq("practice_id", practiceIdNum)
+      .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .maybeSingle()
 

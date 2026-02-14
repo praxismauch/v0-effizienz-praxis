@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     } else {
       // Create new settings
       const { error: insertError } = await supabase.from("practice_settings").insert({
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         system_settings: updatedSystemSettings,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

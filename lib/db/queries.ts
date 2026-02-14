@@ -140,7 +140,7 @@ export async function getSidebarBadges(practiceId: string) {
     // Appraisals (scheduled/pending)
     safeCount(supabase.from("employee_appraisals").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).in("status", ["scheduled", "pending", "in_progress"])),
     // Skills/Competencies
-    safeCount(supabase.from("skill_definitions").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
+    safeCount(supabase.from("skill_definitions").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
     // Workplaces (Arbeitsplaetze)
     safeCount(supabase.from("arbeitsplaetze").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
     // Rooms

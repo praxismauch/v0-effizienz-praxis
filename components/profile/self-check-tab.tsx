@@ -327,8 +327,28 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
   }
 
   const handleGenerateAI = async () => {
-    const hasData = Object.values(currentAssessment).some((v) => v !== null)
-    if (!hasData) {
+    // Use current assessment data, or fall back to the latest saved assessment from history
+    const hasCurrentData = Object.values(currentAssessment).some((v) => v !== null)
+    const latestHistoryEntry = history.length > 0 ? history[0] : null
+
+    let assessmentData: Record<string, number | null>
+    let assessmentId: string | null
+
+    if (hasCurrentData) {
+      assessmentData = currentAssessment
+      assessmentId = savedAssessmentId
+    } else if (latestHistoryEntry) {
+      assessmentData = {
+        energy_level: latestHistoryEntry.energy_level,
+        stress_level: latestHistoryEntry.stress_level,
+        work_satisfaction: latestHistoryEntry.work_satisfaction,
+        team_harmony: latestHistoryEntry.team_harmony,
+        work_life_balance: latestHistoryEntry.work_life_balance,
+        motivation: latestHistoryEntry.motivation,
+        overall_wellbeing: latestHistoryEntry.overall_wellbeing,
+      }
+      assessmentId = latestHistoryEntry.id
+    } else {
       toast({
         title: "Keine Daten",
         description: "Bitte füllen Sie zuerst die Selbsteinschätzung aus.",
@@ -343,8 +363,8 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...currentAssessment,
-          assessment_id: savedAssessmentId,
+          ...assessmentData,
+          assessment_id: assessmentId,
         }),
       })
 
@@ -368,6 +388,8 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
       setIsGeneratingAI(false)
     }
   }
+
+  const hasAnyAssessmentData = Object.values(currentAssessment).some((v) => v !== null) || history.length > 0
 
   const calculateOverallScore = () => {
     const values = DIMENSIONS.map((d) => {
@@ -903,11 +925,38 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
                   <Sparkles className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Keine KI-Empfehlungen vorhanden</h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-md">
-                  Füllen Sie zuerst die Selbsteinschätzung aus und klicken Sie auf "KI-Empfehlungen generieren", um
-                  personalisierte Verbesserungsvorschläge zu erhalten.
-                </p>
-                <Button onClick={() => setActiveSubTab("assessment")}>Zur Selbsteinschätzung</Button>
+                {hasAnyAssessmentData ? (
+                  <>
+                    <p className="text-sm text-muted-foreground mb-6 max-w-md">
+                      Basierend auf Ihren vorhandenen Selbsteinschätzungen können personalisierte
+                      Verbesserungsvorschläge generiert werden.
+                    </p>
+                    <Button onClick={handleGenerateAI} disabled={isGeneratingAI} size="lg">
+                      {isGeneratingAI ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          KI analysiert Ihre Daten...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          KI-Empfehlungen generieren
+                        </>
+                      )}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground mb-6 max-w-md">
+                      Füllen Sie zuerst die Selbsteinschätzung aus, um personalisierte
+                      Verbesserungsvorschläge zu erhalten.
+                    </p>
+                    <Button onClick={() => setActiveSubTab("overview")}>
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Zur Selbsteinschätzung
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}

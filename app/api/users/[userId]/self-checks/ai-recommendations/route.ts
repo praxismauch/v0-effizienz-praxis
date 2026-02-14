@@ -21,10 +21,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Find lowest scoring dimensions
     const sortedDimensions = Object.entries(dimensions)
       .filter(([_, value]) => value !== null && value !== undefined)
-      .sort(([, a], [, b]) => {
-        // For stress_level, higher is worse
-        const aVal = a === "stress_level" ? 11 - (a as number) : (a as number)
-        const bVal = b === "stress_level" ? 11 - (b as number) : (b as number)
+      .sort(([keyA, a], [keyB, b]) => {
+        // For stress_level, higher is worse so invert
+        const aVal = keyA === "stress_level" ? 11 - (a as number) : (a as number)
+        const bVal = keyB === "stress_level" ? 11 - (b as number) : (b as number)
         return aVal - bVal
       })
 

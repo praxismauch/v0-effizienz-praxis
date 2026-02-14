@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .maybeSingle()
 
-    const defaultPracticeId = defaultPractice?.id || 1
+    const defaultPracticeId = defaultPractice?.id || null
 
     // Create the profile
     const displayName = name || `${firstName || ""} ${lastName || ""}`.trim() || email.split("@")[0]
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         name: displayName,
         first_name: firstName || null,
         last_name: lastName || null,
-        role: "doctor", // Default role
+        role: "member", // Default role - member is the standard user role
         practice_id: defaultPracticeId,
         is_active: true,
         created_at: new Date().toISOString(),
@@ -91,6 +91,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
+      console.error("[v0] Error creating user profile:", insertError)
+      console.error("[v0] Insert error details:", { code: insertError.code, message: insertError.message, details: insertError.details })
+      
       // Check if it's a unique constraint violation (profile was created by another request)
       if (insertError.code === "23505") {
         const { data: retryProfile } = await adminClient
@@ -105,9 +108,31 @@ export async function POST(request: NextRequest) {
       }
       
       return NextResponse.json(
-        { error: "Failed to create profile", details: insertError.message },
+        { error: "Failed to create profile", details: insertError.message, code: insertError.code },
         { status: 500 }
       )
+    }
+
+    // Also create team_members entry for the user in the practice
+    if (newProfile && defaultPracticeId) {
+      const { error: teamMemberError } = await adminClient
+        .from("team_members")
+        .insert({
+          practice_id: defaultPracticeId,
+          user_id: userId,
+          first_name: firstName || displayName.split(" ")[0] || "",
+          last_name: lastName || displayName.split(" ").slice(1).join(" ") || "",
+          email: email,
+          role: "member",
+          status: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+      
+      if (teamMemberError) {
+        console.error("[v0] Error creating team member entry:", teamMemberError)
+        // Don't fail the whole request - user profile was created successfully
+      }
     }
 
     return NextResponse.json({ user: newProfile })

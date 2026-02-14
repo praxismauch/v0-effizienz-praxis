@@ -1,19 +1,45 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@supabase/ssr"
 
-// Next.js 16 proxy function (replaces middleware)
-// This is a simplified version without rate limiting for the v0 preview environment
+// Next.js 16 proxy function with Supabase session management
 export async function proxy(request: NextRequest) {
-  // Pass through all requests to their handlers
-  const response = NextResponse.next({
+  let supabaseResponse = NextResponse.next({
     request,
   })
 
-  // Add security headers
-  response.headers.set("X-Frame-Options", "DENY")
-  response.headers.set("X-Content-Type-Options", "nosniff")
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+  // Create Supabase client with cookie handling for session management
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+        },
+      },
+    }
+  )
 
-  return response
+  // CRITICAL: This getUser() call is required to refresh the session
+  // Without it, users will be randomly logged out
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Add security headers
+  supabaseResponse.headers.set("X-Frame-Options", "DENY")
+  supabaseResponse.headers.set("X-Content-Type-Options", "nosniff")
+  supabaseResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+
+  // IMPORTANT: Return the supabaseResponse with updated cookies
+  return supabaseResponse
 }
 
 // Match all routes except static assets

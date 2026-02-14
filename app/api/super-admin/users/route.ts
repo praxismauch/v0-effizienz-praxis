@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
       email_confirm: true,
       user_metadata: {
         name,
-        role: role || "user",
+        role: role || "member",
       },
     })
 
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
         name,
         first_name: firstName,
         last_name: lastName,
-        role: role || "user",
+        role: role || "member",
         is_active: true,
         practice_id: validPracticeId,
         approval_status: "approved",
@@ -278,9 +278,13 @@ export async function POST(request: NextRequest) {
       const { error: tmError } = await supabase.from("team_members").insert({
         practice_id: validPracticeId,
         user_id: authData.user.id,
-        role: role || "user",
+        role: role || "member",
         status: "active",
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
 
       if (tmError) {

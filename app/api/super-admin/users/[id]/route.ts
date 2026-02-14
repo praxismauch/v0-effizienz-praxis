@@ -108,11 +108,29 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     // Build update object - only include provided fields
     const updates: Record<string, any> = { updated_at: new Date().toISOString() }
-    if (name !== undefined) updates.name = name
+    
+    // Handle name - split into first_name and last_name
+    if (name !== undefined) {
+      updates.name = name
+      const nameParts = name.trim().split(" ")
+      updates.first_name = nameParts[0] || name
+      updates.last_name = nameParts.slice(1).join(" ") || ""
+    }
+    
     if (email !== undefined) updates.email = email
     if (is_active !== undefined) updates.is_active = is_active
     if (role !== undefined) updates.role = role
-    if (practice_id !== undefined) updates.practice_id = practice_id
+    
+    // Handle practice_id properly - can be null, number, or string
+    if (practice_id !== undefined) {
+      if (practice_id === null || practice_id === "none" || practice_id === "") {
+        updates.practice_id = null
+      } else {
+        // Keep as string (UUID format in Supabase)
+        updates.practice_id = String(practice_id)
+      }
+    }
+    
     if (preferred_language !== undefined) updates.preferred_language = preferred_language
     if (phone !== undefined) updates.phone = phone
     if (specialization !== undefined) updates.specialization = specialization
@@ -122,7 +140,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     if (error) {
       console.error("[v0] Error updating user:", error)
-      return NextResponse.json({ error: "Benutzer konnte nicht aktualisiert werden" }, { status: 500 })
+      return NextResponse.json({ 
+        error: "Benutzer konnte nicht aktualisiert werden", 
+        details: error.message 
+      }, { status: 500 })
     }
 
     // If email changed, update auth.users email too
@@ -133,39 +154,55 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
 
-    // If practice_id changed, update practice_users
+    // Update team_members if practice changed
     if (practice_id !== undefined) {
-      // Remove existing primary practice
-      await supabase.from("practice_users").update({ is_primary: false }).eq("user_id", id).eq("is_primary", true)
+      const finalPracticeId = practice_id === null || practice_id === "none" || practice_id === "" 
+        ? null 
+        : String(practice_id)
 
-      if (practice_id) {
-        // Check if entry exists
-        const { data: existingPU } = await supabase
-          .from("practice_users")
-          .select("id")
+      if (finalPracticeId) {
+        // Check if team_members entry exists for this practice
+        const { data: existingTM } = await supabase
+          .from("team_members")
+          .select("id, status")
           .eq("user_id", id)
-          .eq("practice_id", practice_id)
+          .eq("practice_id", finalPracticeId)
           .single()
 
-        if (existingPU) {
-          // Update existing
+        if (existingTM) {
+          // Update existing - make sure it's active
           await supabase
-            .from("practice_users")
-            .update({ is_primary: true, status: "active" })
-            .eq("user_id", id)
-            .eq("practice_id", practice_id)
+            .from("team_members")
+            .update({ 
+              status: "active",
+              role: role || data.role || "member",
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", existingTM.id)
         } else {
-          // Create new entry
-          await supabase.from("practice_users").insert({
+          // Get user details for team_members
+          const firstName = updates.first_name || data.first_name || data.name?.split(" ")[0] || ""
+          const lastName = updates.last_name || data.last_name || data.name?.split(" ").slice(1).join(" ") || ""
+          
+          // Create new team_members entry
+          await supabase.from("team_members").insert({
+            practice_id: finalPracticeId,
             user_id: id,
-            practice_id: practice_id,
+            first_name: firstName,
+            last_name: lastName,
+            email: email || data.email,
             role: role || data.role || "member",
             status: "active",
-            is_primary: true,
-            invited_by: authUser.id,
-            joined_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           })
         }
+      } else {
+        // Practice removed - deactivate team_members entries
+        await supabase
+          .from("team_members")
+          .update({ status: "inactive", updated_at: new Date().toISOString() })
+          .eq("user_id", id)
       }
     }
 

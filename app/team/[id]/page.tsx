@@ -181,42 +181,40 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
 
         {/* Tabs */}
         <Tabs defaultValue="contracts" className="w-full">
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex h-10 w-auto min-w-full sm:min-w-0">
-              <TabsTrigger value="contracts" className="gap-1.5 text-xs sm:text-sm">
-                <FileText className="h-3.5 w-3.5" />
-                <span>Verträge</span>
-              </TabsTrigger>
-              <TabsTrigger value="responsibilities" className="gap-1.5 text-xs sm:text-sm">
-                <ClipboardList className="h-3.5 w-3.5" />
-                <span>Zuständigkeiten</span>
-              </TabsTrigger>
-              <TabsTrigger value="competencies" className="gap-1.5 text-xs sm:text-sm">
-                <Star className="h-3.5 w-3.5" />
-                <span>Kompetenzen</span>
-              </TabsTrigger>
-              <TabsTrigger value="time" className="gap-1.5 text-xs sm:text-sm">
-                <Clock className="h-3.5 w-3.5" />
-                <span>Zeiterfassung</span>
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="gap-1.5 text-xs sm:text-sm">
-                <Briefcase className="h-3.5 w-3.5" />
-                <span>Dokumente</span>
-              </TabsTrigger>
-              <TabsTrigger value="equipment" className="gap-1.5 text-xs sm:text-sm">
-                <Wrench className="h-3.5 w-3.5" />
-                <span>Arbeitsmittel</span>
-              </TabsTrigger>
-              <TabsTrigger value="devices" className="gap-1.5 text-xs sm:text-sm">
-                <Laptop className="h-3.5 w-3.5" />
-                <span>Geräte</span>
-              </TabsTrigger>
-              <TabsTrigger value="vaccination" className="gap-1.5 text-xs sm:text-sm">
-                <Syringe className="h-3.5 w-3.5" />
-                <span>Impfstatus</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+            <TabsTrigger value="contracts" className="gap-1.5 text-xs sm:text-sm">
+              <FileText className="h-3.5 w-3.5" />
+              <span>Verträge</span>
+            </TabsTrigger>
+            <TabsTrigger value="responsibilities" className="gap-1.5 text-xs sm:text-sm">
+              <ClipboardList className="h-3.5 w-3.5" />
+              <span>Zuständigkeiten</span>
+            </TabsTrigger>
+            <TabsTrigger value="competencies" className="gap-1.5 text-xs sm:text-sm">
+              <Star className="h-3.5 w-3.5" />
+              <span>Kompetenzen</span>
+            </TabsTrigger>
+            <TabsTrigger value="time" className="gap-1.5 text-xs sm:text-sm">
+              <Clock className="h-3.5 w-3.5" />
+              <span>Zeiterfassung</span>
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-1.5 text-xs sm:text-sm">
+              <Briefcase className="h-3.5 w-3.5" />
+              <span>Dokumente</span>
+            </TabsTrigger>
+            <TabsTrigger value="equipment" className="gap-1.5 text-xs sm:text-sm">
+              <Wrench className="h-3.5 w-3.5" />
+              <span>Arbeitsmittel</span>
+            </TabsTrigger>
+            <TabsTrigger value="devices" className="gap-1.5 text-xs sm:text-sm">
+              <Laptop className="h-3.5 w-3.5" />
+              <span>Geräte</span>
+            </TabsTrigger>
+            <TabsTrigger value="vaccination" className="gap-1.5 text-xs sm:text-sm">
+              <Syringe className="h-3.5 w-3.5" />
+              <span>Impfstatus</span>
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="contracts" className="mt-6">
             <ContractsManager

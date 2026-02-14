@@ -47,10 +47,10 @@ export const getDashboardData = cache(async (practiceId: string): Promise<Dashbo
         .gte("start_time", new Date().toISOString())
         .limit(10),
       
-      // Fetch recent activity from audit logs
+      // Fetch recent activity from system logs
       supabase
-        .from("audit_logs")
-        .select("id, action, entity_type, created_at")
+        .from("system_logs")
+        .select("id, action, category, message, created_at")
         .eq("practice_id", practiceId)
         .order("created_at", { ascending: false })
         .limit(10),
@@ -63,8 +63,8 @@ export const getDashboardData = cache(async (practiceId: string): Promise<Dashbo
     // Format recent activity
     const recentActivity = (activityData.data || []).map(activity => ({
       id: activity.id,
-      type: activity.entity_type || "unknown",
-      title: `${activity.action} ${activity.entity_type || "item"}`,
+      type: activity.category || "unknown",
+      title: activity.message || `${activity.action || "Aktion"} ${activity.category || ""}`.trim(),
       timestamp: activity.created_at,
     }))
 

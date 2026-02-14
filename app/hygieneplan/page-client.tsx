@@ -135,21 +135,15 @@ export default function HygienePlanClient() {
 
   const loadHygienePlans = async () => {
     try {
-      console.log("[v0] Loading hygiene plans for practice:", currentPractice?.id)
       const response = await fetch(`/api/practices/${currentPractice?.id}/hygiene-plans`)
-      console.log("[v0] Hygiene plans response status:", response.status)
-      
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Hygiene plans loaded:", data.hygienePlans?.length || 0, "plans")
         setHygienePlans(data.hygienePlans || [])
       } else {
-        const errorText = await response.text()
-        console.error("[v0] Error response:", errorText)
         toast.error("Fehler beim Laden der Hygienepläne")
       }
     } catch (error) {
-      console.error("[v0] Error loading hygiene plans:", error)
+      console.error("Error loading hygiene plans:", error)
       toast.error("Fehler beim Laden der Hygienepläne")
     } finally {
       setLoading(false)
@@ -179,7 +173,7 @@ export default function HygienePlanClient() {
         toast.error("Fehler beim Generieren des Hygieneplans")
       }
     } catch (error) {
-      console.error("[v0] Error generating hygiene plan:", error)
+      console.error("Error generating hygiene plan:", error)
       toast.error("Fehler beim Generieren des Hygieneplans")
     } finally {
       setGenerating(false)
@@ -226,18 +220,21 @@ export default function HygienePlanClient() {
           </div>
         </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
-          <StatCard
-            key={key}
-            label={config.label}
-            value={categoryStats[key] || 0}
-            icon={config.icon}
-            {...config.statColor}
-            description={`${categoryStats[key] || 0} Plaene`}
-          />
-        ))}
+      {/* Stats Grid - 4 key categories */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {(["infection_control", "sterilization", "cleaning", "quality_management"] as const).map((key) => {
+          const config = CATEGORY_CONFIG[key]
+          return (
+            <StatCard
+              key={key}
+              label={config.label}
+              value={categoryStats[key] || 0}
+              icon={config.icon}
+              {...config.statColor}
+              description={`${categoryStats[key] || 0} Pläne`}
+            />
+          )
+        })}
       </div>
 
       {/* Filters */}

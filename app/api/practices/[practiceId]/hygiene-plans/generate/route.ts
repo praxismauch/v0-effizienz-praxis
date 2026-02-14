@@ -84,7 +84,7 @@ Ensure the plan is:
 - Addresses quality and safety standards`
 
     const { text } = await generateText({
-      model: "grok/grok-beta",
+      model: "xai/grok-3-mini-fast",
       prompt,
       temperature: 0.7,
       maxTokens: 2000,

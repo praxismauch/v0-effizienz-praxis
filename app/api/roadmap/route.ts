@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error("[v0] Error fetching roadmap items:", error)
+      console.error("Error fetching roadmap items:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ items: sortedData })
   } catch (error) {
-    console.error("[v0] Error in GET /api/roadmap:", error)
+    console.error("Error in GET /api/roadmap:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -137,13 +137,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("[v0] Error creating roadmap item:", error)
+      console.error("Error creating roadmap item:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ item: data })
   } catch (error) {
-    console.error("[v0] Error in POST /api/roadmap:", error)
+    console.error("Error in POST /api/roadmap:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

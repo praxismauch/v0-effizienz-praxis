@@ -21,25 +21,9 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // Fetch sidebar preferences
-    const { data, error } = await supabase
-      .from("user_sidebar_preferences")
-      .select("expanded_groups, sidebar_collapsed, expanded_items, favorites")
-      .eq("user_id", user.id)
-      .eq("practice_id", "super-admin")
-      .maybeSingle()
-
-    if (error) {
-      console.error("Error fetching sidebar preferences:", error)
-      return NextResponse.json({
-        expanded_groups: ["overview", "praxen-benutzer"],
-        sidebar_collapsed: false,
-        expanded_items: [],
-        favorites: [],
-      })
-    }
-
-    return NextResponse.json(data || {
+    // Super-admin sidebar preferences are handled via localStorage
+    // because "super-admin" is not a valid practice_id FK
+    return NextResponse.json({
       expanded_groups: ["overview", "praxen-benutzer"],
       sidebar_collapsed: false,
       expanded_items: [],

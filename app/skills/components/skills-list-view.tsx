@@ -12,6 +12,7 @@ interface SkillsListViewProps {
   groupedSkills: Record<string, Skill[]>
   expandedCategories: Set<string>
   onToggleCategory: (category: string) => void
+  onViewSkill: (skill: Skill) => void
   onEditSkill: (skill: Skill) => void
   onDeleteSkill: (skill: Skill) => void
 }
@@ -20,6 +21,7 @@ export function SkillsListView({
   groupedSkills,
   expandedCategories,
   onToggleCategory,
+  onViewSkill,
   onEditSkill,
   onDeleteSkill,
 }: SkillsListViewProps) {
@@ -50,7 +52,16 @@ export function SkillsListView({
                 {categorySkills.map((skill) => (
                   <div
                     key={skill.id}
-                    className="group flex items-center justify-between p-4 border-b last:border-b-0 hover:bg-muted/30"
+                    className="group flex items-center justify-between p-4 border-b last:border-b-0 hover:bg-muted/30 cursor-pointer"
+                    onClick={() => onViewSkill(skill)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        onViewSkill(skill)
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <Award className="h-5 w-5 text-primary" />
@@ -75,7 +86,7 @@ export function SkillsListView({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => onEditSkill(skill)}
+                          onClick={(e) => { e.stopPropagation(); onEditSkill(skill) }}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -83,7 +94,7 @@ export function SkillsListView({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
-                          onClick={() => onDeleteSkill(skill)}
+                          onClick={(e) => { e.stopPropagation(); onDeleteSkill(skill) }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

@@ -48,8 +48,13 @@ interface TreeNode {
 
 interface TeamMember {
   id: string
+  user_id?: string | null
+  team_member_id?: string
   first_name: string
   last_name: string
+  name?: string
+  avatar?: string | null
+  avatar_url?: string | null
 }
 
 interface Team {
@@ -72,14 +77,6 @@ export default function OrganigrammClient() {
   const { user } = useAuth()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
 
-  console.log("[v0] Organigramm state:", {
-    loading,
-    practiceLoading,
-    currentPracticeId: currentPractice?.id,
-    currentPracticeName: currentPractice?.name,
-    positionsCount: positions.length,
-  })
-
   const { data: positionsData, error: positionsError } = useSWR<{ positions: Position[] }>(
     currentPractice?.id ? `/api/practices/${currentPractice.id}/org-chart-positions` : null,
     swrFetcher,
@@ -97,7 +94,6 @@ export default function OrganigrammClient() {
 
   useEffect(() => {
     if (positionsData?.positions) {
-      console.log("[v0] Organigramm: SWR data loaded, positions:", positionsData.positions.length)
       setPositions(positionsData.positions)
     }
   }, [positionsData])
@@ -116,7 +112,6 @@ export default function OrganigrammClient() {
 
   useEffect(() => {
     if (positionsError) {
-      console.error("[v0] Organigramm: SWR error:", positionsError)
       toast({
         title: "Fehler",
         description: "Organigramm konnte nicht geladen werden",
@@ -266,17 +261,47 @@ export default function OrganigrammClient() {
     const displayName = position.position_title
     const displayRole = position.department || ""
 
+    // Find assigned team member by user_id
+    const assignedMember = position.user_id
+      ? teamMembers.find(
+          (m) => m.user_id === position.user_id || m.id === position.user_id || m.team_member_id === position.user_id,
+        )
+      : null
+    const memberName = assignedMember
+      ? `${assignedMember.first_name || ""} ${assignedMember.last_name || ""}`.trim() || assignedMember.name || ""
+      : ""
+    const memberAvatar = assignedMember?.avatar || assignedMember?.avatar_url || null
+
     return (
       <div className="flex flex-col items-center">
+        {/* The card itself */}
         <div
           className={cn(
-            "relative group bg-[#4F7CBA] text-white rounded-md px-4 py-3 min-w-[140px] max-w-[200px] text-center shadow-md transition-all hover:shadow-lg cursor-pointer",
+            "relative group bg-[#4F7CBA] text-white rounded-md px-4 py-3 min-w-[140px] max-w-[220px] text-center shadow-md transition-all hover:shadow-lg cursor-pointer",
             isRoot && "bg-[#3A5F8A] min-w-[180px]",
           )}
           onClick={() => setEditingPosition(position)}
         >
           <p className="font-semibold text-sm leading-tight break-words">{displayName}</p>
           {displayRole && <p className="text-xs text-white/80 mt-0.5 leading-tight">({displayRole})</p>}
+          {memberName && (
+            <div className="flex items-center justify-center gap-1.5 mt-2 pt-2 border-t border-white/20">
+              {memberAvatar ? (
+                <img
+                  src={memberAvatar}
+                  alt={memberName}
+                  className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-white/30"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-white">
+                    {memberName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <span className="text-xs text-white/90 leading-tight truncate">{memberName}</span>
+            </div>
+          )}
           <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
             <button
               className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-100"
@@ -298,27 +323,90 @@ export default function OrganigrammClient() {
             </button>
           </div>
         </div>
+
+        {/* Children with proper connectors */}
         {children.length > 0 && (
-          <>
-            <div className="w-px h-6 bg-[#4F7CBA]" />
-            {children.length > 1 && (
-              <div
-                className="h-px bg-[#4F7CBA]"
-                style={{
-                  width: `calc(${(children.length - 1) * 100}% / ${children.length} + ${(children.length - 1) * 32}px)`,
-                }}
-              />
-            )}
-            <div className="flex gap-8 items-start">
-              {children.map((child, index) => (
-                <div key={child.position.id} className="flex flex-col items-center">
-                  <div className="w-px h-6 bg-[#4F7CBA]" />
-                  <PositionCard node={child} />
-                </div>
-              ))}
-            </div>
-          </>
+          <ChildrenConnector>
+            {children.map((child) => (
+              <PositionCard key={child.position.id} node={child} />
+            ))}
+          </ChildrenConnector>
         )}
+      </div>
+    )
+  }
+
+  /**
+   * ChildrenConnector renders:
+   * 1. A vertical stem down from the parent
+   * 2. A horizontal rail spanning from the center of the first child to the center of the last child
+   * 3. A vertical stem up into each child
+   * It uses refs to measure actual rendered positions so lines always connect properly.
+   */
+  const ChildrenConnector = ({ children: childElements }: { children: React.ReactNode[] }) => {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const [lineStyle, setLineStyle] = useState<{ left: number; width: number } | null>(null)
+
+    useEffect(() => {
+      const el = containerRef.current
+      if (!el) return
+
+      const updateLine = () => {
+        const childWrappers = el.querySelectorAll<HTMLElement>(":scope > .org-child-wrapper")
+        if (childWrappers.length < 2) {
+          setLineStyle(null)
+          return
+        }
+        const containerRect = el.getBoundingClientRect()
+        const firstChild = childWrappers[0]
+        const lastChild = childWrappers[childWrappers.length - 1]
+        const firstCenter = firstChild.getBoundingClientRect().left + firstChild.getBoundingClientRect().width / 2 - containerRect.left
+        const lastCenter = lastChild.getBoundingClientRect().left + lastChild.getBoundingClientRect().width / 2 - containerRect.left
+        setLineStyle({ left: firstCenter, width: lastCenter - firstCenter })
+      }
+
+      // Measure after paint
+      const raf = requestAnimationFrame(updateLine)
+      // Also observe resize
+      const ro = new ResizeObserver(updateLine)
+      ro.observe(el)
+
+      return () => {
+        cancelAnimationFrame(raf)
+        ro.disconnect()
+      }
+    }, [childElements])
+
+    const stemH = 24 // px – vertical stem height
+
+    return (
+      <div className="flex flex-col items-center w-full">
+        {/* Vertical stem from parent down */}
+        <div className="w-px bg-[#4F7CBA]" style={{ height: stemH }} />
+
+        {/* Horizontal rail + children row */}
+        <div ref={containerRef} className="relative flex gap-8 items-start">
+          {/* The horizontal rail (absolute, drawn after measurement) */}
+          {lineStyle && lineStyle.width > 0 && (
+            <div
+              className="absolute bg-[#4F7CBA]"
+              style={{
+                top: 0,
+                left: lineStyle.left,
+                width: lineStyle.width,
+                height: 1,
+              }}
+            />
+          )}
+
+          {childElements.map((child, i) => (
+            <div key={i} className="org-child-wrapper flex flex-col items-center">
+              {/* Vertical stem into child */}
+              <div className="w-px bg-[#4F7CBA]" style={{ height: stemH }} />
+              {child}
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

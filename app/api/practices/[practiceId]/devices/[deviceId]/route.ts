@@ -117,6 +117,7 @@ export async function PATCH(
       "cleaning_instructions",
       "maintenance_instructions",
       "short_sop",
+      "software_version",
       "status",
       "is_active",
     ]

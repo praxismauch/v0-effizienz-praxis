@@ -112,8 +112,10 @@ export function AIContactExtractorDialog({ open, onOpenChange, onSuccess }: AICo
     reader.readAsDataURL(file)
     try {
       if (!currentUser?.practice_id) throw new Error("Keine Praxis zugeordnet")
+      const { compressImageIfLarge } = await import("@/lib/image-compression")
+      const compressedFile = await compressImageIfLarge(file)
       const formData = new FormData()
-      formData.append("file", file)
+      formData.append("file", compressedFile)
       const uploadResponse = await fetch(`/api/practices/${currentUser.practice_id}/upload`, { method: "POST", body: formData })
       if (!uploadResponse.ok) throw new Error("Bild-Upload fehlgeschlagen")
       const { url: publicUrl } = await uploadResponse.json()

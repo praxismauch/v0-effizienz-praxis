@@ -95,8 +95,9 @@ export default function ArbeitsmittelPage() {
     const response = await fetch(url)
     if (!response.ok) throw new Error("Failed to fetch team members")
     const data = await response.json()
-    // Ensure we always return an array
-    return Array.isArray(data) ? data : []
+    // API returns { teamMembers: [...] } - extract the array
+    const members = data?.teamMembers || data
+    return Array.isArray(members) ? members : []
   })
 
   
@@ -313,17 +314,15 @@ export default function ArbeitsmittelPage() {
                       <TableRow>
                         <TableHead className="min-w-[100px]">Typ</TableHead>
                         <TableHead className="min-w-[120px]">Name</TableHead>
-                        <TableHead className="min-w-[120px]">Seriennummer</TableHead>
                         <TableHead className="min-w-[100px]">Status</TableHead>
                         <TableHead className="min-w-[140px]">Zugewiesen an</TableHead>
-                        <TableHead className="min-w-[100px]">Zustand</TableHead>
                         <TableHead className="text-right min-w-[80px]">Aktionen</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredItems.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">
                             Keine Arbeitsmittel gefunden
                           </TableCell>
                         </TableRow>
@@ -334,7 +333,11 @@ export default function ArbeitsmittelPage() {
                             ? teamMembers.find((m) => m.id === item.assigned_to || m.user_id === item.assigned_to)
                             : null
                           return (
-                            <TableRow key={item.id} className="group">
+                            <TableRow
+                              key={item.id}
+                              className="group cursor-pointer hover:bg-muted/50"
+                              onClick={() => router.push(`/arbeitsmittel/${item.id}`)}
+                            >
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -342,7 +345,6 @@ export default function ArbeitsmittelPage() {
                                 </div>
                               </TableCell>
                               <TableCell className="font-medium">{item.name}</TableCell>
-                              <TableCell>{item.serial_number || "-"}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className={statusColors[item.status]}>
                                   {statusLabels[item.status]}
@@ -351,9 +353,8 @@ export default function ArbeitsmittelPage() {
                               <TableCell>
                                 {assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "-"}
                               </TableCell>
-                              <TableCell>{item.condition || "-"}</TableCell>
                               <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                                   <Button
                                     variant="ghost"
                                     size="sm"

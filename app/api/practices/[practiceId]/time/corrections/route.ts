@@ -17,7 +17,7 @@ export async function GET(
     const status = searchParams.get("status")
 
     let query = supabase
-      .from("time_corrections")
+      .from("time_correction_requests")
       .select("*, time_blocks:block_id(*)")
       .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
@@ -74,7 +74,7 @@ export async function POST(
     }
 
     const { data, error } = await supabase
-      .from("time_corrections")
+      .from("time_correction_requests")
       .insert({
         practice_id: practiceId,
         user_id,

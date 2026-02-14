@@ -444,7 +444,7 @@ export function OrgChartCanvas({ positions, onEdit, onDelete, onCreate, isAdmin,
                     <div className="flex items-start gap-3">
                       {/* Avatar */}
                       <Avatar className="h-14 w-14 border-2 border-white shadow-md">
-                        <AvatarImage src={position.user_avatar || "/placeholder.svg"} />
+                        <AvatarImage src={position.user_avatar || ""} />
                         <AvatarFallback
                           className={cn("bg-gradient-to-br text-white font-semibold", roleColors.gradient)}
                         >

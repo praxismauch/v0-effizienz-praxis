@@ -9,7 +9,24 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Mail, Briefcase, Building2, Calendar, Edit, FileText, ClipboardList, Briefcase as BriefcaseIcon, Clock, Folder, Laptop, Smartphone, Syringe } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import {
+  ArrowLeft,
+  Mail,
+  Briefcase,
+  Building2,
+  Calendar,
+  Edit,
+  FileText,
+  ClipboardList,
+  Clock,
+  Laptop,
+  Syringe,
+  Star,
+  Wrench,
+  Phone,
+  MapPin,
+} from "lucide-react"
 import Link from "next/link"
 import { ContractsManager } from "@/components/team/contracts-manager"
 import { TeamMemberDocumentsTab } from "@/components/team/team-member-documents-tab"
@@ -19,168 +36,188 @@ import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiter
 import { ArbeitsmittelAssignments } from "@/components/team/arbeitsmittel-assignments"
 import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
+import { getRoleLabel } from "@/lib/roles"
 
 export default async function TeamMemberDetailPage(props: { params: Promise<{ id: string }> }) {
-  // Await params in Next.js 16
   const params = await props.params
   const memberId = params.id
-  
-  // Fetch user and practice data server-side
+
   const [user, practiceId] = await Promise.all([
     getCurrentUser(),
     getCurrentPracticeId(),
   ])
-  
-  // Redirect if not authenticated
-  if (!user) {
-    redirect("/auth/login")
-  }
-  
-  if (!practiceId) {
-    redirect("/dashboard")
-  }
-  
-  // Fetch team member data server-side
+
+  if (!user) redirect("/auth/login")
+  if (!practiceId) redirect("/dashboard")
+
   const teamMember = await getTeamMemberById(memberId, practiceId)
-  
-  // If team member not found, show 404
-  if (!teamMember) {
-    notFound()
-  }
-  
-  // Get initials for avatar
-  const getInitials = (name: string) => {
-    return name
+  if (!teamMember) notFound()
+
+  const getInitials = (name: string) =>
+    name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2)
-  }
 
-  // Build display name from first_name and last_name
   const fullName = [teamMember.first_name, teamMember.last_name].filter(Boolean).join(" ")
   const displayName = fullName || teamMember.email || "Teammitglied"
   const initials = displayName ? getInitials(displayName) : "TM"
+  const isActive = teamMember.status === "active"
+  const memberSince = teamMember.created_at
+    ? new Date(teamMember.created_at).toLocaleDateString("de-DE", { month: "long", year: "numeric" })
+    : null
 
   return (
     <AppLayout>
       <div className="container py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/team">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Zurück zum Team
-              </Button>
-            </Link>
-            <h1 className="text-3xl font-bold">Teammitglied Details</h1>
-          </div>
-          <Link href={`/team/${memberId}/edit`}>
-            <Button>
-              <Edit className="h-4 w-4 mr-2" />
-              Bearbeiten
+        {/* Navigation */}
+        <div className="flex items-center gap-3">
+          <Link href="/team">
+            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" />
+              Team
             </Button>
           </Link>
+          <span className="text-muted-foreground">/</span>
+          <span className="text-sm font-medium text-foreground">{displayName}</span>
         </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={teamMember.avatar_url} alt={displayName} />
-              <AvatarFallback className="text-xl">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <CardTitle className="text-2xl">{displayName}</CardTitle>
-              {teamMember.role && (
-                <Badge variant="secondary" className="mt-2">
-                  {teamMember.role}
-                </Badge>
+        {/* Profile Hero */}
+        <Card className="overflow-hidden">
+          <div className="h-24 bg-gradient-to-r from-[#4F7CBA] to-[#3A5F8A]" />
+          <CardContent className="relative px-6 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12">
+              {/* Avatar */}
+              <div className="relative">
+                <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                  <AvatarImage src={teamMember.avatar_url} alt={displayName} />
+                  <AvatarFallback className="text-2xl font-semibold bg-[#4F7CBA] text-white">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div
+                  className={`absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-background ${
+                    isActive ? "bg-green-500" : "bg-gray-400"
+                  }`}
+                />
+              </div>
+
+              {/* Name & Role */}
+              <div className="flex-1 sm:pb-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
+                  <Badge
+                    variant="outline"
+                    className={
+                      isActive
+                        ? "border-green-200 bg-green-50 text-green-700 w-fit"
+                        : "border-gray-200 bg-gray-50 text-gray-600 w-fit"
+                    }
+                  >
+                    {isActive ? "Aktiv" : "Inaktiv"}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground mt-0.5">
+                  {teamMember.position || getRoleLabel(teamMember.role)}
+                  {teamMember.department && ` · ${teamMember.department}`}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 sm:pb-1">
+                <Link href={`/team/${memberId}/edit`}>
+                  <Button size="sm" className="gap-2">
+                    <Edit className="h-4 w-4" />
+                    Bearbeiten
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Quick Info Bar */}
+            <Separator className="my-5" />
+            <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
+              {teamMember.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 flex-shrink-0" />
+                  <a href={`mailto:${teamMember.email}`} className="hover:text-foreground transition-colors">
+                    {teamMember.email}
+                  </a>
+                </div>
+              )}
+              {teamMember.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 flex-shrink-0" />
+                  <span>{teamMember.phone}</span>
+                </div>
+              )}
+              {teamMember.department && (
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 flex-shrink-0" />
+                  <span>{teamMember.department}</span>
+                </div>
+              )}
+              {memberSince && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 flex-shrink-0" />
+                  <span>Dabei seit {memberSince}</span>
+                </div>
               )}
             </div>
-          </CardHeader>
+
+            {/* Bio */}
+            {teamMember.bio && (
+              <>
+                <Separator className="my-5" />
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
+                  {teamMember.bio}
+                </p>
+              </>
+            )}
+          </CardContent>
         </Card>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9">
-            <TabsTrigger value="overview">Übersicht</TabsTrigger>
-            <TabsTrigger value="contracts">Verträge</TabsTrigger>
-            <TabsTrigger value="responsibilities">Zuständigkeiten</TabsTrigger>
-            <TabsTrigger value="competencies">Kompetenzen</TabsTrigger>
-            <TabsTrigger value="time">Zeiterfassung</TabsTrigger>
-            <TabsTrigger value="documents">Dokumente</TabsTrigger>
-            <TabsTrigger value="equipment">Arbeitsmittel</TabsTrigger>
-            <TabsTrigger value="devices">Geräte</TabsTrigger>
-            <TabsTrigger value="vaccination">Impfstatus</TabsTrigger>
+        {/* Tabs */}
+        <Tabs defaultValue="contracts" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+            <TabsTrigger value="contracts" className="gap-1.5 text-xs sm:text-sm">
+              <FileText className="h-3.5 w-3.5" />
+              <span>Verträge</span>
+            </TabsTrigger>
+            <TabsTrigger value="responsibilities" className="gap-1.5 text-xs sm:text-sm">
+              <ClipboardList className="h-3.5 w-3.5" />
+              <span>Zuständigkeiten</span>
+            </TabsTrigger>
+            <TabsTrigger value="competencies" className="gap-1.5 text-xs sm:text-sm">
+              <Star className="h-3.5 w-3.5" />
+              <span>Kompetenzen</span>
+            </TabsTrigger>
+            <TabsTrigger value="time" className="gap-1.5 text-xs sm:text-sm">
+              <Clock className="h-3.5 w-3.5" />
+              <span>Zeiterfassung</span>
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-1.5 text-xs sm:text-sm">
+              <Briefcase className="h-3.5 w-3.5" />
+              <span>Dokumente</span>
+            </TabsTrigger>
+            <TabsTrigger value="equipment" className="gap-1.5 text-xs sm:text-sm">
+              <Wrench className="h-3.5 w-3.5" />
+              <span>Arbeitsmittel</span>
+            </TabsTrigger>
+            <TabsTrigger value="devices" className="gap-1.5 text-xs sm:text-sm">
+              <Laptop className="h-3.5 w-3.5" />
+              <span>Geräte</span>
+            </TabsTrigger>
+            <TabsTrigger value="vaccination" className="gap-1.5 text-xs sm:text-sm">
+              <Syringe className="h-3.5 w-3.5" />
+              <span>Impfstatus</span>
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Persönliche Informationen</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      <span className="text-sm font-medium">E-Mail-Adresse</span>
-                    </div>
-                    <p className="text-base">{teamMember.email || "—"}</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Briefcase className="h-4 w-4" />
-                      <span className="text-sm font-medium">Rolle</span>
-                    </div>
-                    <p className="text-base">{teamMember.position || teamMember.role || "—"}</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Building2 className="h-4 w-4" />
-                      <span className="text-sm font-medium">Abteilung</span>
-                    </div>
-                    <p className="text-base">{teamMember.department || "—"}</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span className="text-sm font-medium">Mitglied seit</span>
-                    </div>
-                    <p className="text-base">
-                      {teamMember.created_at 
-                        ? new Date(teamMember.created_at).toLocaleDateString("de-DE")
-                        : "—"
-                      }
-                    </p>
-                  </div>
-                </div>
-
-                {teamMember.bio && (
-                  <div className="space-y-2 pt-4 border-t">
-                    <h3 className="text-sm font-medium text-muted-foreground">Über</h3>
-                    <p className="text-base">{teamMember.bio}</p>
-                  </div>
-                )}
-
-                <div className="space-y-2 pt-4 border-t">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <ClipboardList className="h-4 w-4" />
-                    <span className="text-sm font-medium">Teamzuweisungen</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Keine Teams zugewiesen
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="contracts" className="mt-6">
-            <ContractsManager 
+            <ContractsManager
               memberId={memberId}
               memberName={displayName}
               practiceId={practiceId}
@@ -188,7 +225,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="responsibilities" className="mt-6">
-            <TeamMemberResponsibilitiesTab 
+            <TeamMemberResponsibilitiesTab
               memberId={memberId}
               practiceId={practiceId}
               memberName={displayName}
@@ -196,7 +233,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="competencies" className="mt-6">
-            <TeamMemberSkillsTab 
+            <TeamMemberSkillsTab
               memberId={memberId}
               practiceId={practiceId}
               memberName={displayName}
@@ -206,7 +243,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="time" className="mt-6">
-            <TeamMemberZeiterfassungTab 
+            <TeamMemberZeiterfassungTab
               memberId={memberId}
               practiceId={practiceId}
               memberName={displayName}
@@ -214,7 +251,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="documents" className="mt-6">
-            <TeamMemberDocumentsTab 
+            <TeamMemberDocumentsTab
               teamMemberId={memberId}
               practiceId={practiceId}
               isAdmin={true}
@@ -224,14 +261,14 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="equipment" className="mt-6">
-            <ArbeitsmittelAssignments 
+            <ArbeitsmittelAssignments
               teamMemberId={memberId}
               practiceId={practiceId}
             />
           </TabsContent>
 
           <TabsContent value="devices" className="mt-6">
-            <TeamMemberDevicesTab 
+            <TeamMemberDevicesTab
               memberId={memberId}
               practiceId={practiceId}
               memberName={displayName}
@@ -239,7 +276,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           </TabsContent>
 
           <TabsContent value="vaccination" className="mt-6">
-            <TeamMemberVaccinationTab 
+            <TeamMemberVaccinationTab
               teamMemberId={memberId}
               practiceId={parseInt(practiceId, 10)}
             />

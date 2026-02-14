@@ -46,15 +46,6 @@ export default async function DienstplanPage({
     getAllTeamData(practiceId),
   ])
 
-  console.log("[v0] Dienstplan server data:", {
-    teamMembers: dienstplanData.teamMembers?.length || 0,
-    shiftTypes: dienstplanData.shiftTypes?.length || 0,
-    schedules: dienstplanData.schedules?.length || 0,
-    availability: dienstplanData.availability?.length || 0,
-    swapRequests: dienstplanData.swapRequests?.length || 0,
-    teams: teamData.teams?.length || 0,
-  })
-
   // Ensure all data is an array, never null
   const safeInitialData = {
     teamMembers: dienstplanData.teamMembers || [],
@@ -62,6 +53,8 @@ export default async function DienstplanPage({
     schedules: dienstplanData.schedules || [],
     availability: dienstplanData.availability || [],
     swapRequests: dienstplanData.swapRequests || [],
+    holidayRequests: teamData.holidayRequests || [],
+    sickLeaves: teamData.sickLeaves || [],
   }
 
   return (

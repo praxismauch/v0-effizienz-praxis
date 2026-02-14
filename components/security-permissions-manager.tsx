@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Shield, Key, Clock, Activity, UserCog } from "lucide-react"
+import { getRoleLabel } from "@/lib/roles"
 
 interface SecuritySettings {
   passwordPolicy: {
@@ -661,7 +662,7 @@ function SecurityPermissionsManager() {
                     <div className="font-medium">{user.userName}</div>
                     <div className="text-sm text-muted-foreground">{user.email}</div>
                     <div className="flex gap-2 mt-2">
-                      <Badge variant="outline">{user.role}</Badge>
+                      <Badge variant="outline">{getRoleLabel(user.role)}</Badge>
                       {user.mfaEnabled && (
                         <Badge variant="secondary">
                           <Key className="h-3 w-3 mr-1" />

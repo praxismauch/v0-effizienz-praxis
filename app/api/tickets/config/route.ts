@@ -5,15 +5,9 @@ import { delay, isRateLimitError } from "@/lib/supabase/safe-query"
 export const dynamic = "force-dynamic"
 export const revalidate = 3600 // Cache for 1 hour
 
-/**
- * GET /api/tickets/config
- * Returns all ticket configuration (statuses, priorities, types)
- * Used by ticket UI components to populate dropdowns and filters
- */
+// GET /api/tickets/config - Returns all ticket configuration
 export async function GET(request: Request) {
   try {
-    console.log("[v0] GET /api/tickets/config - Fetching ticket configuration")
-
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const configType = searchParams.get("type") // 'statuses', 'priorities', 'types', or null for all
@@ -46,7 +40,6 @@ export async function GET(request: Request) {
       isRateLimitError(prioritiesResult.error) ||
       isRateLimitError(typesResult.error)
     ) {
-      console.warn("[v0] Rate limited fetching ticket config, returning empty fallback")
       return NextResponse.json(
         {
           statuses: [],
@@ -68,7 +61,6 @@ export async function GET(request: Request) {
 
     // Check for errors
     if (statusesResult.error) {
-      console.error("[v0] Error fetching ticket statuses:", statusesResult.error)
       return NextResponse.json(
         { error: "Failed to fetch ticket statuses", details: statusesResult.error.message },
         { status: 500 },
@@ -76,7 +68,6 @@ export async function GET(request: Request) {
     }
 
     if (prioritiesResult.error) {
-      console.error("[v0] Error fetching ticket priorities:", prioritiesResult.error)
       return NextResponse.json(
         { error: "Failed to fetch ticket priorities", details: prioritiesResult.error.message },
         { status: 500 },
@@ -84,7 +75,6 @@ export async function GET(request: Request) {
     }
 
     if (typesResult.error) {
-      console.error("[v0] Error fetching ticket types:", typesResult.error)
       return NextResponse.json(
         { error: "Failed to fetch ticket types", details: typesResult.error.message },
         { status: 500 },
@@ -94,12 +84,6 @@ export async function GET(request: Request) {
     const statuses = statusesResult.data || []
     const priorities = prioritiesResult.data || []
     const types = typesResult.data || []
-
-    console.log("[v0] Ticket config fetched:", {
-      statusesCount: statuses.length,
-      prioritiesCount: priorities.length,
-      typesCount: types.length,
-    })
 
     // Return specific type or all configurations
     if (configType === "statuses") {
@@ -127,7 +111,6 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error("[v0] Error in tickets config GET:", error)
     return NextResponse.json(
       {
         error: "Failed to fetch ticket configuration",

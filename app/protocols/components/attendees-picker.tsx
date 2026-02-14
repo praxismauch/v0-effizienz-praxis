@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Users } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getRoleLabel } from "@/lib/roles"
 
 interface TeamMember {
   id: string
@@ -90,7 +91,7 @@ export function AttendeesPickerInline({ teamMembers, selectedIds, onChange }: At
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <span className="truncate block">{member.name}</span>
-                  {member.role && <span className="text-xs text-muted-foreground truncate block">{member.role}</span>}
+                  {member.role && <span className="text-xs text-muted-foreground truncate block">{getRoleLabel(member.role)}</span>}
                 </div>
               </button>
             )

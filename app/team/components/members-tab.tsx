@@ -8,6 +8,7 @@ import { Users, Calendar, Building2, Tag } from "lucide-react"
 import type { TeamMember } from "../types"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
+import { getRoleLabel } from "@/lib/roles"
 
 interface MembersTabProps {
   teamMembers: TeamMember[]
@@ -89,7 +90,7 @@ export default function MembersTab({ teamMembers, teams = [], onAddMember, onEdi
           >
             <CardHeader className="pb-3">
               <div className="flex items-start gap-4">
-                <Avatar className="h-12 w-12">
+                <Avatar className="h-12 w-12 flex-shrink-0">
                   {member.avatar_url && (
                     <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} />
                   )}
@@ -98,18 +99,18 @@ export default function MembersTab({ teamMembers, teams = [], onAddMember, onEdi
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center justify-between gap-2">
                     <CardTitle className="text-base truncate">
                       {member.first_name} {member.last_name}
                     </CardTitle>
                     <Badge 
                       variant="outline" 
-                      className={`text-xs ${getStatusColor(member.status)}`}
+                      className={`text-xs flex-shrink-0 ${getStatusColor(member.status)}`}
                     >
                       {getStatusLabel(member.status)}
                     </Badge>
                   </div>
-                  <CardDescription className="truncate">{member.position || member.role}</CardDescription>
+                  <CardDescription className="truncate mt-0.5">{member.position || getRoleLabel(member.role)}</CardDescription>
                 </div>
               </div>
             </CardHeader>

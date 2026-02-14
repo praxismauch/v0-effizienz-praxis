@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Search, ChevronRight, Loader2, User } from "lucide-react"
 import { AppLayout } from "@/components/app-layout"
 import type { TeamMember } from "../types"
+import { getRoleLabel } from "@/lib/roles"
 
 interface MemberSelectionProps {
   teamMembers: TeamMember[]
@@ -102,7 +103,7 @@ export function MemberSelection({
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-base truncate">{member.name}</h4>
-                      <p className="text-sm text-muted-foreground truncate">{member.role}</p>
+                      <p className="text-sm text-muted-foreground truncate">{getRoleLabel(member.role)}</p>
                       {member.department && (
                         <Badge variant="secondary" className="mt-1 text-xs">
                           {member.department}

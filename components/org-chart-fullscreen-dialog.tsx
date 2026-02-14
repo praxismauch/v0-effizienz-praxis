@@ -21,6 +21,8 @@ interface TeamMember {
   last_name: string
   position?: string
   email?: string
+  avatar?: string | null
+  avatar_url?: string | null
 }
 
 interface OrgChartFullscreenDialogProps {

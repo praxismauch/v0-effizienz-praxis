@@ -17,15 +17,16 @@ interface CreateContactDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  defaultCategory?: string
 }
 
-export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateContactDialogProps) {
+export function CreateContactDialog({ open, onOpenChange, onSuccess, defaultCategory }: CreateContactDialogProps) {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   const { currentUser, loading: authLoading } = useUser()
   const { currentPractice } = usePractice()
 
-  const [formData, setFormData] = useState({
+  const defaultFormData = {
     salutation: "",
     title: "",
     first_name: "",
@@ -42,12 +43,14 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateCon
     postal_code: "",
     city: "",
     country: "Deutschland",
-    category: "",
+    category: defaultCategory || "",
     notes: "",
     contact_person: "",
     direct_phone: "",
     availability: "",
-  })
+  }
+
+  const [formData, setFormData] = useState(defaultFormData)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -103,29 +106,7 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateCon
       })
       onSuccess()
       onOpenChange(false)
-      setFormData({
-        salutation: "",
-        title: "",
-        first_name: "",
-        last_name: "",
-        company: "",
-        position: "",
-        email: "",
-        phone: "",
-        mobile: "",
-        fax: "",
-        website: "",
-        street: "",
-        house_number: "",
-        postal_code: "",
-        city: "",
-        country: "Deutschland",
-        category: "",
-        notes: "",
-        contact_person: "",
-        direct_phone: "",
-        availability: "",
-      })
+      setFormData(defaultFormData)
     } catch (error: any) {
       console.error("[v0] Contact creation error:", error)
       toast({
@@ -146,30 +127,7 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess }: CreateCon
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen && !loading) {
-      // Reset form when dialog closes
-      setFormData({
-        salutation: "",
-        title: "",
-        first_name: "",
-        last_name: "",
-        company: "",
-        position: "",
-        email: "",
-        phone: "",
-        mobile: "",
-        fax: "",
-        website: "",
-        street: "",
-        house_number: "",
-        postal_code: "",
-        city: "",
-        country: "Deutschland",
-        category: "",
-        notes: "",
-        contact_person: "",
-        direct_phone: "",
-        availability: "",
-      })
+      setFormData(defaultFormData)
     }
     onOpenChange(isOpen)
   }

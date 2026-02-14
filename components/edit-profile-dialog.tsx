@@ -24,6 +24,7 @@ import { useUser, type User } from "@/contexts/user-context"
 import { Shield, UserIcon, Settings, Camera, Star } from "lucide-react"
 import { useRoleColors } from "@/lib/use-role-colors"
 import { FavoritesManager } from "@/components/favorites-manager"
+import { getRoleLabel } from "@/lib/roles"
 
 interface TeamMember extends User {
   permissions: string[]
@@ -291,7 +292,7 @@ function EditProfileDialog({ member, open, onOpenChange }: EditProfileDialogProp
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Badge className={roleColors[member.role]}>{member.role}</Badge>
+                  <Badge className={roleColors[member.role]}>{getRoleLabel(member.role)}</Badge>
                   <span className="text-sm text-muted-foreground">
                     Mitglied seit {new Date(member.joinedAt).toLocaleDateString()}
                   </span>

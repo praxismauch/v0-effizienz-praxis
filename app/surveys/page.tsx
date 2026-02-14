@@ -145,9 +145,10 @@ export default function SurveysPage() {
         toast({ title: "Umfrage erstellt", description: "Die Umfrage wurde erfolgreich erstellt." })
         setShowCreateDialog(false)
         setNewSurvey(DEFAULT_NEW_SURVEY)
-        fetchSurveys()
+        await fetchSurveys()
       } else {
-        throw new Error(`Failed to create survey: ${response.status}`)
+        const responseData = await response.json()
+        throw new Error(`Failed to create survey: ${response.status} - ${responseData?.error || "Unknown error"}`)
       }
     } catch (error) {
       Logger.error("api", "Error creating survey", error)

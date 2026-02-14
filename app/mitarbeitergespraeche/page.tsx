@@ -54,6 +54,7 @@ import { format, parseISO, isAfter, isBefore, addMonths } from "date-fns"
 import { de } from "date-fns/locale"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
+import { getRoleLabel } from "@/lib/roles"
 
 interface Appraisal {
   id: string
@@ -458,7 +459,7 @@ export default function MitarbeitergespraechePage() {
                                 </Badge>
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                {appraisal.employee?.role} •{" "}
+                                {getRoleLabel(appraisal.employee?.role)} •{" "}
                                 {format(parseISO(appraisal.appraisal_date), "dd.MM.yyyy", { locale: de })}
                               </p>
                             </div>
@@ -545,7 +546,7 @@ export default function MitarbeitergespraechePage() {
                           </Avatar>
                           <div className="flex-1">
                             <h3 className="font-semibold">{member.name}</h3>
-                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                            <p className="text-sm text-muted-foreground">{getRoleLabel(member.role)}</p>
                           </div>
                         </div>
                         <div className="mt-4 flex items-center justify-between text-sm">

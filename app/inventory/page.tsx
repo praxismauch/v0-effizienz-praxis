@@ -258,13 +258,7 @@ export default function InventoryPage() {
         </TabsContent>
 
         <TabsContent value="suppliers" className="mt-6">
-          <SuppliersTab
-            suppliers={suppliers}
-            onCreateSupplier={() => {
-              // TODO: Implement add supplier dialog
-              console.log("Add supplier")
-            }}
-          />
+          <SuppliersTab />
         </TabsContent>
 
         <TabsContent value="bills" className="mt-6">

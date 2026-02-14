@@ -396,8 +396,10 @@ export function CreateGoalDialog({
 
     setIsUploading(true)
     try {
+      const { compressImageIfLarge } = await import("@/lib/image-compression")
+      const compressedFile = await compressImageIfLarge(file)
       const formDataUpload = new FormData()
-      formDataUpload.append("file", file)
+      formDataUpload.append("file", compressedFile)
 
       const response = await fetch(`/api/upload`, {
         method: "POST",

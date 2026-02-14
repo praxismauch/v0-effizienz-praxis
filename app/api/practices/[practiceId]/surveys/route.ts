@@ -135,14 +135,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         survey_id: survey.id,
         question_text: q.question_text,
         question_type: q.question_type,
-        is_required: q.is_required ?? true,
+        required: q.is_required ?? q.required ?? true,
         display_order: index,
         options: q.options || [],
-        min_value: q.min_value,
-        max_value: q.max_value,
-        scale_labels: q.scale_labels,
-        placeholder: q.placeholder,
-        help_text: q.help_text,
+        min_value: q.min_value ?? null,
+        max_value: q.max_value ?? null,
+        placeholder: q.placeholder ?? null,
       }))
 
       const { error: questionsError } = await supabase.from("survey_questions").insert(questionsToInsert)

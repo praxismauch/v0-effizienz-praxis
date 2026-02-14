@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useTranslation } from "@/contexts/translation-context"
+import { ColorPicker } from "@/components/color-picker"
 import type { FolderFormData } from "./types"
 
 interface FolderDialogProps {
@@ -68,31 +69,12 @@ export function FolderDialog({
             />
           </div>
 
-          <div>
-            <Label htmlFor="folder-color">{t("documents.color", "Farbe")}</Label>
-            <div className="flex items-center gap-3 mt-2">
-              <input
-                type="color"
-                id="folder-color"
-                value={formData.color}
-                onChange={(e) => onFormDataChange({ ...formData, color: e.target.value })}
-                className="h-10 w-20 cursor-pointer rounded border"
-              />
-              <div className="flex gap-2">
-                {["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#6b7280"].map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`h-8 w-8 rounded-full border-2 transition-all ${
-                      formData.color === color ? "border-foreground scale-110" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => onFormDataChange({ ...formData, color })}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+          <ColorPicker
+            id="folder-color"
+            label={t("documents.color", "Farbe")}
+            value={formData.color}
+            onChange={(color) => onFormDataChange({ ...formData, color })}
+          />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

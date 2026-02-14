@@ -19,6 +19,8 @@ interface TeamMember {
   last_name: string
   position?: string
   email?: string
+  avatar?: string | null
+  avatar_url?: string | null
 }
 
 interface OrgChartCanvasProps {
@@ -40,12 +42,13 @@ export function OrgChartCanvas({
   isAdmin,
   practiceId = "",
 }: OrgChartCanvasProps) {
-  // Adapt positions to include user_name from teamMembers
+  // Adapt positions to include user_name and user_avatar from teamMembers
   const adaptedPositions = positions.map((pos) => {
     const member = teamMembers.find((m) => m.id === pos.user_id)
     return {
       ...pos,
       user_name: member ? `${member.first_name} ${member.last_name}` : undefined,
+      user_avatar: member ? (member.avatar_url || member.avatar) : undefined,
     }
   })
 

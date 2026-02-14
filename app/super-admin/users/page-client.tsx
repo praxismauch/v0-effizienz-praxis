@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
 import { Search, Users, UserCheck, UserX } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { getRoleLabel } from "@/lib/roles"
 
 interface User {
   id: string
@@ -146,7 +147,7 @@ export default function SuperAdminUsers() {
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell className="truncate max-w-[180px]">{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant={roleColors[user.role] as any}>{user.role}</Badge>
+                        <Badge variant={roleColors[user.role] as any}>{getRoleLabel(user.role)}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={user.is_active ? "default" : "secondary"}>

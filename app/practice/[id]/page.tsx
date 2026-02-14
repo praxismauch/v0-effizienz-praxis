@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
+import { getRoleLabel } from "@/lib/roles"
 import {
   ArrowLeft,
   Building2,
@@ -495,7 +496,7 @@ export default function PracticeDetailsPage({ params }: { params: { id: string }
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{member.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{member.position || member.role}</p>
+                      <p className="text-xs text-muted-foreground truncate">{member.position || getRoleLabel(member.role)}</p>
                     </div>
                     {member.role === "admin" && <Shield className="h-4 w-4 text-primary flex-shrink-0" />}
                   </div>

@@ -185,8 +185,6 @@ export const TARGET_AUDIENCE_OPTIONS = [
   { value: "external", label: "Externe Benutzer" },
 ]
 
-export const HARDCODED_PRACTICE_ID = "1"
-
 export function getDifficultyBadge(level: string) {
   return DIFFICULTY_LEVELS.find((d) => d.value === level) || { value: level, label: level, color: "bg-gray-500" }
 }

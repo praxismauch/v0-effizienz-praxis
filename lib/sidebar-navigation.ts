@@ -51,8 +51,6 @@ export interface NavigationGroup {
   items: NavigationItem[]
 }
 
-export const HARDCODED_PRACTICE_ID = "1"
-
 export const DEFAULT_EXPANDED_GROUPS = [
   "overview",
   "planning",

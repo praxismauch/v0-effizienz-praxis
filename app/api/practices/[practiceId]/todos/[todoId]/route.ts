@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-const HARDCODED_PRACTICE_ID = "1"
-
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string; todoId: string }> },
@@ -12,8 +10,6 @@ export async function PUT(
     const todoIdText = String(todoId)
     const body = await request.json()
     const supabase = await createAdminClient()
-
-    const effectivePracticeId = practiceId || HARDCODED_PRACTICE_ID
 
     const { id, created_at, practice_id, ...updateFields } = body
 
@@ -60,9 +56,13 @@ export async function DELETE(
     const todoIdText = String(todoId)
     const supabase = await createAdminClient()
 
-    const effectivePracticeId = practiceId || HARDCODED_PRACTICE_ID
 
-    const { error } = await supabase.from("todos").update({ deleted_at: new Date().toISOString() }).eq("id", todoIdText)
+
+    const { error } = await supabase
+      .from("todos")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", todoIdText)
+      .eq("practice_id", practiceId)
 
     if (error) {
       console.error("[v0] Error deleting todo:", error)

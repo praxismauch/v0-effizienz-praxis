@@ -155,9 +155,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }
   }, [currentPractice?.createdAt])
 
-  const HARDCODED_PRACTICE_ID = "1"
-
-  const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+  const practiceId = currentPractice?.id || "1"
 
   const loadProgressFromDb = useCallback(async () => {
     if (!currentUser?.id || hasLoadedFromDb.current) return

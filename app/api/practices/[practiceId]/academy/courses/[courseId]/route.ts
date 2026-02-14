@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-
-const HARDCODED_PRACTICE_ID = "1"
+import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(
   request: NextRequest,
@@ -9,10 +8,11 @@ export async function GET(
 ) {
   try {
     const { practiceId, courseId } = await params
-    const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? HARDCODED_PRACTICE_ID
-        : practiceId
+    const effectivePracticeId = await getValidatedPracticeId(practiceId)
+
+    if (!effectivePracticeId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
 
     const supabase = await createAdminClient()
 
@@ -42,10 +42,11 @@ export async function PUT(
 ) {
   try {
     const { practiceId, courseId } = await params
-    const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? HARDCODED_PRACTICE_ID
-        : practiceId
+    const effectivePracticeId = await getValidatedPracticeId(practiceId)
+
+    if (!effectivePracticeId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
 
     const body = await request.json()
     const supabase = await createAdminClient()
@@ -90,10 +91,11 @@ export async function DELETE(
 ) {
   try {
     const { practiceId, courseId } = await params
-    const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? HARDCODED_PRACTICE_ID
-        : practiceId
+    const effectivePracticeId = await getValidatedPracticeId(practiceId)
+
+    if (!effectivePracticeId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
 
     const supabase = await createAdminClient()
 

@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-const HARDCODED_PRACTICE_ID = "1"
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string; workflowId: string }> },
@@ -10,8 +8,7 @@ export async function PATCH(
   const supabase = await createAdminClient()
 
   try {
-    const { practiceId: rawPracticeId, workflowId } = await params
-    const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
+    const { practiceId, workflowId } = await params
 
     const body = await request.json()
 
@@ -56,8 +53,7 @@ export async function DELETE(
   const supabase = await createAdminClient()
 
   try {
-    const { practiceId: rawPracticeId, workflowId } = await params
-    const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
+    const { practiceId, workflowId } = await params
 
     // Soft delete the workflow
     const { error } = await supabase

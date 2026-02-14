@@ -6,12 +6,9 @@ import Logger from "@/lib/logger"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-const HARDCODED_PRACTICE_ID = "1"
-
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
+    const { practiceId } = await params
 
     if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
       return NextResponse.json({ workflows: [] }, { status: 200 })
@@ -80,8 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
+    const { practiceId } = await params
 
     if (!practiceId || practiceId === "0") {
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })
@@ -161,8 +157,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
-    const { practiceId: rawPracticeId } = await params
-    const practiceId = rawPracticeId || HARDCODED_PRACTICE_ID
+    const { practiceId } = await params
 
     if (!practiceId || practiceId === "0") {
       return NextResponse.json({ error: "Ungültige Praxis-ID" }, { status: 400 })

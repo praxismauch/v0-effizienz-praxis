@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
 
-// GET /api/role-permissions - Fetch all role permissions
+// GET /api/role-permissions
 export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = await createAdminClient()

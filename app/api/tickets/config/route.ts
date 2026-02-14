@@ -5,11 +5,7 @@ import { delay, isRateLimitError } from "@/lib/supabase/safe-query"
 export const dynamic = "force-dynamic"
 export const revalidate = 3600 // Cache for 1 hour
 
-/**
- * GET /api/tickets/config
- * Returns all ticket configuration (statuses, priorities, types)
- * Used by ticket UI components to populate dropdowns and filters
- */
+// GET /api/tickets/config - Returns all ticket configuration
 export async function GET(request: Request) {
   try {
     const supabase = await createClient()

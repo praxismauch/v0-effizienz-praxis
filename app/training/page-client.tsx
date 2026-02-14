@@ -245,7 +245,7 @@ export default function TrainingPageClient() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <div className="space-y-3 mb-4">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
             <TabsTrigger value="courses">
               <BookOpen className="h-4 w-4 mr-2" />
@@ -266,13 +266,13 @@ export default function TrainingPageClient() {
           </TabsList>
 
           <div className="flex items-center gap-2">
-            <div className="relative">
+            <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Suchen..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-64"
+                className="pl-9"
               />
             </div>
             {(activeTab === "courses" || activeTab === "certifications") && (

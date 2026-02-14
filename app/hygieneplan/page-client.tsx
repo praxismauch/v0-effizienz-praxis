@@ -108,6 +108,13 @@ const CATEGORY_CONFIG = {
   },
 }
 
+const HEADER_STAT_KEYS: (keyof typeof CATEGORY_CONFIG)[] = [
+  "infection_control",
+  "sterilization",
+  "cleaning",
+  "quality_management",
+]
+
 const STATUS_CONFIG = {
   active: { label: "Aktiv", variant: "default" as const, color: "#10b981" },
   draft: { label: "Entwurf", variant: "secondary" as const, color: "#6b7280" },
@@ -163,7 +170,6 @@ export default function HygienePlanClient() {
           userId: currentUser?.id,
         }),
       })
-
       if (response.ok) {
         const data = await response.json()
         toast.success("KI-Hygieneplan erfolgreich erstellt")
@@ -220,175 +226,175 @@ export default function HygienePlanClient() {
           </div>
         </div>
 
-      {/* Stats Grid - 4 key categories */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {(["infection_control", "sterilization", "cleaning", "quality_management"] as const).map((key) => {
-          const config = CATEGORY_CONFIG[key]
-          return (
-            <StatCard
-              key={key}
-              label={config.label}
-              value={categoryStats[key] || 0}
-              icon={config.icon}
-              {...config.statColor}
-              description={`${categoryStats[key] || 0} Pläne`}
-            />
-          )
-        })}
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Hygieneplan suchen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-full md:w-[220px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Kategorie" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle Kategorien</SelectItem>
-                {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
-                  <SelectItem key={key} value={key}>
-                    {config.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle Status</SelectItem>
-                {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                  <SelectItem key={key} value={key}>
-                    {config.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Plans List */}
-      {filteredPlans.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12">
-            <div className="text-center space-y-4">
-              <Shield className="h-16 w-16 mx-auto text-muted-foreground/20" />
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Keine Hygienepläne gefunden</h3>
-                <p className="text-muted-foreground mb-4">
-                  {searchTerm || filterCategory !== "all" || filterStatus !== "all"
-                    ? "Passen Sie Ihre Filter an oder erstellen Sie einen neuen Plan."
-                    : "Erstellen Sie Ihren ersten Hygieneplan oder generieren Sie einen mit KI."}
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Plan erstellen
-                  </Button>
-                  <Button onClick={() => setIsGenerateDialogOpen(true)} className="bg-gradient-to-r from-violet-600 to-indigo-600">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Mit KI generieren
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {filteredPlans.map((plan) => {
-            const categoryConfig = CATEGORY_CONFIG[plan.category as keyof typeof CATEGORY_CONFIG]
-            const statusConfig = STATUS_CONFIG[plan.status as keyof typeof STATUS_CONFIG]
-            const Icon = categoryConfig?.icon || FileText
-
+        {/* Stats Grid - 4 most important categories */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {HEADER_STAT_KEYS.map((key) => {
+            const config = CATEGORY_CONFIG[key]
             return (
-              <Card
-                key={plan.id}
-                className="group hover:shadow-lg transition-all duration-200 cursor-pointer"
-                style={{ borderLeftWidth: "6px", borderLeftColor: categoryConfig?.color || "#6b7280" }}
-                onClick={() => setSelectedPlan(plan)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1 min-w-0">
-                      <div
-                        className="p-3 rounded-xl shrink-0"
-                        style={{ backgroundColor: categoryConfig?.bgColor || "#f3f4f6" }}
-                      >
-                        <Icon className="h-6 w-6" style={{ color: categoryConfig?.color || "#6b7280" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-lg">{plan.title}</h3>
-                          {plan.is_rki_template && (
-                            <Badge variant="secondary" className="shrink-0">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              RKI
-                            </Badge>
-                          )}
-                          <Badge variant={statusConfig.variant} className="shrink-0">
-                            {statusConfig.label}
-                          </Badge>
-                        </div>
-                        {plan.description && (
-                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{plan.description}</p>
-                        )}
-                        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                          {plan.frequency && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              <span className="capitalize">{plan.frequency}</span>
-                            </div>
-                          )}
-                          {plan.responsible_role && (
-                            <div className="flex items-center gap-1">
-                              <Target className="h-4 w-4" />
-                              <span>{plan.responsible_role}</span>
-                            </div>
-                          )}
-                          {plan.content?.steps && (
-                            <div className="flex items-center gap-1">
-                              <FileText className="h-4 w-4" />
-                              <span>{plan.content.steps.length} Schritte</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); setSelectedPlan(plan)}}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <StatCard
+                key={key}
+                label={config.label}
+                value={categoryStats[key] || 0}
+                icon={config.icon}
+                {...config.statColor}
+                description={`${categoryStats[key] || 0} Pläne`}
+              />
             )
           })}
         </div>
-      )}
 
-      {/* Generate AI Plan Dialog */}
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Hygieneplan suchen..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-full md:w-[220px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Kategorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Kategorien</SelectItem>
+                  {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      {config.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Status</SelectItem>
+                  {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      {config.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Plans List */}
+        {filteredPlans.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="py-12">
+              <div className="text-center space-y-4">
+                <Shield className="h-16 w-16 mx-auto text-muted-foreground/20" />
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Keine Hygienepläne gefunden</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm || filterCategory !== "all" || filterStatus !== "all"
+                      ? "Passen Sie Ihre Filter an oder erstellen Sie einen neuen Plan."
+                      : "Erstellen Sie Ihren ersten Hygieneplan oder generieren Sie einen mit KI."}
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Plan erstellen
+                    </Button>
+                    <Button onClick={() => setIsGenerateDialogOpen(true)} className="bg-gradient-to-r from-violet-600 to-indigo-600">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Mit KI generieren
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {filteredPlans.map((plan) => {
+              const categoryConfig = CATEGORY_CONFIG[plan.category as keyof typeof CATEGORY_CONFIG]
+              const statusConfig = STATUS_CONFIG[plan.status as keyof typeof STATUS_CONFIG]
+              const Icon = categoryConfig?.icon || FileText
+
+              return (
+                <Card
+                  key={plan.id}
+                  className="group hover:shadow-lg transition-all duration-200 cursor-pointer"
+                  style={{ borderLeftWidth: "6px", borderLeftColor: categoryConfig?.color || "#6b7280" }}
+                  onClick={() => setSelectedPlan(plan)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <div
+                          className="p-3 rounded-xl shrink-0"
+                          style={{ backgroundColor: categoryConfig?.bgColor || "#f3f4f6" }}
+                        >
+                          <Icon className="h-6 w-6" style={{ color: categoryConfig?.color || "#6b7280" }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-lg">{plan.title}</h3>
+                            {plan.is_rki_template && (
+                              <Badge variant="secondary" className="shrink-0">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                RKI
+                              </Badge>
+                            )}
+                            <Badge variant={statusConfig.variant} className="shrink-0">
+                              {statusConfig.label}
+                            </Badge>
+                          </div>
+                          {plan.description && (
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{plan.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                            {plan.frequency && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" />
+                                <span className="capitalize">{plan.frequency}</span>
+                              </div>
+                            )}
+                            {plan.responsible_role && (
+                              <div className="flex items-center gap-1">
+                                <Target className="h-4 w-4" />
+                                <span>{plan.responsible_role}</span>
+                              </div>
+                            )}
+                            {plan.content?.steps && (
+                              <div className="flex items-center gap-1">
+                                <FileText className="h-4 w-4" />
+                                <span>{plan.content.steps.length} Schritte</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedPlan(plan) }}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Generate AI Plan Dialog */}
         <GenerateAIPlanDialog
           open={isGenerateDialogOpen}
           onOpenChange={setIsGenerateDialogOpen}

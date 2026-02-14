@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send } from "lucide-react"
+import { getRoleLabel } from "@/lib/roles"
 
 // Types
 interface Notification {
@@ -409,7 +410,7 @@ export default function CommunicationPage() {
                                   <AvatarFallback className="text-xs">{member.first_name?.[0]}</AvatarFallback>
                                 </Avatar>
                                 {member.first_name} {member.last_name}
-                                <span className="text-muted-foreground">({member.role})</span>
+                                <span className="text-muted-foreground">({getRoleLabel(member.role)})</span>
                               </div>
                             </SelectItem>
                           )

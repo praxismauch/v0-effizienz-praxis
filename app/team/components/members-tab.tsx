@@ -8,6 +8,7 @@ import { Users, Calendar, Building2, Tag } from "lucide-react"
 import type { TeamMember } from "../types"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
+import { getRoleLabel } from "@/lib/roles"
 
 interface MembersTabProps {
   teamMembers: TeamMember[]
@@ -109,7 +110,7 @@ export default function MembersTab({ teamMembers, teams = [], onAddMember, onEdi
                       {getStatusLabel(member.status)}
                     </Badge>
                   </div>
-                  <CardDescription className="truncate">{member.position || member.role}</CardDescription>
+                  <CardDescription className="truncate">{member.position || getRoleLabel(member.role)}</CardDescription>
                 </div>
               </div>
             </CardHeader>

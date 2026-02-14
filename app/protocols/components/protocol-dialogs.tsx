@@ -33,6 +33,7 @@ import { de } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import type { Protocol, TeamMember, ProtocolFormData, ProtocolItem } from "../types"
 import { PROTOCOL_CATEGORIES } from "../types"
+import { getRoleLabel } from "@/lib/roles"
 
 interface CreateProtocolDialogProps {
   open: boolean
@@ -499,7 +500,7 @@ function AttendeesPicker({ teamMembers, selectedIds, onChange }: AttendeesPicker
                 <div className="flex-1 min-w-0">
                   <span className="truncate block">{member.name}</span>
                   {member.role && (
-                    <span className="text-xs text-muted-foreground truncate block">{member.role}</span>
+                    <span className="text-xs text-muted-foreground truncate block">{getRoleLabel(member.role)}</span>
                   )}
                 </div>
               </button>

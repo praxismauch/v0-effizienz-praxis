@@ -33,6 +33,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { X, Users, User, Trash2 } from "lucide-react"
 import { RichTextEditor } from "./rich-text-editor"
+import { getRoleLabel } from "@/lib/roles"
 
 interface EditKnowledgeDialogProps {
   open: boolean
@@ -435,7 +436,7 @@ export function EditKnowledgeDialog({
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{member.name}</p>
-                                {member.role && <p className="text-xs text-muted-foreground truncate">{member.role}</p>}
+                                {member.role && <p className="text-xs text-muted-foreground truncate">{getRoleLabel(member.role)}</p>}
                               </div>
                             </div>
                           ))}

@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import type { CustomForm, Parameter } from "./types"
+import { getRoleLabel } from "@/lib/roles"
 
 interface FormDialogProps {
   open: boolean
@@ -134,7 +135,7 @@ export function FormDialog({
                   />
                   <Label htmlFor={`user-${member.id}`} className="text-sm">
                     <div className="font-medium">{member.name}</div>
-                    {member.role && <div className="text-xs text-muted-foreground">{member.role}</div>}
+                    {member.role && <div className="text-xs text-muted-foreground">{getRoleLabel(member.role)}</div>}
                   </Label>
                 </div>
               ))}

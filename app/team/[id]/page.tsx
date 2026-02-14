@@ -19,6 +19,7 @@ import { TeamMemberZeiterfassungTab } from "@/components/team/team-member-zeiter
 import { ArbeitsmittelAssignments } from "@/components/team/arbeitsmittel-assignments"
 import { TeamMemberDevicesTab } from "@/components/team/team-member-devices-tab"
 import { TeamMemberVaccinationTab } from "@/components/team/team-member-vaccination-tab"
+import { getRoleLabel } from "@/lib/roles"
 
 export default async function TeamMemberDetailPage(props: { params: Promise<{ id: string }> }) {
   // Await params in Next.js 16
@@ -94,7 +95,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
               <CardTitle className="text-2xl">{displayName}</CardTitle>
               {teamMember.role && (
                 <Badge variant="secondary" className="mt-2">
-                  {teamMember.role}
+                  {getRoleLabel(teamMember.role)}
                 </Badge>
               )}
             </div>
@@ -134,7 +135,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
                       <Briefcase className="h-4 w-4" />
                       <span className="text-sm font-medium">Rolle</span>
                     </div>
-                    <p className="text-base">{teamMember.position || teamMember.role || "—"}</p>
+                    <p className="text-base">{teamMember.position || getRoleLabel(teamMember.role) || "—"}</p>
                   </div>
 
                   <div className="space-y-2">

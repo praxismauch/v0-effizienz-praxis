@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import type { TeamPerformance } from "../types"
 import { getScoreColor } from "../types"
+import { getRoleLabel } from "@/lib/roles"
 
 interface TeamTabProps {
   teamPerformance: TeamPerformance[]
@@ -28,7 +29,7 @@ export default function TeamTab({ teamPerformance }: TeamTabProps) {
               </Avatar>
               <div>
                 <h3 className="font-semibold">{member.memberName}</h3>
-                <p className="text-sm text-muted-foreground">{member.role}</p>
+                <p className="text-sm text-muted-foreground">{getRoleLabel(member.role)}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">

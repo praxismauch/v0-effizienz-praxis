@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import type { TeamMember, NewMessageData } from "./types"
+import { getRoleLabel } from "@/lib/roles"
 
 interface ComposeMessageDialogProps {
   teamMembers: TeamMember[]
@@ -76,7 +77,7 @@ export function ComposeMessageDialog({ teamMembers, onSend }: ComposeMessageDial
                   if (!memberId) return null
                   return (
                     <SelectItem key={memberId} value={memberId}>
-                      {member.first_name} {member.last_name} ({member.role})
+                      {member.first_name} {member.last_name} ({getRoleLabel(member.role)})
                     </SelectItem>
                   )
                 })}

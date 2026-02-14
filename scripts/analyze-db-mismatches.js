@@ -40,13 +40,7 @@ function walkDir(dir, extensions, exclude = []) {
 }
 
 const codeFiles = walkDir('.', ['.ts', '.tsx'], ['node_modules', '.next', 'user_read_only_context', 'scripts']);
-const fromRegex = /\.from\(["']([^"']+)["']\)/g;
-const selectRegex = /\.select\(["'`]([^"'`]+)["'`]\)/g;
-const eqRegex = /\.eq\(["']([^"']+)["']/g;
-const insertRegex = /\.insert\(\{([^}]+)\}\)/gs;
-const updateRegex = /\.update\(\{([^}]+)\}\)/gs;
-
-const codeTableUsage = new Map(); // tableName -> [{file, line, columns_referenced}]
+const codeTableUsage = new Map();
 const missingTables = new Set();
 const columnMismatches = [];
 
@@ -73,7 +67,6 @@ for (const file of codeFiles) {
     const eqMatches = [...line.matchAll(/\.eq\(["']([^"']+)["']/g)];
     for (const eqMatch of eqMatches) {
       const colName = eqMatch[1];
-      // Find which table this belongs to by looking at preceding lines
       for (let j = i; j >= Math.max(0, i - 15); j--) {
         const prevFromMatch = lines[j].match(/\.from\(["']([^"']+)["']\)/);
         if (prevFromMatch) {
@@ -96,9 +89,8 @@ for (const file of codeFiles) {
     }
   }
   
-  // Check insert/update column names
-  const fullContent = content;
-  const insertMatches = [...fullContent.matchAll(/\.from\(["']([^"']+)["']\)[\s\S]*?\.(?:insert|upsert)\(\s*(?:\[?\s*\{([^}]+)\})/g)];
+  // Check insert/update column names  
+  const insertMatches = [...content.matchAll(/\.from\(["']([^"']+)["']\)[\s\S]*?\.(?:insert|upsert)\(\s*(?:\[?\s*\{([^}]+)\})/g)];
   for (const match of insertMatches) {
     const tableName = match[1];
     const body = match[2];
@@ -106,9 +98,9 @@ for (const file of codeFiles) {
       const dbCols = dbTables.get(tableName).columns;
       const insertCols = [...body.matchAll(/(\w+)\s*:/g)].map(m => m[1]);
       for (const col of insertCols) {
-        if (!dbCols.includes(col) && !['true', 'false', 'null', 'undefined', 'new', 'Date'].includes(col)) {
+        if (!dbCols.includes(col) && !['true', 'false', 'null', 'undefined', 'new', 'Date', 'Math', 'JSON', 'Array', 'Object', 'String', 'Number'].includes(col)) {
           columnMismatches.push({
-            file: file,
+            file: '(insert scan)',
             table: tableName,
             column: col,
             type: 'insert/upsert'
@@ -130,18 +122,17 @@ for (const t of [...missingTables].sort()) {
 }
 
 console.log("\n\n=== COLUMN MISMATCHES (column referenced in code but not in DB table) ===");
-// Deduplicate
 const seen = new Set();
 for (const m of columnMismatches) {
   const key = `${m.table}.${m.column}`;
   if (seen.has(key)) continue;
   seen.add(key);
-  console.log(`  TABLE "${m.table}" - column "${m.column}" NOT FOUND (used in ${m.file}:${m.lineNum || '?'} via ${m.type})`);
+  console.log(`  TABLE "${m.table}" - column "${m.column}" NOT FOUND (${m.type} in ${m.file}:${m.lineNum || '?'})`);
 }
 
-console.log("\n\n=== CODE TABLE USAGE SUMMARY ===");
+console.log("\n\n=== CODE TABLE USAGE SUMMARY (top 50) ===");
 const sortedUsage = [...codeTableUsage.entries()].sort((a, b) => b[1].length - a[1].length);
-for (const [table, usages] of sortedUsage.slice(0, 40)) {
+for (const [table, usages] of sortedUsage.slice(0, 50)) {
   const exists = dbTables.has(table) ? 'OK' : 'MISSING';
   console.log(`  ${table}: ${usages.length} usage(s) [${exists}]`);
 }

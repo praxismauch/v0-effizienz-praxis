@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         name: displayName,
         first_name: firstName || null,
         last_name: lastName || null,
-        role: "member", // Default role - member is the standard user role
+        role: "user", // Default role - user is the standard role in database
         practice_id: defaultPracticeId,
         is_active: true,
         created_at: new Date().toISOString(),
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
           first_name: firstName || displayName.split(" ")[0] || "",
           last_name: lastName || displayName.split(" ").slice(1).join(" ") || "",
           email: email,
-          role: "member",
+          role: "user",
           status: "active",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

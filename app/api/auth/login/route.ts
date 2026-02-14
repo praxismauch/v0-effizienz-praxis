@@ -53,7 +53,7 @@ export async function POST(request: Request) {
           id: authData.user.id,
           email: authData.user.email!,
           name: authData.user.user_metadata?.name ?? authData.user.email!.split("@")[0],
-          role: authData.user.user_metadata?.role ?? "member",
+          role: authData.user.user_metadata?.role ?? "user",
           is_active: true,
           practice_id: authData.user.user_metadata?.practice_id ?? null,
         })

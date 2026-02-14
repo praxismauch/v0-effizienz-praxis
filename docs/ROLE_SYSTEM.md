@@ -1,71 +1,54 @@
 # Role System Documentation
 
 ## Overview
-The Effizienz Praxis system uses a hierarchical role-based access control (RBAC) system with 7 distinct roles. All role logic is centralized in `/lib/roles.ts` and `/lib/auth-utils.ts`.
+The Effizienz Praxis system uses a hierarchical role-based access control (RBAC) system. **IMPORTANT: The database only allows 4 specific roles due to a CHECK constraint.**
 
-## Valid Roles
+## Valid Database Roles
+
+**⚠️ CRITICAL: The `users` table has a CHECK constraint that ONLY allows these 4 roles:**
 
 ### 1. Super Admin (`superadmin`)
 - **Hierarchy Level:** 100 (highest)
-- **Aliases:** `super_admin`
-- **Description:** Vollzugriff auf alle Systeme und Praxen
+- **Description:** Vollzugriff auf alle Systeme und Praxen (Full system access)
 - **Access:** Full system access across all practices
 - **Color:** Red badge
-- **Icon:** Shield
+- **German:** Super Administrator
 
-### 2. Praxis Admin (`practiceadmin`)
+### 2. Practice Admin (`practiceadmin`)
 - **Hierarchy Level:** 80
-- **Aliases:** `practice_admin`
+- **Aliases:** Praxis Admin, Practice Administrator
 - **Description:** Administrator einer Praxis mit voller Kontrolle
 - **Access:** Full control over their assigned practice
 - **Color:** Purple badge
-- **Icon:** UserCheck
+- **German:** Praxisadmin
 
-### 3. Admin (`admin`)
-- **Hierarchy Level:** 70
-- **Description:** Administrativer Zugriff (ähnlich wie Praxis Admin)
-- **Access:** Administrative access (similar to practice admin)
-- **Color:** Indigo badge
-- **Icon:** UserCheck
-
-### 4. Manager (`manager`)
+### 3. Power User (`poweruser`)
 - **Hierarchy Level:** 60
-- **Aliases:** `poweruser` (legacy)
-- **Description:** Erweiterte Berechtigungen für Teamführung
+- **Description:** Erweiterte Berechtigungen für Teamführung (Extended permissions)
 - **Access:** Extended permissions for team management
 - **Color:** Blue badge
-- **Icon:** UserCog
+- **German:** Power User / Manager
 
-### 5. Mitglied (`member`)
+### 4. Standard User (`user`)
 - **Hierarchy Level:** 40
-- **Aliases:** `user` (legacy), `mitglied`
 - **Description:** Standardbenutzer mit normalen Funktionen
 - **Access:** Standard user with normal functionality
 - **Color:** Green badge
-- **Icon:** Users
-- **DEFAULT ROLE FOR NEW USERS**
-
-### 6. Betrachter (`viewer`)
-- **Hierarchy Level:** 20
-- **Aliases:** `betrachter`
-- **Description:** Nur-Lese-Zugriff auf freigegebene Bereiche
-- **Access:** Read-only access to shared areas
-- **Color:** Gray badge
-- **Icon:** Eye
-
-### 7. Extern (`extern`)
-- **Hierarchy Level:** 10 (lowest)
-- **Description:** Eingeschränkter externer Zugriff
-- **Access:** Limited external access
-- **Color:** Orange badge
-- **Icon:** UserX
+- **German:** Benutzer / Mitglied
+- **⭐ DEFAULT ROLE FOR NEW USERS**
 
 ## Database Storage
 
-In Supabase `users` table, the `role` column stores the normalized role key:
-- Values: `superadmin`, `practiceadmin`, `admin`, `manager`, `member`, `viewer`, `extern`
-- Type: TEXT (enum in TypeScript)
-- Default: `member`
+In Supabase `users` table, the `role` column has this CHECK constraint:
+```sql
+CHECK (role = ANY (ARRAY['superadmin'::text, 'practiceadmin'::text, 'poweruser'::text, 'user'::text]))
+```
+
+**This means:**
+- ✅ ONLY these 4 values are valid: `superadmin`, `practiceadmin`, `poweruser`, `user`
+- ❌ Any other value (like `member`, `admin`, `manager`, `viewer`, `extern`, `doctor`) will cause an INSERT/UPDATE error
+- Type: TEXT with CHECK constraint
+- Default: `user`
 
 ## Usage in Code
 

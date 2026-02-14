@@ -130,7 +130,7 @@ export async function getSidebarBadges(practiceId: string) {
     // Contacts
     safeCount(supabase.from("contacts").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
     // Hygiene plan executions (due/overdue)
-    safeCount(supabase.from("hygiene_plan_executions").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "pending").lte("due_date", today)),
+    safeCount(supabase.from("hygiene_plan_executions").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "pending")),
     // Training events (upcoming/required)
     safeCount(supabase.from("training_events").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "required")),
     // Protocols
@@ -140,17 +140,17 @@ export async function getSidebarBadges(practiceId: string) {
     // Appraisals (scheduled/pending)
     safeCount(supabase.from("employee_appraisals").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).in("status", ["scheduled", "pending", "in_progress"])),
     // Skills/Competencies
-    safeCount(supabase.from("skill_definitions").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    safeCount(supabase.from("skill_definitions").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
     // Workplaces (Arbeitsplaetze)
     safeCount(supabase.from("arbeitsplaetze").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
     // Rooms
-    safeCount(supabase.from("rooms").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    safeCount(supabase.from("rooms").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
     // Equipment/Arbeitsmittel
-    safeCount(supabase.from("equipment").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
+    safeCount(supabase.from("equipment").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
     // Dienstplan (shift schedules for today/this week)
     safeCount(supabase.from("shift_schedules").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).gte("shift_date", today)),
     // Zeiterfassung (time stamps for today)
-    safeCount(supabase.from("time_stamps").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).gte("date", today)),
+    safeCount(supabase.from("time_stamps").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).gte("timestamp", today)),
     // Analytics/KPIs
     safeCount(supabase.from("analytics_parameters").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
     // Knowledge base articles
@@ -164,7 +164,7 @@ export async function getSidebarBadges(practiceId: string) {
     // Leitbild count (separate from leadership badge)
     safeCount(supabase.from("leitbild").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
     // Self-check entries (pending)
-    safeCount(supabase.from("user_self_checks").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("status", "pending")),
+    safeCount(supabase.from("user_self_checks").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
     // Organigramm (org chart positions)
     safeCount(supabase.from("org_chart_positions").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
   ])

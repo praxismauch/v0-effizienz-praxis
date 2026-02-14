@@ -60,7 +60,7 @@ export function validateUserData(user: any): { valid: boolean; errors: string[] 
     errors.push("Full name must be at least 2 characters")
   }
 
-  const validRoles = ["superadmin", "admin", "user", "viewer"]
+  const validRoles = ["superadmin", "practiceadmin", "admin", "manager", "member", "viewer", "extern", "user", "poweruser"]
   if (!validRoles.includes(user.role)) {
     errors.push("Invalid user role")
   }

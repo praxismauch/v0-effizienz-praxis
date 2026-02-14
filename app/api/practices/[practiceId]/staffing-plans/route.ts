@@ -25,7 +25,6 @@ export async function GET(req: NextRequest, context: { params: Promise<{ practic
         .from("staffing_plans")
         .select("*")
         .eq("practice_id", practiceId)
-        .eq("is_active", true)
         .order("created_at", { ascending: false })
 
       data = result.data

@@ -103,7 +103,6 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
     
     // Convert practiceId to number since database stores it as integer
     const practiceIdNum = parseInt(practiceId, 10)
-    console.log("[v0] Fetching team members for practice:", practiceIdNum)
     
     const { data, error } = await supabase
       .from("team_members")
@@ -113,14 +112,13 @@ export const getTeamMembersByPractice = cache(async (practiceId: string): Promis
       .order("created_at")
 
     if (error) {
-      console.error("[v0] Error fetching team members by practice:", error)
+      console.error("Error fetching team members by practice:", error)
       return []
     }
 
-    console.log("[v0] Found", data?.length || 0, "team members for practice", practiceIdNum)
     return data || []
   } catch (error) {
-    console.error("[v0] Error getting team members by practice:", error)
+    console.error("Error getting team members by practice:", error)
     return []
   }
 })
@@ -134,7 +132,6 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
     
     // Convert practiceId to number since database stores it as integer
     const practiceIdNum = parseInt(practiceId, 10)
-    console.log("[v0] getTeamMemberById called with:", { memberId, practiceId, practiceIdNum })
     
     const { data, error } = await supabase
       .from("team_members")
@@ -145,14 +142,13 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
       .maybeSingle()
 
     if (error) {
-      console.error("[v0] Error fetching team member by ID:", error)
+      console.error("Error fetching team member by ID:", error)
       return null
     }
 
-    console.log("[v0] getTeamMemberById result:", { found: !!data, data: data ? { id: data.id, first_name: data.first_name, last_name: data.last_name, email: data.email } : null })
     return data
   } catch (error) {
-    console.error("[v0] Error getting team member by ID:", error)
+    console.error("Error getting team member by ID:", error)
     return null
   }
 })
@@ -162,25 +158,28 @@ export const getTeamMemberById = cache(async (memberId: string, practiceId: stri
  */
 export const getAllTeamData = cache(async (practiceId: string) => {
   try {
-    console.log("[v0] getAllTeamData called for practiceId:", practiceId)
-    
-    const [teams, teamMembers] = await Promise.all([
+    const supabase = await createServerClient()
+
+    const [teams, teamMembers, staffingPlansResult] = await Promise.all([
       getTeamsByPractice(practiceId),
       getTeamMembersByPractice(practiceId),
+      supabase
+        .from("staffing_plans")
+        .select("*")
+        .eq("practice_id", practiceId)
+        .order("created_at", { ascending: false }),
     ])
-
-    console.log("[v0] getAllTeamData results - teams:", teams.length, "teamMembers:", teamMembers.length)
 
     return {
       teams,
       teamMembers,
-      responsibilities: [], // TODO: Add responsibilities table
-      staffingPlans: [], // TODO: Add staffing plans table
-      holidayRequests: [], // TODO: Add holiday requests table
-      sickLeaves: [], // TODO: Add sick leaves table
+      responsibilities: [],
+      staffingPlans: staffingPlansResult.data || [],
+      holidayRequests: [],
+      sickLeaves: [],
     }
   } catch (error) {
-    console.error("[v0] Error getting all team data:", error)
+    console.error("Error getting all team data:", error)
     return {
       teams: [],
       teamMembers: [],

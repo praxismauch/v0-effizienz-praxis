@@ -132,6 +132,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "Ihr Konto wartet noch auf die Genehmigung durch einen Administrator.",
+          redirectTo: "/auth/pending-approval"
         },
         { status: 403 },
       )

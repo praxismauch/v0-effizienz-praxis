@@ -137,10 +137,20 @@ function LoginForm() {
       router.push(redirectTo)
       router.refresh()
     } catch (error: any) {
+      // Check if error has a redirectTo field (for inactive users)
+      if (error.redirectTo) {
+        router.push(error.redirectTo)
+        return
+      }
+      
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.message) {
         const msg = error.message.toLowerCase()
-        if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("fetch")) {
+        if (msg.includes("genehmigung") || msg.includes("approval") || msg.includes("pending")) {
+          // Inactive user - redirect to pending page
+          router.push("/auth/pending-approval")
+          return
+        } else if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("fetch")) {
           errorMessage = "Verbindungsfehler - bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
         } else if (msg.includes("invalid") || msg.includes("credentials")) {
           errorMessage = "Ungültige Anmeldedaten. Bitte überprüfen Sie E-Mail und Passwort."

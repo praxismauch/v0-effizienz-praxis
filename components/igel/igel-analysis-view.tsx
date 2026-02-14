@@ -28,7 +28,7 @@ interface IgelAnalysisViewProps {
 export function IgelAnalysisView({ analysisId }: IgelAnalysisViewProps) {
   const router = useRouter()
   const { currentPractice } = usePractice()
-  const { data: analyses, isLoading } = useIgelAnalyses(currentPractice?.id)
+  const { analyses, isLoading } = useIgelAnalyses(currentPractice?.id)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const { toast } = useToast()

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       query = query.lte("created_at", endDate)
     }
     if (practiceId) {
-      query = query.eq("practice_id", parseInt(practiceId))
+      query = query.eq("practice_id", practiceId)
     }
     if (fingerprint) {
       query = query.eq("fingerprint", fingerprint)

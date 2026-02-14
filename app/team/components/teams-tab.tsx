@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Plus, Users, Edit, Trash2 } from "lucide-react"
 import type { Team, TeamMember } from "../types"
+import { getTeamColor, getCardStyles } from "../types"
 import CreateTeamDialog from "./create-team-dialog"
 
 interface TeamsTabProps {
@@ -26,7 +27,7 @@ export default function TeamsTab({
 }: TeamsTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const getTeamMembers = (teamId: string) => {
-    return (teamMembers || []).filter((m) => m.team_id === teamId)
+    return (teamMembers || []).filter((m) => m.team_ids?.includes(teamId))
   }
 
   if (teams.length === 0) {
@@ -79,8 +80,10 @@ export default function TeamsTab({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {teams.map((team) => {
           const members = getTeamMembers(team.id)
+          const teamColor = getTeamColor(team.color)
+          const cardStyles = getCardStyles(teamColor)
           return (
-            <Card key={team.id}>
+            <Card key={team.id} className="border-l-4" style={cardStyles}>
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div>

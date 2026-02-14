@@ -7,11 +7,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
     const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId ? HARDCODED_PRACTICE_ID : practiceId
+      practiceId === "0" || practiceId === "undefined" || !practiceId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId)
 
     const supabase = await createAdminClient()
-
-    console.log("[v0] Fetching courses for practice:", effectivePracticeId)
 
     const { data: courses, error } = await supabase
       .from("academy_courses")
@@ -39,13 +39,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { practiceId } = await params
     const effectivePracticeId =
       practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? HARDCODED_PRACTICE_ID
-        : practiceId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId)
 
     const body = await request.json()
     const supabase = await createAdminClient()
-
-    console.log("[v0] Creating course for practice:", effectivePracticeId)
 
     const courseData = {
       ...body,

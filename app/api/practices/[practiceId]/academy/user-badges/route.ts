@@ -7,7 +7,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createClient()
 
     const effectivePracticeId =
-      !practiceId || practiceId === "0" || practiceId === "undefined" ? "1" : practiceId
+      !practiceId || practiceId === "0" || practiceId === "undefined" ? 1 : Number.parseInt(practiceId)
 
     const url = new URL(request.url)
     const userId = url.searchParams.get("userId")
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = await createClient()
 
     const effectivePracticeId =
-      !practiceId || practiceId === "0" || practiceId === "undefined" ? "1" : practiceId
+      !practiceId || practiceId === "0" || practiceId === "undefined" ? 1 : Number.parseInt(practiceId)
 
     const body = await request.json()
     const { userId, badgeId, criteriaMet } = body

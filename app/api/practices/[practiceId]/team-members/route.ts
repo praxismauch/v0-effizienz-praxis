@@ -49,11 +49,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let customRoleOrder: string[] | undefined
     try {
-      const practiceIdInt = Number.parseInt(practiceIdStr, 10)
       const { data: practiceSettings } = await supabase
         .from("practice_settings")
         .select("system_settings")
-        .eq("practice_id", practiceIdInt)
+        .eq("practice_id", practiceIdStr)
         .single()
 
       customRoleOrder = practiceSettings?.system_settings?.team_member_role_order
@@ -201,7 +200,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { practiceId } = await params
 
     const practiceIdStr = String(practiceId)
-    const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
     const supabase = await createAdminClient()
 
@@ -238,7 +236,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           email: body.email.trim(),
           role: userRole,
           avatar: body.avatar || null,
-          practice_id: practiceIdInt,
+          practice_id: practiceIdStr,
           is_active: true,
           date_of_birth: body.date_of_birth || null,
         })
@@ -313,7 +311,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
-    const practiceIdInt = Number.parseInt(practiceIdStr, 10)
 
     const supabase = await createAdminClient()
     const body = await request.json()
@@ -398,7 +395,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         .from("users")
         .update(userUpdates)
         .eq("id", memberId)
-        .eq("practice_id", practiceIdInt)
+        .eq("practice_id", practiceIdStr)
 
       if (userError) {
         console.error("User update error:", userError.message)

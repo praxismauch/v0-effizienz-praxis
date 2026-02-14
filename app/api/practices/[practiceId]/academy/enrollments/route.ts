@@ -10,8 +10,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const effectivePracticeId =
       !practiceId || practiceId === "0" || practiceId === "undefined"
-        ? HARDCODED_PRACTICE_ID
-        : practiceId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId)
 
     console.log("[v0] Fetching academy enrollments for practice:", effectivePracticeId)
 
@@ -59,8 +59,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const effectivePracticeId =
       !practiceId || practiceId === "0" || practiceId === "undefined"
-        ? HARDCODED_PRACTICE_ID
-        : practiceId
+        ? Number.parseInt(HARDCODED_PRACTICE_ID)
+        : Number.parseInt(practiceId)
 
     const body = await request.json()
     const { userId, courseId } = body

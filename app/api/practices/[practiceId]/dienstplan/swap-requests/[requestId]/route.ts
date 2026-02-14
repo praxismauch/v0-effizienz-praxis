@@ -40,22 +40,19 @@ export async function PUT(
 
     // If approved, swap the shifts
     if (body.status === "approved" && swapRequest) {
-      const { requester_shift_id, target_shift_id, requester_id, target_id } = swapRequest
+      const { requester_schedule_id, target_schedule_id, requester_id, target_id } = swapRequest
 
       // Get both shifts
       const { data: shifts } = await supabase
         .from("shift_schedules")
         .select("*")
-        .in("id", [requester_shift_id, target_shift_id])
+        .in("id", [requester_schedule_id, target_schedule_id].filter(Boolean))
 
       if (shifts && shifts.length === 2) {
-        const requesterShift = shifts.find((s) => s.id === requester_shift_id)
-        const targetShift = shifts.find((s) => s.id === target_shift_id)
-
         // Swap the team_member_ids
-        await supabase.from("shift_schedules").update({ team_member_id: target_id }).eq("id", requester_shift_id)
+        await supabase.from("shift_schedules").update({ team_member_id: target_id }).eq("id", requester_schedule_id)
 
-        await supabase.from("shift_schedules").update({ team_member_id: requester_id }).eq("id", target_shift_id)
+        await supabase.from("shift_schedules").update({ team_member_id: requester_id }).eq("id", target_schedule_id)
       }
     }
 

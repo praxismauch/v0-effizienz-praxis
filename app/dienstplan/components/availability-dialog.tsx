@@ -64,7 +64,7 @@ export default function AvailabilityDialog({
     try {
       await onSave({
         team_member_id: memberId,
-        practice_id: parseInt(practiceId),
+        practice_id: practiceId,
         availability_type: formData.availability_type as Availability["availability_type"],
         is_recurring: formData.is_recurring,
         day_of_week: formData.is_recurring ? formData.day_of_week : undefined,

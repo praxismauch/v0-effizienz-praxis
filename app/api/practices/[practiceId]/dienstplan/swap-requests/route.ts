@@ -16,8 +16,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         *,
         requester:requester_id(id, first_name, last_name, avatar_url, role),
         target:target_id(id, first_name, last_name, avatar_url, role),
-        requester_shift:requester_shift_id(id, shift_date, start_time, end_time, shift_type_id),
-        target_shift:target_shift_id(id, shift_date, start_time, end_time, shift_type_id)
+        requester_shift:requester_schedule_id(id, shift_date, start_time, end_time, shift_type_id),
+        target_shift:target_schedule_id(id, shift_date, start_time, end_time, shift_type_id)
       `,
       )
       .eq("practice_id", practiceId)
@@ -69,11 +69,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         practice_id: practiceId,
         requester_id: body.requester_id,
         target_id: body.target_id,
-        requester_shift_id: body.requester_shift_id,
-        target_shift_id: body.target_shift_id,
+        requester_schedule_id: body.requester_shift_id || body.requester_schedule_id,
+        target_schedule_id: body.target_shift_id || body.target_schedule_id,
         reason: body.reason,
         status: "pending",
-        ai_recommendation: aiRecommendation,
+        admin_notes: aiRecommendation || undefined,
       })
       .select()
       .single()

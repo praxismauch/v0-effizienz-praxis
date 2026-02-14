@@ -177,11 +177,21 @@ export const getAllTeamData = cache(async (practiceId: string) => {
   try {
     const supabase = await createServerClient()
 
-    const [teams, teamMembers, staffingPlansResult] = await Promise.all([
+    const [teams, teamMembers, staffingPlansResult, holidayRequestsResult, sickLeavesResult] = await Promise.all([
       getTeamsByPractice(practiceId),
       getTeamMembersByPractice(practiceId),
       supabase
         .from("staffing_plans")
+        .select("*")
+        .eq("practice_id", practiceId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("holiday_requests")
+        .select("*")
+        .eq("practice_id", practiceId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("sick_leaves")
         .select("*")
         .eq("practice_id", practiceId)
         .order("created_at", { ascending: false }),
@@ -191,8 +201,8 @@ export const getAllTeamData = cache(async (practiceId: string) => {
       teams,
       teamMembers,
       staffingPlans: staffingPlansResult.data || [],
-      holidayRequests: [],
-      sickLeaves: [],
+      holidayRequests: holidayRequestsResult.data || [],
+      sickLeaves: sickLeavesResult.data || [],
     }
   } catch (error) {
     console.error("Error getting all team data:", error)

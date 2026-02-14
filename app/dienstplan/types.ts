@@ -30,7 +30,7 @@ export interface Shift {
   date?: string       // Alias for backwards compatibility
   start_time: string
   end_time: string
-  status: "scheduled" | "approved" | "rejected" | "pending"
+  status: "scheduled" | "confirmed" | "cancelled" | "completed"
   notes?: string
   created_at?: string
   shift_type?: ShiftType

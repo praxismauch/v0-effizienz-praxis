@@ -245,7 +245,7 @@ export default function ScheduleTab({
       const res = await fetch(url, {
         method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, practice_id: parseInt(practiceId) }),
+        body: JSON.stringify({ ...data, practice_id: practiceId }),
         cache: "no-store",
       })
 

@@ -23,8 +23,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { searchParams } = new URL(request.url)
     const practiceId = searchParams.get("practice_id")
 
-    // For super-admin context, query database with practice_id "super-admin"
-    // (no longer skip DB - preferences must persist across reloads)
+    // For super-admin context, skip DB (practice_id "super-admin" is not a valid FK)
+    // localStorage handles persistence for super-admin pages
+    if (practiceId === "super-admin") {
+      return NextResponse.json({
+        preferences: {
+          expanded_groups: ["overview", "praxen-benutzer"],
+          expanded_items: {},
+          is_collapsed: false,
+          favorites: [],
+          collapsed_sections: [],
+          single_group_mode: false,
+        },
+      })
+    }
 
     const adminClient = await createAdminClient()
     
@@ -115,8 +127,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { practice_id, expanded_groups, expanded_items, is_collapsed, favorites, single_group_mode } = body
 
-    // For super-admin context, persist to database with practice_id "super-admin"
-    // (no longer skip DB - preferences must persist across reloads)
+    // For super-admin context, skip DB (practice_id "super-admin" is not a valid FK)
+    // localStorage handles persistence for super-admin pages
+    if (practice_id === "super-admin") {
+      return NextResponse.json({
+        preferences: {
+          expanded_groups: expanded_groups || [],
+          expanded_items: expanded_items || {},
+          is_collapsed: is_collapsed || false,
+          favorites: favorites || [],
+          collapsed_sections: [],
+          single_group_mode: single_group_mode ?? false,
+        },
+      })
+    }
 
     const effectivePracticeId = String(practice_id || "1")
 

@@ -1,11 +1,13 @@
 # Role System Documentation
 
 ## Overview
-The Effizienz Praxis system uses a hierarchical role-based access control (RBAC) system. **IMPORTANT: The database only allows 4 specific roles due to a CHECK constraint.**
+The Effizienz Praxis system uses a hierarchical role-based access control (RBAC) system with 7 core roles plus legacy support.
 
 ## Valid Database Roles
 
-**⚠️ CRITICAL: The `users` table has a CHECK constraint that ONLY allows these 4 roles:**
+The `users` table accepts the following roles through a CHECK constraint:
+
+### Primary Roles (Application Standard)
 
 ### 1. Super Admin (`superadmin`)
 - **Hierarchy Level:** 100 (highest)
@@ -22,33 +24,71 @@ The Effizienz Praxis system uses a hierarchical role-based access control (RBAC)
 - **Color:** Purple badge
 - **German:** Praxisadmin
 
-### 3. Power User (`poweruser`)
+### 3. Admin (`admin`)
+- **Hierarchy Level:** 70
+- **Description:** Administrativer Zugriff
+- **Access:** Administrative access within practice
+- **Color:** Indigo badge
+- **German:** Administrator
+
+### 4. Manager (`manager`)
 - **Hierarchy Level:** 60
 - **Description:** Erweiterte Berechtigungen für Teamführung (Extended permissions)
 - **Access:** Extended permissions for team management
 - **Color:** Blue badge
-- **German:** Power User / Manager
+- **German:** Manager
 
-### 4. Standard User (`user`)
+### 5. Member (`member`)
 - **Hierarchy Level:** 40
 - **Description:** Standardbenutzer mit normalen Funktionen
 - **Access:** Standard user with normal functionality
 - **Color:** Green badge
-- **German:** Benutzer / Mitglied
+- **German:** Mitglied
 - **⭐ DEFAULT ROLE FOR NEW USERS**
+
+### 6. Viewer (`viewer`)
+- **Hierarchy Level:** 20
+- **Aliases:** Betrachter
+- **Description:** Nur-Lese-Zugriff
+- **Access:** Read-only access
+- **Color:** Gray badge
+- **German:** Betrachter
+
+### 7. Extern (`extern`)
+- **Hierarchy Level:** 10
+- **Description:** Eingeschränkter externer Zugriff
+- **Access:** Limited external access
+- **Color:** Orange badge
+- **German:** Extern
+
+### Legacy Roles (Supported for Backwards Compatibility)
+
+- **`user`** → Use `member` instead (legacy alias)
+- **`poweruser`** → Use `manager` instead (legacy alias)
 
 ## Database Storage
 
 In Supabase `users` table, the `role` column has this CHECK constraint:
 ```sql
-CHECK (role = ANY (ARRAY['superadmin'::text, 'practiceadmin'::text, 'poweruser'::text, 'user'::text]))
+CHECK (role = ANY (ARRAY[
+  'superadmin'::text, 
+  'practiceadmin'::text, 
+  'admin'::text,
+  'manager'::text,
+  'member'::text,
+  'viewer'::text,
+  'extern'::text,
+  'user'::text,      -- legacy
+  'poweruser'::text   -- legacy
+]))
 ```
 
 **This means:**
-- ✅ ONLY these 4 values are valid: `superadmin`, `practiceadmin`, `poweruser`, `user`
-- ❌ Any other value (like `member`, `admin`, `manager`, `viewer`, `extern`, `doctor`) will cause an INSERT/UPDATE error
+- ✅ All 7 primary roles are valid: `superadmin`, `practiceadmin`, `admin`, `manager`, `member`, `viewer`, `extern`
+- ✅ Legacy roles are supported: `user`, `poweruser`
+- ❌ Any other value (like `doctor`, `nurse`, `staff`) will cause an INSERT/UPDATE error
 - Type: TEXT with CHECK constraint
-- Default: `user`
+- Default: `member`
 
 ## Usage in Code
 

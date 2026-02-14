@@ -289,11 +289,11 @@ export default function OrganigrammClient() {
                 <img
                   src={memberAvatar}
                   alt={memberName}
-                  className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                  className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-white/30"
                 />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[10px] font-bold text-white">
+                <div className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-white">
                     {memberName.charAt(0).toUpperCase()}
                   </span>
                 </div>

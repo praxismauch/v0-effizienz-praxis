@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Users, Calendar, Clock, AlertTriangle, ArrowLeftRight, Settings } from "lucide-react"
+import { ChevronLeft, ChevronRight, Users, Calendar, Clock, AlertTriangle, ArrowLeftRight, Settings, Palmtree, Stethoscope } from "lucide-react"
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from "date-fns"
 import { de } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
@@ -16,7 +16,10 @@ import AvailabilityTab from "./components/availability-tab"
 import SwapRequestsTab from "./components/swap-requests-tab"
 import ShiftTypesTab from "./components/shift-types-tab"
 import ShiftTypeDialog from "./components/shift-type-dialog"
+import HolidaysTab from "@/app/team/components/holidays-tab"
+import SickLeavesTab from "@/app/team/components/sickleaves-tab"
 import type { TeamMember, ShiftType, Shift, Availability, SwapRequest, Violation, DienstplanStats } from "./types"
+import type { HolidayRequest, SickLeave } from "@/app/team/types"
 
 interface DienstplanPageClientProps {
   initialData: {
@@ -25,6 +28,8 @@ interface DienstplanPageClientProps {
     schedules: any[]
     availability: any[]
     swapRequests: any[]
+    holidayRequests: any[]
+    sickLeaves: any[]
   }
   initialWeek: Date
   teams: any[]
@@ -42,14 +47,6 @@ export default function DienstplanPageClient({
   const { toast } = useToast()
   const router = useRouter()
 
-  console.log("[v0] DienstplanPageClient received:", {
-    hasInitialData: !!initialData,
-    initialWeek: initialWeek instanceof Date ? initialWeek.toISOString() : initialWeek,
-    teamMembers: initialData?.teamMembers?.length || 0,
-    teams: teams?.length || 0,
-    practiceId,
-  })
-
   // Safety check - ensure initialData is never null/undefined
   const safeInitialData = initialData || {
     teamMembers: [],
@@ -57,6 +54,8 @@ export default function DienstplanPageClient({
     schedules: [],
     availability: [],
     swapRequests: [],
+    holidayRequests: [],
+    sickLeaves: [],
   }
 
   // Core state - initialize with server data
@@ -76,6 +75,8 @@ export default function DienstplanPageClient({
   const [schedules, setSchedules] = useState<Shift[]>(safeInitialData.schedules || [])
   const [availability, setAvailability] = useState<Availability[]>(safeInitialData.availability || [])
   const [swapRequests, setSwapRequests] = useState<SwapRequest[]>(safeInitialData.swapRequests || [])
+  const [holidayRequests, setHolidayRequests] = useState<HolidayRequest[]>(safeInitialData.holidayRequests || [])
+  const [sickLeaves, setSickLeaves] = useState<SickLeave[]>(safeInitialData.sickLeaves || [])
   const [violations, setViolations] = useState<Violation[]>([])
 
   // Dialog state for shift types
@@ -113,12 +114,14 @@ export default function DienstplanPageClient({
     const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "yyyy-MM-dd")
 
     try {
-      const [teamRes, shiftTypesRes, schedulesRes, availabilityRes, swapRes] = await Promise.all([
+      const [teamRes, shiftTypesRes, schedulesRes, availabilityRes, swapRes, holidaysRes, sickLeavesRes] = await Promise.all([
         fetch(`/api/practices/${practiceId}/team-members`, { cache: "no-store" }),
         fetch(`/api/practices/${practiceId}/dienstplan/shift-types`, { cache: "no-store" }),
         fetch(`/api/practices/${practiceId}/dienstplan/schedules?start=${weekStart}&end=${weekEnd}`, { cache: "no-store" }),
         fetch(`/api/practices/${practiceId}/dienstplan/availability`, { cache: "no-store" }),
         fetch(`/api/practices/${practiceId}/dienstplan/swap-requests?status=pending`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/holiday-requests`, { cache: "no-store" }),
+        fetch(`/api/practices/${practiceId}/sick-leaves`, { cache: "no-store" }),
       ])
 
       // Use functional updates to ensure state changes are detected
@@ -141,6 +144,14 @@ export default function DienstplanPageClient({
       if (swapRes.ok) {
         const data = await swapRes.json()
         setSwapRequests(() => data.swapRequests || [])
+      }
+      if (holidaysRes.ok) {
+        const data = await holidaysRes.json()
+        setHolidayRequests(() => data.holidayRequests || [])
+      }
+      if (sickLeavesRes.ok) {
+        const data = await sickLeavesRes.json()
+        setSickLeaves(() => data.sickLeaves || [])
       }
     } catch (error) {
       console.error("Error fetching dienstplan data:", error)
@@ -266,6 +277,24 @@ export default function DienstplanPageClient({
     }
   }
 
+  // Holiday & Sick leave handlers
+  const handleHolidayRequestCreated = (request: HolidayRequest) => {
+    setHolidayRequests(prev => [request, ...prev])
+    toast({ title: "Urlaubsantrag erstellt" })
+  }
+  const handleApproveHolidayRequest = (request: HolidayRequest) => {
+    setHolidayRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: "approved" as const } : r))
+    toast({ title: "Antrag genehmigt" })
+  }
+  const handleRejectHolidayRequest = (request: HolidayRequest) => {
+    setHolidayRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: "rejected" as const } : r))
+    toast({ title: "Antrag abgelehnt" })
+  }
+  const handleSickLeaveCreated = (sickLeave: SickLeave) => {
+    setSickLeaves(prev => [sickLeave, ...prev])
+    toast({ title: "Krankmeldung erfasst" })
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -321,7 +350,7 @@ export default function DienstplanPageClient({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto gap-1">
           <TabsTrigger value="schedule" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Wochenplan</span>
@@ -329,6 +358,14 @@ export default function DienstplanPageClient({
           <TabsTrigger value="availability" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Verfügbarkeit</span>
+          </TabsTrigger>
+          <TabsTrigger value="holidays" className="flex items-center gap-2">
+            <Palmtree className="h-4 w-4" />
+            <span className="hidden sm:inline">Urlaub</span>
+          </TabsTrigger>
+          <TabsTrigger value="sickleaves" className="flex items-center gap-2">
+            <Stethoscope className="h-4 w-4" />
+            <span className="hidden sm:inline">Krankmeldungen</span>
           </TabsTrigger>
           <TabsTrigger value="swaps" className="flex items-center gap-2">
             <ArrowLeftRight className="h-4 w-4" />
@@ -364,6 +401,24 @@ export default function DienstplanPageClient({
             currentWeek={currentWeek}
             practiceId={practiceId}
             onRefresh={fetchData}
+          />
+        </TabsContent>
+
+        <TabsContent value="holidays">
+          <HolidaysTab
+            holidayRequests={holidayRequests}
+            teamMembers={teamMembers}
+            onRequestCreated={handleHolidayRequestCreated}
+            onApproveRequest={handleApproveHolidayRequest}
+            onRejectRequest={handleRejectHolidayRequest}
+          />
+        </TabsContent>
+
+        <TabsContent value="sickleaves">
+          <SickLeavesTab
+            sickLeaves={sickLeaves}
+            teamMembers={teamMembers}
+            onSickLeaveCreated={handleSickLeaveCreated}
           />
         </TabsContent>
 

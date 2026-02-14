@@ -5,8 +5,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
-    const practiceIdInt =
-      practiceId === "0" || !practiceId || practiceId === "undefined" ? 1 : Number.parseInt(practiceId)
+    const practiceIdStr =
+      practiceId === "0" || !practiceId || practiceId === "undefined" ? "1" : practiceId
     const supabase = createClient()
 
     const searchParams = request.nextUrl.searchParams

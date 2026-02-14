@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       .from("academy_user_badges")
       .insert({
         user_id: userId,
-        practice_id: Number.parseInt(practiceId),
+        practice_id: practiceId,
         badge_id: badge.id,
         earned_at: new Date().toISOString(),
       })

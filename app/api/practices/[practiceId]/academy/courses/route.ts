@@ -1,22 +1,22 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-
-const HARDCODED_PRACTICE_ID = "1"
+import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId ? HARDCODED_PRACTICE_ID : practiceId
+    const effectivePracticeId = await getValidatedPracticeId(practiceId)
+
+    if (!effectivePracticeId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
 
     const supabase = await createAdminClient()
-
-    console.log("[v0] Fetching courses for practice:", effectivePracticeId)
 
     const { data: courses, error } = await supabase
       .from("academy_courses")
       .select("*")
-      .eq("practice_id", Number.parseInt(effectivePracticeId))
+      .eq("practice_id", effectivePracticeId)
       .is("deleted_at", null)
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: false })
@@ -37,15 +37,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const effectivePracticeId =
-      practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId)
+    const effectivePracticeId = await getValidatedPracticeId(practiceId)
+
+    if (!effectivePracticeId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
 
     const body = await request.json()
     const supabase = await createAdminClient()
-
-    console.log("[v0] Creating course for practice:", effectivePracticeId)
 
     const courseData = {
       ...body,

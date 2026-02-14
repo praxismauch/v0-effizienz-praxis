@@ -24,7 +24,7 @@ export const getDashboardData = cache(async (practiceId: string): Promise<Dashbo
     const supabase = await createServerClient()
     
     // Fetch all dashboard data in parallel for maximum performance
-    const [teamsData, membersData, todosData, eventsData] = await Promise.all([
+    const [teamsData, membersData, todosData, eventsData, activityData] = await Promise.all([
       supabase
         .from("teams")
         .select("id")
@@ -46,11 +46,27 @@ export const getDashboardData = cache(async (practiceId: string): Promise<Dashbo
         .eq("practice_id", practiceId)
         .gte("start_time", new Date().toISOString())
         .limit(10),
+      
+      // Fetch recent activity from system logs
+      supabase
+        .from("system_logs")
+        .select("id, action, category, message, created_at")
+        .eq("practice_id", practiceId)
+        .order("created_at", { ascending: false })
+        .limit(10),
     ])
 
     // Calculate stats
     const activeTodos = todosData.data?.filter(t => t.status !== "completed").length || 0
     const completedTodos = todosData.data?.filter(t => t.status === "completed").length || 0
+
+    // Format recent activity
+    const recentActivity = (activityData.data || []).map(activity => ({
+      id: activity.id,
+      type: activity.category || "unknown",
+      title: activity.message || `${activity.action || "Aktion"} ${activity.category || ""}`.trim(),
+      timestamp: activity.created_at,
+    }))
 
     return {
       totalTeams: teamsData.data?.length || 0,
@@ -58,7 +74,7 @@ export const getDashboardData = cache(async (practiceId: string): Promise<Dashbo
       activeTodos,
       completedTodos,
       upcomingEvents: eventsData.data?.length || 0,
-      recentActivity: [], // TODO: Implement recent activity feed
+      recentActivity,
     }
   } catch (error) {
     console.error("[Server] Error fetching dashboard data:", error)

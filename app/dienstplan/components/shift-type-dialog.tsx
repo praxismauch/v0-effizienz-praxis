@@ -88,7 +88,7 @@ export default function ShiftTypeDialog({
     setIsSubmitting(true)
     try {
       await onSave({
-        practice_id: parseInt(practiceId),
+        practice_id: practiceId,
         name: formData.name,
         short_name: formData.short_name,
         start_time: formData.start_time,

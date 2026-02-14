@@ -30,7 +30,6 @@ import {
 // Extracted navigation config
 import {
   getNavigationGroups,
-  HARDCODED_PRACTICE_ID,
   DEFAULT_EXPANDED_GROUPS,
   DEFAULT_BADGE_COUNTS,
   DEFAULT_BADGE_VISIBILITY,
@@ -128,7 +127,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   // Fetch sidebar badge counts
   useEffect(() => {
     const loadBadgeCounts = async () => {
-      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+      const practiceId = currentPractice?.id
       if (!practiceId) return
 
       try {
@@ -199,7 +198,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   useEffect(() => {
     const loadSidebarPreferences = async () => {
-      const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+      const practiceId = currentPractice?.id 
       if (!currentUser?.id) return
       if (initialLoadDone.current) return
 
@@ -347,7 +346,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   }, [currentUser?.id, currentPractice?.id])
 
   useEffect(() => {
-    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    const practiceId = currentPractice?.id 
     if (!currentUser?.id || !preferencesLoaded) return
 
     const saveExpandedGroups = async () => {
@@ -373,7 +372,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   // Favorites are now saved immediately in toggleFavorite function
 
   useEffect(() => {
-    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    const practiceId = currentPractice?.id 
     if (!currentUser?.id || !scrollContainerRef.current) return
 
     let scrollTimeout: NodeJS.Timeout
@@ -414,7 +413,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   }, [currentUser?.id, currentPractice?.id, pathname])
 
   useEffect(() => {
-    const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+    const practiceId = currentPractice?.id 
     if (!currentUser?.id || !pathname || !preferencesLoaded) return
 
     const saveSelectedItem = async () => {
@@ -483,7 +482,7 @@ const toggleFavorite = async (href: string, e?: React.MouseEvent) => {
   
   // Save to database
   if (currentUser?.id) {
-  const practiceId = currentPractice?.id || HARDCODED_PRACTICE_ID
+  const practiceId = currentPractice?.id 
   try {
   const response = await fetch(`/api/users/${currentUser.id}/favorites`, {
   method: "POST",

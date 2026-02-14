@@ -19,11 +19,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = await createClient()
     const { settings } = await request.json()
 
-    // Get practice info (practices table uses INTEGER id)
+    // Get practice info
     const { data: practice } = await supabase
       .from("practices")
       .select("name, email, logo_url")
-      .eq("id", Number.parseInt(practiceId))
+      .eq("id", practiceId)
       .single()
 
     // Gather summary data
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const { data: teamMembers } = await supabase
         .from("practice_users")
         .select("users(id, first_name, last_name, date_of_birth)")
-        .eq("practice_id", Number.parseInt(practiceId))
+        .eq("practice_id", practiceId)
         .eq("is_active", true)
 
       if (teamMembers) {
@@ -169,27 +169,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         })
       }
 
-      // 5. Get training/certifications expiring next week (team_member_skills uses TEXT practice_id)
+      // 5. Get certifications expiring next week
       const { data: expiringCerts } = await supabase
-        .from("team_member_skills")
-        .select("id, certification_expires_at, skills(name), team_members(users(first_name, last_name))")
+        .from("team_member_certifications")
+        .select("id, expiry_date, certification_id, team_member_id")
         .eq("practice_id", practiceId)
-        .gte("certification_expires_at", nextWeekStart.toISOString().split("T")[0])
-        .lte("certification_expires_at", nextWeekEnd.toISOString().split("T")[0])
+        .gte("expiry_date", nextWeekStart.toISOString().split("T")[0])
+        .lte("expiry_date", nextWeekEnd.toISOString().split("T")[0])
         .limit(5)
 
       if (expiringCerts) {
         expiringCerts.forEach((cert: any) => {
-          if (cert.skills?.name && cert.team_members?.users) {
             forecastItems.push({
               type: "training",
-              date: new Date(cert.certification_expires_at),
-              title: `Zertifikat läuft ab: ${cert.skills.name}`,
-              description: `${cert.team_members.users.first_name} ${cert.team_members.users.last_name}`,
+              date: new Date(cert.expiry_date),
+              title: `Zertifikat läuft ab: ${cert.certification_id || "Zertifizierung"}`,
+              description: `Mitarbeiter ${cert.team_member_id}`,
               priority: "high",
               icon: "📜",
             })
-          }
         })
       }
 
@@ -537,7 +535,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Log to history
     await supabase.from("weekly_summary_history").insert({
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
       recipients_count: successCount,
       recipients: recipients,
       status: failedCount === 0 ? "sent" : failedCount === recipients.length ? "failed" : "partial",
@@ -563,7 +561,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         last_sent_status: failedCount === 0 ? "sent" : "partial",
         send_count: (settings.send_count || 0) + 1,
       })
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
 
     return NextResponse.json({
       success: true,

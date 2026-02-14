@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { toast } from "@/hooks/use-toast"
 import type { Course, Module, Lesson, Quiz, AcademyBadge, AcademyStats } from "../types"
-import { HARDCODED_PRACTICE_ID } from "../types"
+
+const PRACTICE_ID = "1" // TODO: Get from user context in super admin
 
 export function useAcademy() {
   const [courses, setCourses] = useState<Course[]>([])
@@ -74,7 +75,7 @@ export function useAcademy() {
   // Fetch functions
   const fetchCourses = useCallback(async () => {
     try {
-      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses`)
+      const response = await fetch(`/api/practices/${PRACTICE_ID}/academy/courses`)
       if (response.ok) {
         const data = await response.json()
         setCourses(Array.isArray(data) ? data : data.courses || [])
@@ -84,7 +85,7 @@ export function useAcademy() {
 
   const fetchQuizzes = useCallback(async () => {
     try {
-      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/quizzes`)
+      const response = await fetch(`/api/practices/${PRACTICE_ID}/academy/quizzes`)
       if (response.ok) {
         const data = await response.json()
         setQuizzes(Array.isArray(data) ? data : data.quizzes || [])
@@ -94,7 +95,7 @@ export function useAcademy() {
 
   const fetchBadges = useCallback(async () => {
     try {
-      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges`)
+      const response = await fetch(`/api/practices/${PRACTICE_ID}/academy/badges`)
       if (response.ok) {
         const data = await response.json()
         setBadges(Array.isArray(data) ? data : data.badges || [])
@@ -104,7 +105,7 @@ export function useAcademy() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/stats`)
+      const response = await fetch(`/api/practices/${PRACTICE_ID}/academy/stats`)
       if (response.ok) setStats(await response.json())
     } catch (error) { console.error("[v0] Error fetching stats:", error) }
   }, [])
@@ -123,13 +124,13 @@ export function useAcademy() {
 
   const fetchCourseModules = useCallback(async (courseId: string) => {
     try {
-      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules?course_id=${courseId}`)
+      const response = await fetch(`/api/practices/${PRACTICE_ID}/academy/modules?course_id=${courseId}`)
       if (response.ok) {
         const data = await response.json()
         const modulesData = Array.isArray(data) ? data : data.modules || []
         const modulesWithLessons = await Promise.all(
           modulesData.map(async (module: Module) => {
-            const lr = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/lessons?module_id=${module.id}`)
+            const lr = await fetch(`/api/practices/${PRACTICE_ID}/academy/lessons?module_id=${module.id}`)
             if (lr.ok) {
               const ld = await lr.json()
               return { ...module, lessons: Array.isArray(ld) ? ld : ld.lessons || [] }
@@ -174,7 +175,7 @@ export function useAcademy() {
         total_reviews: editingCourse?.total_reviews || 0, created_at: editingCourse?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString() } as Course
       setCourses(isEditing ? courses.map((c) => (c.id === editingCourse!.id ? optimistic : c)) : [...courses, optimistic])
-      const url = isEditing ? `/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses/${editingCourse!.id}` : `/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses`
+      const url = isEditing ? `/api/practices/${PRACTICE_ID}/academy/courses/${editingCourse!.id}` : `/api/practices/${PRACTICE_ID}/academy/courses`
       const response = await fetch(url, { method: isEditing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(courseForm) })
       if (!response.ok) throw new Error("Failed")
       toast({ title: isEditing ? "Kurs aktualisiert" : "Kurs erstellt", description: `"${courseForm.title}" erfolgreich.` })
@@ -193,7 +194,7 @@ export function useAcademy() {
       const optimistic = { ...moduleForm, id: editingModule?.id || `temp-${Date.now()}`, course_id: selectedCourse.id,
         display_order: editingModule?.display_order || courseModules.length, lessons: editingModule?.lessons || [] }
       setCourseModules(isEditing ? courseModules.map((m) => (m.id === editingModule!.id ? optimistic : m)) : [...courseModules, optimistic])
-      const url = isEditing ? `/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules/${editingModule!.id}` : `/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules`
+      const url = isEditing ? `/api/practices/${PRACTICE_ID}/academy/modules/${editingModule!.id}` : `/api/practices/${PRACTICE_ID}/academy/modules`
       const response = await fetch(url, { method: isEditing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...moduleForm, course_id: selectedCourse.id }) })
       if (!response.ok) throw new Error("Failed")
       toast({ title: isEditing ? "Modul aktualisiert" : "Modul erstellt", description: `"${moduleForm.title}" erfolgreich.` })
@@ -210,7 +211,7 @@ export function useAcademy() {
     try {
       const optimistic = { ...badgeForm, id: editingBadge?.id || `temp-${Date.now()}`, icon_url: "", display_order: editingBadge?.display_order || badges.length }
       setBadges(isEditing ? badges.map((b) => (b.id === editingBadge!.id ? optimistic : b)) : [...badges, optimistic])
-      const url = isEditing ? `/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges/${editingBadge!.id}` : `/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges`
+      const url = isEditing ? `/api/practices/${PRACTICE_ID}/academy/badges/${editingBadge!.id}` : `/api/practices/${PRACTICE_ID}/academy/badges`
       const response = await fetch(url, { method: isEditing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badgeForm) })
       if (!response.ok) throw new Error("Failed")
       toast({ title: isEditing ? "Badge aktualisiert" : "Badge erstellt", description: `"${badgeForm.name}" erfolgreich.` })
@@ -227,11 +228,11 @@ export function useAcademy() {
     try {
       let endpoint = ""
       switch (deleteItem.type) {
-        case "course": setCourses(courses.filter((c) => c.id !== deleteItem.id)); endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses/${deleteItem.id}`; break
-        case "module": setCourseModules(courseModules.filter((m) => m.id !== deleteItem.id)); endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules/${deleteItem.id}`; break
-        case "lesson": setCourseModules(courseModules.map((m) => ({ ...m, lessons: m.lessons?.filter((l) => l.id !== deleteItem.id) || [] }))); endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/lessons/${deleteItem.id}`; break
-        case "quiz": setQuizzes(quizzes.filter((q) => q.id !== deleteItem.id)); endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/quizzes/${deleteItem.id}`; break
-        case "badge": setBadges(badges.filter((b) => b.id !== deleteItem.id)); endpoint = `/api/practices/${HARDCODED_PRACTICE_ID}/academy/badges/${deleteItem.id}`; break
+        case "course": setCourses(courses.filter((c) => c.id !== deleteItem.id)); endpoint = `/api/practices/${PRACTICE_ID}/academy/courses/${deleteItem.id}`; break
+        case "module": setCourseModules(courseModules.filter((m) => m.id !== deleteItem.id)); endpoint = `/api/practices/${PRACTICE_ID}/academy/modules/${deleteItem.id}`; break
+        case "lesson": setCourseModules(courseModules.map((m) => ({ ...m, lessons: m.lessons?.filter((l) => l.id !== deleteItem.id) || [] }))); endpoint = `/api/practices/${PRACTICE_ID}/academy/lessons/${deleteItem.id}`; break
+        case "quiz": setQuizzes(quizzes.filter((q) => q.id !== deleteItem.id)); endpoint = `/api/practices/${PRACTICE_ID}/academy/quizzes/${deleteItem.id}`; break
+        case "badge": setBadges(badges.filter((b) => b.id !== deleteItem.id)); endpoint = `/api/practices/${PRACTICE_ID}/academy/badges/${deleteItem.id}`; break
       }
       const response = await fetch(endpoint, { method: "DELETE" })
       if (!response.ok) throw new Error("Failed")
@@ -268,7 +269,7 @@ export function useAcademy() {
     const previousCourses = [...courses]
     try {
       setCourses([...courses, { ...generatedCourse, id: `temp-${Date.now()}`, is_published: false, total_enrollments: 0, average_rating: 0, total_reviews: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
-      const response = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/courses`, {
+      const response = await fetch(`/api/practices/${PRACTICE_ID}/academy/courses`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...generatedCourse, is_published: false }),
       })
@@ -276,14 +277,14 @@ export function useAcademy() {
       const savedCourse = await response.json()
       if (generatedCourse.modules?.length) {
         for (const mod of generatedCourse.modules) {
-          const mr = await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/modules`, {
+          const mr = await fetch(`/api/practices/${PRACTICE_ID}/academy/modules`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...mod, course_id: savedCourse.id }),
           })
           if (mr.ok && mod.lessons?.length) {
             const sm = await mr.json()
             for (const lesson of mod.lessons) {
-              await fetch(`/api/practices/${HARDCODED_PRACTICE_ID}/academy/lessons`, {
+              await fetch(`/api/practices/${PRACTICE_ID}/academy/lessons`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...lesson, module_id: sm.id, course_id: savedCourse.id }),
               })

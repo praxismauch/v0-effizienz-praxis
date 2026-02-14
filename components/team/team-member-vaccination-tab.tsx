@@ -47,7 +47,7 @@ const VACCINATION_TYPES = [
 
 interface TeamMemberVaccinationTabProps {
   teamMemberId: string
-  practiceId: number
+  practiceId: string
 }
 
 export function TeamMemberVaccinationTab({ teamMemberId, practiceId }: TeamMemberVaccinationTabProps) {

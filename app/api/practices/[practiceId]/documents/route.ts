@@ -2,17 +2,9 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 import { type NextRequest, NextResponse } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 
-const HARDCODED_PRACTICE_ID = "1"
-
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-
-    const practiceIdInt = Number.parseInt(
-      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID,
-      10,
-    )
-
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const { searchParams } = new URL(request.url)
@@ -24,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       let query = supabase
         .from("documents")
         .select("*")
-        .eq("practice_id", practiceIdInt)
+        .eq("practice_id", practiceId)
         .eq("is_archived", false)
         .order("created_at", { ascending: false })
 
@@ -64,12 +56,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-
-    const practiceIdInt = Number.parseInt(
-      practiceId && practiceId !== "undefined" && practiceId !== "0" ? practiceId : HARDCODED_PRACTICE_ID,
-      10,
-    )
-
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
     const body = await request.json()
@@ -80,7 +66,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const { data, error } = await supabase
         .from("documents")
         .insert({
-          practice_id: practiceIdInt,
+          practice_id: practiceId,
           name: body.name,
           description: body.description,
           file_url: body.file_url || body.fileUrl,

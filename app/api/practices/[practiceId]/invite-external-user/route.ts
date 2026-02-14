@@ -92,6 +92,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const newUserId = crypto.randomUUID()
 
     // Create the external user in the users table with pending approval status
+    // practice_id is now TEXT (UUID format)
     const { error: createUserError } = await adminClient.from("users").insert({
       id: newUserId,
       email: email,
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       last_name: lastName,
       name: `${firstName} ${lastName}`,
       role: "user", // External users always get basic "user" role
-      practice_id: practiceId,
+      practice_id: String(practiceId),
       is_active: false, // Will be activated after they complete registration
       approval_status: "pending",
       created_at: new Date().toISOString(),
@@ -111,11 +112,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Fehler beim Erstellen des Benutzers" }, { status: 500 })
     }
 
-    // Create team member entry
+    // Create team member entry with TEXT practice_id
     const { error: teamMemberError } = await adminClient.from("team_members").insert({
       id: crypto.randomUUID(),
       user_id: newUserId,
-      practice_id: practiceId,
+      practice_id: String(practiceId),
       first_name: firstName,
       last_name: lastName,
       role: "extern",

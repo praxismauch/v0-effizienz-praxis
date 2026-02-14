@@ -1,19 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server-admin"
-
-const HARDCODED_PRACTICE_ID = "1"
+import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId: rawPracticeId } = await params
     const supabase = createClient()
 
-    const practiceId =
-      rawPracticeId === "0" || rawPracticeId === "undefined" || !rawPracticeId
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(rawPracticeId)
+    const practiceId = await getValidatedPracticeId(rawPracticeId)
 
-    console.log("[v0] Academy stats - Practice ID:", practiceId)
+    if (!practiceId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
+
+
 
     // Get total courses
     const { count: totalCourses } = await supabase
@@ -80,9 +80,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Calculate completion rate
     const completionRate = totalEnrollments > 0 ? Math.round((completedEnrollments / totalEnrollments) * 100) : 0
 
-    // Get average course rating (if ratings table exists)
-    // For now, return mock data
-    const avgRating = 4.5
+    // Average rating placeholder - no academy review/rating table exists yet
+    // When a course review system is added, query it here
+    const avgRating = 0
 
     const stats = {
       totalCourses: totalCourses || 0,
@@ -98,7 +98,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       averageRating: avgRating,
     }
 
-    console.log("[v0] Academy stats result:", stats)
     return NextResponse.json(stats)
   } catch (error: any) {
     console.error("[v0] Error fetching academy stats:", error)

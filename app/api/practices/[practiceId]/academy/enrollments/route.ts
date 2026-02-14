@@ -1,17 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server-admin"
-
-const HARDCODED_PRACTICE_ID = "1"
+import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     const supabase = await createClient()
 
-    const effectivePracticeId =
-      !practiceId || practiceId === "0" || practiceId === "undefined"
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId, 10)
+    const effectivePracticeId = await getValidatedPracticeId(practiceId)
+
+    if (!effectivePracticeId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
 
     console.log("[v0] Fetching academy enrollments for practice:", effectivePracticeId)
 
@@ -57,10 +57,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { practiceId } = await params
     const supabase = await createClient()
 
-    const effectivePracticeId =
-      !practiceId || practiceId === "0" || practiceId === "undefined"
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId, 10)
+    const effectivePracticeId = await getValidatedPracticeId(practiceId)
+
+    if (!effectivePracticeId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
 
     const body = await request.json()
     const { userId, courseId } = body

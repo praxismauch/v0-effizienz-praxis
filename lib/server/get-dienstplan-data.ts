@@ -25,24 +25,22 @@ export const getDienstplanData = cache(async (
     const currentWeekStart = weekStart || startOfWeek(new Date(), { weekStartsOn: 1 })
     const weekStartStr = format(currentWeekStart, "yyyy-MM-dd")
     const weekEndStr = format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), "yyyy-MM-dd")
-    
-    // Convert practiceId to number for database queries
-    const practiceIdNum = parseInt(practiceId, 10)
 
     // Fetch all data in parallel
+    // Note: practice_id is stored as TEXT in dienstplan tables, pass as string
     const [teamMembersResult, shiftTypesResult, schedulesResult, availabilityResult, swapRequestsResult] = await Promise.all([
-      // Team members
+      // Team members - practice_id is integer in team_members table
       supabase
         .from("team_members")
         .select("*")
-        .eq("practice_id", practiceIdNum)
+        .eq("practice_id", practiceId)
         .is("deleted_at", null),
       
       // Shift types
       supabase
         .from("shift_types")
         .select("*")
-        .eq("practice_id", practiceIdNum)
+        .eq("practice_id", practiceId)
         .eq("is_active", true)
         .order("name"),
       
@@ -50,23 +48,22 @@ export const getDienstplanData = cache(async (
       supabase
         .from("shift_schedules")
         .select("*")
-        .eq("practice_id", practiceIdNum)
+        .eq("practice_id", practiceId)
         .gte("shift_date", weekStartStr)
         .lte("shift_date", weekEndStr)
         .order("shift_date"),
       
-      // Availability
+      // Availability - matches API route table name
       supabase
-        .from("team_availability")
+        .from("employee_availability")
         .select("*")
-        .eq("practice_id", practiceIdNum)
-        .order("date"),
+        .eq("practice_id", practiceId),
       
       // Pending swap requests
       supabase
         .from("shift_swap_requests")
         .select("*")
-        .eq("practice_id", practiceIdNum)
+        .eq("practice_id", practiceId)
         .eq("status", "pending")
         .order("created_at", { ascending: false })
     ])

@@ -76,10 +76,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .eq("practice_id", id)
       .eq("status", "active")
 
-    // Fetch recent activity
+    // Fetch recent activity from system logs
     const { data: recentActivity } = await supabase
-      .from("audit_logs")
-      .select("id, action, entity_type, created_at, user_id")
+      .from("system_logs")
+      .select("id, action, category, message, created_at, user_id")
       .eq("practice_id", id)
       .order("created_at", { ascending: false })
       .limit(10)

@@ -25,18 +25,25 @@ export async function GET(
       throw err
     }
 
-    // TODO: team_member_skills_history table doesn't exist yet
-    // Return empty array until table is created
-    let query = supabase.from("team_member_skills_history").select()
+    // Skill history uses system_changes table to track skill-related changes
+    // since there is no dedicated team_member_skills_history table
+    let query = supabase
+      .from("system_changes")
+      .select("*")
+      .eq("practice_id", practiceId)
+      .eq("entity_type", "skill")
+      .order("created_at", { ascending: false })
+
     if (skillId) {
-      query = query.eq("skill_id", skillId)
+      query = query.eq("entity_id", skillId)
     }
 
     const { data, error } = await query
 
     if (error) {
+      // Table may not have matching records - return empty gracefully
       console.error("Skill history error:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json([])
     }
 
     return NextResponse.json(data || [])

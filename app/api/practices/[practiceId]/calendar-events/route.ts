@@ -3,18 +3,12 @@ import { isRateLimitError } from "@/lib/supabase/safe-query"
 import Logger from "@/lib/logger"
 import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 
-const HARDCODED_PRACTICE_ID = "1"
-
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-
     const { adminClient: supabase } = await requirePracticeAccess(practiceId)
 
-    const effectivePracticeId =
-      practiceId && practiceId !== "undefined" && practiceId !== "0" ? String(practiceId) : HARDCODED_PRACTICE_ID
-
-    Logger.info("calendar-events-api", "Fetching calendar events", { practiceId: effectivePracticeId })
+    Logger.info("calendar-events-api", "Fetching calendar events", { practiceId })
 
     if (!practiceId || practiceId === "undefined") {
       return NextResponse.json({ events: [] }, { status: 200 })
@@ -28,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         supabase
           .from("calendar_events")
           .select("*")
-          .eq("practice_id", effectivePracticeId)
+          .eq("practice_id", practiceId)
           .is("deleted_at", null)
           .order("start_time", { ascending: true }),
       ])
@@ -43,7 +37,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       Logger.error("calendar-events-api", "Supabase query error", {
         error: supabaseError.message,
         code: supabaseError.code,
-        practiceId: effectivePracticeId,
+        practiceId,
       })
       return NextResponse.json({ events: [] }, { status: 200 })
     }
@@ -52,7 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       Logger.warn("calendar-events-api", "Error fetching calendar events", {
         error: calendarError.message,
         code: calendarError.code,
-        practiceId: effectivePracticeId,
+        practiceId,
       })
     }
 
@@ -101,11 +95,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-
     const { adminClient: supabase, user } = await requirePracticeAccess(practiceId)
-
-    const effectivePracticeId =
-      practiceId && practiceId !== "undefined" && practiceId !== "0" ? String(practiceId) : HARDCODED_PRACTICE_ID
 
     const body = await request.json()
 
@@ -127,7 +117,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       type: eventType,
       priority: body.priority || "medium",
       created_by: userId,
-      practice_id: effectivePracticeId,
+      practice_id: practiceId,
       is_all_day: body.isAllDay || false,
       attendees: body.attendees || [],
       location: body.location || null,

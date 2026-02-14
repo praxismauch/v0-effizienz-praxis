@@ -80,9 +80,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Calculate completion rate
     const completionRate = totalEnrollments > 0 ? Math.round((completedEnrollments / totalEnrollments) * 100) : 0
 
-    // Get average course rating (if ratings table exists)
-    // For now, return mock data
-    const avgRating = 4.5
+    // Calculate average rating from course reviews if available
+    const { data: reviewsData } = await supabase
+      .from("reviews")
+      .select("rating")
+      .eq("practice_id", practiceId)
+      .eq("entity_type", "course")
+      .not("rating", "is", null)
+
+    let avgRating = 0
+    if (reviewsData && reviewsData.length > 0) {
+      const totalRating = reviewsData.reduce((sum, review) => sum + (review.rating || 0), 0)
+      avgRating = Math.round((totalRating / reviewsData.length) * 10) / 10 // Round to 1 decimal
+    }
 
     const stats = {
       totalCourses: totalCourses || 0,

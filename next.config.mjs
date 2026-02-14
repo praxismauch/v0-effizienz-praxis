@@ -7,12 +7,10 @@ const withBundleAnalyzer = bundleAnalyzer({
 /** @type {import('next').NextConfig} */
 // Force cache invalidation - ghost directory cleanup
 const nextConfig = {
-  // NOTE: Re-enable type checking once all `any` types are fixed
-  // typescript: {
-  //   ignoreBuildErrors: false,
-  // },
+  // TypeScript build errors are currently ignored to allow rapid development
+  // Enable strict type checking once the codebase matures and types are properly defined
   typescript: {
-    ignoreBuildErrors: true, // TODO: Fix remaining type errors and set to false
+    ignoreBuildErrors: true,
   },
   // Empty turbopack config to silence build error when using webpack
   turbopack: {},

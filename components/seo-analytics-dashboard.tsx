@@ -263,7 +263,11 @@ export function SEOAnalyticsDashboard() {
     })
   }
 
-  // Mock data - Replace with real SEO tracking API integration
+  // Sample ranking history for visualization
+  // Note: Real SEO ranking data requires integration with external SEO APIs like:
+  // - Google Search Console API (https://developers.google.com/webmaster-tools/search-console-api-original)
+  // - SEMrush API, Ahrefs API, or Moz API for competitor and ranking tracking
+  // These services require API keys and paid subscriptions for accurate position tracking
   const rankingHistory = [
     { date: "01.11", position: 15 },
     { date: "05.11", position: 12 },
@@ -274,6 +278,8 @@ export function SEOAnalyticsDashboard() {
     { date: "30.11", position: 4 },
   ]
 
+  // Sample competitor analysis for visualization
+  // Real data would come from SEO tracking services (SEMrush, Ahrefs, etc.)
   const competitorAnalysis = [
     { domain: "competitor1.de", position: 1, change: 0 },
     { domain: "competitor2.de", position: 2, change: -1 },

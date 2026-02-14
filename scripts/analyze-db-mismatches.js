@@ -72,15 +72,17 @@ function walkDir(dir, extensions, exclude = []) {
   return files;
 }
 
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { existsSync } from 'fs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, '..');
+// Script is at /home/user/scripts/analyze-db-mismatches.js at runtime
+// Project files are copied to /home/user/
+const projectRoot = '/home/user';
+console.log("Project root:", projectRoot, "exists:", existsSync(projectRoot));
+const topEntries = readdirSync(projectRoot).slice(0, 30);
+console.log("Top entries:", topEntries.join(', '));
 
-console.log("Scanning from:", projectRoot);
 const codeFiles = walkDir(projectRoot, ['.ts', '.tsx'], ['node_modules', '.next', 'user_read_only_context', 'scripts']);
+console.log("Found", codeFiles.length, "code files");
 const codeTableUsage = new Map();
 
 for (const file of codeFiles) {

@@ -229,7 +229,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (createAuthError || !authData.user) {
-      console.error("Error creating auth user:", createAuthError)
+      console.error("[v0] Error creating auth user:", createAuthError)
+      console.error("[v0] Auth error details:", {
+        message: createAuthError?.message,
+        status: createAuthError?.status,
+        name: createAuthError?.name,
+      })
       return NextResponse.json(
         { error: createAuthError?.message || "Benutzer konnte nicht erstellt werden" },
         { status: 500 },
@@ -262,12 +267,19 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (createUserError) {
-      console.error("Error creating user record:", createUserError)
+      console.error("[v0] Error creating user record:", createUserError)
+      console.error("[v0] Error details:", {
+        message: createUserError.message,
+        code: createUserError.code,
+        details: createUserError.details,
+        hint: createUserError.hint,
+      })
       // Cleanup auth user on failure
       await supabase.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json(
         {
           error: `Benutzerdatensatz konnte nicht erstellt werden: ${createUserError.message}`,
+          code: createUserError.code,
         },
         { status: 500 },
       )

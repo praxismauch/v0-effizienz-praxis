@@ -1,60 +1,24 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
 import AppLayout from "@/components/app-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  AlertTriangle,
-  Shield,
-  TrendingUp,
-  Plus,
-  Search,
-  Filter,
-  X,
-  ChevronDown,
-  MessageSquare,
-  Clock,
-  Lightbulb,
-  Eye,
-  EyeOff,
-  Sparkles,
-} from "lucide-react"
-import { formatDateDE } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
+import { Shield, Plus, Search, Filter, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
+import type { CIRSIncident } from "./cirs-constants"
+import { categories } from "./cirs-constants"
+import { ReportDialog } from "./report-dialog"
+import { DetailDialog } from "./detail-dialog"
+import { IncidentCard } from "./incident-card"
 
 export const dynamic = "force-dynamic"
-
-interface CIRSIncident {
-  id: string
-  incident_type: "error" | "near_error" | "adverse_event"
-  severity: "low" | "medium" | "high" | "critical"
-  category: string
-  title: string
-  description: string
-  contributing_factors?: string
-  immediate_actions?: string
-  is_anonymous: boolean
-  reporter_name?: string
-  reporter_role?: string
-  created_at: string
-  status: "submitted" | "under_review" | "analyzed" | "closed"
-  ai_suggestions?: string
-  comment_count?: number
-}
 
 export default function CIRSPageClient() {
   const { toast } = useToast()
@@ -68,49 +32,19 @@ export default function CIRSPageClient() {
   const [showDetailDialog, setShowDetailDialog] = useState(false)
   const [selectedIncident, setSelectedIncident] = useState<CIRSIncident | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [filterSeverity, setFilterSeverity] = useState<string>("all")
-  const [filterCategory, setFilterCategory] = useState<string>("all")
-
-  // Form state
-  const [incidentType, setIncidentType] = useState<"error" | "near_error" | "adverse_event">("near_error")
-  const [severity, setSeverity] = useState<"low" | "medium" | "high" | "critical">("medium")
-  const [category, setCategory] = useState<string>("medication")
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [contributingFactors, setContributingFactors] = useState("")
-  const [immediateActions, setImmediateActions] = useState("")
-  const [isAnonymous, setIsAnonymous] = useState(false)
-  const [generateAISuggestions, setGenerateAISuggestions] = useState(true)
-  const [addToKnowledge, setAddToKnowledge] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const categories = [
-    { value: "medication", label: "Medikation" },
-    { value: "diagnosis", label: "Diagnose" },
-    { value: "treatment", label: "Behandlung" },
-    { value: "documentation", label: "Dokumentation" },
-    { value: "communication", label: "Kommunikation" },
-    { value: "hygiene", label: "Hygiene" },
-    { value: "equipment", label: "Geräte/Ausstattung" },
-    { value: "organization", label: "Organisation" },
-    { value: "other", label: "Sonstiges" },
-  ]
+  const [filterSeverity, setFilterSeverity] = useState("all")
+  const [filterCategory, setFilterCategory] = useState("all")
 
   useEffect(() => {
-    if (currentPractice?.id) {
-      fetchIncidents()
-    }
+    if (currentPractice?.id) fetchIncidents()
   }, [currentPractice?.id, activeTab])
 
   const fetchIncidents = async () => {
     if (!currentPractice?.id) return
-
     try {
       setLoading(true)
       const params = new URLSearchParams()
-      if (activeTab !== "all") {
-        params.append("status", activeTab)
-      }
+      if (activeTab !== "all") params.append("status", activeTab)
 
       const response = await fetch(`/api/practices/${currentPractice.id}/cirs?${params.toString()}`)
       if (response.ok) {
@@ -122,13 +56,12 @@ export default function CIRSPageClient() {
       }
     } catch (error) {
       console.error("Error fetching incidents:", error)
-      const errorMessage = error instanceof Error ? error.message : "Vorfälle konnten nicht geladen werden."
+      const errorMessage = error instanceof Error ? error.message : "Vorfalle konnten nicht geladen werden."
       const isSchemaError = errorMessage.includes("schema cache") || errorMessage.includes("PGRST205")
-      
       toast({
         title: "Fehler beim Laden",
-        description: isSchemaError 
-          ? "Die Datenbank wird aktualisiert. Bitte laden Sie die Seite in wenigen Sekunden neu." 
+        description: isSchemaError
+          ? "Die Datenbank wird aktualisiert. Bitte laden Sie die Seite in wenigen Sekunden neu."
           : errorMessage,
         variant: "destructive",
       })
@@ -137,71 +70,34 @@ export default function CIRSPageClient() {
     }
   }
 
-  const resetForm = () => {
-    setIncidentType("near_error")
-    setSeverity("medium")
-    setCategory("medication")
-    setTitle("")
-    setDescription("")
-    setContributingFactors("")
-    setImmediateActions("")
-    setIsAnonymous(false)
-    setGenerateAISuggestions(true)
-    setAddToKnowledge(true)
-  }
-
-  const handleSubmitIncident = async () => {
+  const handleSubmitIncident = async (data: Record<string, unknown>) => {
     if (!currentPractice?.id) return
-    if (!title.trim() || !description.trim()) {
+    if (!data.title || !data.description) {
       toast({
-        title: "Unvollständige Angaben",
-        description: "Bitte füllen Sie mindestens Titel und Beschreibung aus.",
+        title: "Unvollstandige Angaben",
+        description: "Bitte fullen Sie mindestens Titel und Beschreibung aus.",
         variant: "destructive",
       })
       return
     }
 
-    setIsSubmitting(true)
-    try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/cirs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          incident_type: incidentType,
-          severity,
-          category,
-          title,
-          description,
-          contributing_factors: contributingFactors,
-          immediate_actions: immediateActions,
-          is_anonymous: isAnonymous,
-          generate_ai_suggestions: generateAISuggestions,
-          add_to_knowledge: addToKnowledge,
-        }),
-      })
+    const response = await fetch(`/api/practices/${currentPractice.id}/cirs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
 
-      if (response.ok) {
-        toast({
-          title: "Vorfall gemeldet",
-          description: isAnonymous
-            ? "Ihr anonymer Bericht wurde erfolgreich übermittelt."
-            : "Ihr Bericht wurde erfolgreich übermittelt.",
-        })
-        setShowReportDialog(false)
-        resetForm()
-        fetchIncidents()
-      } else {
-        throw new Error("Failed to submit incident")
-      }
-    } catch (error) {
-      console.error("Error submitting incident:", error)
+    if (response.ok) {
       toast({
-        title: "Fehler",
-        description: "Der Vorfall konnte nicht gemeldet werden.",
-        variant: "destructive",
+        title: "Vorfall gemeldet",
+        description: data.is_anonymous
+          ? "Ihr anonymer Bericht wurde erfolgreich ubermittelt."
+          : "Ihr Bericht wurde erfolgreich ubermittelt.",
       })
-    } finally {
-      setIsSubmitting(false)
+      setShowReportDialog(false)
+      fetchIncidents()
+    } else {
+      throw new Error("Failed to submit incident")
     }
   }
 
@@ -210,58 +106,10 @@ export default function CIRSPageClient() {
       searchQuery === "" ||
       incident.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       incident.description.toLowerCase().includes(searchQuery.toLowerCase())
-
     const passesSeverity = filterSeverity === "all" || incident.severity === filterSeverity
     const passesCategory = filterCategory === "all" || incident.category === filterCategory
-
     return passesSearch && passesSeverity && passesCategory
   })
-
-  const getSeverityColor = (severity: string) => {
-    const colors = {
-      low: "bg-green-100 text-green-800 border-green-200",
-      medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      high: "bg-orange-100 text-orange-800 border-orange-200",
-      critical: "bg-red-100 text-red-800 border-red-200",
-    }
-    return colors[severity as keyof typeof colors] || colors.medium
-  }
-
-  const getSeverityLabel = (severity: string) => {
-    const labels = {
-      low: "Niedrig",
-      medium: "Mittel",
-      high: "Hoch",
-      critical: "Kritisch",
-    }
-    return labels[severity as keyof typeof labels] || severity
-  }
-
-  const getTypeLabel = (type: string) => {
-    const labels = {
-      error: "Fehler",
-      near_error: "Beinahe-Fehler",
-      adverse_event: "Unerwünschtes Ereignis",
-    }
-    return labels[type as keyof typeof labels] || type
-  }
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "error":
-        return <AlertTriangle className="h-4 w-4" />
-      case "near_error":
-        return <Shield className="h-4 w-4" />
-      case "adverse_event":
-        return <TrendingUp className="h-4 w-4" />
-      default:
-        return <AlertTriangle className="h-4 w-4" />
-    }
-  }
-
-  const getCategoryLabel = (cat: string) => {
-    return categories.find((c) => c.value === cat)?.label || cat
-  }
 
   const stats = {
     total: incidents.length,
@@ -284,7 +132,6 @@ export default function CIRSPageClient() {
           </Button>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
@@ -292,7 +139,7 @@ export default function CIRSPageClient() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">Gemeldete Vorfälle</p>
+              <p className="text-xs text-muted-foreground mt-1">{"Gemeldete Vorfalle"}</p>
             </CardContent>
           </Card>
           <Card>
@@ -301,7 +148,7 @@ export default function CIRSPageClient() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">{stats.errors}</div>
-              <p className="text-xs text-muted-foreground mt-1">Tatsächliche Fehler</p>
+              <p className="text-xs text-muted-foreground mt-1">{"Tatsachliche Fehler"}</p>
             </CardContent>
           </Card>
           <Card>
@@ -319,17 +166,16 @@ export default function CIRSPageClient() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">{stats.critical}</div>
-              <p className="text-xs text-muted-foreground mt-1">Hohe Priorität</p>
+              <p className="text-xs text-muted-foreground mt-1">{"Hohe Prioritat"}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Vorfälle durchsuchen..."
+              placeholder={"Vorfalle durchsuchen..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-9"
@@ -343,7 +189,6 @@ export default function CIRSPageClient() {
               </button>
             )}
           </div>
-
           <Select value={filterSeverity} onValueChange={setFilterSeverity}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <Filter className="h-4 w-4 mr-2" />
@@ -357,7 +202,6 @@ export default function CIRSPageClient() {
               <SelectItem value="critical">Kritisch</SelectItem>
             </SelectContent>
           </Select>
-
           <Select value={filterCategory} onValueChange={setFilterCategory}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <Filter className="h-4 w-4 mr-2" />
@@ -374,25 +218,24 @@ export default function CIRSPageClient() {
           </Select>
         </div>
 
-        {/* Incidents List */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">Alle</TabsTrigger>
             <TabsTrigger value="submitted">Eingereicht</TabsTrigger>
-            <TabsTrigger value="under_review">In Prüfung</TabsTrigger>
+            <TabsTrigger value="under_review">{"In Prufung"}</TabsTrigger>
             <TabsTrigger value="analyzed">Analysiert</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-4 mt-6">
             {loading ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Vorfälle werden geladen...</p>
+                <p className="text-muted-foreground">{"Vorfalle werden geladen..."}</p>
               </div>
             ) : filteredIncidents.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-lg font-medium mb-2">Keine Vorfälle vorhanden</p>
+                  <p className="text-lg font-medium mb-2">Keine Vorfalle vorhanden</p>
                   <p className="text-muted-foreground mb-4">
                     Melden Sie Fehler oder Beinahe-Fehler, um die Patientensicherheit zu verbessern
                   </p>
@@ -405,297 +248,31 @@ export default function CIRSPageClient() {
             ) : (
               <div className="grid gap-4">
                 {filteredIncidents.map((incident) => (
-                  <Card
+                  <IncidentCard
                     key={incident.id}
-                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    incident={incident}
                     onClick={() => {
                       setSelectedIncident(incident)
                       setShowDetailDialog(true)
                     }}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <Badge variant="outline" className="gap-1">
-                              {getTypeIcon(incident.incident_type)}
-                              {getTypeLabel(incident.incident_type)}
-                            </Badge>
-                            <Badge className={getSeverityColor(incident.severity)}>{getSeverityLabel(incident.severity)}</Badge>
-                            <Badge variant="secondary">{getCategoryLabel(incident.category)}</Badge>
-                            {incident.is_anonymous && (
-                              <Badge variant="outline" className="gap-1">
-                                <EyeOff className="h-3 w-3" />
-                                Anonym
-                              </Badge>
-                            )}
-                            {incident.ai_suggestions && (
-                              <Badge variant="outline" className="gap-1 bg-purple-50 text-purple-700 border-purple-200">
-                                <Sparkles className="h-3 w-3" />
-                                KI-Analyse
-                              </Badge>
-                            )}
-                          </div>
-                          <CardTitle className="text-lg mb-1">{incident.title}</CardTitle>
-                          <CardDescription className="line-clamp-2">{incident.description}</CardDescription>
-                        </div>
-                        <div className="text-right text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDateDE(incident.created_at)}
-                          </div>
-                          {!incident.is_anonymous && incident.reporter_name && (
-                            <div className="mt-1">{incident.reporter_name}</div>
-                          )}
-                          {incident.comment_count && incident.comment_count > 0 && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <MessageSquare className="h-3 w-3" />
-                              {incident.comment_count}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                  </Card>
+                  />
                 ))}
               </div>
             )}
           </TabsContent>
         </Tabs>
 
-        {/* Report Dialog */}
-        <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Vorfall melden</DialogTitle>
-              <DialogDescription>
-                Melden Sie Fehler, Beinahe-Fehler oder unerwünschte Ereignisse. Ihre Meldung hilft, die Patientensicherheit zu verbessern.
-              </DialogDescription>
-            </DialogHeader>
+        <ReportDialog
+          open={showReportDialog}
+          onOpenChange={setShowReportDialog}
+          onSubmit={handleSubmitIncident}
+        />
 
-            <div className="space-y-4 py-4">
-              {/* Anonymous Toggle */}
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2">
-                  {isAnonymous ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  <div>
-                    <Label className="font-medium">Anonyme Meldung</Label>
-                    <p className="text-sm text-muted-foreground">Ihr Name wird nicht gespeichert</p>
-                  </div>
-                </div>
-                <Switch checked={isAnonymous} onCheckedChange={setIsAnonymous} />
-              </div>
-
-              {/* Incident Type */}
-              <div className="space-y-2">
-                <Label>Art des Vorfalls *</Label>
-                <RadioGroup value={incidentType} onValueChange={(value: any) => setIncidentType(value)}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="near_error" id="near_error" />
-                    <Label htmlFor="near_error" className="font-normal cursor-pointer">
-                      Beinahe-Fehler (rechtzeitig erkannt)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="error" id="error" />
-                    <Label htmlFor="error" className="font-normal cursor-pointer">
-                      Fehler (ist aufgetreten)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="adverse_event" id="adverse_event" />
-                    <Label htmlFor="adverse_event" className="font-normal cursor-pointer">
-                      Unerwünschtes Ereignis
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Severity */}
-              <div className="space-y-2">
-                <Label htmlFor="severity">Schweregrad *</Label>
-                <Select value={severity} onValueChange={(value: any) => setSeverity(value)}>
-                  <SelectTrigger id="severity">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Niedrig</SelectItem>
-                    <SelectItem value="medium">Mittel</SelectItem>
-                    <SelectItem value="high">Hoch</SelectItem>
-                    <SelectItem value="critical">Kritisch</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Category */}
-              <div className="space-y-2">
-                <Label htmlFor="category">Kategorie *</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger id="category">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Title */}
-              <div className="space-y-2">
-                <Label htmlFor="title">Titel *</Label>
-                <Input
-                  id="title"
-                  placeholder="Kurze Zusammenfassung des Vorfalls"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Beschreibung *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Was ist passiert? Beschreiben Sie den Vorfall im Detail..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                />
-              </div>
-
-              {/* Contributing Factors */}
-              <div className="space-y-2">
-                <Label htmlFor="contributing_factors">Mögliche Ursachen / Beitragende Faktoren</Label>
-                <Textarea
-                  id="contributing_factors"
-                  placeholder="Was könnte zu diesem Vorfall beigetragen haben?"
-                  value={contributingFactors}
-                  onChange={(e) => setContributingFactors(e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              {/* Immediate Actions */}
-              <div className="space-y-2">
-                <Label htmlFor="immediate_actions">Sofortmaßnahmen</Label>
-                <Textarea
-                  id="immediate_actions"
-                  placeholder="Welche Maßnahmen wurden unmittelbar ergriffen?"
-                  value={immediateActions}
-                  onChange={(e) => setImmediateActions(e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              {/* AI Suggestions */}
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <Label className="font-medium">KI-basierte Vorschläge</Label>
-                    <p className="text-sm text-muted-foreground">Automatische Analyse und Präventionsvorschläge generieren</p>
-                  </div>
-                </div>
-                <Switch checked={generateAISuggestions} onCheckedChange={setGenerateAISuggestions} />
-              </div>
-
-              {/* Add to Knowledge */}
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-amber-600" />
-                  <div>
-                    <Label className="font-medium">Zur Wissensdatenbank hinzufügen</Label>
-                    <p className="text-sm text-muted-foreground">Analyse und Lösungen im Wissensbereich speichern</p>
-                  </div>
-                </div>
-                <Switch checked={addToKnowledge} onCheckedChange={setAddToKnowledge} />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowReportDialog(false)}>
-                Abbrechen
-              </Button>
-              <Button onClick={handleSubmitIncident} disabled={isSubmitting}>
-                {isSubmitting ? "Wird gemeldet..." : "Vorfall melden"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Detail Dialog */}
-        <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            {selectedIncident && (
-              <>
-                <DialogHeader>
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <Badge variant="outline" className="gap-1">
-                      {getTypeIcon(selectedIncident.incident_type)}
-                      {getTypeLabel(selectedIncident.incident_type)}
-                    </Badge>
-                    <Badge className={getSeverityColor(selectedIncident.severity)}>
-                      {getSeverityLabel(selectedIncident.severity)}
-                    </Badge>
-                    <Badge variant="secondary">{getCategoryLabel(selectedIncident.category)}</Badge>
-                    {selectedIncident.is_anonymous && (
-                      <Badge variant="outline" className="gap-1">
-                        <EyeOff className="h-3 w-3" />
-                        Anonym
-                      </Badge>
-                    )}
-                  </div>
-                  <DialogTitle>{selectedIncident.title}</DialogTitle>
-                  <DialogDescription>
-                    Gemeldet am {formatDateDE(selectedIncident.created_at)}
-                    {!selectedIncident.is_anonymous && selectedIncident.reporter_name && ` von ${selectedIncident.reporter_name}`}
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                  <div>
-                    <Label className="font-semibold">Beschreibung</Label>
-                    <p className="text-sm mt-2 whitespace-pre-wrap">{selectedIncident.description}</p>
-                  </div>
-
-                  {selectedIncident.contributing_factors && (
-                    <div>
-                      <Label className="font-semibold">Beitragende Faktoren</Label>
-                      <p className="text-sm mt-2 whitespace-pre-wrap">{selectedIncident.contributing_factors}</p>
-                    </div>
-                  )}
-
-                  {selectedIncident.immediate_actions && (
-                    <div>
-                      <Label className="font-semibold">Sofortmaßnahmen</Label>
-                      <p className="text-sm mt-2 whitespace-pre-wrap">{selectedIncident.immediate_actions}</p>
-                    </div>
-                  )}
-
-                  {selectedIncident.ai_suggestions && (
-                    <div className="p-4 border rounded-lg bg-purple-50 border-purple-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="h-5 w-5 text-purple-600" />
-                        <Label className="font-semibold text-purple-900">KI-Analyse und Empfehlungen</Label>
-                      </div>
-                      <p className="text-sm text-purple-900 whitespace-pre-wrap">{selectedIncident.ai_suggestions}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end">
-                  <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
-                    Schließen
-                  </Button>
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
+        <DetailDialog
+          open={showDetailDialog}
+          onOpenChange={setShowDetailDialog}
+          incident={selectedIncident}
+        />
       </div>
     </AppLayout>
   )

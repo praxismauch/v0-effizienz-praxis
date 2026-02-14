@@ -144,6 +144,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const effectivePracticeId = String(practice_id || "1")
 
+    // Double-check: if practiceId is not a valid integer, skip DB save
+    if (isNaN(Number(effectivePracticeId))) {
+      return NextResponse.json({
+        preferences: {
+          expanded_groups: expanded_groups || [],
+          expanded_items: expanded_items || {},
+          is_collapsed: is_collapsed || false,
+          favorites: favorites || [],
+          collapsed_sections: [],
+          single_group_mode: single_group_mode ?? false,
+        },
+      })
+    }
+
     const adminClient = await createAdminClient()
     
     // If Supabase isn't configured, return success (localStorage is handling the data)

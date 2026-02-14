@@ -21,6 +21,7 @@ import { SkillsGridView } from "./components/skills-grid-view"
 import { CreateSkillDialog } from "./components/create-skill-dialog"
 import { EditSkillDialog } from "./components/edit-skill-dialog"
 import { AiGeneratorDialog } from "./components/ai-generator-dialog"
+import { SkillDetailDialog } from "./components/skill-detail-dialog"
 
 export default function SkillsPageClient() {
   const { currentUser } = useUser()
@@ -43,6 +44,8 @@ export default function SkillsPageClient() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
+  const [viewingSkill, setViewingSkill] = useState<Skill | null>(null)
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null)
 
   // Category expansion state
@@ -135,6 +138,11 @@ export default function SkillsPageClient() {
       newExpanded.add(category)
     }
     setExpandedCategories(newExpanded)
+  }
+
+  const handleViewSkill = (skill: Skill) => {
+    setViewingSkill(skill)
+    setIsDetailDialogOpen(true)
   }
 
   const handleEditSkill = (skill: Skill) => {
@@ -319,18 +327,27 @@ export default function SkillsPageClient() {
             groupedSkills={groupedSkills}
             expandedCategories={expandedCategories}
             onToggleCategory={handleToggleCategory}
+            onViewSkill={handleViewSkill}
             onEditSkill={handleEditSkill}
             onDeleteSkill={handleDeleteSkill}
           />
         ) : (
           <SkillsGridView
             skills={filteredSkills}
+            onViewSkill={handleViewSkill}
             onEditSkill={handleEditSkill}
             onDeleteSkill={handleDeleteSkill}
           />
         )}
 
         {/* Dialogs */}
+        <SkillDetailDialog
+          open={isDetailDialogOpen}
+          onOpenChange={setIsDetailDialogOpen}
+          skill={viewingSkill}
+          onEdit={handleEditSkill}
+        />
+
         <CreateSkillDialog
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}

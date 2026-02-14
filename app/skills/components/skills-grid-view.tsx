@@ -9,19 +9,21 @@ import { categoryLabels, categoryColors } from "../types"
 
 interface SkillsGridViewProps {
   skills: Skill[]
+  onViewSkill: (skill: Skill) => void
   onEditSkill: (skill: Skill) => void
   onDeleteSkill: (skill: Skill) => void
 }
 
 export function SkillsGridView({
   skills,
+  onViewSkill,
   onEditSkill,
   onDeleteSkill,
 }: SkillsGridViewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {skills.map((skill) => (
-        <Card key={skill.id} className="group hover:shadow-md transition-shadow">
+        <Card key={skill.id} className="group hover:shadow-md transition-shadow cursor-pointer" onClick={() => onViewSkill(skill)}>
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
@@ -35,7 +37,7 @@ export function SkillsGridView({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  onClick={() => onEditSkill(skill)}
+                  onClick={(e) => { e.stopPropagation(); onEditSkill(skill) }}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -43,7 +45,7 @@ export function SkillsGridView({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
-                  onClick={() => onDeleteSkill(skill)}
+                  onClick={(e) => { e.stopPropagation(); onDeleteSkill(skill) }}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

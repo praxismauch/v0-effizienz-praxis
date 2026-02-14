@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
@@ -11,7 +10,10 @@ import {
   UserPlus,
   Building2,
   Loader2,
+  UserCheck,
+  ClipboardList,
 } from "lucide-react"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 
 // Import extracted tab components
 import MembersTab from "./components/members-tab"
@@ -128,7 +130,9 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
   const stats = {
     totalMembers: (teamMembers || []).length,
     activeMembers: (teamMembers || []).filter((m) => m.status === "active").length,
+    inactiveMembers: (teamMembers || []).filter((m) => m.status !== "active").length,
     totalTeams: (teams || []).length,
+    totalStaffingPlans: (staffingPlans || []).length,
   }
 
   return (
@@ -148,24 +152,33 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700">Mitarbeiter</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalMembers}</div>
-            <p className="text-xs text-muted-foreground">{stats.activeMembers} aktiv</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-green-50 to-green-100/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-700">Teams</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalTeams}</div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Mitarbeiter"
+          value={stats.totalMembers}
+          icon={Users}
+          color={statCardColors.blue}
+          description={`${stats.activeMembers} aktiv`}
+        />
+        <StatCard
+          label="Aktiv"
+          value={stats.activeMembers}
+          icon={UserCheck}
+          color={statCardColors.green}
+          description={`${stats.inactiveMembers} inaktiv`}
+        />
+        <StatCard
+          label="Teams"
+          value={stats.totalTeams}
+          icon={Building2}
+          color={statCardColors.purple}
+        />
+        <StatCard
+          label="Bedarfspläne"
+          value={stats.totalStaffingPlans}
+          icon={ClipboardList}
+          color={statCardColors.amber}
+        />
       </div>
 
       {/* Tabs */}

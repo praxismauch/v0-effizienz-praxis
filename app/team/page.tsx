@@ -22,7 +22,6 @@ export default async function TeamPage() {
   const teamData = practiceId ? await getAllTeamData(practiceId) : {
     teams: [],
     teamMembers: [],
-    responsibilities: [],
     staffingPlans: [],
     holidayRequests: [],
     sickLeaves: []

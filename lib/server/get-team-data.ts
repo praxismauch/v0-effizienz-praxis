@@ -190,7 +190,6 @@ export const getAllTeamData = cache(async (practiceId: string) => {
     return {
       teams,
       teamMembers,
-      responsibilities: [],
       staffingPlans: staffingPlansResult.data || [],
       holidayRequests: [],
       sickLeaves: [],
@@ -200,7 +199,6 @@ export const getAllTeamData = cache(async (practiceId: string) => {
     return {
       teams: [],
       teamMembers: [],
-      responsibilities: [],
       staffingPlans: [],
       holidayRequests: [],
       sickLeaves: [],

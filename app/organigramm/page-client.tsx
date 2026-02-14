@@ -274,6 +274,7 @@ export default function OrganigrammClient() {
 
     return (
       <div className="flex flex-col items-center">
+        {/* The card itself */}
         <div
           className={cn(
             "relative group bg-[#4F7CBA] text-white rounded-md px-4 py-3 min-w-[140px] max-w-[220px] text-center shadow-md transition-all hover:shadow-lg cursor-pointer",
@@ -322,27 +323,90 @@ export default function OrganigrammClient() {
             </button>
           </div>
         </div>
+
+        {/* Children with proper connectors */}
         {children.length > 0 && (
-          <>
-            <div className="w-px h-6 bg-[#4F7CBA]" />
-            {children.length > 1 && (
-              <div
-                className="h-px bg-[#4F7CBA]"
-                style={{
-                  width: `calc(${(children.length - 1) * 100}% / ${children.length} + ${(children.length - 1) * 32}px)`,
-                }}
-              />
-            )}
-            <div className="flex gap-8 items-start">
-              {children.map((child, index) => (
-                <div key={child.position.id} className="flex flex-col items-center">
-                  <div className="w-px h-6 bg-[#4F7CBA]" />
-                  <PositionCard node={child} />
-                </div>
-              ))}
-            </div>
-          </>
+          <ChildrenConnector>
+            {children.map((child) => (
+              <PositionCard key={child.position.id} node={child} />
+            ))}
+          </ChildrenConnector>
         )}
+      </div>
+    )
+  }
+
+  /**
+   * ChildrenConnector renders:
+   * 1. A vertical stem down from the parent
+   * 2. A horizontal rail spanning from the center of the first child to the center of the last child
+   * 3. A vertical stem up into each child
+   * It uses refs to measure actual rendered positions so lines always connect properly.
+   */
+  const ChildrenConnector = ({ children: childElements }: { children: React.ReactNode[] }) => {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const [lineStyle, setLineStyle] = useState<{ left: number; width: number } | null>(null)
+
+    useEffect(() => {
+      const el = containerRef.current
+      if (!el) return
+
+      const updateLine = () => {
+        const childWrappers = el.querySelectorAll<HTMLElement>(":scope > .org-child-wrapper")
+        if (childWrappers.length < 2) {
+          setLineStyle(null)
+          return
+        }
+        const containerRect = el.getBoundingClientRect()
+        const firstChild = childWrappers[0]
+        const lastChild = childWrappers[childWrappers.length - 1]
+        const firstCenter = firstChild.getBoundingClientRect().left + firstChild.getBoundingClientRect().width / 2 - containerRect.left
+        const lastCenter = lastChild.getBoundingClientRect().left + lastChild.getBoundingClientRect().width / 2 - containerRect.left
+        setLineStyle({ left: firstCenter, width: lastCenter - firstCenter })
+      }
+
+      // Measure after paint
+      const raf = requestAnimationFrame(updateLine)
+      // Also observe resize
+      const ro = new ResizeObserver(updateLine)
+      ro.observe(el)
+
+      return () => {
+        cancelAnimationFrame(raf)
+        ro.disconnect()
+      }
+    }, [childElements])
+
+    const stemH = 24 // px – vertical stem height
+
+    return (
+      <div className="flex flex-col items-center w-full">
+        {/* Vertical stem from parent down */}
+        <div className="w-px bg-[#4F7CBA]" style={{ height: stemH }} />
+
+        {/* Horizontal rail + children row */}
+        <div ref={containerRef} className="relative flex gap-8 items-start">
+          {/* The horizontal rail (absolute, drawn after measurement) */}
+          {lineStyle && lineStyle.width > 0 && (
+            <div
+              className="absolute bg-[#4F7CBA]"
+              style={{
+                top: 0,
+                left: lineStyle.left,
+                width: lineStyle.width,
+                height: 1,
+              }}
+            />
+          )}
+
+          {childElements.map((child, i) => (
+            <div key={i} className="org-child-wrapper flex flex-col items-center">
+              {/* Vertical stem into child */}
+              <div className="w-px bg-[#4F7CBA]" style={{ height: stemH }} />
+              {child}
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

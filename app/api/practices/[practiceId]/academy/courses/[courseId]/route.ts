@@ -11,8 +11,8 @@ export async function GET(
     const { practiceId, courseId } = await params
     const effectivePracticeId =
       practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId)
+        ? HARDCODED_PRACTICE_ID
+        : practiceId
 
     const supabase = await createAdminClient()
 
@@ -44,8 +44,8 @@ export async function PUT(
     const { practiceId, courseId } = await params
     const effectivePracticeId =
       practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId)
+        ? HARDCODED_PRACTICE_ID
+        : practiceId
 
     const body = await request.json()
     const supabase = await createAdminClient()
@@ -92,8 +92,8 @@ export async function DELETE(
     const { practiceId, courseId } = await params
     const effectivePracticeId =
       practiceId === "0" || practiceId === "undefined" || !practiceId
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId)
+        ? HARDCODED_PRACTICE_ID
+        : practiceId
 
     const supabase = await createAdminClient()
 

@@ -278,7 +278,7 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           <TabsContent value="vaccination" className="mt-6">
             <TeamMemberVaccinationTab
               teamMemberId={memberId}
-              practiceId={parseInt(practiceId, 10)}
+              practiceId={practiceId}
             />
           </TabsContent>
         </Tabs>

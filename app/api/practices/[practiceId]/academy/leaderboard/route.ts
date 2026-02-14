@@ -10,8 +10,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const practiceId =
       rawPracticeId === "0" || rawPracticeId === "undefined" || !rawPracticeId
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(rawPracticeId)
+        ? HARDCODED_PRACTICE_ID
+        : rawPracticeId
 
     const searchParams = request.nextUrl.searchParams
     const period = searchParams.get("period") || "all" // all, weekly, monthly

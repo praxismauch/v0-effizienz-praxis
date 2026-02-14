@@ -19,11 +19,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = await createClient()
     const { settings } = await request.json()
 
-    // Get practice info (practices table uses INTEGER id)
+    // Get practice info
     const { data: practice } = await supabase
       .from("practices")
       .select("name, email, logo_url")
-      .eq("id", Number.parseInt(practiceId))
+      .eq("id", practiceId)
       .single()
 
     // Gather summary data
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const { data: teamMembers } = await supabase
         .from("practice_users")
         .select("users(id, first_name, last_name, date_of_birth)")
-        .eq("practice_id", Number.parseInt(practiceId))
+        .eq("practice_id", practiceId)
         .eq("is_active", true)
 
       if (teamMembers) {
@@ -535,7 +535,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Log to history
     await supabase.from("weekly_summary_history").insert({
-      practice_id: Number.parseInt(practiceId),
+      practice_id: practiceId,
       recipients_count: successCount,
       recipients: recipients,
       status: failedCount === 0 ? "sent" : failedCount === recipients.length ? "failed" : "partial",
@@ -561,7 +561,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         last_sent_status: failedCount === 0 ? "sent" : "partial",
         send_count: (settings.send_count || 0) + 1,
       })
-      .eq("practice_id", Number.parseInt(practiceId))
+      .eq("practice_id", practiceId)
 
     return NextResponse.json({
       success: true,

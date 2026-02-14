@@ -13,8 +13,8 @@ export async function GET(
 
     const effectivePracticeId =
       !practiceId || practiceId === "0" || practiceId === "undefined"
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId)
+        ? HARDCODED_PRACTICE_ID
+        : practiceId
 
     console.log("[v0] Fetching enrollment:", enrollmentId)
 
@@ -51,8 +51,8 @@ export async function PUT(
 
     const effectivePracticeId =
       !practiceId || practiceId === "0" || practiceId === "undefined"
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId)
+        ? HARDCODED_PRACTICE_ID
+        : practiceId
 
     const body = await request.json()
 
@@ -102,8 +102,8 @@ export async function DELETE(
 
     const effectivePracticeId =
       !practiceId || practiceId === "0" || practiceId === "undefined"
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(practiceId)
+        ? HARDCODED_PRACTICE_ID
+        : practiceId
 
     console.log("[v0] Soft deleting enrollment:", enrollmentId)
 

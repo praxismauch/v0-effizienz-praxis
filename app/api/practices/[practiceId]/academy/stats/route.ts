@@ -1,17 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server-admin"
-
-const HARDCODED_PRACTICE_ID = "1"
+import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId: rawPracticeId } = await params
     const supabase = createClient()
 
-    const practiceId =
-      rawPracticeId === "0" || rawPracticeId === "undefined" || !rawPracticeId
-        ? Number.parseInt(HARDCODED_PRACTICE_ID)
-        : Number.parseInt(rawPracticeId)
+    const practiceId = await getValidatedPracticeId(rawPracticeId)
+
+    if (!practiceId) {
+      return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
+    }
 
 
 

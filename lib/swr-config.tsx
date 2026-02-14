@@ -115,7 +115,20 @@ export function SWRProvider({ children }: { children: ReactNode }) {
     onError: (error: unknown, key: string) => {
       const err = error as { status?: number; message?: string }
       
-      // Don't log auth errors at error level - they're expected on logout/session expiry
+      // Handle 401 errors - redirect to login after a short delay
+      if (err.status === 401) {
+        Logger.debug("swr", "401 Unauthorized - redirecting to login", { key })
+        
+        // Redirect to login if not already on auth pages
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
+          setTimeout(() => {
+            window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`
+          }, 1000) // Small delay to prevent multiple redirects
+        }
+        return
+      }
+      
+      // Don't log other auth errors at error level - they're expected
       if (isAuthError(error)) {
         Logger.debug("swr", "Auth error (expected)", { key, status: err.status })
         return

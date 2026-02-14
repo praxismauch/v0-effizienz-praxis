@@ -40,8 +40,10 @@ export default function WorkflowsPageClient() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
 
   useEffect(() => {
+    // Don't fetch workflows until user authentication is complete
+    if (!user) return
     if (currentPractice?.id) loadWorkflows()
-  }, [currentPractice?.id])
+  }, [currentPractice?.id, user])
 
   const loadWorkflows = async () => {
     if (!currentPractice?.id) return

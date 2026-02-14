@@ -28,7 +28,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const effectivePracticeId =
       practiceId && practiceId !== "0" && practiceId !== "undefined" ? String(practiceId) : "1"
 
-    const { adminClient } = await requirePracticeAccess(effectivePracticeId)
+    // Try to get authenticated access, but return empty array if no auth
+    let adminClient
+    try {
+      const access = await requirePracticeAccess(effectivePracticeId)
+      adminClient = access.adminClient
+    } catch (error: any) {
+      // If 401 (no auth), return empty array instead of error
+      if (error.status === 401 || error.message?.includes("authentifiziert")) {
+        return NextResponse.json([])
+      }
+      // Re-throw other errors (403, etc)
+      throw error
+    }
+    
     const supabase = adminClient
 
     const result = await withRetry(() =>

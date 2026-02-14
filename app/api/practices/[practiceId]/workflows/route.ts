@@ -14,8 +14,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ workflows: [] }, { status: 200 })
     }
 
-    const access = await requirePracticeAccess(practiceId)
-    const supabase = access.adminClient
+    // Try to get authenticated access, but return empty array if no auth
+    let supabase
+    try {
+      const access = await requirePracticeAccess(practiceId)
+      supabase = access.adminClient
+    } catch (error: any) {
+      // If 401 (no auth), return empty array instead of error
+      if (error.status === 401 || error.message?.includes("authentifiziert")) {
+        return NextResponse.json({ workflows: [] }, { status: 200 })
+      }
+      // Re-throw other errors (403, etc)
+      throw error
+    }
 
     let data: any[] = []
     try {

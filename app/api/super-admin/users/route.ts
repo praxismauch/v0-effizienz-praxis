@@ -86,15 +86,15 @@ export async function GET(request: NextRequest) {
       console.error("Error fetching team_members:", tmError)
     }
 
-    // Build maps for efficient lookups
-    const practiceMap = new Map(practices?.map((p) => [p.id, { name: p.name, color: p.color }]) || [])
+    // Build maps for efficient lookups - practice_id is now TEXT
+    const practiceMap = new Map(practices?.map((p) => [String(p.id), { name: p.name, color: p.color }]) || [])
     const userPracticesMap = new Map<
       string,
       Array<{ practiceId: string; practiceName: string; role: string; isPrimary: boolean }>
     >()
 
     teamMembers?.forEach((tm) => {
-      const practice = practiceMap.get(Number.parseInt(tm.practice_id))
+      const practice = practiceMap.get(String(tm.practice_id))
       if (practice) {
         const existing = userPracticesMap.get(tm.user_id) || []
         existing.push({
@@ -236,7 +236,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const validPracticeId = practiceId && !Number.isNaN(Number(practiceId)) ? Number(practiceId) : null
+    // Practice ID is now TEXT (UUID format), keep as string
+    const validPracticeId = practiceId && practiceId !== "undefined" && practiceId !== "null" ? String(practiceId) : null
 
     const nameParts = name.trim().split(" ")
     const firstName = nameParts[0] || name
@@ -275,7 +276,7 @@ export async function POST(request: NextRequest) {
     // If practice assigned, create team_members entry
     if (validPracticeId) {
       const { error: tmError } = await supabase.from("team_members").insert({
-        practice_id: validPracticeId.toString(),
+        practice_id: validPracticeId,
         user_id: authData.user.id,
         role: role || "user",
         status: "active",

@@ -143,16 +143,12 @@ export async function POST(request: NextRequest) {
     const { data: existingPractices, error: fetchError } = await supabase
       .from("practices")
       .select("id, color")
-      .order("id", { ascending: false })
+      .order("created_at", { ascending: false })
 
     if (fetchError) {
       Logger.error("api", "Error fetching existing practices", fetchError)
       return NextResponse.json({ error: fetchError.message }, { status: 500 })
     }
-
-    const maxId =
-      existingPractices && existingPractices.length > 0 ? Math.max(...existingPractices.map((p) => p.id)) : 0
-    const nextId = maxId + 1
 
     const usedColors = (existingPractices || []).map((p) => p.color).filter(Boolean) as string[]
     const assignedColor = getNextAvailableColor(usedColors)
@@ -160,7 +156,7 @@ export async function POST(request: NextRequest) {
     const address = [street, city, zipCode].filter(Boolean).join(", ")
 
     const practiceData = {
-      id: nextId,
+      // Remove id - let database auto-generate UUID
       name,
       type,
       address,
@@ -192,7 +188,7 @@ export async function POST(request: NextRequest) {
 
       if (!defaultTeamsError && defaultTeamsData && defaultTeamsData.length > 0) {
         const defaultTeams = defaultTeamsData.map((dt) => ({
-          practice_id: data.id,
+          practice_id: String(data.id), // Ensure TEXT type
           name: dt.name,
           color: dt.color || "#64748b",
           description: dt.description,

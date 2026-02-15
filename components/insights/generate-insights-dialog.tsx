@@ -53,6 +53,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { useUser } from "@/contexts/user-context"
 import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 interface Props {
   open: boolean
@@ -160,6 +161,10 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
   const [existingJournal, setExistingJournal] = useState<ExistingJournalInfo | null>(null)
 
   const [includeSelfCheck, setIncludeSelfCheck] = useState(false)
+  const [includeKpis, setIncludeKpis] = useState(true)
+  const [includeTeamData, setIncludeTeamData] = useState(true)
+  const [generateActionPlan, setGenerateActionPlan] = useState(true)
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   const [selfCheckData, setSelfCheckData] = useState<SelfCheckData>({
     energy_level: 5,
     stress_level: 5,
@@ -169,6 +174,27 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
     motivation: 5,
     overall_wellbeing: 5,
   })
+
+  // Load saved journal preferences
+  useEffect(() => {
+    if (!open || preferencesLoaded) return
+    const effectivePracticeId = practiceId || currentUser?.practice_id
+    if (!effectivePracticeId) return
+
+    fetch(`/api/practices/${effectivePracticeId}/insights/preferences`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((prefs) => {
+        if (prefs) {
+          if (prefs.frequency) setPeriodType(prefs.frequency)
+          if (typeof prefs.include_kpis === "boolean") setIncludeKpis(prefs.include_kpis)
+          if (typeof prefs.include_team_data === "boolean") setIncludeTeamData(prefs.include_team_data)
+          if (typeof prefs.include_self_check === "boolean") setIncludeSelfCheck(prefs.include_self_check)
+          if (typeof prefs.generate_action_plan === "boolean") setGenerateActionPlan(prefs.generate_action_plan)
+        }
+        setPreferencesLoaded(true)
+      })
+      .catch(() => setPreferencesLoaded(true))
+  }, [open, preferencesLoaded, practiceId, currentUser?.practice_id])
 
   const getPeriodDates = () => {
     const now = new Date()
@@ -247,7 +273,7 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
 
       setProgress(70)
 
-      // Generate AI analysis
+      // Generate AI analysis (respecting journal preferences)
       const response = await fetch("/api/practice-insights/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -257,12 +283,13 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
           periodStart: format(start, "yyyy-MM-dd"),
           periodEnd: format(end, "yyyy-MM-dd"),
           userNotes,
-          kpis,
-          parameterValues: values,
-          teamMembers,
+          kpis: includeKpis ? kpis : [],
+          parameterValues: includeKpis ? values : [],
+          teamMembers: includeTeamData ? teamMembers : [],
           goals,
           workflows,
           selfCheckData: includeSelfCheck ? selfCheckData : null,
+          generateActionPlan,
         }),
       })
 
@@ -300,6 +327,7 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
         setUserNotes("")
         setExistingJournal(null)
         setIncludeSelfCheck(false)
+        setPreferencesLoaded(false)
         setSelfCheckData({
           energy_level: 5,
           stress_level: 5,

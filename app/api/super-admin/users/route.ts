@@ -283,12 +283,20 @@ export async function POST(request: NextRequest) {
         details: createUserError.details,
         hint: createUserError.hint,
       })
+      
       // Cleanup auth user on failure
-      await supabase.auth.admin.deleteUser(authData.user.id)
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id)
+        console.log("[v0] Cleaned up auth user after DB error")
+      } catch (cleanupError) {
+        console.error("[v0] Failed to cleanup auth user:", cleanupError)
+      }
+      
       return NextResponse.json(
         {
           error: `Benutzerdatensatz konnte nicht erstellt werden: ${createUserError.message}`,
           code: createUserError.code,
+          details: createUserError.details,
         },
         { status: 500 },
       )

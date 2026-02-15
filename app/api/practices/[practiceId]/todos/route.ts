@@ -25,8 +25,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
-    const effectivePracticeId =
-      practiceId && practiceId !== "0" && practiceId !== "undefined" ? String(practiceId) : "1"
+    // Validate practice ID - don't default to "1", return empty if invalid
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json([])
+    }
+    const effectivePracticeId = String(practiceId)
 
     // Try to get authenticated access, but return empty array if no auth
     let adminClient

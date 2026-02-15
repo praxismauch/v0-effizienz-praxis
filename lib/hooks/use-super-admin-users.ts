@@ -11,11 +11,11 @@ interface User {
   created_at: string
   updated_at: string | null
   last_login: string | null
-  practice_id: number | null
+  practice_id: string | null
   practice_name: string | null
   practice_color: string | null
   practices: Array<{
-    practiceId: number
+    practiceId: string
     practiceName: string
     role: string
     isPrimary: boolean
@@ -24,10 +24,11 @@ interface User {
   avatar: string | null
   preferred_language: string
   specialization: string | null
+  approval_status: string | null
 }
 
 interface Practice {
-  id: number
+  id: string
   name: string
   color: string | null
 }
@@ -113,11 +114,11 @@ export function useSuperAdminUsers() {
       specialization?: string
     },
   ) => {
-    if (!userId || userId === "undefined" || userId === "null") {
+    if (!id || id === "undefined" || id === "null") {
       throw new Error("Ungültige Benutzer-ID")
     }
 
-    const response = await fetch(`/api/super-admin/users/${userId}`, {
+    const response = await fetch(`/api/super-admin/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),

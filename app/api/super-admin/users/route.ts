@@ -1,6 +1,7 @@
 import { createAdminClient, createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
+import { randomUUID } from "crypto"
 
 export const dynamic = "force-dynamic"
 
@@ -288,12 +289,14 @@ export async function POST(request: NextRequest) {
     // If practice assigned, create team_members entry
     if (validPracticeId) {
       const { error: tmError } = await supabase.from("team_members").insert({
+        id: randomUUID(),
         practice_id: validPracticeId,
         user_id: authData.user.id,
         role: role || "member",
         status: "active",
         first_name: firstName,
         last_name: lastName,
+        name: name,
         email: email,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -301,6 +304,7 @@ export async function POST(request: NextRequest) {
 
       if (tmError) {
         console.error("Error creating team_members entry:", tmError)
+        // Non-critical: user was created successfully, team membership failed
       }
     }
 
@@ -318,6 +322,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Exception in POST /api/super-admin/users:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    const message = error instanceof Error ? error.message : "Interner Serverfehler"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

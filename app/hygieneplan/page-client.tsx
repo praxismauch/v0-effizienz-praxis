@@ -399,6 +399,18 @@ export default function HygienePlanClient() {
           </div>
         )}
 
+        {/* Create Plan Dialog */}
+        <CreateHygienePlanDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onCreated={(plan) => {
+            setHygienePlans([plan, ...hygienePlans])
+            setIsCreateDialogOpen(false)
+          }}
+          practiceId={currentPractice?.id?.toString() || ""}
+          userId={currentUser?.id || ""}
+        />
+
         {/* Generate AI Plan Dialog */}
         <GenerateAIPlanDialog
           open={isGenerateDialogOpen}
@@ -698,6 +710,253 @@ function PlanDetailDialog({
           <Button>
             <Download className="h-4 w-4 mr-2" />
             Als PDF exportieren
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Create Hygiene Plan Dialog Component
+function CreateHygienePlanDialog({
+  open,
+  onOpenChange,
+  onCreated,
+  practiceId,
+  userId,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCreated: (plan: HygienePlan) => void
+  practiceId: string
+  userId: string
+}) {
+  const [saving, setSaving] = useState(false)
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [category, setCategory] = useState("")
+  const [frequency, setFrequency] = useState("")
+  const [responsibleRole, setResponsibleRole] = useState("")
+  const [objective, setObjective] = useState("")
+  const [materials, setMaterials] = useState("")
+  const [steps, setSteps] = useState("")
+  const [documentation, setDocumentation] = useState("")
+
+  const resetForm = () => {
+    setTitle("")
+    setDescription("")
+    setCategory("")
+    setFrequency("")
+    setResponsibleRole("")
+    setObjective("")
+    setMaterials("")
+    setSteps("")
+    setDocumentation("")
+  }
+
+  const handleCreate = async () => {
+    if (!title.trim()) {
+      toast.error("Bitte geben Sie einen Titel ein")
+      return
+    }
+    if (!category) {
+      toast.error("Bitte waehlen Sie eine Kategorie")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const content: Record<string, unknown> = {}
+      if (objective.trim()) content.objective = objective.trim()
+      if (materials.trim()) content.materials = materials.split("\n").map((m) => m.trim()).filter(Boolean)
+      if (steps.trim()) {
+        content.steps = steps.split("\n").map((s, i) => ({
+          step: i + 1,
+          description: s.trim(),
+          critical: false,
+        })).filter((s) => s.description)
+      }
+      if (documentation.trim()) content.documentation = documentation.trim()
+
+      const response = await fetch(`/api/practices/${practiceId}/hygiene-plans`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || null,
+          category,
+          frequency: frequency || null,
+          responsible_role: responsibleRole.trim() || null,
+          content,
+          status: "active",
+          tags: [],
+          created_by: userId,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast.success("Hygieneplan erfolgreich erstellt")
+        onCreated(data.hygienePlan)
+        resetForm()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData.error || "Fehler beim Erstellen des Hygieneplans")
+      }
+    } catch (error) {
+      console.error("Error creating hygiene plan:", error)
+      toast.error("Fehler beim Erstellen des Hygieneplans")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v) }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-primary" />
+            Neuen Hygieneplan erstellen
+          </DialogTitle>
+          <DialogDescription>
+            Erstellen Sie manuell einen neuen Hygieneplan fuer Ihre Praxis.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Title */}
+          <div className="space-y-2">
+            <Label htmlFor="plan-title">Titel *</Label>
+            <Input
+              id="plan-title"
+              placeholder="z.B. Flaechendesinfektion Behandlungsraum"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="plan-desc">Beschreibung</Label>
+            <Textarea
+              id="plan-desc"
+              placeholder="Kurze Beschreibung des Hygieneplans..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          {/* Category & Frequency */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Kategorie *</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Kategorie waehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Haeufigkeit</Label>
+              <Select value={frequency} onValueChange={setFrequency}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Haeufigkeit waehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Taeglich</SelectItem>
+                  <SelectItem value="weekly">Woechentlich</SelectItem>
+                  <SelectItem value="monthly">Monatlich</SelectItem>
+                  <SelectItem value="quarterly">Quartalsweise</SelectItem>
+                  <SelectItem value="yearly">Jaehrlich</SelectItem>
+                  <SelectItem value="as_needed">Bei Bedarf</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Responsible Role */}
+          <div className="space-y-2">
+            <Label htmlFor="plan-role">Verantwortliche Rolle</Label>
+            <Input
+              id="plan-role"
+              placeholder="z.B. MFA, Hygienefachkraft, alle Mitarbeiter"
+              value={responsibleRole}
+              onChange={(e) => setResponsibleRole(e.target.value)}
+            />
+          </div>
+
+          {/* Objective */}
+          <div className="space-y-2">
+            <Label htmlFor="plan-objective">Zielsetzung</Label>
+            <Textarea
+              id="plan-objective"
+              placeholder="Was soll mit diesem Hygieneplan erreicht werden?"
+              value={objective}
+              onChange={(e) => setObjective(e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          {/* Materials */}
+          <div className="space-y-2">
+            <Label htmlFor="plan-materials">Benoetigte Materialien (eine pro Zeile)</Label>
+            <Textarea
+              id="plan-materials"
+              placeholder={"Flaechendesinfektionsmittel\nEinmalhandschuhe\nWischtuecher"}
+              value={materials}
+              onChange={(e) => setMaterials(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          {/* Steps */}
+          <div className="space-y-2">
+            <Label htmlFor="plan-steps">Durchfuehrungsschritte (einer pro Zeile)</Label>
+            <Textarea
+              id="plan-steps"
+              placeholder={"Haende desinfizieren\nFlaeche mit Desinfektionsmittel einspruehen\nEinwirkzeit beachten (mind. 1 Min.)\nMit Tuch abwischen"}
+              value={steps}
+              onChange={(e) => setSteps(e.target.value)}
+              rows={4}
+            />
+          </div>
+
+          {/* Documentation */}
+          <div className="space-y-2">
+            <Label htmlFor="plan-doc">Dokumentationspflichten</Label>
+            <Textarea
+              id="plan-doc"
+              placeholder="Welche Dokumentation ist erforderlich?"
+              value={documentation}
+              onChange={(e) => setDocumentation(e.target.value)}
+              rows={2}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Abbrechen
+          </Button>
+          <Button onClick={handleCreate} disabled={saving || !title.trim() || !category}>
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Wird erstellt...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Plan erstellen
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -160,6 +160,7 @@ export default function HygienePlanClient() {
   const generateAIPlan = async (category: string, customRequirements: string) => {
     setGenerating(true)
     try {
+      console.log("[v0] Generating AI hygiene plan for:", category, "practice:", currentPractice?.id)
       const response = await fetch(`/api/practices/${currentPractice?.id}/hygiene-plans/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -170,16 +171,20 @@ export default function HygienePlanClient() {
           userId: currentUser?.id,
         }),
       })
+      console.log("[v0] AI hygiene plan response status:", response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] AI hygiene plan created:", data.hygienePlan?.id)
         toast.success("KI-Hygieneplan erfolgreich erstellt")
         setHygienePlans([data.hygienePlan, ...hygienePlans])
         setIsGenerateDialogOpen(false)
       } else {
-        toast.error("Fehler beim Generieren des Hygieneplans")
+        const errorData = await response.json().catch(() => ({ error: "Unbekannt" }))
+        console.error("[v0] AI hygiene plan error:", errorData)
+        toast.error(errorData.details || errorData.error || "Fehler beim Generieren des Hygieneplans")
       }
     } catch (error) {
-      console.error("Error generating hygiene plan:", error)
+      console.error("[v0] Error generating hygiene plan:", error)
       toast.error("Fehler beim Generieren des Hygieneplans")
     } finally {
       setGenerating(false)

@@ -25,6 +25,8 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
   const [isVerifyingAll, setIsVerifyingAll] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
+  const [backupProgress, setBackupProgress] = useState(0)
+  const [backupProgressMessage, setBackupProgressMessage] = useState("")
   
   // Filter state
   const [filterPractice, setFilterPractice] = useState("all")
@@ -104,6 +106,36 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
   const createBackup = useCallback(async () => {
     try {
       setIsCreatingBackup(true)
+      setBackupProgress(0)
+      setBackupProgressMessage("Backup wird vorbereitet...")
+
+      // Simulate progress steps while the API processes tables
+      const progressSteps = [
+        { progress: 5, message: "Verbindung zur Datenbank wird hergestellt...", delay: 300 },
+        { progress: 10, message: "Tabellen werden analysiert...", delay: 800 },
+        { progress: 18, message: "Globale Tabellen werden gesichert...", delay: 1500 },
+        { progress: 25, message: "Benutzerdaten werden gesichert...", delay: 2500 },
+        { progress: 35, message: "Praxis-Daten werden gesichert...", delay: 4000 },
+        { progress: 45, message: "Dokumente werden gesichert...", delay: 6000 },
+        { progress: 55, message: "Aufgaben und Ziele werden gesichert...", delay: 8000 },
+        { progress: 65, message: "Kalender und HR-Daten werden gesichert...", delay: 10000 },
+        { progress: 75, message: "Analysen und Berichte werden gesichert...", delay: 13000 },
+        { progress: 82, message: "Formulare und Einstellungen werden gesichert...", delay: 16000 },
+        { progress: 88, message: "Backup wird zusammengestellt...", delay: 19000 },
+        { progress: 92, message: "Backup wird hochgeladen...", delay: 22000 },
+        { progress: 95, message: "Fast fertig...", delay: 26000 },
+      ]
+
+      const timeouts: ReturnType<typeof setTimeout>[] = []
+
+      for (const step of progressSteps) {
+        const timeout = setTimeout(() => {
+          setBackupProgress(step.progress)
+          setBackupProgressMessage(step.message)
+        }, step.delay)
+        timeouts.push(timeout)
+      }
+
       const response = await fetch("/api/super-admin/backups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -113,12 +145,22 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
         }),
       })
 
+      // Clear all pending timeouts
+      timeouts.forEach(clearTimeout)
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
         throw new Error(errorData.error || "Failed to create backup")
       }
 
+      setBackupProgress(100)
+      setBackupProgressMessage("Backup erfolgreich erstellt!")
+
       const data = await response.json()
+
+      // Short delay to show 100% before closing
+      await new Promise((resolve) => setTimeout(resolve, 800))
+
       toast({
         title: "Erfolg",
         description: `Backup wurde erfolgreich erstellt (${data.metadata?.total_rows || 0} Zeilen in ${data.tables_included?.length || 0} Tabellen)`,
@@ -129,6 +171,7 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
       return true
     } catch (error) {
       console.error("Error creating backup:", error)
+      setBackupProgressMessage("Fehler beim Erstellen des Backups")
       toast({
         title: "Fehler",
         description: error instanceof Error ? error.message : "Backup konnte nicht erstellt werden",
@@ -137,6 +180,11 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
       return false
     } finally {
       setIsCreatingBackup(false)
+      // Reset progress after a small delay
+      setTimeout(() => {
+        setBackupProgress(0)
+        setBackupProgressMessage("")
+      }, 1000)
     }
   }, [backupForm, toast, fetchBackups])
 
@@ -643,6 +691,8 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
     isVerifyingAll,
     loading,
     isRestoring,
+    backupProgress,
+    backupProgressMessage,
     filterPractice,
     filterType,
     googleDriveConnected,

@@ -127,10 +127,10 @@ export function DefaultTeamsManager() {
   const handleEdit = (team: DefaultTeam) => {
     setEditingTeam(team)
     setFormData({
-      name: team.name,
-      color: team.color,
+      name: team.name || "",
+      color: team.color || "#3b82f6",
       description: team.description || "",
-      display_order: team.display_order,
+      display_order: team.display_order ?? 0,
     })
     setDialogOpen(true)
   }
@@ -352,7 +352,7 @@ export function DefaultTeamsManager() {
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
-                value={formData.name}
+                value={formData.name ?? ""}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 placeholder="z.B. Arzt, MFA, Verwaltung"
@@ -364,13 +364,13 @@ export function DefaultTeamsManager() {
                 <Input
                   id="color"
                   type="color"
-                  value={formData.color}
+                  value={formData.color ?? "#3b82f6"}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                   className="w-20"
                 />
                 <Input
                   type="text"
-                  value={formData.color}
+                  value={formData.color ?? ""}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                   placeholder="#3b82f6"
                 />
@@ -380,7 +380,7 @@ export function DefaultTeamsManager() {
               <Label htmlFor="description">Beschreibung</Label>
               <Textarea
                 id="description"
-                value={formData.description}
+                value={formData.description ?? ""}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Optionale Beschreibung des Teams"
                 rows={3}
@@ -391,8 +391,8 @@ export function DefaultTeamsManager() {
               <Input
                 id="display_order"
                 type="number"
-                value={formData.display_order}
-                onChange={(e) => setFormData({ ...formData, display_order: Number.parseInt(e.target.value) })}
+                value={formData.display_order ?? 0}
+                onChange={(e) => setFormData({ ...formData, display_order: Number.parseInt(e.target.value) || 0 })}
                 min={0}
               />
             </div>

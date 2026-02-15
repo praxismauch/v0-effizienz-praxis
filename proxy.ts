@@ -74,10 +74,11 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle()
 
+    const normalizedRole = userData?.role?.toLowerCase().replace(/[_\- ]/g, "") || ""
     const hasAdminAccess =
       userData &&
       userData.is_active &&
-      (userData.role === ROLES.SUPER_ADMIN || userData.role === ROLES.ADMIN)
+      (normalizedRole === "superadmin" || normalizedRole === "admin")
 
     if (!hasAdminAccess) {
       const redirectUrl = request.nextUrl.clone()

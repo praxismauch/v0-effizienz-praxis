@@ -163,11 +163,13 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     const practiceData = {
-      // Remove id - let database auto-generate UUID
+      id: crypto.randomUUID(), // Generate UUID since db has no default
       name,
       type,
       address,
-      bundesland: bundesland || null,
+      street: street || "",
+      city: city || "",
+      zip_code: zipCode || "",
       phone: phone || "",
       email: email || "",
       website: website || "",

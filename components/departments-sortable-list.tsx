@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2, GripVertical } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { ColorPicker } from "@/components/color-picker"
 
 interface Department {
   id: string
@@ -175,24 +176,12 @@ function DepartmentsSortableList({ practiceId, departments, onUpdate }: Departme
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="color">Farbe</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-20 h-10"
-                />
-                <Input
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  placeholder="#3b82f6"
-                  className="flex-1"
-                />
-              </div>
-            </div>
+            <ColorPicker
+              value={formData.color}
+              onChange={(color) => setFormData({ ...formData, color })}
+              label="Farbe"
+              id="color"
+            />
           </div>
 
           <DialogFooter>

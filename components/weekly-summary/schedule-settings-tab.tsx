@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Clock, Sparkles } from "lucide-react"
+import { ColorPicker } from "@/components/color-picker"
 import type { WeeklySummarySettings } from "./types"
 import { DAYS_OF_WEEK } from "./types"
 
@@ -100,20 +101,11 @@ export function ScheduleSettingsTab({ settings, onUpdate }: ScheduleSettingsTabP
           </div>
           <div className="flex items-center gap-4">
             <div className="space-y-2">
-              <Label>Markenfarbe</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="color"
-                  value={settings.branding_color}
-                  onChange={(e) => onUpdate("branding_color", e.target.value)}
-                  className="w-12 h-10 p-1 cursor-pointer"
-                />
-                <Input
-                  value={settings.branding_color}
-                  onChange={(e) => onUpdate("branding_color", e.target.value)}
-                  className="w-28"
-                />
-              </div>
+              <ColorPicker
+                value={settings.branding_color}
+                onChange={(color) => onUpdate("branding_color", color)}
+                label="Markenfarbe"
+              />
             </div>
             <div className="flex items-center gap-2 pt-6">
               <Switch

@@ -1,6 +1,7 @@
 "use client"
 
 import { Separator } from "@/components/ui/separator"
+import { ColorPicker } from "@/components/color-picker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -343,7 +344,7 @@ export function SuperAdminAcademyManager() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2"><Label>Icon</Label><Select value={a.badgeForm.icon_name} onValueChange={(v) => a.setBadgeForm({ ...a.badgeForm, icon_name: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{BADGE_ICONS.map((i) => { const Ic = i.icon; return <SelectItem key={i.value} value={i.value}><div className="flex items-center gap-2"><Ic className="h-4 w-4" />{i.label || i.value}</div></SelectItem> })}</SelectContent></Select></div>
-              <div className="grid gap-2"><Label>Farbe</Label><div className="flex gap-2"><Input type="color" value={a.badgeForm.color} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, color: e.target.value })} className="w-12 h-10 p-1" /><Input value={a.badgeForm.color} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, color: e.target.value })} /></div></div>
+              <div className="grid gap-2"><ColorPicker value={a.badgeForm.color} onChange={(color) => a.setBadgeForm({ ...a.badgeForm, color })} label="Farbe" /></div>
             </div>
             <div className="grid gap-2"><Label>XP</Label><Input type="number" value={a.badgeForm.xp_reward} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, xp_reward: Number(e.target.value) })} min={0} step={25} /></div>
             <div className="flex items-center justify-between"><Label>Aktiv</Label><Switch checked={a.badgeForm.is_active} onCheckedChange={(c) => a.setBadgeForm({ ...a.badgeForm, is_active: c })} /></div>

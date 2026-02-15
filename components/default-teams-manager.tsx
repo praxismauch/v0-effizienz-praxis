@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Plus, Pencil, Trash2, RefreshCw, Users } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { ColorPicker } from "@/components/color-picker"
 
 interface DefaultTeam {
   id: string
@@ -358,24 +359,12 @@ export function DefaultTeamsManager() {
                 placeholder="z.B. Arzt, MFA, Verwaltung"
               />
             </div>
-            <div>
-              <Label htmlFor="color">Farbe *</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="color"
-                  type="color"
-                  value={formData.color ?? "#3b82f6"}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-20"
-                />
-                <Input
-                  type="text"
-                  value={formData.color ?? ""}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  placeholder="#3b82f6"
-                />
-              </div>
-            </div>
+            <ColorPicker
+              value={formData.color ?? "#3b82f6"}
+              onChange={(color) => setFormData({ ...formData, color })}
+              label="Farbe *"
+              id="color"
+            />
             <div>
               <Label htmlFor="description">Beschreibung</Label>
               <Textarea

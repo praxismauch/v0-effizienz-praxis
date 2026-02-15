@@ -51,6 +51,7 @@ import {
   type DefaultTeam,
   type PracticeTeam,
 } from "@/lib/hooks/use-super-admin-teams"
+import { ColorPicker } from "@/components/color-picker"
 
 const TEAM_COLORS = [
   { value: "#3b82f6", label: "Blau" },
@@ -582,33 +583,12 @@ export default function TeamsManager() {
                 placeholder="z.B. Ärzte, MFA, Verwaltung"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="color">Farbe</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-16 h-10 p-1"
-                />
-                <Select value={formData.color} onValueChange={(value) => setFormData({ ...formData, color: value })}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TEAM_COLORS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ backgroundColor: c.value }} />
-                          {c.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <ColorPicker
+              value={formData.color}
+              onChange={(color) => setFormData({ ...formData, color })}
+              label="Farbe"
+              id="color"
+            />
             <div className="space-y-2">
               <Label htmlFor="description">Beschreibung</Label>
               <Textarea
@@ -666,33 +646,12 @@ export default function TeamsManager() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-color">Farbe</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="edit-color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-16 h-10 p-1"
-                />
-                <Select value={formData.color} onValueChange={(value) => setFormData({ ...formData, color: value })}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TEAM_COLORS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ backgroundColor: c.value }} />
-                          {c.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <ColorPicker
+              value={formData.color}
+              onChange={(color) => setFormData({ ...formData, color })}
+              label="Farbe"
+              id="edit-color"
+            />
             <div className="space-y-2">
               <Label htmlFor="edit-description">Beschreibung</Label>
               <Textarea

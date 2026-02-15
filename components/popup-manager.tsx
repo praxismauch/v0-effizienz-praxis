@@ -20,6 +20,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Plus, Edit, Trash2, Eye, EyeOff, RefreshCw, MessageSquare } from "lucide-react"
+import { ColorPicker } from "@/components/color-picker"
 
 interface Popup {
   id: string
@@ -483,24 +484,18 @@ function PopupManager() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="background_color">Hintergrundfarbe</Label>
-                <Input
-                  id="background_color"
-                  type="color"
-                  value={formData.background_color}
-                  onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="text_color">Textfarbe</Label>
-                <Input
-                  id="text_color"
-                  type="color"
-                  value={formData.text_color}
-                  onChange={(e) => setFormData({ ...formData, text_color: e.target.value })}
-                />
-              </div>
+              <ColorPicker
+                value={formData.background_color}
+                onChange={(color) => setFormData({ ...formData, background_color: color })}
+                label="Hintergrundfarbe"
+                id="background_color"
+              />
+              <ColorPicker
+                value={formData.text_color}
+                onChange={(color) => setFormData({ ...formData, text_color: color })}
+                label="Textfarbe"
+                id="text_color"
+              />
             </div>
 
             <div className="space-y-2">

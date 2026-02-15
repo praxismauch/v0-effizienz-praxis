@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { usePractice } from "@/contexts/practice-context"
+import { ColorPicker } from "@/components/color-picker"
 import { useToast } from "@/hooks/use-toast"
 
 interface Position {
@@ -144,14 +145,11 @@ export function OrgChartDialog({
             />
           </div>
 
-          <div>
-            <Label>Farbe</Label>
-            <Input
-              type="color"
-              value={formData.color || "#3b82f6"}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-            />
-          </div>
+          <ColorPicker
+            value={formData.color || "#3b82f6"}
+            onChange={(color) => setFormData({ ...formData, color })}
+            label="Farbe"
+          />
 
           <div>
             <Label>Abteilung (optional)</Label>

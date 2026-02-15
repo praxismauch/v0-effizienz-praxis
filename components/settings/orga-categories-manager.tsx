@@ -21,11 +21,7 @@ import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { useState, useEffect } from "react"
 import type { OrgaCategory } from "@/types/orgaCategory"
-
-const DEFAULT_COLORS = [
-  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-  "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
-]
+import { ColorPicker } from "@/components/color-picker"
 
 export function OrgaCategoriesManager() {
   const { currentPractice, isLoading: practiceLoading } = usePractice()
@@ -369,30 +365,11 @@ export function OrgaCategoriesManager() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Farbe</Label>
-              <div className="flex flex-wrap gap-2">
-                {DEFAULT_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className="w-8 h-8 rounded-lg border-2 transition-all"
-                    style={{
-                      backgroundColor: color,
-                      borderColor: formColor === color ? "var(--foreground)" : "transparent",
-                      transform: formColor === color ? "scale(1.15)" : "scale(1)",
-                    }}
-                    onClick={() => setFormColor(color)}
-                  />
-                ))}
-                <Input
-                  type="color"
-                  value={formColor}
-                  onChange={(e) => setFormColor(e.target.value)}
-                  className="w-8 h-8 p-0 border-0 cursor-pointer"
-                />
-              </div>
-            </div>
+            <ColorPicker
+              value={formColor}
+              onChange={setFormColor}
+              label="Farbe"
+            />
 
             <div className="flex items-center justify-between">
               <Label htmlFor="cat-active">Aktiv</Label>

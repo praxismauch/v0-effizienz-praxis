@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
 import { SimpleRichTextEditor } from "./simple-rich-text-editor"
 import { MultiImageUpload } from "@/components/ui/multi-image-upload"
+import { ColorPicker } from "@/components/color-picker"
 
 interface Room {
   id: string
@@ -248,15 +249,10 @@ const CreateArbeitsplatzDialogComponent = ({ open, onOpenChange, onSuccess }: Cr
                     ? "Manuelle Farbauswahl (überschreibt die Raumfarbe)" 
                     : "Wählen Sie eine Farbe für diesen Arbeitsplatz"}
                 </p>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={selectedColor}
-                    onChange={(e) => setSelectedColor(e.target.value)}
-                    className="h-10 w-14 cursor-pointer rounded-lg border border-border p-1"
-                  />
-                  <span className="text-sm text-muted-foreground font-mono">{selectedColor}</span>
-                </div>
+                <ColorPicker
+                  value={selectedColor}
+                  onChange={setSelectedColor}
+                />
               </>
             )}
           </div>

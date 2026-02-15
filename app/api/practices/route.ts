@@ -193,6 +193,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Link the user to the newly created practice
+    if (user?.id) {
+      const { error: updateUserError } = await supabase
+        .from("users")
+        .update({ 
+          practice_id: data.id,
+          default_practice_id: data.id 
+        })
+        .eq("id", user.id)
+
+      if (updateUserError) {
+        Logger.error("api", "Error linking user to practice", updateUserError)
+        // Don't fail the request - practice was created successfully
+      } else {
+        Logger.info("api", "User linked to practice", { userId: user.id, practiceId: data.id })
+      }
+    }
+
     let defaultTeamsCreated = false
     try {
       const { data: defaultTeamsData, error: defaultTeamsError } = await supabase

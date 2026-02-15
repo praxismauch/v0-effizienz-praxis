@@ -20,15 +20,15 @@ export interface PracticeAuthResult extends ApiAuthResult {
 }
 
 /**
- * Simplified authenticateApiRequest - trust middleware for session
- * The middleware already refreshes the session and sets cookies properly.
+ * Simplified authenticateApiRequest - trust proxy for session.
+ * The proxy already refreshes the session and sets cookies properly.
  * We just need to read the user from the already-refreshed session.
  */
 export async function authenticateApiRequest(): Promise<ApiAuthResult> {
   const adminClient = await createAdminClient()
   const supabase = await createClient()
 
-  // Get user from session - middleware has already refreshed it
+  // Get user from session - proxy has already refreshed it
   const {
     data: { user },
     error,

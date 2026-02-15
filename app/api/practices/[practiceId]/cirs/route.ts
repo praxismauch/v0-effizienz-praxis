@@ -27,13 +27,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     let query = queryClient
       .from("cirs_incidents")
-      .select(
-        `
-        *,
-        reporter:reported_by(name, role),
-        comments:cirs_incident_comments(count)
-      `,
-      )
+      .select("*")
       .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
@@ -48,12 +42,38 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ incidents: [], error: error.message }, { status: 500 })
     }
 
-    const incidents = (data || []).map((incident: any) => ({
-      ...incident,
-      reporter_name: incident.is_anonymous ? null : incident.reporter?.name,
-      reporter_role: incident.is_anonymous ? null : incident.reporter?.role,
-      comment_count: incident.comments?.[0]?.count || 0,
-    }))
+    // Resolve reporter names from profiles if reported_by contains user IDs
+    const reporterIds = (data || [])
+      .filter((i: any) => i.reported_by && !i.is_anonymous)
+      .map((i: any) => i.reported_by)
+      .filter((id: string, idx: number, arr: string[]) => arr.indexOf(id) === idx)
+
+    let profileMap: Record<string, { name: string; role: string }> = {}
+    if (reporterIds.length > 0) {
+      const { data: profiles } = await queryClient
+        .from("profiles")
+        .select("id, first_name, last_name, role")
+        .in("id", reporterIds)
+
+      if (profiles) {
+        for (const p of profiles) {
+          profileMap[p.id] = {
+            name: [p.first_name, p.last_name].filter(Boolean).join(" ") || "Unbekannt",
+            role: p.role || "",
+          }
+        }
+      }
+    }
+
+    const incidents = (data || []).map((incident: any) => {
+      const reporter = profileMap[incident.reported_by]
+      return {
+        ...incident,
+        reporter_name: incident.is_anonymous ? null : (reporter?.name || null),
+        reporter_role: incident.is_anonymous ? null : (reporter?.role || null),
+        comment_count: 0,
+      }
+    })
 
     return NextResponse.json({ incidents })
   } catch (error) {

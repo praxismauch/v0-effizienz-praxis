@@ -9,7 +9,7 @@ import CreateStaffingPlanDialog from "./create-staffing-plan-dialog"
 import { StaffingPlanGrid } from "@/components/team/staffing-plan-grid"
 import { StaffingPlansManager } from "@/components/team/staffing-plans-manager"
 import { usePractice } from "@/contexts/practice-context"
-import { useAuth } from "@/contexts/auth-context"
+import { useUser } from "@/contexts/user-context"
 
 interface StaffingEntry {
   id: string
@@ -53,9 +53,9 @@ export default function StaffingTab({
   const [isLoadingEntries, setIsLoadingEntries] = useState(false)
   
   const { currentPractice } = usePractice()
-  const { user } = useAuth()
+  const { isAdmin, isSuperAdmin } = useUser()
   const practiceId = currentPractice?.id?.toString()
-  const isAdmin = user?.role === "admin" || user?.role === "superadmin" || user?.is_practice_admin
+  const canManagePlans = isAdmin || isSuperAdmin
 
 
 
@@ -163,7 +163,7 @@ export default function StaffingTab({
         onPlanUpdated={handleRefresh}
         onPlanDeleted={handleRefresh}
         practiceId={practiceId || ""}
-        isAdmin={!!isAdmin}
+        isAdmin={canManagePlans}
       />
 
       {/* Weekly grid view */}
@@ -181,7 +181,7 @@ export default function StaffingTab({
                 practiceId={practiceId}
                 selectedPlanId={selectedPlanId}
                 onRefresh={loadEntries}
-                isAdmin={!!isAdmin}
+                isAdmin={canManagePlans}
                 responsibilities={responsibilities}
               />
             )}

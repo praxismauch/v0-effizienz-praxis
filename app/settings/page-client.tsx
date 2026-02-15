@@ -16,7 +16,8 @@ import {
   MapPin,
   Loader2,
   Target,
-  Link2
+  Link2,
+  BookOpen,
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/contexts/user-context"
@@ -38,6 +39,7 @@ import { OrgaCategoriesManager } from "@/components/settings/orga-categories-man
 import { TeamRoleOrderSettings } from "@/components/settings/team-role-order-settings"
 import { PracticeParameterManagement } from "@/components/practice-parameter-management"
 import { InterfacesTab } from "@/components/settings/interfaces-tab"
+import { KnowledgeSettings } from "@/components/knowledge/knowledge-settings"
 
 export default function SettingsPageClient() {
   const { currentUser } = useUser()
@@ -137,6 +139,10 @@ export default function SettingsPageClient() {
                 <span>Team-Reihenfolge</span>
               </TabsTrigger>
             )}
+            <TabsTrigger value="knowledge" className="gap-2 whitespace-nowrap">
+              <BookOpen className="h-4 w-4" />
+              <span>Wissen</span>
+            </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="interfaces" className="gap-2 whitespace-nowrap">
                 <Link2 className="h-4 w-4" />
@@ -208,6 +214,11 @@ export default function SettingsPageClient() {
               <TeamRoleOrderSettings />
             </TabsContent>
           )}
+
+          {/* Knowledge Settings Tab */}
+          <TabsContent value="knowledge">
+            <KnowledgeSettings />
+          </TabsContent>
 
           {/* Interfaces Tab (Admin only) */}
           {isAdmin && (

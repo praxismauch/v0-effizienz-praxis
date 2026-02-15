@@ -157,18 +157,6 @@ const DEFAULT_EVENT_TYPES = [
   },
 ]
 
-const COLOR_OPTIONS = [
-  { value: "#3b82f6", label: "Blau", className: "bg-blue-500" },
-  { value: "#10b981", label: "Grün", className: "bg-emerald-500" },
-  { value: "#f97316", label: "Orange", className: "bg-orange-500" },
-  { value: "#8b5cf6", label: "Lila", className: "bg-violet-500" },
-  { value: "#ec4899", label: "Pink", className: "bg-pink-500" },
-  { value: "#ef4444", label: "Rot", className: "bg-red-500" },
-  { value: "#eab308", label: "Gelb", className: "bg-yellow-500" },
-  { value: "#6366f1", label: "Indigo", className: "bg-indigo-500" },
-  { value: "#06b6d4", label: "Cyan", className: "bg-cyan-500" },
-  { value: "#6b7280", label: "Grau", className: "bg-gray-500" },
-]
 
 interface EventType {
   id: string
@@ -321,10 +309,8 @@ export default function EventTypesManager() {
       return
     }
 
-    const colorOption = COLOR_OPTIONS.find((c) => c.value === formData.color)
-    const colorClass = colorOption?.className || "bg-blue-500"
-    const labelBgColor = colorClass.replace("bg-", "bg-").replace("-500", "-100")
-    const labelTextColor = colorClass.replace("bg-", "text-").replace("-500", "-700")
+    const labelBgColor = formData.color + "20"
+    const labelTextColor = formData.color
 
     if (editingType) {
       // Update existing
@@ -336,7 +322,7 @@ export default function EventTypesManager() {
                 name: formData.name,
                 label: formData.label,
                 color: formData.color,
-                bgColor: colorClass,
+                bgColor: formData.color,
                 labelBgColor,
                 labelTextColor,
                 description: formData.description,
@@ -354,11 +340,11 @@ export default function EventTypesManager() {
       const newType: EventType = {
         id: newId,
         name: formData.name,
-        label: formData.label,
-        color: formData.color,
-        bgColor: colorClass,
-        labelBgColor,
-        labelTextColor,
+  label: formData.label,
+  color: formData.color,
+  bgColor: formData.color,
+  labelBgColor,
+  labelTextColor,
         description: formData.description,
         isSystem: false,
         isActive: true,
@@ -479,14 +465,7 @@ export default function EventTypesManager() {
                   />
                   <span className="font-medium">{formData.label || "Label"}</span>
                   <Badge
-                    className={cn(
-                      "ml-auto",
-                      COLOR_OPTIONS.find((c) => c.value === formData.color)?.className
-                        .replace("-500", "-100") || "bg-blue-100",
-                      COLOR_OPTIONS.find((c) => c.value === formData.color)?.className
-                        .replace("bg-", "text-")
-                        .replace("-500", "-700") || "text-blue-700"
-                    )}
+                    className="ml-auto"
                     style={{
                       backgroundColor: formData.color + "20",
                       color: formData.color,

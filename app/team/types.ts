@@ -51,6 +51,15 @@ export interface SortableTeamCardProps {
 }
 
 export const getTeamColor = (colorName?: string): string => {
+  if (!colorName) return "#3b82f6"
+
+  // If the value is already a hex color (e.g. from default_teams), return it directly
+  if (colorName.startsWith("#")) return colorName
+
+  // If the value is an rgb/hsl color, return it directly
+  if (colorName.startsWith("rgb") || colorName.startsWith("hsl")) return colorName
+
+  // Otherwise map named colors to hex
   const colors: Record<string, string> = {
     blue: "#3b82f6",
     green: "#22c55e",
@@ -61,8 +70,17 @@ export const getTeamColor = (colorName?: string): string => {
     red: "#ef4444",
     teal: "#14b8a6",
     indigo: "#6366f1",
+    cyan: "#06b6d4",
+    lime: "#84cc16",
+    amber: "#f59e0b",
+    rose: "#f43f5e",
+    emerald: "#10b981",
+    violet: "#8b5cf6",
+    sky: "#0ea5e9",
+    slate: "#64748b",
+    gray: "#6b7280",
   }
-  return colorName ? colors[colorName] || colors.blue : colors.blue
+  return colors[colorName.toLowerCase()] || "#3b82f6"
 }
 
 export const getCardStyles = (color: string) => {

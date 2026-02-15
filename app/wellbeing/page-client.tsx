@@ -450,7 +450,6 @@ export default function WellbeingPageClient() {
             </div>
           }
         />
-        </div>
 
         {/* Quick Stats */}
         <div className="grid gap-4 md:grid-cols-4">

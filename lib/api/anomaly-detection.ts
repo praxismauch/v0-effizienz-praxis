@@ -2,7 +2,7 @@
  * Anomaly Detection System
  * Tracks request patterns and detects suspicious behavior
  */
-import { getRedis } from "@/lib/redis"
+import { redis as getRedis } from "@/lib/redis"
 
 export interface SecurityEvent {
   ip: string

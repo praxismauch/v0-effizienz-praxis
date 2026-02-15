@@ -437,6 +437,8 @@ if (typeof window !== "undefined") {
   setupGlobalErrorHandlers()
 }
 
+const appLogger = new Logger()
+
 export default Logger
-export { Logger, PerformanceTimer, flushErrorTracking, addToErrorTrackingQueue }
+export { Logger, PerformanceTimer, flushErrorTracking, addToErrorTrackingQueue, appLogger }
 export type { LogLevel, LogCategory, LogEntry, StructuredLog, ErrorTrackingEntry }

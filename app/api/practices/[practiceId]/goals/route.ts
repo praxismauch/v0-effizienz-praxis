@@ -5,12 +5,17 @@ import { requirePracticeAccess, handleApiError } from "@/lib/api-helpers"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const effectivePracticeId = practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
+    
+    // Return empty if invalid practice ID
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json({ goals: [] }, { status: 200 })
+    }
+    const effectivePracticeId = String(practiceId)
 
     const { user, adminClient: supabase } = await requirePracticeAccess(effectivePracticeId)
     const currentUserId = user.id
 
-    const practiceIdText = String(effectivePracticeId)
+    const practiceIdText = effectivePracticeId
 
     const { searchParams } = new URL(request.url)
 
@@ -105,7 +110,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const effectivePracticeId = practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
+    
+    // Return error if invalid practice ID
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })
+    }
+    const effectivePracticeId = String(practiceId)
 
     const { user, adminClient: supabase } = await requirePracticeAccess(effectivePracticeId)
 

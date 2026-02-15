@@ -43,7 +43,8 @@ export function SidebarSettingsProvider({ children }: { children: ReactNode }) {
       if (!currentUser?.id) return
 
       try {
-        const practiceId = currentPractice?.id || "1"
+        const practiceId = currentPractice?.id
+        if (!practiceId) return // Don't load if no practice selected
         const response = await fetch(`/api/users/${currentUser.id}/sidebar-preferences?practice_id=${practiceId}`)
         if (response.ok) {
           const data = await response.json()
@@ -77,7 +78,8 @@ export function SidebarSettingsProvider({ children }: { children: ReactNode }) {
     // Save to API
     if (currentUser?.id) {
       try {
-        const practiceId = currentPractice?.id || "1"
+        const practiceId = currentPractice?.id
+        if (!practiceId) return // Don't load if no practice selected
         await fetch(`/api/users/${currentUser.id}/sidebar-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

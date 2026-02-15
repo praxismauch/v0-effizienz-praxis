@@ -6,7 +6,12 @@ export async function GET(request: Request) {
     const supabase = await createAdminClient()
 
     const { searchParams } = new URL(request?.url || "")
-    const practiceId = searchParams.get("practice_id") || "1"
+    const practiceId = searchParams.get("practice_id")
+    
+    // Return empty if no practice ID provided
+    if (!practiceId) {
+      return NextResponse.json([])
+    }
 
     const { data, error } = await supabase
       .from("wunschpatient_profiles")
@@ -33,9 +38,13 @@ export async function POST(request: Request) {
 
     const body = await request.json()
 
-    const practiceId = body.practice_id || "1"
+    const practiceId = body.practice_id
     const createdBy = body.created_by || body.user_id || body.userId
 
+    if (!practiceId) {
+      return NextResponse.json({ error: "practice_id is required" }, { status: 400 })
+    }
+    
     if (!createdBy) {
       return NextResponse.json({ error: "created_by or user_id is required" }, { status: 400 })
     }

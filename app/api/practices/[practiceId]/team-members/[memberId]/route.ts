@@ -8,7 +8,11 @@ export async function PUT(
 ) {
   try {
     const { practiceId, memberId } = await params
-    const practiceIdText = String(practiceId) || "1"
+    // Validate practice ID
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })
+    }
+    const practiceIdText = String(practiceId)
     const memberIdText = String(memberId)
     const supabase = await createAdminClient()
     const body = await request.json()
@@ -134,7 +138,11 @@ export async function DELETE(
 ) {
   try {
     const { practiceId, memberId } = await params
-    const practiceIdText = String(practiceId) || "1"
+    // Validate practice ID
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })
+    }
+    const practiceIdText = String(practiceId)
     const memberIdText = String(memberId)
 
     const supabase = await createAdminClient()

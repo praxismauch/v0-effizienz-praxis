@@ -6,9 +6,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { practiceId } = await params
     const body = await request.json()
 
-    // Validate practiceId
-    const effectivePracticeId =
-      practiceId && practiceId !== "0" && practiceId !== "undefined" ? String(practiceId) : "1"
+    // Validate practiceId - return error if invalid
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })
+    }
+    const effectivePracticeId = String(practiceId)
 
     const { adminClient: supabase } = await requirePracticeAccess(effectivePracticeId)
 

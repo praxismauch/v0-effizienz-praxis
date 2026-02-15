@@ -99,6 +99,40 @@ function ParameterFormFields({
         <Switch id={`${idPrefix}param-active`} checked={newParameter.isActive} onCheckedChange={(checked) => setNewParameter({ ...newParameter, isActive: checked })} />
         <Label htmlFor={`${idPrefix}param-active`}>{t("kpi.active", "Active")}</Label>
       </div>
+      {/* Visibility Controls */}
+      <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+        <Label className="font-medium">{t("kpi.visibility", "Sichtbarkeit")}</Label>
+        <Select value={newParameter.visibility || "all"} onValueChange={(value: "all" | "admin_only" | "custom") => setNewParameter({ ...newParameter, visibility: value })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("kpi.visibility_all", "Alle Mitarbeiter")}</SelectItem>
+            <SelectItem value="admin_only">{t("kpi.visibility_admin", "Nur Admins/Inhaber")}</SelectItem>
+            <SelectItem value="custom">{t("kpi.visibility_custom", "Benutzerdefiniert")}</SelectItem>
+          </SelectContent>
+        </Select>
+        {newParameter.visibility === "custom" && (
+          <div className="space-y-2 pl-2">
+            <Label className="text-sm text-muted-foreground">{t("kpi.visible_to_roles", "Sichtbar fuer:")}</Label>
+            {["admin", "owner", "manager", "employee"].map((role) => {
+              const roleLabels: Record<string, string> = { admin: "Admin", owner: "Inhaber", manager: "Manager", employee: "Mitarbeiter" }
+              const roles = newParameter.visible_to_roles || ["admin", "owner", "manager", "employee"]
+              return (
+                <div key={role} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${idPrefix}role-${role}`}
+                    checked={roles.includes(role)}
+                    onCheckedChange={(checked) => {
+                      const updated = checked ? [...roles, role] : roles.filter((r) => r !== role)
+                      setNewParameter({ ...newParameter, visible_to_roles: updated })
+                    }}
+                  />
+                  <Label htmlFor={`${idPrefix}role-${role}`} className="font-normal">{roleLabels[role] || role}</Label>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
       {newParameter.type === "calculated" && (
         <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
           <div>

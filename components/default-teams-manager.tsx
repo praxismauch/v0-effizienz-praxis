@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,9 +10,27 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, Pencil, Trash2, RefreshCw, Users } from "lucide-react"
+import { Plus, Pencil, Trash2, RefreshCw, Users, GripVertical } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { ColorPicker } from "@/components/color-picker"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 interface DefaultTeam {
   id: string
@@ -23,6 +41,65 @@ interface DefaultTeam {
   is_active: boolean
   created_at: string
   updated_at: string
+}
+
+function SortableRow({
+  team,
+  onEdit,
+  onDelete,
+}: {
+  team: DefaultTeam
+  onEdit: (team: DefaultTeam) => void
+  onDelete: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: team.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <button
+          className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+          <span className="sr-only">Reihenfolge per Drag and Drop aendern</span>
+        </button>
+      </TableCell>
+      <TableCell className="text-muted-foreground tabular-nums">{team.display_order}</TableCell>
+      <TableCell className="font-medium">{team.name}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded" style={{ backgroundColor: team.color }} />
+          <span className="text-sm text-muted-foreground">{team.color}</span>
+        </div>
+      </TableCell>
+      <TableCell>{team.description || "-"}</TableCell>
+      <TableCell>
+        <Badge variant={team.is_active ? "default" : "secondary"}>
+          {team.is_active ? "Aktiv" : "Inaktiv"}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(team)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onDelete(team.id)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
 }
 
 export function DefaultTeamsManager() {
@@ -39,6 +116,50 @@ export function DefaultTeamsManager() {
     display_order: 0,
   })
   const { toast } = useToast()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+
+      const oldIndex = defaultTeams.findIndex((t) => t.id === active.id)
+      const newIndex = defaultTeams.findIndex((t) => t.id === over.id)
+      if (oldIndex === -1 || newIndex === -1) return
+
+      const reordered = arrayMove(defaultTeams, oldIndex, newIndex).map((team, index) => ({
+        ...team,
+        display_order: index,
+      }))
+
+      // Optimistic update
+      setDefaultTeams(reordered)
+
+      // Persist new order to the API
+      try {
+        const updates = reordered.map((team) => ({ id: team.id, display_order: team.display_order }))
+        const response = await fetch("/api/super-admin/default-teams", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reorder: updates }),
+        })
+        if (!response.ok) throw new Error("Failed to save order")
+      } catch (error) {
+        console.error("[v0] Error saving order:", error)
+        toast({
+          title: "Fehler",
+          description: "Reihenfolge konnte nicht gespeichert werden",
+          variant: "destructive",
+        })
+        fetchDefaultTeams()
+      }
+    },
+    [defaultTeams, toast],
+  )
 
   useEffect(() => {
     fetchDefaultTeams()
@@ -127,10 +248,10 @@ export function DefaultTeamsManager() {
   const handleEdit = (team: DefaultTeam) => {
     setEditingTeam(team)
     setFormData({
-      name: team.name,
-      color: team.color,
+      name: team.name || "",
+      color: team.color || "#3b82f6",
       description: team.description || "",
-      display_order: team.display_order,
+      display_order: team.display_order ?? 0,
     })
     setDialogOpen(true)
   }
@@ -291,48 +412,36 @@ export function DefaultTeamsManager() {
               Keine Standard-Teams vorhanden. Erstellen Sie ein neues Team.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Reihenfolge</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Farbe</TableHead>
-                  <TableHead>Beschreibung</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Aktionen</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {defaultTeams.map((team) => (
-                  <TableRow key={team.id}>
-                    <TableCell>{team.display_order}</TableCell>
-                    <TableCell className="font-medium">{team.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded" style={{ backgroundColor: team.color }} />
-                        <span className="text-sm text-muted-foreground">{team.color}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{team.description || "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant={team.is_active ? "default" : "secondary"}>
-                        {team.is_active ? "Aktiv" : "Inaktiv"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(team)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(team.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="w-20">Nr.</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Farbe</TableHead>
+                    <TableHead>Beschreibung</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  <SortableContext
+                    items={defaultTeams.map((t) => t.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {defaultTeams.map((team) => (
+                      <SortableRow
+                        key={team.id}
+                        team={team}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </SortableContext>
+                </TableBody>
+              </Table>
+            </DndContext>
           )}
         </CardContent>
       </Card>
@@ -352,35 +461,23 @@ export function DefaultTeamsManager() {
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
-                value={formData.name}
+                value={formData.name ?? ""}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 placeholder="z.B. Arzt, MFA, Verwaltung"
               />
             </div>
-            <div>
-              <Label htmlFor="color">Farbe *</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-20"
-                />
-                <Input
-                  type="text"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  placeholder="#3b82f6"
-                />
-              </div>
-            </div>
+            <ColorPicker
+              value={formData.color ?? "#3b82f6"}
+              onChange={(color) => setFormData({ ...formData, color })}
+              label="Farbe *"
+              id="color"
+            />
             <div>
               <Label htmlFor="description">Beschreibung</Label>
               <Textarea
                 id="description"
-                value={formData.description}
+                value={formData.description ?? ""}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Optionale Beschreibung des Teams"
                 rows={3}
@@ -391,8 +488,8 @@ export function DefaultTeamsManager() {
               <Input
                 id="display_order"
                 type="number"
-                value={formData.display_order}
-                onChange={(e) => setFormData({ ...formData, display_order: Number.parseInt(e.target.value) })}
+                value={formData.display_order ?? 0}
+                onChange={(e) => setFormData({ ...formData, display_order: Number.parseInt(e.target.value) || 0 })}
                 min={0}
               />
             </div>

@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       goals,
       workflows,
       selfCheckData,
+      generateActionPlan = true,
     } = body
 
     if (!practiceId || practiceId === "null" || practiceId === "undefined") {
@@ -122,35 +123,56 @@ export async function POST(request: NextRequest) {
 - Gesamtbewertung: ${selfCheckData.overallScore}/10`
         : ""
 
-    const prompt = `Du bist ein erfahrener Praxisberater für medizinische Praxen. Erstelle einen professionellen Praxis-Journalbericht für den Zeitraum ${effectivePeriodStart} bis ${effectivePeriodEnd}.
+    // Build data sections conditionally based on what's available
+    const dataSections: string[] = []
+    if ((kpis as KPI[])?.length > 0) {
+      dataSections.push(`- KPIs/Kennzahlen:\n${kpiSummary}`)
+      dataSections.push(`- Datenpunkte: ${valuesSummary}`)
+    }
+    if (teamMembers?.length > 0) {
+      dataSections.push(`- Team: ${teamSummary}`)
+    }
+    if (workflows?.length > 0) {
+      dataSections.push(`- Workflows: ${workflowsSummary}`)
+    }
+    if ((goals as Goal[])?.length > 0) {
+      dataSections.push(`- Ziele:\n${goalsSummary}`)
+    }
 
-VERFÜGBARE DATEN:
-- KPIs/Kennzahlen:
-${kpiSummary}
+    // Build report structure
+    const reportSections = [
+      "1. ZUSAMMENFASSUNG (2-3 Satze Gesamtueberblick)",
+      "2. ERFOLGE (3-5 positive Entwicklungen)",
+      "3. HERAUSFORDERUNGEN (2-4 Bereiche mit Verbesserungspotential)",
+    ]
+    if (generateActionPlan) {
+      reportSections.push("4. EMPFEHLUNGEN (4-6 konkrete Handlungsempfehlungen)")
+    }
 
-- Datenpunkte: ${valuesSummary}
-- Team: ${teamSummary}
-- Workflows: ${workflowsSummary}
-- Ziele:
-${goalsSummary}
+    const jsonShape: Record<string, string> = {
+      summary: "Gesamtzusammenfassung...",
+      overview: "Detaillierte Uebersicht...",
+      achievements: '["Erfolg 1", "Erfolg 2", ...]',
+      challenges: '["Herausforderung 1", ...]',
+    }
+    if (generateActionPlan) {
+      jsonShape.recommendations = '["Empfehlung 1", ...]'
+    }
 
-${selfCheckSummary ? `WOHLBEFINDEN & SELBSTEINSCHÄTZUNG:\n${selfCheckSummary}\n` : ""}
+    const jsonExample = `{\n${Object.entries(jsonShape).map(([k, v]) => `  "${k}": ${v.startsWith("[") ? v : `"${v}"`}`).join(",\n")}\n}`
+
+    const prompt = `Du bist ein erfahrener Praxisberater fuer medizinische Praxen. Erstelle einen professionellen Praxis-Journalbericht fuer den Zeitraum ${effectivePeriodStart} bis ${effectivePeriodEnd}.
+
+${dataSections.length > 0 ? `VERFUEGBARE DATEN:\n${dataSections.join("\n\n")}` : "Keine spezifischen Daten verfuegbar."}
+
+${selfCheckSummary ? `WOHLBEFINDEN & SELBSTEINSCHAETZUNG:\n${selfCheckSummary}\n` : ""}
 ${userNotes ? `NOTIZEN DES PRAXISMANAGERS:\n${userNotes}` : ""}
 
 Erstelle einen strukturierten Bericht mit:
-1. ZUSAMMENFASSUNG (2-3 Sätze Gesamtüberblick)
-2. ERFOLGE (3-5 positive Entwicklungen)
-3. HERAUSFORDERUNGEN (2-4 Bereiche mit Verbesserungspotential)
-4. EMPFEHLUNGEN (4-6 konkrete Handlungsempfehlungen)
+${reportSections.join("\n")}
 
 Antworte im JSON-Format:
-{
-  "summary": "Gesamtzusammenfassung...",
-  "overview": "Detaillierte Übersicht...",
-  "achievements": ["Erfolg 1", "Erfolg 2", ...],
-  "challenges": ["Herausforderung 1", ...],
-  "recommendations": ["Empfehlung 1", ...]
-}
+${jsonExample}
 
 Sei konkret, konstruktiv und praxisnah. Verwende deutsche Sprache.`
 

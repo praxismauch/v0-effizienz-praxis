@@ -44,6 +44,7 @@ import { SuggestionsTab } from "./components/suggestions-tab"
 import { KudosTab } from "./components/kudos-tab"
 import { MoodSurveyDialog } from "./components/mood-survey-dialog"
 import { KudosDialog } from "./components/kudos-dialog"
+import { PageHeader } from "@/components/page-layout"
 
 export default function WellbeingPageClient() {
   const { user, currentPractice } = useUser()
@@ -428,30 +429,27 @@ export default function WellbeingPageClient() {
     <AppLayout>
       <div className="container mx-auto py-6 space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <Heart className="h-8 w-8 text-pink-500" />
-              Mitarbeiter-Wellbeing
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Burnout-Prävention, anonyme Stimmungsumfragen und Peer-Recognition
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowKudosDialog(true)}>
-              <Award className="h-4 w-4 mr-2" />
-              Kudos senden
-            </Button>
-            <Button onClick={handleGenerateSuggestions} disabled={isGeneratingSuggestions}>
-              {isGeneratingSuggestions ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              KI-Vorschläge
-            </Button>
-          </div>
+        <PageHeader
+          title="Mitarbeiter-Wellbeing"
+          subtitle="Burnout-Praevention, anonyme Stimmungsumfragen und Peer-Recognition"
+          icon={<Heart className="h-8 w-8 text-pink-500" />}
+          actions={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowKudosDialog(true)}>
+                <Award className="h-4 w-4 mr-2" />
+                Kudos senden
+              </Button>
+              <Button onClick={handleGenerateSuggestions} disabled={isGeneratingSuggestions}>
+                {isGeneratingSuggestions ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-2" />
+                )}
+                KI-Vorschlaege
+              </Button>
+            </div>
+          }
+        />
         </div>
 
         {/* Quick Stats */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import AppLayout from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -121,16 +122,16 @@ export default function CIRSPageClient() {
   return (
     <AppLayout loading={loading} loadingMessage="CIRS-Daten werden geladen...">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">CIRS</h1>
-            <p className="text-muted-foreground">Critical Incident Reporting System - Fehler- und Beinahe-Fehler-Meldesystem</p>
-          </div>
-          <Button onClick={() => setShowReportDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Vorfall melden
-          </Button>
-        </div>
+        <PageHeader
+          title="CIRS"
+          subtitle="Critical Incident Reporting System - Fehler- und Beinahe-Fehler-Meldesystem"
+          actions={
+            <Button onClick={() => setShowReportDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Vorfall melden
+            </Button>
+          }
+        />
 
         <div className="grid gap-4 md:grid-cols-4">
           <Card>

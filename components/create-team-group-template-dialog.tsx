@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
+import { ColorPicker } from "@/components/color-picker"
 
 interface CreateTeamGroupTemplateDialogProps {
   open: boolean
@@ -142,15 +143,12 @@ export function CreateTeamGroupTemplateDialog({ open, onOpenChange, onSuccess, e
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="color">Farbe</Label>
-              <Input
-                id="color"
-                type="color"
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              />
-            </div>
+            <ColorPicker
+              value={formData.color}
+              onChange={(color) => setFormData({ ...formData, color })}
+              label="Farbe"
+              id="color"
+            />
 
             <div className="space-y-2">
               <Label htmlFor="icon">Icon</Label>

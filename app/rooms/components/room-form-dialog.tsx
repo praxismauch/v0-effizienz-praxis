@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Loader2, ImageIcon } from "lucide-react"
 import { MultiImageUpload } from "@/components/ui/multi-image-upload"
+import { ColorPicker } from "@/components/color-picker"
 
 interface RoomFormDialogProps {
   open: boolean
@@ -79,19 +80,11 @@ export function RoomFormDialog({
               rows={3}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Farbe</Label>
-            <p className="text-xs text-muted-foreground mb-2">Wählen Sie eine Farbe für diesen Raum</p>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={formColor}
-                onChange={(e) => onFormColorChange(e.target.value)}
-                className="h-10 w-14 cursor-pointer rounded-lg border border-border p-1"
-              />
-              <span className="text-sm text-muted-foreground font-mono">{formColor}</span>
-            </div>
-          </div>
+          <ColorPicker
+            value={formColor}
+            onChange={onFormColorChange}
+            label="Farbe"
+          />
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />

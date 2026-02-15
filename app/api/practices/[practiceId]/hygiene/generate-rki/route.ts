@@ -24,6 +24,8 @@ export async function POST(
     const body = await request.json()
     const { plan_type, area } = body
 
+    console.log("[v0] generate-rki called with:", { plan_type, area })
+
     if (!plan_type || !area) {
       return NextResponse.json(
         { error: "plan_type and area are required" },
@@ -32,8 +34,9 @@ export async function POST(
     }
 
     // Generate hygiene plan using AI
+    console.log("[v0] Calling generateText for hygiene plan...")
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "anthropic/claude-sonnet-4-20250514",
       system: RKI_SYSTEM_PROMPT,
       maxOutputTokens: 1500,
       temperature: 0.7,
@@ -57,6 +60,8 @@ Formatiere die Antwort als JSON mit folgender Struktur:
 }`,
     })
 
+    console.log("[v0] AI response received, length:", text?.length)
+
     // Parse AI response
     let parsedData
     try {
@@ -64,7 +69,9 @@ Formatiere die Antwort als JSON mit folgender Struktur:
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         parsedData = JSON.parse(jsonMatch[0])
+        console.log("[v0] Successfully parsed AI JSON response")
       } else {
+        console.log("[v0] No JSON found, using fallback")
         throw new Error("No JSON found in response")
       }
     } catch (parseError) {
@@ -73,15 +80,16 @@ Formatiere die Antwort als JSON mit folgender Struktur:
         title: `Hygieneplan: ${plan_type} - ${area}`,
         procedure: text,
         products_used: [],
-        rki_reference: "Bitte RKI-Richtlinien für weitere Details konsultieren",
+        rki_reference: "Bitte RKI-Richtlinien fuer weitere Details konsultieren",
       }
     }
 
     return NextResponse.json(parsedData)
-  } catch (error: any) {
-    console.error("Error generating RKI plan:", error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("[v0] Error generating RKI plan:", errorMessage, error)
     return NextResponse.json(
-      { error: "Failed to generate plan", details: error.message },
+      { error: "Failed to generate plan", details: errorMessage },
       { status: 500 },
     )
   }

@@ -31,8 +31,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { X, Users, User, Trash2 } from "lucide-react"
+import { X, Users, User, Trash2, History, ChevronDown, ChevronRight } from "lucide-react"
 import { RichTextEditor } from "./rich-text-editor"
+import { VersionHistory } from "./version-history"
 import { getRoleLabel } from "@/lib/roles"
 
 interface EditKnowledgeDialogProps {
@@ -75,6 +76,7 @@ export function EditKnowledgeDialog({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([])
   const [loadingTeams, setLoadingTeams] = useState(true)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
@@ -449,6 +451,31 @@ export function EditKnowledgeDialog({
                       </p>
                     )}
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Version History */}
+            <div className="border-t pt-4">
+              <button
+                type="button"
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full"
+                onClick={() => setShowVersionHistory(!showVersionHistory)}
+              >
+                {showVersionHistory ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                <History className="h-4 w-4" />
+                Versionsverlauf (v{article?.version || 1})
+              </button>
+              {showVersionHistory && article?.id && (
+                <div className="mt-3">
+                  <VersionHistory
+                    articleId={article.id}
+                    currentVersion={article.version || 1}
+                    onRestore={() => {
+                      onSuccess()
+                      onOpenChange(false)
+                    }}
+                  />
                 </div>
               )}
             </div>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
@@ -227,33 +228,31 @@ export default function WorkflowsPageClient() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Workflows</h1>
-            <p className="text-muted-foreground">
-              Verwalten Sie Ihre Praxis-Arbeitsabläufe
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAiEnabled && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setFormData({ ...defaultFormData })
-                  setIsCreateDialogOpen(true)
-                }}
-                className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white border-0"
-              >
-                <Sparkles className="h-4 w-4" />
-                Mit KI generieren
+        <PageHeader
+          title="Workflows"
+          subtitle="Verwalten Sie Ihre Praxis-Arbeitsablaeufe"
+          actions={
+            <>
+              {isAiEnabled && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFormData({ ...defaultFormData })
+                    setIsCreateDialogOpen(true)
+                  }}
+                  className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white border-0"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Mit KI generieren
+                </Button>
+              )}
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Neuer Workflow
               </Button>
-            )}
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Neuer Workflow
-            </Button>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         <WorkflowStats workflows={workflows} />
 

@@ -64,6 +64,8 @@ export function BackupManager({ userId, practices }: BackupManagerProps) {
     isVerifying,
     isVerifyingAll,
     isRestoring,
+    backupProgress,
+    backupProgressMessage,
     loading,
     showBackupDialog,
     showScheduleDialog,
@@ -199,6 +201,8 @@ export function BackupManager({ userId, practices }: BackupManagerProps) {
             filterType={filterType}
             isLoading={isLoading}
             isCreatingBackup={isCreatingBackup}
+            backupProgress={backupProgress}
+            backupProgressMessage={backupProgressMessage}
             isVerifying={isVerifying}
             isVerifyingAll={isVerifyingAll}
             googleDriveConnected={googleDriveConnected}

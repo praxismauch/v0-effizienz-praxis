@@ -29,6 +29,7 @@ import { ViewJournalDialog } from "@/components/insights/view-insights-dialog"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 
 interface Journal {
   id: string
@@ -207,38 +208,34 @@ export default function PracticeJournalsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <BookOpen className="h-8 w-8 text-primary" />
-              Praxis-Journal
-            </h1>
-            <p className="text-muted-foreground">
-              KI-generierte Berichte über Ihre Praxisentwicklung mit Aktionsplänen
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowPreferencesDialog(true)}>
-              <Settings className="h-4 w-4 mr-2" />
-              Einstellungen
-            </Button>
-            <Button onClick={() => setShowGenerateDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Neues Journal
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="Praxis-Journal"
+          subtitle="KI-generierte Berichte ueber Ihre Praxisentwicklung mit Aktionsplaenen"
+          icon={<BookOpen className="h-8 w-8" />}
+          actions={
+            <>
+              <Button variant="outline" onClick={() => setShowPreferencesDialog(true)}>
+                <Settings className="h-4 w-4 mr-2" />
+                Einstellungen
+              </Button>
+              <Button onClick={() => setShowGenerateDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Neues Journal
+              </Button>
+            </>
+          }
+        />
 
         {kpiCount === 0 && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Tipp:</strong> Für aussagekräftigere Journals mit detaillierten KPI-Analysen empfehlen wir, zuerst
-              Kennzahlen in der{" "}
-              <Button variant="link" className="p-0 h-auto" onClick={() => router.push("/analytics")}>
+            <AlertDescription className="inline">
+              <strong>Tipp:</strong>{" "}
+              {"Fuer aussagekraeftigere Journals mit detaillierten KPI-Analysen empfehlen wir, zuerst Kennzahlen in der "}
+              <Button variant="link" className="p-0 h-auto inline" onClick={() => router.push("/analytics")}>
                 Auswertung
-              </Button>{" "}
-              zu definieren. Sie können aber auch ohne KPIs Journals erstellen.
+              </Button>
+              {" zu definieren. Sie koennen aber auch ohne KPIs Journals erstellen."}
             </AlertDescription>
           </Alert>
         )}

@@ -84,24 +84,32 @@ export function HygienePage() {
   const handleGenerateWithAI = async () => {
     setIsGenerating(true)
     try {
+      console.log("[v0] Starting AI hygiene plan generation for:", formData.plan_type, formData.area)
       const res = await fetch(`/api/practices/${practiceId}/hygiene/generate-rki`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_type: formData.plan_type, area: formData.area }),
       })
+      console.log("[v0] AI generation response status:", res.status)
       if (res.ok) {
         const data = await res.json()
+        console.log("[v0] AI generation response data keys:", Object.keys(data))
         setFormData((prev) => ({
           ...prev,
           title: data.title || prev.title,
           procedure: data.procedure || prev.procedure,
-          products_used: data.products_used?.join(", ") || prev.products_used,
+          products_used: Array.isArray(data.products_used) ? data.products_used.join(", ") : (data.products_used || prev.products_used),
           rki_reference: data.rki_reference || prev.rki_reference,
         }))
-        toast({ title: "RKI-Richtlinien geladen", description: "Der Plan wurde mit RKI-Empfehlungen ausgefüllt." })
+        toast({ title: "RKI-Richtlinien geladen", description: "Der Plan wurde mit RKI-Empfehlungen ausgefuellt." })
+      } else {
+        const errorData = await res.json().catch(() => ({ error: "Unbekannter Fehler" }))
+        console.error("[v0] AI generation error:", errorData)
+        toast({ title: "Fehler", description: errorData.details || errorData.error || "AI-Generierung fehlgeschlagen.", variant: "destructive" })
       }
-    } catch {
-      toast({ title: "Fehler", description: "AI-Generierung fehlgeschlagen.", variant: "destructive" })
+    } catch (error) {
+      console.error("[v0] AI generation exception:", error)
+      toast({ title: "Fehler", description: "AI-Generierung fehlgeschlagen. Bitte versuchen Sie es erneut.", variant: "destructive" })
     } finally { setIsGenerating(false) }
   }
 

@@ -27,6 +27,7 @@ import { EventList } from "./components/event-list"
 import { EventDialog } from "./components/event-dialog"
 import { UpcomingEventsSidebar } from "./components/upcoming-events-sidebar"
 import { CalendarMenuBar } from "@/components/calendar-menu-bar"
+import { PageHeader } from "@/components/page-layout"
 import { AICalendarDialog } from "@/components/ai-calendar-dialog"
 
 const fetcher = (url: string) => fetch(url, { credentials: "include" }).then((res) => res.json())
@@ -219,22 +220,22 @@ export default function CalendarPageClient({ initialEvents, practiceId, user }: 
   return (
     <div className="space-y-6 max-w-full">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Kalender</h1>
-          <p className="text-muted-foreground">Gemeinsamer Kalender für Ihre Praxis</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="default" className="bg-purple-500 hover:bg-purple-600" onClick={() => setShowAIDialog(true)}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            KI-Terminassistent
-          </Button>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Termin hinzufügen
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Kalender"
+        subtitle="Gemeinsamer Kalender fuer Ihre Praxis"
+        actions={
+          <>
+            <Button variant="default" className="bg-purple-500 hover:bg-purple-600" onClick={() => setShowAIDialog(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              KI-Terminassistent
+            </Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Termin hinzufuegen
+            </Button>
+          </>
+        }
+      />
 
       {/* Menu Bar */}
       <CalendarMenuBar

@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { formatGermanNumber } from "@/lib/utils/number-format"
 
@@ -109,29 +110,29 @@ export default function ResponsibilitiesPageClient() {
     <AppLayout loading={loading} loadingMessage="Zuständigkeiten werden geladen...">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Zuständigkeiten</h1>
-            <p className="text-muted-foreground">Verwalten Sie Aufgaben und Verantwortlichkeiten</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" />
-              Drucken
-            </Button>
-            <Button
-              onClick={() => setAiDialogOpen(true)}
-              className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white border-0"
-            >
-              <Sparkles className="h-4 w-4" />
-              Mit KI generieren
-            </Button>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Neue Zuständigkeit
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="Zustaendigkeiten"
+          subtitle="Verwalten Sie Aufgaben und Verantwortlichkeiten"
+          actions={
+            <>
+              <Button variant="outline" onClick={handlePrint}>
+                <Printer className="h-4 w-4 mr-2" />
+                Drucken
+              </Button>
+              <Button
+                onClick={() => setAiDialogOpen(true)}
+                className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white border-0"
+              >
+                <Sparkles className="h-4 w-4" />
+                Mit KI generieren
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus className="h-4 w-4 mr-2" />
+                Neue Zustaendigkeit
+              </Button>
+            </>
+          }
+        />
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">

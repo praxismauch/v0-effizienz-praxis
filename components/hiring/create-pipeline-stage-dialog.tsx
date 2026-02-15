@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Plus } from "lucide-react"
 import { usePractice } from "@/contexts/practice-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ColorPicker } from "@/components/color-picker"
 
 interface JobPosting {
   id: string
@@ -134,15 +135,12 @@ function CreatePipelineStageDialog({ onStageCreated }: CreatePipelineStageDialog
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="color">Farbe</Label>
-              <Input
-                id="color"
-                type="color"
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              />
-            </div>
+            <ColorPicker
+              value={formData.color}
+              onChange={(color) => setFormData({ ...formData, color })}
+              label="Farbe"
+              id="color"
+            />
 
             <div className="space-y-2">
               <Label htmlFor="stage_order">Reihenfolge</Label>

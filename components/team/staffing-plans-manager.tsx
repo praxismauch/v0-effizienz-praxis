@@ -176,10 +176,10 @@ export function StaffingPlansManager({
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Label className="text-xs font-medium whitespace-nowrap">Bedarfsplan:</Label>
             <Select value={selectedPlanId || undefined} onValueChange={onSelectPlan}>
-              <SelectTrigger className="w-56 bg-white text-sm h-9">
+              <SelectTrigger className="w-56 text-sm h-9">
                 <SelectValue placeholder="Plan auswählen" />
               </SelectTrigger>
-              <SelectContent className="bg-white">
+              <SelectContent>
                 {plans.map((plan) => (
                   <SelectItem key={plan.id} value={plan.id}>
                     {plan.name}

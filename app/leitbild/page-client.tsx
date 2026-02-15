@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { Sparkles, History, X } from "lucide-react"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { WizardView } from "./wizard-view"
 import { LeitbildDisplay } from "./leitbild-display"
 import { VersionHistoryDialog, DeleteVersionDialog } from "./version-history-dialog"
@@ -283,24 +284,22 @@ export default function LeitbildPageClient() {
     <AppLayout>
       <div className="space-y-6 p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("leitbild.title", "Leitbild")}</h1>
-            <p className="text-muted-foreground">
-              {t("leitbild.subtitle", "Definieren Sie die Mission und Vision Ihrer Praxis")}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsHistoryDialogOpen(true)}>
-              <History className="mr-2 h-4 w-4" />
-              {t("leitbild.viewHistory", "Historie")}
-            </Button>
-            <Button onClick={handleStartWizard} className="bg-primary">
-              <Sparkles className="mr-2 h-4 w-4" />
-              {t("leitbild.generateNew", "Mit KI erstellen")}
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title={t("leitbild.title", "Leitbild")}
+          subtitle={t("leitbild.subtitle", "Definieren Sie die Mission und Vision Ihrer Praxis")}
+          actions={
+            <>
+              <Button variant="outline" onClick={() => setIsHistoryDialogOpen(true)}>
+                <History className="mr-2 h-4 w-4" />
+                {t("leitbild.viewHistory", "Historie")}
+              </Button>
+              <Button onClick={handleStartWizard} className="bg-primary">
+                <Sparkles className="mr-2 h-4 w-4" />
+                {t("leitbild.generateNew", "Mit KI erstellen")}
+              </Button>
+            </>
+          }
+        />
 
         {/* Content */}
         {activeVersion ? (

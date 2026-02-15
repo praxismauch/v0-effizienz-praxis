@@ -145,7 +145,17 @@ export function useDataEntry() {
     const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchCat = selectedCategory === "all" || p.category === selectedCategory
     const matchInterval = selectedInterval === "all" || !p.interval || p.interval === selectedInterval
-    return matchSearch && matchCat && matchInterval && p.isActive
+
+    // Visibility filter based on user role
+    const userRole = currentUser?.role || "employee"
+    let matchVisibility = true
+    if (p.visibility === "admin_only") {
+      matchVisibility = ["admin", "owner"].includes(userRole)
+    } else if (p.visibility === "custom" && p.visible_to_roles) {
+      matchVisibility = p.visible_to_roles.includes(userRole)
+    }
+
+    return matchSearch && matchCat && matchInterval && p.isActive && matchVisibility
   })
 
   const getDialogFilteredParams = (interval: string, category: string) =>

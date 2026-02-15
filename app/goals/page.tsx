@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from "react"
 import useSWR from "swr"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -239,27 +240,27 @@ export default function GoalsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Ziele</h1>
-            <p className="text-muted-foreground">Verwalten Sie Ihre Praxisziele und verfolgen Sie deren Fortschritt</p>
-          </div>
-          {currentPractice && (
-            <div className="flex gap-2 shrink-0">
-              <Button
-                className="bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white shadow-md hover:shadow-lg transition-all border-0"
-                onClick={() => setAiGeneratorOpen(true)}
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                KI-Ziel generieren
-              </Button>
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Neues Ziel
-              </Button>
-            </div>
-          )}
-        </div>
+        <PageHeader
+          title="Ziele"
+          subtitle="Verwalten Sie Ihre Praxisziele und verfolgen Sie deren Fortschritt"
+          actions={
+            currentPractice ? (
+              <>
+                <Button
+                  className="bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white shadow-md hover:shadow-lg transition-all border-0"
+                  onClick={() => setAiGeneratorOpen(true)}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  KI-Ziel generieren
+                </Button>
+                <Button onClick={() => setCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Neues Ziel
+                </Button>
+              </>
+            ) : undefined
+          }
+        />
 
         {!currentPractice ? (
           <Card className="p-12">

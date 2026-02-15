@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Mic, ExternalLink, Info, Loader2, Sparkles } from "lucide-react"
+import { Mic, ExternalLink, Info, Loader2, Sparkles, Upload, FileAudio } from "lucide-react"
 import { VoiceLevelIndicator } from "@/components/voice-level-indicator"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
@@ -41,6 +41,8 @@ export default function CreateProtocolRecordingDialog({
   const [error, setError] = useState<string | null>(null)
   const [liveTranscript, setLiveTranscript] = useState("")
   const [isTranscribing, setIsTranscribing] = useState(false)
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -355,6 +357,52 @@ export default function CreateProtocolRecordingDialog({
     }
   }
 
+  const handleFileUpload = async (file: File) => {
+    setIsUploadingFile(true)
+    try {
+      const formData = new FormData()
+      formData.append("audio", file, file.name)
+      formData.append("language", "de")
+
+      const response = await fetch("/api/protocols/transcribe", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        throw new Error(errorData.error || `Transkription fehlgeschlagen (${response.status})`)
+      }
+
+      const data = await response.json()
+
+      if (data.text && onTranscriptComplete) {
+        onTranscriptComplete(
+          data.text,
+          meetingTitle || `Protokoll vom ${format(new Date(), "dd.MM.yyyy HH:mm", { locale: de })}`,
+          participants,
+        )
+        onOpenChange(false)
+        toast({
+          title: "Transkription abgeschlossen",
+          description: `${data.text.split(/\s+/).length} Woerter erkannt`,
+        })
+      } else {
+        throw new Error("Keine Transkription erhalten")
+      }
+    } catch (error) {
+      console.error("[v0] File upload transcription error:", error)
+      toast({
+        title: "Fehler bei der Transkription",
+        description: error instanceof Error ? error.message : "Bitte versuchen Sie es erneut",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingFile(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -409,6 +457,48 @@ export default function CreateProtocolRecordingDialog({
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
+          )}
+
+          {/* File Upload Option */}
+          {!isRecording && (
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Upload className="h-4 w-4" />
+                Audiodatei hochladen
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Laden Sie eine vorhandene Audio- oder Videodatei zur Transkription hoch (MP3, WAV, M4A, WebM, MP4 - max. 25 MB)
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*,video/*,.mp3,.wav,.m4a,.ogg,.webm,.mp4,.flac"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleFileUpload(file)
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingFile}
+              >
+                {isUploadingFile ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Transkribiere...
+                  </>
+                ) : (
+                  <>
+                    <FileAudio className="h-4 w-4" />
+                    Datei auswaehlen
+                  </>
+                )}
+              </Button>
+            </div>
           )}
 
           <div className="space-y-2">

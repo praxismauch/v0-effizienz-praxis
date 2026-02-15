@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
 import {
   Download,
   Plus,
@@ -31,6 +32,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   ShieldQuestion,
+  Database,
 } from "lucide-react"
 import type { Backup, BackupFormState, Practice } from "./types"
 import { formatDateDE, formatFileSize, getVerificationStatus, getBackupTypeLabel } from "./utils"
@@ -42,6 +44,8 @@ interface BackupsTabProps {
   filterType: string
   isLoading: boolean
   isCreatingBackup: boolean
+  backupProgress: number
+  backupProgressMessage: string
   isVerifying: string | null
   isVerifyingAll: boolean
   googleDriveConnected: boolean
@@ -68,6 +72,8 @@ export function BackupsTab({
   filterType,
   isLoading,
   isCreatingBackup,
+  backupProgress,
+  backupProgressMessage,
   isVerifying,
   isVerifyingAll,
   googleDriveConnected,
@@ -159,9 +165,25 @@ export function BackupsTab({
                   />
                 </div>
 
-                <Button onClick={handleCreateBackup} disabled={isLoading || isCreatingBackup} className="w-full">
-                  {isCreatingBackup ? "Wird erstellt..." : "Backup erstellen"}
-                </Button>
+                {isCreatingBackup ? (
+                  <div className="space-y-3 w-full">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Database className="h-4 w-4 animate-pulse" />
+                      <span>{backupProgressMessage || "Backup wird erstellt..."}</span>
+                    </div>
+                    <Progress value={backupProgress} className="h-3" />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{backupProgress}%</span>
+                      <span>
+                        {backupProgress < 100 ? "Bitte warten..." : "Abgeschlossen!"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <Button onClick={handleCreateBackup} disabled={isLoading} className="w-full">
+                    Backup erstellen
+                  </Button>
+                )}
               </div>
             </DialogContent>
           </Dialog>

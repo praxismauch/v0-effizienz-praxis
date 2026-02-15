@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Calendar, Copy, Check, ExternalLink, Info, Plus, Trash2, Download, Upload } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
+import { ColorPicker } from "@/components/color-picker"
 
 interface CalendarSubscriptionDialogProps {
   open: boolean
@@ -327,15 +328,11 @@ export function CalendarSubscriptionDialog({ open, onOpenChange }: CalendarSubsc
                     onChange={(e) => setNewExternalUrl(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Farbe</Label>
-                  <Input
-                    type="color"
-                    value={newExternalColor}
-                    onChange={(e) => setNewExternalColor(e.target.value)}
-                    className="h-10 w-20"
-                  />
-                </div>
+                <ColorPicker
+                  value={newExternalColor}
+                  onChange={setNewExternalColor}
+                  label="Farbe"
+                />
                 <div className="flex gap-2">
                   <Button onClick={addExternalCalendar} disabled={loadingExternal} size="sm">
                     {loadingExternal ? "Wird hinzugefügt..." : "Hinzufügen"}

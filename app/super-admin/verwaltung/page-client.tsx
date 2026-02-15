@@ -5,6 +5,7 @@ import { Building2, Users, Shield, UsersRound } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
+import { PageHeader } from "@/components/page-layout"
 
 // Dynamic imports for code splitting
 const PracticesManager = dynamic(() => import("@/components/super-admin/practices-manager"), {
@@ -36,10 +37,10 @@ function VerwaltungContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Verwaltung</h1>
-        <p className="text-muted-foreground mt-2">Verwalten Sie Praxen, Benutzer, Teams und Berechtigungen</p>
-      </div>
+      <PageHeader
+        title="Verwaltung"
+        subtitle="Verwalten Sie Praxen, Benutzer, Teams und Berechtigungen"
+      />
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-4">

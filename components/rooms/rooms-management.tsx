@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Plus, Pencil, Trash2, ImageIcon } from "lucide-react"
+import { PageHeader } from "@/components/page-layout"
 import { CreateRoomDialog } from "./create-room-dialog"
 import { EditRoomDialog } from "./edit-room-dialog"
 import { toast } from "sonner"
@@ -74,16 +75,16 @@ export function RoomsManagement({ initialRooms, practiceId }: RoomsManagementPro
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Räume</h1>
-          <p className="text-muted-foreground mt-1">Verwalten Sie die Räume Ihrer Praxis</p>
-        </div>
-        <Button onClick={handleOpenCreate} disabled={!practiceId}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neuer Raum
-        </Button>
-      </div>
+      <PageHeader
+        title="Raeume"
+        subtitle="Verwalten Sie die Raeume Ihrer Praxis"
+        actions={
+          <Button onClick={handleOpenCreate} disabled={!practiceId}>
+            <Plus className="h-4 w-4 mr-2" />
+            Neuer Raum
+          </Button>
+        }
+      />
 
       {rooms.length === 0 ? (
         <Card>

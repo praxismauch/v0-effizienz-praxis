@@ -13,11 +13,14 @@ import { EntryDialog } from "./entry-dialog"
 import { EditValueDialog } from "./edit-value-dialog"
 import { formatDate, subWeeks, startOfWeek, endOfWeek } from "./date-utils"
 import type { ParameterValue } from "./types"
+import { useTranslation } from "@/contexts/translation-context"
+import { useUser } from "@/contexts/user-context"
+import { usePractice } from "@/contexts/practice-context"
 
 interface ParameterDataEntryProps {
-  currentPractice: { id: string } | null
-  currentUser: { id: string; name: string } | null
-  t: (key: string, fallback: string) => string
+  currentPractice?: { id: string } | null
+  currentUser?: { id: string; name: string } | null
+  t?: (key: string, fallback?: string) => string
 }
 
 const intervalBadgeColors: Record<string, string> = {
@@ -27,7 +30,15 @@ const intervalBadgeColors: Record<string, string> = {
   yearly: "#9333ea",
 }
 
-export function ParameterDataEntry({ currentPractice, currentUser, t }: ParameterDataEntryProps) {
+export function ParameterDataEntry(props: ParameterDataEntryProps) {
+  const { t: contextT } = useTranslation()
+  const userCtx = useUser()
+  const practiceCtx = usePractice()
+
+  const t = props.t || contextT
+  const currentUser = props.currentUser || (userCtx.currentUser ? { id: userCtx.currentUser.id, name: userCtx.currentUser.firstName || userCtx.currentUser.email || "" } : null)
+  const currentPractice = props.currentPractice || (practiceCtx.currentPractice ? { id: practiceCtx.currentPractice.id } : null)
+
   const data = useDataEntry({ currentPractice, currentUser, t })
 
   const [searchTerm, setSearchTerm] = useState("")

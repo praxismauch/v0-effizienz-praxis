@@ -60,6 +60,7 @@ export interface EditSurveyData {
   is_anonymous: boolean
   start_date: string
   end_date: string
+  questions?: SurveyQuestion[]
 }
 
 export interface NewSurveyData {
@@ -71,4 +72,5 @@ export interface NewSurveyData {
   start_date: string
   end_date: string
   notify_admin_on_response: boolean
+  questions?: SurveyQuestion[]
 }

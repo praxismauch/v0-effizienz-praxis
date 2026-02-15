@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Plus, Search, Sparkles, ClipboardCheck, LayoutTemplate, Heart, Zap } from "lucide-react"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import Logger from "@/lib/logger"
 
 import type { Survey, SurveyTemplate, MoodTrendData, MoodAlert, NewSurveyData, EditSurveyData } from "./types"
@@ -314,7 +315,7 @@ export default function SurveysPage() {
     }
   }
 
-  const openEditDialog = (survey: Survey) => {
+  const openEditDialog = async (survey: Survey) => {
     setSelectedSurvey(survey)
     setEditSurveyData({
       title: survey.title,
@@ -323,8 +324,25 @@ export default function SurveysPage() {
       is_anonymous: survey.is_anonymous || false,
       start_date: survey.start_date || "",
       end_date: survey.end_date || "",
+      questions: [],
     })
     setShowEditDialog(true)
+
+    // Fetch existing questions for this survey
+    if (currentPractice?.id) {
+      try {
+        const response = await fetch(
+          `/api/practices/${currentPractice.id}/surveys/${survey.id}/questions`,
+          { credentials: "include" }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setEditSurveyData((prev) => ({ ...prev, questions: data.questions || [] }))
+        }
+      } catch (error) {
+        Logger.error("api", "Error fetching survey questions", error)
+      }
+    }
   }
 
   const handleEditSurvey = async () => {
@@ -415,40 +433,30 @@ export default function SurveysPage() {
       <div className="space-y-6 -mx-4 sm:-mx-6 lg:-mx-8">
         <div className="px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
-                  <ClipboardCheck className="h-6 w-6" />
-                </div>
-                Umfragen
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Erstellen und verwalten Sie Umfragen fur Ihr Team und Ihre Patienten
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowAIDialog(true)}
-                className="bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200 hover:border-violet-300"
-              >
-                <Sparkles className="h-4 w-4 mr-2 text-violet-600" />
-                Mit KI erstellen
-              </Button>
-              <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
-                <LayoutTemplate className="h-4 w-4 mr-2" />
-                Aus Vorlage
-              </Button>
-              <Button
-                onClick={() => setShowCreateDialog(true)}
-                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Neue Umfrage
-              </Button>
-            </div>
-          </div>
+          <PageHeader
+            title="Umfragen"
+            subtitle="Erstellen und verwalten Sie Umfragen fuer Ihr Team und Ihre Patienten"
+            icon={<ClipboardCheck className="h-8 w-8" />}
+            actions={
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAIDialog(true)}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Mit KI erstellen
+                </Button>
+                <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
+                  <LayoutTemplate className="h-4 w-4 mr-2" />
+                  Aus Vorlage
+                </Button>
+                <Button onClick={() => setShowCreateDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Neue Umfrage
+                </Button>
+              </>
+            }
+          />
 
           <SurveyStatsCards stats={stats} />
         </div>

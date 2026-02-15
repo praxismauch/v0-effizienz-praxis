@@ -5,6 +5,7 @@ import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useSidebarSettings } from "@/contexts/sidebar-settings-context"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
@@ -107,14 +108,10 @@ export default function ProfilePageClient() {
     <AppLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Mein Profil</h1>
-            <p className="text-muted-foreground mt-1">
-              Verwalten Sie Ihre personlichen Informationen und Einstellungen
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="Mein Profil"
+          subtitle="Verwalten Sie Ihre persoenlichen Informationen und Einstellungen"
+        />
 
         {/* Profile Overview Card */}
         <ProfileOverviewCard

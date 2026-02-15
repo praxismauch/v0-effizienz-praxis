@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
 import {
   ArrowLeft,
   Mail,
@@ -25,7 +24,6 @@ import {
   Star,
   Wrench,
   Phone,
-  MapPin,
 } from "lucide-react"
 import Link from "next/link"
 import { ContractsManager } from "@/components/team/contracts-manager"
@@ -84,51 +82,43 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
           <span className="text-sm font-medium text-foreground">{displayName}</span>
         </div>
 
-        {/* Profile Hero */}
-        <Card className="overflow-hidden">
-          <div className="h-24 bg-gradient-to-r from-[#4F7CBA] to-[#3A5F8A]" />
-          <CardContent className="relative px-6 pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12">
+        {/* Profile Card */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               {/* Avatar */}
-              <div className="relative">
-                <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+              <div className="relative flex-shrink-0">
+                <Avatar className="h-16 w-16">
                   <AvatarImage src={teamMember.avatar_url} alt={displayName} />
-                  <AvatarFallback className="text-2xl font-semibold bg-[#4F7CBA] text-white">
+                  <AvatarFallback className="text-lg font-semibold bg-muted text-muted-foreground">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div
-                  className={`absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-background ${
+                  className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background ${
                     isActive ? "bg-green-500" : "bg-gray-400"
                   }`}
                 />
               </div>
 
               {/* Name & Role */}
-              <div className="flex-1 sm:pb-1">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
-                  <Badge
-                    variant="outline"
-                    className={
-                      isActive
-                        ? "border-green-200 bg-green-50 text-green-700 w-fit"
-                        : "border-gray-200 bg-gray-50 text-gray-600 w-fit"
-                    }
-                  >
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl font-semibold text-foreground">{displayName}</h1>
+                  <Badge variant={isActive ? "default" : "secondary"}>
                     {isActive ? "Aktiv" : "Inaktiv"}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   {teamMember.position || getRoleLabel(teamMember.role)}
                   {teamMember.department && ` · ${teamMember.department}`}
                 </p>
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 sm:pb-1">
+              <div className="flex-shrink-0">
                 <Link href={`/team/${memberId}/edit`}>
-                  <Button size="sm" className="gap-2">
+                  <Button variant="outline" size="sm" className="gap-2">
                     <Edit className="h-4 w-4" />
                     Bearbeiten
                   </Button>
@@ -136,45 +126,39 @@ export default async function TeamMemberDetailPage(props: { params: Promise<{ id
               </div>
             </div>
 
-            {/* Quick Info Bar */}
-            <Separator className="my-5" />
-            <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
+            {/* Quick Info */}
+            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 pt-4 border-t text-sm text-muted-foreground">
               {teamMember.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 flex-shrink-0" />
-                  <a href={`mailto:${teamMember.email}`} className="hover:text-foreground transition-colors">
-                    {teamMember.email}
-                  </a>
-                </div>
+                <a href={`mailto:${teamMember.email}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+                  <Mail className="h-3.5 w-3.5" />
+                  {teamMember.email}
+                </a>
               )}
               {teamMember.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 flex-shrink-0" />
-                  <span>{teamMember.phone}</span>
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5" />
+                  {teamMember.phone}
+                </span>
               )}
               {teamMember.department && (
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 flex-shrink-0" />
-                  <span>{teamMember.department}</span>
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5" />
+                  {teamMember.department}
+                </span>
               )}
               {memberSince && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 flex-shrink-0" />
-                  <span>Dabei seit {memberSince}</span>
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Dabei seit {memberSince}
+                </span>
               )}
             </div>
 
             {/* Bio */}
             {teamMember.bio && (
-              <>
-                <Separator className="my-5" />
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
-                  {teamMember.bio}
-                </p>
-              </>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-3 pt-3 border-t max-w-3xl">
+                {teamMember.bio}
+              </p>
             )}
           </CardContent>
         </Card>

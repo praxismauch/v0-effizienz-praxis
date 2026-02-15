@@ -19,6 +19,8 @@ export interface Parameter {
   min?: number
   max?: number
   target?: number
+  visibility?: "all" | "admin_only" | "custom"
+  visible_to_roles?: string[]
 }
 
 export interface ParameterGroup {

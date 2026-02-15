@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/card"
 import { Plus, Pencil, Trash2, GripVertical, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ColorPicker } from "@/components/color-picker"
 
 interface TestingCategory {
   id: string
@@ -340,24 +341,12 @@ function TestingCategoriesManager() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="color">Farbe</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-20 h-10"
-                />
-                <Input
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  placeholder="#6366f1"
-                  className="flex-1"
-                />
-              </div>
-            </div>
+            <ColorPicker
+              value={formData.color}
+              onChange={(color) => setFormData({ ...formData, color })}
+              label="Farbe"
+              id="color"
+            />
           </div>
 
           <DialogFooter>

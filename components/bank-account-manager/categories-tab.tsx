@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Pencil, Trash2 } from "lucide-react"
 import type { WorkflowCategory } from "./types"
+import { ColorPicker } from "@/components/color-picker"
 
 interface CategoriesTabProps {
   categories: WorkflowCategory[]
@@ -140,28 +141,11 @@ export function CategoriesTab({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Farbe</Label>
-              <div className="flex flex-wrap gap-2">
-                {colorPresets.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
-                      categoryColor === color ? "border-foreground scale-110" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setCategoryColor(color)}
-                  />
-                ))}
-                <Input
-                  type="color"
-                  value={categoryColor}
-                  onChange={(e) => setCategoryColor(e.target.value)}
-                  className="w-8 h-8 p-0 border-0 cursor-pointer"
-                />
-              </div>
-            </div>
+            <ColorPicker
+              value={categoryColor}
+              onChange={setCategoryColor}
+              label="Farbe"
+            />
 
             <div className="space-y-2">
               <Label htmlFor="category-description">Beschreibung (optional)</Label>

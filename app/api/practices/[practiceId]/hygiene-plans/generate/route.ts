@@ -84,10 +84,10 @@ Ensure the plan is:
 - Addresses quality and safety standards`
 
     const { text } = await generateText({
-      model: "xai/grok-3-mini-fast",
+      model: "anthropic/claude-sonnet-4-20250514",
       prompt,
       temperature: 0.7,
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     })
 
     console.log("[v0] AI generated hygiene plan")

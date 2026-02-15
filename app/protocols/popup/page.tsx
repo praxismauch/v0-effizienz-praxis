@@ -101,7 +101,15 @@ export default function ProtocolPopupPage() {
   const startRecording = async () => {
     try {
       console.log("[v0] Popup: Starting recording...")
+      console.log("[v0] Popup: navigator.mediaDevices available:", !!navigator.mediaDevices)
+      console.log("[v0] Popup: getUserMedia available:", !!navigator.mediaDevices?.getUserMedia)
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Ihr Browser unterstuetzt keine Audio-Aufnahme. Bitte verwenden Sie die Datei-Upload-Option.")
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      console.log("[v0] Popup: Microphone access granted, tracks:", stream.getAudioTracks().length)
 
       setAudioStream(stream)
 
@@ -147,9 +155,24 @@ export default function ProtocolPopupPage() {
       })
     } catch (error) {
       console.error("[v0] Popup: Error starting recording:", error)
+      let errorMessage = "Mikrofon-Zugriff wurde verweigert"
+      if (error instanceof Error) {
+        console.error("[v0] Popup: Error name:", error.name, "message:", error.message)
+        if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+          errorMessage = "Mikrofon-Zugriff wurde verweigert. Bitte erlauben Sie den Zugriff in den Browser-Einstellungen und laden Sie die Seite neu."
+        } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+          errorMessage = "Kein Mikrofon gefunden. Bitte schliessen Sie ein Mikrofon an."
+        } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+          errorMessage = "Mikrofon wird bereits verwendet oder ist nicht verfuegbar."
+        } else if (error.name === "AbortError") {
+          errorMessage = "Aufnahme wurde abgebrochen."
+        } else {
+          errorMessage = `Mikrofon-Fehler: ${error.message}`
+        }
+      }
       toast({
         title: "Fehler",
-        description: "Mikrofon-Zugriff wurde verweigert",
+        description: errorMessage,
         variant: "destructive",
       })
     }
@@ -422,7 +445,7 @@ export default function ProtocolPopupPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <Tabs defaultValue="upload" className="w-full">
+          <Tabs defaultValue="record" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="record" className="gap-2" disabled={isUploading}>
                 <Mic className="h-4 w-4" />

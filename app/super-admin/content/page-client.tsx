@@ -66,7 +66,7 @@ function ContentManagementContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Content Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Vorlagen</h1>
         <p className="text-muted-foreground mt-2">Verwalten Sie Vorlagen, Skills, Workflows und Dokumente</p>
       </div>
 

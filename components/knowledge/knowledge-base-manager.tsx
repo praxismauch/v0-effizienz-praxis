@@ -5,6 +5,7 @@ import useSWR from "swr"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { usePractice } from "@/contexts/practice-context"
 import { REALTIME_SWR_CONFIG } from "@/lib/swr-config"
+import { PageHeader } from "@/components/page-layout"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -198,29 +199,29 @@ export function KnowledgeBaseManager() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">QM Dokumentation</h1>
-            <p className="text-muted-foreground">Qualitätsmanagement-Dokumentation mit KI-gestützter Suche</p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <AIKnowledgeAnalyzerDialog />
-            <Button
-              size="default"
-              variant="default"
-              onClick={() => setShowAiSearch(true)}
-              disabled={!isAiEnabled}
-              className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white shadow-md hover:shadow-lg transition-all border-0"
-            >
-              <Sparkles className="h-4 w-4" />
-              KI-Suche
-            </Button>
-            <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Neuer Artikel
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="QM Dokumentation"
+          subtitle="Qualitaetsmanagement-Dokumentation mit KI-gestuetzter Suche"
+          actions={
+            <div className="flex gap-2 flex-wrap">
+              <AIKnowledgeAnalyzerDialog />
+              <Button
+                size="default"
+                variant="default"
+                onClick={() => setShowAiSearch(true)}
+                disabled={!isAiEnabled}
+                className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white shadow-md hover:shadow-lg transition-all border-0"
+              >
+                <Sparkles className="h-4 w-4" />
+                KI-Suche
+              </Button>
+              <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Neuer Artikel
+              </Button>
+            </div>
+          }
+        />
 
         <KnowledgeStatCards
           articleCount={articles.length}

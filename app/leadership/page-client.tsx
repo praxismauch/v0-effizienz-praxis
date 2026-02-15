@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -170,24 +171,22 @@ export default function LeadershipPageClient() {
     <AppLayout>
       <div className="container mx-auto p-6 max-w-7xl space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Führung & Wohlbefinden</h1>
-            <p className="text-muted-foreground">
-              PERMA-V basiertes Leadership Dashboard für nachhaltige Teamführung
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={fetchPermaData} disabled={isLoading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-              Aktualisieren
-            </Button>
-            <Button onClick={() => setShowAssessmentDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Selbsteinschätzung
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="Fuehrung & Wohlbefinden"
+          subtitle="PERMA-V basiertes Leadership Dashboard fuer nachhaltige Teamfuehrung"
+          actions={
+            <>
+              <Button variant="outline" onClick={fetchPermaData} disabled={isLoading}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                Aktualisieren
+              </Button>
+              <Button onClick={() => setShowAssessmentDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Selbsteinschaetzung
+              </Button>
+            </>
+          }
+        />
 
         {/* PERMA-V Overview Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

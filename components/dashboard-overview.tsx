@@ -28,6 +28,7 @@ import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { GoogleReviewsWidget } from "./google-reviews-widget"
 import { JournalActionItemsCard } from "@/components/dashboard/insights-action-items-card"
 import { useTranslation } from "@/contexts/translation-context"
+import { PageHeader } from "@/components/page-layout"
 import {
   StatCard,
   WeeklyTasksWidget,
@@ -585,24 +586,24 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
 
   return (
     <div className="space-y-6 max-w-full">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Cockpit</h1>
-          <p className="text-muted-foreground mt-1">Willkommen zurück! Hier ist ein 360° Überblick über Ihre Praxis.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsEditorOpen(true)}>
-            <Settings className="h-4 w-4 mr-2" />
-            Cockpit bearbeiten
-          </Button>
-          <Link href={isEnabled ? "/analysis" : "#"}>
-            <Button size="sm" variant="outline" disabled={!isEnabled} className="gap-2 bg-transparent">
-              <Sparkles className="h-4 w-4" />
-              KI-Analyse starten
+      <PageHeader
+        title="Cockpit"
+        subtitle="Willkommen zurueck! Hier ist ein 360 Grad Ueberblick ueber Ihre Praxis."
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setIsEditorOpen(true)}>
+              <Settings className="h-4 w-4 mr-2" />
+              Cockpit bearbeiten
             </Button>
-          </Link>
-        </div>
-      </div>
+            <Link href={isEnabled ? "/analysis" : "#"}>
+              <Button size="sm" variant="outline" disabled={!isEnabled} className="gap-2 bg-transparent">
+                <Sparkles className="h-4 w-4" />
+                KI-Analyse starten
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 min-w-0 auto-rows-min">{orderedWidgets}</div>
 

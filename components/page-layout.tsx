@@ -14,18 +14,25 @@ import type { ComponentType, ReactNode } from "react"
 interface PageHeaderProps {
   title: string
   subtitle?: string
+  icon?: ReactNode
   actions?: ReactNode
+  /** @deprecated Use `actions` instead */
+  action?: ReactNode
   className?: string
 }
 
-export function PageHeader({ title, subtitle, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, icon, actions, action, className }: PageHeaderProps) {
+  const actionContent = actions || action
   return (
     <div className={cn("flex flex-col sm:flex-row sm:items-start justify-between gap-4", className)}>
       <div className="space-y-1 min-w-0">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{title}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          {icon && <span className="text-primary flex-shrink-0">{icon}</span>}
+          {title}
+        </h1>
         {subtitle && <p className="text-sm text-muted-foreground max-w-2xl">{subtitle}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">{actions}</div>}
+      {actionContent && <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">{actionContent}</div>}
     </div>
   )
 }

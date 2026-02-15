@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, RefreshCw, Plus } from "lucide-react"
+import { PageHeader } from "@/components/page-layout"
 import { format } from "date-fns"
 import { toast } from "sonner"
 
@@ -142,21 +143,21 @@ export default function TimeReportsPageClient() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Zeiterfassungs-Reports</h1>
-          <p className="text-muted-foreground">Monatliche Auswertungen und Export</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadReports}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button size="sm" onClick={() => setShowGenerateDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Report generieren
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Zeiterfassungs-Reports"
+        subtitle="Monatliche Auswertungen und Export"
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={loadReports}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button size="sm" onClick={() => setShowGenerateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Report generieren
+            </Button>
+          </>
+        }
+      />
 
       {/* Filters */}
       <Card>

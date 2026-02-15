@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Search, FileText, Clock, Mic, List, Grid, Filter } from "lucide-react"
+import { PageHeader } from "@/components/page-layout"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -341,22 +342,22 @@ export default function PageClient(_props: PageClientProps) {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gesprächsprotokolle</h1>
-          <p className="text-muted-foreground">Nehmen Sie Meetings auf und erstellen Sie automatisch Protokolle</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setRecordingDialogOpen(true)}>
-            <Mic className="mr-2 h-4 w-4" />
-            Neue Aufnahme
-          </Button>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Manuell erstellen
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Gespraechsprotokolle"
+        subtitle="Nehmen Sie Meetings auf und erstellen Sie automatisch Protokolle"
+        actions={
+          <>
+            <Button variant="outline" onClick={() => setRecordingDialogOpen(true)}>
+              <Mic className="mr-2 h-4 w-4" />
+              Neue Aufnahme
+            </Button>
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Manuell erstellen
+            </Button>
+          </>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Gesamt" value={stats.total} icon={FileText} {...statCardColors.primary} />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/page-layout"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
@@ -66,10 +67,10 @@ export default function SuperAdminUsers() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Benutzerverwaltung</h1>
-        <p className="text-muted-foreground">Verwalten Sie alle Systembenutzer</p>
-      </div>
+      <PageHeader
+        title="Benutzerverwaltung"
+        subtitle="Verwalten Sie alle Systembenutzer"
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

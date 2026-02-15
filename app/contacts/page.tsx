@@ -29,6 +29,7 @@ import AIContactSearchDialog from "@/components/contacts/ai-contact-search-dialo
 import AIRecommendedContactsDialog from "@/components/contacts/ai-recommended-contacts-dialog"
 import BatchImportContactsDialog from "@/components/contacts/batch-import-contacts-dialog"
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
 import { useTeam } from "@/contexts/team-context"
@@ -191,47 +192,47 @@ export default function ContactsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Kontakte</h1>
-            <p className="text-muted-foreground">Verwalten Sie Ihre Praxiskontakte</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300"
-              onClick={() => setShowAIDialog(true)}
-            >
-              <Sparkles className="h-4 w-4" />
-              KI-Extraktion
-            </Button>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Neuer Kontakt
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowAISearchDialog(true)}>
-                  <Search className="h-4 w-4 mr-2" />
-                  KI-Suche
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowRecommendedDialog(true)}>
-                  <Phone className="h-4 w-4 mr-2" />
-                  Empfohlene Nummern
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowBatchDialog(true)}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Batch Import
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+        <PageHeader
+          title="Kontakte"
+          subtitle="Verwalten Sie Ihre Praxiskontakte"
+          actions={
+            <div className="flex gap-2">
+              <Button
+                className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300"
+                onClick={() => setShowAIDialog(true)}
+              >
+                <Sparkles className="h-4 w-4" />
+                KI-Extraktion
+              </Button>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Neuer Kontakt
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowAISearchDialog(true)}>
+                    <Search className="h-4 w-4 mr-2" />
+                    KI-Suche
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowRecommendedDialog(true)}>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Empfohlene Nummern
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setShowBatchDialog(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Batch Import
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          }
+        />
 
         <div className="space-y-4">
           <Card>

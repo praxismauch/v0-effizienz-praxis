@@ -1,6 +1,7 @@
 "use client"
 
 import { AppLayout } from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { SelfCheckTab } from "@/components/profile/self-check-tab"
@@ -24,12 +25,10 @@ export default function SelbstCheckPageClient() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Selbst-Check</h1>
-          <p className="text-muted-foreground mt-1">
-            Bewerten Sie regelmäßig Ihr mentales Wohlbefinden und erhalten Sie personalisierte Empfehlungen
-          </p>
-        </div>
+        <PageHeader
+          title="Selbst-Check"
+          subtitle="Bewerten Sie regelmaessig Ihr mentales Wohlbefinden und erhalten Sie personalisierte Empfehlungen"
+        />
 
         {/* Self-Check Component */}
         <SelfCheckTab userId={currentUser.id} practiceId={currentPractice?.id ? String(currentPractice.id) : ""} />

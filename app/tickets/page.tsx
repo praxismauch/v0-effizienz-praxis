@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import AppLayout from "@/components/app-layout"
+import { PageHeader } from "@/components/page-layout"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -161,16 +162,16 @@ export default function TicketsPage() {
   return (
     <AppLayout loading={loading || configLoading} loadingMessage="Tickets werden geladen...">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Tickets</h1>
-            <p className="text-muted-foreground">Verwalten Sie Ihre Support-Anfragen und Bug-Reports</p>
-          </div>
-          <Button onClick={() => setShowReportDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Neues Ticket erstellen
-          </Button>
-        </div>
+        <PageHeader
+          title="Tickets"
+          subtitle="Verwalten Sie Ihre Support-Anfragen und Bug-Reports"
+          actions={
+            <Button onClick={() => setShowReportDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Neues Ticket erstellen
+            </Button>
+          }
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
           <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">

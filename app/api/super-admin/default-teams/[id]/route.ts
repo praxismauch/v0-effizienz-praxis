@@ -3,19 +3,13 @@ import { type NextRequest, NextResponse } from "next/server"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
-// Helper to validate UUID
-function isValidUUID(id: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-  return uuidRegex.test(id)
-}
-
 // GET /api/super-admin/default-teams/[id] - Get a specific default team
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const resolvedParams = await params
     const id = String(resolvedParams.id)
 
-    if (!id || !isValidUUID(id)) {
+    if (!id) {
       return NextResponse.json({ error: "Ungültige Team-ID" }, { status: 400 })
     }
 
@@ -39,13 +33,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
+// PUT /api/super-admin/default-teams/[id] - Update a default team (alias for PATCH)
+export async function PUT(request: NextRequest, props: RouteParams) {
+  return PATCH(request, props)
+}
+
 // PATCH /api/super-admin/default-teams/[id] - Update a default team
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const resolvedParams = await params
     const id = String(resolvedParams.id)
 
-    if (!id || !isValidUUID(id)) {
+    if (!id) {
       return NextResponse.json({ error: "Ungültige Team-ID" }, { status: 400 })
     }
 
@@ -118,7 +117,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const resolvedParams = await params
     const id = String(resolvedParams.id)
 
-    if (!id || !isValidUUID(id)) {
+    if (!id) {
       return NextResponse.json({ error: "Ungültige Team-ID" }, { status: 400 })
     }
 

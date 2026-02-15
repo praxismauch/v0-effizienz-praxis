@@ -105,12 +105,12 @@ export default function UsersManager() {
     })
   }
 
-  const parsePracticeId = (value: string): number | undefined => {
+  const parsePracticeId = (value: string): string | undefined => {
     if (!value || value === "none" || value === "") {
       return undefined
     }
-    const parsed = Number.parseInt(value, 10)
-    return Number.isNaN(parsed) ? undefined : parsed
+    // Return as string since database expects TEXT type for practice_id
+    return value
   }
 
   const handleCreateUser = async () => {

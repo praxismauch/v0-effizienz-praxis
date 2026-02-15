@@ -16,7 +16,11 @@ const supabase = new Proxy({} as ReturnType<typeof createClient>, { get: (_, pro
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const practiceIdStr = practiceId === "0" || !practiceId ? "1" : practiceId
+    // Return empty if invalid practice ID
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json({ modules: [] })
+    }
+    const practiceIdStr = String(practiceId)
 
 
 
@@ -53,7 +57,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const practiceIdStr = practiceId === "0" || !practiceId ? "1" : practiceId
+    // Return empty if invalid practice ID
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json({ modules: [] })
+    }
+    const practiceIdStr = String(practiceId)
 
     const body = await request.json()
 

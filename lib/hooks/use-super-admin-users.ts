@@ -68,7 +68,7 @@ export function useSuperAdminUsers() {
     password: string
     name: string
     role?: string
-    practiceId?: number // Removed null, only undefined or number
+    practiceId?: string | number | null // Support string (database format), number (legacy), or null
     preferred_language?: string
   }) => {
     const payload: Record<string, unknown> = {
@@ -79,9 +79,9 @@ export function useSuperAdminUsers() {
       preferred_language: userData.preferred_language,
     }
 
-    // Only include practiceId if it's a valid number
-    if (userData.practiceId !== undefined && userData.practiceId !== null) {
-      payload.practiceId = userData.practiceId
+    // Convert practiceId to string format (database expects TEXT)
+    if (userData.practiceId !== undefined && userData.practiceId !== null && userData.practiceId !== "none") {
+      payload.practiceId = String(userData.practiceId)
     }
 
     const response = await fetch("/api/super-admin/users", {
@@ -101,17 +101,17 @@ export function useSuperAdminUsers() {
   }
 
   const updateUser = async (
-    userId: string,
-    updates: Partial<{
-      name: string
-      email: string
-      is_active: boolean
-      role: string
-      practice_id: number | null
-      preferred_language: string
-      phone: string | null
-      specialization: string | null
-    }>,
+    id: string,
+    updates: {
+      name?: string
+      email?: string
+      is_active?: boolean
+      role?: string
+      practice_id?: string | number | null // Support string (database format), number (legacy), or null
+      preferred_language?: string
+      phone?: string
+      specialization?: string
+    },
   ) => {
     if (!userId || userId === "undefined" || userId === "null") {
       throw new Error("Ungültige Benutzer-ID")

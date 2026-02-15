@@ -5,8 +5,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
-    const practiceIdStr =
-      practiceId === "0" || !practiceId || practiceId === "undefined" ? "1" : practiceId
+    // Practice ID validation - return empty for invalid IDs
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json([])
+    }
+    const practiceIdStr = String(practiceId)
     const supabase = createClient()
 
     const searchParams = request.nextUrl.searchParams

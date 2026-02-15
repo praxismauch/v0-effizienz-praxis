@@ -14,7 +14,11 @@ export async function POST(
       return NextResponse.json({ error: "practiceId, memberId und teamId sind erforderlich" }, { status: 400 })
     }
 
-    const practiceIdStr = String(practiceId) || "1"
+    // Validate practice ID
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return NextResponse.json({ error: "Invalid practice ID" }, { status: 400 })
+    }
+    const practiceIdStr = String(practiceId)
     const memberIdStr = String(memberId)
     const supabase = await createAdminClient()
 

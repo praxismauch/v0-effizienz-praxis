@@ -38,8 +38,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
 
-    // Use the actual practiceId from URL params, with fallback only if truly invalid
-    const practiceIdStr = practiceId && practiceId !== "0" && practiceId !== "undefined" ? practiceId : "1"
+    // Return empty stats if invalid practice ID - don't default to "1"
+    if (!practiceId || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
+      return new Response(JSON.stringify(defaultStats), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    }
+    const practiceIdStr = String(practiceId)
 
     const cacheKey = `dashboard-stats:${practiceId}`
     try {

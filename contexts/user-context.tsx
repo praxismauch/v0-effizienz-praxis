@@ -481,7 +481,7 @@ export function UserProvider({
       ...userData,
       id: crypto.randomUUID(),
       joinedAt: new Date().toISOString(),
-      practiceId: userData.practiceId || "1",
+      practiceId: userData.practiceId || null,
     }
     setSuperAdmins((prev) => [...prev, newAdmin])
   }, [])

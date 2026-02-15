@@ -195,6 +195,7 @@ export async function POST(request: NextRequest) {
 
     // Link the user to the newly created practice
     if (user?.id) {
+      // Update user's practice_id and default_practice_id
       const { error: updateUserError } = await supabase
         .from("users")
         .update({ 
@@ -205,9 +206,22 @@ export async function POST(request: NextRequest) {
 
       if (updateUserError) {
         Logger.error("api", "Error linking user to practice", updateUserError)
-        // Don't fail the request - practice was created successfully
       } else {
         Logger.info("api", "User linked to practice", { userId: user.id, practiceId: data.id })
+      }
+
+      // Add user as a member of the practice (required for RLS access)
+      const { error: memberError } = await supabase
+        .from("practice_members")
+        .insert({
+          practice_id: String(data.id),
+          user_id: user.id,
+        })
+
+      if (memberError) {
+        Logger.error("api", "Error adding user to practice_members", memberError)
+      } else {
+        Logger.info("api", "User added to practice_members", { userId: user.id, practiceId: data.id })
       }
     }
 

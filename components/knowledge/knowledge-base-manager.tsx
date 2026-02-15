@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useState, useMemo } from "react"
+import useSWR from "swr"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { usePractice } from "@/contexts/practice-context"
+import { REALTIME_SWR_CONFIG } from "@/lib/swr-config"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -39,121 +41,78 @@ import { convertDeviceToArticle, convertInventoryToArticle, convertWorkEquipment
 import { KnowledgeStatCards } from "./knowledge-stat-cards"
 import { ArticleList } from "./article-list"
 
+const fetcher = (url: string) => fetch(url).then((r) => { if (!r.ok) throw new Error("Fetch failed"); return r.json() })
+
 export function KnowledgeBaseManager() {
   const { isAiEnabled } = useAiEnabled()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
 
+  const practiceId = currentPractice?.id
+
+  // SWR hooks with auto-refresh every 60 seconds
+  const swrConfig = { ...REALTIME_SWR_CONFIG, refreshInterval: 60000 }
+
+  const { data: articlesData, mutate: mutateArticles, isLoading: articlesLoading } = useSWR(
+    practiceId ? `/api/knowledge-base?practiceId=${practiceId}` : null,
+    fetcher,
+    swrConfig,
+  )
+
+  const { data: categoriesData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/orga-categories` : null,
+    fetcher,
+    swrConfig,
+  )
+
+  const { data: devicesData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/devices` : null,
+    fetcher,
+    swrConfig,
+  )
+
+  const { data: inventoryData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/inventory` : null,
+    fetcher,
+    swrConfig,
+  )
+
+  const { data: workEquipmentData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/work-equipment` : null,
+    fetcher,
+    swrConfig,
+  )
+
+  const articles: KnowledgeArticle[] = articlesData?.articles || []
+  const devices: MedicalDevice[] = devicesData?.devices || devicesData || []
+  const inventoryItems: InventoryItem[] = inventoryData?.items || inventoryData || []
+  const workEquipment: WorkEquipment[] = workEquipmentData?.items || workEquipmentData || []
+
+  const orgaCategories = useMemo(() => {
+    const categories = categoriesData?.categories || []
+    const seen = new Set<string>()
+    return categories.filter((cat: OrgaCategory) => {
+      const key = cat.name?.toLowerCase()?.trim()
+      if (key && !seen.has(key)) {
+        seen.add(key)
+        return true
+      }
+      return false
+    })
+  }, [categoriesData])
+
+  const loading = articlesLoading
+
   const [showAiSearch, setShowAiSearch] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingArticle, setEditingArticle] = useState<KnowledgeArticle | null>(null)
-  const [articles, setArticles] = useState<KnowledgeArticle[]>([])
-  const [orgaCategories, setOrgaCategories] = useState<OrgaCategory[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("handbook")
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
 
-  const [devices, setDevices] = useState<MedicalDevice[]>([])
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
-  const [workEquipment, setWorkEquipment] = useState<WorkEquipment[]>([])
-
   const [articleToDelete, setArticleToDelete] = useState<KnowledgeArticle | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-
-  useEffect(() => {
-    if (currentPractice?.id) {
-      fetchArticles()
-      fetchCategories()
-      fetchDevices()
-      fetchInventory()
-      fetchWorkEquipment()
-    } else if (!practiceLoading) {
-      setLoading(false)
-    }
-  }, [currentPractice?.id, practiceLoading])
-
-  const fetchArticles = async () => {
-    if (!currentPractice?.id) {
-      setLoading(false)
-      return
-    }
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/knowledge-base?practiceId=${currentPractice.id}`)
-      if (!response.ok) throw new Error("Failed to fetch articles")
-      const data = await response.json()
-      setArticles(data.articles || [])
-    } catch (error) {
-      console.error("Error fetching articles:", error)
-      toast({
-        title: "Fehler beim Laden",
-        description: "Die Artikel konnten nicht geladen werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchDevices = async () => {
-    if (!currentPractice?.id) return
-    try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/devices`)
-      if (!response.ok) return
-      const data = await response.json()
-      setDevices(data.devices || data || [])
-    } catch (error) {
-      console.error("Error fetching devices:", error)
-    }
-  }
-
-  const fetchInventory = async () => {
-    if (!currentPractice?.id) return
-    try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/inventory`)
-      if (!response.ok) return
-      const data = await response.json()
-      setInventoryItems(data.items || data || [])
-    } catch (error) {
-      console.error("Error fetching inventory:", error)
-    }
-  }
-
-  const fetchWorkEquipment = async () => {
-    if (!currentPractice?.id) return
-    try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/work-equipment`)
-      if (!response.ok) return
-      const data = await response.json()
-      setWorkEquipment(data.items || data || [])
-    } catch (error) {
-      console.error("Error fetching work equipment:", error)
-    }
-  }
-
-  const fetchCategories = async () => {
-    if (!currentPractice?.id) return
-    try {
-      const response = await fetch(`/api/practices/${currentPractice.id}/orga-categories`)
-      if (!response.ok) throw new Error("Failed to fetch categories")
-      const data = await response.json()
-      const categories = data.categories || []
-      const seen = new Set<string>()
-      const uniqueCategories = categories.filter((cat: OrgaCategory) => {
-        const key = cat.name?.toLowerCase()?.trim()
-        if (key && !seen.has(key)) {
-          seen.add(key)
-          return true
-        }
-        return false
-      })
-      setOrgaCategories(uniqueCategories)
-    } catch (error) {
-      console.error("Error fetching categories:", error)
-    }
-  }
 
   const deviceArticles = useMemo(() => devices.map(convertDeviceToArticle), [devices])
   const inventoryArticles = useMemo(() => inventoryItems.map(convertInventoryToArticle), [inventoryItems])
@@ -204,7 +163,7 @@ export function KnowledgeBaseManager() {
         description: "Der Artikel wurde erfolgreich gelöscht.",
       })
 
-      fetchArticles()
+      mutateArticles()
     } catch (error) {
       console.error("Error deleting article:", error)
       toast({
@@ -362,7 +321,7 @@ export function KnowledgeBaseManager() {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onSuccess={() => {
-          fetchArticles()
+          mutateArticles()
           setShowCreateDialog(false)
         }}
       />
@@ -372,7 +331,7 @@ export function KnowledgeBaseManager() {
           open={!!editingArticle}
           onOpenChange={(open) => !open && setEditingArticle(null)}
           onSuccess={() => {
-            fetchArticles()
+            mutateArticles()
             setEditingArticle(null)
           }}
           orgaCategories={orgaCategories}

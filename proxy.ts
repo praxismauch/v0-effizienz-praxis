@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
+import { ROLES } from "./lib/constants/roles"
 
 // Protected routes that require authentication
 const PROTECTED_PATHS = ["/dashboard", "/settings", "/patients", "/protocols", "/academy", "/reports"]
@@ -76,7 +77,7 @@ export async function proxy(request: NextRequest) {
     const hasAdminAccess =
       userData &&
       userData.is_active &&
-      (userData.role === "super_admin" || userData.role === "admin")
+      (userData.role === ROLES.SUPER_ADMIN || userData.role === ROLES.ADMIN)
 
     if (!hasAdminAccess) {
       const redirectUrl = request.nextUrl.clone()

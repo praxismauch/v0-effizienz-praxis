@@ -2,7 +2,7 @@
  * Progressive CAPTCHA System
  * Uses hCaptcha for bot detection with progressive activation
  */
-import { getRedis } from "@/lib/redis"
+import { redis as getRedis } from "@/lib/redis"
 import { getClientIp } from "./rate-limit-redis"
 import { blockIP, logSecurityEvent } from "./anomaly-detection"
 

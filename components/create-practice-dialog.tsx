@@ -109,6 +109,8 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
     setIsSubmitting(true)
     try {
+      console.log("[v0] CLIENT: Creating practice with data:", formData)
+      
       const response = await fetch("/api/practices", {
         method: "POST",
         headers: {
@@ -128,8 +130,11 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         }),
       })
 
+      console.log("[v0] CLIENT: Response status:", response.status, response.statusText)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.log("[v0] CLIENT: Error response:", errorData)
         throw new Error(errorData.message || "Fehler beim Erstellen der Praxis")
       }
 

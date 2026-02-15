@@ -55,6 +55,36 @@ export async function GET() {
   }
 }
 
+// PATCH /api/super-admin/default-teams - Reorder default teams
+export async function PATCH(request: Request) {
+  try {
+    const supabase = await createAdminClient()
+    const body = await request.json()
+    const { reorder } = body
+
+    if (!reorder || !Array.isArray(reorder)) {
+      return NextResponse.json({ error: "Invalid reorder data" }, { status: 400 })
+    }
+
+    // Update each team's display_order
+    for (const item of reorder) {
+      const { error } = await supabase
+        .from("default_teams")
+        .update({ display_order: item.display_order, updated_at: new Date().toISOString() })
+        .eq("id", item.id)
+
+      if (error) {
+        console.error(`[v0] Error updating order for team ${item.id}:`, error)
+      }
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("[v0] Error in PATCH /api/super-admin/default-teams:", error)
+    return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 })
+  }
+}
+
 // POST /api/super-admin/default-teams - Create a new default team
 export async function POST(request: Request) {
   try {

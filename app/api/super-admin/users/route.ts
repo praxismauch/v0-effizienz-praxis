@@ -170,6 +170,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[v0] POST /api/super-admin/users - Request received")
+    
     const userId = request.headers.get("x-user-id")
 
     if (!userId) {
@@ -179,6 +181,7 @@ export async function POST(request: NextRequest) {
       } = await authSupabase.auth.getUser()
 
       if (!authUser) {
+        console.log("[v0] POST users - No auth user")
         return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
       }
     }
@@ -189,6 +192,7 @@ export async function POST(request: NextRequest) {
     } = await authSupabase.auth.getUser()
 
     if (!authUser) {
+      console.log("[v0] POST users - No auth user (second check)")
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
     }
 
@@ -199,14 +203,18 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!userData || !isSuperAdminRole(userData.role)) {
+      console.log("[v0] POST users - Not super admin, role:", userData?.role)
       return NextResponse.json({ error: "Zugriff verweigert: Super-Admin-Berechtigung erforderlich" }, { status: 403 })
     }
 
     const body = await request.json()
     const { email, password, name, role, practiceId } = body
+    
+    console.log("[v0] POST users - Creating user:", { email, name, role, practiceId })
 
     // Validation - no empty values
     if (!email || !password || !name) {
+      console.log("[v0] POST users - Missing required fields")
       return NextResponse.json({ error: "E-Mail, Passwort und Name sind erforderlich" }, { status: 400 })
     }
 
@@ -308,6 +316,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log("[v0] POST users - User created successfully:", newUser.id)
+    
     return NextResponse.json({
       success: true,
       user: {
@@ -321,7 +331,8 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Exception in POST /api/super-admin/users:", error)
+    console.error("[v0] Exception in POST /api/super-admin/users:", error)
+    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
     const message = error instanceof Error ? error.message : "Interner Serverfehler"
     return NextResponse.json({ error: message }, { status: 500 })
   }

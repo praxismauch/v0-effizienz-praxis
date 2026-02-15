@@ -315,7 +315,7 @@ export default function SurveysPage() {
     }
   }
 
-  const openEditDialog = (survey: Survey) => {
+  const openEditDialog = async (survey: Survey) => {
     setSelectedSurvey(survey)
     setEditSurveyData({
       title: survey.title,
@@ -324,8 +324,25 @@ export default function SurveysPage() {
       is_anonymous: survey.is_anonymous || false,
       start_date: survey.start_date || "",
       end_date: survey.end_date || "",
+      questions: [],
     })
     setShowEditDialog(true)
+
+    // Fetch existing questions for this survey
+    if (currentPractice?.id) {
+      try {
+        const response = await fetch(
+          `/api/practices/${currentPractice.id}/surveys/${survey.id}/questions`,
+          { credentials: "include" }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setEditSurveyData((prev) => ({ ...prev, questions: data.questions || [] }))
+        }
+      } catch (error) {
+        Logger.error("api", "Error fetching survey questions", error)
+      }
+    }
   }
 
   const handleEditSurvey = async () => {

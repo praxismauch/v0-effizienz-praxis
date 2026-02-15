@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dialog"
 import { Loader2, Sparkles, BarChart3 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import type { Survey, SurveyTemplate, NewSurveyData, EditSurveyData } from "../types"
+import type { Survey, SurveyTemplate, NewSurveyData, EditSurveyData, SurveyQuestion } from "../types"
+import { SurveyQuestionEditor } from "./survey-question-editor"
 
 // Create Survey Dialog
 interface CreateSurveyDialogProps {
@@ -41,12 +42,13 @@ export function CreateSurveyDialog({
 }: CreateSurveyDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Neue Umfrage erstellen</DialogTitle>
           <DialogDescription>Erstellen Sie eine neue Umfrage fur Ihr Team oder Ihre Patienten.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <ScrollArea className="flex-1 overflow-y-auto">
+        <div className="space-y-4 py-4 pr-4">
           <div className="space-y-2">
             <Label htmlFor="title">Titel *</Label>
             <Input
@@ -159,7 +161,16 @@ export function CreateSurveyDialog({
               }
             />
           </div>
+
+          {/* Question Editor */}
+          <div className="border-t pt-4">
+            <SurveyQuestionEditor
+              questions={newSurvey.questions || []}
+              onChange={(questions) => onNewSurveyChange({ ...newSurvey, questions })}
+            />
+          </div>
         </div>
+        </ScrollArea>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
@@ -379,12 +390,13 @@ export function EditSurveyDialog({
 }: EditSurveyDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Umfrage bearbeiten</DialogTitle>
-          <DialogDescription>Passen Sie die Umfrageeinstellungen an.</DialogDescription>
+          <DialogDescription>Passen Sie die Umfrageeinstellungen und Fragen an.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <ScrollArea className="flex-1 overflow-y-auto">
+        <div className="space-y-4 py-4 pr-4">
           <div className="space-y-2">
             <Label htmlFor="edit-title">Titel *</Label>
             <Input
@@ -451,7 +463,16 @@ export function EditSurveyDialog({
               onCheckedChange={(v) => onEditDataChange({ ...editData, is_anonymous: v })}
             />
           </div>
+
+          {/* Question Editor */}
+          <div className="border-t pt-4">
+            <SurveyQuestionEditor
+              questions={editData.questions || []}
+              onChange={(questions) => onEditDataChange({ ...editData, questions })}
+            />
+          </div>
         </div>
+        </ScrollArea>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen

@@ -95,8 +95,6 @@ export async function PATCH(
       updateData.is_anonymous = updateData.anonymous
     }
 
-    console.log("[v0] Survey PATCH updateData:", JSON.stringify(updateData))
-
     const { data: survey, error } = await supabase
       .from("surveys")
       .update(updateData)
@@ -108,6 +106,35 @@ export async function PATCH(
     if (error) {
       console.error("Error updating survey:", error, "updateData:", updateData)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Handle questions update if provided
+    if (Array.isArray(body.questions)) {
+      // Delete existing questions
+      await supabase
+        .from("survey_questions")
+        .delete()
+        .eq("survey_id", surveyId)
+
+      // Insert new questions
+      if (body.questions.length > 0) {
+        const questionsToInsert = body.questions.map((q: Record<string, unknown>, i: number) => ({
+          survey_id: surveyId,
+          question_text: q.question_text,
+          question_type: q.question_type || "scale",
+          options: q.options || [],
+          is_required: q.is_required !== false,
+          order_index: q.order_index || i + 1,
+        }))
+
+        const { error: qError } = await supabase
+          .from("survey_questions")
+          .insert(questionsToInsert)
+
+        if (qError) {
+          console.error("Error updating survey questions:", qError)
+        }
+      }
     }
 
     return NextResponse.json({ survey })

@@ -135,8 +135,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[v0] POST /api/practices - Request received")
     const body = await request.json()
-    const { name, type, street, city, zipCode, phone, email, website, timezone, currency, isActive } = body
+    console.log("[v0] POST /api/practices - Body:", { ...body, bundesland: body.bundesland })
+    const { name, type, street, city, zipCode, phone, email, website, timezone, currency, isActive, bundesland } = body
 
     const supabase = await createClient()
 
@@ -165,6 +167,7 @@ export async function POST(request: NextRequest) {
       name,
       type,
       address,
+      bundesland: bundesland || null,
       phone: phone || "",
       email: email || "",
       website: website || "",

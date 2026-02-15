@@ -98,7 +98,11 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("[v0] CLIENT: handleSubmit called with formData:", formData)
+    console.log("[v0] CLIENT: Validation check - name:", !!formData.name, "type:", !!formData.type, "bundesland:", !!formData.bundesland)
+    
     if (!formData.name || !formData.type || !formData.bundesland) {
+      console.log("[v0] CLIENT: Validation failed")
       toast({
         title: "Validierungsfehler",
         description: "Bitte füllen Sie alle Pflichtfelder aus (Name, Typ und Bundesland).",
@@ -106,9 +110,13 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
       })
       return
     }
+    
+    console.log("[v0] CLIENT: Validation passed, proceeding with fetch")
 
     setIsSubmitting(true)
     try {
+      console.log("[v0] CLIENT: Creating practice with data:", formData)
+      
       const response = await fetch("/api/practices", {
         method: "POST",
         headers: {
@@ -128,9 +136,12 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         }),
       })
 
+      console.log("[v0] CLIENT: Response status:", response.status, response.statusText)
+
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || "Fehler beim Erstellen der Praxis")
+        console.log("[v0] CLIENT: Error response:", errorData)
+        throw new Error(errorData.error || errorData.message || "Fehler beim Erstellen der Praxis")
       }
 
       const newPractice = await response.json()

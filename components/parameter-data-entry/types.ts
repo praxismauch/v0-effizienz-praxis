@@ -20,6 +20,8 @@ export interface Parameter {
   options?: string[]
   isActive: boolean
   interval?: "weekly" | "monthly" | "quarterly" | "yearly"
+  visibility?: "all" | "admin_only" | "custom"
+  visible_to_roles?: string[]
 }
 
 export interface SortConfig {

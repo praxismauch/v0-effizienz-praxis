@@ -57,6 +57,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       createdAt: p.created_at,
       updatedAt: p.updated_at,
       unit: p.unit,
+      visibility: p.visibility || "all",
+      visible_to_roles: p.visible_to_roles || ["admin", "owner", "manager", "employee"],
     }))
 
     return NextResponse.json({ parameters: transformedPracticeParameters })
@@ -95,6 +97,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         is_global: body.isGlobal || false,
         color: body.color,
         group_ids: body.groupIds,
+        visibility: body.visibility || "all",
+        visible_to_roles: body.visible_to_roles || ["admin", "owner", "manager", "employee"],
       })
       .select()
       .single()

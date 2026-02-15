@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import * as OTPAuth from "otpauth"
+import { decrypt } from "@/lib/encryption"
 
 // Disable MFA for the user
 export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
@@ -33,9 +34,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "2FA ist nicht aktiviert" }, { status: 400 })
     }
 
-    const secret = userData.preferences?.mfa_secret
+    const encryptedSecret = userData.preferences?.mfa_secret
 
-    if (code && secret) {
+    if (code && encryptedSecret) {
+      // Decrypt the secret before verification
+      const secret = decrypt(encryptedSecret)
+
       // Verify the TOTP code before disabling
       const totp = new OTPAuth.TOTP({
         issuer: "Effizienz Praxis",

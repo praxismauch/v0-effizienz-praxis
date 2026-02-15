@@ -2,11 +2,20 @@ import { createServerClient } from "@supabase/ssr"
 import { createAdminClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { validateCsrf } from "@/lib/api/csrf"
 
 export const dynamic = "force-dynamic"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Validate CSRF token first
+    const csrfValidation = await validateCsrf(request)
+    if (!csrfValidation.valid) {
+      console.error("[auth/logout] Logout blocked - CSRF validation failed")
+      return csrfValidation.response
+    }
+
     const cookieStore = await cookies()
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
@@ -49,8 +58,10 @@ export async function POST() {
         const adminClient = await createAdminClient()
         await adminClient.auth.admin.signOut(user.id)
       } catch (adminError) {
-        console.error("[auth/logout] Failed to revoke tokens:", adminError)
-        // Continue with logout even if revocation fails
+        console.error("[auth/logout] CRITICAL: Failed to revoke tokens for user", user.id, adminError)
+        // Log this as a security concern but continue with logout
+        // The client-side session will still be cleared
+        // NOTE: In production, consider alerting on this error
       }
     }
 

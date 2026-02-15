@@ -346,8 +346,9 @@ export async function POST(request: Request) {
         .select("*")
         .eq("practice_id", practiceId), // Added recruitingFormFields query
       supabase
-        .from("workflow_templates")
-        .select("*"), // workflow_templates is a global table without practice_id
+        .from("workflows")
+        .select("*")
+        .eq("is_template", true), // workflow templates stored in workflows table with is_template=true
       supabase
         .from("todos")
         .select("*")

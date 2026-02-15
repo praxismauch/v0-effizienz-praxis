@@ -11,13 +11,6 @@ export async function GET() {
       supabase.from("users").select("id", { count: "exact", head: true }),
     ])
 
-    console.log("[v0] User counts API - Pending result:", {
-      count: pendingResult.count,
-      error: pendingResult.error,
-    })
-    console.log("[v0] User counts API - Super admins:", superAdminsResult.count)
-    console.log("[v0] User counts API - Total users:", allUsersResult.count)
-
     return NextResponse.json({
       pending: pendingResult.count || 0,
       superAdmins: superAdminsResult.count || 0,

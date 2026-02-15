@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
   const { practiceId } = await params
-  const supabase = await createRouteHandlerClient()
+  const supabase = await createServerClient()
 
   const { data, error } = await supabase
     .from("knowledge_base_settings")
@@ -39,7 +39,7 @@ export async function PUT(
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
   const { practiceId } = await params
-  const supabase = await createRouteHandlerClient()
+  const supabase = await createServerClient()
   const body = await request.json()
 
   const settingsData = {

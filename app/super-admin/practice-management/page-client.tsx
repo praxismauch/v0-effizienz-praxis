@@ -149,13 +149,13 @@ export function PracticeManagementClient() {
   }
 
   const getPracticeName = (practiceId: string) => {
-    return practices.find((p) => p.id === practiceId)?.name || "Unknown"
+    return practices.find((p) => p.id === practiceId)?.name || "Unbekannt"
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">Loading...</div>
+        <div className="text-center">Laden...</div>
       </div>
     )
   }
@@ -164,8 +164,8 @@ export function PracticeManagementClient() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Practice Management</h1>
-          <p className="text-muted-foreground">Assign users to practices and manage team memberships</p>
+          <h1 className="text-3xl font-bold">Praxisverwaltung</h1>
+          <p className="text-muted-foreground">Benutzer zu Praxen zuweisen und Teammitgliedschaften verwalten</p>
         </div>
       </div>
 
@@ -174,13 +174,13 @@ export function PracticeManagementClient() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Practices
+              Praxen
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{practices.length}</div>
             <p className="text-sm text-muted-foreground">
-              {practices.filter((p) => p.approval_status === "approved").length} approved
+              {practices.filter((p) => p.approval_status === "approved").length} genehmigt
             </p>
           </CardContent>
         </Card>
@@ -189,12 +189,12 @@ export function PracticeManagementClient() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Users
+              Benutzer
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{users.length}</div>
-            <p className="text-sm text-muted-foreground">{users.filter((u) => u.is_active).length} active</p>
+            <p className="text-sm text-muted-foreground">{users.filter((u) => u.is_active).length} aktiv</p>
           </CardContent>
         </Card>
 
@@ -202,28 +202,28 @@ export function PracticeManagementClient() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Assignments
+              Zuweisungen
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{teamMembers.length}</div>
-            <p className="text-sm text-muted-foreground">Total practice memberships</p>
+            <p className="text-sm text-muted-foreground">Gesamte Praxis-Mitgliedschaften</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Assign User to Practice</CardTitle>
-          <CardDescription>Add a user to a practice team with a specific role</CardDescription>
+          <CardTitle>Benutzer zu Praxis zuweisen</CardTitle>
+          <CardDescription>Einen Benutzer mit einer bestimmten Rolle einem Praxis-Team hinzufugen</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
             <div className="space-y-2">
-              <Label>User</Label>
+              <Label>Benutzer</Label>
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select user" />
+                  <SelectValue placeholder="Benutzer auswahlen" />
                 </SelectTrigger>
                 <SelectContent>
                   {users.map((user) => (
@@ -236,10 +236,10 @@ export function PracticeManagementClient() {
             </div>
 
             <div className="space-y-2">
-              <Label>Practice</Label>
+              <Label>Praxis</Label>
               <Select value={selectedPracticeId} onValueChange={setSelectedPracticeId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select practice" />
+                  <SelectValue placeholder="Praxis auswahlen" />
                 </SelectTrigger>
                 <SelectContent>
                   {practices
@@ -254,15 +254,15 @@ export function PracticeManagementClient() {
             </div>
 
             <div className="space-y-2">
-              <Label>Role</Label>
+              <Label>Rolle</Label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="user">Benutzer</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="practice_admin">Practice Admin</SelectItem>
+                  <SelectItem value="practice_admin">Praxis Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -271,7 +271,7 @@ export function PracticeManagementClient() {
               <Label>&nbsp;</Label>
               <Button onClick={assignUserToPractice} className="w-full">
                 <UserPlus className="h-4 w-4 mr-2" />
-                Assign
+                Zuweisen
               </Button>
             </div>
           </div>
@@ -280,15 +280,15 @@ export function PracticeManagementClient() {
 
       <Card>
         <CardHeader>
-          <CardTitle>User Practice Assignments</CardTitle>
-          <CardDescription>View and manage all user-to-practice assignments</CardDescription>
+          <CardTitle>Benutzer-Praxis-Zuweisungen</CardTitle>
+          <CardDescription>Alle Benutzer-Praxis-Zuweisungen anzeigen und verwalten</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search users by email or name..."
+                placeholder="Benutzer nach E-Mail oder Name suchen..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -299,11 +299,11 @@ export function PracticeManagementClient() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Assigned Practices</TableHead>
+                <TableHead>Benutzer</TableHead>
+                <TableHead>E-Mail</TableHead>
+                <TableHead>Zugewiesene Praxen</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Aktionen</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -323,12 +323,12 @@ export function PracticeManagementClient() {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground">No assignments</span>
+                        <span className="text-muted-foreground">Keine Zuweisungen</span>
                       )}
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.is_active ? "default" : "secondary"}>
-                        {user.is_active ? "Active" : "Inactive"}
+                        {user.is_active ? "Aktiv" : "Inaktiv"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -339,7 +339,7 @@ export function PracticeManagementClient() {
                           size="sm"
                           onClick={() => removeUserFromPractice(user.id, tm.practice_id)}
                         >
-                          Remove from {getPracticeName(tm.practice_id)}
+                          Entfernen aus {getPracticeName(tm.practice_id)}
                         </Button>
                       ))}
                     </TableCell>

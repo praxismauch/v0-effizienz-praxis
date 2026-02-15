@@ -18,7 +18,7 @@ export async function GET(
 
     let query = supabase
       .from("time_correction_requests")
-      .select("*, time_blocks:block_id(*)")
+      .select("*")
       .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
 
@@ -32,7 +32,22 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data || [])
+    // Enrich with time_block data if block_id exists
+    const enriched = await Promise.all(
+      (data || []).map(async (correction) => {
+        if (correction.block_id) {
+          const { data: block } = await supabase
+            .from("time_blocks")
+            .select("*")
+            .eq("id", correction.block_id)
+            .single()
+          return { ...correction, time_block: block || null }
+        }
+        return { ...correction, time_block: null }
+      })
+    )
+
+    return NextResponse.json(enriched)
   } catch (error) {
     return handleApiError(error)
   }

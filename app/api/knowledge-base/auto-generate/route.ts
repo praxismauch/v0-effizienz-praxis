@@ -118,9 +118,10 @@ ${goal.description || ""}
     // Generate Workflow Templates article
     if (handbookConfig.workflowTemplates) {
       const { data: workflows } = await supabase
-        .from("workflow_templates")
+        .from("workflows")
         .select("*")
-        .eq("is_active", true)
+        .eq("is_template", true)
+        .is("deleted_at", null)
         .order("name")
 
       const content = `# Workflow-Vorlagen

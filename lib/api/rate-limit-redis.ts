@@ -4,6 +4,7 @@
  */
 import { Redis } from "@upstash/redis"
 import { Ratelimit } from "@upstash/ratelimit"
+import { logSecurityEvent } from "./anomaly-detection"
 
 // Initialize Redis client
 const redis = new Redis({
@@ -97,10 +98,32 @@ export async function applyRateLimitRedis(
     const key = `${ip}:${type}`
 
     const result = await limiter.limit(key)
+    
+    const url = new URL(request.url)
+    const userAgent = request.headers.get("user-agent") || "unknown"
 
     if (result.success) {
+      // Log successful request
+      await logSecurityEvent({
+        ip,
+        endpoint: url.pathname,
+        timestamp: Date.now(),
+        userAgent,
+        status: "allowed",
+      })
+      
       return { allowed: true, remaining: result.remaining }
     }
+
+    // Log blocked request
+    await logSecurityEvent({
+      ip,
+      endpoint: url.pathname,
+      timestamp: Date.now(),
+      userAgent,
+      status: "blocked",
+      reason: "rate_limit_exceeded",
+    })
 
     const retryAfter = Math.ceil((result.reset - Date.now()) / 1000)
 

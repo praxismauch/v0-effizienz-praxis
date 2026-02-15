@@ -1,6 +1,7 @@
 import { createAdminClient, createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
+import { randomUUID } from "crypto"
 
 export const dynamic = "force-dynamic"
 
@@ -169,6 +170,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[v0] POST /api/super-admin/users - Request received")
+    
     const userId = request.headers.get("x-user-id")
 
     if (!userId) {
@@ -178,6 +181,7 @@ export async function POST(request: NextRequest) {
       } = await authSupabase.auth.getUser()
 
       if (!authUser) {
+        console.log("[v0] POST users - No auth user")
         return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
       }
     }
@@ -188,6 +192,7 @@ export async function POST(request: NextRequest) {
     } = await authSupabase.auth.getUser()
 
     if (!authUser) {
+      console.log("[v0] POST users - No auth user (second check)")
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
     }
 
@@ -198,14 +203,18 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!userData || !isSuperAdminRole(userData.role)) {
+      console.log("[v0] POST users - Not super admin, role:", userData?.role)
       return NextResponse.json({ error: "Zugriff verweigert: Super-Admin-Berechtigung erforderlich" }, { status: 403 })
     }
 
     const body = await request.json()
     const { email, password, name, role, practiceId } = body
+    
+    console.log("[v0] POST users - Creating user:", { email, name, role, practiceId })
 
     // Validation - no empty values
     if (!email || !password || !name) {
+      console.log("[v0] POST users - Missing required fields")
       return NextResponse.json({ error: "E-Mail, Passwort und Name sind erforderlich" }, { status: 400 })
     }
 
@@ -274,12 +283,20 @@ export async function POST(request: NextRequest) {
         details: createUserError.details,
         hint: createUserError.hint,
       })
+      
       // Cleanup auth user on failure
-      await supabase.auth.admin.deleteUser(authData.user.id)
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id)
+        console.log("[v0] Cleaned up auth user after DB error")
+      } catch (cleanupError) {
+        console.error("[v0] Failed to cleanup auth user:", cleanupError)
+      }
+      
       return NextResponse.json(
         {
           error: `Benutzerdatensatz konnte nicht erstellt werden: ${createUserError.message}`,
           code: createUserError.code,
+          details: createUserError.details,
         },
         { status: 500 },
       )
@@ -288,12 +305,14 @@ export async function POST(request: NextRequest) {
     // If practice assigned, create team_members entry
     if (validPracticeId) {
       const { error: tmError } = await supabase.from("team_members").insert({
+        id: randomUUID(),
         practice_id: validPracticeId,
         user_id: authData.user.id,
         role: role || "member",
         status: "active",
         first_name: firstName,
         last_name: lastName,
+        name: name,
         email: email,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -301,9 +320,12 @@ export async function POST(request: NextRequest) {
 
       if (tmError) {
         console.error("Error creating team_members entry:", tmError)
+        // Non-critical: user was created successfully, team membership failed
       }
     }
 
+    console.log("[v0] POST users - User created successfully:", newUser.id)
+    
     return NextResponse.json({
       success: true,
       user: {
@@ -317,7 +339,9 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Exception in POST /api/super-admin/users:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[v0] Exception in POST /api/super-admin/users:", error)
+    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
+    const message = error instanceof Error ? error.message : "Interner Serverfehler"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

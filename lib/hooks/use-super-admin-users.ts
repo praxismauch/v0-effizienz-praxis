@@ -11,11 +11,11 @@ interface User {
   created_at: string
   updated_at: string | null
   last_login: string | null
-  practice_id: number | null
+  practice_id: string | null
   practice_name: string | null
   practice_color: string | null
   practices: Array<{
-    practiceId: number
+    practiceId: string
     practiceName: string
     role: string
     isPrimary: boolean
@@ -24,10 +24,11 @@ interface User {
   avatar: string | null
   preferred_language: string
   specialization: string | null
+  approval_status: string | null
 }
 
 interface Practice {
-  id: number
+  id: string
   name: string
   color: string | null
 }
@@ -71,6 +72,8 @@ export function useSuperAdminUsers() {
     practiceId?: string | number | null // Support string (database format), number (legacy), or null
     preferred_language?: string
   }) => {
+    console.log("[v0] CLIENT: createUser called with:", { email: userData.email, name: userData.name, role: userData.role, practiceId: userData.practiceId })
+    
     const payload: Record<string, unknown> = {
       email: userData.email,
       password: userData.password,
@@ -84,17 +87,24 @@ export function useSuperAdminUsers() {
       payload.practiceId = String(userData.practiceId)
     }
 
+    console.log("[v0] CLIENT: Sending POST request with payload:", { ...payload, password: "[REDACTED]" })
+
     const response = await fetch("/api/super-admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
 
+    console.log("[v0] CLIENT: Response received - status:", response.status, response.statusText)
+
     if (!response.ok) {
       const error = await response.json()
+      console.log("[v0] CLIENT: Error response body:", error)
       throw new Error(error.error || "Benutzer konnte nicht erstellt werden")
     }
 
+    console.log("[v0] CLIENT: User created successfully")
+    
     // Revalidate the cache for instant update
     await mutate()
     return response.json()
@@ -113,11 +123,11 @@ export function useSuperAdminUsers() {
       specialization?: string
     },
   ) => {
-    if (!userId || userId === "undefined" || userId === "null") {
+    if (!id || id === "undefined" || id === "null") {
       throw new Error("Ungültige Benutzer-ID")
     }
 
-    const response = await fetch(`/api/super-admin/users/${userId}`, {
+    const response = await fetch(`/api/super-admin/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),

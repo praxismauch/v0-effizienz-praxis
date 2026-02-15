@@ -20,20 +20,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // Fetch workflow templates with their assigned specialty groups
+    // Fetch workflow templates (workflows where is_template = true)
     const { data: templates, error } = await supabase
-      .from("workflow_templates")
-      .select(`
-        *,
-        workflow_template_specialties (
-          specialty_group_id,
-          specialty_groups (
-            id,
-            name,
-            description
-          )
-        )
-      `)
+      .from("workflows")
+      .select("*")
+      .eq("is_template", true)
       .is("deleted_at", null)
       .order("name")
 
@@ -66,17 +57,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, category, steps, specialty_group_ids, is_active, hide_items_from_other_users } = body
+    const { name, description, category, steps, is_active, hide_items_from_other_users } = body
 
-    // Insert workflow template
+    // Insert workflow template (stored in workflows table with is_template = true)
     const { data: template, error: insertError } = await supabase
-      .from("workflow_templates")
+      .from("workflows")
       .insert({
         name,
         description,
         category,
-        steps,
-        is_active: is_active ?? true,
+        is_template: true,
+        status: is_active === false ? "inactive" : "active",
         hide_items_from_other_users: hide_items_from_other_users ?? false,
       })
       .select()
@@ -84,16 +75,18 @@ export async function POST(request: NextRequest) {
 
     if (insertError) throw insertError
 
-    // Insert specialty group assignments
-    if (specialty_group_ids && specialty_group_ids.length > 0) {
-      const specialtyInserts = specialty_group_ids.map((sgId: string) => ({
-        workflow_template_id: template.id,
-        specialty_group_id: sgId,
+    // Insert workflow steps if provided
+    if (steps && Array.isArray(steps) && steps.length > 0) {
+      const stepInserts = steps.map((step: any, idx: number) => ({
+        workflow_id: template.id,
+        title: step.title || step.name,
+        description: step.description || "",
+        step_order: idx + 1,
+        status: "pending",
       }))
 
-      const { error: specialtyError } = await supabase.from("workflow_template_specialties").insert(specialtyInserts)
-
-      if (specialtyError) throw specialtyError
+      const { error: stepsError } = await supabase.from("workflow_steps").insert(stepInserts)
+      if (stepsError) console.error("Error inserting workflow steps:", stepsError)
     }
 
     return NextResponse.json({ template }, { status: 201 })

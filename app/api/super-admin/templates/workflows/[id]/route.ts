@@ -32,9 +32,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (hide_items_from_other_users !== undefined) updateData.hide_items_from_other_users = hide_items_from_other_users
 
     const { data: template, error: updateError } = await supabase
-      .from("workflow_templates")
+      .from("workflows")
       .update(updateData)
       .eq("id", id)
+      .eq("is_template", true)
       .select()
       .single()
 
@@ -55,9 +56,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     // Soft delete
     const { error: deleteError } = await supabase
-      .from("workflow_templates")
+      .from("workflows")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id)
+      .eq("is_template", true)
 
     if (deleteError) throw deleteError
 

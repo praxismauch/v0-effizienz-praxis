@@ -201,8 +201,6 @@ export async function captureScreenshot(
       absoluteUrl = `${origin}${url.startsWith("/") ? "" : "/"}${url}`
     }
 
-    console.log("[v0] captureScreenshot input url:", url, "absoluteUrl:", absoluteUrl)
-
     // Inject practice_id into URL
     const urlObj = new URL(absoluteUrl)
     if (!urlObj.searchParams.has("practice_id")) {

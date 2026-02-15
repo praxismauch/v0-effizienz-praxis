@@ -141,7 +141,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
       if (!response.ok) {
         const errorData = await response.json()
         console.log("[v0] CLIENT: Error response:", errorData)
-        throw new Error(errorData.message || "Fehler beim Erstellen der Praxis")
+        throw new Error(errorData.error || errorData.message || "Fehler beim Erstellen der Praxis")
       }
 
       const newPractice = await response.json()

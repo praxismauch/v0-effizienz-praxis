@@ -72,6 +72,8 @@ export function useSuperAdminUsers() {
     practiceId?: string | number | null // Support string (database format), number (legacy), or null
     preferred_language?: string
   }) => {
+    console.log("[v0] CLIENT: createUser called with:", { email: userData.email, name: userData.name, role: userData.role, practiceId: userData.practiceId })
+    
     const payload: Record<string, unknown> = {
       email: userData.email,
       password: userData.password,
@@ -85,17 +87,24 @@ export function useSuperAdminUsers() {
       payload.practiceId = String(userData.practiceId)
     }
 
+    console.log("[v0] CLIENT: Sending POST request with payload:", { ...payload, password: "[REDACTED]" })
+
     const response = await fetch("/api/super-admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
 
+    console.log("[v0] CLIENT: Response received - status:", response.status, response.statusText)
+
     if (!response.ok) {
       const error = await response.json()
+      console.log("[v0] CLIENT: Error response body:", error)
       throw new Error(error.error || "Benutzer konnte nicht erstellt werden")
     }
 
+    console.log("[v0] CLIENT: User created successfully")
+    
     // Revalidate the cache for instant update
     await mutate()
     return response.json()

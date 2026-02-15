@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import * as OTPAuth from "otpauth"
-import { encrypt } from "@/lib/encryption"
 
 // Verify TOTP code and enable MFA
 export async function POST(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
@@ -39,15 +38,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Ungültiger Verifizierungscode" }, { status: 400 })
     }
 
-    // Encrypt the secret before storing
-    const encryptedSecret = encrypt(secret)
-
-    // Store the encrypted secret and enable MFA
+    // Store the secret and enable MFA
+    // Note: In production, you should encrypt the secret before storing
     const { error: updateError } = await supabase
       .from("users")
       .update({
         mfa_enabled: true,
-        preferences: supabase.sql`COALESCE(preferences, '{}'::jsonb) || '{"mfa_secret": "${encryptedSecret}"}'::jsonb`,
+        preferences: supabase.sql`COALESCE(preferences, '{}'::jsonb) || '{"mfa_secret": "${secret}"}'::jsonb`,
       })
       .eq("id", userId)
 

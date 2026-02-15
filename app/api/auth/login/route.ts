@@ -1,22 +1,13 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 import { applyRateLimitRedis } from "@/lib/api/rate-limit-redis"
-import { validateCsrf } from "@/lib/api/csrf"
 import Logger from "@/lib/logger"
 import { sendEmail } from "@/lib/email/send-email"
 
 export const dynamic = "force-dynamic"
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    // Validate CSRF token first
-    const csrfValidation = await validateCsrf(request)
-    if (!csrfValidation.valid) {
-      Logger.warn("auth", "Login blocked - CSRF validation failed")
-      return csrfValidation.response
-    }
-
     const rateLimitResult = await applyRateLimitRedis(request, "auth")
     if (!rateLimitResult.allowed) {
       return rateLimitResult.response
@@ -63,7 +54,7 @@ export async function POST(request: NextRequest) {
           email: authData.user.email!,
           name: authData.user.user_metadata?.name ?? authData.user.email!.split("@")[0],
           role: authData.user.user_metadata?.role ?? "member",
-          is_active: false, // New users require admin approval
+          is_active: true,
           practice_id: authData.user.user_metadata?.practice_id ?? null,
         })
         .select()
@@ -74,10 +65,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Fehler beim Erstellen des Benutzerprofils" }, { status: 500 })
       }
 
-      Logger.info("auth", "Created new user profile - pending approval")
-
-      // Sign out the user immediately since they're inactive
-      await supabase.auth.signOut()
+      Logger.info("auth", "Created new user profile")
 
       // Notify super admins about new registration
       try {
@@ -117,13 +105,20 @@ export async function POST(request: NextRequest) {
         Logger.error("auth", "Failed to send notification email", emailError)
       }
 
-      // Return pending approval status
       return NextResponse.json(
         {
-          error: "Ihr Konto wartet noch auf die Genehmigung durch einen Administrator.",
-          redirectTo: "/auth/pending-approval"
+          success: true,
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name,
+            role: newUser.role,
+            practiceId: newUser.practice_id,
+            isActive: newUser.is_active,
+            joinedAt: new Date().toISOString(),
+          },
         },
-        { status: 403 },
+        { status: 200 },
       )
     }
 

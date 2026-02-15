@@ -12,6 +12,43 @@ import { useState, Suspense, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Logo } from "@/components/logo"
 
+async function verifySessionWithRetry(maxRetries = 8, initialDelay = 300): Promise<{ success: boolean; user?: any }> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    // Exponential backoff: 300ms, 450ms, 675ms, 1012ms, 1518ms, 2277ms, 3416ms, 5124ms
+    const delay = initialDelay * Math.pow(1.5, attempt)
+
+    // Wait before each attempt to let cookies propagate
+    await new Promise((resolve) => setTimeout(resolve, delay))
+
+    try {
+      const response = await fetch("/api/user/me", {
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.user) {
+          return { success: true, user: data.user }
+        }
+      }
+
+      // 401 means session not ready yet, keep trying
+      if (response.status === 401) {
+        continue
+      }
+    } catch {
+      // Network errors - keep trying
+    }
+  }
+
+  return { success: false }
+}
+
 function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

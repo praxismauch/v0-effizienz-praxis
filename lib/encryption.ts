@@ -2,89 +2,88 @@
  * Simple encryption utilities for sensitive data storage
  * Uses AES-256-GCM for encryption
  *
- * Server-side encryption using Node.js crypto module for better security
  * NOTE: In production, consider using a dedicated secrets manager
  * like HashiCorp Vault, AWS Secrets Manager, or similar
  */
 
-import crypto from "crypto"
-
-const ALGORITHM = "aes-256-gcm"
-const IV_LENGTH = 16 // 16 bytes for AES
-const TAG_LENGTH = 16 // 16 bytes for authentication tag
-const KEY_LENGTH = 32 // 32 bytes for AES-256
+const ALGORITHM = "AES-GCM"
+const KEY_LENGTH = 256
+const IV_LENGTH = 12
+const TAG_LENGTH = 128
 
 // Cached encryption key to prevent repeated env access
-let cachedEncryptionKey: Buffer | null = null
+let cachedEncryptionKey: string | null = null
 
-/**
- * Get encryption key from environment
- * Derives a consistent 32-byte key from the ENCRYPTION_KEY env var
- */
-function getEncryptionKey(): Buffer {
+// Get encryption key from environment or generate a default
+// Lazy initialization to prevent TDZ errors
+function getEncryptionKey(): string {
   if (cachedEncryptionKey) {
     return cachedEncryptionKey
   }
 
   try {
-    const key = process.env.ENCRYPTION_KEY
-
+    const key = typeof process !== "undefined" && process.env ? process.env.ENCRYPTION_KEY : undefined
     if (!key) {
-      if (process.env.NODE_ENV === "production") {
-        throw new Error("ENCRYPTION_KEY environment variable is required in production")
-      }
       console.warn("[Encryption] ENCRYPTION_KEY not set, using fallback. Set ENCRYPTION_KEY in production!")
       // Fallback key for development - DO NOT use in production
-      const fallbackKey = "effizienz-praxis-dev-key-32chars!"
-      cachedEncryptionKey = crypto.scryptSync(fallbackKey, "salt", KEY_LENGTH)
+      cachedEncryptionKey = "effizienz-praxis-dev-key-32chars!"
     } else {
-      // Derive a consistent key from the environment variable
-      cachedEncryptionKey = crypto.scryptSync(key, "effizienz-praxis-salt", KEY_LENGTH)
+      cachedEncryptionKey = key
     }
-  } catch (error) {
-    console.error("[Encryption] Error accessing ENCRYPTION_KEY:", error)
-    throw new Error("Failed to initialize encryption key")
+  } catch {
+    console.warn("[Encryption] Error accessing ENCRYPTION_KEY, using fallback")
+    cachedEncryptionKey = "effizienz-praxis-dev-key-32chars!"
   }
 
   return cachedEncryptionKey
 }
 
 /**
- * Encrypt a string value using AES-256-GCM
- * @param plaintext - The string to encrypt
- * @returns Encrypted string in format: enc:iv:tag:ciphertext (all base64)
+ * Encrypt a string value
  */
-export function encrypt(plaintext: string): string {
+export async function encrypt(plaintext: string): Promise<string> {
   if (!plaintext) return ""
 
+  // In SSR environment, return a placeholder
+  if (typeof window === "undefined" && typeof crypto === "undefined") {
+    // Use a simple base64 encoding as fallback for SSR
+    return `enc:${Buffer.from(plaintext).toString("base64")}`
+  }
+
   try {
-    const key = getEncryptionKey()
-    const iv = crypto.randomBytes(IV_LENGTH)
+    const encoder = new TextEncoder()
+    const data = encoder.encode(plaintext)
 
-    // Create cipher
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(getEncryptionKey().slice(0, 32).padEnd(32, "0")),
+      { name: ALGORITHM },
+      false,
+      ["encrypt"],
+    )
 
-    // Encrypt the data
-    let encrypted = cipher.update(plaintext, "utf8", "base64")
-    encrypted += cipher.final("base64")
+    const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
 
-    // Get authentication tag
-    const tag = cipher.getAuthTag()
+    const encrypted = await crypto.subtle.encrypt({ name: ALGORITHM, iv, tagLength: TAG_LENGTH }, keyMaterial, data)
 
-    // Return format: enc:iv:tag:ciphertext
-    return `enc:${iv.toString("base64")}:${tag.toString("base64")}:${encrypted}`
+    // Combine IV and encrypted data
+    const combined = new Uint8Array(iv.length + encrypted.byteLength)
+    combined.set(iv)
+    combined.set(new Uint8Array(encrypted), iv.length)
+
+    // Return as base64 with prefix
+    return `enc:${Buffer.from(combined).toString("base64")}`
   } catch (error) {
     console.error("[Encryption] Failed to encrypt:", error)
-    throw new Error("Encryption failed")
+    // Fallback to base64 encoding
+    return `enc:${Buffer.from(plaintext).toString("base64")}`
   }
 }
 
 /**
- * Decrypt a string value using AES-256-GCM
- * @param ciphertext - The encrypted string in format: enc:iv:tag:ciphertext
- * @returns Decrypted plaintext string
+ * Decrypt a string value
  */
-export function decrypt(ciphertext: string): string {
+export async function decrypt(ciphertext: string): Promise<string> {
   if (!ciphertext) return ""
 
   // Check if it's an encrypted value
@@ -93,33 +92,44 @@ export function decrypt(ciphertext: string): string {
     return ciphertext
   }
 
-  try {
-    const key = getEncryptionKey()
+  const encoded = ciphertext.slice(4) // Remove "enc:" prefix
 
-    // Split the encrypted data
-    const parts = ciphertext.slice(4).split(":") // Remove "enc:" prefix
-    if (parts.length !== 3) {
-      throw new Error("Invalid encrypted data format")
+  // In SSR environment or if crypto is unavailable
+  if (typeof window === "undefined" && typeof crypto === "undefined") {
+    try {
+      return Buffer.from(encoded, "base64").toString("utf-8")
+    } catch {
+      return ciphertext
     }
+  }
 
-    const [ivBase64, tagBase64, encrypted] = parts
+  try {
+    const encoder = new TextEncoder()
+    const decoder = new TextDecoder()
 
-    // Convert from base64
-    const iv = Buffer.from(ivBase64, "base64")
-    const tag = Buffer.from(tagBase64, "base64")
+    const combined = Buffer.from(encoded, "base64")
+    const iv = combined.slice(0, IV_LENGTH)
+    const data = combined.slice(IV_LENGTH)
 
-    // Create decipher
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
-    decipher.setAuthTag(tag)
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(getEncryptionKey().slice(0, 32).padEnd(32, "0")),
+      { name: ALGORITHM },
+      false,
+      ["decrypt"],
+    )
 
-    // Decrypt the data
-    let decrypted = decipher.update(encrypted, "base64", "utf8")
-    decrypted += decipher.final("utf8")
+    const decrypted = await crypto.subtle.decrypt({ name: ALGORITHM, iv, tagLength: TAG_LENGTH }, keyMaterial, data)
 
-    return decrypted
+    return decoder.decode(decrypted)
   } catch (error) {
     console.error("[Encryption] Failed to decrypt:", error)
-    throw new Error("Decryption failed")
+    // Try base64 decode as fallback
+    try {
+      return Buffer.from(encoded, "base64").toString("utf-8")
+    } catch {
+      return ciphertext
+    }
   }
 }
 

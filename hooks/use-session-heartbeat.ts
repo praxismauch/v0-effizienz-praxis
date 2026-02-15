@@ -9,64 +9,24 @@ interface UseSessionHeartbeatOptions {
   interval?: number
   /** Whether heartbeat is enabled (default: true) */
   enabled?: boolean
-  /** Idle timeout in milliseconds (default: 30 minutes, 0 to disable) */
-  idleTimeout?: number
   /** Callback when session is refreshed successfully */
   onRefresh?: () => void
   /** Callback when session refresh fails */
   onError?: (error: Error) => void
-  /** Callback when user becomes idle and is logged out */
-  onIdle?: () => void
 }
 
 const DEFAULT_INTERVAL = 5 * 60 * 1000 // 5 minutes
-const DEFAULT_IDLE_TIMEOUT = 30 * 60 * 1000 // 30 minutes
 
 /**
  * Hook that keeps the Supabase session alive by periodically refreshing the token.
  * Also handles tab visibility - pauses when hidden, refreshes immediately when visible.
  */
 export function useSessionHeartbeat(options: UseSessionHeartbeatOptions = {}) {
-  const {
-    interval = DEFAULT_INTERVAL,
-    enabled = true,
-    idleTimeout = DEFAULT_IDLE_TIMEOUT,
-    onRefresh,
-    onError,
-    onIdle,
-  } = options
+  const { interval = DEFAULT_INTERVAL, enabled = true, onRefresh, onError } = options
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastRefreshRef = useRef<number>(Date.now())
-  const lastActivityRef = useRef<number>(Date.now())
   const isRefreshingRef = useRef(false)
-
-  const handleIdleTimeout = useCallback(async () => {
-    Logger.warn("heartbeat", "User idle timeout - logging out")
-
-    try {
-      const supabase = createClient()
-      await supabase.auth.signOut()
-      onIdle?.()
-    } catch (error) {
-      Logger.error("heartbeat", "Error during idle logout", error)
-    }
-  }, [onIdle])
-
-  const resetIdleTimer = useCallback(() => {
-    lastActivityRef.current = Date.now()
-
-    // Clear existing timeout
-    if (idleTimeoutRef.current) {
-      clearTimeout(idleTimeoutRef.current)
-    }
-
-    // Set new timeout if idle detection is enabled
-    if (idleTimeout > 0) {
-      idleTimeoutRef.current = setTimeout(handleIdleTimeout, idleTimeout)
-    }
-  }, [idleTimeout, handleIdleTimeout])
 
   const refreshSession = useCallback(
     async (reason: string) => {
@@ -126,38 +86,12 @@ export function useSessionHeartbeat(options: UseSessionHeartbeatOptions = {}) {
     [onRefresh, onError],
   )
 
-  // Track user activity for idle detection
-  useEffect(() => {
-    if (!enabled || typeof window === "undefined" || idleTimeout === 0) return
-
-    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart"]
-
-    events.forEach((event) => {
-      window.addEventListener(event, resetIdleTimer, { passive: true })
-    })
-
-    // Initialize idle timer
-    resetIdleTimer()
-
-    return () => {
-      events.forEach((event) => {
-        window.removeEventListener(event, resetIdleTimer)
-      })
-      if (idleTimeoutRef.current) {
-        clearTimeout(idleTimeoutRef.current)
-      }
-    }
-  }, [enabled, idleTimeout, resetIdleTimer])
-
   // Handle tab visibility changes
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        // Reset idle timer when tab becomes visible
-        resetIdleTimer()
-
         // Tab became visible - check if we need to refresh
         const timeSinceLastRefresh = Date.now() - lastRefreshRef.current
 
@@ -176,7 +110,7 @@ export function useSessionHeartbeat(options: UseSessionHeartbeatOptions = {}) {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
-  }, [enabled, refreshSession, resetIdleTimer])
+  }, [enabled, refreshSession])
 
   // Handle online/offline status
   useEffect(() => {

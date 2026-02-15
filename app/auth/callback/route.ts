@@ -10,13 +10,22 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createServerClient()
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
-      console.log("[v0] [auth/callback] Successfully exchanged code for session")
-      return NextResponse.redirect(`${origin}${redirectTo}`)
+    if (!error && data.session) {
+      console.log("[v0] [auth/callback] Successfully exchanged code for session, user:", data.user?.email)
+      
+      // Verify the session was actually established by checking the user
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        console.log("[v0] [auth/callback] Session verified, redirecting to:", redirectTo)
+        return NextResponse.redirect(`${origin}${redirectTo}`)
+      } else {
+        console.error("[v0] [auth/callback] Session created but user not found")
+      }
     } else {
-      console.error("[v0] [auth/callback] Error exchanging code:", error.message)
+      console.error("[v0] [auth/callback] Error exchanging code:", error?.message)
     }
   }
 

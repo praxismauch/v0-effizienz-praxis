@@ -76,7 +76,7 @@ export async function proxy(request: NextRequest) {
     const hasAdminAccess =
       userData &&
       userData.is_active &&
-      (userData.role === "superadmin" || userData.role === "admin")
+      (userData.role === "super_admin" || userData.role === "admin")
 
     if (!hasAdminAccess) {
       const redirectUrl = request.nextUrl.clone()

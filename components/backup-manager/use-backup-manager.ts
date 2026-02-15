@@ -468,24 +468,32 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
   // Diagnose schedules
   const diagnoseSchedules = useCallback(async () => {
     try {
+      setLoading(true)
+      // Use the diagnose endpoint (GET on fix-stuck route provides diagnosis)
       const response = await fetch("/api/super-admin/backup-schedules/fix-stuck")
       if (!response.ok) throw new Error("Failed to diagnose")
 
       const data = await response.json()
 
-      if (data.summary.stuck > 0) {
+      if (data.summary?.stuck > 0) {
         toast({
-          title: "Fehler",
-          description: `${data.summary.stuck} Zeitpläne sind blockiert. Klicken Sie auf "Reparieren".`,
+          title: "Diagnose",
+          description: `${data.summary.stuck} Zeitpläne sind blockiert. Klicken Sie auf "Repariere blockierte Zeitpläne".`,
           variant: "destructive",
+        })
+      } else if (data.summary) {
+        toast({
+          title: "Diagnose",
+          description: `Alle ${data.summary.healthy} Zeitpläne sind gesund. CRON_SECRET: ${data.summary.cron_secret_set ? "gesetzt" : "NICHT gesetzt!"}`,
         })
       } else {
         toast({
-          title: "Erfolg",
-          description: `Alle ${data.summary.healthy} Zeitpläne sind gesund.`,
+          title: "Diagnose",
+          description: "Diagnose abgeschlossen - keine Probleme gefunden",
         })
       }
 
+      fetchSchedules()
       return data
     } catch (error) {
       console.error("Error diagnosing:", error)
@@ -494,8 +502,10 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
         description: "Diagnose fehlgeschlagen",
         variant: "destructive",
       })
+    } finally {
+      setLoading(false)
     }
-  }, [toast])
+  }, [toast, fetchSchedules])
 
   // Fix stuck schedules
   const fixStuckSchedules = useCallback(async () => {

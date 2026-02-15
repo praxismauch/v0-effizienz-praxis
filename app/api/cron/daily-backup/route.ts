@@ -208,11 +208,22 @@ async function verifyBackup(
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret
+    // Verify cron secret (Vercel Cron sends this automatically in production)
     const authHeader = request.headers.get("authorization")
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const cronSecret = process.env.CRON_SECRET
+
+    const isPreview =
+      process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" ||
+      process.env.VERCEL_ENV === "preview" ||
+      !process.env.NEXT_PUBLIC_VERCEL_ENV
+
+    // In production, require CRON_SECRET. In preview/dev, allow unauthenticated.
+    if (!isPreview && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      console.error("[v0] Daily backup cron: Unauthorized - invalid CRON_SECRET")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    console.log("[v0] Daily backup cron: Starting backup job...")
 
     const supabase = await createAdminClient()
     const now = new Date()
@@ -224,7 +235,12 @@ export async function GET(request: NextRequest) {
       .eq("is_active", true)
       .lte("next_run_at", now.toISOString())
 
-    if (schedulesError) throw schedulesError
+    if (schedulesError) {
+      console.error("[v0] Daily backup cron: Error fetching schedules:", schedulesError)
+      throw schedulesError
+    }
+
+    console.log(`[v0] Daily backup cron: Found ${schedules?.length || 0} schedules due to run`)
 
     const results = []
 
@@ -366,13 +382,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    console.log(`[v0] Daily backup cron: Completed. Processed ${schedules?.length || 0} schedules.`, 
+      JSON.stringify(results.map(r => ({ schedule_id: r.schedule_id, status: r.status }))))
+
     return NextResponse.json({
       success: true,
       processed: schedules?.length || 0,
       results,
     })
   } catch (error: any) {
-    console.error("[v0] Error in daily backup cron:", error)
+    console.error("[v0] Daily backup cron: Fatal error:", error)
     return NextResponse.json({ error: error.message || "Failed to run daily backup" }, { status: 500 })
   }
 }
@@ -383,22 +402,28 @@ function calculateNextRun(
   dayOfWeek?: number | null,
   dayOfMonth?: number | null,
 ): string {
-  const now = new Date()
-  const [hours, minutes] = timeOfDay.split(":").map(Number)
+  const [hours, minutes] = (timeOfDay || "02:00").split(":").map(Number)
 
   const nextRun = new Date()
   nextRun.setHours(hours, minutes, 0, 0)
 
   if (scheduleType === "daily") {
+    // Always schedule for tomorrow
     nextRun.setDate(nextRun.getDate() + 1)
-  } else if (scheduleType === "weekly" && dayOfWeek !== null) {
+  } else if (scheduleType === "weekly" && dayOfWeek != null) {
+    // Find next occurrence of the specified day of week
     do {
       nextRun.setDate(nextRun.getDate() + 1)
     } while (nextRun.getDay() !== dayOfWeek)
-  } else if (scheduleType === "monthly" && dayOfMonth !== null) {
+  } else if (scheduleType === "monthly" && dayOfMonth != null) {
+    // Schedule for next month on the specified day
     nextRun.setMonth(nextRun.getMonth() + 1)
-    nextRun.setDate(dayOfMonth)
+    nextRun.setDate(Math.min(dayOfMonth, new Date(nextRun.getFullYear(), nextRun.getMonth() + 1, 0).getDate()))
+  } else {
+    // Fallback: schedule for tomorrow
+    nextRun.setDate(nextRun.getDate() + 1)
   }
 
+  console.log(`[v0] Daily backup cron: Next run calculated: ${nextRun.toISOString()} for ${scheduleType} schedule`)
   return nextRun.toISOString()
 }

@@ -232,13 +232,13 @@ export default function PracticeJournalsPage() {
         {kpiCount === 0 && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Tipp:</strong> Für aussagekräftigere Journals mit detaillierten KPI-Analysen empfehlen wir, zuerst
-              Kennzahlen in der{" "}
-              <Button variant="link" className="p-0 h-auto" onClick={() => router.push("/analytics")}>
+            <AlertDescription className="inline">
+              <strong>Tipp:</strong>{" "}
+              {"Fuer aussagekraeftigere Journals mit detaillierten KPI-Analysen empfehlen wir, zuerst Kennzahlen in der "}
+              <Button variant="link" className="p-0 h-auto inline" onClick={() => router.push("/analytics")}>
                 Auswertung
-              </Button>{" "}
-              zu definieren. Sie können aber auch ohne KPIs Journals erstellen.
+              </Button>
+              {" zu definieren. Sie koennen aber auch ohne KPIs Journals erstellen."}
             </AlertDescription>
           </Alert>
         )}

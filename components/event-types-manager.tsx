@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,8 +24,26 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, Edit, Trash2, Calendar, Eye, EyeOff } from "lucide-react"
+import { Plus, Edit, Trash2, Calendar, Eye, EyeOff, GripVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ColorPicker } from "@/components/color-picker"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 // Event types from calendar/types.ts - this is the source of truth
 const DEFAULT_EVENT_TYPES = [
@@ -165,6 +183,81 @@ interface EventType {
   isActive: boolean
 }
 
+function SortableEventRow({
+  eventType,
+  onToggle,
+  onEdit,
+  onDelete,
+}: {
+  eventType: EventType
+  onToggle: (id: string) => void
+  onEdit: (et: EventType) => void
+  onDelete: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: eventType.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className={cn(!eventType.isActive && "opacity-50")}>
+      <TableCell>
+        <button
+          className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+          <span className="sr-only">Reihenfolge aendern</span>
+        </button>
+      </TableCell>
+      <TableCell>
+        <div className="w-6 h-6 rounded" style={{ backgroundColor: eventType.color }} />
+      </TableCell>
+      <TableCell className="font-medium">{eventType.name}</TableCell>
+      <TableCell>
+        <Badge
+          style={{
+            backgroundColor: eventType.color + "20",
+            color: eventType.color,
+          }}
+        >
+          {eventType.label}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">{eventType.description}</TableCell>
+      <TableCell>
+        <Badge variant={eventType.isActive ? "default" : "secondary"}>
+          {eventType.isActive ? "Aktiv" : "Inaktiv"}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline">
+          {eventType.isSystem ? "System" : "Benutzerdefiniert"}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" onClick={() => onToggle(eventType.id)} title={eventType.isActive ? "Deaktivieren" : "Aktivieren"}>
+            {eventType.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onEdit(eventType)}>
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onDelete(eventType.id)} disabled={eventType.isSystem} className={cn(eventType.isSystem && "opacity-30 cursor-not-allowed")}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+}
+
 export default function EventTypesManager() {
   const [eventTypes, setEventTypes] = useState<EventType[]>(DEFAULT_EVENT_TYPES)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -176,6 +269,26 @@ export default function EventTypesManager() {
     description: "",
   })
   const { toast } = useToast()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+
+      setEventTypes((prev) => {
+        const oldIndex = prev.findIndex((t) => t.id === active.id)
+        const newIndex = prev.findIndex((t) => t.id === over.id)
+        if (oldIndex === -1 || newIndex === -1) return prev
+        return arrayMove(prev, oldIndex, newIndex)
+      })
+    },
+    [],
+  )
 
   const resetForm = () => {
     setFormData({
@@ -340,26 +453,11 @@ export default function EventTypesManager() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Farbe</Label>
-                <div className="flex flex-wrap gap-2">
-                  {COLOR_OPTIONS.map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, color: color.value }))}
-                      className={cn(
-                        "w-8 h-8 rounded-full border-2 transition-all",
-                        color.className,
-                        formData.color === color.value
-                          ? "border-foreground scale-110"
-                          : "border-transparent hover:scale-105"
-                      )}
-                      title={color.label}
-                    />
-                  ))}
-                </div>
-              </div>
+              <ColorPicker
+                value={formData.color}
+                onChange={(color) => setFormData((prev) => ({ ...prev, color }))}
+                label="Farbe"
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="description">Beschreibung</Label>
@@ -423,87 +521,35 @@ export default function EventTypesManager() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">Farbe</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Label</TableHead>
-                <TableHead>Beschreibung</TableHead>
-                <TableHead className="w-24">Status</TableHead>
-                <TableHead className="w-24">Typ</TableHead>
-                <TableHead className="w-32 text-right">Aktionen</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {eventTypes.map((eventType) => (
-                <TableRow key={eventType.id} className={cn(!eventType.isActive && "opacity-50")}>
-                  <TableCell>
-                    <div
-                      className="w-6 h-6 rounded"
-                      style={{ backgroundColor: eventType.color }}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{eventType.name}</TableCell>
-                  <TableCell>
-                    <Badge
-                      style={{
-                        backgroundColor: eventType.color + "20",
-                        color: eventType.color,
-                      }}
-                    >
-                      {eventType.label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {eventType.description}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={eventType.isActive ? "default" : "secondary"}>
-                      {eventType.isActive ? "Aktiv" : "Inaktiv"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {eventType.isSystem ? "System" : "Benutzerdefiniert"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleToggleActive(eventType.id)}
-                        title={eventType.isActive ? "Deaktivieren" : "Aktivieren"}
-                      >
-                        {eventType.isActive ? (
-                          <Eye className="h-4 w-4" />
-                        ) : (
-                          <EyeOff className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditDialog(eventType)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(eventType.id)}
-                        disabled={eventType.isSystem}
-                        className={cn(eventType.isSystem && "opacity-30 cursor-not-allowed")}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10"></TableHead>
+                  <TableHead className="w-12">Farbe</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Label</TableHead>
+                  <TableHead>Beschreibung</TableHead>
+                  <TableHead className="w-24">Status</TableHead>
+                  <TableHead className="w-24">Typ</TableHead>
+                  <TableHead className="w-32 text-right">Aktionen</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                <SortableContext items={eventTypes.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                  {eventTypes.map((eventType) => (
+                    <SortableEventRow
+                      key={eventType.id}
+                      eventType={eventType}
+                      onToggle={handleToggleActive}
+                      onEdit={openEditDialog}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </SortableContext>
+              </TableBody>
+            </Table>
+          </DndContext>
         </CardContent>
       </Card>
 

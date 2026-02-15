@@ -8,6 +8,8 @@ import { applyRateLimitRedis, isRateLimitingEnabled, type RateLimiterType } from
 import { applyRateLimit, type RateLimitConfig, RATE_LIMITS } from "./rate-limit"
 import { validateCsrf } from "./csrf"
 import { validateRequest } from "./schemas"
+import { validateOriginHeader, shouldValidateOrigin } from "./origin-validation"
+import { checkCaptchaRequirement, validateCaptchaFromRequest } from "./captcha"
 
 export interface SecurityOptions {
   /** Rate limit type */
@@ -22,6 +24,10 @@ export interface SecurityOptions {
   querySchema?: z.ZodSchema
   /** Required authentication */
   requireAuth?: boolean
+  /** Enable origin header validation (default: auto-detect based on endpoint) */
+  originValidation?: boolean | "auto"
+  /** Enable progressive CAPTCHA (default: false) */
+  captcha?: boolean
 }
 
 export interface SecurityResult {
@@ -42,9 +48,42 @@ export async function applySecurityChecks(
   request: NextRequest,
   options: SecurityOptions = {},
 ): Promise<SecurityResult | SecurityError> {
-  const { rateLimit = "api", rateLimitConfig, csrf = false, bodySchema, querySchema } = options
+  const { rateLimit = "api", rateLimitConfig, csrf = false, bodySchema, querySchema, originValidation = "auto", captcha = false } = options
 
-  // 1. Rate limiting
+  // 1. Progressive CAPTCHA check
+  if (captcha) {
+    const captchaReq = await checkCaptchaRequirement(request)
+    
+    if (captchaReq.required) {
+      // Check if CAPTCHA token was provided
+      const captchaValidation = await validateCaptchaFromRequest(request)
+      if (!captchaValidation.valid) {
+        return { success: false, response: captchaValidation.response! }
+      }
+    }
+  }
+
+  // 2. Origin validation
+  const shouldCheckOrigin = originValidation === true || 
+    (originValidation === "auto" && shouldValidateOrigin(request.nextUrl.pathname))
+  
+  if (shouldCheckOrigin && !validateOriginHeader(request)) {
+    return {
+      success: false,
+      response: new Response(
+        JSON.stringify({
+          error: "Invalid origin",
+          message: "Request must originate from the application",
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    }
+  }
+
+  // 3. Rate limiting
   if (rateLimit !== false) {
     if (isRateLimitingEnabled()) {
       // Use Redis-based rate limiting
@@ -62,7 +101,7 @@ export async function applySecurityChecks(
     }
   }
 
-  // 2. CSRF validation (for mutating requests)
+  // 4. CSRF validation (for mutating requests)
   if (csrf && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
     const csrfResult = await validateCsrf(request)
     if (!csrfResult.valid) {
@@ -70,7 +109,7 @@ export async function applySecurityChecks(
     }
   }
 
-  // 3. Body validation
+  // 5. Body validation
   let validatedBody: unknown
   if (bodySchema && ["POST", "PUT", "PATCH"].includes(request.method)) {
     try {
@@ -109,7 +148,7 @@ export async function applySecurityChecks(
     }
   }
 
-  // 4. Query validation
+  // 6. Query validation
   let validatedQuery: unknown
   if (querySchema) {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams)

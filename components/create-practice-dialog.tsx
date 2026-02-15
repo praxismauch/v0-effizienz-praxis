@@ -98,7 +98,11 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("[v0] CLIENT: handleSubmit called with formData:", formData)
+    console.log("[v0] CLIENT: Validation check - name:", !!formData.name, "type:", !!formData.type, "bundesland:", !!formData.bundesland)
+    
     if (!formData.name || !formData.type || !formData.bundesland) {
+      console.log("[v0] CLIENT: Validation failed")
       toast({
         title: "Validierungsfehler",
         description: "Bitte füllen Sie alle Pflichtfelder aus (Name, Typ und Bundesland).",
@@ -106,6 +110,8 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
       })
       return
     }
+    
+    console.log("[v0] CLIENT: Validation passed, proceeding with fetch")
 
     setIsSubmitting(true)
     try {

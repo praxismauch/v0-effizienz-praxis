@@ -46,6 +46,7 @@ export default function AuswertungTab({
   }
 
   const formatDuration = (hours: number) => {
+    if (!hours || isNaN(hours)) return "0h 0m"
     const h = Math.floor(hours)
     const m = Math.round((hours - h) * 60)
     return `${h}h ${m}m`

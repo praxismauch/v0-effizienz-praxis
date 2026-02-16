@@ -1,24 +1,19 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; itemId: string }> }) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
     const { id: checklistId, itemId } = await params
 
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
 
     if ("is_completed" in body) {
       updateData.completed = body.is_completed
+      updateData.is_completed = body.is_completed
       if (body.is_completed) {
         updateData.completed_at = new Date().toISOString()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        if (user) {
-          updateData.completed_by = user.id
-        }
       } else {
         updateData.completed_at = null
         updateData.completed_by = null

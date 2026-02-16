@@ -10,8 +10,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .from("sick_leaves")
       .select(`
         *,
-        user:users!sick_leaves_user_id_fkey(id, name, email, avatar),
-        approved_by_user:users!sick_leaves_approved_by_fkey(id, name, email),
         team_member:team_members(id, first_name, last_name)
       `)
       .eq("id", String(id))
@@ -61,8 +59,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
       .eq("practice_id", String(practiceId))
       .select(`
         *,
-        user:users!sick_leaves_user_id_fkey(id, name, email, avatar),
-        approved_by_user:users!sick_leaves_approved_by_fkey(id, name, email),
         team_member:team_members(id, first_name, last_name)
       `)
       .single()

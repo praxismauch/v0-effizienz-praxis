@@ -291,7 +291,8 @@ function SickLeavesManager({ teamMembers = [] }: SickLeavesManagerProps) {
 
   const filteredSickLeaves = sickLeaves.filter((leave) => {
     if (!searchQuery) return true
-    const userName = leave.user?.name?.toLowerCase() || ""
+    const tm = leave.team_member
+    const userName = tm ? `${tm.first_name || ""} ${tm.last_name || ""}`.toLowerCase() : ""
     const reason = leave.reason?.toLowerCase() || ""
     return userName.includes(searchQuery.toLowerCase()) || reason.includes(searchQuery.toLowerCase())
   })
@@ -559,11 +560,10 @@ function SickLeavesManager({ teamMembers = [] }: SickLeavesManagerProps) {
                       {teamMembers.length > 0 && (
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={leave.user?.avatar || "/placeholder.svg"} />
-                              <AvatarFallback>{leave.user?.name?.charAt(0) || "?"}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{leave.user?.name || "Unbekannt"}</span>
+  <Avatar className="h-8 w-8">
+  <AvatarFallback>{leave.team_member?.first_name?.charAt(0) || "?"}</AvatarFallback>
+  </Avatar>
+  <span className="font-medium">{leave.team_member ? `${leave.team_member.first_name || ""} ${leave.team_member.last_name || ""}`.trim() : "Unbekannt"}</span>
                           </div>
                         </TableCell>
                       )}

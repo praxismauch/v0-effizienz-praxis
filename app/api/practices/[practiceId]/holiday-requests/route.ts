@@ -128,7 +128,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         reason,
         notes,
         status: status || "wish",
-        created_by: user.id,
       })
       .select()
       .single()

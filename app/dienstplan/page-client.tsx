@@ -85,14 +85,33 @@ export default function DienstplanPageClient({
   const [shiftTypeDialogOpen, setShiftTypeDialogOpen] = useState(false)
   const [editingShiftType, setEditingShiftType] = useState<ShiftType | null>(null)
 
-  // Week days - safely calculate with validated currentWeek
+  // Load planner days setting from practice settings
+  const [plannerDays, setPlannerDays] = useState(5)
+  useEffect(() => {
+    if (!practiceId) return
+    const loadPlannerDays = async () => {
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/settings`)
+        if (response.ok) {
+          const data = await response.json()
+          const days = data?.settings?.system_settings?.dienstplan?.plannerDays
+          if (days && [5, 6, 7].includes(days)) {
+            setPlannerDays(days)
+          }
+        }
+      } catch {}
+    }
+    loadPlannerDays()
+  }, [practiceId])
+
+  // Week days - safely calculate with validated currentWeek and plannerDays setting
   const weekDays = useMemo(() => {
     if (!currentWeek || isNaN(new Date(currentWeek).getTime())) {
       const fallbackWeek = startOfWeek(new Date(), { weekStartsOn: 1 })
-      return Array.from({ length: 7 }, (_, i) => addDays(fallbackWeek, i))
+      return Array.from({ length: plannerDays }, (_, i) => addDays(fallbackWeek, i))
     }
-    return Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i))
-  }, [currentWeek])
+    return Array.from({ length: plannerDays }, (_, i) => addDays(currentWeek, i))
+  }, [currentWeek, plannerDays])
 
   // Stats
   const stats: DienstplanStats = useMemo(() => {

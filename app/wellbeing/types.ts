@@ -89,9 +89,9 @@ export const KUDOS_CATEGORIES: CategoryItem[] = [
   { value: "innovation", label: "Innovation", icon: Lightbulb, color: "bg-purple-500" },
   { value: "helpfulness", label: "Hilfsbereitschaft", icon: Heart, color: "bg-pink-500" },
   { value: "customer_service", label: "Patientenservice", icon: Heart, color: "bg-red-500" },
-  { value: "reliability", label: "Zuverlaessigkeit", icon: Shield, color: "bg-green-500" },
+  { value: "reliability", label: "Zuverlässigkeit", icon: Shield, color: "bg-green-500" },
   { value: "positivity", label: "Positive Energie", icon: Sparkles, color: "bg-yellow-500" },
-  { value: "leadership", label: "Fuehrung", icon: Target, color: "bg-indigo-500" },
+  { value: "leadership", label: "Führung", icon: Target, color: "bg-indigo-500" },
   { value: "growth", label: "Weiterentwicklung", icon: TrendingUp, color: "bg-teal-500" },
 ]
 
@@ -101,7 +101,7 @@ export const SUGGESTION_CATEGORIES: Omit<CategoryItem, "color">[] = [
   { value: "team_building", label: "Teambuilding", icon: Users },
   { value: "communication", label: "Kommunikation", icon: MessageSquare },
   { value: "recognition", label: "Anerkennung", icon: Award },
-  { value: "flexibility", label: "Flexibilitaet", icon: Clock },
+  { value: "flexibility", label: "Flexibilität", icon: Clock },
   { value: "health", label: "Gesundheit", icon: Activity },
   { value: "growth", label: "Entwicklung", icon: TrendingUp },
 ]

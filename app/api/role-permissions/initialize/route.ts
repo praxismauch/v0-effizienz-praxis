@@ -50,7 +50,7 @@ const permissionDefinitions: PermissionDef[] = [
   { key: "contacts", category: "Daten & Dokumente", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
 
   // ============================================
-  // Strategie & Fuehrung
+  // Strategie & Führung
   // ============================================
   { key: "strategy_journey", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
   { key: "leadership", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },

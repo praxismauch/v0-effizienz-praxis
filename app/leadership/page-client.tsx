@@ -172,8 +172,8 @@ export default function LeadershipPageClient() {
       <div className="w-full p-6 space-y-6">
         {/* Header */}
         <PageHeader
-          title="Fuehrung & Wohlbefinden"
-          subtitle="PERMA-V basiertes Leadership Dashboard fuer nachhaltige Teamfuehrung"
+          title="Führung & Wohlbefinden"
+          subtitle="PERMA-V basiertes Leadership Dashboard für nachhaltige Teamführung"
           actions={
             <>
               <Button variant="outline" onClick={fetchPermaData} disabled={isLoading}>

@@ -84,7 +84,7 @@ export const defaultPages = [
   // App - Qualitaets-Management
   { path: "/hygieneplan", name: "Hygieneplan" },
 
-  // App - Strategie & Fuehrung
+  // App - Strategie & Führung
   { path: "/strategy-journey", name: "Strategiepfad" },
   { path: "/leadership", name: "Leadership" },
   { path: "/wellbeing", name: "Mitarbeiter-Wellbeing" },

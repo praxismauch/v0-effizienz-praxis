@@ -495,7 +495,7 @@ export function AppraisalDialog({
                         {aiLoading === "feedback-overall" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       </Button>
                     </div>
-                    <Textarea placeholder="Gesamtfeedback der Fuehrungskraft" value={formData.manager_comments || ""} onChange={(e) => setFormData((prev) => ({ ...prev, manager_comments: e.target.value }))} rows={4} />
+                    <Textarea placeholder="Gesamtfeedback der Führungskraft" value={formData.manager_comments || ""} onChange={(e) => setFormData((prev) => ({ ...prev, manager_comments: e.target.value }))} rows={4} />
                   </div>
                 </div>
               </TabsContent>

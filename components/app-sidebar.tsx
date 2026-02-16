@@ -51,7 +51,30 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const betaFlags = useFeatureBetaFlags()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const hasRestoredScroll = useRef(false)
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(DEFAULT_EXPANDED_GROUPS)
+  const [expandedGroups, setExpandedGroupsRaw] = useState<string[]>(() => {
+    // Instant restore from localStorage to avoid flash
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("sidebar_expanded_groups")
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed)) return parsed
+        }
+      } catch {}
+    }
+    return DEFAULT_EXPANDED_GROUPS
+  })
+
+  // Wrapper that saves to localStorage on every change
+  const setExpandedGroups = (updater: string[] | ((prev: string[]) => string[])) => {
+    setExpandedGroupsRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater
+      try {
+        localStorage.setItem("sidebar_expanded_groups", JSON.stringify(next))
+      } catch {}
+      return next
+    })
+  }
   const [lastActivePath, setLastActivePath] = useState<string | null>(null)
   const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar()
   const [favorites, setFavorites] = useState<string[]>([])

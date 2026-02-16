@@ -98,7 +98,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         headers: {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": "id,displayName,rating,userRatingCount,reviews",
+          "X-Goog-FieldMask": "id,displayName,rating,userRatingCount,reviews.originalText,reviews.text,reviews.rating,reviews.authorAttribution,reviews.publishTime,reviews.name",
         },
       })
 
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             google_review_id: reviewId,
             reviewer_name: review.authorAttribution?.displayName || "Google User",
             rating: review.rating || 5,
-            review_text: review.text?.text || review.originalText?.text || "",
+            review_text: review.originalText?.text || review.text?.text || "",
             review_date: review.publishTime
               ? new Date(review.publishTime).toISOString().split("T")[0]
               : new Date().toISOString().split("T")[0],

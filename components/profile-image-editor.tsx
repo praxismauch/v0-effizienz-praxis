@@ -246,12 +246,79 @@ export const ProfileImageEditor = ({ currentAvatar, userName, onAvatarChange, tr
     setIsDragging(false)
   }
 
+  const renderCroppedImage = (): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      img.onload = () => {
+        const size = 512 // Output size
+        const canvas = document.createElement("canvas")
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return reject(new Error("Canvas not supported"))
+
+        // Clear canvas
+        ctx.clearRect(0, 0, size, size)
+
+        // Clip to circle
+        ctx.beginPath()
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+        ctx.closePath()
+        ctx.clip()
+
+        // Move to center, apply transforms
+        ctx.translate(size / 2, size / 2)
+        ctx.rotate((cropSettings.rotation * Math.PI) / 180)
+        ctx.scale(cropSettings.zoom, cropSettings.zoom)
+
+        // Calculate pan offset relative to the preview container (192px = w-48)
+        const previewSize = 192
+        const scaleFactor = size / previewSize
+        const panXScaled = (cropSettings.panX / cropSettings.zoom) * scaleFactor
+        const panYScaled = (cropSettings.panY / cropSettings.zoom) * scaleFactor
+
+        ctx.translate(panXScaled, panYScaled)
+
+        // Draw image centered (object-cover behavior)
+        const aspect = img.width / img.height
+        let drawW: number, drawH: number
+        if (aspect > 1) {
+          drawH = size
+          drawW = size * aspect
+        } else {
+          drawW = size
+          drawH = size / aspect
+        }
+
+        ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH)
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob)
+            else reject(new Error("Failed to create blob"))
+          },
+          "image/jpeg",
+          0.9,
+        )
+      }
+      img.onerror = () => reject(new Error("Failed to load image"))
+      img.src = previewUrl
+    })
+  }
+
   const handleSave = async () => {
     try {
-      if (selectedFile) {
-        // Upload file to blob storage
+      const hasCropChanges =
+        cropSettings.zoom !== 1 || cropSettings.rotation !== 0 || cropSettings.panX !== 0 || cropSettings.panY !== 0
+
+      if (selectedFile || (previewUrl && hasCropChanges)) {
+        // Render the cropped/zoomed image to a canvas, then upload
+        const croppedBlob = await renderCroppedImage()
+        const croppedFile = new File([croppedBlob], "avatar-cropped.jpg", { type: "image/jpeg" })
+
         const formDataUpload = new FormData()
-        formDataUpload.append("file", selectedFile)
+        formDataUpload.append("file", croppedFile)
         formDataUpload.append("type", "avatar")
 
         const response = await fetch("/api/upload/unified", {

@@ -48,16 +48,18 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData?.teamMembers || [])
   const [teams, setTeams] = useState<Team[]>(initialData?.teams || [])
   const [staffingPlans, setStaffingPlans] = useState<StaffingPlan[]>(initialData?.staffingPlans || [])
+  const [roleOrder, setRoleOrder] = useState<string[]>([])
 
   // Fetch data function
   const fetchData = useCallback(async () => {
     if (!practiceId) return
 
     try {
-      const [membersRes, teamsRes, staffingRes] = await Promise.all([
+      const [membersRes, teamsRes, staffingRes, roleOrderRes] = await Promise.all([
         fetch(`/api/practices/${practiceId}/team-members`),
         fetch(`/api/practices/${practiceId}/teams`),
         fetch(`/api/practices/${practiceId}/staffing-plans`),
+        fetch(`/api/practices/${practiceId}/settings/team-role-order`),
       ])
 
       if (membersRes.ok) {
@@ -71,6 +73,10 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
       if (staffingRes.ok) {
         const data = await staffingRes.json()
         setStaffingPlans(() => data.staffingPlans || [])
+      }
+      if (roleOrderRes.ok) {
+        const data = await roleOrderRes.json()
+        setRoleOrder(data.roleOrder || [])
       }
     } catch (error) {
       console.error("Error fetching team data:", error)
@@ -202,6 +208,7 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
               <MembersTab
                 teamMembers={teamMembers}
                 teams={teams}
+                roleOrder={roleOrder}
                 onAddMember={handleAddMember}
                 onEditMember={handleEditMember}
                 onDeleteMember={handleDeleteMember}

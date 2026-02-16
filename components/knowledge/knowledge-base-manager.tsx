@@ -19,7 +19,7 @@ import {
   FileText,
   Loader2,
   Archive,
-  Settings2,
+
 } from "lucide-react"
 import { AiSearchDialog } from "./ai-search-dialog"
 import { AIKnowledgeAnalyzerDialog } from "./ai-knowledge-analyzer-dialog"
@@ -42,7 +42,7 @@ import type { KnowledgeArticle, OrgaCategory, MedicalDevice, InventoryItem, Work
 import { convertDeviceToArticle, convertInventoryToArticle, convertWorkEquipmentToArticle } from "./article-converters"
 import { KnowledgeStatCards } from "./knowledge-stat-cards"
 import { ArticleList } from "./article-list"
-import { KnowledgeSettings } from "./knowledge-settings"
+
 
 const fetcher = (url: string) => fetch(url).then((r) => { if (!r.ok) throw new Error("Fetch failed"); return r.json() })
 
@@ -282,10 +282,7 @@ export function KnowledgeBaseManager() {
               <Archive className="h-4 w-4" />
               Archiviert
             </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2 flex-1">
-              <Settings2 className="h-4 w-4" />
-              Einstellungen
-            </TabsTrigger>
+
           </TabsList>
 
           <TabsContent value="handbook" className="mt-6">
@@ -321,9 +318,7 @@ export function KnowledgeBaseManager() {
             />
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-6">
-            <KnowledgeSettings />
-          </TabsContent>
+
         </Tabs>
       </div>
 

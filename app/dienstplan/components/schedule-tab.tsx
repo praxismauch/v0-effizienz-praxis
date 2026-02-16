@@ -310,7 +310,7 @@ export default function ScheduleTab({
                 <SelectItem value="all">Alle Gruppen</SelectItem>
                 {availableRoles.map((role) => (
                   <SelectItem key={role} value={role}>
-                    {role}
+                    {getRoleLabel(role)}
                   </SelectItem>
                 ))}
               </SelectContent>

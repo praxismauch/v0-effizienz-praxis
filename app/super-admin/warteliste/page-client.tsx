@@ -308,7 +308,23 @@ export default function WartlistePageClient() {
                 ) : (
                   filteredEntries.map((entry) => (
                     <TableRow key={entry.id}>
-                      <TableCell className="font-medium">{entry.email}</TableCell>
+                      <TableCell className="font-medium">
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 hover:text-primary transition-colors text-left"
+                          onClick={() => {
+                            navigator.clipboard.writeText(entry.email)
+                            toast({
+                              title: "E-Mail kopiert",
+                              description: `${entry.email} wurde in die Zwischenablage kopiert`,
+                            })
+                          }}
+                          title="Klicken zum Kopieren"
+                        >
+                          {entry.email}
+                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                      </TableCell>
                       <TableCell>{entry.name || "-"}</TableCell>
                       <TableCell>{entry.company_name || "-"}</TableCell>
                       <TableCell>{entry.phone || "-"}</TableCell>
@@ -324,6 +340,19 @@ export default function WartlistePageClient() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                navigator.clipboard.writeText(entry.email)
+                                toast({
+                                  title: "E-Mail kopiert",
+                                  description: `${entry.email} wurde in die Zwischenablage kopiert`,
+                                })
+                              }}
+                            >
+                              <Mail className="h-4 w-4 mr-2" />
+                              E-Mail kopieren
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => updateStatus(entry.id, "pending")}>
                               Als Ausstehend markieren
                             </DropdownMenuItem>

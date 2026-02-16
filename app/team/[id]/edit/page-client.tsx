@@ -25,7 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import AppLayout from "@/components/app-layout"
-import ArbeitsmittelAssignments from "@/components/team/arbeitsmittel-assignments"
+
 import { useSWRConfig } from "swr"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { ProfileTab } from "./profile-tab"
@@ -282,7 +282,6 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
               <FileText className="h-3 w-3" />
               Dokumente
             </TabsTrigger>
-            <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
             <TabsTrigger value="vaccinations" className="gap-1">
               <Syringe className="h-3 w-3" />
               Impfstatus
@@ -314,19 +313,6 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="arbeitsmittel" className="space-y-4">
-            {member ? (
-              <ArbeitsmittelAssignments teamMemberId={memberId} practiceId={member.practice_id || ""} />
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                  <Package className="h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
                 </CardContent>
               </Card>

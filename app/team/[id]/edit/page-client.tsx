@@ -208,12 +208,7 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => router.push("/team")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Zuruck zum Team
-            {(formData.firstName || formData.lastName) && (
-              <span className="ml-2 text-muted-foreground">
-                {"\u2022"} {formData.firstName} {formData.lastName}
-              </span>
-            )}
+            Zurück zum Team
           </Button>
           <div className="flex gap-2">
             {canDeleteMember && (

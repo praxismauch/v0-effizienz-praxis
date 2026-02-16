@@ -14,6 +14,7 @@ interface TeamTabProps {
 }
 
 export default function TeamTab({ teamMembers, teamPerformance, isLoading }: TeamTabProps) {
+  // Safely handle undefined props from parent components
   const members = teamMembers || teamPerformance || []
 
   if (isLoading) {

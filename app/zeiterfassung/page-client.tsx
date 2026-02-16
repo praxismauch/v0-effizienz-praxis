@@ -204,7 +204,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
 
   if (!practiceId || !user?.id) {
     return (
-      <div className="container mx-auto p-6 max-w-7xl">
+      <div className="w-full p-6">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
@@ -221,7 +221,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="w-full p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Zeiterfassung</h1>
         <p className="text-muted-foreground">Erfassen und verwalten Sie Ihre Arbeitszeiten</p>

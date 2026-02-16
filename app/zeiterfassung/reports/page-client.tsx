@@ -142,7 +142,7 @@ export default function TimeReportsPageClient() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl space-y-6">
+    <div className="w-full p-6 space-y-6">
       <PageHeader
         title="Zeiterfassungs-Reports"
         subtitle="Monatliche Auswertungen und Export"

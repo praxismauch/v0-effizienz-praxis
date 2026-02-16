@@ -640,7 +640,7 @@ export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelet
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       {/* Header Card */}
       <Card className="border-2 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
         <div className="p-8">

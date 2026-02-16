@@ -170,7 +170,7 @@ export default function SkillsPageClient() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="container mx-auto p-6 max-w-7xl space-y-6">
+        <div className="w-full p-6 space-y-6">
           <Skeleton className="h-8 w-48" />
           <div className="grid gap-4 md:grid-cols-2">
             <Skeleton className="h-32" />
@@ -184,7 +184,7 @@ export default function SkillsPageClient() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 max-w-7xl space-y-6">
+      <div className="w-full p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

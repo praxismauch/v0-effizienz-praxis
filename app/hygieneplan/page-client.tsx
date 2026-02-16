@@ -212,7 +212,7 @@ export default function HygienePlanClient() {
 
   return (
     <AppLayout loading={loading} loadingMessage="Hygienepläne werden geladen...">
-      <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="w-full space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

@@ -43,8 +43,18 @@ function renderDiagram(diagram: SystemDiagram) {
 }
 
 export function DiagramCard({ diagram, isCustom = false, onToggleFavorite, onToggleDashboard, onDelete }: DiagramCardProps) {
+  const rendered = renderDiagram(diagram)
+
+  if (!rendered) {
+    return (
+      <div className="border rounded-lg p-6 text-center text-muted-foreground">
+        <p>Diagramm konnte nicht geladen werden: {diagram.title}</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="relative group">
+    <div className="relative group min-h-[200px]">
       <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button
           variant={diagram.isFavorite ? "default" : "secondary"}
@@ -68,7 +78,7 @@ export function DiagramCard({ diagram, isCustom = false, onToggleFavorite, onTog
           </Button>
         )}
       </div>
-      {renderDiagram(diagram)}
+      {rendered}
     </div>
   )
 }

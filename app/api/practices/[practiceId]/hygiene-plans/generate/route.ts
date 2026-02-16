@@ -108,22 +108,22 @@ Ensure the plan is:
     }
 
     // Save the generated plan to the database
+    // Table columns: id, title, description, area, frequency, responsible_user_id, status,
+    //   practice_id, created_at, updated_at, ai_generated, generated_at, template_id, products_used, deleted_at
     const { data: hygienePlan, error } = await supabase
       .from("hygiene_plans")
       .insert({
+        id: crypto.randomUUID(),
         practice_id: practiceId,
         title: parsedPlan.title,
-        description: parsedPlan.description,
-        category: parsedPlan.category || category,
+        description: parsedPlan.description || "",
+        area: parsedPlan.category || category,
         frequency: parsedPlan.frequency,
-        responsible_role: parsedPlan.responsible_role,
-        content: parsedPlan.content,
-        is_rki_template: true,
-        rki_reference_url: parsedPlan.rki_reference_url,
+        responsible_user_id: userId || null,
         status: "active",
-        tags: parsedPlan.tags || [],
-        created_by: userId,
-        updated_by: userId,
+        ai_generated: true,
+        generated_at: new Date().toISOString(),
+        products_used: parsedPlan.content?.materials ? JSON.stringify(parsedPlan.content.materials) : null,
       })
       .select()
       .single()

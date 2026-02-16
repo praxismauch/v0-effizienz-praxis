@@ -86,7 +86,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
     }
 
-    const { teamMemberId, userId, startDate, endDate, priority, reason, notes, status } = body
+    // Support both camelCase and snake_case field names from client
+    const teamMemberId = body.teamMemberId || body.team_member_id
+    const userId = body.userId || body.user_id
+    const startDate = body.startDate || body.start_date
+    const endDate = body.endDate || body.end_date
+    const priority = body.priority
+    const reason = body.reason
+    const notes = body.notes
+    const status = body.status
 
     if (!teamMemberId || !startDate || !endDate) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })

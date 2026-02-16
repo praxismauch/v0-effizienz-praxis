@@ -56,7 +56,7 @@ export function UserMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/help" className="cursor-pointer">
+          <Link href="/help" target="_blank" rel="noopener noreferrer" className="cursor-pointer">
             <HelpCircle className="mr-2 h-4 w-4" />
             Hilfe
           </Link>

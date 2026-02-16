@@ -40,7 +40,7 @@ export function Header() {
           </Button>
 
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/help">
+            <Link href="/help" target="_blank" rel="noopener noreferrer">
               <HelpCircle className="h-5 w-5" />
               <span className="sr-only">Hilfe</span>
             </Link>

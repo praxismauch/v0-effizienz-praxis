@@ -402,7 +402,7 @@ function WorkflowsPage() {
           />
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" onClick={() => setIsAiOpen(true)} className="gap-1.5">
+          <Button onClick={() => setIsAiOpen(true)} className="gap-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
             <Sparkles className="h-4 w-4" />
             Mit KI generieren
           </Button>

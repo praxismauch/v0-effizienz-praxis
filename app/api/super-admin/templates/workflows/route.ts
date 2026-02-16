@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
     const { data: template, error: insertError } = await adminClient
       .from("workflows")
       .insert({
+        id: crypto.randomUUID(),
         name,
         description,
         category,

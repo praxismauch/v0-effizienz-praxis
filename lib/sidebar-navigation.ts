@@ -55,6 +55,7 @@ export const DEFAULT_EXPANDED_GROUPS = [
   "overview",
   "planning",
   "data",
+  "quality-management",
   "strategy",
   "team-personal",
   "praxis-einstellungen",
@@ -246,18 +247,24 @@ export function getNavigationGroups(
           badge: "journal",
         },
         {
-          name: t("sidebar.knowledge", "Wissen"),
-          href: "/knowledge",
-          icon: BookOpen,
-          key: "knowledge",
-          badge: "knowledge",
-        },
-        {
           name: t("sidebar.protocols", "Protokolle"),
           href: "/protocols",
           icon: FileCheck,
           key: "protocols",
           badge: "protocols",
+        },
+      ],
+    },
+    {
+      id: "quality-management",
+      label: t("sidebar.group.quality_management", "Qualitätsmanagement"),
+      items: [
+        {
+          name: t("sidebar.knowledge", "Wissen"),
+          href: "/knowledge",
+          icon: BookOpen,
+          key: "knowledge",
+          badge: "knowledge",
         },
         {
           name: t("sidebar.cirs", "Verbesserungsmeldung"),
@@ -266,12 +273,6 @@ export function getNavigationGroups(
           key: "cirs",
           badge: "cirs",
         },
-      ],
-    },
-    {
-      id: "quality-management",
-      label: t("sidebar.group.quality_management", "Qualitäts-Management"),
-      items: [
         {
           name: t("sidebar.hygieneplan", "Hygieneplan"),
           href: "/hygieneplan",

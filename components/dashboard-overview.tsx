@@ -588,7 +588,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     <div className="space-y-6 max-w-full">
       <PageHeader
         title="Cockpit"
-        subtitle="Willkommen zurueck! Hier ist ein 360 Grad Ueberblick ueber Ihre Praxis."
+        subtitle="Willkommen zurück! Hier ist ein 360-Grad-Überblick über Ihre Praxis."
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => setIsEditorOpen(true)}>

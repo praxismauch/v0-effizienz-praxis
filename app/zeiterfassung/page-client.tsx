@@ -288,7 +288,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
             selectedMonth={selectedMonth}
             onMonthChange={setSelectedMonth}
             onEditBlock={() => toast.info("Bearbeitung wird noch implementiert")}
-            onDeleteBlock={() => toast.info("Loeschen wird noch implementiert")}
+            onDeleteBlock={() => toast.info("Löschen wird noch implementiert")}
           />
         </TabsContent>
 

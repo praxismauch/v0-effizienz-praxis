@@ -586,7 +586,7 @@ export default function ProtocolPopupPage() {
                     </div>
                     <Button variant="outline" size="sm" className="gap-2">
                       <FileAudio className="h-4 w-4" />
-                      Datei auswaehlen
+                      Datei auswählen
                     </Button>
                   </div>
                 </div>

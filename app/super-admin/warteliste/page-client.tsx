@@ -111,7 +111,7 @@ export default function WartlistePageClient() {
 
       if (response.ok) {
         toast({
-          title: "Eintrag geloescht",
+          title: "Eintrag gelöscht",
           description: `${entry.email} wurde von der Warteliste entfernt`,
         })
         loadWaitlist()
@@ -122,7 +122,7 @@ export default function WartlistePageClient() {
       console.error("Error deleting entry:", error)
       toast({
         title: "Fehler",
-        description: "Eintrag konnte nicht geloescht werden",
+        description: "Eintrag konnte nicht gelöscht werden",
         variant: "destructive",
       })
     } finally {
@@ -371,7 +371,7 @@ export default function WartlistePageClient() {
                               onClick={() => setDeleteTarget(entry)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Eintrag loeschen
+                              Eintrag löschen
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -389,11 +389,11 @@ export default function WartlistePageClient() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eintrag loeschen?</AlertDialogTitle>
+            <AlertDialogTitle>Eintrag löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Moechten Sie <span className="font-semibold text-foreground">{deleteTarget?.email}</span>
+              Möchten Sie <span className="font-semibold text-foreground">{deleteTarget?.email}</span>
               {deleteTarget?.name ? ` (${deleteTarget.name})` : ""} wirklich von der Warteliste entfernen?
-              Diese Aktion kann nicht rueckgaengig gemacht werden.
+              Diese Aktion kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -403,7 +403,7 @@ export default function WartlistePageClient() {
               onClick={() => deleteTarget && deleteEntry(deleteTarget)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Endgueltig loeschen
+              Endgültig löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

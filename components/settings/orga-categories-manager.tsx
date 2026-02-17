@@ -103,11 +103,11 @@ export function OrgaCategoriesManager() {
 
       if (!response.ok) throw new Error("Delete failed")
 
-      toast.success("Kategorie geloescht")
+      toast.success("Kategorie gelöscht")
       await fetchCategories()
     } catch (error) {
       console.error("Error deleting category:", error)
-      toast.error("Fehler beim Loeschen der Kategorie")
+      toast.error("Fehler beim Löschen der Kategorie")
     }
   }
 

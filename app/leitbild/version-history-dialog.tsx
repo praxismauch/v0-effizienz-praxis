@@ -111,7 +111,7 @@ export function VersionHistoryDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t("common.close", "Schliessen")}
+            {t("common.close", "Schließen")}
           </Button>
         </DialogFooter>
       </DialogContent>

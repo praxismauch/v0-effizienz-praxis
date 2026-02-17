@@ -712,7 +712,7 @@ function ReportBugDialog({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAiActionDialogOpen(false)}>
-              Schliessen
+              Schließen
             </Button>
             <Button
               onClick={handleCopyToClipboard}

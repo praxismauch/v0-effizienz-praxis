@@ -222,7 +222,7 @@ export default function CalendarPageClient({ initialEvents, practiceId, user }: 
       {/* Header */}
       <PageHeader
         title="Kalender"
-        subtitle="Gemeinsamer Kalender fuer Ihre Praxis"
+        subtitle="Gemeinsamer Kalender für Ihre Praxis"
         actions={
           <>
             <Button variant="default" className="bg-purple-500 hover:bg-purple-600" onClick={() => setShowAIDialog(true)}>

@@ -767,7 +767,7 @@ function CreateHygienePlanDialog({
       return
     }
     if (!category) {
-      toast.error("Bitte waehlen Sie eine Kategorie")
+      toast.error("Bitte wählen Sie eine Kategorie")
       return
     }
 
@@ -827,7 +827,7 @@ function CreateHygienePlanDialog({
             Neuen Hygieneplan erstellen
           </DialogTitle>
           <DialogDescription>
-            Erstellen Sie manuell einen neuen Hygieneplan fuer Ihre Praxis.
+            Erstellen Sie manuell einen neuen Hygieneplan für Ihre Praxis.
           </DialogDescription>
         </DialogHeader>
 
@@ -861,7 +861,7 @@ function CreateHygienePlanDialog({
               <Label>Kategorie *</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Kategorie waehlen" />
+                  <SelectValue placeholder="Kategorie wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
@@ -874,7 +874,7 @@ function CreateHygienePlanDialog({
               <Label>Haeufigkeit</Label>
               <Select value={frequency} onValueChange={setFrequency}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Haeufigkeit waehlen" />
+                  <SelectValue placeholder="Häufigkeit wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="daily">Taeglich</SelectItem>

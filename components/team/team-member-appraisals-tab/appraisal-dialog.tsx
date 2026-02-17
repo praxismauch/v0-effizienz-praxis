@@ -169,7 +169,7 @@ export function AppraisalDialog({
                   <div className="grid grid-cols-2 gap-4">
                     {aiSuggestions.strengths && (
                       <Card className="bg-emerald-50 border-emerald-200">
-                        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-emerald-700"><Award className="w-4 h-4" />Staerken (KI-Analyse)</CardTitle></CardHeader>
+                        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-emerald-700"><Award className="w-4 h-4" />Stärken (KI-Analyse)</CardTitle></CardHeader>
                         <CardContent><ul className="space-y-1">{aiSuggestions.strengths.map((s, i) => (<li key={i} className="text-sm flex items-start gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />{s}</li>))}</ul></CardContent>
                       </Card>
                     )}
@@ -269,8 +269,8 @@ export function AppraisalDialog({
                   <Card className="bg-muted/50">
                     <CardContent className="py-8 text-center">
                       <GraduationCap className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                      <p className="font-medium mb-1">Keine Skills verfuegbar</p>
-                      <p className="text-sm text-muted-foreground mb-4">Fuer diesen Mitarbeiter sind noch keine Skills definiert</p>
+                      <p className="font-medium mb-1">Keine Skills verfügbar</p>
+                      <p className="text-sm text-muted-foreground mb-4">Für diesen Mitarbeiter sind noch keine Skills definiert</p>
                       <Button variant="outline" size="sm" onClick={onRefreshCompetencies}><RefreshCw className="w-4 h-4 mr-2" />Skills laden</Button>
                     </CardContent>
                   </Card>
@@ -280,7 +280,7 @@ export function AppraisalDialog({
               {/* Goals Tab */}
               <TabsContent value="goals" className="mt-0 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Ziele setzen & ueberpruefen</h4>
+                  <h4 className="font-medium">Ziele setzen & überprüfen</h4>
                   <Button variant="outline" size="sm" onClick={() => onAIGenerate("goals")} disabled={aiLoading === "goals"}>
                     {aiLoading === "goals" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                     KI-Ziele vorschlagen
@@ -288,7 +288,7 @@ export function AppraisalDialog({
                 </div>
                 {aiSuggestions.goals && aiSuggestions.goals.length > 0 && (
                   <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />KI-Vorschlaege (basierend auf Skill-Gaps)</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />KI-Vorschläge (basierend auf Skill-Gaps)</CardTitle></CardHeader>
                     <CardContent className="space-y-2">
                       {aiSuggestions.goals.map((goal, idx) => (
                         <div key={idx} className="p-3 rounded-lg bg-background border flex items-start justify-between">
@@ -576,7 +576,7 @@ export function AppraisalDialog({
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Naechstes Gespraech</Label>
+                    <Label>Nächstes Gespräch</Label>
                     <Input type="date" value={formData.next_review_date || ""} onChange={(e) => setFormData((prev) => ({ ...prev, next_review_date: e.target.value }))} />
                   </div>
                 </div>

@@ -42,11 +42,11 @@ function getRatingStars(rating: number) {
 
 function getAppraisalTypeLabel(type: string) {
   switch (type) {
-    case "annual": return "Jahresgespraech"
-    case "semi_annual": return "Halbjahresgespraech"
-    case "quarterly": return "Quartalsgespraech"
-    case "probation": return "Probezeit-Gespraech"
-    case "ad_hoc": return "Zwischengespraech"
+    case "annual": return "Jahresgespräch"
+    case "semi_annual": return "Halbjahresgespräch"
+    case "quarterly": return "Quartalsgespräch"
+    case "probation": return "Probezeit-Gespräch"
+    case "ad_hoc": return "Zwischengespräch"
     default: return type
   }
 }
@@ -61,16 +61,16 @@ export function AppraisalList({ appraisals, skills, memberName, isAdmin, onNew, 
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
-                Mitarbeitergespraeche
+                Mitarbeitergespräche
               </CardTitle>
               <CardDescription>
-                {appraisals.length} Gespraech{appraisals.length !== 1 ? "e" : ""} erfasst
+                {appraisals.length} Gespräch{appraisals.length !== 1 ? "e" : ""} erfasst
               </CardDescription>
             </div>
             {isAdmin && (
               <Button onClick={onNew}>
                 <Plus className="w-4 h-4 mr-2" />
-                Neues Gespraech
+                Neues Gespräch
               </Button>
             )}
           </div>
@@ -85,7 +85,7 @@ export function AppraisalList({ appraisals, skills, memberName, isAdmin, onNew, 
               <div className="p-2 rounded-lg bg-primary/10"><FileText className="w-5 h-5 text-primary" /></div>
               <div>
                 <p className="text-2xl font-bold">{appraisals.length}</p>
-                <p className="text-xs text-muted-foreground">Gespraeche gesamt</p>
+                <p className="text-xs text-muted-foreground">Gespräche gesamt</p>
               </div>
             </div>
           </CardContent>

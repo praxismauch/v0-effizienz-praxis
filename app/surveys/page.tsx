@@ -435,7 +435,7 @@ export default function SurveysPage() {
           {/* Header */}
           <PageHeader
             title="Umfragen"
-            subtitle="Erstellen und verwalten Sie Umfragen fuer Ihr Team und Ihre Patienten"
+            subtitle="Erstellen und verwalten Sie Umfragen für Ihr Team und Ihre Patienten"
             icon={<ClipboardCheck className="h-8 w-8" />}
             actions={
               <>

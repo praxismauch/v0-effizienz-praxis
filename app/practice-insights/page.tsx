@@ -210,7 +210,7 @@ export default function PracticeJournalsPage() {
       <div className="space-y-6">
         <PageHeader
           title="Praxis-Journal"
-          subtitle="KI-generierte Berichte ueber Ihre Praxisentwicklung mit Aktionsplaenen"
+          subtitle="KI-generierte Berichte über Ihre Praxisentwicklung mit Aktionsplänen"
           icon={<BookOpen className="h-8 w-8" />}
           actions={
             <>
@@ -231,11 +231,11 @@ export default function PracticeJournalsPage() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="inline">
               <strong>Tipp:</strong>{" "}
-              {"Fuer aussagekraeftigere Journals mit detaillierten KPI-Analysen empfehlen wir, zuerst Kennzahlen in der "}
+              {"Für aussagekräftigere Journals mit detaillierten KPI-Analysen empfehlen wir, zuerst Kennzahlen in der "}
               <Button variant="link" className="p-0 h-auto inline" onClick={() => router.push("/analytics")}>
                 Auswertung
               </Button>
-              {" zu definieren. Sie koennen aber auch ohne KPIs Journals erstellen."}
+              {" zu definieren. Sie können aber auch ohne KPIs Journals erstellen."}
             </AlertDescription>
           </Alert>
         )}

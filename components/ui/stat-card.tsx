@@ -48,8 +48,8 @@ export function StatCard({
 
   return (
     <Card className={cn("p-4", className)}>
-      <div className="flex items-center gap-4">
-        <div className={cn("rounded-lg p-2.5 shrink-0", finalIconBgColor)}>
+      <div className="flex items-start gap-4">
+        <div className={cn("rounded-lg p-2.5 shrink-0 mt-0.5", finalIconBgColor)}>
           {isIconElement ? (
             <div className={cn(finalIconColor)}>{icon as ReactNode}</div>
           ) : (

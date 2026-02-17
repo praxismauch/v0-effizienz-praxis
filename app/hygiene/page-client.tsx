@@ -21,6 +21,7 @@ import {
 import { CreateHygienePlanDialog } from "./create-hygiene-plan-dialog"
 import { ExecuteHygieneDialog } from "./execute-hygiene-dialog"
 import { HygienePlansTable } from "./hygiene-plans-table"
+import { HygienePlanDetailDialog } from "./hygiene-plan-detail-dialog"
 
 export function HygienePage() {
   const { currentPractice } = useUser()
@@ -34,6 +35,7 @@ export function HygienePage() {
   const [isExecuteDialogOpen, setIsExecuteDialogOpen] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<HygienePlan | null>(null)
+  const [detailPlan, setDetailPlan] = useState<HygienePlan | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterArea, setFilterArea] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
@@ -262,6 +264,7 @@ export function HygienePage() {
           onCreateNew={() => setIsCreateDialogOpen(true)}
           onExecute={(plan) => { setSelectedPlan(plan); setIsExecuteDialogOpen(true) }}
           onAddToKnowledge={handleAddToKnowledge}
+          onViewDetail={(plan) => setDetailPlan(plan)}
         />
       </div>
 
@@ -283,6 +286,17 @@ export function HygienePage() {
         notes={executionNotes}
         onNotesChange={setExecutionNotes}
         onSubmit={handleExecutePlan}
+      />
+
+      <HygienePlanDetailDialog
+        plan={detailPlan}
+        open={!!detailPlan}
+        onOpenChange={(open) => !open && setDetailPlan(null)}
+        onExecute={(plan) => {
+          setSelectedPlan(plan)
+          setIsExecuteDialogOpen(true)
+        }}
+        onAddToKnowledge={handleAddToKnowledge}
       />
     </AppLayout>
   )

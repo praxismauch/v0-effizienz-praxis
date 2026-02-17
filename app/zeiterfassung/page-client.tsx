@@ -65,7 +65,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
     format(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0), "yyyy-MM-dd")
   )
   
-  const { members: teamMembers, isLoading: teamLoading } = useTeamLiveView(practiceId)
+  const { members: teamMembers, isLoading: teamLoading, mutate: mutateTeam } = useTeamLiveView(practiceId)
   const { clockIn, clockOut, startBreak, endBreak } = useTimeActions(practiceId, user?.id)
   const { corrections: correctionRequests, mutate: mutateCorrectionRequests } = useCorrectionRequests(practiceId)
   const { issues: plausibilityIssues } = usePlausibilityIssues(practiceId)
@@ -94,27 +94,27 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
         case "start":
           result = await clockIn(selectedLocation, stampComment)
           if (!result.success) throw new Error(result.error || "Einstempeln fehlgeschlagen")
-          await Promise.all([mutate(), mutateBlocks()])
+          await Promise.all([mutate(), mutateBlocks(), mutateTeam()])
           toast.success("Erfolgreich eingestempelt")
           break
         case "stop":
           result = await clockOut(undefined, stampComment)
           if (!result.success) throw new Error(result.error || "Ausstempeln fehlgeschlagen")
-          await Promise.all([mutate(), mutateBlocks()])
+          await Promise.all([mutate(), mutateBlocks(), mutateTeam()])
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
           if (!currentBlock?.id) throw new Error("Kein aktiver Zeitblock gefunden.")
           result = await startBreak(currentBlock.id)
           if (!result.success) throw new Error(result.error || "Pause starten fehlgeschlagen")
-          await Promise.all([mutate(), mutateBlocks()])
+          await Promise.all([mutate(), mutateBlocks(), mutateTeam()])
           toast.success("Pause gestartet")
           break
         case "pause_end":
           if (!activeBreak?.id) throw new Error("Keine aktive Pause gefunden")
           result = await endBreak(activeBreak.id)
           if (!result.success) throw new Error(result.error || "Pause beenden fehlgeschlagen")
-          await Promise.all([mutate(), mutateBlocks()])
+          await Promise.all([mutate(), mutateBlocks(), mutateTeam()])
           toast.success("Pause beendet")
           break
       }

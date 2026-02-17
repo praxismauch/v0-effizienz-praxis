@@ -30,7 +30,7 @@ export function useTeamLiveView(practiceId: string | null) {
     practiceId ? `/api/practices/${practiceId}/time/team-live` : null,
     fetcher,
     {
-      refreshInterval: 60000, // Refresh every 60 seconds (1 minute)
+      refreshInterval: 30000, // Refresh every 30 seconds for near-live updates
       revalidateOnFocus: true,
     }
   )

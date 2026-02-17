@@ -48,6 +48,9 @@ import {
   MessageSquare,
   Cog,
   HardDrive,
+  CheckCircle2,
+  Search as SearchIcon,
+  UserCog,
 } from "lucide-react"
 
 type BadgeType =
@@ -470,6 +473,18 @@ export function SuperAdminSidebarSimple() {
           badge: true,
           badgeType: "waitlist" as const,
         },
+        {
+          id: "approvals",
+          label: "Genehmigungen",
+          icon: CheckCircle2,
+          href: "/super-admin/approvals",
+        },
+        {
+          id: "practice-management",
+          label: "Praxisverwaltung",
+          icon: UserCog,
+          href: "/super-admin/practice-management",
+        },
       ],
     },
     {
@@ -504,6 +519,12 @@ export function SuperAdminSidebarSimple() {
       id: "marketing",
       label: "Marketing",
       items: [
+        {
+          id: "marketing-seo",
+          label: "Marketing & SEO",
+          icon: SearchIcon,
+          href: "/super-admin/marketing",
+        },
         {
           id: "landingpages",
           label: "Landingpages",

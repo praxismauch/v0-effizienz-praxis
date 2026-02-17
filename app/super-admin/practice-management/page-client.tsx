@@ -215,7 +215,7 @@ export function PracticeManagementClient() {
       <Card>
         <CardHeader>
           <CardTitle>Benutzer zu Praxis zuweisen</CardTitle>
-          <CardDescription>Einen Benutzer mit einer bestimmten Rolle einem Praxis-Team hinzufugen</CardDescription>
+          <CardDescription>Einen Benutzer mit einer bestimmten Rolle einem Praxis-Team hinzufügen</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
@@ -223,7 +223,7 @@ export function PracticeManagementClient() {
               <Label>Benutzer</Label>
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Benutzer auswahlen" />
+                  <SelectValue placeholder="Benutzer auswählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {users.map((user) => (
@@ -239,7 +239,7 @@ export function PracticeManagementClient() {
               <Label>Praxis</Label>
               <Select value={selectedPracticeId} onValueChange={setSelectedPracticeId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Praxis auswahlen" />
+                  <SelectValue placeholder="Praxis auswählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {practices

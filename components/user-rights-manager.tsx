@@ -298,7 +298,7 @@ export function UserRightsManager() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Berechtigungs-Matrix</h2>
-          <p className="text-muted-foreground text-sm">Konfigurieren Sie die Berechtigungen fuer alle 7 Benutzerrollen</p>
+          <p className="text-muted-foreground text-sm">Konfigurieren Sie die Berechtigungen für alle 7 Benutzerrollen</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={loadPermissions} variant="outline" size="sm">

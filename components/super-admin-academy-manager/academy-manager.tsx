@@ -139,7 +139,7 @@ export function SuperAdminAcademyManager() {
 
       <Tabs value={a.activeTab} onValueChange={a.setActiveTab}>
         <TabsList className="grid grid-cols-6 w-full max-w-3xl">
-          <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-2" />Uebersicht</TabsTrigger>
+          <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-2" />Übersicht</TabsTrigger>
           <TabsTrigger value="courses"><GraduationCap className="h-4 w-4 mr-2" />Kurse</TabsTrigger>
           <TabsTrigger value="quizzes"><HelpCircle className="h-4 w-4 mr-2" />Quizze</TabsTrigger>
           <TabsTrigger value="badges"><Award className="h-4 w-4 mr-2" />Badges</TabsTrigger>
@@ -182,7 +182,7 @@ export function SuperAdminAcademyManager() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => a.handleSelectCourse(course)}><Eye className="h-4 w-4 mr-2" />Inhalt verwalten</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => a.openEditCourse(course)}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "course", id: course.id, name: course.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Loeschen</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "course", id: course.id, name: course.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -205,7 +205,7 @@ export function SuperAdminAcademyManager() {
               <Table><TableHeader><TableRow><TableHead>Titel</TableHead><TableHead>Typ</TableHead><TableHead>Bestehensgrenze</TableHead><TableHead>Zeitlimit</TableHead><TableHead>XP</TableHead><TableHead className="text-right">Aktionen</TableHead></TableRow></TableHeader>
                 <TableBody>{a.quizzes.map((quiz) => (
                   <TableRow key={quiz.id}><TableCell className="font-medium">{quiz.title}</TableCell><TableCell><Badge variant="outline">{quiz.quiz_type}</Badge></TableCell><TableCell>{quiz.passing_score}%</TableCell><TableCell>{quiz.time_limit_minutes} Min</TableCell><TableCell>{quiz.xp_reward} XP</TableCell>
-                    <TableCell className="text-right"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => { a.setEditingQuiz(quiz); a.setShowQuizDialog(true) }}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "quiz", id: quiz.id, name: quiz.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Loeschen</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>
+                    <TableCell className="text-right"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => { a.setEditingQuiz(quiz); a.setShowQuizDialog(true) }}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "quiz", id: quiz.id, name: quiz.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>
                 ))}</TableBody></Table>
             )}
           </div>
@@ -240,7 +240,7 @@ export function SuperAdminAcademyManager() {
             <Card><CardContent className="flex flex-col items-center justify-center py-12"><Layers className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-medium">Kein Kurs ausgewaehlt</h3><Button className="mt-4 bg-transparent" variant="outline" onClick={() => a.setActiveTab("courses")}>Zur Kursliste</Button></CardContent></Card>
           ) : (
             <div className="space-y-4">
-              <Card><CardHeader><div className="flex items-start justify-between"><div><CardTitle>{a.selectedCourse.title}</CardTitle><CardDescription>{a.selectedCourse.description}</CardDescription></div><Button variant="outline" onClick={() => a.setSelectedCourse(null)}>Zurueck</Button></div></CardHeader></Card>
+              <Card><CardHeader><div className="flex items-start justify-between"><div><CardTitle>{a.selectedCourse.title}</CardTitle><CardDescription>{a.selectedCourse.description}</CardDescription></div><Button variant="outline" onClick={() => a.setSelectedCourse(null)}>Zurück</Button></div></CardHeader></Card>
               <div className="flex justify-end"><Button onClick={() => { a.resetModuleForm(); a.setEditingModule(null); a.setShowModuleDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Modul</Button></div>
               {a.courseModules.length === 0 ? <Card><CardContent className="flex flex-col items-center py-12"><BookOpen className="h-12 w-12 text-muted-foreground mb-4" /><h3>Keine Module</h3></CardContent></Card> : (
                 <div className="space-y-3">
@@ -256,7 +256,7 @@ export function SuperAdminAcademyManager() {
                             {module.is_published ? <Badge className="bg-green-500 text-white">Veroeffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}
                             <DropdownMenu><DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); a.setEditingModule(module); a.setModuleForm({ title: module.title, description: module.description, estimated_minutes: module.estimated_minutes, is_published: module.is_published }); a.setShowModuleDialog(true) }}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); a.setDeleteItem({ type: "module", id: module.id, name: module.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Loeschen</DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); a.setDeleteItem({ type: "module", id: module.id, name: module.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem>
                             </DropdownMenuContent></DropdownMenu>
                           </div>
                         </div>
@@ -272,7 +272,7 @@ export function SuperAdminAcademyManager() {
                               <div className="flex items-center gap-2">{lesson.is_published ? <Badge variant="outline" className="text-green-600 border-green-600">Live</Badge> : <Badge variant="outline">Entwurf</Badge>}
                                 <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3 w-3" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => { a.setEditingLesson(lesson); a.setLessonForm({ title: lesson.title, description: lesson.description, content: lesson.content, lesson_type: lesson.lesson_type, video_url: lesson.video_url, video_duration_seconds: lesson.video_duration_seconds, estimated_minutes: lesson.estimated_minutes, xp_reward: lesson.xp_reward, is_published: lesson.is_published, is_free_preview: lesson.is_free_preview }); a.setShowLessonDialog(true) }}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "lesson", id: lesson.id, name: lesson.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Loeschen</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "lesson", id: lesson.id, name: lesson.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem>
                                 </DropdownMenuContent></DropdownMenu>
                               </div>
                             </div>
@@ -382,7 +382,7 @@ export function SuperAdminAcademyManager() {
       {/* Delete Dialog */}
       <AlertDialog open={a.showDeleteDialog} onOpenChange={a.setShowDeleteDialog}>
         <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Sind Sie sicher?</AlertDialogTitle><AlertDialogDescription>{"Moechten Sie \"" + (a.deleteItem?.name || "") + "\" wirklich loeschen?"}</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={a.handleDelete} className="bg-destructive text-destructive-foreground">Loeschen</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={a.handleDelete} className="bg-destructive text-destructive-foreground">Löschen</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

@@ -157,15 +157,15 @@ export default function BusinessModelCanvasManager() {
                 <Sparkles className="h-5 w-5" />
                 KI-Assistent
               </CardTitle>
-              <CardDescription>Lassen Sie die KI Vorschlaege fuer Ihr Business Model Canvas generieren</CardDescription>
+              <CardDescription>Lassen Sie die KI Vorschläge für Ihr Business Model Canvas generieren</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Beschreiben Sie, was Sie analysieren moechten</Label>
+                <Label>Beschreiben Sie, was Sie analysieren möchten</Label>
                 <Textarea
                   value={bmc.aiPrompt}
                   onChange={(e) => bmc.setAiPrompt(e.target.value)}
-                  placeholder="z.B. Analysiere moegliche neue Kundensegmente..."
+                  placeholder="z.B. Analysiere mögliche neue Kundensegmente..."
                   rows={4}
                 />
               </div>
@@ -173,7 +173,7 @@ export default function BusinessModelCanvasManager() {
                 {bmc.isGenerating ? (
                   <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Generiere...</>
                 ) : (
-                  <><Sparkles className="mr-2 h-4 w-4" />Vorschlaege generieren</>
+                  <><Sparkles className="mr-2 h-4 w-4" />Vorschläge generieren</>
                 )}
               </Button>
             </CardContent>
@@ -189,12 +189,12 @@ export default function BusinessModelCanvasManager() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">Auf Standard zuruecksetzen</p>
-                  <p className="text-sm text-muted-foreground">Setzt alle Eintraege auf die Standardwerte zurueck</p>
+                  <p className="font-medium">Auf Standard zurücksetzen</p>
+                  <p className="text-sm text-muted-foreground">Setzt alle Einträge auf die Standardwerte zurück</p>
                 </div>
                 <Button variant="destructive" onClick={bmc.resetToDefault}>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Zuruecksetzen
+                  Zurücksetzen
                 </Button>
               </div>
             </CardContent>
@@ -276,7 +276,7 @@ export default function BusinessModelCanvasManager() {
               if (bmc.editingItem) {
                 bmc.updateItem(bmc.editingItem.sectionId, bmc.editingItem.item.id, bmc.editingItem.item)
                 bmc.setEditingItem(null)
-                toast({ title: "Gespeichert", description: "Aenderungen wurden uebernommen." })
+                toast({ title: "Gespeichert", description: "Änderungen wurden übernommen." })
               }
             }}>
               Speichern

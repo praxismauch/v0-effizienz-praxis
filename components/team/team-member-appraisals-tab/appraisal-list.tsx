@@ -132,12 +132,12 @@ export function AppraisalList({ appraisals, skills, memberName, isAdmin, onNew, 
         <Card>
           <CardContent className="py-12 text-center">
             <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h4 className="font-medium mb-2">Noch keine Mitarbeitergespraeche</h4>
+            <h4 className="font-medium mb-2">Noch keine Mitarbeitergespräche</h4>
             <p className="text-sm text-muted-foreground mb-4">
-              Erstellen Sie das erste Mitarbeitergespraech fuer {memberName}
+              Erstellen Sie das erste Mitarbeitergespräch für {memberName}
             </p>
             {isAdmin && (
-              <Button onClick={onNew}><Plus className="w-4 h-4 mr-2" />Gespraech erstellen</Button>
+              <Button onClick={onNew}><Plus className="w-4 h-4 mr-2" />Gespräch erstellen</Button>
             )}
           </CardContent>
         </Card>

@@ -149,14 +149,14 @@ export function useAppraisals({ memberId, practiceId, memberName }: AppraisalsTa
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Moechten Sie dieses Gespraech wirklich loeschen?")) return
+    if (!confirm("Möchten Sie dieses Gespräch wirklich löschen?")) return
     try {
       const res = await fetch(`/api/practices/${practiceId}/team-members/${memberId}/appraisals?id=${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Delete failed")
-      toast({ title: "Erfolgreich", description: "Gespraech geloescht" })
+      toast({ title: "Erfolgreich", description: "Gespräch gelöscht" })
       loadAppraisals()
     } catch {
-      toast({ title: "Fehler", description: "Loeschen fehlgeschlagen", variant: "destructive" })
+      toast({ title: "Fehler", description: "Löschen fehlgeschlagen", variant: "destructive" })
     }
   }
 

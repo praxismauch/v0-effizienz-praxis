@@ -104,7 +104,7 @@ export function CanvasSectionCard({
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onDeleteItem(sectionId, item.id)} className="text-red-600">
                     <Trash2 className="mr-2 h-3 w-3" />
-                    Loeschen
+                    Löschen
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -172,9 +172,9 @@ export const BADGE_ICONS = [
 ]
 
 export const VISIBILITY_OPTIONS = [
-  { value: "public", label: "Oeffentlich", description: "Fuer alle Besucher sichtbar", icon: Globe },
-  { value: "logged_in", label: "Angemeldete Nutzer", description: "Nur fuer eingeloggte Benutzer", icon: Users },
-  { value: "premium", label: "Premium", description: "Nur fuer zahlende Abonnenten", icon: Crown },
+  { value: "public", label: "Öffentlich", description: "Für alle Besucher sichtbar", icon: Globe },
+  { value: "logged_in", label: "Angemeldete Nutzer", description: "Nur für eingeloggte Benutzer", icon: Users },
+  { value: "premium", label: "Premium", description: "Nur für zahlende Abonnenten", icon: Crown },
 ]
 
 export const TARGET_AUDIENCE_OPTIONS = [

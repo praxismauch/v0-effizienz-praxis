@@ -84,15 +84,15 @@ export function AppraisalDialog({
               <TabsContent value="performance" className="mt-0 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Gespraechsart</Label>
+                    <Label>Gesprächsart</Label>
                     <Select value={formData.appraisal_type || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, appraisal_type: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Gespraechsart waehlen" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Gesprächsart wählen" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="annual">Jahresgespraech</SelectItem>
-                        <SelectItem value="semi_annual">Halbjahresgespraech</SelectItem>
-                        <SelectItem value="quarterly">Quartalsgespraech</SelectItem>
-                        <SelectItem value="probation">Probezeit-Gespraech</SelectItem>
-                        <SelectItem value="ad_hoc">Zwischengespraech</SelectItem>
+                        <SelectItem value="annual">Jahresgespräch</SelectItem>
+                        <SelectItem value="semi_annual">Halbjahresgespräch</SelectItem>
+                        <SelectItem value="quarterly">Quartalsgespräch</SelectItem>
+                        <SelectItem value="probation">Probezeit-Gespräch</SelectItem>
+                        <SelectItem value="ad_hoc">Zwischengespräch</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -538,7 +538,7 @@ export function AppraisalDialog({
                     <div className="space-y-2">
                       <Label>Befoerderungsreife</Label>
                       <Select value={formData.promotion_readiness || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, promotion_readiness: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Einschaetzung waehlen" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Einschätzung wählen" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="ready_now">Sofort befoerderbar</SelectItem>
                           <SelectItem value="ready_6_months">In 6 Monaten</SelectItem>
@@ -551,7 +551,7 @@ export function AppraisalDialog({
                     <div className="space-y-2">
                       <Label>Nachfolgepotenzial</Label>
                       <Select value={formData.succession_potential || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, succession_potential: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Einschaetzung waehlen" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Einschätzung wählen" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="high">Hohes Potenzial</SelectItem>
                           <SelectItem value="medium">Mittleres Potenzial</SelectItem>
@@ -565,13 +565,13 @@ export function AppraisalDialog({
                   <div className="space-y-2">
                     <Label>Gehaltsempfehlung</Label>
                     <Select value={formData.salary_recommendation || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, salary_recommendation: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Empfehlung waehlen" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Empfehlung wählen" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="significant_increase">{'Deutliche Erhoehung (>10%)'}</SelectItem>
                         <SelectItem value="moderate_increase">Moderate Erhoehung (5-10%)</SelectItem>
                         <SelectItem value="small_increase">{'Kleine Erhoehung (<5%)'}</SelectItem>
-                        <SelectItem value="no_change">Keine Aenderung</SelectItem>
-                        <SelectItem value="review_needed">Ueberpruefung erforderlich</SelectItem>
+                        <SelectItem value="no_change">Keine Änderung</SelectItem>
+                        <SelectItem value="review_needed">Überprüfung erforderlich</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -588,7 +588,7 @@ export function AppraisalDialog({
         <DialogFooter className="mt-4">
           <div className="flex items-center gap-2 w-full">
             <Select value={formData.status || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, status: v }))}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status waehlen" /></SelectTrigger>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status wählen" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="draft">Entwurf</SelectItem>
                 <SelectItem value="scheduled">Geplant</SelectItem>

@@ -62,7 +62,7 @@ export function useBMC() {
         body: JSON.stringify({ practiceId: 0, ...updated }),
       })
       if (!response.ok) {
-        toast({ title: "Fehler beim Speichern", description: "Ihre Aenderungen konnten nicht gespeichert werden.", variant: "destructive" })
+        toast({ title: "Fehler beim Speichern", description: "Ihre Änderungen konnten nicht gespeichert werden.", variant: "destructive" })
       } else {
         toast({ title: "Gespeichert", description: "Ihr Business Model Canvas wurde erfolgreich aktualisiert." })
       }
@@ -102,14 +102,14 @@ export function useBMC() {
     updateSection(sectionId, [...currentSection.items, newItem])
     setNewItemText("")
     setIsAddingItem(null)
-    toast({ title: "Eintrag hinzugefuegt", description: "Der neue Eintrag wurde erfolgreich erstellt." })
+    toast({ title: "Eintrag hinzugefügt", description: "Der neue Eintrag wurde erfolgreich erstellt." })
   }, [newItemText, data, updateSection, toast])
 
   const deleteItem = useCallback((sectionId: string, itemId: string) => {
     const currentSection = data[sectionId as keyof BMCData] as CanvasSection
     if (!currentSection) return
     updateSection(sectionId, currentSection.items.filter((i) => i.id !== itemId))
-    toast({ title: "Eintrag geloescht", description: "Der Eintrag wurde entfernt." })
+    toast({ title: "Eintrag gelöscht", description: "Der Eintrag wurde entfernt." })
   }, [data, updateSection, toast])
 
   const updateItem = useCallback((sectionId: string, itemId: string, updates: Partial<CanvasItem>) => {
@@ -178,10 +178,10 @@ export function useBMC() {
       if (response.ok) {
         const result = await response.json()
         if (result.suggestions) {
-          toast({ title: "KI-Vorschlaege generiert", description: "Die Vorschlaege wurden dem Canvas hinzugefuegt." })
+          toast({ title: "KI-Vorschläge generiert", description: "Die Vorschläge wurden dem Canvas hinzugefügt." })
         }
       } else {
-        toast({ title: "Fehler bei der KI-Anfrage", description: "Die KI konnte keine Vorschlaege generieren.", variant: "destructive" })
+        toast({ title: "Fehler bei der KI-Anfrage", description: "Die KI konnte keine Vorschläge generieren.", variant: "destructive" })
       }
     } catch {
       toast({ title: "Fehler", description: "KI-Generierung fehlgeschlagen.", variant: "destructive" })
@@ -194,7 +194,7 @@ export function useBMC() {
   const resetToDefault = useCallback(() => {
     const defaultData = getInitialBMCData()
     saveData(defaultData)
-    toast({ title: "Zurueckgesetzt", description: "Das Canvas wurde auf die Standardwerte zurueckgesetzt." })
+    toast({ title: "Zurückgesetzt", description: "Das Canvas wurde auf die Standardwerte zurückgesetzt." })
   }, [saveData, toast])
 
   const getSectionById = useCallback((id: string) => {

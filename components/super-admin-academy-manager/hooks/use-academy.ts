@@ -236,7 +236,7 @@ export function useAcademy() {
       }
       const response = await fetch(endpoint, { method: "DELETE" })
       if (!response.ok) throw new Error("Failed")
-      toast({ title: "Geloescht", description: `"${deleteItem.name}" wurde geloescht.` })
+      toast({ title: "Gelöscht", description: `"${deleteItem.name}" wurde gelöscht.` })
       setShowDeleteDialog(false); setDeleteItem(null)
       if (deleteItem.type === "course") fetchCourses()
       if (deleteItem.type === "quiz") fetchQuizzes()
@@ -244,7 +244,7 @@ export function useAcademy() {
       if (selectedCourse && (deleteItem.type === "module" || deleteItem.type === "lesson")) fetchCourseModules(selectedCourse.id)
     } catch {
       setCourses(prev.courses); setQuizzes(prev.quizzes); setBadges(prev.badges); setCourseModules(prev.modules)
-      toast({ title: "Fehler", description: "Problem beim Loeschen.", variant: "destructive" })
+      toast({ title: "Fehler", description: "Problem beim Löschen.", variant: "destructive" })
     }
   }
 

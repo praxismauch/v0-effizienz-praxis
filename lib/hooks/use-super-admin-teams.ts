@@ -1,6 +1,7 @@
 "use client"
 
 import useSWR from "swr"
+import { SHARED_SWR_CONFIG } from "@/lib/swr-config"
 
 export interface DefaultTeam {
   id: string
@@ -52,19 +53,9 @@ interface DefaultTeamsResponse {
   defaultTeams: DefaultTeam[]
 }
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.error || "Fehler beim Laden der Daten")
-  }
-  return res.json()
-}
-
 export function useSuperAdminTeams() {
-  const { data, error, isLoading, mutate } = useSWR<TeamsResponse>("/api/super-admin/teams", fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 5000,
+  const { data, error, isLoading, mutate } = useSWR<TeamsResponse>("/api/super-admin/teams", {
+    ...SHARED_SWR_CONFIG,
   })
 
   return {
@@ -84,9 +75,8 @@ export function useSuperAdminTeams() {
 }
 
 export function useSuperAdminDefaultTeams() {
-  const { data, error, isLoading, mutate } = useSWR<DefaultTeamsResponse>("/api/super-admin/default-teams", fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 5000,
+  const { data, error, isLoading, mutate } = useSWR<DefaultTeamsResponse>("/api/super-admin/default-teams", {
+    ...SHARED_SWR_CONFIG,
   })
 
   const createDefaultTeam = async (teamData: {

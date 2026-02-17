@@ -1,3 +1,4 @@
+import "server-only"
 // Standalone admin client for server-side use only
 // This file does NOT import from ./server to avoid next/headers dependency chain
 

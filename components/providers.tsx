@@ -13,7 +13,7 @@ import { OnboardingProvider } from "@/contexts/onboarding-context"
 import { SidebarSettingsProvider } from "@/contexts/sidebar-settings-context"
 import RoutePersistence from "@/components/route-persistence"
 import GlobalDragPrevention from "@/components/global-drag-prevention"
-import { SWRConfig } from "swr"
+import { SWRProvider } from "@/lib/swr-config"
 import { ErrorBoundary } from "@/components/error-boundary"
 
 const PUBLIC_ROUTES = [
@@ -69,15 +69,6 @@ function isPublicRoute(pathname: string): boolean {
   return false
 }
 
-const swrConfig = {
-  dedupingInterval: 2000,
-  revalidateOnFocus: false,
-  revalidateOnReconnect: true,
-  keepPreviousData: true,
-  errorRetryCount: 2,
-  errorRetryInterval: 1000,
-}
-
 export function Providers({
   children,
   initialUser,
@@ -86,7 +77,7 @@ export function Providers({
   initialUser?: User | null
 }) {
   return (
-    <SWRConfig value={swrConfig}>
+    <SWRProvider>
       <UserProvider initialUser={initialUser}>
         <TranslationProvider>
           <PracticeProvider>
@@ -112,7 +103,7 @@ export function Providers({
           </PracticeProvider>
         </TranslationProvider>
       </UserProvider>
-    </SWRConfig>
+    </SWRProvider>
   )
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import useSWR from "swr"
+import { SHARED_SWR_CONFIG } from "@/lib/swr-config"
 
 interface Practice {
   id: number
@@ -39,25 +40,10 @@ interface PracticeStats {
   deleted: number
 }
 
-const fetcher = async (url: string): Promise<PracticesResponse> => {
-  const response = await fetch(url)
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error("Nicht autorisiert")
-    } else if (response.status === 403) {
-      throw new Error("Zugriff verweigert: Super-Admin-Berechtigung erforderlich")
-    }
-    const error = await response.json()
-    throw new Error(error.error || "Fehler beim Laden der Praxen")
-  }
-  return response.json()
-}
-
 export function useSuperAdminPractices() {
-  const { data, error, isLoading, mutate } = useSWR<PracticesResponse>("/api/super-admin/practices", fetcher, {
-    revalidateOnFocus: false,
+  const { data, error, isLoading, mutate } = useSWR<PracticesResponse>("/api/super-admin/practices", {
+    ...SHARED_SWR_CONFIG,
     revalidateOnReconnect: true,
-    dedupingInterval: 5000,
   })
 
   const practices = data?.practices || []

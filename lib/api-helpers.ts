@@ -1,3 +1,4 @@
+import "server-only"
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { isSuperAdminRole, isPracticeAdminRole, isManagerRole } from "@/lib/auth-utils"

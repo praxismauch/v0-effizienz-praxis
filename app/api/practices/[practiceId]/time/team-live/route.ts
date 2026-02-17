@@ -89,6 +89,14 @@ export async function GET(
       // Map to the shape expected by TeamLiveTab
       const currentStatus = activeBreak ? "break" : activeBlock ? "working" : "absent"
 
+      // Provide clock_in_time so the client can compute a live counter
+      let clockInTime: string | null = null
+      if (activeBlock?.start_time) {
+        // start_time could be "HH:mm" or "HH:mm:ss" – turn it into a full ISO string
+        const timePart = activeBlock.start_time.length <= 8 ? activeBlock.start_time : activeBlock.start_time
+        clockInTime = `${activeBlock.date}T${timePart}`
+      }
+
       return {
         id: member.id,
         first_name: member.first_name,
@@ -98,6 +106,8 @@ export async function GET(
         current_status: currentStatus,
         current_location: activeBlock?.work_location || null,
         today_minutes: todayMinutes,
+        clock_in_time: clockInTime,
+        break_minutes: activeBlock?.break_minutes || 0,
       }
     })
 

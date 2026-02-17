@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,7 +22,35 @@ const formatMinutes = (minutes: number) => {
   return `${sign}${h}h ${m}min`
 }
 
+// Compute live elapsed minutes for an active member
+function useLiveMinutes(members: TeamMember[]) {
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const hasActive = members.some(
+      (m) => (m.current_status === "working" || m.current_status === "break") && (m as any).clock_in_time
+    )
+    if (!hasActive) return
+
+    const interval = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [members])
+
+  return (member: TeamMember) => {
+    const clockIn = (member as any).clock_in_time
+    if (!clockIn || (member.current_status !== "working" && member.current_status !== "break")) {
+      return member.today_minutes || 0
+    }
+    const start = new Date(clockIn).getTime()
+    if (isNaN(start)) return member.today_minutes || 0
+    const breakMins = (member as any).break_minutes || 0
+    const elapsedMin = Math.floor((now - start) / 60000) - breakMins
+    return Math.max(0, elapsedMin)
+  }
+}
+
 export default function TeamLiveTab({ teamMembers, teamFilter, setTeamFilter }: TeamLiveTabProps) {
+  const getLiveMinutes = useLiveMinutes(teamMembers)
   return (
     <Card>
       <CardHeader>
@@ -102,7 +131,7 @@ export default function TeamLiveTab({ teamMembers, teamFilter, setTeamFilter }: 
                               : "text-gray-400",
                         )}
                       >
-                        {formatMinutes(member.today_minutes || 0)}
+                        {formatMinutes(getLiveMinutes(member))}
                       </div>
                       <div className="text-xs text-muted-foreground">heute</div>
                     </div>

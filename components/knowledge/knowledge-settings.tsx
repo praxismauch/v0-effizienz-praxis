@@ -33,6 +33,7 @@ interface KnowledgeSettingsData {
   auto_versioning: boolean
   default_category: string
   allowed_categories: string[]
+  disabled_categories: string[]
   max_versions_to_keep: number
   require_change_summary: boolean
   notify_on_publish: boolean
@@ -44,6 +45,7 @@ const DEFAULT_SETTINGS: KnowledgeSettingsData = {
   auto_versioning: true,
   default_category: "general",
   allowed_categories: ["general", "protocol", "guideline", "template", "faq", "training"],
+  disabled_categories: [],
   max_versions_to_keep: 10,
   require_change_summary: true,
   notify_on_publish: false,
@@ -71,11 +73,15 @@ const CATEGORY_LABELS: Record<string, string> = {
 function SortableCategoryItem({
   id,
   index,
+  isActive,
+  onToggleActive,
   onRemove,
   totalItems,
 }: {
   id: string
   index: number
+  isActive: boolean
+  onToggleActive: (cat: string) => void
   onRemove: (cat: string) => void
   totalItems: number
 }) {
@@ -90,7 +96,7 @@ function SortableCategoryItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 rounded-lg border bg-card p-3 ${isDragging ? "opacity-50 shadow-lg" : ""}`}
+      className={`flex items-center gap-3 rounded-lg border bg-card p-3 ${isDragging ? "opacity-50 shadow-lg" : ""} ${!isActive ? "opacity-50" : ""}`}
     >
       <button
         className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
@@ -105,11 +111,17 @@ function SortableCategoryItem({
         {index + 1}
       </span>
 
-      <span className="flex-1 text-sm font-medium">
+      <span className={`flex-1 text-sm font-medium ${!isActive ? "line-through text-muted-foreground" : ""}`}>
         {CATEGORY_LABELS[id] || id}
       </span>
 
       <span className="text-xs text-muted-foreground">{id}</span>
+
+      <Switch
+        checked={isActive}
+        onCheckedChange={() => onToggleActive(id)}
+        aria-label={`Kategorie ${CATEGORY_LABELS[id] || id} ${isActive ? "deaktivieren" : "aktivieren"}`}
+      />
 
       <button
         onClick={() => onRemove(id)}
@@ -150,6 +162,7 @@ export function KnowledgeSettings() {
           auto_versioning: data.auto_versioning ?? true,
           default_category: data.default_category || "general",
           allowed_categories: data.allowed_categories || DEFAULT_SETTINGS.allowed_categories,
+          disabled_categories: data.disabled_categories || [],
           max_versions_to_keep: data.max_versions_to_keep ?? 10,
           require_change_summary: data.require_change_summary ?? true,
           notify_on_publish: data.notify_on_publish ?? false,
@@ -186,6 +199,16 @@ export function KnowledgeSettings() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const toggleCategory = (cat: string) => {
+    setSettings((prev) => {
+      const isCurrentlyDisabled = prev.disabled_categories.includes(cat)
+      const newDisabled = isCurrentlyDisabled
+        ? prev.disabled_categories.filter((c) => c !== cat)
+        : [...prev.disabled_categories, cat]
+      return { ...prev, disabled_categories: newDisabled }
+    })
   }
 
   const addCategory = () => {
@@ -316,7 +339,7 @@ export function KnowledgeSettings() {
             Kategorien & Reihenfolge
           </CardTitle>
           <CardDescription>
-            Verwalten Sie die verfügbaren Kategorien für Wissensartikel. Ziehen Sie die Kategorien in die gewünschte Reihenfolge für die automatische Generierung.
+            Verwalten Sie die verfügbaren Kategorien für Wissensartikel. Sortieren Sie die Reihenfolge per Drag & Drop und aktivieren/deaktivieren Sie einzelne Kategorien.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -342,7 +365,7 @@ export function KnowledgeSettings() {
           <div className="space-y-2">
             <Label className="text-sm font-medium">Kategorien-Reihenfolge</Label>
             <p className="text-xs text-muted-foreground">
-              Ziehen Sie die Kategorien per Drag & Drop in die gewünschte Anzeigereihenfolge. Diese Reihenfolge wird für die automatische Generierung der Wissensseite verwendet.
+              Ziehen Sie die Kategorien per Drag & Drop in die gewünschte Anzeigereihenfolge. Aktivieren oder deaktivieren Sie einzelne Kategorien mit dem Schalter. Nur aktive Kategorien werden für die automatische Generierung der Wissensseite verwendet.
             </p>
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -353,6 +376,8 @@ export function KnowledgeSettings() {
                       key={cat}
                       id={cat}
                       index={index}
+                      isActive={!settings.disabled_categories.includes(cat)}
+                      onToggleActive={toggleCategory}
                       onRemove={removeCategory}
                       totalItems={settings.allowed_categories.length}
                     />

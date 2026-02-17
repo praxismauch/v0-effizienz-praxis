@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ interface CreateSickLeaveDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   teamMembers: TeamMember[]
+  editingLeave?: SickLeave | null
   onSickLeaveCreated: (sickLeave: SickLeave) => void
 }
 
@@ -35,6 +36,7 @@ export default function CreateSickLeaveDialog({
   open,
   onOpenChange,
   teamMembers,
+  editingLeave,
   onSickLeaveCreated,
 }: CreateSickLeaveDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -44,13 +46,25 @@ export default function CreateSickLeaveDialog({
   const [reason, setReason] = useState("")
   const [notes, setNotes] = useState("")
 
-  const resetForm = () => {
-    setTeamMemberId("")
-    setStartDate("")
-    setEndDate("")
-    setReason("")
-    setNotes("")
-  }
+  const isEditing = !!editingLeave
+
+  // Prefill form when dialog opens with editingLeave data
+  useEffect(() => {
+    if (open && editingLeave) {
+      const memberId = editingLeave.team_member_id || editingLeave.user_id || ""
+      setTeamMemberId(memberId)
+      setStartDate(editingLeave.start_date || "")
+      setEndDate(editingLeave.end_date || "")
+      setReason(editingLeave.reason || "")
+      setNotes(editingLeave.notes || "")
+    } else if (open && !editingLeave) {
+      setTeamMemberId("")
+      setStartDate("")
+      setEndDate("")
+      setReason("")
+      setNotes("")
+    }
+  }, [open, editingLeave])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,9 +73,8 @@ export default function CreateSickLeaveDialog({
 
     setIsSubmitting(true)
 
-    // Create new sick leave object
-    const newSickLeave: SickLeave = {
-      id: crypto.randomUUID(),
+    const sickLeave: SickLeave = {
+      id: editingLeave?.id || crypto.randomUUID(),
       team_member_id: teamMemberId,
       start_date: startDate,
       end_date: endDate || undefined,
@@ -72,8 +85,7 @@ export default function CreateSickLeaveDialog({
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    onSickLeaveCreated(newSickLeave)
-    resetForm()
+    onSickLeaveCreated(sickLeave)
     setIsSubmitting(false)
   }
 
@@ -81,9 +93,13 @@ export default function CreateSickLeaveDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Krankmeldung erfassen</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Krankmeldung bearbeiten" : "Krankmeldung erfassen"}
+          </DialogTitle>
           <DialogDescription>
-            Erfassen Sie eine neue Krankmeldung für einen Mitarbeiter.
+            {isEditing
+              ? "Bearbeiten Sie die bestehende Krankmeldung."
+              : "Erfassen Sie eine neue Krankmeldung für einen Mitarbeiter."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -168,7 +184,7 @@ export default function CreateSickLeaveDialog({
             </Button>
             <Button type="submit" disabled={isSubmitting || !teamMemberId || !startDate}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Krankmeldung erfassen
+              {isEditing ? "Änderungen speichern" : "Krankmeldung erfassen"}
             </Button>
           </DialogFooter>
         </form>

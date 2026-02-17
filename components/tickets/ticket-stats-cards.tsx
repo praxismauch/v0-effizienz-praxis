@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { Ticket, Clock, AlertCircle, AlertTriangle } from "lucide-react"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import type { TicketItem } from "./ticket-types"
 
 interface TicketStatsCardsProps {
@@ -21,55 +21,31 @@ export function TicketStatsCards({ tickets }: TicketStatsCardsProps) {
   })()
 
   return (
-    <div className="grid grid-cols-4 gap-4">
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Gesamt</p>
-              <p className="text-2xl font-bold">{tickets.length}</p>
-            </div>
-            <Ticket className="h-8 w-8 text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Offen</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {tickets.filter((t) => t.status === "open").length}
-              </p>
-            </div>
-            <AlertCircle className="h-8 w-8 text-orange-600" />
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Durchschn. Lösungszeit</p>
-              <p className="text-2xl font-bold">{avgResolutionDays}</p>
-            </div>
-            <Clock className="h-8 w-8 text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Hohe Priorität</p>
-              <p className="text-2xl font-bold text-red-600">
-                {tickets.filter((t) => t.priority === "high").length}
-              </p>
-            </div>
-            <AlertTriangle className="h-8 w-8 text-red-600" />
-          </div>
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <StatCard
+        label="Gesamt"
+        value={tickets.length}
+        icon={Ticket}
+        {...statCardColors.primary}
+      />
+      <StatCard
+        label="Offen"
+        value={tickets.filter((t) => t.status === "open").length}
+        icon={AlertCircle}
+        {...statCardColors.orange}
+      />
+      <StatCard
+        label="Durchschn. Lösungszeit"
+        value={avgResolutionDays}
+        icon={Clock}
+        {...statCardColors.blue}
+      />
+      <StatCard
+        label="Hohe Priorität"
+        value={tickets.filter((t) => t.priority === "high").length}
+        icon={AlertTriangle}
+        {...statCardColors.red}
+      />
     </div>
   )
 }

@@ -1,8 +1,8 @@
 "use client"
 
 import { memo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, Users, Building2, UserPlus, Zap, DollarSign, Clock, Target } from "lucide-react"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 
 interface AnalyticsStatCardsProps {
   systemMetrics: {
@@ -32,99 +32,62 @@ export const AnalyticsStatCards = memo(function AnalyticsStatCards({
 }: AnalyticsStatCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Aktive Praxen</CardTitle>
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{systemMetrics?.totalPractices || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            +{systemMetrics?.newPractices || 0} in den letzten {dateRange} Tagen
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Aktive Benutzer</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{systemMetrics?.activeUsers || 0}</div>
-          <p className="text-xs text-muted-foreground">{systemMetrics?.userGrowthPercent || 0}% Wachstum</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Feature-Nutzung</CardTitle>
-          <Zap className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{systemMetrics?.totalFeatureUsage || 0}</div>
-          <p className="text-xs text-muted-foreground">Ø {systemMetrics?.avgFeatureUsagePerUser || 0} pro Benutzer</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">MRR (Monatlich)</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {subscriptionStats?.mrr ? `€${(subscriptionStats.mrr / 100).toLocaleString()}` : "€0"}
-          </div>
-          <p className="text-xs text-muted-foreground">{subscriptionStats?.activeSubscriptions || 0} aktive Abos</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Seitenaufrufe</CardTitle>
-          <Eye className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalViews.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">Landing Page Traffic</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-          <Target className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {systemMetrics?.conversionRate ? `${systemMetrics.conversionRate.toFixed(1)}%` : "0%"}
-          </div>
-          <p className="text-xs text-muted-foreground">Besucher zu Registrierungen</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Ø Session-Dauer</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{systemMetrics?.avgSessionDuration || "0m"}</div>
-          <p className="text-xs text-muted-foreground">Pro Benutzer pro Tag</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Warteschlange</CardTitle>
-          <UserPlus className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{systemMetrics?.waitlistCount || 0}</div>
-          <p className="text-xs text-muted-foreground">Wartende Interessenten</p>
-        </CardContent>
-      </Card>
+      <StatCard
+        label="Aktive Praxen"
+        value={systemMetrics?.totalPractices || 0}
+        icon={Building2}
+        {...statCardColors.primary}
+        description={`+${systemMetrics?.newPractices || 0} in den letzten ${dateRange} Tagen`}
+      />
+      <StatCard
+        label="Aktive Benutzer"
+        value={systemMetrics?.activeUsers || 0}
+        icon={Users}
+        {...statCardColors.blue}
+        description={`${systemMetrics?.userGrowthPercent || 0}% Wachstum`}
+      />
+      <StatCard
+        label="Feature-Nutzung"
+        value={systemMetrics?.totalFeatureUsage || 0}
+        icon={Zap}
+        {...statCardColors.amber}
+        description={`\u00D8 ${systemMetrics?.avgFeatureUsagePerUser || 0} pro Benutzer`}
+      />
+      <StatCard
+        label="MRR (Monatlich)"
+        value={subscriptionStats?.mrr ? `\u20AC${(subscriptionStats.mrr / 100).toLocaleString()}` : "\u20AC0"}
+        icon={DollarSign}
+        {...statCardColors.green}
+        description={`${subscriptionStats?.activeSubscriptions || 0} aktive Abos`}
+      />
+      <StatCard
+        label="Seitenaufrufe"
+        value={totalViews.toLocaleString()}
+        icon={Eye}
+        {...statCardColors.purple}
+        description="Landing Page Traffic"
+      />
+      <StatCard
+        label="Conversion Rate"
+        value={systemMetrics?.conversionRate ? `${systemMetrics.conversionRate.toFixed(1)}%` : "0%"}
+        icon={Target}
+        {...statCardColors.orange}
+        description="Besucher zu Registrierungen"
+      />
+      <StatCard
+        label="Ø Session-Dauer"
+        value={systemMetrics?.avgSessionDuration || "0m"}
+        icon={Clock}
+        {...statCardColors.info}
+        description="Pro Benutzer pro Tag"
+      />
+      <StatCard
+        label="Warteschlange"
+        value={systemMetrics?.waitlistCount || 0}
+        icon={UserPlus}
+        {...statCardColors.red}
+        description="Wartende Interessenten"
+      />
     </div>
   )
 })

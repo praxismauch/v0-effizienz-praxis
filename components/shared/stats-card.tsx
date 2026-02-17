@@ -1,8 +1,8 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { LucideIcon } from "lucide-react"
+import { StatCard as UIStatCard, type StatCardProps as UIStatCardProps } from "@/components/ui/stat-card"
 import { cn } from "@/lib/utils"
+import type { LucideIcon } from "lucide-react"
 
 export interface StatItem {
   label: string
@@ -24,40 +24,17 @@ interface StatsCardProps {
 }
 
 export function StatsCard({ stat, className }: StatsCardProps) {
-  const Icon = stat.icon
-  const iconColor = stat.iconColor || "text-blue-600"
-  const iconBgColor = stat.iconBgColor || "bg-blue-100"
-
   return (
-    <Card className={className}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className={cn("p-2 rounded-lg", iconBgColor)}>
-            <Icon className={cn("h-5 w-5", iconColor)} />
-          </div>
-          <div className="flex-1">
-            <p className="text-2xl font-bold">{stat.value}</p>
-            <p className="text-sm text-muted-foreground">{stat.label}</p>
-            {stat.description && (
-              <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-            )}
-            {stat.trend && (
-              <div className="flex items-center gap-1 mt-1">
-                <span
-                  className={cn(
-                    "text-xs font-medium",
-                    stat.trend.isPositive ? "text-green-600" : "text-red-600",
-                  )}
-                >
-                  {stat.trend.isPositive ? "↑" : "↓"} {Math.abs(stat.trend.value)}%
-                </span>
-                <span className="text-xs text-muted-foreground">{stat.trend.label}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <UIStatCard
+      label={stat.label}
+      value={stat.value}
+      icon={stat.icon}
+      iconColor={stat.iconColor || "text-blue-600"}
+      iconBgColor={stat.iconBgColor || "bg-blue-500/10"}
+      description={stat.description}
+      trend={stat.trend ? { value: stat.trend.value, label: stat.trend.label, positive: stat.trend.isPositive } : undefined}
+      className={className}
+    />
   )
 }
 

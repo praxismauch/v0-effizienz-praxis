@@ -308,7 +308,7 @@ export function AIGenerationDialog({
             <ul className="text-sm text-violet-600 space-y-1 list-disc list-inside">
               <li>Beschreiben Sie das Ziel der Umfrage</li>
               <li>Nennen Sie die Zielgruppe (Team, Patienten, etc.)</li>
-              <li>Erwahnen Sie spezifische Themen, die abgefragt werden sollen</li>
+              <li>Erwähnen Sie spezifische Themen, die abgefragt werden sollen</li>
             </ul>
           </div>
         </div>

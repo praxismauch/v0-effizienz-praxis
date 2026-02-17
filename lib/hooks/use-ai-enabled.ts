@@ -45,7 +45,7 @@ export function useAiEnabled() {
           setIsAiEnabled(true)
         }
       } catch (error) {
-        console.error("[v0] Error checking AI enabled status:", error)
+        console.error("Error checking AI enabled status:", error)
         // On error, default to enabled
         setIsAiEnabled(true)
       } finally {

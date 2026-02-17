@@ -19,7 +19,10 @@ import {
   FileText,
   Loader2,
   Archive,
-
+  ShieldCheck,
+  Cpu,
+  GraduationCap,
+  ShieldAlert,
 } from "lucide-react"
 import { AiSearchDialog } from "./ai-search-dialog"
 import { AIKnowledgeAnalyzerDialog } from "./ai-knowledge-analyzer-dialog"
@@ -42,6 +45,10 @@ import type { KnowledgeArticle, OrgaCategory, MedicalDevice, InventoryItem, Work
 import { convertDeviceToArticle, convertInventoryToArticle, convertWorkEquipmentToArticle } from "./article-converters"
 import { KnowledgeStatCards } from "./knowledge-stat-cards"
 import { ArticleList } from "./article-list"
+import { QmHygieneTab } from "./qm-hygiene-tab"
+import { QmDevicesTab } from "./qm-devices-tab"
+import { QmTrainingTab } from "./qm-training-tab"
+import { QmCirsTab } from "./qm-cirs-tab"
 
 
 const fetcher = (url: string) => fetch(url).then((r) => { if (!r.ok) throw new Error("Fetch failed"); return r.json() })
@@ -82,6 +89,18 @@ export function KnowledgeBaseManager() {
 
   const { data: workEquipmentData } = useSWR(
     practiceId ? `/api/practices/${practiceId}/work-equipment` : null,
+    fetcher,
+    swrConfig,
+  )
+
+  const { data: hygienePlansData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/hygiene-plans` : null,
+    fetcher,
+    swrConfig,
+  )
+
+  const { data: cirsData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/cirs` : null,
     fetcher,
     swrConfig,
   )
@@ -149,6 +168,8 @@ export function KnowledgeBaseManager() {
   const deviceCount = deviceArticles.length
   const materialCount = inventoryArticles.length
   const equipmentCount = workEquipmentArticles.length
+  const hygienePlanCount = (hygienePlansData?.hygienePlans || []).filter((p: any) => p.status === "active").length
+  const cirsCount = (cirsData?.incidents || []).length
 
   const handleDeleteArticle = async () => {
     if (!articleToDelete?.id || !currentPractice?.id) return
@@ -231,6 +252,8 @@ export function KnowledgeBaseManager() {
           materialCount={materialCount}
           equipmentCount={equipmentCount}
           totalCount={allArticles.length}
+          hygienePlanCount={hygienePlanCount}
+          cirsCount={cirsCount}
         />
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -282,7 +305,22 @@ export function KnowledgeBaseManager() {
               <Archive className="h-4 w-4" />
               Archiviert
             </TabsTrigger>
-
+            <TabsTrigger value="hygiene" className="gap-2 flex-1">
+              <ShieldCheck className="h-4 w-4" />
+              Hygieneplan
+            </TabsTrigger>
+            <TabsTrigger value="devices" className="gap-2 flex-1">
+              <Cpu className="h-4 w-4" />
+              Gerate
+            </TabsTrigger>
+            <TabsTrigger value="training" className="gap-2 flex-1">
+              <GraduationCap className="h-4 w-4" />
+              Schulungen
+            </TabsTrigger>
+            <TabsTrigger value="cirs" className="gap-2 flex-1">
+              <ShieldAlert className="h-4 w-4" />
+              CIRS
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="handbook" className="mt-6">
@@ -319,6 +357,21 @@ export function KnowledgeBaseManager() {
             />
           </TabsContent>
 
+          <TabsContent value="hygiene" className="mt-6">
+            <QmHygieneTab />
+          </TabsContent>
+
+          <TabsContent value="devices" className="mt-6">
+            <QmDevicesTab />
+          </TabsContent>
+
+          <TabsContent value="training" className="mt-6">
+            <QmTrainingTab />
+          </TabsContent>
+
+          <TabsContent value="cirs" className="mt-6">
+            <QmCirsTab />
+          </TabsContent>
 
         </Tabs>
       </div>

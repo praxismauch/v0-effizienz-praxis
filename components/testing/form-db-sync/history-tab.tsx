@@ -154,7 +154,7 @@ export function HistoryTab({ historyData, isLoading, onRefresh }: HistoryTabProp
                     if (filtered.length === 0) {
                       return (
                         <div className="py-8 text-center text-muted-foreground text-sm">
-                          Keine Eintraege fuer diesen Filter.
+                          Keine Einträge für diesen Filter.
                         </div>
                       )
                     }

@@ -417,11 +417,11 @@ export function FormScanTab({
                                     if (result.formFields.length > 0) prompt += `- Formular-Felder: ${result.formFields.join(", ")}\n\n`
                                     prompt += `Probleme:\n`
                                     result.issues.forEach((i) => { prompt += `- ${i.severity.toUpperCase()}: ${i.message}\n` })
-                                    prompt += `\nBitte analysiere das Problem und behebe es. Fuer DB-Aenderungen nutze supabase_execute_sql.`
+                                    prompt += `\nBitte analysiere das Problem und behebe es. Für DB-Änderungen nutze supabase_execute_sql.`
                                     onCopy(prompt)
                                   }}>
                                     <Copy className="h-3 w-3 mr-1" />
-                                    Fix in v0 einfuegen
+                                    Fix in v0 einfügen
                                   </Button>
                                 )}
                               </CardContent>

@@ -94,7 +94,7 @@ export default function BusinessModelCanvasManager() {
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Eintraege gesamt</p>
+                <p className="text-sm text-muted-foreground">Einträge gesamt</p>
                 <p className="text-2xl font-bold">{bmc.totalItems}</p>
               </div>
               <BarChart3 className="h-8 w-8 text-blue-500" />
@@ -105,7 +105,7 @@ export default function BusinessModelCanvasManager() {
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Hohe Prioritaet</p>
+                <p className="text-sm text-muted-foreground">Hohe Priorität</p>
                 <p className="text-2xl font-bold">{bmc.highPriorityItems}</p>
               </div>
               <Target className="h-8 w-8 text-red-500" />
@@ -116,7 +116,7 @@ export default function BusinessModelCanvasManager() {
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Aktive Eintraege</p>
+                <p className="text-sm text-muted-foreground">Aktive Einträge</p>
                 <p className="text-2xl font-bold">{bmc.activeItems}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-emerald-500" />
@@ -222,7 +222,7 @@ export default function BusinessModelCanvasManager() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Prioritaet</Label>
+                <Label>Priorität</Label>
                 <div className="flex gap-2">
                   {(["high", "medium", "low"] as const).map((p) => (
                     <Button

@@ -338,7 +338,7 @@ export function AppraisalDialog({
                             const updated = [...(formData.new_goals || [])]; updated[idx] = { ...updated[idx], priority: v }
                             setFormData((prev) => ({ ...prev, new_goals: updated }))
                           }}>
-                            <SelectTrigger><SelectValue placeholder="Prioritaet" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Priorität" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="high">Hoch</SelectItem>
                               <SelectItem value="medium">Mittel</SelectItem>
@@ -458,12 +458,12 @@ export function AppraisalDialog({
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label>Staerken</Label>
+                      <Label>Stärken</Label>
                       <Button variant="ghost" size="sm" onClick={() => onAIGenerate("feedback-strengths")} disabled={aiLoading === "feedback-strengths"}>
                         {aiLoading === "feedback-strengths" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       </Button>
                     </div>
-                    <Textarea placeholder="Welche besonderen Staerken zeigt der Mitarbeiter?" value={formData.strengths || ""} onChange={(e) => setFormData((prev) => ({ ...prev, strengths: e.target.value }))} rows={3} />
+                    <Textarea placeholder="Welche besonderen Stärken zeigt der Mitarbeiter?" value={formData.strengths || ""} onChange={(e) => setFormData((prev) => ({ ...prev, strengths: e.target.value }))} rows={3} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -481,12 +481,12 @@ export function AppraisalDialog({
                   </div>
                   <div className="space-y-2">
                     <Label>Herausforderungen</Label>
-                    <Textarea placeholder="Mit welchen Herausforderungen hatte der Mitarbeiter zu kaempfen?" value={formData.challenges || ""} onChange={(e) => setFormData((prev) => ({ ...prev, challenges: e.target.value }))} rows={3} />
+                    <Textarea placeholder="Mit welchen Herausforderungen hatte der Mitarbeiter zu kämpfen?" value={formData.challenges || ""} onChange={(e) => setFormData((prev) => ({ ...prev, challenges: e.target.value }))} rows={3} />
                   </div>
                   <Separator />
                   <div className="space-y-2">
-                    <Label>Selbsteinschaetzung des Mitarbeiters</Label>
-                    <Textarea placeholder="Wie schaetzt der Mitarbeiter seine eigene Leistung ein?" value={formData.employee_self_assessment || ""} onChange={(e) => setFormData((prev) => ({ ...prev, employee_self_assessment: e.target.value }))} rows={3} />
+                    <Label>Selbsteinschätzung des Mitarbeiters</Label>
+                    <Textarea placeholder="Wie schätzt der Mitarbeiter seine eigene Leistung ein?" value={formData.employee_self_assessment || ""} onChange={(e) => setFormData((prev) => ({ ...prev, employee_self_assessment: e.target.value }))} rows={3} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -511,7 +511,7 @@ export function AppraisalDialog({
                 </div>
                 {aiSuggestions.careerSteps && aiSuggestions.careerSteps.length > 0 && (
                   <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />KI-Karrierevorschlaege</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />KI-Karrierevorschläge</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
                       {aiSuggestions.careerSteps.map((step, idx) => (
                         <div key={idx} className="p-3 rounded-lg bg-background border">
@@ -536,11 +536,11 @@ export function AppraisalDialog({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Befoerderungsreife</Label>
+                      <Label>Beförderungsreife</Label>
                       <Select value={formData.promotion_readiness || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, promotion_readiness: v }))}>
                         <SelectTrigger><SelectValue placeholder="Einschätzung wählen" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ready_now">Sofort befoerderbar</SelectItem>
+                          <SelectItem value="ready_now">Sofort beförderbar</SelectItem>
                           <SelectItem value="ready_6_months">In 6 Monaten</SelectItem>
                           <SelectItem value="ready_12_months">In 12 Monaten</SelectItem>
                           <SelectItem value="needs_development">Braucht Entwicklung</SelectItem>
@@ -567,9 +567,9 @@ export function AppraisalDialog({
                     <Select value={formData.salary_recommendation || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, salary_recommendation: v }))}>
                       <SelectTrigger><SelectValue placeholder="Empfehlung wählen" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="significant_increase">{'Deutliche Erhoehung (>10%)'}</SelectItem>
-                        <SelectItem value="moderate_increase">Moderate Erhoehung (5-10%)</SelectItem>
-                        <SelectItem value="small_increase">{'Kleine Erhoehung (<5%)'}</SelectItem>
+                        <SelectItem value="significant_increase">{'Deutliche Erhöhung (>10%)'}</SelectItem>
+                        <SelectItem value="moderate_increase">Moderate Erhöhung (5-10%)</SelectItem>
+                        <SelectItem value="small_increase">{'Kleine Erhöhung (<5%)'}</SelectItem>
                         <SelectItem value="no_change">Keine Änderung</SelectItem>
                         <SelectItem value="review_needed">Überprüfung erforderlich</SelectItem>
                       </SelectContent>

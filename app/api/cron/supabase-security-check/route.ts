@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     if (!result.overallSecure || result.warnings.length > 0) {
       await sendSecurityAlert({
         severity: result.tablesWithoutRLS.length > 0 ? "critical" : "warning",
-        title: "Taglicher Sicherheitsbericht",
+        title: "Täglicher Sicherheitsbericht",
         message: result.overallSecure
           ? `Sicherheitscheck bestanden mit ${result.warnings.length} Warnung(en)`
           : `Sicherheitsprobleme erkannt: ${result.tablesWithoutRLS.length} Tabellen ohne RLS`,

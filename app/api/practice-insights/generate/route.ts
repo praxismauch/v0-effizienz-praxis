@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     const jsonShape: Record<string, string> = {
       summary: "Gesamtzusammenfassung...",
-      overview: "Detaillierte Uebersicht...",
+      overview: "Detaillierte Übersicht...",
       achievements: '["Erfolg 1", "Erfolg 2", ...]',
       challenges: '["Herausforderung 1", ...]',
     }

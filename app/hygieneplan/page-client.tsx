@@ -837,7 +837,7 @@ function CreateHygienePlanDialog({
             <Label htmlFor="plan-title">Titel *</Label>
             <Input
               id="plan-title"
-              placeholder="z.B. Flaechendesinfektion Behandlungsraum"
+              placeholder="z.B. Flächendesinfektion Behandlungsraum"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -871,17 +871,17 @@ function CreateHygienePlanDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Haeufigkeit</Label>
+              <Label>Häufigkeit</Label>
               <Select value={frequency} onValueChange={setFrequency}>
                 <SelectTrigger>
                   <SelectValue placeholder="Häufigkeit wählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="daily">Taeglich</SelectItem>
-                  <SelectItem value="weekly">Woechentlich</SelectItem>
+                  <SelectItem value="daily">Täglich</SelectItem>
+                  <SelectItem value="weekly">Wöchentlich</SelectItem>
                   <SelectItem value="monthly">Monatlich</SelectItem>
                   <SelectItem value="quarterly">Quartalsweise</SelectItem>
-                  <SelectItem value="yearly">Jaehrlich</SelectItem>
+                  <SelectItem value="yearly">Jährlich</SelectItem>
                   <SelectItem value="as_needed">Bei Bedarf</SelectItem>
                 </SelectContent>
               </Select>
@@ -913,10 +913,10 @@ function CreateHygienePlanDialog({
 
           {/* Materials */}
           <div className="space-y-2">
-            <Label htmlFor="plan-materials">Benoetigte Materialien (eine pro Zeile)</Label>
+            <Label htmlFor="plan-materials">Benötigte Materialien (eine pro Zeile)</Label>
             <Textarea
               id="plan-materials"
-              placeholder={"Flaechendesinfektionsmittel\nEinmalhandschuhe\nWischtuecher"}
+              placeholder={"Flächendesinfektionsmittel\nEinmalhandschuhe\nWischtücher"}
               value={materials}
               onChange={(e) => setMaterials(e.target.value)}
               rows={3}
@@ -925,10 +925,10 @@ function CreateHygienePlanDialog({
 
           {/* Steps */}
           <div className="space-y-2">
-            <Label htmlFor="plan-steps">Durchfuehrungsschritte (einer pro Zeile)</Label>
+            <Label htmlFor="plan-steps">Durchführungsschritte (einer pro Zeile)</Label>
             <Textarea
               id="plan-steps"
-              placeholder={"Haende desinfizieren\nFlaeche mit Desinfektionsmittel einspruehen\nEinwirkzeit beachten (mind. 1 Min.)\nMit Tuch abwischen"}
+              placeholder={"Hände desinfizieren\nFläche mit Desinfektionsmittel einsprühen\nEinwirkzeit beachten (mind. 1 Min.)\nMit Tuch abwischen"}
               value={steps}
               onChange={(e) => setSteps(e.target.value)}
               rows={4}

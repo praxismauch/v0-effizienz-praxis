@@ -182,7 +182,7 @@ export default function LeadershipPageClient() {
               </Button>
               <Button onClick={() => setShowAssessmentDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Selbsteinschaetzung
+                Selbsteinschätzung
               </Button>
             </>
           }

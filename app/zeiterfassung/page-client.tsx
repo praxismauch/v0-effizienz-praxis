@@ -207,7 +207,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      toast.success(`CSV-Export erfolgreich (${timeBlocks.length} Eintraege)`)
+      toast.success(`CSV-Export erfolgreich (${timeBlocks.length} Einträge)`)
     } else {
       toast.info("PDF-Export wird vorbereitet...")
     }

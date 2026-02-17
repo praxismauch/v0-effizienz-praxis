@@ -185,7 +185,7 @@ export function DbSchemaTab({
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Sync-Check ausfuehren
+                  Sync-Check ausführen
                 </>
               )}
             </Button>
@@ -321,8 +321,8 @@ export function DbSchemaTab({
                                         {issue.fix && (
                                           <div className="mt-2 space-y-1">
                                             <pre className="p-2 bg-background/50 rounded text-xs font-mono overflow-x-auto">{issue.fix}</pre>
-                                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); onCopy(`Bitte fuehre folgendes SQL aus, um das Problem "${issue.message}" in Tabelle "${form.table}" zu beheben:\n\n\`\`\`sql\n${issue.fix}\n\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\nBitte fuehre das SQL-Statement direkt mit supabase_execute_sql aus.`) }}>
-                                              <Copy className="h-3 w-3 mr-1" />Fix in v0 einfuegen
+                                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); onCopy(`Bitte führe folgendes SQL aus, um das Problem "${issue.message}" in Tabelle "${form.table}" zu beheben:\n\n\`\`\`sql\n${issue.fix}\n\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\nBitte führe das SQL-Statement direkt mit supabase_execute_sql aus.`) }}>
+                                              <Copy className="h-3 w-3 mr-1" />Fix in v0 einfügen
                                             </Button>
                                           </div>
                                         )}

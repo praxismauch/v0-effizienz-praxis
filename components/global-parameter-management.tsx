@@ -1590,7 +1590,7 @@ export function GlobalParameterManagement() {
             <DialogHeader>
               <DialogTitle>Globale KPI-Kategorie bearbeiten</DialogTitle>
               <DialogDescription>
-                Bearbeiten Sie die Kategorie-Details. Aenderungen stehen allen Praxen zur Verfuegung.
+                Bearbeiten Sie die Kategorie-Details. Änderungen stehen allen Praxen zur Verfügung.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">

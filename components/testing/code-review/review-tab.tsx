@@ -204,7 +204,7 @@ export function ReviewTab({
                     if (f.code) prompt += `- Code: \`${f.code}\`\n`
                     if (f.fix) prompt += `- Fix: ${f.fix}\n\n`
                   })
-                  prompt += `Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitaetsprobleme.`
+                  prompt += `Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitätsprobleme.`
                   onShowPrompt(prompt, "Kritische Probleme")
                 }}
               >

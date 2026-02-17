@@ -103,8 +103,8 @@ export function VersionHistory({ articleId, currentVersion, onRestore }: Version
       <Card>
         <CardContent className="py-8 text-center">
           <History className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">Keine frueheren Versionen vorhanden.</p>
-          <p className="text-xs text-muted-foreground mt-1">Versionen werden bei jeder Aenderung automatisch erstellt.</p>
+          <p className="text-sm text-muted-foreground">Keine früheren Versionen vorhanden.</p>
+          <p className="text-xs text-muted-foreground mt-1">Versionen werden bei jeder Änderung automatisch erstellt.</p>
         </CardContent>
       </Card>
     )

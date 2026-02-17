@@ -175,7 +175,7 @@ export default function FormDbSyncPanel() {
   const generateFixPrompt = (form: FormResult): string => {
     const fixes = form.issues.filter((i) => i.fix).map((i) => i.fix!)
     if (fixes.length === 0) return ""
-    return `Bitte fuehre folgende SQL-Migrationen aus, um die Datenbank-Spalten fuer das Formular "${form.name}" (Tabelle: ${form.table}) zu korrigieren:\n\n\`\`\`sql\n${fixes.join("\n\n")}\n\n-- PostgREST Schema-Cache neu laden\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\nDas Formular befindet sich in: ${form.component}\nBitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
+    return `Bitte führe folgende SQL-Migrationen aus, um die Datenbank-Spalten für das Formular "${form.name}" (Tabelle: ${form.table}) zu korrigieren:\n\n\`\`\`sql\n${fixes.join("\n\n")}\n\n-- PostgREST Schema-Cache neu laden\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\nDas Formular befindet sich in: ${form.component}\nBitte führe die SQL-Statements direkt mit supabase_execute_sql aus.`
   }
 
   const generateAllFixPrompt = (): string => {
@@ -186,7 +186,7 @@ export default function FormDbSyncPanel() {
       const fixes = form.issues.filter((i) => i.fix).map((i) => i.fix!)
       return [`-- ${form.name} (${form.table})`, ...fixes, ""]
     })
-    return `Bitte fuehre folgende SQL-Migrationen aus, um alle fehlenden Datenbank-Spalten zu korrigieren:\n\n\`\`\`sql\n${allFixes.join("\n")}\n-- PostgREST Schema-Cache neu laden\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\nBitte fuehre die SQL-Statements direkt mit supabase_execute_sql aus.`
+    return `Bitte führe folgende SQL-Migrationen aus, um alle fehlenden Datenbank-Spalten zu korrigieren:\n\n\`\`\`sql\n${allFixes.join("\n")}\n-- PostgREST Schema-Cache neu laden\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\nBitte führe die SQL-Statements direkt mit supabase_execute_sql aus.`
   }
 
   const generateAllProblemsPrompt = (): string => {

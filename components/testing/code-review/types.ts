@@ -226,9 +226,9 @@ export function generateAllRecommendationsPrompt(data: ReviewData): string {
 
   lines.push(`${"=".repeat(60)}`)
   lines.push("")
-  lines.push("Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitaetsprobleme.")
-  lines.push("Danach die Warnungen nach Prioritaet abarbeiten.")
-  lines.push("Info-Findings sind Verbesserungsvorschlaege fuer hoehere Code-Qualitaet.")
+  lines.push("Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitätsprobleme.")
+  lines.push("Danach die Warnungen nach Priorität abarbeiten.")
+  lines.push("Info-Findings sind Verbesserungsvorschläge für höhere Code-Qualität.")
 
   return lines.join("\n")
 }

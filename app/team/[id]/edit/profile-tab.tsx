@@ -129,7 +129,7 @@ export function ProfileTab({
                   <AvatarImage
                     src={formData.avatar || "/placeholder.svg"}
                     alt={`${formData.firstName} ${formData.lastName}`}
-                    className="object-cover"
+                    className="object-contain"
                   />
                 )}
                 <AvatarFallback className="text-3xl font-semibold bg-primary/10 text-primary">

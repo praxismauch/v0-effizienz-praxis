@@ -80,8 +80,7 @@ export const ProfileImageEditor = ({ currentAvatar, userName, onAvatarChange, tr
         setShowPasteHint(true)
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "v") {
-        // Let the native paste event handle it, but ensure we're listening
-        console.log("[v0] Ctrl+V detected in dialog")
+        // Let the native paste event handle it
       }
     }
 
@@ -280,15 +279,17 @@ export const ProfileImageEditor = ({ currentAvatar, userName, onAvatarChange, tr
 
         ctx.translate(panXScaled, panYScaled)
 
-        // Draw image centered (object-cover behavior)
+        // Draw image centered (object-contain behavior - show full image)
         const aspect = img.width / img.height
         let drawW: number, drawH: number
         if (aspect > 1) {
-          drawH = size
-          drawW = size * aspect
-        } else {
+          // Landscape: fit width, height scales down
           drawW = size
           drawH = size / aspect
+        } else {
+          // Portrait: fit height, width scales down
+          drawH = size
+          drawW = size * aspect
         }
 
         ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH)
@@ -499,7 +500,7 @@ export const ProfileImageEditor = ({ currentAvatar, userName, onAvatarChange, tr
                       <img
                         src={previewUrl || "/placeholder.svg"}
                         alt="Preview"
-                        className="w-full h-full object-cover pointer-events-none"
+                        className="w-full h-full object-contain pointer-events-none"
                         style={{
                           transform: `scale(${cropSettings.zoom}) rotate(${cropSettings.rotation}deg) translate(${cropSettings.panX / cropSettings.zoom}px, ${cropSettings.panY / cropSettings.zoom}px)`,
                           transformOrigin: "center",

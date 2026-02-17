@@ -85,9 +85,9 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: C
     try {
       const isEdit = !!editingCourse
       const url = isEdit
-        ? `/api/practices/${practiceId}/training/courses/${editingCourse!.id}`
-        : `/api/practices/${practiceId}/training/courses`
-      const method = isEdit ? "PATCH" : "POST"
+        ? `/api/practices/${practiceId}/academy/courses/${editingCourse!.id}`
+        : `/api/practices/${practiceId}/academy/courses`
+      const method = isEdit ? "PUT" : "POST"
 
       const res = await fetch(url, {
         method,

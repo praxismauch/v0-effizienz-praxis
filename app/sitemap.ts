@@ -14,6 +14,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/effizienz`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/preise`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/demo`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/alle-funktionen`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/selbst-check`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
   ]
 
   // ── Feature Detail Pages (dynamically generated) ──
@@ -46,6 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/impressum`, lastModified: now, changeFrequency: "yearly", priority: 0.5 },
     { url: `${baseUrl}/datenschutz`, lastModified: now, changeFrequency: "yearly", priority: 0.5 },
     { url: `${baseUrl}/agb`, lastModified: now, changeFrequency: "yearly", priority: 0.5 },
+    { url: `${baseUrl}/cookies`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ]
 
   // ── Auth Pages (low priority, still indexable for SEO) ──

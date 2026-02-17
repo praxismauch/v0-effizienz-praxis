@@ -3,9 +3,18 @@ import { LandingPageLayout } from "@/components/landing-page-layout"
 import { Shield, Lock, Eye, Database, FileCheck, Server, Key, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export const metadata = {
-  title: "Sicherheit & Datenschutz - Effizienz Praxis",
-  description: "Ihre Daten sind bei uns in sicheren Händen. Erfahren Sie mehr über unsere Sicherheitsmaßnahmen.",
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Sicherheit & DSGVO-Datenschutz | Deutsche Server & Verschlüsselung",
+  description:
+    "Effizienz Praxis ist DSGVO-konform: Deutsche Server, Ende-zu-Ende-Verschlüsselung, AV-Vertrag & regelmäßige Sicherheitsaudits. Erfahren Sie, wie wir Ihre Praxisdaten schützen.",
+  alternates: { canonical: "/sicherheit" },
+  openGraph: {
+    title: "Sicherheit & DSGVO-Datenschutz | Effizienz Praxis",
+    description: "DSGVO-konform: Deutsche Server, E2E-Verschlüsselung & Sicherheitsaudits. So schützen wir Ihre Daten.",
+    url: "/sicherheit",
+  },
 }
 
 export default function SicherheitPage() {

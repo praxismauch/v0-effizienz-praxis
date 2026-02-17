@@ -2,9 +2,13 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { LandingPageLayout } from "@/components/landing-page-layout"
 
-export const metadata = {
-  title: "Cookie-Richtlinie - Effizienz Praxis",
-  description: "Informationen über die Verwendung von Cookies auf der Effizienz Praxis Website.",
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Cookie-Richtlinie",
+  description: "Informationen zur Verwendung von Cookies auf effizienz-praxis.de. Erfahren Sie, welche Cookies wir nutzen und wie Sie Ihre Einstellungen verwalten.",
+  alternates: { canonical: "/cookies" },
+  robots: { index: false, follow: true },
 }
 
 export default function CookiesPage() {

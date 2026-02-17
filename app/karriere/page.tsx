@@ -3,9 +3,18 @@ import { Briefcase, MapPin, Clock, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { LandingPageLayout } from "@/components/landing-page-layout"
 
-export const metadata = {
-  title: "Karriere - Effizienz Praxis",
-  description: "Werde Teil von Effizienz Praxis und gestalte die Zukunft der digitalen Praxisverwaltung.",
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Karriere bei Effizienz Praxis | Offene Stellen im HealthTech",
+  description:
+    "Werde Teil von Effizienz Praxis und gestalte die Zukunft der digitalen Praxisverwaltung. Offene Stellen in Engineering, Design & Vertrieb. Remote-first Arbeitskultur.",
+  alternates: { canonical: "/karriere" },
+  openGraph: {
+    title: "Karriere bei Effizienz Praxis | HealthTech Jobs",
+    description: "Gestalte die Zukunft der digitalen Praxisverwaltung. Offene Stellen & Remote-first Kultur.",
+    url: "/karriere",
+  },
 }
 
 export default function KarrierePage() {

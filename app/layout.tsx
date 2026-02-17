@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { cookies, headers } from "next/headers"
 import "./globals.css"
@@ -16,14 +16,93 @@ const inter = Inter({
 
 export const dynamic = "force-dynamic"
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+}
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://effizienz-praxis.de"
+
 export const metadata: Metadata = {
-  title: "Effizienz Praxis",
-  description: "Struktur. Erfolg. Leichtigkeit. - Moderne Praxismanagement Software",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "Effizienz Praxis | Praxismanagement Software für Arztpraxen & MVZ",
+    template: "%s | Effizienz Praxis",
+  },
+  description:
+    "Die moderne Praxismanagement-Software für Arztpraxen, Zahnarztpraxen & MVZ. KI-gestützte Mitarbeiterentwicklung, Team-Management, Dienstplanung & Aufgabenverwaltung. DSGVO-konform. Jetzt kostenlos testen.",
+  keywords: [
+    "Praxismanagement Software",
+    "Arztpraxis Software",
+    "Zahnarztpraxis Management",
+    "MVZ Software",
+    "Praxisverwaltung",
+    "Mitarbeiterentwicklung Arztpraxis",
+    "Team-Management Praxis",
+    "Dienstplanung Arztpraxis",
+    "QM Software Arztpraxis",
+    "Praxis Digitalisierung",
+    "DSGVO-konforme Praxissoftware",
+    "KI Praxismanagement",
+  ],
+  authors: [{ name: "Effizienz Praxis GmbH", url: BASE_URL }],
+  creator: "Effizienz Praxis GmbH",
+  publisher: "Effizienz Praxis GmbH",
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",
   },
-  generator: "v0.app",
+  openGraph: {
+    type: "website",
+    locale: "de_DE",
+    url: BASE_URL,
+    siteName: "Effizienz Praxis",
+    title: "Effizienz Praxis | Praxismanagement Software für Arztpraxen & MVZ",
+    description:
+      "Die moderne Praxismanagement-Software mit KI-gestützter Mitarbeiterentwicklung, Team-Management & Aufgabenverwaltung. DSGVO-konform. Jetzt kostenlos testen.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Effizienz Praxis - Praxismanagement Software",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Effizienz Praxis | Praxismanagement Software",
+    description:
+      "Moderne Praxismanagement-Software mit KI-gestützter Mitarbeiterentwicklung. DSGVO-konform. Jetzt kostenlos testen.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: BASE_URL,
+    languages: {
+      "de-DE": BASE_URL,
+    },
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+  },
+  category: "Healthcare Software",
 }
 
 const PUBLIC_ROUTES = [
@@ -60,6 +139,9 @@ const PUBLIC_ROUTES = [
   "/agb",
   "/sicherheit",
   "/cookies",
+  "/alle-funktionen",
+  "/selbst-check",
+  "/roi-analysis",
 ]
 
 const PUBLIC_PREFIXES = ["/features/", "/blog/", "/auth/"]
@@ -97,10 +179,6 @@ export default async function RootLayout({
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
-        />
         <link
           rel="preconnect"
           href="https://fonts.googleapis.com"

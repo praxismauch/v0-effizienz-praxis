@@ -264,7 +264,7 @@ export function TeamRoleOrderSettings() {
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Speichern..." : "Speichern"}
           </Button>
-          <Button variant="outline" onClick={handleReset} disabled={saving || !isCustom}>
+          <Button variant="outline" onClick={handleReset} disabled={saving}>
             <RotateCcw className="h-4 w-4 mr-2" />
             Standard wiederherstellen
           </Button>

@@ -44,7 +44,9 @@ import {
   Sparkles,
   List,
   Grid3x3,
+  Columns3,
   X,
+  Clock,
 } from "lucide-react"
 import { toast } from "sonner"
 import { DocumentPermissionsDialog } from "@/components/document-permissions-dialog"
@@ -248,7 +250,7 @@ export function DocumentsManager() {
 
   const [fileTypeFilter, setFileTypeFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("name-asc")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "finder">("grid")
 
   const [hasCheckedDefaultFolders, setHasCheckedDefaultFolders] = useState(false)
 
@@ -1213,6 +1215,7 @@ export function DocumentsManager() {
                 size="sm"
                 onClick={() => setViewMode("list")}
                 className="h-9 px-3"
+                title="Listenansicht"
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -1221,8 +1224,18 @@ export function DocumentsManager() {
                 size="sm"
                 onClick={() => setViewMode("grid")}
                 className="h-9 px-3"
+                title="Kachelansicht"
               >
                 <Grid3x3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "finder" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("finder")}
+                className="h-9 px-3"
+                title="Finder-Ansicht"
+              >
+                <Columns3 className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -1310,7 +1323,153 @@ export function DocumentsManager() {
             onDragOver={handleDragOver}
             onDrop={handleFileDrop}
           >
-            {displayFolders.length > 0 && (
+            {/* Finder view mode */}
+            {viewMode === "finder" && (
+              <div className="flex border rounded-lg bg-background overflow-hidden" style={{ minHeight: 480 }}>
+                {/* Sidebar: folder tree */}
+                <div className="w-64 border-r bg-muted/30 overflow-y-auto flex-shrink-0">
+                  <div className="p-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-2">Ordner</h4>
+                    <button
+                      onClick={handleNavigateToRoot}
+                      className={`flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors ${!currentFolderId ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted text-foreground"}`}
+                    >
+                      <Home className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Alle Ordner</span>
+                    </button>
+                    <div className="mt-1 space-y-0.5">
+                      {displayFolders.map((folder) => (
+                        <button
+                          key={folder.id}
+                          onClick={() => handleNavigateToFolder(folder)}
+                          className={`flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors ${currentFolderId === folder.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted text-foreground"}`}
+                        >
+                          <Folder className="h-4 w-4 flex-shrink-0" style={{ color: folder.color || "#3b82f6" }} />
+                          <span className="truncate">{folder.name}</span>
+                          <span className="ml-auto text-xs text-muted-foreground flex-shrink-0">
+                            {getRecursiveFileCount(folder.id)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {/* Main content: file list */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* Subfolders */}
+                  {displayFolders.length > 0 && (
+                    <div className="border-b">
+                      <div className="px-4 py-2 bg-muted/20">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          {displayFolders.length} Ordner
+                        </span>
+                      </div>
+                      {displayFolders.map((folder) => (
+                        <div
+                          key={folder.id}
+                          onClick={() => handleNavigateToFolder(folder)}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-b-0 transition-colors"
+                        >
+                          <div
+                            className="flex items-center justify-center w-8 h-8 rounded-lg"
+                            style={{ backgroundColor: `${folder.color || "#3b82f6"}15` }}
+                          >
+                            <Folder className="h-4.5 w-4.5" style={{ color: folder.color || "#3b82f6" }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{folder.name}</div>
+                            {folder.description && (
+                              <div className="text-xs text-muted-foreground truncate">{folder.description}</div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-shrink-0">
+                            <span>{getRecursiveFileCount(folder.id)} Dateien</span>
+                            <ChevronRight className="h-4 w-4" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Files */}
+                  {filteredDocuments.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-muted/20">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          {filteredDocuments.length} Dateien
+                        </span>
+                      </div>
+                      {filteredDocuments.map((doc) => (
+                        <div
+                          key={doc.id}
+                          onClick={() => handlePreviewDocument(doc)}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-b-0 transition-colors"
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/5">
+                            <FileText className="h-4.5 w-4.5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{doc.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {doc.tags && doc.tags.length > 0 && <span className="mr-2">{doc.tags[0]}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground flex-shrink-0">
+                            {doc.ai_analysis && (
+                              <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-primary/10 text-primary border-primary/20">
+                                <Sparkles className="h-3 w-3 mr-0.5" />
+                                KI
+                              </Badge>
+                            )}
+                            <span>{formatFileSize(doc.file_size)}</span>
+                            <span className="w-20 text-right">{new Date(doc.created_by_at).toLocaleDateString("de-DE")}</span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="z-[999999]">
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handlePreviewDocument(doc) }}>
+                                  <Eye className="h-4 w-4 mr-2" />Vorschau
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownloadDocument(doc) }}>
+                                  <Download className="h-4 w-4 mr-2" />Herunterladen
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenMoveDialog(doc) }}>
+                                  Verschieben
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id) }} className="text-destructive">
+                                  Löschen
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {displayFolders.length === 0 && filteredDocuments.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full py-16 text-center">
+                      <Folder className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                      <p className="text-sm text-muted-foreground">Dieser Ordner ist leer</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Grid and List views */}
+            {viewMode !== "finder" && displayFolders.length > 0 && (
+              <>
+              {/* Folders section header */}
+              <div className="flex items-center gap-2 mb-3">
+                <Folder className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Ordner ({displayFolders.length})
+                </h3>
+                <div className="flex-1 h-px bg-border" />
+              </div>
               <div
                 className={
                   viewMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "space-y-2"
@@ -1514,9 +1673,10 @@ export function DocumentsManager() {
                   )
                 })}
               </div>
+              </>
             )}
 
-            {displayFolders.length === 0 && documents.length === 0 && (
+            {viewMode !== "finder" && displayFolders.length === 0 && documents.length === 0 && (
               <Card className="p-12">
                 <div className="flex flex-col items-center justify-center text-center space-y-4">
                   <div className="rounded-full bg-muted p-4">
@@ -1557,7 +1717,16 @@ export function DocumentsManager() {
               </Card>
             )}
 
-            {documents.length > 0 && (
+            {viewMode !== "finder" && documents.length > 0 && (
+              <>
+              {/* Files section header */}
+              <div className="flex items-center gap-2 mb-3 mt-6">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Dateien ({filteredDocuments.length})
+                </h3>
+                <div className="flex-1 h-px bg-border" />
+              </div>
               <div
                 className={
                   viewMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "space-y-2"
@@ -1768,6 +1937,7 @@ export function DocumentsManager() {
                   )
                 })}
               </div>
+              </>
             )}
           </div>
         </>

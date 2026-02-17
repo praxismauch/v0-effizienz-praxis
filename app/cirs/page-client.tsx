@@ -58,7 +58,7 @@ export default function CIRSPageClient() {
       }
     } catch (error) {
       console.error("Error fetching incidents:", error)
-      const errorMessage = error instanceof Error ? error.message : "Vorfalle konnten nicht geladen werden."
+      const errorMessage = error instanceof Error ? error.message : "Vorfälle konnten nicht geladen werden."
       const isSchemaError = errorMessage.includes("schema cache") || errorMessage.includes("PGRST205")
       toast({
         title: "Fehler beim Laden",
@@ -76,8 +76,8 @@ export default function CIRSPageClient() {
     if (!currentPractice?.id) return
     if (!data.title || !data.description) {
       toast({
-        title: "Unvollstandige Angaben",
-        description: "Bitte fullen Sie mindestens Titel und Beschreibung aus.",
+        title: "Unvollständige Angaben",
+        description: "Bitte füllen Sie mindestens Titel und Beschreibung aus.",
         variant: "destructive",
       })
       return
@@ -93,8 +93,8 @@ export default function CIRSPageClient() {
       toast({
         title: "Vorfall gemeldet",
         description: data.is_anonymous
-          ? "Ihr anonymer Bericht wurde erfolgreich ubermittelt."
-          : "Ihr Bericht wurde erfolgreich ubermittelt.",
+          ? "Ihr anonymer Bericht wurde erfolgreich übermittelt."
+          : "Ihr Bericht wurde erfolgreich übermittelt.",
       })
       setShowReportDialog(false)
       fetchIncidents()
@@ -139,14 +139,14 @@ export default function CIRSPageClient() {
             label="Gesamt"
             value={stats.total}
             icon={ClipboardList}
-            description="Gemeldete Vorfalle"
+            description="Gemeldete Vorfälle"
             {...statCardColors.primary}
           />
           <StatCard
             label="Fehler"
             value={stats.errors}
             icon={AlertTriangle}
-            description="Tatsachliche Fehler"
+            description="Tatsächliche Fehler"
             {...statCardColors.red}
           />
           <StatCard
@@ -160,7 +160,7 @@ export default function CIRSPageClient() {
             label="Kritisch"
             value={stats.critical}
             icon={Flame}
-            description="Hohe Prioritat"
+            description="Hohe Priorität"
             {...statCardColors.orange}
           />
         </div>
@@ -169,7 +169,7 @@ export default function CIRSPageClient() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={"Vorfalle durchsuchen..."}
+              placeholder={"Vorfälle durchsuchen..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-9"
@@ -216,20 +216,20 @@ export default function CIRSPageClient() {
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">Alle</TabsTrigger>
             <TabsTrigger value="submitted">Eingereicht</TabsTrigger>
-            <TabsTrigger value="under_review">{"In Prufung"}</TabsTrigger>
+            <TabsTrigger value="under_review">{"In Prüfung"}</TabsTrigger>
             <TabsTrigger value="analyzed">Analysiert</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-4 mt-6">
             {loading ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">{"Vorfalle werden geladen..."}</p>
+                <p className="text-muted-foreground">{"Vorfälle werden geladen..."}</p>
               </div>
             ) : filteredIncidents.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-lg font-medium mb-2">Keine Vorfalle vorhanden</p>
+                  <p className="text-lg font-medium mb-2">Keine Vorfälle vorhanden</p>
                   <p className="text-muted-foreground mb-4">
                     Melden Sie Fehler oder Beinahe-Fehler, um die Patientensicherheit zu verbessern
                   </p>

@@ -59,7 +59,7 @@ export const defaultPages = [
   { path: "/auth/login", name: "Login" },
   { path: "/auth/register", name: "Registrierung" },
 
-  // App - Uebersicht
+  // App - Übersicht
   { path: "/dashboard", name: "Dashboard" },
   { path: "/analysis", name: "KI-Analyse" },
   { path: "/academy", name: "Academy" },
@@ -71,7 +71,7 @@ export const defaultPages = [
   { path: "/todos", name: "Aufgaben" },
   { path: "/goals", name: "Ziele" },
   { path: "/workflows", name: "Workflows" },
-  { path: "/responsibilities", name: "Zustaendigkeiten" },
+  { path: "/responsibilities", name: "Zuständigkeiten" },
 
   // App - Daten & Dokumente
   { path: "/analytics", name: "Kennzahlen" },
@@ -81,7 +81,7 @@ export const defaultPages = [
   { path: "/protocols", name: "Protokolle" },
   { path: "/cirs", name: "Verbesserungsmeldung" },
 
-  // App - Qualitaets-Management
+  // App - Qualitäts-Management
   { path: "/hygieneplan", name: "Hygieneplan" },
 
   // App - Strategie & Führung
@@ -97,7 +97,7 @@ export const defaultPages = [
   // App - Team & Personal
   { path: "/hiring", name: "Personalsuche" },
   { path: "/team", name: "Team" },
-  { path: "/mitarbeitergespraeche", name: "Mitarbeitergespraeche" },
+  { path: "/mitarbeitergespraeche", name: "Mitarbeitergespräche" },
   { path: "/selbst-check", name: "Selbst-Check" },
   { path: "/skills", name: "Kompetenzen" },
   { path: "/organigramm", name: "Organigramm" },
@@ -106,14 +106,14 @@ export const defaultPages = [
   // App - Praxis & Einstellungen
   { path: "/contacts", name: "Kontakte" },
   { path: "/surveys", name: "Umfragen" },
-  { path: "/arbeitsplaetze", name: "Arbeitsplaetze" },
-  { path: "/rooms", name: "Raeume" },
+  { path: "/arbeitsplaetze", name: "Arbeitsplätze" },
+  { path: "/rooms", name: "Räume" },
   { path: "/arbeitsmittel", name: "Arbeitsmittel" },
   { path: "/inventory", name: "Material" },
-  { path: "/devices", name: "Geraete" },
+  { path: "/devices", name: "Geräte" },
   { path: "/settings", name: "Einstellungen" },
 
-  // Super Admin - Uebersicht
+  // Super Admin - Übersicht
   { path: "/super-admin", name: "SA Dashboard" },
 
   // Super Admin - Verwaltung

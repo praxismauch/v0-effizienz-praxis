@@ -110,7 +110,7 @@ export const CATEGORY_META: Record<Category, CategoryMeta> = {
   "error-handling": { label: "Fehlerbehandlung", icon: h(Bug, iconProps), color: "text-yellow-600" },
   typescript: { label: "TypeScript", icon: h(Code2, iconProps), color: "text-blue-600" },
   "nextjs-patterns": { label: "Next.js Patterns", icon: h(Layers, iconProps), color: "text-foreground" },
-  "code-quality": { label: "Code-Qualitaet", icon: h(FileCode, iconProps), color: "text-purple-600" },
+  "code-quality": { label: "Code-Qualität", icon: h(FileCode, iconProps), color: "text-purple-600" },
   accessibility: { label: "Barrierefreiheit", icon: h(Accessibility, iconProps), color: "text-teal-600" },
   "api-design": { label: "API Design", icon: h(Server, iconProps), color: "text-indigo-600" },
   database: { label: "Datenbank", icon: h(Database, iconProps), color: "text-emerald-600" },

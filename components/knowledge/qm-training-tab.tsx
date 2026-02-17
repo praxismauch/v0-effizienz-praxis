@@ -238,7 +238,7 @@ export function QmTrainingTab() {
                       ) : (
                         <Badge variant="destructive" className="shrink-0 gap-1">
                           <AlertTriangle className="h-3 w-3" />
-                          Unvollstandig
+                          Unvollständig
                         </Badge>
                       )}
                     </div>

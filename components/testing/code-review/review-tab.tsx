@@ -227,8 +227,8 @@ export function ReviewTab({
             <Code2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
             <CardTitle>Professioneller Code Review</CardTitle>
             <CardDescription>
-              Scannt den gesamten Code wie ein erfahrener Entwickler und prueft auf Sicherheit,
-              Performance, TypeScript-Qualitaet, Next.js Best Practices, Barrierefreiheit und mehr.
+              Scannt den gesamten Code wie ein erfahrener Entwickler und prüft auf Sicherheit,
+              Performance, TypeScript-Qualität, Next.js Best Practices, Barrierefreiheit und mehr.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">

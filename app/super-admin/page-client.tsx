@@ -189,7 +189,7 @@ function DashboardContent() {
                 )}
               </div>
               <div>
-                <CardTitle className="text-base">Tagliche Backups</CardTitle>
+                <CardTitle className="text-base">Tägliche Backups</CardTitle>
                 <CardDescription>
                   {backupStatus?.overallStatus === "success"
                     ? "Alle Backups erfolgreich"

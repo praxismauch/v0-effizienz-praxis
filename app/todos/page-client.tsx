@@ -499,7 +499,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
         /* Kanban View */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <KanbanColumn
-            title="Hohe Prioritat"
+            title="Hohe Priorität"
             priority="high"
             todos={kanbanGroups.high}
             teamMembers={membersList}
@@ -515,7 +515,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
             onDragEnd={handleDragEnd}
           />
           <KanbanColumn
-            title="Mittlere Prioritat"
+            title="Mittlere Priorität"
             priority="medium"
             todos={kanbanGroups.medium}
             teamMembers={membersList}
@@ -531,7 +531,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
             onDragEnd={handleDragEnd}
           />
           <KanbanColumn
-            title="Niedrige Prioritat"
+            title="Niedrige Priorität"
             priority="low"
             todos={kanbanGroups.low}
             teamMembers={membersList}

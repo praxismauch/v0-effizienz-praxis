@@ -114,7 +114,7 @@ export function QmCirsTab() {
         <ShieldAlert className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">Keine CIRS-Meldungen vorhanden</h3>
         <p className="text-muted-foreground mb-4">
-          Melden Sie Vorfalle und Beinahe-Fehler im CIRS-System.
+          Melden Sie Vorfälle und Beinahe-Fehler im CIRS-System.
         </p>
         <Link href="/cirs">
           <Button variant="outline" className="gap-2">

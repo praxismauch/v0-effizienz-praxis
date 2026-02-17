@@ -76,8 +76,8 @@ export function RoomsManagement({ initialRooms, practiceId }: RoomsManagementPro
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Raeume"
-        subtitle="Verwalten Sie die Raeume Ihrer Praxis"
+        title="Räume"
+        subtitle="Verwalten Sie die Räume Ihrer Praxis"
         actions={
           <Button onClick={handleOpenCreate} disabled={!practiceId}>
             <Plus className="h-4 w-4 mr-2" />

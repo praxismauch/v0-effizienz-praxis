@@ -224,7 +224,7 @@ export function KnowledgeBaseManager() {
       <div className="space-y-6">
         <PageHeader
           title="QM Dokumentation"
-          subtitle="Qualitaetsmanagement-Dokumentation mit KI-gestuetzter Suche"
+          subtitle="Qualitätsmanagement-Dokumentation mit KI-gestützter Suche"
           actions={
             <div className="flex gap-2 flex-wrap">
               <AIKnowledgeAnalyzerDialog />
@@ -311,7 +311,7 @@ export function KnowledgeBaseManager() {
             </TabsTrigger>
             <TabsTrigger value="devices" className="gap-2 flex-1">
               <Cpu className="h-4 w-4" />
-              Gerate
+              Geräte
             </TabsTrigger>
             <TabsTrigger value="training" className="gap-2 flex-1">
               <GraduationCap className="h-4 w-4" />

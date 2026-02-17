@@ -111,7 +111,7 @@ export default function ResponsibilitiesPageClient() {
       <div className="space-y-6">
         {/* Header */}
         <PageHeader
-          title="Zustaendigkeiten"
+          title="Zuständigkeiten"
           subtitle="Verwalten Sie Aufgaben und Verantwortlichkeiten"
           actions={
             <>
@@ -128,7 +128,7 @@ export default function ResponsibilitiesPageClient() {
               </Button>
               <Button onClick={handleCreate}>
                 <Plus className="h-4 w-4 mr-2" />
-                Neue Zustaendigkeit
+                Neue Zuständigkeit
               </Button>
             </>
           }

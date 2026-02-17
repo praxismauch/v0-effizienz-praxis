@@ -281,7 +281,7 @@ export function CustomRulesTab({ customRules, onAddOrUpdate, onDelete, onToggle 
                         size="sm"
                         variant="ghost"
                         className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                        title="Loeschen"
+                        title="Löschen"
                         onClick={() => onDelete(rule.id)}
                       >
                         <XCircle className="h-3.5 w-3.5" />

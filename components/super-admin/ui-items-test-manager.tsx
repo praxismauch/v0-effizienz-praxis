@@ -613,7 +613,7 @@ export default function UIItemsTestManager() {
                 )}
               </CardTitle>
               <CardDescription>
-                Systematischer End-to-End Test aller UI-Elemente: Funktionalitaet, Responsiveness und Barrierefreiheit
+                Systematischer End-to-End Test aller UI-Elemente: Funktionalität, Responsivität und Barrierefreiheit
                 {uiItemsData && <span className="text-xs ml-2">(Version: {uiItemsData.version})</span>}
               </CardDescription>
             </div>
@@ -657,7 +657,7 @@ export default function UIItemsTestManager() {
           {/* Criteria Breakdown */}
           <div className="grid grid-cols-3 gap-3 mb-4 p-3 bg-muted/50 rounded-lg">
             <div className="text-center">
-              <div className="text-sm font-medium text-muted-foreground">Funktionalitaet</div>
+              <div className="text-sm font-medium text-muted-foreground">Funktionalität</div>
               <div className="text-lg font-semibold">{summary.functionalityPassed}/{summary.total}</div>
             </div>
             <div className="text-center border-x border-border">

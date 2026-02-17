@@ -69,7 +69,7 @@ export default function CodeReviewPanel() {
 
   const deleteRule = useCallback((id: string) => {
     saveCustomRules(customRules.filter((r) => r.id !== id))
-    toast({ title: "Regel geloescht" })
+    toast({ title: "Regel gelöscht" })
   }, [customRules, saveCustomRules, toast])
 
   const toggleRule = useCallback((id: string) => {
@@ -115,11 +115,11 @@ export default function CodeReviewPanel() {
       setProgress(currentProgress)
       if (currentProgress < 10) setProgressLabel("Initialisiere Code Review...")
       else if (currentProgress < 25) setProgressLabel("Scanne Projektdateien...")
-      else if (currentProgress < 40) setProgressLabel("Pruefe Sicherheit...")
+      else if (currentProgress < 40) setProgressLabel("Prüfe Sicherheit...")
       else if (currentProgress < 55) setProgressLabel("Analysiere Performance...")
-      else if (currentProgress < 65) setProgressLabel("Pruefe TypeScript-Qualitaet...")
-      else if (currentProgress < 75) setProgressLabel("Pruefe Next.js Patterns...")
-      else if (currentProgress < 85) setProgressLabel("Pruefe Barrierefreiheit...")
+      else if (currentProgress < 65) setProgressLabel("Prüfe TypeScript-Qualität...")
+      else if (currentProgress < 75) setProgressLabel("Prüfe Next.js Patterns...")
+      else if (currentProgress < 85) setProgressLabel("Prüfe Barrierefreiheit...")
       else setProgressLabel("Erstelle Bericht...")
     }, 400)
 

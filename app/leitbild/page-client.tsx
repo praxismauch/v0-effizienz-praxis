@@ -164,7 +164,7 @@ export default function LeitbildPageClient() {
     const finalVision = isEditMode ? editedVision : visionStatement
     const finalOneSentence = isEditMode ? editedOneSentence : leitbildOneSentence
     if (!finalMission.trim() && !finalVision.trim() && !finalOneSentence.trim()) {
-      toast.error(t("leitbild.fillAtLeastOne", "Bitte fullen Sie mindestens ein Feld aus"))
+      toast.error(t("leitbild.fillAtLeastOne", "Bitte füllen Sie mindestens ein Feld aus"))
       return
     }
     try {

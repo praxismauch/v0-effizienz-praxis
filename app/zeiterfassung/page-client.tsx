@@ -73,6 +73,25 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
   const homeofficePolicy = null
   const dataLoading = statusLoading || blocksLoading || teamLoading
 
+  // Auto-stop stale time blocks on page load
+  useEffect(() => {
+    if (practiceId) {
+      fetch(`/api/practices/${practiceId}/time/auto-stop`, { method: "POST" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.stopped > 0) {
+            toast.warning(`${data.stopped} vergessene Stempelung(en) wurden automatisch beendet`, {
+              duration: 8000,
+            })
+            mutate()
+            mutateBlocks()
+            mutateTeam()
+          }
+        })
+        .catch(() => {})
+    }
+  }, [practiceId])
+
   useEffect(() => {
     if (practiceId && userId) {
       const timer = setTimeout(() => setIsLoading(false), 1000)

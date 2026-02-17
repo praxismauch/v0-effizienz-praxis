@@ -5,6 +5,7 @@ import {
   Settings, 
   Building2, 
   Clock, 
+  Timer,
   Calendar, 
   CalendarDays,
   Monitor, 
@@ -42,6 +43,7 @@ import { PracticeParameterManagement } from "@/components/practice-parameter-man
 import { InterfacesTab } from "@/components/settings/interfaces-tab"
 import { KnowledgeSettings } from "@/components/knowledge/knowledge-settings"
 import { DienstplanSettingsTab } from "@/components/settings/dienstplan-settings-tab"
+import { TimeTrackingSettingsTab } from "@/components/settings/time-tracking-settings-tab"
 
 export default function SettingsPageClient() {
   const { currentUser } = useUser()
@@ -100,6 +102,10 @@ export default function SettingsPageClient() {
             <TabsTrigger value="hours" className="gap-2 whitespace-nowrap">
               <Clock className="h-4 w-4" />
               <span>Arbeitszeiten</span>
+            </TabsTrigger>
+            <TabsTrigger value="time-tracking" className="gap-2 whitespace-nowrap">
+              <Timer className="h-4 w-4" />
+              <span>Zeiterfassung</span>
             </TabsTrigger>
             <TabsTrigger value="calendar" className="gap-2 whitespace-nowrap">
               <Calendar className="h-4 w-4" />
@@ -170,6 +176,11 @@ export default function SettingsPageClient() {
           {/* Working Hours Tab */}
           <TabsContent value="hours">
             <WorkingHoursTab />
+          </TabsContent>
+
+          {/* Time Tracking Settings Tab */}
+          <TabsContent value="time-tracking">
+            <TimeTrackingSettingsTab />
           </TabsContent>
 
           {/* Calendar Settings Tab */}

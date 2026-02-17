@@ -23,7 +23,7 @@ interface PracticeSettings {
   email: string
   website: string
   description: string
-  practice_type: string
+  type: string
   specializations: string[]
 }
 
@@ -48,7 +48,7 @@ export function PracticeSettingsTab() {
     email: "",
     website: "",
     description: "",
-    practice_type: "",
+    type: "",
     specializations: [],
   })
 
@@ -77,7 +77,7 @@ export function PracticeSettingsTab() {
         email: currentPractice.email || "",
         website: currentPractice.website || "",
         description: currentPractice.description || "",
-        practice_type: currentPractice.practice_type || "",
+        type: currentPractice.type || "",
         specializations: specs,
       })
     }
@@ -110,7 +110,7 @@ export function PracticeSettingsTab() {
       const address = [settings.street, city, zip].filter(Boolean).join(", ")
 
       const { street, zipCity, specializations, ...rest } = settings
-      const payload = { ...rest, address, specialization: specializations.join(", ") }
+      const payload = { ...rest, address, street: settings.street, zip_code: zip, city, specialty: specializations.join(", ") }
 
       const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
         method: "PATCH",
@@ -173,8 +173,8 @@ export function PracticeSettingsTab() {
             <div className="space-y-2">
               <Label htmlFor="practice_type">Praxisart</Label>
               <Select
-                value={settings.practice_type}
-                onValueChange={(value) => setSettings({ ...settings, practice_type: value })}
+value={settings.type}
+onValueChange={(value) => setSettings({ ...settings, type: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Praxisart auswählen" />

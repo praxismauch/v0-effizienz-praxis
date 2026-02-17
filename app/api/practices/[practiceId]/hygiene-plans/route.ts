@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     console.log("[v0] GET hygiene-plans for practice:", practiceId)
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const { data: hygienePlans, error } = await supabase
       .from("hygiene_plans")
       .select("*")
       .eq("practice_id", practiceId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -29,39 +30,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
 
-    const {
-      title,
-      description,
-      category,
-      frequency,
-      responsible_role,
-      content,
-      is_rki_template,
-      rki_reference_url,
-      status,
-      tags,
-      created_by,
-    } = body
+    const { title, description, category, frequency, status, userId } = body
 
     const { data: hygienePlan, error } = await supabase
       .from("hygiene_plans")
       .insert({
+        id: crypto.randomUUID(),
         practice_id: practiceId,
         title,
-        description,
-        category,
-        frequency,
-        responsible_role,
-        content,
-        is_rki_template: is_rki_template || false,
-        rki_reference_url,
+        description: description || "",
+        area: category || "",
+        frequency: frequency || "daily",
+        responsible_user_id: userId || null,
         status: status || "active",
-        tags: tags || [],
-        created_by,
-        updated_by: created_by,
+        ai_generated: false,
       })
       .select()
       .single()

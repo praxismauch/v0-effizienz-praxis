@@ -21,11 +21,11 @@ export const availablePermissions = [
   // Daten & Dokumente
   { id: "documents", label: "Dokumente", description: "Dokumente hochladen und verwalten" },
   { id: "knowledge", label: "Wissensdatenbank", description: "Wissensdatenbank pflegen und nutzen" },
-  { id: "contacts", label: "Kontakte", description: "Geschaftskontakte und Partner verwalten" },
+  { id: "contacts", label: "Kontakte", description: "Geschäftskontakte und Partner verwalten" },
   // Infrastruktur
-  { id: "rooms", label: "Raume", description: "Praxisraume verwalten" },
-  { id: "workplaces", label: "Arbeitsplatze", description: "Arbeitsplatze konfigurieren" },
-  { id: "equipment", label: "Ausstattung", description: "Gerate und Ausstattung verwalten" },
+  { id: "rooms", label: "Räume", description: "Praxisräume verwalten" },
+  { id: "workplaces", label: "Arbeitsplätze", description: "Arbeitsplätze konfigurieren" },
+  { id: "equipment", label: "Ausstattung", description: "Geräte und Ausstattung verwalten" },
   // Finanzen & Abrechnung
   { id: "billing", label: "Abrechnung", description: "Abrechnungs- und Finanzunterlagen verwalten" },
   { id: "reports", label: "Berichte", description: "Praxisberichte generieren und einsehen" },

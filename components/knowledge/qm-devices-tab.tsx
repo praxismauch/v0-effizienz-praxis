@@ -137,14 +137,14 @@ export function QmDevicesTab() {
     return (
       <Card className="p-12 text-center">
         <Cpu className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Keine Gerate vorhanden</h3>
+        <h3 className="text-lg font-semibold mb-2">Keine Geräte vorhanden</h3>
         <p className="text-muted-foreground mb-4">
-          Verwalten Sie Ihre Gerate und Einweisungen in der Gerateverwaltung.
+          Verwalten Sie Ihre Geräte und Einweisungen in der Geräteverwaltung.
         </p>
         <Link href="/devices">
           <Button variant="outline" className="gap-2">
             <ExternalLink className="h-4 w-4" />
-            Zur Gerateverwaltung
+            Zur Geräteverwaltung
           </Button>
         </Link>
       </Card>
@@ -158,7 +158,7 @@ export function QmDevicesTab() {
         <div className="flex items-center gap-4 flex-wrap">
           <Badge variant="secondary" className="gap-1.5 py-1">
             <Cpu className="h-3.5 w-3.5" />
-            {devices.length} Gerate
+            {devices.length} Geräte
           </Badge>
           <Badge variant="secondary" className="gap-1.5 py-1">
             <Users className="h-3.5 w-3.5" />
@@ -180,7 +180,7 @@ export function QmDevicesTab() {
         <Link href="/devices">
           <Button variant="outline" size="sm" className="gap-2">
             <ExternalLink className="h-4 w-4" />
-            Gerateverwaltung
+            Geräteverwaltung
           </Button>
         </Link>
       </div>
@@ -189,7 +189,7 @@ export function QmDevicesTab() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Gerate suchen..."
+          placeholder="Geräte suchen..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"

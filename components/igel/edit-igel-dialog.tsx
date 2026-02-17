@@ -100,7 +100,7 @@ export function EditIgelDialog({ analysis, open, onOpenChange, onSuccess }: Edit
       const nonLaborCosts = (analysis.variable_costs || []).filter(
         (c: Cost) => c.category !== "Labor" && !c.name.includes("Arbeitszeit") && !c.name.includes("Arztzeit")
       )
-      setOneTimeCosts(analysis.one_time_costs || [{ name: "Geraeteanschaffung", amount: 0 }])
+      setOneTimeCosts(analysis.one_time_costs || [{ name: "Geräteanschaffung", amount: 0 }])
       setRecurringCosts(analysis.recurring_costs || [{ name: "Softwarelizenzen", amount: 0, category: "Recurring" }])
       setVariableCosts(nonLaborCosts.length > 0 ? nonLaborCosts : [{ name: "Materialkosten", amount: 0 }])
       

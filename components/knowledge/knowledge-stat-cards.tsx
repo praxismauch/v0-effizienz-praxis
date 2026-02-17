@@ -33,7 +33,7 @@ export const KnowledgeStatCards = memo(function KnowledgeStatCards({
         {...statCardColors.primary}
       />
       <StatCard
-        label="Gerate"
+        label="Geräte"
         value={deviceCount}
         icon={Cpu}
         className="min-w-[140px] flex-1"

@@ -216,18 +216,18 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" disabled={isDeleting}>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    {isDeleting ? "Wird geloscht..." : "Mitglied loschen"}
+                    {isDeleting ? "Wird gelöscht..." : "Mitglied löschen"}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Teammitglied loschen?</AlertDialogTitle>
+                    <AlertDialogTitle>Teammitglied löschen?</AlertDialogTitle>
                     <AlertDialogDescription>
                       {"Sind Sie sicher, dass Sie "}
                       <span className="font-semibold">
                         {formData.firstName} {formData.lastName}
                       </span>
-                      {" loschen mochten? Das Mitglied wird deaktiviert und kann sich nicht mehr anmelden."}
+                      {" löschen möchten? Das Mitglied wird deaktiviert und kann sich nicht mehr anmelden."}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

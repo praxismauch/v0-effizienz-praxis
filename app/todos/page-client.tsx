@@ -381,7 +381,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
               className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
               <X className="h-3 w-3" />
-              Zurucksetzen
+              Zurücksetzen
             </Button>
           )}
         </div>
@@ -432,7 +432,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
                   Keine Ergebnisse
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 text-center max-w-sm">
-                  Fur Ihre aktuellen Filter und Suchbegriffe wurden keine Aufgaben gefunden
+                  Für Ihre aktuellen Filter und Suchbegriffe wurden keine Aufgaben gefunden
                 </p>
                 <Button
                   variant="outline"
@@ -443,7 +443,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
                     setStatusFilter("alle")
                   }}
                 >
-                  Filter zurucksetzen
+                  Filter zurücksetzen
                 </Button>
               </>
             ) : (
@@ -623,15 +623,15 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Aufgabe loschen?</AlertDialogTitle>
+            <AlertDialogTitle>Aufgabe löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Aktion kann nicht ruckgangig gemacht werden. Die Aufgabe wird permanent geloscht.
+              Diese Aktion kann nicht rückgängig gemacht werden. Die Aufgabe wird permanent gelöscht.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Loschen
+              Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

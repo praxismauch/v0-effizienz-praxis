@@ -164,7 +164,7 @@ export function FeatureRow({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{"Auf globale Einstellung zurucksetzen"}</p>
+                <p>{"Auf globale Einstellung zurücksetzen"}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -60,7 +60,7 @@ export function DiagramCard({ diagram, isCustom = false, onToggleFavorite, onTog
           variant={diagram.isFavorite ? "default" : "secondary"}
           size="sm"
           onClick={() => onToggleFavorite(diagram.id, isCustom)}
-          title={diagram.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufugen"}
+          title={diagram.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
         >
           {diagram.isFavorite ? <Star className="h-4 w-4 fill-current" /> : <StarOff className="h-4 w-4" />}
         </Button>
@@ -68,12 +68,12 @@ export function DiagramCard({ diagram, isCustom = false, onToggleFavorite, onTog
           variant={diagram.showOnDashboard ? "default" : "secondary"}
           size="sm"
           onClick={() => onToggleDashboard(diagram.id, isCustom)}
-          title={diagram.showOnDashboard ? "Vom Dashboard entfernen" : "Zum Dashboard hinzufugen"}
+          title={diagram.showOnDashboard ? "Vom Dashboard entfernen" : "Zum Dashboard hinzufügen"}
         >
           <LayoutDashboard className="h-4 w-4" />
         </Button>
         {isCustom && onDelete && (
-          <Button variant="destructive" size="sm" onClick={() => onDelete(diagram.id)} title="Diagramm loschen">
+          <Button variant="destructive" size="sm" onClick={() => onDelete(diagram.id)} title="Diagramm löschen">
             <Trash2 className="h-4 w-4" />
           </Button>
         )}

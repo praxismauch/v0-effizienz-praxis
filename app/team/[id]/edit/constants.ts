@@ -11,13 +11,13 @@ export const availablePermissions = [
   { id: "team", label: "Teamverwaltung", description: "Teammitglieder und Zuweisungen verwalten" },
   { id: "hiring", label: "Recruiting", description: "Stellenausschreibungen und Bewerber verwalten" },
   { id: "training", label: "Fortbildungen", description: "Fortbildungen und Schulungen verwalten" },
-  { id: "skills", label: "Kompetenzen", description: "Mitarbeiterkompetenzen und Fahigkeiten pflegen" },
-  { id: "responsibilities", label: "Zustandigkeiten", description: "Verantwortungsbereiche definieren" },
+  { id: "skills", label: "Kompetenzen", description: "Mitarbeiterkompetenzen und Fähigkeiten pflegen" },
+  { id: "responsibilities", label: "Zuständigkeiten", description: "Verantwortungsbereiche definieren" },
   // Planung & Organisation
   { id: "calendar", label: "Kalenderverwaltung", description: "Praxiskalender und Termine verwalten" },
   { id: "tasks", label: "Aufgaben", description: "Aufgaben erstellen und verwalten" },
   { id: "goals", label: "Ziele", description: "Praxis- und Teamziele definieren" },
-  { id: "workflows", label: "Workflows", description: "Arbeitsablaufe und Prozesse verwalten" },
+  { id: "workflows", label: "Workflows", description: "Arbeitsabläufe und Prozesse verwalten" },
   // Daten & Dokumente
   { id: "documents", label: "Dokumente", description: "Dokumente hochladen und verwalten" },
   { id: "knowledge", label: "Wissensdatenbank", description: "Wissensdatenbank pflegen und nutzen" },

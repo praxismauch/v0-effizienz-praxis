@@ -163,7 +163,7 @@ export default function ProtocolPopupPage() {
         } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
           errorMessage = "Kein Mikrofon gefunden. Bitte schliessen Sie ein Mikrofon an."
         } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
-          errorMessage = "Mikrofon wird bereits verwendet oder ist nicht verfuegbar."
+          errorMessage = "Mikrofon wird bereits verwendet oder ist nicht verfügbar."
         } else if (error.name === "AbortError") {
           errorMessage = "Aufnahme wurde abgebrochen."
         } else {

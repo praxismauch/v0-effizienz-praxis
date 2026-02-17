@@ -288,7 +288,7 @@ export function SecurityDashboard() {
               </Table>
             ) : (
               <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
-                Keine Daten verfugbar
+                Keine Daten verfügbar
               </p>
             )}
           </CardContent>
@@ -329,7 +329,7 @@ export function SecurityDashboard() {
               </Table>
             ) : (
               <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
-                Keine Daten verfugbar
+                Keine Daten verfügbar
               </p>
             )}
           </CardContent>

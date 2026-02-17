@@ -152,7 +152,7 @@ export default function ErrorLogsPageClient() {
   }
 
   const handleDeleteOldLogs = async (days: number) => {
-    if (!confirm(`Alle Logs alter als ${days} Tage loschen?`)) return
+    if (!confirm(`Alle Logs älter als ${days} Tage löschen?`)) return
 
     try {
       const response = await fetch(`/api/super-admin/error-logs?olderThan=${days}`, {
@@ -161,10 +161,10 @@ export default function ErrorLogsPageClient() {
       if (!response.ok) throw new Error("Failed to delete logs")
       
       const result = await response.json()
-      toast({ title: "Erfolg", description: `${result.deleted || 0} Logs geloscht` })
+      toast({ title: "Erfolg", description: `${result.deleted || 0} Logs gelöscht` })
       mutate()
     } catch {
-      toast({ title: "Fehler", description: "Logs konnten nicht geloscht werden", variant: "destructive" })
+      toast({ title: "Fehler", description: "Logs konnten nicht gelöscht werden", variant: "destructive" })
     }
   }
 
@@ -204,7 +204,7 @@ export default function ErrorLogsPageClient() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Error Logging</h1>
           <p className="text-muted-foreground">
-            Systemweite Fehleruberwachung und Analyse
+            Systemweite Fehlerüberwachung und Analyse
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -234,13 +234,13 @@ export default function ErrorLogsPageClient() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => handleDeleteOldLogs(7)}>
-                {"Alter als 7 Tage loschen"}
+                {"Älter als 7 Tage löschen"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDeleteOldLogs(30)}>
-                {"Alter als 30 Tage loschen"}
+                {"Älter als 30 Tage löschen"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDeleteOldLogs(90)}>
-                {"Alter als 90 Tage loschen"}
+                {"Älter als 90 Tage löschen"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -335,7 +335,7 @@ export default function ErrorLogsPageClient() {
                   })
                 }
               >
-                {"Filter zurucksetzen"}
+                {"Filter zurücksetzen"}
               </Button>
             )}
           </div>
@@ -433,9 +433,9 @@ export default function ErrorLogsPageClient() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>{"Losungsnotizen (optional)"}</Label>
+              <Label>{"Lösungsnotizen (optional)"}</Label>
               <Textarea
-                placeholder={"Notizen zur Losung oder Erklarung..."}
+                placeholder={"Notizen zur Lösung oder Erklärung..."}
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
               />

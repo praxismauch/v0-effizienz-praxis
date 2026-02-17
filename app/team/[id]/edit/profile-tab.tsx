@@ -217,7 +217,7 @@ export function ProfileTab({
                 <div className="p-2 border rounded-md bg-muted/50">
                   {member?.created_at
                     ? format(new Date(member.created_at), "dd. MMMM yyyy", { locale: de })
-                    : "Nicht verfugbar"}
+                    : "Nicht verfügbar"}
                 </div>
               </div>
               <div className="space-y-2">
@@ -286,7 +286,7 @@ export function ProfileTab({
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">Rolle & Zugriffsebene</CardTitle>
-              <CardDescription>Rolle und grundlegende Zugriffsebene des Mitglieds andern</CardDescription>
+              <CardDescription>Rolle und grundlegende Zugriffsebene des Mitglieds ändern</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -297,7 +297,7 @@ export function ProfileTab({
                   disabled={!canEditRole}
                 >
                   <SelectTrigger id="role">
-                    <SelectValue placeholder="Rolle auswahlen" />
+                    <SelectValue placeholder="Rolle auswählen" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">Benutzer</SelectItem>

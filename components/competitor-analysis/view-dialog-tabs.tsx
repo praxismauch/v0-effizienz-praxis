@@ -106,9 +106,9 @@ export function OverviewTab({ analysis }: { analysis: any }) {
       )}
       {analysis.market_overview && (
         <Card>
-          <CardHeader><CardTitle>Marktubersicht</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Marktübersicht</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            {analysis.market_overview.market_size && <div><h4 className="font-medium mb-1">Marktgrosse</h4><p className="text-sm text-muted-foreground">{analysis.market_overview.market_size}</p></div>}
+            {analysis.market_overview.market_size && <div><h4 className="font-medium mb-1">Marktgröße</h4><p className="text-sm text-muted-foreground">{analysis.market_overview.market_size}</p></div>}
             {analysis.market_overview.demographics && <div><h4 className="font-medium mb-1">Demografie</h4><p className="text-sm text-muted-foreground">{analysis.market_overview.demographics}</p></div>}
             {analysis.market_overview.trends?.length > 0 && (
               <div>
@@ -124,7 +124,7 @@ export function OverviewTab({ analysis }: { analysis: any }) {
       )}
       {ratingSummary && (
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-yellow-500" />Bewertungsubersicht im Markt</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-yellow-500" />Bewertungsübersicht im Markt</CardTitle></CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-muted rounded-lg">
@@ -236,7 +236,7 @@ export function RatingsTab({ analysis }: { analysis: any }) {
     <div className="space-y-4">
       {ratingSummary && (
         <Card>
-          <CardHeader><CardTitle>Markt-Bewertungsubersicht</CardTitle><CardDescription>Zusammenfassung aller Bewertungen</CardDescription></CardHeader>
+          <CardHeader><CardTitle>Markt-Bewertungsübersicht</CardTitle><CardDescription>Zusammenfassung aller Bewertungen</CardDescription></CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 border rounded-lg text-center"><div className="flex items-center justify-center gap-1 mb-2"><Star className="h-6 w-6 fill-yellow-400 text-yellow-400" /><span className="text-3xl font-bold">{ratingSummary.average_google_rating?.toFixed(1) || "-"}</span></div><p className="text-sm font-medium">Durchschnitt Google</p><p className="text-xs text-muted-foreground">im Marktumfeld</p></div>
@@ -315,7 +315,7 @@ export function PricingTab({ analysis }: { analysis: any }) {
   if (!analysis.pricing_comparison) return null
   return (
     <div className="space-y-4">
-      <Card><CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5" />Preisubersicht</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">{analysis.pricing_comparison.overview}</p>{analysis.pricing_comparison.pricing_strategy && <div className="mt-4 p-3 bg-primary/10 rounded-lg"><h4 className="font-medium mb-1">Empfohlene Preisstrategie</h4><p className="text-sm">{analysis.pricing_comparison.pricing_strategy}</p></div>}</CardContent></Card>
+      <Card><CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5" />Preisübersicht</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">{analysis.pricing_comparison.overview}</p>{analysis.pricing_comparison.pricing_strategy && <div className="mt-4 p-3 bg-primary/10 rounded-lg"><h4 className="font-medium mb-1">Empfohlene Preisstrategie</h4><p className="text-sm">{analysis.pricing_comparison.pricing_strategy}</p></div>}</CardContent></Card>
       {analysis.pricing_comparison.igel_services?.length > 0 && (
         <Card><CardHeader><CardTitle>IGeL-Leistungen Preisvergleich</CardTitle></CardHeader><CardContent><div className="space-y-3">{analysis.pricing_comparison.igel_services.map((service: any, i: number) => <div key={i} className="flex items-center justify-between p-3 border rounded-lg"><div><h4 className="font-medium">{service.service}</h4><p className="text-sm text-muted-foreground">Marktdurchschnitt: {service.market_average}</p></div><div className="text-right"><p className="text-sm font-medium text-primary">{service.recommendation}</p></div></div>)}</div></CardContent></Card>
       )}
@@ -339,7 +339,7 @@ export function OnlineTab({ analysis }: { analysis: any }) {
 // --- Tab: Recommendations ---
 
 export function RecommendationsTab({ analysis }: { analysis: any }) {
-  if (!analysis.recommendations?.length) return <Card><CardContent className="py-8 text-center text-muted-foreground">Keine Empfehlungen verfugbar</CardContent></Card>
+  if (!analysis.recommendations?.length) return <Card><CardContent className="py-8 text-center text-muted-foreground">Keine Empfehlungen verfügbar</CardContent></Card>
   return (
     <div className="space-y-4">
       {analysis.recommendations.map((rec: any, i: number) => (

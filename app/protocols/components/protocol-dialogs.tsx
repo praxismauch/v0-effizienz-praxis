@@ -508,7 +508,7 @@ function AttendeesPicker({ teamMembers, selectedIds, onChange }: AttendeesPicker
           })}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Keine Teammitglieder verfuegbar</p>
+        <p className="text-sm text-muted-foreground">Keine Teammitglieder verfügbar</p>
       )}
     </div>
   )

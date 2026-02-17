@@ -233,7 +233,7 @@ onValueChange={(value) => setSettings({ ...settings, type: value })}
                       ))}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">Fachrichtungen auswahlen...</span>
+                    <span className="text-muted-foreground">Fachrichtungen auswählen...</span>
                   )}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>

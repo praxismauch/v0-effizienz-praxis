@@ -264,11 +264,11 @@ export function EntryDialog({
               setParameterId(v)
               setDuplicateWarning({ show: false, existingValue: null })
             }}>
-              <SelectTrigger><SelectValue placeholder={t("kpi.select_parameter", "Parameter auswahlen")} /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t("kpi.select_parameter", "Parameter auswählen")} /></SelectTrigger>
               <SelectContent>
                 {filteredParameters.length === 0 ? (
                   <div className="p-2 text-sm text-muted-foreground text-center">
-                    {t("kpi.no_parameters", "Keine Parameter verfuegbar")}
+                    {t("kpi.no_parameters", "Keine Parameter verfügbar")}
                   </div>
                 ) : filteredParameters.map((p) => (
                   <SelectItem key={p.id} value={p.id}>

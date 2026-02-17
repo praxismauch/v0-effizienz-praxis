@@ -43,7 +43,7 @@ export function TileCard({ tile, onEdit, onDelete, onToggleDashboard }: TileCard
           size="icon"
           className={cn("h-7 w-7", tile.showOnDashboard && "text-primary")}
           onClick={() => onToggleDashboard(tile.id)}
-          title={tile.showOnDashboard ? "Vom Dashboard entfernen" : "Zum Dashboard hinzufugen"}
+          title={tile.showOnDashboard ? "Vom Dashboard entfernen" : "Zum Dashboard hinzufügen"}
         >
           <LayoutDashboard className="h-3.5 w-3.5" />
         </Button>

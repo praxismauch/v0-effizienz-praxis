@@ -131,11 +131,11 @@ export function DeleteVersionDialog({ isOpen, onOpenChange, onConfirm, t }: Dele
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("leitbild.deleteVersion", "Version loschen?")}</AlertDialogTitle>
+          <AlertDialogTitle>{t("leitbild.deleteVersion", "Version löschen?")}</AlertDialogTitle>
           <AlertDialogDescription>
             {t(
               "leitbild.deleteVersionDesc",
-              "Diese Aktion kann nicht ruckgangig gemacht werden. Die Version wird permanent geloscht.",
+              "Diese Aktion kann nicht rückgängig gemacht werden. Die Version wird permanent gelöscht.",
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>

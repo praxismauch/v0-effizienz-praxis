@@ -98,7 +98,7 @@ export function AttendeesPickerInline({ teamMembers, selectedIds, onChange }: At
           })}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Keine Teammitglieder verfuegbar</p>
+        <p className="text-sm text-muted-foreground">Keine Teammitglieder verfügbar</p>
       )}
     </div>
   )

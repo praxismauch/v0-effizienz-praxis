@@ -19,8 +19,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Successfully fetched", hygienePlans?.length || 0, "hygiene plans")
-    return NextResponse.json({ hygienePlans })
+    // Map DB column 'area' to 'category' for the UI
+    const mappedPlans = (hygienePlans || []).map((plan) => ({
+      ...plan,
+      category: plan.area || "",
+    }))
+
+    console.log("[v0] Successfully fetched", mappedPlans.length, "hygiene plans")
+    return NextResponse.json({ hygienePlans: mappedPlans })
   } catch (error) {
     console.error("[v0] Error in hygiene plans GET:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

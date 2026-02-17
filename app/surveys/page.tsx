@@ -263,10 +263,51 @@ export default function SurveysPage() {
         body: JSON.stringify({ prompt: aiPrompt }),
       })
       if (response.ok) {
-        toast({ title: "Umfrage generiert", description: "Die KI hat eine Umfrage erstellt." })
+        const data = await response.json()
+        const generatedSurvey = data.survey
+
+        // Close AI dialog and reset prompt
         setShowAIDialog(false)
         setAIPrompt("")
+
+        // Refresh list so the new survey appears
         fetchSurveys()
+
+        // Open the edit dialog pre-filled with the generated survey
+        if (generatedSurvey) {
+          setSelectedSurvey(generatedSurvey)
+          setEditSurveyData({
+            title: generatedSurvey.title || "",
+            description: generatedSurvey.description || "",
+            target_audience: generatedSurvey.target_audience || "all",
+            is_anonymous: generatedSurvey.is_anonymous || false,
+            start_date: generatedSurvey.start_date || "",
+            end_date: generatedSurvey.end_date || "",
+            questions: [],
+          })
+          setShowEditDialog(true)
+
+          // Fetch the generated questions
+          try {
+            const qResponse = await fetch(
+              `/api/practices/${currentPractice.id}/surveys/${generatedSurvey.id}/questions`,
+              { credentials: "include" }
+            )
+            if (qResponse.ok) {
+              const qData = await qResponse.json()
+              setEditSurveyData((prev) => ({ ...prev, questions: qData.questions || [] }))
+            }
+          } catch {
+            // Questions will just be empty if fetch fails
+          }
+
+          toast({
+            title: "Umfrage generiert",
+            description: "Bitte überprüfen Sie die generierte Umfrage und passen Sie sie bei Bedarf an.",
+          })
+        }
+      } else {
+        throw new Error("Generation failed")
       }
     } catch {
       toast({ title: "Fehler", description: "Die Umfrage konnte nicht generiert werden.", variant: "destructive" })

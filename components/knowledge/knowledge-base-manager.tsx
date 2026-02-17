@@ -291,6 +291,7 @@ export function KnowledgeBaseManager() {
               orgaCategories={orgaCategories}
               onEdit={setEditingArticle}
               onDelete={setArticleToDelete}
+              externalSearchQuery={searchQuery}
             />
           </TabsContent>
 

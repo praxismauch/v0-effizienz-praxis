@@ -61,6 +61,7 @@ interface PracticeHandbookViewProps {
   orgaCategories: OrgaCategory[]
   onEdit?: (article: KnowledgeArticle) => void
   onDelete?: (article: KnowledgeArticle) => void
+  externalSearchQuery?: string
 }
 
 const DEFAULT_HANDBOOK_CHAPTERS: HandbookChapter[] = [
@@ -456,9 +457,11 @@ function ChapterContent({ chapter, practiceId }: { chapter: HandbookChapter; pra
   return <div className="space-y-4">{renderContent()}</div>
 }
 
-export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelete }: PracticeHandbookViewProps) {
+export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelete, externalSearchQuery }: PracticeHandbookViewProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [searchQuery, setSearchQuery] = useState("")
+  const [internalSearchQuery, setInternalSearchQuery] = useState("")
+  // Use external search if provided and non-empty, otherwise use the internal handbook search
+  const searchQuery = externalSearchQuery || internalSearchQuery
   const [exportingPdf, setExportingPdf] = useState(false)
   const [exportingWord, setExportingWord] = useState(false)
   const [handbookChapters, setHandbookChapters] = useState<HandbookChapter[]>(DEFAULT_HANDBOOK_CHAPTERS)
@@ -678,12 +681,12 @@ export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelet
 
           <div className="relative mt-6">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Im Handbuch suchen..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-background"
-            />
+  <Input
+  placeholder="Im Handbuch suchen..."
+  value={internalSearchQuery}
+  onChange={(e) => setInternalSearchQuery(e.target.value)}
+  className="pl-10 bg-background"
+  />
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4">
@@ -716,7 +719,7 @@ export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelet
         <div className="p-6">
           <h2 className="text-xl font-semibold mb-4">Inhaltsverzeichnis</h2>
           <div className="space-y-2">
-            {enabledChapters.map((chapter) => {
+            {!searchQuery && enabledChapters.map((chapter) => {
               const IconComponent = ICON_MAP[chapter.icon] || FileText
               return (
                 <button
@@ -773,7 +776,7 @@ export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelet
         </div>
       </Card>
 
-      {enabledChapters.length > 0 && (
+      {enabledChapters.length > 0 && !searchQuery && (
         <div className="space-y-6">
           {enabledChapters.map((chapter) => {
             const IconComponent = ICON_MAP[chapter.icon] || FileText

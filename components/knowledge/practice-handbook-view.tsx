@@ -738,8 +738,16 @@ export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelet
             })}
 
             {/* Article categories */}
-            {sortedCategories.map((category) => {
-              const categoryData = orgaCategories.find((cat) => cat.name === category)
+            {sortedCategories.map((category, idx) => {
+              const categoryData = orgaCategories.find(
+                (cat) => cat.name.trim().toLowerCase() === category.trim().toLowerCase()
+              )
+              // Fallback colors for categories without an explicit orgaCategory color
+              const FALLBACK_COLORS = [
+                "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316",
+                "#eab308", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6",
+              ]
+              const dotColor = categoryData?.color || FALLBACK_COLORS[idx % FALLBACK_COLORS.length]
               return (
                 <button
                   key={category}
@@ -749,12 +757,10 @@ export function PracticeHandbookView({ articles, orgaCategories, onEdit, onDelet
                   }}
                   className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-md hover:bg-muted transition-colors"
                 >
-                  {categoryData && (
-                    <div
-                      className="h-3 w-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: categoryData.color }}
-                    />
-                  )}
+                  <div
+                    className="h-3 w-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: dotColor }}
+                  />
                   <span className="font-medium">{category}</span>
                   <Badge variant="secondary" className="ml-auto">
                     {groupedArticles[category].length}

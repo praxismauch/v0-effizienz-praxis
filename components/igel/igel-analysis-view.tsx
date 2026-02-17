@@ -27,19 +27,22 @@ interface IgelAnalysisViewProps {
 
 export function IgelAnalysisView({ analysisId }: IgelAnalysisViewProps) {
   const router = useRouter()
-  const { currentPractice } = usePractice()
-  const { analyses, isLoading } = useIgelAnalyses(currentPractice?.id)
+  const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const practiceId = currentPractice?.id
+  const { analyses, isLoading: analysesLoading } = useIgelAnalyses(practiceId)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const { toast } = useToast()
 
+  const isLoading = practiceLoading || !practiceId || analysesLoading
   const analysis = analyses?.find((a: any) => a.id === analysisId)
 
   useEffect(() => {
-    if (!isLoading && !analysis) {
+    // Only redirect if we have finished loading everything and still can't find the analysis
+    if (!practiceLoading && practiceId && !analysesLoading && !analysis) {
       router.push("/igel")
     }
-  }, [analysis, isLoading, router])
+  }, [analysis, practiceLoading, practiceId, analysesLoading, router])
 
   if (isLoading) {
     return (

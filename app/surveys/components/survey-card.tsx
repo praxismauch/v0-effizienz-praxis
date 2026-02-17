@@ -66,44 +66,42 @@ export function SurveyCard({
 
   return (
     <Card className="flex flex-col hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base leading-snug truncate">{survey.title}</CardTitle>
-            {survey.description && (
-              <CardDescription className="line-clamp-2 text-xs mt-1">{survey.description}</CardDescription>
+      <CardHeader className="pb-3 relative">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="absolute top-3 right-3 h-8 w-8 p-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEdit(survey)}>
+              <Edit2 className="h-4 w-4 mr-2" />
+              Bearbeiten
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDuplicate(survey)}>
+              <Copy className="h-4 w-4 mr-2" />
+              Duplizieren
+            </DropdownMenuItem>
+            {survey.public_token && (
+              <DropdownMenuItem onClick={() => onCopyLink(survey)}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Link kopieren
+              </DropdownMenuItem>
             )}
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(survey)}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Bearbeiten
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onDuplicate(survey)}>
-                <Copy className="h-4 w-4 mr-2" />
-                Duplizieren
-              </DropdownMenuItem>
-              {survey.public_token && (
-                <DropdownMenuItem onClick={() => onCopyLink(survey)}>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Link kopieren
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onDelete(survey.id)} className="text-red-600">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Löschen
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onDelete(survey.id)} className="text-red-600">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Löschen
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <div className="pr-8">
+          <CardTitle className="text-base leading-snug">{survey.title}</CardTitle>
+          {survey.description && (
+            <CardDescription className="line-clamp-2 text-xs mt-1">{survey.description}</CardDescription>
+          )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 mt-2">
           <Badge
             variant={survey.status === "active" ? "default" : survey.status === "draft" ? "secondary" : "outline"}
             className={cn(survey.status === "active" && "bg-emerald-100 text-emerald-700 hover:bg-emerald-100")}
@@ -127,12 +125,14 @@ export function SurveyCard({
               Anonym
             </Badge>
           )}
-          {timeStatus && (
+        </div>
+        {timeStatus && (
+          <div className="mt-1.5">
             <Badge variant="outline" className={cn("text-xs", timeStatus.color)}>
               {timeStatus.label}
             </Badge>
-          )}
-        </div>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="flex-1 pb-3 pt-0">
         <div className="flex items-center justify-between text-sm">

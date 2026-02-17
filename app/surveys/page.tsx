@@ -8,7 +8,17 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Search, Sparkles, ClipboardCheck, LayoutTemplate, Heart, Zap } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Plus, Search, Sparkles, ClipboardCheck, LayoutTemplate, Heart, Zap, Trash2 } from "lucide-react"
 import { AppLayout } from "@/components/app-layout"
 import { PageHeader } from "@/components/page-layout"
 import Logger from "@/lib/logger"
@@ -51,6 +61,7 @@ export default function SurveysPage() {
   const [showResultsDialog, setShowResultsDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Survey | null>(null)
   const [editSurveyData, setEditSurveyData] = useState<EditSurveyData>({
     title: "",
     description: "",
@@ -554,7 +565,10 @@ export default function SurveysPage() {
                   key={survey.id}
                   survey={survey}
                   onEdit={openEditDialog}
-                  onDelete={handleDeleteSurvey}
+                    onDelete={(id) => {
+                      const survey = surveys.find((s) => s.id === id)
+                      if (survey) setDeleteTarget(survey)
+                    }}
                   onDuplicate={handleDuplicateSurvey}
                   onCopyLink={copyPublicLink}
                   onToggleStatus={handleToggleStatus}
@@ -602,6 +616,34 @@ export default function SurveysPage() {
         onSubmit={handleEditSurvey}
         isCreating={isCreating}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Umfrage löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie die Umfrage <span className="font-semibold text-foreground">{deleteTarget?.title}</span> wirklich
+              löschen? Alle zugehörigen Antworten und Ergebnisse werden ebenfalls entfernt. Diese Aktion kann nicht
+              rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  handleDeleteSurvey(deleteTarget.id)
+                  setDeleteTarget(null)
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Endgültig löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   )
 }

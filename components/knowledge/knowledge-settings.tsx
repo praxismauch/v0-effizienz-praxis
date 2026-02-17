@@ -7,12 +7,28 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Save, Settings2, Shield, Bell, History, FolderOpen, Plus, X } from "lucide-react"
+import { Loader2, Save, Shield, Bell, History, FolderOpen, Plus, X, GripVertical } from "lucide-react"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
-interface KnowledgeSettings {
+interface KnowledgeSettingsData {
   require_review_before_publish: boolean
   auto_versioning: boolean
   default_category: string
@@ -23,7 +39,7 @@ interface KnowledgeSettings {
   notify_on_update: boolean
 }
 
-const DEFAULT_SETTINGS: KnowledgeSettings = {
+const DEFAULT_SETTINGS: KnowledgeSettingsData = {
   require_review_before_publish: false,
   auto_versioning: true,
   default_category: "general",
@@ -43,7 +59,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   training: "Schulung",
   hygiene: "Hygiene",
   safety: "Sicherheit",
-  quality: "Qualitaet",
+  quality: "Qualität",
   hr: "Personal",
   it: "IT",
   finance: "Finanzen",
@@ -51,15 +67,76 @@ const CATEGORY_LABELS: Record<string, string> = {
   marketing: "Marketing",
 }
 
+// Sortable category item component
+function SortableCategoryItem({
+  id,
+  index,
+  onRemove,
+  totalItems,
+}: {
+  id: string
+  index: number
+  onRemove: (cat: string) => void
+  totalItems: number
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 rounded-lg border bg-card p-3 ${isDragging ? "opacity-50 shadow-lg" : ""}`}
+    >
+      <button
+        className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+        {...attributes}
+        {...listeners}
+        aria-label="Kategorie verschieben"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+        {index + 1}
+      </span>
+
+      <span className="flex-1 text-sm font-medium">
+        {CATEGORY_LABELS[id] || id}
+      </span>
+
+      <span className="text-xs text-muted-foreground">{id}</span>
+
+      <button
+        onClick={() => onRemove(id)}
+        disabled={totalItems <= 1}
+        className="rounded-full p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+        aria-label={`Kategorie ${CATEGORY_LABELS[id] || id} entfernen`}
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
+}
+
 export function KnowledgeSettings() {
   const { currentPractice } = usePractice()
   const { toast } = useToast()
-  const [settings, setSettings] = useState<KnowledgeSettings>(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useState<KnowledgeSettingsData>(DEFAULT_SETTINGS)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [newCategory, setNewCategory] = useState("")
 
   const practiceId = currentPractice?.id
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   const loadSettings = useCallback(async () => {
     if (!practiceId) return
@@ -123,8 +200,25 @@ export function KnowledgeSettings() {
     setSettings((prev) => ({
       ...prev,
       allowed_categories: prev.allowed_categories.filter((c) => c !== cat),
-      default_category: prev.default_category === cat ? prev.allowed_categories.filter((c) => c !== cat)[0] || "general" : prev.default_category,
+      default_category:
+        prev.default_category === cat
+          ? prev.allowed_categories.filter((c) => c !== cat)[0] || "general"
+          : prev.default_category,
     }))
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    setSettings((prev) => {
+      const oldIndex = prev.allowed_categories.indexOf(active.id as string)
+      const newIndex = prev.allowed_categories.indexOf(over.id as string)
+      return {
+        ...prev,
+        allowed_categories: arrayMove(prev.allowed_categories, oldIndex, newIndex),
+      }
+    })
   }
 
   if (loading) {
@@ -142,15 +236,15 @@ export function KnowledgeSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Shield className="h-5 w-5" />
-            Review & Veroeffentlichung
+            Review & Veröffentlichung
           </CardTitle>
-          <CardDescription>Steuern Sie, wie Artikel veroeffentlicht und geprueft werden.</CardDescription>
+          <CardDescription>Steuern Sie, wie Artikel veröffentlicht und geprüft werden.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label className="text-sm font-medium">Review vor Veroeffentlichung</Label>
-              <p className="text-xs text-muted-foreground">Artikel muessen vor der Veroeffentlichung geprueft werden.</p>
+              <Label className="text-sm font-medium">Review vor Veröffentlichung</Label>
+              <p className="text-xs text-muted-foreground">Artikel müssen vor der Veröffentlichung geprüft werden.</p>
             </div>
             <Switch
               checked={settings.require_review_before_publish}
@@ -167,7 +261,7 @@ export function KnowledgeSettings() {
             <History className="h-5 w-5" />
             Versionierung
           </CardTitle>
-          <CardDescription>Konfigurieren Sie die automatische Versionsverwaltung fuer Artikel.</CardDescription>
+          <CardDescription>Konfigurieren Sie die automatische Versionsverwaltung für Artikel.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
@@ -183,8 +277,8 @@ export function KnowledgeSettings() {
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label className="text-sm font-medium">Aenderungsbeschreibung erforderlich</Label>
-              <p className="text-xs text-muted-foreground">Bei jeder Aenderung muss eine Beschreibung angegeben werden.</p>
+              <Label className="text-sm font-medium">Änderungsbeschreibung erforderlich</Label>
+              <p className="text-xs text-muted-foreground">Bei jeder Änderung muss eine Beschreibung angegeben werden.</p>
             </div>
             <Switch
               checked={settings.require_change_summary}
@@ -194,7 +288,7 @@ export function KnowledgeSettings() {
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Maximale Versionen pro Artikel</Label>
-            <p className="text-xs text-muted-foreground">Aeltere Versionen werden automatisch entfernt.</p>
+            <p className="text-xs text-muted-foreground">Ältere Versionen werden automatisch entfernt.</p>
             <Select
               value={String(settings.max_versions_to_keep)}
               onValueChange={(v) => setSettings((p) => ({ ...p, max_versions_to_keep: parseInt(v) }))}
@@ -214,14 +308,16 @@ export function KnowledgeSettings() {
         </CardContent>
       </Card>
 
-      {/* Categories */}
+      {/* Categories with drag-and-drop sorting */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <FolderOpen className="h-5 w-5" />
-            Kategorien
+            Kategorien & Reihenfolge
           </CardTitle>
-          <CardDescription>Verwalten Sie die verfuegbaren Kategorien fuer Wissensartikel.</CardDescription>
+          <CardDescription>
+            Verwalten Sie die verfügbaren Kategorien für Wissensartikel. Ziehen Sie die Kategorien in die gewünschte Reihenfolge für die automatische Generierung.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -244,24 +340,30 @@ export function KnowledgeSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Erlaubte Kategorien</Label>
-            <div className="flex flex-wrap gap-2">
-              {settings.allowed_categories.map((cat) => (
-                <Badge key={cat} variant="secondary" className="gap-1 pr-1">
-                  {CATEGORY_LABELS[cat] || cat}
-                  <button
-                    onClick={() => removeCategory(cat)}
-                    className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
-                    aria-label={`Kategorie ${cat} entfernen`}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-            <div className="flex gap-2">
+            <Label className="text-sm font-medium">Kategorien-Reihenfolge</Label>
+            <p className="text-xs text-muted-foreground">
+              Ziehen Sie die Kategorien per Drag & Drop in die gewünschte Anzeigereihenfolge. Diese Reihenfolge wird für die automatische Generierung der Wissensseite verwendet.
+            </p>
+
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={settings.allowed_categories} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {settings.allowed_categories.map((cat, index) => (
+                    <SortableCategoryItem
+                      key={cat}
+                      id={cat}
+                      index={index}
+                      onRemove={removeCategory}
+                      totalItems={settings.allowed_categories.length}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+
+            <div className="flex gap-2 pt-2">
               <Input
-                placeholder="Neue Kategorie..."
+                placeholder="Neue Kategorie hinzufügen..."
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addCategory()}
@@ -269,7 +371,7 @@ export function KnowledgeSettings() {
               />
               <Button variant="outline" size="sm" onClick={addCategory} disabled={!newCategory.trim()}>
                 <Plus className="h-4 w-4 mr-1" />
-                Hinzufuegen
+                Hinzufügen
               </Button>
             </div>
           </div>
@@ -283,13 +385,13 @@ export function KnowledgeSettings() {
             <Bell className="h-5 w-5" />
             Benachrichtigungen
           </CardTitle>
-          <CardDescription>Konfigurieren Sie Benachrichtigungen fuer Wissensartikel.</CardDescription>
+          <CardDescription>Konfigurieren Sie Benachrichtigungen für Wissensartikel.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label className="text-sm font-medium">Bei Veroeffentlichung benachrichtigen</Label>
-              <p className="text-xs text-muted-foreground">Team-Mitglieder werden ueber neue Artikel informiert.</p>
+              <Label className="text-sm font-medium">Bei Veröffentlichung benachrichtigen</Label>
+              <p className="text-xs text-muted-foreground">Team-Mitglieder werden über neue Artikel informiert.</p>
             </div>
             <Switch
               checked={settings.notify_on_publish}
@@ -299,7 +401,7 @@ export function KnowledgeSettings() {
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
               <Label className="text-sm font-medium">Bei Aktualisierung benachrichtigen</Label>
-              <p className="text-xs text-muted-foreground">Team-Mitglieder werden ueber Aenderungen an bestehenden Artikeln informiert.</p>
+              <p className="text-xs text-muted-foreground">Team-Mitglieder werden über Änderungen an bestehenden Artikeln informiert.</p>
             </div>
             <Switch
               checked={settings.notify_on_update}

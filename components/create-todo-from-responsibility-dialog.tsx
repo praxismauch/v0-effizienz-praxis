@@ -19,7 +19,7 @@ import { usePractice } from "@/contexts/practice-context"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
-import { Link2, ClipboardList } from "lucide-react"
+import { Link2, ClipboardList, User } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface Responsibility {
@@ -272,14 +272,9 @@ export function CreateTodoFromResponsibilityDialog({
                       className="flex items-center space-x-2 cursor-pointer flex-1"
                     >
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={member.avatar || ""} />
-                        <AvatarFallback className="text-xs">
-                          {member.name
-                            ?.split(" ")
-                            .map((n: string) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase() || "TM"}
+                        {member.avatar ? <AvatarImage src={member.avatar} /> : null}
+                        <AvatarFallback className="text-xs bg-muted">
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm">{member.name || member.email || "Unbekannt"}</span>

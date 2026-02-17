@@ -24,7 +24,7 @@ import { useTeam } from "@/contexts/team-context"
 import { useUser } from "@/contexts/user-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useTranslation } from "@/contexts/translation-context"
-import { Loader2, Link, ChevronDown, ChevronUp, Users, Settings } from "lucide-react"
+import { Loader2, Link, ChevronDown, ChevronUp, Users, Settings, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 import { SWR_KEYS } from "@/lib/swr-keys"
@@ -488,10 +488,11 @@ export function EditGoalDialogComponent({ open, onOpenChange, goal, onGoalUpdate
                         className="flex items-center space-x-2 cursor-pointer flex-1"
                       >
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={member.avatar || ""} />
-                          <AvatarFallback className="text-xs">
-                            {member.name?.split(" ")[0]?.[0]?.toUpperCase() || ""}
-                            {member.name?.split(" ")[1]?.[0]?.toUpperCase() || ""}
+                          {member.avatar ? (
+                            <AvatarImage src={member.avatar} />
+                          ) : null}
+                          <AvatarFallback className="text-xs bg-muted">
+                            <User className="h-3.5 w-3.5 text-muted-foreground" />
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm">{member.name || member.email}</span>

@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Users, Loader2 } from "lucide-react"
+import { Users, Loader2, User } from "lucide-react"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
 
 interface Team {
@@ -108,10 +108,11 @@ export function GoalTeamAssignment({
                 />
                 <label htmlFor={`member-${member.id}`} className="flex items-center space-x-2 cursor-pointer flex-1">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={member.avatar || ""} />
-                    <AvatarFallback className="text-xs">
-                      {member.name?.split(" ")[0]?.[0]?.toUpperCase() || ""}
-                      {member.name?.split(" ")[1]?.[0]?.toUpperCase() || ""}
+                    {member.avatar ? (
+                      <AvatarImage src={member.avatar} />
+                    ) : null}
+                    <AvatarFallback className="text-xs bg-muted">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm">{member.name || member.email}</span>

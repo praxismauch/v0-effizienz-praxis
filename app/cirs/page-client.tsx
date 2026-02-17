@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Plus, Search, Filter, X } from "lucide-react"
+import { Shield, Plus, Search, Filter, X, ClipboardList, AlertTriangle, ShieldAlert, Flame } from "lucide-react"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
@@ -133,43 +134,35 @@ export default function CIRSPageClient() {
           }
         />
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Gesamt</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">{"Gemeldete Vorfalle"}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Fehler</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.errors}</div>
-              <p className="text-xs text-muted-foreground mt-1">{"Tatsachliche Fehler"}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Beinahe-Fehler</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.nearErrors}</div>
-              <p className="text-xs text-muted-foreground mt-1">Rechtzeitig erkannt</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Kritisch</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.critical}</div>
-              <p className="text-xs text-muted-foreground mt-1">{"Hohe Prioritat"}</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard
+            label="Gesamt"
+            value={stats.total}
+            icon={ClipboardList}
+            description="Gemeldete Vorfalle"
+            {...statCardColors.primary}
+          />
+          <StatCard
+            label="Fehler"
+            value={stats.errors}
+            icon={AlertTriangle}
+            description="Tatsachliche Fehler"
+            {...statCardColors.red}
+          />
+          <StatCard
+            label="Beinahe-Fehler"
+            value={stats.nearErrors}
+            icon={ShieldAlert}
+            description="Rechtzeitig erkannt"
+            {...statCardColors.amber}
+          />
+          <StatCard
+            label="Kritisch"
+            value={stats.critical}
+            icon={Flame}
+            description="Hohe Prioritat"
+            {...statCardColors.orange}
+          />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2">

@@ -242,11 +242,6 @@ function WorkflowsPage() {
       setIsCreateOpen(true)
       setAiDescription("")
       setAiCategory("")
-
-      toast({
-        title: "Workflow generiert",
-        description: `"${workflow.name}" mit ${workflow.steps?.length || 0} Schritten wurde generiert. Sie können die Vorlage nun anpassen und speichern.`,
-      })
     } catch (error) {
       toast({
         title: "Fehler",

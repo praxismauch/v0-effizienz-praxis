@@ -554,7 +554,7 @@ export default function ZeitLogsTab({
                         {stat.blocks.map((block) => (
                           <TableRow key={block.id}>
                             <TableCell>
-                              {format(parseISO(block.date), "dd.MM.yyyy", { locale: de })}
+                              {format(parseISO(block.date), "EE, dd.MM.yyyy", { locale: de })}
                             </TableCell>
                             <TableCell>
                               {format(parseISO(block.start_time), "HH:mm")}

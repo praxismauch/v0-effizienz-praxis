@@ -3,37 +3,37 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { generateText } from "ai"
 
 const RKI_HYGIENE_CONTEXT = `
-Robert Koch Institut (RKI) Hygiene Guidelines for Medical Practices:
+Robert Koch-Institut (RKI) Hygienerichtlinien für medizinische Praxen:
 
-1. Hand Hygiene:
-- Hand disinfection before and after patient contact
-- Hand washing when visibly soiled
-- Use of WHO 5 Moments for Hand Hygiene
+1. Händehygiene:
+- Händedesinfektion vor und nach Patientenkontakt
+- Händewaschen bei sichtbarer Verschmutzung
+- Anwendung der WHO 5 Momente der Händehygiene
 
-2. Surface Disinfection:
-- Regular disinfection of contact surfaces
-- Disinfection after each patient for examination surfaces
-- Use of RKI/VAH approved disinfectants
+2. Flächendesinfektion:
+- Regelmäßige Desinfektion von Kontaktflächen
+- Desinfektion nach jedem Patienten bei Untersuchungsflächen
+- Verwendung von RKI/VAH-gelisteten Desinfektionsmitteln
 
-3. Sterilization:
-- Follow DIN EN ISO 13060 standards
-- Regular validation of sterilization equipment
-- Documentation of sterilization cycles
+3. Sterilisation:
+- Einhaltung der DIN EN ISO 13060 Standards
+- Regelmäßige Validierung der Sterilisationsgeräte
+- Dokumentation der Sterilisationszyklen
 
-4. Waste Management:
-- Separate infectious and non-infectious waste
-- Use of appropriate containers
-- Follow local waste management regulations
+4. Abfallmanagement:
+- Trennung von infektiösem und nicht-infektiösem Abfall
+- Verwendung geeigneter Behälter
+- Beachtung der lokalen Abfallentsorgungsvorschriften
 
-5. Occupational Safety:
-- Use of personal protective equipment (PPE)
-- Vaccination recommendations for staff
-- Post-exposure protocols
+5. Arbeitsschutz:
+- Verwendung persönlicher Schutzausrüstung (PSA)
+- Impfempfehlungen für das Personal
+- Postexpositionsprotokolle
 
-6. Quality Management:
-- Regular hygiene inspections
-- Staff training and documentation
-- Compliance monitoring
+6. Qualitätsmanagement:
+- Regelmäßige Hygienebegehungen
+- Schulung und Dokumentation des Personals
+- Compliance-Überwachung
 `
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
@@ -47,41 +47,43 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     console.log("[v0] Generating hygiene plan for category:", category)
 
     // Generate AI-based hygiene plan using RKI guidelines
-    const prompt = `Based on the Robert Koch Institut (RKI) guidelines for medical practices in Germany, create a comprehensive hygiene plan for the following:
+    const prompt = `Erstelle basierend auf den Richtlinien des Robert Koch-Instituts (RKI) für medizinische Praxen in Deutschland einen umfassenden Hygieneplan für folgende Anforderungen:
 
-Category: ${category}
-Practice Type: ${practiceType || "General medical practice"}
-Custom Requirements: ${customRequirements || "None"}
+Kategorie: ${category}
+Praxistyp: ${practiceType || "Allgemeine Arztpraxis"}
+Besondere Anforderungen: ${customRequirements || "Keine"}
 
 ${RKI_HYGIENE_CONTEXT}
 
-Please provide a detailed hygiene plan in JSON format with the following structure:
+WICHTIG: Antworte ausschließlich auf Deutsch. Alle Texte, Titel, Beschreibungen und Inhalte müssen in deutscher Sprache verfasst sein.
+
+Erstelle einen detaillierten Hygieneplan im JSON-Format mit folgender Struktur:
 {
-  "title": "Clear, descriptive title",
-  "description": "Brief overview of the hygiene plan",
+  "title": "Klarer, beschreibender Titel auf Deutsch",
+  "description": "Kurze Übersicht des Hygieneplans auf Deutsch",
   "category": "${category}",
   "frequency": "daily/weekly/monthly/as_needed",
-  "responsible_role": "Who is responsible (e.g., Practice Manager, All Staff)",
+  "responsible_role": "Verantwortliche Rolle (z.B. Praxisleitung, Gesamtes Personal)",
   "content": {
-    "objective": "Main goal of this hygiene measure",
-    "materials": ["List of required materials and products"],
+    "objective": "Hauptziel dieser Hygienemaßnahme",
+    "materials": ["Liste der benötigten Materialien und Produkte"],
     "steps": [
-      {"step": 1, "description": "Detailed step description", "critical": true/false}
+      {"step": 1, "description": "Detaillierte Schritt-Beschreibung", "critical": true/false}
     ],
-    "documentation": "What needs to be documented",
-    "quality_indicators": ["How to measure compliance"],
-    "references": ["Specific RKI guideline references"]
+    "documentation": "Was dokumentiert werden muss",
+    "quality_indicators": ["Wie die Einhaltung gemessen wird"],
+    "references": ["Spezifische RKI-Richtlinien-Referenzen"]
   },
-  "rki_reference_url": "URL to relevant RKI guideline if available",
-  "tags": ["relevant", "tags"]
+  "rki_reference_url": "URL zur relevanten RKI-Richtlinie falls verfügbar",
+  "tags": ["relevante", "schlagwörter"]
 }
 
-Ensure the plan is:
-- Compliant with current RKI guidelines
-- Practical and implementable in a medical practice
-- Clear and easy to follow
-- Includes specific product recommendations when relevant
-- Addresses quality and safety standards`
+Stelle sicher, dass der Plan:
+- Den aktuellen RKI-Richtlinien entspricht
+- Praxistauglich und umsetzbar ist
+- Klar und leicht verständlich formuliert ist
+- Spezifische Produktempfehlungen enthält, wo relevant
+- Qualitäts- und Sicherheitsstandards berücksichtigt`
 
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",

@@ -227,7 +227,7 @@ function SickLeavesManager({ teamMembers = [] }: SickLeavesManagerProps) {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Möchten Sie diese Krankmeldung wirklich löschen?")) return
+    if (!window.confirm("Möchten Sie diese Krankmeldung wirklich löschen?")) return
 
     try {
       const response = await fetch(`/api/practices/${currentPractice?.id}/sick-leaves/${id}`, { method: "DELETE" })

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -31,6 +32,7 @@ export default function WorkflowsPageClient() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid")
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null)
@@ -123,7 +125,11 @@ export default function WorkflowsPageClient() {
 
   const handleDelete = async (workflow: Workflow) => {
     if (!currentPractice?.id) return
-    if (!confirm("Sind Sie sicher, dass Sie diesen Workflow löschen möchten?")) return
+    const ok = await confirmDialog({
+      title: "Workflow löschen?",
+      description: `Möchten Sie den Workflow "${workflow.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`,
+    })
+    if (!ok) return
     try {
       const response = await fetch(
         `/api/practices/${currentPractice.id}/workflows/${workflow.id}`,
@@ -403,6 +409,7 @@ export default function WorkflowsPageClient() {
           />
         )}
       </div>
+      <ConfirmDialog />
     </AppLayout>
   )
 }

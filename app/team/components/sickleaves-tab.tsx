@@ -4,6 +4,16 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Plus, Stethoscope, Clock, Pencil, Trash2 } from "lucide-react"
 import { toast } from "sonner"
@@ -27,6 +37,7 @@ export default function SickLeavesTab({
   const { currentPractice } = usePractice()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingLeave, setEditingLeave] = useState<SickLeave | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SickLeave | null>(null)
 
   const getMember = (memberId: string) => {
     return teamMembers.find((m) => m.id === memberId)
@@ -42,12 +53,11 @@ export default function SickLeavesTab({
     setDialogOpen(true)
   }
 
-  const handleDelete = async (leave: SickLeave) => {
-    if (!confirm("Möchten Sie diese Krankmeldung wirklich löschen?")) return
-
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
     try {
       const res = await fetch(
-        `/api/practices/${currentPractice?.id}/sick-leaves/${leave.id}`,
+        `/api/practices/${currentPractice?.id}/sick-leaves/${deleteTarget.id}`,
         { method: "DELETE" }
       )
 
@@ -60,6 +70,8 @@ export default function SickLeavesTab({
       }
     } catch {
       toast.error("Fehler beim Löschen der Krankmeldung")
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
@@ -143,7 +155,7 @@ export default function SickLeavesTab({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:text-destructive"
-                          onClick={() => handleDelete(leave)}
+                          onClick={() => setDeleteTarget(leave)}
                           title="Löschen"
                         >
                           <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -160,6 +172,27 @@ export default function SickLeavesTab({
           })}
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Krankmeldung löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie diese Krankmeldung wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDelete}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

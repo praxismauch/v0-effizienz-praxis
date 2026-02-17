@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
@@ -46,6 +47,7 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
 
   // Data states - initialize with server data
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData?.teamMembers || [])
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog()
   const [teams, setTeams] = useState<Team[]>(initialData?.teams || [])
   const [staffingPlans, setStaffingPlans] = useState<StaffingPlan[]>(initialData?.staffingPlans || [])
   const [roleOrder, setRoleOrder] = useState<string[]>([])
@@ -96,7 +98,11 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
   const handleAddMember = () => router.push("/team/add")
   const handleEditMember = (member: TeamMember) => router.push(`/team/${member.id}`)
   const handleDeleteMember = async (member: TeamMember) => {
-    if (!confirm(`${member.first_name} ${member.last_name} wirklich entfernen?`)) return
+    const ok = await confirmDialog({
+      title: "Mitarbeiter entfernen?",
+      description: `Möchten Sie ${member.first_name} ${member.last_name} wirklich aus dem Team entfernen? Diese Aktion kann nicht rückgängig gemacht werden.`,
+    })
+    if (!ok) return
     try {
       const res = await fetch(`/api/practices/${practiceId}/team-members/${member.id}`, {
         method: "DELETE",
@@ -238,6 +244,7 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
 
 
       </Tabs>
+      <ConfirmDialog />
     </div>
   )
 }

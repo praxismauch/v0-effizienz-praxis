@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import useSWR from "swr"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent } from "@/components/ui/card"
@@ -27,6 +28,7 @@ export default function SkillsPageClient() {
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { isAiEnabled } = useAiEnabled()
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog()
 
   const [mounted, setMounted] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -151,7 +153,11 @@ export default function SkillsPageClient() {
   }
 
   const handleDeleteSkill = async (skill: Skill) => {
-    if (!confirm(`Möchten Sie "${skill.name}" wirklich löschen?`)) return
+    const ok = await confirmDialog({
+      title: "Kompetenz löschen?",
+      description: `Möchten Sie "${skill.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`,
+    })
+    if (!ok) return
     try {
       const response = await fetch(`/api/practices/${practiceId}/skills/${skill.id}`, {
         method: "DELETE",
@@ -375,6 +381,7 @@ export default function SkillsPageClient() {
           onSuccess={() => refreshSkills()}
         />
       </div>
+      <ConfirmDialog />
     </AppLayout>
   )
 }

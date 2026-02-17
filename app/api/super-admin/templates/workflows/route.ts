@@ -23,17 +23,32 @@ export async function GET(request: NextRequest) {
     await requireSuperAdmin()
     const adminClient = await createAdminClient()
 
-    // Fetch workflow templates (workflows where is_template = true)
+    // Fetch workflow templates with their steps
     const { data: templates, error } = await adminClient
       .from("workflows")
-      .select("*")
+      .select("*, workflow_steps(id, title, description, step_order, status, assigned_to, estimated_duration)")
       .eq("is_template", true)
       .is("deleted_at", null)
       .order("name")
 
     if (error) throw error
 
-    return NextResponse.json({ templates })
+    // Map workflow_steps into the steps array expected by the frontend
+    const mapped = (templates || []).map((t: any) => ({
+      ...t,
+      steps: (t.workflow_steps || [])
+        .sort((a: any, b: any) => (a.step_order || 0) - (b.step_order || 0))
+        .map((s: any) => ({
+          title: s.title || "",
+          description: s.description || "",
+          assignedTo: s.assigned_to || "",
+          estimatedDuration: s.estimated_duration || 5,
+          dependencies: [],
+        })),
+      workflow_steps: undefined,
+    }))
+
+    return NextResponse.json({ templates: mapped })
   } catch (error: any) {
     if (error.status === 401 || error.status === 403) {
       return NextResponse.json({ error: error.message }, { status: error.status })
@@ -72,8 +87,10 @@ export async function POST(request: NextRequest) {
     if (steps && Array.isArray(steps) && steps.length > 0) {
       const stepInserts = steps.map((step: any, idx: number) => ({
         workflow_id: template.id,
-        title: step.title || step.name,
+        title: step.title || step.name || "",
         description: step.description || "",
+        assigned_to: step.assignedTo || null,
+        estimated_duration: step.estimatedDuration || 5,
         step_order: idx + 1,
         status: "pending",
       }))

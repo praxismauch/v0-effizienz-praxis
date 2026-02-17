@@ -28,7 +28,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (name !== undefined) updateData.name = name
     if (description !== undefined) updateData.description = description
     if (category !== undefined) updateData.category = category
-    if (steps !== undefined) updateData.steps = steps
     if (is_active !== undefined) updateData.is_active = is_active
     if (hide_items_from_other_users !== undefined) updateData.hide_items_from_other_users = hide_items_from_other_users
 
@@ -41,6 +40,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .single()
 
     if (updateError) throw updateError
+
+    // Update steps in workflow_steps table
+    if (steps !== undefined && Array.isArray(steps)) {
+      // Delete old steps
+      await adminClient.from("workflow_steps").delete().eq("workflow_id", id)
+
+      // Insert new steps
+      if (steps.length > 0) {
+        const stepInserts = steps.map((step: any, idx: number) => ({
+          workflow_id: id,
+          title: step.title || step.name || "",
+          description: step.description || "",
+          assigned_to: step.assignedTo || null,
+          estimated_duration: step.estimatedDuration || 5,
+          step_order: idx + 1,
+          status: "pending",
+        }))
+
+        const { error: stepsError } = await adminClient.from("workflow_steps").insert(stepInserts)
+        if (stepsError) console.error("Error updating workflow steps:", stepsError)
+      }
+    }
 
     return NextResponse.json({ template })
   } catch (error: any) {

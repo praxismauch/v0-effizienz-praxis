@@ -6,7 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Download, Mail, Loader2, Users, Clock, CheckCircle2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Search, Download, Mail, Loader2, Users, Clock, CheckCircle2, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
@@ -30,6 +40,7 @@ export default function WaitlistPageClient() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [exporting, setExporting] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<WaitlistEntry | null>(null)
 
   useEffect(() => {
     fetchEntries()
@@ -103,6 +114,31 @@ export default function WaitlistPageClient() {
       })
     } finally {
       setExporting(false)
+    }
+  }
+
+  const deleteEntry = async (entry: WaitlistEntry) => {
+    try {
+      const response = await fetch(`/api/admin/waitlist/${entry.id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) throw new Error("Delete failed")
+
+      toast({
+        title: "Eintrag gelöscht",
+        description: `${entry.email} wurde von der Warteliste entfernt`,
+      })
+      fetchEntries()
+    } catch (error) {
+      console.error("Error deleting entry:", error)
+      toast({
+        title: "Fehler",
+        description: "Eintrag konnte nicht gelöscht werden",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
@@ -237,13 +273,25 @@ export default function WaitlistPageClient() {
                           {format(new Date(entry.created_at), "dd.MM.yyyy HH:mm", { locale: de })}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => (window.location.href = `mailto:${entry.email}`)}
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => (window.location.href = `mailto:${entry.email}`)}
+                              title="E-Mail senden"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteTarget(entry)}
+                              title="Eintrag löschen"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -254,6 +302,30 @@ export default function WaitlistPageClient() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eintrag löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie <span className="font-semibold text-foreground">{deleteTarget?.email}</span>
+              {deleteTarget?.name ? ` (${deleteTarget.name})` : ""} wirklich von der Warteliste entfernen?
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteEntry(deleteTarget)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Endgültig löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

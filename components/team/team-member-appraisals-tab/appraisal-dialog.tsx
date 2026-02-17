@@ -63,9 +63,9 @@ export function AppraisalDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>
-            {editingAppraisal ? "Mitarbeitergespraech bearbeiten" : "Neues Mitarbeitergespraech"}
+            {editingAppraisal ? "Mitarbeitergespräch bearbeiten" : "Neues Mitarbeitergespräch"}
           </DialogTitle>
-          <DialogDescription>Strukturiertes Gespraech fuer {memberName}</DialogDescription>
+          <DialogDescription>Strukturiertes Gespräch für {memberName}</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">

@@ -12,27 +12,27 @@ const HIERARCHY_DESCRIPTIONS: Record<NormalizedRoleKey, string[]> = {
     "Vollzugriff auf alle Systeme und Praxen",
     "Kann alle Rollen verwalten",
     "Zugriff auf das Super-Admin-Panel",
-    "Kann Praxen erstellen und loeschen",
-    "Kann globale Einstellungen aendern",
+    "Kann Praxen erstellen und löschen",
+    "Kann globale Einstellungen ändern",
   ],
   practiceadmin: [
-    "Volle Kontrolle ueber die eigene Praxis",
+    "Volle Kontrolle über die eigene Praxis",
     "Kann Benutzer einladen und Rollen zuweisen",
-    "Kann Praxis-Einstellungen aendern",
+    "Kann Praxis-Einstellungen ändern",
     "Kann Abonnements und Abrechnungen verwalten",
     "Kann Teams und Abteilungen erstellen",
   ],
   admin: [
-    "Administrativer Zugriff (aehnlich wie Praxis Admin)",
-    "Kann Benutzer verwalten (keine Loeschung)",
+    "Administrativer Zugriff (ähnlich wie Praxis Admin)",
+    "Kann Benutzer verwalten (keine Löschung)",
     "Kann Einstellungen bearbeiten",
     "Kann Berichte einsehen und exportieren",
     "Kein Zugriff auf Abrechnungen",
   ],
   manager: [
-    "Erweiterte Berechtigungen fuer Teamfuehrung",
-    "Kann Dienstplaene erstellen und bearbeiten",
-    "Kann Mitarbeitergespraeche fuehren",
+    "Erweiterte Berechtigungen für Teamführung",
+    "Kann Dienstpläne erstellen und bearbeiten",
+    "Kann Mitarbeitergespräche führen",
     "Kann Aufgaben zuweisen und verwalten",
     "Kann Team-Berichte einsehen",
   ],
@@ -46,14 +46,14 @@ const HIERARCHY_DESCRIPTIONS: Record<NormalizedRoleKey, string[]> = {
   viewer: [
     "Nur-Lese-Zugriff auf freigegebene Bereiche",
     "Kann Dashboard und Berichte einsehen",
-    "Kann keine Daten aendern",
-    "Ideal fuer Aufsichtsbehoerden oder Berater",
+    "Kann keine Daten ändern",
+    "Ideal für Aufsichtsbehörden oder Berater",
   ],
   extern: [
-    "Eingeschraenkter externer Zugriff",
+    "Eingeschränkter externer Zugriff",
     "Kann nur freigegebene Dokumente sehen",
     "Kein Zugriff auf Personalinformationen",
-    "Ideal fuer externe Dienstleister",
+    "Ideal für externe Dienstleister",
   ],
 }
 
@@ -65,8 +65,8 @@ export function RolesOverview() {
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Die 7 Standardrollen sind systemweit definiert und bilden die Grundlage fuer die Rechteverwaltung.
-          Die Berechtigungen je Rolle koennen im Tab &quot;Berechtigungen&quot; konfiguriert werden.
+          Die 7 Standardrollen sind systemweit definiert und bilden die Grundlage für die Rechteverwaltung.
+          Die Berechtigungen je Rolle können im Tab &quot;Berechtigungen&quot; konfiguriert werden.
         </AlertDescription>
       </Alert>
 
@@ -75,7 +75,7 @@ export function RolesOverview() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Rollen-Uebersicht
+            Rollen-Übersicht
           </CardTitle>
           <CardDescription>
             Alle {roles.length} Systemrollen mit Hierarchie und Beschreibung
@@ -171,7 +171,7 @@ export function RolesOverview() {
         <CardHeader>
           <CardTitle>Hierarchie-Vergleich</CardTitle>
           <CardDescription>
-            Hoehere Hierarchie-Werte bedeuten mehr Berechtigungen. Eine Rolle kann nur Benutzer mit niedrigerer Hierarchie verwalten.
+            Höhere Hierarchie-Werte bedeuten mehr Berechtigungen. Eine Rolle kann nur Benutzer mit niedrigerer Hierarchie verwalten.
           </CardDescription>
         </CardHeader>
         <CardContent>

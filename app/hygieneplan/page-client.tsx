@@ -145,7 +145,12 @@ export default function HygienePlanClient() {
       const response = await fetch(`/api/practices/${currentPractice?.id}/hygiene-plans`)
       if (response.ok) {
         const data = await response.json()
-        setHygienePlans(data.hygienePlans || [])
+        // Map DB 'area' column to 'category' used in the UI
+        const plans = (data.hygienePlans || []).map((p: HygienePlan & { area?: string }) => ({
+          ...p,
+          category: p.category || p.area || "",
+        }))
+        setHygienePlans(plans)
       } else {
         toast.error("Fehler beim Laden der Hygienepläne")
       }
@@ -176,7 +181,9 @@ export default function HygienePlanClient() {
         const data = await response.json()
         console.log("[v0] AI hygiene plan created:", data.hygienePlan?.id)
         toast.success("KI-Hygieneplan erfolgreich erstellt")
-        setHygienePlans([data.hygienePlan, ...hygienePlans])
+        // Map DB 'area' to 'category' for UI
+        const newPlan = { ...data.hygienePlan, category: data.hygienePlan?.category || data.hygienePlan?.area || category }
+        setHygienePlans([newPlan, ...hygienePlans])
         setIsGenerateDialogOpen(false)
       } else {
         const errorData = await response.json().catch(() => ({ error: "Unbekannt" }))

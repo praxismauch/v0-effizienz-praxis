@@ -138,6 +138,8 @@ export default function SchwarzesBrettClient() {
   const [posts, setPosts] = useState<BulletinPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("aktiv")
+  const [activCount, setActivCount] = useState(0)
+  const [archivCount, setArchivCount] = useState(0)
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("")
@@ -190,6 +192,19 @@ export default function SchwarzesBrettClient() {
       if (!res.ok) throw new Error("Fetch failed")
       const data = await res.json()
       setPosts(data.posts || [])
+
+      // Fetch counts for both tabs
+      const countActive = fetch(`/api/practices/${practiceId}/bulletin?archived=false&count_only=true${currentUser?.id ? `&userId=${currentUser.id}` : ""}`)
+      const countArchive = fetch(`/api/practices/${practiceId}/bulletin?archived=true&count_only=true${currentUser?.id ? `&userId=${currentUser.id}` : ""}`)
+      const [activeRes, archiveRes] = await Promise.all([countActive, countArchive])
+      if (activeRes.ok) {
+        const d = await activeRes.json()
+        setActivCount(d.count ?? (d.posts || []).length)
+      }
+      if (archiveRes.ok) {
+        const d = await archiveRes.json()
+        setArchivCount(d.count ?? (d.posts || []).length)
+      }
     } catch {
       console.error("Failed to fetch bulletin posts")
     } finally {
@@ -390,10 +405,10 @@ export default function SchwarzesBrettClient() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <TabsList>
-              <TabsTrigger value="aktiv">Aktiv</TabsTrigger>
+              <TabsTrigger value="aktiv">Aktiv ({activCount})</TabsTrigger>
               <TabsTrigger value="archiv">
                 <Archive className="h-4 w-4 mr-1" />
-                Archiv
+                Archiv ({archivCount})
               </TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2">
@@ -644,7 +659,7 @@ export default function SchwarzesBrettClient() {
             {/* Publish / Expire dates */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="publish_at">Ver��ffentlichung</Label>
+                <Label htmlFor="publish_at">Ver����ffentlichung</Label>
                 <Input
                   id="publish_at"
                   type="datetime-local"

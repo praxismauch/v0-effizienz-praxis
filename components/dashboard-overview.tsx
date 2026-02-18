@@ -13,15 +13,19 @@ import {
   CheckSquare,
   Calendar,
   Sparkles,
+  Pencil,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import {
   DashboardEditorDialog,
   type DashboardConfig,
+  type WidgetConfig,
   DEFAULT_ORDER,
   isLinebreakWidget,
+  WIDGET_DEFINITIONS,
 } from "./dashboard-editor-dialog"
+import { DashboardEditMode } from "./dashboard/dashboard-edit-mode"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
@@ -151,6 +155,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     widgets: DEFAULT_WIDGETS,
   })
   const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
   const [cockpitCardSettings, setCockpitCardSettings] = useState<CockpitCardSetting[]>([])
 
   const hasLoadedRef = useRef(!!initialData)
@@ -588,6 +593,15 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     return order.map((id) => renderWidget(id)).filter(Boolean)
   }, [dashboardConfig, renderWidget])
 
+  const getNumericColumnSpan = useCallback((widgetId: string): number => {
+    const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+    const userSpan = widgets.columnSpans?.[widgetId]
+    const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
+    const adminSpan = setting?.column_span
+    const defaultSpan = FULL_WIDTH_WIDGETS.has(widgetId) ? 5 : 1
+    return (userSpan && userSpan > 0) ? userSpan : (adminSpan || defaultSpan)
+  }, [dashboardConfig, cockpitCardSettings])
+
   const handleSaveConfig = useCallback(async (newConfig: { widgets: any }) => {
     const widgets = newConfig?.widgets
       ? (newConfig.widgets.widgets || newConfig.widgets)
@@ -628,6 +642,11 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     }
   }, [practiceId, userId, toast])
 
+  const handleEditModeSave = useCallback((updatedWidgets: WidgetConfig) => {
+    setIsEditMode(false)
+    handleSaveConfig({ widgets: updatedWidgets })
+  }, [handleSaveConfig])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -647,6 +666,26 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     )
   }
 
+  const currentWidgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+  const currentOrder = currentWidgets.widgetOrder || DEFAULT_ORDER
+  const currentLinebreaks = currentWidgets.linebreaks || []
+
+  if (isEditMode) {
+    return (
+      <div className="space-y-6 max-w-full">
+        <DashboardEditMode
+          config={currentWidgets}
+          widgetOrder={Array.isArray(currentOrder) ? currentOrder : DEFAULT_ORDER}
+          linebreaks={currentLinebreaks}
+          onSave={handleEditModeSave}
+          onCancel={() => setIsEditMode(false)}
+          renderWidgetPreview={renderWidget}
+          getColumnSpan={getNumericColumnSpan}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 max-w-full">
       <PageHeader
@@ -654,8 +693,8 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
         subtitle="Willkommen zurück! Hier ist ein 360-Grad-Überblick über Ihre Praxis."
         actions={
           <>
-            <Button variant="outline" size="sm" onClick={() => setIsEditorOpen(true)}>
-              <Settings className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)} className="gap-2">
+              <Pencil className="h-4 w-4" />
               Cockpit bearbeiten
             </Button>
             <Link href={isEnabled ? "/analysis" : "#"}>

@@ -361,6 +361,32 @@ export function SuperAdminAcademyManager() {
         </DialogContent>
       </Dialog>
 
+      {/* Quiz Dialog */}
+      <Dialog open={a.showQuizDialog} onOpenChange={a.setShowQuizDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{a.editingQuiz ? "Quiz bearbeiten" : "Neues Quiz"}</DialogTitle></DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2"><Label>Titel</Label><Input value={a.quizForm.title} onChange={(e) => a.setQuizForm({ ...a.quizForm, title: e.target.value })} placeholder="z.B. Hygiene-Grundlagen Quiz" /></div>
+            <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.quizForm.description} onChange={(e) => a.setQuizForm({ ...a.quizForm, description: e.target.value })} rows={3} placeholder="Kurze Beschreibung des Quiz..." /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2"><Label>Quiz-Typ</Label><Select value={a.quizForm.quiz_type} onValueChange={(v) => a.setQuizForm({ ...a.quizForm, quiz_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="multiple_choice">Multiple Choice</SelectItem><SelectItem value="true_false">Wahr/Falsch</SelectItem><SelectItem value="mixed">Gemischt</SelectItem></SelectContent></Select></div>
+              <div className="grid gap-2"><Label>Bestehensgrenze (%)</Label><Input type="number" value={a.quizForm.passing_score} onChange={(e) => a.setQuizForm({ ...a.quizForm, passing_score: Number(e.target.value) })} min={0} max={100} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="grid gap-2"><Label>Max. Versuche</Label><Input type="number" value={a.quizForm.max_attempts} onChange={(e) => a.setQuizForm({ ...a.quizForm, max_attempts: Number(e.target.value) })} min={1} /></div>
+              <div className="grid gap-2"><Label>Zeitlimit (Min)</Label><Input type="number" value={a.quizForm.time_limit_minutes} onChange={(e) => a.setQuizForm({ ...a.quizForm, time_limit_minutes: Number(e.target.value) })} min={1} /></div>
+              <div className="grid gap-2"><Label>XP-Belohnung</Label><Input type="number" value={a.quizForm.xp_reward} onChange={(e) => a.setQuizForm({ ...a.quizForm, xp_reward: Number(e.target.value) })} min={0} step={25} /></div>
+            </div>
+            <Separator />
+            <div className="grid gap-2"><Label>Kurs (optional)</Label><Select value={a.quizForm.course_id} onValueChange={(v) => a.setQuizForm({ ...a.quizForm, course_id: v })}><SelectTrigger><SelectValue placeholder="Kurs auswählen..." /></SelectTrigger><SelectContent><SelectItem value="">Kein Kurs</SelectItem>{a.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent></Select></div>
+            <Separator />
+            <div className="flex items-center justify-between"><div><Label>Fragen mischen</Label><p className="text-sm text-muted-foreground">Zufällige Reihenfolge der Fragen</p></div><Switch checked={a.quizForm.randomize_questions} onCheckedChange={(c) => a.setQuizForm({ ...a.quizForm, randomize_questions: c })} /></div>
+            <div className="flex items-center justify-between"><div><Label>Antworten anzeigen</Label><p className="text-sm text-muted-foreground">Korrekte Antworten nach Abgabe zeigen</p></div><Switch checked={a.quizForm.show_correct_answers} onCheckedChange={(c) => a.setQuizForm({ ...a.quizForm, show_correct_answers: c })} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => a.setShowQuizDialog(false)}>Abbrechen</Button><Button onClick={a.handleSaveQuiz}><Save className="h-4 w-4 mr-2" />{a.editingQuiz ? "Speichern" : "Erstellen"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* AI Course Dialog */}
       <Dialog open={a.showAiCourseDialog} onOpenChange={a.setShowAiCourseDialog}>
         <DialogContent className="max-w-2xl">

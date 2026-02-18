@@ -57,7 +57,6 @@ export async function POST(
           practice_id: practiceId,
           stamp_type: "start",
           timestamp: now.toISOString(),
-          location_type: locationNormalized,
           comment: comment || null,
         })
         .select()
@@ -160,7 +159,6 @@ export async function POST(
           practice_id: practiceId,
           stamp_type: "stop",
           timestamp: now.toISOString(),
-          location_type: openBlock.work_location || openBlock.location_type || locationNormalized,
           comment: comment || null,
         })
         .select()

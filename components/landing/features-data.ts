@@ -21,11 +21,9 @@ import {
   Lightbulb,
   Search,
   UserPlus,
-  Star,
   DoorOpen,
   Package,
   MonitorCheck,
-  Pin,
   Settings,
   CalendarClock,
   Clock,
@@ -38,6 +36,9 @@ import {
   ClipboardCheck,
   Cpu,
   LayoutDashboard,
+  Clipboard,
+  ClipboardPenLine,
+  Wrench,
   type LucideIcon,
 } from "lucide-react"
 
@@ -79,6 +80,15 @@ export const features: Feature[] = [
     image: "/analytics-charts-dashboard-green-medical-practice.jpg",
     category: "analyse",
     link: "/analytics",
+  },
+  {
+    icon: Clipboard,
+    title: "Schwarzes Brett",
+    description: "Interne Mitteilungen, Ankündigungen und Team-Kommunikation",
+    color: "bg-orange-500/10 text-orange-600",
+    image: "/features/schwarzes-brett-bulletin-orange.jpg",
+    category: "analyse",
+    link: "/features/schwarzes-brett",
   },
   {
     icon: BarChart3,
@@ -299,6 +309,15 @@ export const features: Feature[] = [
     category: "wissen",
     link: "/features/kontakte",
   },
+  {
+    icon: ClipboardPenLine,
+    title: "Umfragen",
+    description: "Patienten- und Mitarbeiterbefragungen erstellen und auswerten",
+    color: "bg-teal-500/10 text-teal-600",
+    image: "/features/umfragen-surveys-teal.jpg",
+    category: "praxis",
+    link: "/features/umfragen",
+  },
   // Strategie
   {
     icon: Map,
@@ -345,16 +364,6 @@ export const features: Feature[] = [
     category: "strategie",
     link: "/features/wunschpatient",
   },
-  // Marketing & Bewertungen
-  {
-    icon: Star,
-    title: "Bewertungsmanagement",
-    description: "Google, Jameda & andere Bewertungen verwalten",
-    color: "bg-yellow-500/10 text-yellow-600",
-    image: "/reviews-ratings-stars-yellow-modern-dashboard.jpg",
-    category: "marketing",
-    link: "/features/bewertungsmanagement",
-  },
   // Praxis & Infrastruktur
   {
     icon: Cpu,
@@ -375,13 +384,22 @@ export const features: Feature[] = [
     link: "/features/räume",
   },
   {
-    icon: Package,
+    icon: Wrench,
     title: "Arbeitsmittel",
-    description: "Inventar und Ausstattung verwalten",
+    description: "Arbeitsmittel und Ausstattung verwalten",
     color: "bg-orange-500/10 text-orange-600",
-    image: "/placeholder.svg?height=200&width=400",
+    image: "/features/arbeitsmittel-equipment-orange.jpg",
     category: "praxis",
     link: "/features/arbeitsmittel",
+  },
+  {
+    icon: Package,
+    title: "Material",
+    description: "Materialbestand, Bestellungen und Verbrauch verwalten",
+    color: "bg-lime-500/10 text-lime-600",
+    image: "/features/material-inventory-lime.jpg",
+    category: "praxis",
+    link: "/features/material",
   },
   {
     icon: MonitorCheck,
@@ -393,15 +411,6 @@ export const features: Feature[] = [
     link: "/features/arbeitsplätze",
   },
   // System & Sicherheit
-  {
-    icon: Pin,
-    title: "Favoriten",
-    description: "Meistgenutzte Funktionen schnell erreichen",
-    color: "bg-amber-500/10 text-amber-600",
-    image: "/placeholder.svg?height=200&width=400",
-    category: "system",
-    link: "/features/favoriten",
-  },
   {
     icon: Settings,
     title: "Einstellungen",

@@ -76,6 +76,7 @@ export interface WidgetConfig {
   showKPIs?: boolean
   showInsightsActions?: boolean
   showJournalActions?: boolean
+  columnSpans?: Record<string, number>
   todosFilterWichtig?: boolean
   todosFilterDringend?: boolean
   todosFilterPriority?: string
@@ -234,6 +235,7 @@ const defaultWidgetConfig: WidgetConfig = {
   showInsightsActions: true,
   showJournalActions: true,
   showBulletin: true,
+  columnSpans: {},
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
   todosFilterPriority: undefined,
@@ -241,13 +243,25 @@ const defaultWidgetConfig: WidgetConfig = {
   linebreaks: [],
 }
 
+const FULL_WIDTH_WIDGET_IDS = new Set(["showBulletin", "showInsightsActions", "showJournalActions"])
+
+const COLUMN_OPTIONS = [
+  { value: 0, label: "Standard" },
+  { value: 1, label: "1 Spalte" },
+  { value: 2, label: "2 Spalten" },
+  { value: 3, label: "3 Spalten" },
+  { value: 4, label: "4 Spalten" },
+  { value: 5, label: "Volle Breite" },
+]
+
 interface SortableWidgetProps {
   widget: (typeof WIDGET_DEFINITIONS)[0]
   config: WidgetConfig
   setConfig: React.Dispatch<React.SetStateAction<WidgetConfig>>
+  defaultSpan?: number
 }
 
-function SortableWidget({ widget, config, setConfig }: SortableWidgetProps) {
+function SortableWidget({ widget, config, setConfig, defaultSpan }: SortableWidgetProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   })
@@ -290,6 +304,40 @@ function SortableWidget({ widget, config, setConfig }: SortableWidgetProps) {
           onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, [widget.id]: checked }))}
         />
       </div>
+
+      {isEnabled && (
+        <div className="mt-3 pl-12 flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground whitespace-nowrap">Breite:</Label>
+          <div className="flex gap-1">
+            {COLUMN_OPTIONS.map((opt) => {
+              const currentSpan = config.columnSpans?.[widget.id] || 0
+              const isSelected = currentSpan === opt.value
+              const computedDefault = FULL_WIDTH_WIDGET_IDS.has(widget.id) ? 5 : (defaultSpan || 1)
+              const displayLabel = opt.value === 0 ? `Std. (${computedDefault})` : String(opt.value === 5 ? "Voll" : opt.value)
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-input hover:border-primary/50"
+                  }`}
+                  title={opt.label}
+                  onClick={() =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      columnSpans: { ...(prev.columnSpans || {}), [widget.id]: opt.value },
+                    }))
+                  }
+                >
+                  {displayLabel}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {showSubOptions && (
         <div className="mt-4 pl-12 space-y-3 border-l-2 border-primary/20">

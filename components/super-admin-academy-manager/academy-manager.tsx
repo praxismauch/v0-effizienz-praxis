@@ -170,9 +170,17 @@ export function SuperAdminAcademyManager() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {a.filteredCourses.map((course) => (
-                  <Card key={course.id} className="overflow-hidden">
-                    <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                  <Card key={course.id} className="overflow-hidden group">
+                    <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative">
                       {course.thumbnail_url ? <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" /> : <GraduationCap className="h-12 w-12 text-primary/40" />}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                        <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full shadow-lg" onClick={() => a.openEditCourse(course)} title="Bearbeiten">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full shadow-lg text-destructive hover:text-destructive" onClick={() => { a.setDeleteItem({ type: "course", id: course.id, name: course.title }); a.setShowDeleteDialog(true) }} title="Löschen">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">

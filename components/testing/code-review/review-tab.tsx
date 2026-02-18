@@ -394,7 +394,7 @@ export function ReviewTab({
 
             {filteredFindings.length === 0 && data.summary.totalFindings > 0 && (
               <div className="py-8 text-center text-muted-foreground text-sm">
-                Keine Findings fuer die aktuelle Filterauswahl.
+                Keine Findings für die aktuelle Filterauswahl.
               </div>
             )}
             {data.summary.totalFindings === 0 && (

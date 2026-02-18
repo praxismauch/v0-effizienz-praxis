@@ -161,7 +161,7 @@ export default function ProtocolPopupPage() {
         if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
           errorMessage = "Mikrofon-Zugriff wurde verweigert. Bitte erlauben Sie den Zugriff in den Browser-Einstellungen und laden Sie die Seite neu."
         } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
-          errorMessage = "Kein Mikrofon gefunden. Bitte schliessen Sie ein Mikrofon an."
+          errorMessage = "Kein Mikrofon gefunden. Bitte schließen Sie ein Mikrofon an."
         } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
           errorMessage = "Mikrofon wird bereits verwendet oder ist nicht verfügbar."
         } else if (error.name === "AbortError") {

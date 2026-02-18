@@ -228,7 +228,7 @@ export function EntryDialog({
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {t("kpi.duplicate_entry_warning", "Ein Wert existiert bereits fuer diesen Parameter")}
+              {t("kpi.duplicate_entry_warning", "Ein Wert existiert bereits für diesen Parameter")}
               <div className="mt-2 p-2 bg-background rounded border">
                 <div className="font-medium">
                   {t("kpi.current_value", "Aktueller Wert:")} {String(duplicateWarning.existingValue.value)}

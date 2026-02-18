@@ -79,7 +79,7 @@ export const BulletinWidget = memo(function BulletinWidget({
         </div>
 
         {posts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Keine aktuellen Beitraege.</p>
+          <p className="text-sm text-muted-foreground">Keine aktuellen Beiträge.</p>
         ) : (
           <div className="space-y-2">
             {posts.map((post) => (

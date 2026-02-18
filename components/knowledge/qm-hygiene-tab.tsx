@@ -46,7 +46,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   active: { label: "Aktiv", variant: "default", icon: CheckCircle2 },
   draft: { label: "Entwurf", variant: "secondary", icon: Clock },
   archived: { label: "Archiviert", variant: "outline", icon: FileWarning },
-  review: { label: "Pruefung", variant: "destructive", icon: AlertTriangle },
+  review: { label: "Prüfung", variant: "destructive", icon: AlertTriangle },
 }
 
 export function QmHygieneTab() {

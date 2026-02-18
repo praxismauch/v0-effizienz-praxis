@@ -130,7 +130,7 @@ export function PracticeParameterManagement() {
 
   const handleDelete = async (id: string) => {
     if (!currentPractice) return
-    if (!confirm(t("common.confirm_delete", "Sind Sie sicher, dass Sie diesen Parameter loeschen moechten?"))) return
+    if (!confirm(t("common.confirm_delete", "Sind Sie sicher, dass Sie diesen Parameter löschen möchten?"))) return
 
     try {
       const response = await fetch(`/api/practices/${currentPractice.id}/parameters/${id}`, {

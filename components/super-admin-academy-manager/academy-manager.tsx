@@ -51,7 +51,7 @@ export function SuperAdminAcademyManager() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{a.stats?.totalCourses || a.courses.length || 0}</div>
-            <p className="text-xs text-muted-foreground">{a.stats?.publishedCourses || a.courses.filter((c) => c.is_published).length || 0} veroeffentlicht</p>
+            <p className="text-xs text-muted-foreground">{a.stats?.publishedCourses || a.courses.filter((c) => c.is_published).length || 0} veröffentlicht</p>
           </CardContent>
         </Card>
         <Card>
@@ -188,7 +188,7 @@ export function SuperAdminAcademyManager() {
                       </div>
                     </CardHeader>
                     <CardContent className="pb-4">
-                      <div className="flex items-center gap-2 flex-wrap">{diffBadge(course.difficulty_level)}<Badge variant="outline">{CATEGORIES.find((c) => c.value === course.category)?.label}</Badge>{course.is_published ? <Badge className="bg-green-500 text-white">Veroeffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}</div>
+                      <div className="flex items-center gap-2 flex-wrap">{diffBadge(course.difficulty_level)}<Badge variant="outline">{CATEGORIES.find((c) => c.value === course.category)?.label}</Badge>{course.is_published ? <Badge className="bg-green-500 text-white">Veröffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}</div>
                       <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground"><span className="flex items-center gap-1"><Clock className="h-3 w-3" />{course.estimated_hours}h</span><span className="flex items-center gap-1"><Zap className="h-3 w-3" />{course.xp_reward} XP</span><span className="flex items-center gap-1"><Users className="h-3 w-3" />{course.total_enrollments || 0}</span></div>
                     </CardContent>
                   </Card>
@@ -253,7 +253,7 @@ export function SuperAdminAcademyManager() {
                             <div><CardTitle className="text-base">Modul {idx + 1}: {module.title}</CardTitle><CardDescription>{module.lessons?.length || 0} Lektionen - {module.estimated_minutes} Min</CardDescription></div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {module.is_published ? <Badge className="bg-green-500 text-white">Veroeffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}
+                            {module.is_published ? <Badge className="bg-green-500 text-white">Veröffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}
                             <DropdownMenu><DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); a.setEditingModule(module); a.setModuleForm({ title: module.title, description: module.description, estimated_minutes: module.estimated_minutes, is_published: module.is_published }); a.setShowModuleDialog(true) }}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); a.setDeleteItem({ type: "module", id: module.id, name: module.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem>
@@ -310,8 +310,8 @@ export function SuperAdminAcademyManager() {
             <Separator />
             <div className="grid gap-2"><Label>Dozent</Label><Input value={a.courseForm.instructor_name} onChange={(e) => a.setCourseForm({ ...a.courseForm, instructor_name: e.target.value })} /></div>
             <Separator />
-            <div className="flex items-center justify-between"><div><Label>Veroeffentlicht</Label><p className="text-sm text-muted-foreground">Kurs sichtbar machen</p></div><Switch checked={a.courseForm.is_published} onCheckedChange={(c) => a.setCourseForm({ ...a.courseForm, is_published: c })} /></div>
-            <div className="flex items-center justify-between"><div><Label>Auf Landingpage</Label><p className="text-sm text-muted-foreground">Auf oeffentlicher Seite hervorheben</p></div><Switch checked={a.courseForm.is_landing_page_featured} onCheckedChange={(c) => a.setCourseForm({ ...a.courseForm, is_landing_page_featured: c })} /></div>
+            <div className="flex items-center justify-between"><div><Label>Veröffentlicht</Label><p className="text-sm text-muted-foreground">Kurs sichtbar machen</p></div><Switch checked={a.courseForm.is_published} onCheckedChange={(c) => a.setCourseForm({ ...a.courseForm, is_published: c })} /></div>
+            <div className="flex items-center justify-between"><div><Label>Auf Landingpage</Label><p className="text-sm text-muted-foreground">Auf öffentlicher Seite hervorheben</p></div><Switch checked={a.courseForm.is_landing_page_featured} onCheckedChange={(c) => a.setCourseForm({ ...a.courseForm, is_landing_page_featured: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => a.setShowCourseDialog(false)}>Abbrechen</Button><Button onClick={a.handleSaveCourse}><Save className="h-4 w-4 mr-2" />{a.editingCourse ? "Speichern" : "Erstellen"}</Button></DialogFooter>
         </DialogContent>
@@ -325,7 +325,7 @@ export function SuperAdminAcademyManager() {
             <div className="grid gap-2"><Label>Titel</Label><Input value={a.moduleForm.title} onChange={(e) => a.setModuleForm({ ...a.moduleForm, title: e.target.value })} /></div>
             <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.moduleForm.description} onChange={(e) => a.setModuleForm({ ...a.moduleForm, description: e.target.value })} rows={3} /></div>
             <div className="grid gap-2"><Label>Dauer (Min)</Label><Input type="number" value={a.moduleForm.estimated_minutes} onChange={(e) => a.setModuleForm({ ...a.moduleForm, estimated_minutes: Number(e.target.value) })} min={1} /></div>
-            <div className="flex items-center justify-between"><Label>Veroeffentlicht</Label><Switch checked={a.moduleForm.is_published} onCheckedChange={(c) => a.setModuleForm({ ...a.moduleForm, is_published: c })} /></div>
+            <div className="flex items-center justify-between"><Label>Veröffentlicht</Label><Switch checked={a.moduleForm.is_published} onCheckedChange={(c) => a.setModuleForm({ ...a.moduleForm, is_published: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => a.setShowModuleDialog(false)}>Abbrechen</Button><Button onClick={a.handleSaveModule}><Save className="h-4 w-4 mr-2" />{a.editingModule ? "Speichern" : "Erstellen"}</Button></DialogFooter>
         </DialogContent>
@@ -381,7 +381,7 @@ export function SuperAdminAcademyManager() {
 
       {/* Delete Dialog */}
       <AlertDialog open={a.showDeleteDialog} onOpenChange={a.setShowDeleteDialog}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Sind Sie sicher?</AlertDialogTitle><AlertDialogDescription>{"Moechten Sie \"" + (a.deleteItem?.name || "") + "\" wirklich loeschen?"}</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Sind Sie sicher?</AlertDialogTitle><AlertDialogDescription>{"Möchten Sie \"" + (a.deleteItem?.name || "") + "\" wirklich löschen?"}</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={a.handleDelete} className="bg-destructive text-destructive-foreground">Löschen</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -72,7 +72,7 @@ const CATEGORIES = [
   { value: "medizin", label: "Medizin" },
   { value: "personal", label: "Personal" },
   { value: "hygiene", label: "Hygiene" },
-  { value: "qualitaet", label: "Qualitaet" },
+  { value: "qualitaet", label: "Qualität" },
 ]
 
 const PRIORITIES = [
@@ -87,7 +87,7 @@ const VISIBILITY_OPTIONS = [
 ]
 
 const ROLES = [
-  { value: "doctor", label: "Arzt/Aerztin" },
+  { value: "doctor", label: "Arzt/Ärztin" },
   { value: "mfa", label: "MFA" },
   { value: "verah", label: "VERAH" },
   { value: "admin", label: "Verwaltung" },
@@ -350,7 +350,7 @@ export default function SchwarzesBrettClient() {
       <div className="space-y-6">
         <PageHeader
           title="Schwarzes Brett"
-          subtitle="Zentrale Kommunikationsplattform fuer Ankuendigungen, Hinweise und wichtige Mitteilungen."
+          subtitle="Zentrale Kommunikationsplattform für Ankündigungen, Hinweise und wichtige Mitteilungen."
           icon={<Clipboard className="h-7 w-7" />}
         />
 
@@ -497,7 +497,7 @@ export default function SchwarzesBrettClient() {
             <DialogDescription>
               {editingPost
                 ? "Aktualisieren Sie Ihren Beitrag am Schwarzen Brett."
-                : "Erstellen Sie einen neuen Beitrag fuer das Team."}
+                : "Erstellen Sie einen neuen Beitrag für das Team."}
             </DialogDescription>
           </DialogHeader>
 
@@ -520,7 +520,7 @@ export default function SchwarzesBrettClient() {
                 id="content"
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="Schreiben Sie Ihren Beitrag... (Markdown wird unterstuetzt)"
+                placeholder="Schreiben Sie Ihren Beitrag... (Markdown wird unterstützt)"
                 rows={6}
               />
             </div>
@@ -575,7 +575,7 @@ export default function SchwarzesBrettClient() {
             {/* Role selection when visibility = roles */}
             {formData.visibility === "roles" && (
               <div>
-                <Label className="mb-2 block">Sichtbar fuer Rollen</Label>
+                <Label className="mb-2 block">Sichtbar für Rollen</Label>
                 <div className="flex flex-wrap gap-2">
                   {ROLES.map((role) => {
                     const isSelected = formData.visible_roles.includes(role.value)
@@ -643,7 +643,7 @@ export default function SchwarzesBrettClient() {
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <Label htmlFor="requires_confirmation">Lesebestätigung erforderlich</Label>
-                    <p className="text-xs text-muted-foreground">Mitarbeiter muessen den Beitrag bestaetigen</p>
+                    <p className="text-xs text-muted-foreground">Mitarbeiter müssen den Beitrag bestätigen</p>
                   </div>
                 </div>
                 <Switch
@@ -794,13 +794,13 @@ function PostList({
             <>
               <Archive className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold">Archiv ist leer</h3>
-              <p className="text-muted-foreground mt-1">Keine archivierten Beitraege vorhanden.</p>
+              <p className="text-muted-foreground mt-1">Keine archivierten Beiträge vorhanden.</p>
             </>
           ) : (
             <>
               <Clipboard className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold">Noch keine Beitraege</h3>
-              <p className="text-muted-foreground mt-1">Erstellen Sie den ersten Beitrag fuer Ihr Team.</p>
+              <h3 className="text-lg font-semibold">Noch keine Beiträge</h3>
+              <p className="text-muted-foreground mt-1">Erstellen Sie den ersten Beitrag für Ihr Team.</p>
               <Button className="mt-4" onClick={onCreateNew}>
                 <Plus className="h-4 w-4 mr-2" />Ersten Beitrag erstellen
               </Button>
@@ -839,7 +839,7 @@ function PostList({
         <div className="space-y-3">
           {pinnedPosts.length > 0 && (
             <h3 className="text-sm font-medium text-muted-foreground">
-              Beitraege ({regularPosts.length})
+              Beiträge ({regularPosts.length})
             </h3>
           )}
           {regularPosts.map((post) => (

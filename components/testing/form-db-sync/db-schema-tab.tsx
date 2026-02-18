@@ -171,7 +171,7 @@ export function DbSchemaTab({
             DB-Schema Check
           </CardTitle>
           <CardDescription>
-            Prueft ob alle DB-Tabellen Standardspalten (id, created_at) besitzen und kategorisiert sie.
+            Prüft ob alle DB-Tabellen Standardspalten (id, created_at) besitzen und kategorisiert sie.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -180,7 +180,7 @@ export function DbSchemaTab({
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Pruefe...
+                  Prüfe...
                 </>
               ) : (
                 <>
@@ -230,7 +230,7 @@ export function DbSchemaTab({
                         const cm = categoryFilter === "all" || (f.category || "Sonstige") === categoryFilter
                         return sm && cm
                       }).length} von ${data.results.length} Tabellen`
-                    : `Detaillierte Ergebnisse fuer alle ${data.results.length} Tabellen`}
+                    : `Detaillierte Ergebnisse für alle ${data.results.length} Tabellen`}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export function DbSchemaTab({
                     return statusMatch && categoryMatch
                   })
                   if (filtered.length === 0) {
-                    return <div className="py-8 text-center text-muted-foreground text-sm">Keine Tabellen fuer die ausgewaehlten Filter gefunden.</div>
+                    return <div className="py-8 text-center text-muted-foreground text-sm">Keine Tabellen für die ausgewählten Filter gefunden.</div>
                   }
                   const categories = new Map<string, FormResult[]>()
                   filtered.forEach((form) => {

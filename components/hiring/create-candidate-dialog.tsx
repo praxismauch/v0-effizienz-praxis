@@ -257,7 +257,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     if (skippedCount > 0) {
       toast({
         title: "Duplikate erkannt",
-        description: `${skippedCount} Dokument(e) bereits vorhanden und uebersprungen.`,
+        description: `${skippedCount} Dokument(e) bereits vorhanden und übersprungen.`,
       })
     }
 
@@ -453,7 +453,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     if (skippedImgCount > 0) {
       toast({
         title: "Duplikate erkannt",
-        description: `${skippedImgCount} Bild(er) bereits vorhanden und uebersprungen.`,
+        description: `${skippedImgCount} Bild(er) bereits vorhanden und übersprungen.`,
       })
     }
 

@@ -43,8 +43,8 @@ const severityConfig: Record<string, { label: string; color: string; bgColor: st
 
 const statusLabels: Record<string, string> = {
   submitted: "Eingereicht",
-  in_review: "In Pruefung",
-  resolved: "Gelost",
+  in_review: "In Prüfung",
+  resolved: "Gelöst",
   closed: "Geschlossen",
   open: "Offen",
 }
@@ -147,7 +147,7 @@ export function QmCirsTab() {
         <Card className="p-3">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            <span className="text-xs text-muted-foreground">Gelost</span>
+            <span className="text-xs text-muted-foreground">Gelöst</span>
           </div>
           <p className="text-xl font-bold">{summary.resolved}</p>
         </Card>

@@ -285,9 +285,9 @@ export default function ErrorLogsPageClient() {
               <SelectContent>
                 <SelectItem value="all">Alle Status</SelectItem>
                 <SelectItem value="new">Neu</SelectItem>
-                <SelectItem value="acknowledged">{"Bestatigt"}</SelectItem>
+                <SelectItem value="acknowledged">{"Bestätigt"}</SelectItem>
                 <SelectItem value="investigating">In Bearbeitung</SelectItem>
-                <SelectItem value="resolved">{"Gelost"}</SelectItem>
+                <SelectItem value="resolved">{"Gelöst"}</SelectItem>
                 <SelectItem value="ignored">Ignoriert</SelectItem>
               </SelectContent>
             </Select>
@@ -358,7 +358,7 @@ export default function ErrorLogsPageClient() {
                   In Bearbeitung
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("resolved")}>
-                  {"Gelost"}
+                  {"Gelöst"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("ignored")}>
                   Ignorieren

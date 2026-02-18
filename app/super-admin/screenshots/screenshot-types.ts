@@ -51,7 +51,7 @@ export const VIEWPORT_SIZES: Record<string, { width: number; height: number }> =
 export const defaultPages = [
   // Public / Landing Pages
   { path: "/", name: "Landing Page" },
-  { path: "/about", name: "Ueber uns" },
+  { path: "/about", name: "Über uns" },
   { path: "/pricing", name: "Preise" },
   { path: "/features", name: "Features" },
   { path: "/contact", name: "Kontakt" },

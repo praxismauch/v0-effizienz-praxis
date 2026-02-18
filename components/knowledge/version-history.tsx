@@ -196,7 +196,7 @@ export function VersionHistory({ articleId, currentVersion, onRestore }: Version
           <AlertDialogHeader>
             <AlertDialogTitle>Version wiederherstellen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Moechten Sie Version {restoreVersion?.version || restoreVersion?.version_number} ({restoreVersion?.title}) wiederherstellen?
+              Möchten Sie Version {restoreVersion?.version || restoreVersion?.version_number} ({restoreVersion?.title}) wiederherstellen?
               Die aktuelle Version wird vorher gespeichert.
             </AlertDialogDescription>
           </AlertDialogHeader>

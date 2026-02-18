@@ -32,7 +32,7 @@ function ParameterFormFields({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor={`${idPrefix}param-name`}>{t("kpi.parameter_name", "Parameter Name")}</Label>
-          <Input id={`${idPrefix}param-name`} value={newParameter.name || ""} onChange={(e) => setNewParameter({ ...newParameter, name: e.target.value })} placeholder={t("kpi.parameter_name_placeholder", "z.B. Teamgroesse")} />
+          <Input id={`${idPrefix}param-name`} value={newParameter.name || ""} onChange={(e) => setNewParameter({ ...newParameter, name: e.target.value })} placeholder={t("kpi.parameter_name_placeholder", "z.B. Teamgröße")} />
         </div>
         <div>
           <Label htmlFor={`${idPrefix}parameter-category`}>{t("kpi.category", "Category")}</Label>

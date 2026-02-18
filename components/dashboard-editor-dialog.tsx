@@ -199,7 +199,7 @@ export const WIDGET_DEFINITIONS = [
   {
     id: "showBulletin",
     label: "Schwarzes Brett",
-    description: "Neueste Beitraege vom Schwarzen Brett",
+    description: "Neueste Beiträge vom Schwarzen Brett",
     icon: FileText,
   },
 ]

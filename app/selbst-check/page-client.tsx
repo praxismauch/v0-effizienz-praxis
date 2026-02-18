@@ -27,7 +27,7 @@ export default function SelbstCheckPageClient() {
         {/* Header */}
         <PageHeader
           title="Selbst-Check"
-          subtitle="Bewerten Sie regelmaessig Ihr mentales Wohlbefinden und erhalten Sie personalisierte Empfehlungen"
+          subtitle="Bewerten Sie regelmäßig Ihr mentales Wohlbefinden und erhalten Sie personalisierte Empfehlungen"
         />
 
         {/* Self-Check Component */}

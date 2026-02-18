@@ -195,7 +195,7 @@ export default function FormDbSyncPanel() {
     if (problemForms.length === 0) return ""
     const errorForms = problemForms.filter((r) => r.status === "error" || r.status === "missing_table")
     const warningForms = problemForms.filter((r) => r.status === "warning")
-    let prompt = `## Form-DB Sync Check: ${problemForms.length} Probleme gefunden\n\nZusammenfassung: ${data.summary.total} Tabellen geprueft, ${data.summary.ok} OK, ${data.summary.warnings} Warnungen, ${data.summary.errors} Fehler.\n\n`
+    let prompt = `## Form-DB Sync Check: ${problemForms.length} Probleme gefunden\n\nZusammenfassung: ${data.summary.total} Tabellen geprüft, ${data.summary.ok} OK, ${data.summary.warnings} Warnungen, ${data.summary.errors} Fehler.\n\n`
     if (errorForms.length > 0) {
       prompt += `### Fehler (${errorForms.length})\n\n`
       errorForms.forEach((form) => {
@@ -216,7 +216,7 @@ export default function FormDbSyncPanel() {
     if (allFixes.length > 0) {
       prompt += `### Alle SQL-Fixes zusammengefasst\n\n\`\`\`sql\n${allFixes.join("\n\n")}\n\nNOTIFY pgrst, 'reload schema';\n\`\`\`\n\n`
     }
-    prompt += `Bitte analysiere alle oben genannten Probleme und behebe sie. Fuehre SQL-Fixes direkt mit supabase_execute_sql aus. Fuer Warnungen ohne SQL-Fix schlage bitte Loesungen vor.`
+    prompt += `Bitte analysiere alle oben genannten Probleme und behebe sie. Führe SQL-Fixes direkt mit supabase_execute_sql aus. Für Warnungen ohne SQL-Fix schlage bitte Lösungen vor.`
     return prompt
   }
 
@@ -259,10 +259,10 @@ export default function FormDbSyncPanel() {
     }
 
     prompt += `Bitte analysiere alle oben genannten Probleme und behebe sie:\n`
-    prompt += `- Fuer fehlende API-Routen: Erstelle die Route oder korrigiere die URL im Frontend.\n`
-    prompt += `- Fuer fehlende DB-Spalten: Fuehre ALTER TABLE mit supabase_execute_sql aus.\n`
-    prompt += `- Fuer Feld-Mismatches: Passe entweder das Formular oder die DB-Spalte an.\n`
-    prompt += `- Fuer fehlende Tabellen: Erstelle die Tabelle mit CREATE TABLE via supabase_execute_sql.`
+    prompt += `- Für fehlende API-Routen: Erstelle die Route oder korrigiere die URL im Frontend.\n`
+    prompt += `- Für fehlende DB-Spalten: Führe ALTER TABLE mit supabase_execute_sql aus.\n`
+    prompt += `- Für Feld-Mismatches: Passe entweder das Formular oder die DB-Spalte an.\n`
+    prompt += `- Für fehlende Tabellen: Erstelle die Tabelle mit CREATE TABLE via supabase_execute_sql.`
 
     return prompt
   }

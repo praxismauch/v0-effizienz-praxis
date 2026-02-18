@@ -227,7 +227,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Zugriff nicht moeglich</h2>
+            <h2 className="text-xl font-semibold mb-2">Zugriff nicht möglich</h2>
             <p className="text-muted-foreground text-center">
               {!user?.id 
                 ? "Bitte melden Sie sich an, um die Zeiterfassung zu nutzen." 

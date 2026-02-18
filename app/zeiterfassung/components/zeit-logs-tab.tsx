@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, differenceInMinutes, addMinutes } from "date-fns"
+import { format, parseISO, startOfWeek, endOfWeek } from "date-fns"
 import { de } from "date-fns/locale"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -36,41 +36,9 @@ import {
   ChevronUp,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-interface TimeBlock {
-  id: string
-  user_id: string
-  practice_id: string
-  date: string
-  start_time: string
-  end_time?: string
-  planned_hours?: number
-  actual_hours?: number
-  break_minutes: number
-  overtime_minutes: number
-  location_type: string
-  status: "active" | "completed" | "cancelled"
-  notes?: string
-  created_at: string
-  updated_at: string
-}
-
-interface TeamMember {
-  id: string
-  user_id: string
-  first_name: string
-  last_name: string
-  name?: string
-  role: string
-  team_ids?: string[]
-}
-
-interface Team {
-  id: string
-  name: string
-  color: string
-  memberCount: number
-}
+import { type TimeBlock, type TeamMember, type Team, formatMinutes, calculateWorkDuration } from "../lib/time-helpers"
+import { WeeklyStatsCard } from "./weekly-stats-card"
+import { TeamStatsCard } from "./team-stats-card"
 
 interface ZeitLogsTabProps {
   timeBlocks: TimeBlock[]
@@ -81,23 +49,6 @@ interface ZeitLogsTabProps {
   onMonthChange: (date: Date) => void
   onEditBlock?: (block: TimeBlock) => void
   onDeleteBlock?: (blockId: string) => void
-}
-
-// Helper to format minutes to HH:MM
-const formatMinutes = (minutes: number) => {
-  const hours = Math.floor(Math.abs(minutes) / 60)
-  const mins = Math.abs(minutes) % 60
-  const sign = minutes < 0 ? "-" : ""
-  return `${sign}${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`
-}
-
-// Helper to calculate work duration
-const calculateWorkDuration = (block: TimeBlock) => {
-  if (!block.end_time) return 0
-  const start = parseISO(block.start_time)
-  const end = parseISO(block.end_time)
-  const totalMinutes = differenceInMinutes(end, start)
-  return Math.max(0, totalMinutes - block.break_minutes)
 }
 
 export default function ZeitLogsTab({
@@ -624,98 +575,8 @@ export default function ZeitLogsTab({
         </CardContent>
       </Card>
 
-      {/* Weekly statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Wochenübersicht</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Woche</TableHead>
-                <TableHead>Arbeitstage</TableHead>
-                <TableHead>Gesamt Arbeitszeit</TableHead>
-                <TableHead>Überstunden</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {weeklyStats.map((stat) => (
-                <TableRow key={format(stat.weekStart, "yyyy-MM-dd")}>
-                  <TableCell>
-                    {format(stat.weekStart, "dd.MM.yyyy", { locale: de })} -{" "}
-                    {format(stat.weekEnd, "dd.MM.yyyy", { locale: de })}
-                  </TableCell>
-                  <TableCell>{stat.daysWorked}</TableCell>
-                  <TableCell className="font-medium">
-                    {formatMinutes(stat.totalMinutes)}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        "font-medium",
-                        stat.overtimeMinutes >= 0 ? "text-green-600" : "text-red-600"
-                      )}
-                    >
-                      {formatMinutes(stat.overtimeMinutes)}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Team statistics */}
-      {teamStats.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Team-Übersicht</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Team</TableHead>
-                  <TableHead>Aktive Mitarbeiter</TableHead>
-                  <TableHead>Gesamt Arbeitszeit</TableHead>
-                  <TableHead>Überstunden</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {teamStats.map((stat) => (
-                  <TableRow key={stat.teamId}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: stat.teamColor }}
-                        />
-                        <span className="font-medium">{stat.teamName}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{stat.memberCount}</TableCell>
-                    <TableCell className="font-medium">
-                      {formatMinutes(stat.totalMinutes)}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={cn(
-                          "font-medium",
-                          stat.overtimeMinutes >= 0 ? "text-green-600" : "text-red-600"
-                        )}
-                      >
-                        {formatMinutes(stat.overtimeMinutes)}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <WeeklyStatsCard weeklyStats={weeklyStats} />
+      <TeamStatsCard teamStats={teamStats} />
     </div>
   )
 }

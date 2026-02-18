@@ -42,6 +42,7 @@ import {
   Users,
   X,
 } from "lucide-react"
+import { WorkflowFormDialog } from "@/components/workflows/workflow-form-dialog"
 
 interface WorkflowStep {
   title: string
@@ -80,14 +81,6 @@ const defaultFormData: FormData = {
   steps: [],
   is_active: true,
   hide_items_from_other_users: false,
-}
-
-const defaultStep: WorkflowStep = {
-  title: "",
-  description: "",
-  assignedTo: "",
-  estimatedDuration: 5,
-  dependencies: [],
 }
 
 function WorkflowsPage() {
@@ -275,27 +268,6 @@ function WorkflowsPage() {
     })
   }
 
-  const addStep = () => {
-    setFormData((prev) => ({
-      ...prev,
-      steps: [...prev.steps, { ...defaultStep }],
-    }))
-  }
-
-  const removeStep = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      steps: prev.steps.filter((_, i) => i !== index),
-    }))
-  }
-
-  const updateStep = (index: number, field: keyof WorkflowStep, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      steps: prev.steps.map((step, i) => (i === index ? { ...step, [field]: value } : step)),
-    }))
-  }
-
   const filteredTemplates = templates.filter(
     (t) =>
       t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -306,74 +278,7 @@ function WorkflowsPage() {
   const totalDuration = (steps: WorkflowStep[]) =>
     steps?.reduce((sum, s) => sum + (s.estimatedDuration || 0), 0) || 0
 
-  const renderStepsEditor = () => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Label>Schritte ({formData.steps.length})</Label>
-        <Button type="button" variant="outline" size="sm" onClick={addStep}>
-          <Plus className="h-3 w-3 mr-1" />
-          Schritt
-        </Button>
-      </div>
-      {formData.steps.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          Noch keine Schritte. Klicken Sie auf &quot;+ Schritt&quot; oder nutzen Sie die KI-Generierung.
-        </p>
-      )}
-      <div className="space-y-2 max-h-60 overflow-y-auto">
-        {formData.steps.map((step, index) => (
-          <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/30">
-            <div className="flex items-start gap-2">
-              <span className="text-xs text-muted-foreground font-mono mt-2.5 w-5 shrink-0">{index + 1}.</span>
-              <div className="flex-1 space-y-2">
-                <Input
-                  value={step.title}
-                  onChange={(e) => updateStep(index, "title", e.target.value)}
-                  placeholder="Schritt-Titel"
-                  className="text-sm"
-                />
-                <Textarea
-                  value={step.description || ""}
-                  onChange={(e) => updateStep(index, "description", e.target.value)}
-                  placeholder="Beschreibung (optional)"
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    value={step.assignedTo || ""}
-                    onChange={(e) => updateStep(index, "assignedTo", e.target.value)}
-                    placeholder="Zuständig (z.B. MFA)"
-                    className="text-sm"
-                  />
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      value={step.estimatedDuration || ""}
-                      onChange={(e) => updateStep(index, "estimatedDuration", parseInt(e.target.value) || 0)}
-                      placeholder="Min."
-                      className="text-sm"
-                      min={0}
-                    />
-                    <span className="text-xs text-muted-foreground shrink-0">Min.</span>
-                  </div>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => removeStep(index)}
-                className="shrink-0 text-muted-foreground hover:text-destructive"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  // Steps editor is now handled by WorkflowFormDialog
 
   if (isLoading) {
     return (
@@ -510,105 +415,32 @@ function WorkflowsPage() {
       )}
 
       {/* Create dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) setFormData({ ...defaultFormData }) }}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Neue Workflow-Vorlage</DialogTitle>
-            <DialogDescription>
-              Erstellen Sie eine neue Workflow-Vorlage mit Schritten.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[calc(90vh-200px)]">
-            <div className="space-y-4 py-2 pr-4">
-              <div className="space-y-2">
-                <Label htmlFor="create-name">Name *</Label>
-                <Input
-                  id="create-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="z.B. Patientenaufnahme"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-desc">Beschreibung</Label>
-                <Textarea
-                  id="create-desc"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Beschreibung des Workflows..."
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-cat">Kategorie</Label>
-                <Input
-                  id="create-cat"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="z.B. Patientenmanagement"
-                />
-              </div>
-              {renderStepsEditor()}
-            </div>
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleCreate} disabled={isSaving || !formData.name.trim()}>
-              {isSaving ? "Erstelle..." : "Erstellen"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WorkflowFormDialog
+        open={isCreateOpen}
+        onOpenChange={(open) => { setIsCreateOpen(open); if (!open) setFormData({ ...defaultFormData }) }}
+        title="Neue Workflow-Vorlage"
+        description="Erstellen Sie eine neue Workflow-Vorlage mit Schritten."
+        formData={formData}
+        onFormChange={setFormData}
+        onSubmit={handleCreate}
+        isSaving={isSaving}
+        submitLabel="Erstellen"
+        savingLabel="Erstelle..."
+      />
 
       {/* Edit dialog */}
-      <Dialog open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if (!open) { setEditingTemplate(null); setFormData({ ...defaultFormData }) } }}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Workflow-Vorlage bearbeiten</DialogTitle>
-            <DialogDescription>Bearbeiten Sie die Details der Workflow-Vorlage.</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[calc(90vh-200px)]">
-            <div className="space-y-4 py-2 pr-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Name *</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-desc">Beschreibung</Label>
-                <Textarea
-                  id="edit-desc"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-cat">Kategorie</Label>
-                <Input
-                  id="edit-cat"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                />
-              </div>
-              {renderStepsEditor()}
-            </div>
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleUpdate} disabled={isSaving || !formData.name.trim()}>
-              {isSaving ? "Speichere..." : "Speichern"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WorkflowFormDialog
+        open={isEditOpen}
+        onOpenChange={(open) => { setIsEditOpen(open); if (!open) { setEditingTemplate(null); setFormData({ ...defaultFormData }) } }}
+        title="Workflow-Vorlage bearbeiten"
+        description="Bearbeiten Sie die Details der Workflow-Vorlage."
+        formData={formData}
+        onFormChange={setFormData}
+        onSubmit={handleUpdate}
+        isSaving={isSaving}
+        submitLabel="Speichern"
+        savingLabel="Speichere..."
+      />
 
       {/* AI Generator dialog */}
       <Dialog open={isAiOpen} onOpenChange={setIsAiOpen}>

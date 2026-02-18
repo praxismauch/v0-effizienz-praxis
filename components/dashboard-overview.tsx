@@ -284,9 +284,16 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     fetchDashboardData()
   }, [fetchDashboardData])
 
+  const FULL_WIDTH_WIDGETS = new Set([
+    "showBulletin",
+    "showInsightsActions",
+    "showJournalActions",
+  ])
+
   const getColumnSpanClass = (widgetId: string): string => {
     const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
-    const colSpan = setting?.column_span || 1
+    const defaultSpan = FULL_WIDTH_WIDGETS.has(widgetId) ? 5 : 1
+    const colSpan = setting?.column_span || defaultSpan
 
     switch (colSpan) {
       case 2:
@@ -296,7 +303,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
       case 4:
         return "md:col-span-4"
       case 5:
-        return "md:col-span-5"
+        return "col-span-full"
       default:
         return ""
     }

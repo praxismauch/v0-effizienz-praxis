@@ -144,7 +144,7 @@ export function SuperAdminAcademyManager() {
           <TabsTrigger value="quizzes"><HelpCircle className="h-4 w-4 mr-2" />Quizze</TabsTrigger>
           <TabsTrigger value="badges"><Award className="h-4 w-4 mr-2" />Badges</TabsTrigger>
           <TabsTrigger value="waitlist"><Users className="h-4 w-4 mr-2" />Warteliste</TabsTrigger>
-          <TabsTrigger value="content" disabled={!a.selectedCourse}><Layers className="h-4 w-4 mr-2" />Kursinhalt</TabsTrigger>
+          <TabsTrigger value="content"><Layers className="h-4 w-4 mr-2" />Kursinhalt</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">{renderOverview()}</TabsContent>
@@ -244,9 +244,9 @@ export function SuperAdminAcademyManager() {
         </TabsContent>
 
         <TabsContent value="content" className="mt-6">
-          {!a.selectedCourse ? (
-            <Card><CardContent className="flex flex-col items-center justify-center py-12"><Layers className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-medium">Kein Kurs ausgewaehlt</h3><Button className="mt-4 bg-transparent" variant="outline" onClick={() => a.setActiveTab("courses")}>Zur Kursliste</Button></CardContent></Card>
-          ) : (
+      {!a.selectedCourse ? (
+      <Card><CardContent className="flex flex-col items-center justify-center py-12 gap-4"><Layers className="h-12 w-12 text-muted-foreground" /><h3 className="text-lg font-medium">Kurs auswählen</h3><p className="text-sm text-muted-foreground">Wählen Sie einen Kurs, um dessen Inhalte zu verwalten.</p><Select onValueChange={(id) => { const course = a.courses.find((c) => c.id === id); if (course) a.handleSelectCourse(course) }}><SelectTrigger className="w-[320px]"><SelectValue placeholder="Kurs auswählen..." /></SelectTrigger><SelectContent>{a.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent></Select></CardContent></Card>
+      ) : (
             <div className="space-y-4">
               <Card><CardHeader><div className="flex items-start justify-between"><div><CardTitle>{a.selectedCourse.title}</CardTitle><CardDescription>{a.selectedCourse.description}</CardDescription></div><Button variant="outline" onClick={() => a.setSelectedCourse(null)}>Zurück</Button></div></CardHeader></Card>
               <div className="flex justify-end"><Button onClick={() => { a.resetModuleForm(); a.setEditingModule(null); a.setShowModuleDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Modul</Button></div>

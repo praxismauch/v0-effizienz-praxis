@@ -115,7 +115,7 @@ export default function AlleFunktionenPage() {
     <LandingPageLayout>
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-16 md:py-24">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <Link href="/">
             <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground mb-8">
               <ArrowLeft className="h-4 w-4" />
@@ -152,8 +152,8 @@ export default function AlleFunktionenPage() {
       </section>
 
       {/* Category Filter */}
-      <section className="py-8 border-b bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+      <section className="py-8 border-b bg-muted/30 sticky top-0 z-10 backdrop-blur-sm overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {featureCategories.map((category) => {
               const CategoryIcon = category.icon
@@ -185,7 +185,7 @@ export default function AlleFunktionenPage() {
 
       {/* Features Grid */}
       <section className="py-12 md:py-16">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {filteredFeatures.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">Keine Funktionen gefunden für "{searchQuery}"</p>
@@ -257,7 +257,7 @@ export default function AlleFunktionenPage() {
 
       {/* Quick Stats */}
       <section className="py-16 bg-muted/30">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="text-center p-6 bg-background rounded-xl border">
               <div className="text-4xl font-bold text-primary mb-2">{featuresData.length}+</div>
@@ -281,7 +281,7 @@ export default function AlleFunktionenPage() {
 
       {/* CTA Section */}
       <section className="py-16 md:py-24">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h2 className="text-2xl md:text-3xl font-bold">Bereit, Ihre Praxis zu transformieren?</h2>
             <p className="text-muted-foreground text-lg">Starten Sie noch heute mit Effizienz Praxis.</p>

@@ -1,182 +1,19 @@
-import type React from "react"
-import {
-  Brain,
-  TrendingUp,
-  BarChart3,
-  Users,
-  Layers,
-  GraduationCap,
-  Briefcase,
-  Network,
-  Calendar,
-  CheckSquare,
-  Target,
-  Workflow,
-  ClipboardList,
-  BookOpen,
-  FolderOpen,
-  Mic,
-  Phone,
-  Map,
-  Heart,
-  Lightbulb,
-  Search,
-  UserPlus,
-  Star,
-  DoorOpen,
-  Package,
-  MonitorCheck,
-  Pin,
-  Settings,
-  FileText,
-  LayoutDashboard,
-  PieChart,
-  Clock,
-  Shield,
-  Zap,
-  Bell,
-  LineChart,
-  ClipboardCheck,
-  PackageSearch,
-  Shuffle,
-  Smile,
-  MessageSquare,
-  HelpCircle,
-  Bot,
-  Video,
-  Keyboard,
-  Inbox,
-  Send,
-  Reply,
-  Archive,
-  ListChecks,
-  Download,
-  Activity,
-  ThumbsUp,
-  ArrowRightLeft,
-  AlertTriangle,
-  ShoppingCart,
-  Scan,
-  CalendarClock,
-  ShieldCheck,
-  ShieldAlert,
-  BookOpenCheck,
-  Crown,
-  Cpu,
-  Stethoscope,
-  HeartPulse,
-  Gauge,
-  UserCheck,
-} from "lucide-react"
+// Re-export types, icons, and helpers from modular files
+export type { FeatureData } from "./features/types"
+export { FEATURE_ICON_MAP, getFeatureIcon } from "./features/icons"
+export {
+  getFeaturesByCategory,
+  getFeatureBySlug,
+  getAllFeatureSlugs,
+  getRelatedFeatures,
+} from "./features/helpers"
 
-export const FEATURE_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Brain,
-  TrendingUp,
-  BarChart3,
-  Users,
-  Layers,
-  GraduationCap,
-  Briefcase,
-  Network,
-  Calendar,
-  CheckSquare,
-  Target,
-  Workflow,
-  ClipboardList,
-  BookOpen,
-  FolderOpen,
-  Mic,
-  Phone,
-  Map,
-  Heart,
-  Lightbulb,
-  Search,
-  UserPlus,
-  Star,
-  DoorOpen,
-  Package,
-  MonitorCheck,
-  Pin,
-  Settings,
-  FileText,
-  LayoutDashboard,
-  PieChart,
-  Clock,
-  Shield,
-  Zap,
-  Bell,
-  LineChart,
-  ClipboardCheck,
-  PackageSearch,
-  Shuffle,
-  Smile,
-  MessageSquare,
-  HelpCircle,
-  Bot,
-  Video,
-  Keyboard,
-  Inbox,
-  Send,
-  Reply,
-  Archive,
-  ListChecks,
-  Download,
-  Activity,
-  ThumbsUp,
-  ArrowRightLeft,
-  AlertTriangle,
-  ShoppingCart,
-  Scan,
-  CalendarClock,
-  ShieldCheck,
-  ShieldAlert,
-  BookOpenCheck,
-  Crown,
-  Cpu,
-  Stethoscope,
-  HeartPulse,
-  Gauge,
-  UserCheck,
-}
+import type { FeatureData } from "./features/types"
+import { setFeaturesData } from "./features/helpers"
 
-export function getFeatureIcon(iconName: string): React.ComponentType<{ className?: string }> {
-  return FEATURE_ICON_MAP[iconName] || Brain
-}
-
-export interface FeatureData {
-  slug: string
-  title: string
-  subtitle: string
-  description: string
-  detailedDescription: {
-    intro: string
-    howItWorks: string
-    whyItHelps: string
-  }
-  iconName: string
-  color: string
-  heroImage?: string
-  benefits: {
-    title: string
-    description: string
-  }[]
-  features: {
-    title: string
-    description: string
-    iconName: string
-  }[]
-  useCases?: {
-    title: string
-    description: string
-  }[]
-  faq?: {
-    question: string
-    answer: string
-  }[]
-  relatedFeatureSlugs?: string[]
-  metaTitle: string
-  metaDescription: string
-}
+// NOTE: Types, icons, and helper functions have been extracted to lib/features/
+// This file now only contains the featuresData array.
+// To add a new feature, add it to the array below.
 
 export const featuresData: FeatureData[] = [
   {
@@ -2909,31 +2746,5 @@ export const featuresData: FeatureData[] = [
   },
 ]
 
-// Helper function to normalize German umlauts for slug matching
-function normalizeGermanSlug(slug: string): string {
-  return slug.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
-}
-
-// Helper function to get all features for a category
-export function getFeaturesByCategory(slugs: string[]): FeatureData[] {
-  return featuresData.filter((f) => slugs.includes(f.slug))
-}
-
-export function getFeatureBySlug(slug: string): FeatureData | undefined {
-  const decodedSlug = decodeURIComponent(slug)
-  const normalizedSlug = normalizeGermanSlug(decodedSlug)
-
-  return featuresData.find(
-    (feature) => feature.slug === slug || feature.slug === decodedSlug || feature.slug === normalizedSlug,
-  )
-}
-
-// Helper function to get all feature slugs for static generation
-export function getAllFeatureSlugs(): string[] {
-  return featuresData.map((feature) => feature.slug)
-}
-
-// Helper function to get related features by slug array
-export function getRelatedFeatures(slugs: string[]): FeatureData[] {
-  return slugs.map((slug) => getFeatureBySlug(slug)).filter((f): f is FeatureData => f !== undefined)
-}
+// Register the data array with the helpers module (avoids circular imports)
+setFeaturesData(featuresData)

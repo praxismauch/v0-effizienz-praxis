@@ -3,9 +3,7 @@ import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { sortTeamMembersByRole } from "@/lib/team-role-order"
 import { handleApiError } from "@/lib/api-helpers"
-import { createAdminClient } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
-import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
+import { getApiClient } from "@/lib/supabase/admin"
 
 interface TeamMember {
   id: string
@@ -47,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
-    const supabase = hasSupabaseAdminConfig() ? createAdminClient() : await createClient()
+    const supabase = await getApiClient()
 
     let customRoleOrder: string[] | undefined
     try {
@@ -203,7 +201,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const practiceIdStr = String(practiceId)
 
-    const supabase = hasSupabaseAdminConfig() ? createAdminClient() : await createClient()
+    const supabase = await getApiClient()
 
     const body = await request.json()
 
@@ -314,7 +312,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
 
-    const supabase = hasSupabaseAdminConfig() ? createAdminClient() : await createClient()
+    const supabase = await getApiClient()
     const body = await request.json()
 
     const memberId = body.id || body.user_id

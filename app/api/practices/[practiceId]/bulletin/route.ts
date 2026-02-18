@@ -1,6 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
-import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
@@ -15,7 +13,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     const search = searchParams.get("search")
     const userId = searchParams.get("userId")
 
-    const supabase = hasSupabaseAdminConfig() ? createAdminClient() : await createClient()
+    const supabase = await getApiClient()
 
     let query = supabase
       .from("bulletin_posts")
@@ -118,7 +116,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "Titel und Inhalt sind erforderlich" }, { status: 400 })
     }
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const insertData = {
       practice_id: practiceId,

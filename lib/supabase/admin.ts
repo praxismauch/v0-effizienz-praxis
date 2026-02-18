@@ -8,7 +8,7 @@ declare global {
   var __supabaseAdminClientStandalone: ReturnType<typeof createSupabaseClient> | undefined
 }
 
-export function createAdminClient() {
+export function createAdminClient(): ReturnType<typeof createSupabaseClient> | null {
   if (globalThis.__supabaseAdminClientStandalone) {
     return globalThis.__supabaseAdminClientStandalone
   }
@@ -18,7 +18,7 @@ export function createAdminClient() {
 
   if (!hasSupabaseAdminConfig()) {
     console.warn("Supabase admin client not configured - add credentials to lib/supabase/config.ts")
-    return null as unknown as ReturnType<typeof createSupabaseClient>
+    return null
   }
 
   globalThis.__supabaseAdminClientStandalone = createSupabaseClient(supabaseUrl, serviceRoleKey, {
@@ -34,4 +34,17 @@ export function createAdminClient() {
   })
 
   return globalThis.__supabaseAdminClientStandalone
+}
+
+/**
+ * Returns a Supabase client for API routes: prefers admin client, falls back to session client.
+ * This is the safe version that never returns null.
+ */
+export async function getApiClient() {
+  const { createClient } = await import("@/lib/supabase/server")
+  if (hasSupabaseAdminConfig()) {
+    const admin = createAdminClient()
+    if (admin) return admin
+  }
+  return await createClient()
 }

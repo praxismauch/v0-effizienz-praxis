@@ -109,8 +109,8 @@ export async function createAdminClient() {
   const serviceRoleKey = getSupabaseServiceRoleKey()
 
   if (!hasSupabaseAdminConfig()) {
-    console.warn("Supabase admin client not configured - add credentials to lib/supabase/config.ts")
-    return null as unknown as SupabaseClient
+    console.warn("Supabase admin client not configured - falling back to session client")
+    return createClient()
   }
 
   globalThis.__supabaseAdminClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {

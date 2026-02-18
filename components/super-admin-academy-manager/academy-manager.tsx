@@ -364,7 +364,7 @@ export function SuperAdminAcademyManager() {
       {/* Quiz Dialog */}
       <Dialog open={a.showQuizDialog} onOpenChange={a.setShowQuizDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{a.editingQuiz ? "Quiz bearbeiten" : "Neues Quiz"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{a.editingQuiz ? "Quiz bearbeiten" : "Neues Quiz"}</DialogTitle><DialogDescription>Quiz-Einstellungen, Zeitlimit und Kurs-Zuordnung festlegen.</DialogDescription></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2"><Label>Titel</Label><Input value={a.quizForm.title} onChange={(e) => a.setQuizForm({ ...a.quizForm, title: e.target.value })} placeholder="z.B. Hygiene-Grundlagen Quiz" /></div>
             <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.quizForm.description} onChange={(e) => a.setQuizForm({ ...a.quizForm, description: e.target.value })} rows={3} placeholder="Kurze Beschreibung des Quiz..." /></div>
@@ -390,7 +390,7 @@ export function SuperAdminAcademyManager() {
       {/* AI Course Dialog */}
       <Dialog open={a.showAiCourseDialog} onOpenChange={a.setShowAiCourseDialog}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" />Kurs mit KI erstellen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" />Kurs mit KI erstellen</DialogTitle><DialogDescription>Beschreiben Sie den gewünschten Kurs und die KI generiert Struktur und Inhalte.</DialogDescription></DialogHeader>
           {!a.generatedCourse ? (
             <div className="grid gap-4 py-4">
               <div className="grid gap-2"><Label>Kursbeschreibung</Label><Textarea value={a.aiCourseDescription} onChange={(e) => a.setAiCourseDescription(e.target.value)} placeholder="Beschreiben Sie den Kurs..." rows={4} /></div>

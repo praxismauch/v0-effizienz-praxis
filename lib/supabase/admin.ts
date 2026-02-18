@@ -43,12 +43,15 @@ export function createAdminClient(): ReturnType<typeof createSupabaseClient> | n
 /**
  * Returns a Supabase client for API routes: prefers admin client, falls back to session client.
  * This is the safe version that never returns null.
+ * 
+ * IMPORTANT: Only call this from route handlers or server actions where next/headers is available.
  */
 export async function getApiClient() {
-  const { createClient } = await import("@/lib/supabase/server")
   if (hasSupabaseAdminConfig()) {
     const admin = createAdminClient()
     if (admin) return admin
   }
-  return await createClient()
+  // Fallback: use session-based client (dynamic import to avoid top-level next/headers dep)
+  const { createClient } = await import("@/lib/supabase/server")
+  return createClient()
 }

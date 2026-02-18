@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 // GET - Fetch dashboard preferences for a user in a practice

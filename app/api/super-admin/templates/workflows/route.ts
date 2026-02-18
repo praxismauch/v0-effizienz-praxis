@@ -23,29 +23,44 @@ export async function GET(request: NextRequest) {
     await requireSuperAdmin()
     const adminClient = await createAdminClient()
 
-    // Fetch workflow templates with their steps
+    // Fetch workflow templates
     const { data: templates, error } = await adminClient
       .from("workflows")
-      .select("*, workflow_steps(id, title, description, step_order, status, assigned_to, estimated_duration)")
+      .select("*")
       .eq("is_template", true)
       .is("deleted_at", null)
       .order("name")
 
     if (error) throw error
 
-    // Map workflow_steps into the steps array expected by the frontend
+    // Fetch steps separately (no FK relationship for PostgREST join)
+    const templateIds = (templates || []).map((t: any) => t.id)
+    let stepsMap: Record<string, any[]> = {}
+
+    if (templateIds.length > 0) {
+      const { data: allSteps } = await adminClient
+        .from("workflow_steps")
+        .select("id, workflow_id, title, description, step_order, status, assigned_to, estimated_duration")
+        .in("workflow_id", templateIds)
+        .order("step_order", { ascending: true })
+
+      // Group steps by workflow_id
+      for (const step of (allSteps || [])) {
+        if (!stepsMap[step.workflow_id]) stepsMap[step.workflow_id] = []
+        stepsMap[step.workflow_id].push(step)
+      }
+    }
+
+    // Map steps into the format expected by the frontend
     const mapped = (templates || []).map((t: any) => ({
       ...t,
-      steps: (t.workflow_steps || [])
-        .sort((a: any, b: any) => (a.step_order || 0) - (b.step_order || 0))
-        .map((s: any) => ({
-          title: s.title || "",
-          description: s.description || "",
-          assignedTo: s.assigned_to || "",
-          estimatedDuration: s.estimated_duration || 5,
-          dependencies: [],
-        })),
-      workflow_steps: undefined,
+      steps: (stepsMap[t.id] || []).map((s: any) => ({
+        title: s.title || "",
+        description: s.description || "",
+        assignedTo: s.assigned_to || "",
+        estimatedDuration: s.estimated_duration || 5,
+        dependencies: [],
+      })),
     }))
 
     return NextResponse.json({ templates: mapped })

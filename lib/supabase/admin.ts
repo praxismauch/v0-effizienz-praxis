@@ -17,7 +17,8 @@ export function createAdminClient() {
   const serviceRoleKey = getSupabaseServiceRoleKey()
 
   if (!hasSupabaseAdminConfig()) {
-    throw new Error("Supabase admin client not configured - add credentials to lib/supabase/config.ts")
+    console.warn("Supabase admin client not configured - add credentials to lib/supabase/config.ts")
+    return null as unknown as ReturnType<typeof createSupabaseClient>
   }
 
   globalThis.__supabaseAdminClientStandalone = createSupabaseClient(supabaseUrl, serviceRoleKey, {

@@ -65,17 +65,14 @@ import {
 import { toast } from "sonner"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
+import { OrgaCategorySelect } from "@/components/orga-category-select"
 
 // Constants
-const CATEGORIES = [
-  { value: "allgemein", label: "Allgemein" },
-  { value: "organisation", label: "Organisation" },
-  { value: "it", label: "IT & Technik" },
-  { value: "medizin", label: "Medizin" },
-  { value: "personal", label: "Personal" },
-  { value: "hygiene", label: "Hygiene" },
-  { value: "qualitaet", label: "Qualität" },
-]
+interface OrgaCategoryItem {
+  id: string
+  name: string
+  color: string
+}
 
 const PRIORITIES = [
   { value: "normal", label: "Normal", color: "text-muted-foreground", bg: "" },
@@ -123,7 +120,7 @@ interface BulletinPost {
 const defaultFormData = {
   title: "",
   content: "",
-  category: "allgemein",
+  category: "",
   priority: "normal",
   visibility: "all",
   visible_roles: [] as string[],
@@ -150,6 +147,22 @@ export default function SchwarzesBrettClient() {
   const [sortBy, setSortBy] = useState("newest")
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
+
+  // Orga categories from database
+  const [orgaCategories, setOrgaCategories] = useState<OrgaCategoryItem[]>([])
+
+  useEffect(() => {
+    if (!practiceId) return
+    fetch(`/api/practices/${practiceId}/orga-categories`)
+      .then((res) => res.ok ? res.json() : { categories: [] })
+      .then((data) => {
+        const cats = (data.categories || []).sort((a: OrgaCategoryItem, b: OrgaCategoryItem) =>
+          a.name.localeCompare(b.name)
+        )
+        setOrgaCategories(cats)
+      })
+      .catch(() => setOrgaCategories([]))
+  }, [practiceId])
 
   // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -435,8 +448,13 @@ export default function SchwarzesBrettClient() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Alle Kategorien</SelectItem>
-                      {CATEGORIES.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      {orgaCategories.map((c) => (
+                        <SelectItem key={c.id} value={c.name}>
+                          <div className="flex items-center gap-2">
+                            <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color || "#64748b" }} />
+                            {c.name}
+                          </div>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -490,9 +508,10 @@ export default function SchwarzesBrettClient() {
               onViewDetail={openDetailView}
               isAuthorOrAdmin={isAuthorOrAdmin}
               viewMode={viewMode}
+              orgaCategories={orgaCategories}
             />
           </TabsContent>
-
+          
           <TabsContent value="archiv" className="mt-4">
             <PostList
               posts={posts}
@@ -508,6 +527,7 @@ export default function SchwarzesBrettClient() {
               isAuthorOrAdmin={isAuthorOrAdmin}
               isArchiveView
               viewMode={viewMode}
+              orgaCategories={orgaCategories}
             />
           </TabsContent>
         </Tabs>
@@ -553,16 +573,12 @@ export default function SchwarzesBrettClient() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label>Kategorie</Label>
-                <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <OrgaCategorySelect
+                  value={formData.category}
+                  onValueChange={(v) => setFormData({ ...formData, category: v })}
+                  showNoneOption={false}
+                  placeholder="Kategorie wählen..."
+                />
               </div>
               <div>
                 <Label>Priorität</Label>
@@ -698,7 +714,7 @@ export default function SchwarzesBrettClient() {
               <DialogHeader>
                 <div className="flex items-center gap-2 flex-wrap">
                   <PriorityBadge priority={detailPost.priority} />
-                  <CategoryBadge category={detailPost.category} />
+                  <CategoryBadge category={detailPost.category} categories={orgaCategories} />
                   {detailPost.is_pinned && (
                     <Badge variant="secondary"><Pin className="h-3 w-3 mr-1" />Angeheftet</Badge>
                   )}
@@ -789,6 +805,7 @@ function PostList({
   isAuthorOrAdmin,
   isArchiveView = false,
   viewMode = "list",
+  orgaCategories = [],
 }: {
   posts: BulletinPost[]
   pinnedPosts: BulletinPost[]
@@ -803,6 +820,7 @@ function PostList({
   isAuthorOrAdmin: (p: BulletinPost) => boolean
   isArchiveView?: boolean
   viewMode?: "list" | "grid"
+  orgaCategories?: OrgaCategoryItem[]
 }) {
   if (isLoading) {
     return (
@@ -860,6 +878,7 @@ function PostList({
                 onClick={() => onViewDetail(post)}
                 canManage={isAuthorOrAdmin(post)}
                 viewMode={viewMode}
+                orgaCategories={orgaCategories}
               />
             ))}
           </div>
@@ -886,6 +905,7 @@ function PostList({
                 onClick={() => onViewDetail(post)}
                 canManage={isAuthorOrAdmin(post)}
                 viewMode={viewMode}
+                orgaCategories={orgaCategories}
               />
             ))}
           </div>
@@ -904,6 +924,7 @@ function PostCard({
   onClick,
   canManage,
   viewMode = "list",
+  orgaCategories = [],
 }: {
   post: BulletinPost
   onEdit: (p: BulletinPost) => void
@@ -913,6 +934,7 @@ function PostCard({
   onClick: () => void
   canManage: boolean
   viewMode?: "list" | "grid"
+  orgaCategories?: OrgaCategoryItem[]
 }) {
   const priorityConfig = PRIORITIES.find((p) => p.value === post.priority) || PRIORITIES[0]
   const isGrid = viewMode === "grid"
@@ -934,7 +956,7 @@ function PostCard({
                 <Badge variant="secondary" className="text-xs"><Pin className="h-3 w-3 mr-1" />Angeheftet</Badge>
               )}
               <PriorityBadge priority={post.priority} />
-              <CategoryBadge category={post.category} />
+              <CategoryBadge category={post.category} categories={orgaCategories} />
               {post.requires_confirmation && (
                 <Badge variant="outline" className="text-xs"><CheckCircle2 className="h-3 w-3 mr-1" />Bestätigung</Badge>
               )}
@@ -1003,10 +1025,17 @@ function PriorityBadge({ priority }: { priority: string }) {
   return null
 }
 
-function CategoryBadge({ category }: { category: string }) {
-  const cat = CATEGORIES.find((c) => c.value === category)
-  if (!cat || category === "allgemein") return null
-  return <Badge variant="secondary" className="text-xs">{cat.label}</Badge>
+function CategoryBadge({ category, categories = [] }: { category: string; categories?: OrgaCategoryItem[] }) {
+  if (!category || category === "none") return null
+  const cat = categories.find((c) => c.name === category)
+  return (
+    <Badge variant="secondary" className="text-xs">
+      {cat && (
+        <span className="inline-block h-2 w-2 rounded-full mr-1 flex-shrink-0" style={{ backgroundColor: cat.color || "#64748b" }} />
+      )}
+      {category}
+    </Badge>
+  )
 }
 
 function formatDate(dateStr: string) {

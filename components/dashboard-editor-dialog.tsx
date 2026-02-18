@@ -74,7 +74,6 @@ export interface WidgetConfig {
   showTodos: boolean
   showBulletin?: boolean
   showKPIs?: boolean
-  showInsightsActions?: boolean
   showJournalActions?: boolean
   columnSpans?: Record<string, number>
   todosFilterWichtig?: boolean
@@ -181,12 +180,6 @@ export const WIDGET_DEFINITIONS = [
     icon: Rss,
   },
   {
-    id: "showInsightsActions",
-    label: "KI-Insights Handlungsempfehlungen",
-    description: "KI-generierte Erkenntnisse und Empfehlungen",
-    icon: TrendingUp,
-  },
-  {
     id: "showJournalActions",
     label: "Journal Handlungsempfehlungen",
     description: "KI-generierte Handlungsempfehlungen aus dem Journal",
@@ -232,7 +225,6 @@ const defaultWidgetConfig: WidgetConfig = {
   showGoogleReviews: true,
   showTodos: true,
   showKPIs: true,
-  showInsightsActions: true,
   showJournalActions: true,
   showBulletin: true,
   columnSpans: {},
@@ -243,7 +235,7 @@ const defaultWidgetConfig: WidgetConfig = {
   linebreaks: [],
 }
 
-const FULL_WIDTH_WIDGET_IDS = new Set(["showBulletin", "showInsightsActions", "showJournalActions"])
+const FULL_WIDTH_WIDGET_IDS = new Set(["showBulletin", "showJournalActions"])
 
 const COLUMN_OPTIONS = [
   { value: 0, label: "Standard" },
@@ -488,6 +480,7 @@ export function DashboardEditorDialog({
   const [config, setConfig] = useState<WidgetConfig>(initialWidgets)
   const [widgetOrder, setWidgetOrder] = useState<string[]>(ensureCompleteOrder(initialWidgets.widgetOrder || DEFAULT_ORDER))
   const [linebreaks, setLinebreaks] = useState<string[]>(initialWidgets.linebreaks || [])
+  const [adminDefaults, setAdminDefaults] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (open) {
@@ -495,6 +488,20 @@ export function DashboardEditorDialog({
       setConfig(widgets)
       setWidgetOrder(ensureCompleteOrder(widgets.widgetOrder || DEFAULT_ORDER))
       setLinebreaks(widgets.linebreaks || [])
+
+      // Fetch super-admin default column spans (Vorlagen)
+      fetch("/api/cockpit-settings")
+        .then((res) => res.ok ? res.json() : { settings: [] })
+        .then((data) => {
+          const defaults: Record<string, number> = {}
+          for (const s of data.settings || []) {
+            if (s.widget_id && s.column_span) {
+              defaults[s.widget_id] = s.column_span
+            }
+          }
+          setAdminDefaults(defaults)
+        })
+        .catch(() => setAdminDefaults({}))
     }
   }, [open, configProp, currentConfig])
 
@@ -548,7 +555,12 @@ export function DashboardEditorDialog({
   >
 
   const handleSave = () => {
-    onSave({ widgets: { ...config, widgetOrder, linebreaks } })
+    // Clean columnSpans: remove entries with value 0 (= use default)
+    const cleanedSpans: Record<string, number> = {}
+    for (const [key, val] of Object.entries(config.columnSpans || {})) {
+      if (val && val > 0) cleanedSpans[key] = val
+    }
+    onSave({ widgets: { ...config, columnSpans: cleanedSpans, widgetOrder, linebreaks } })
     onOpenChange(false)
   }
 
@@ -581,7 +593,7 @@ export function DashboardEditorDialog({
                 item.type === "linebreak" ? (
                   <SortableLinebreak key={item.id} id={item.id} onRemove={handleRemoveLinebreak} />
                 ) : (
-                  <SortableWidget key={item.widget.id} widget={item.widget} config={config} setConfig={setConfig} />
+                  <SortableWidget key={item.widget.id} widget={item.widget} config={config} setConfig={setConfig} defaultSpan={adminDefaults[item.widget.id]} />
                 ),
               )}
             </SortableContext>

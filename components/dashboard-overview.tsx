@@ -102,7 +102,6 @@ const DEFAULT_WIDGETS = {
   showTodaySchedule: true,
   showRecentActivities: true,
   showGoogleReviews: true,
-  showInsightsActions: true,
   showJournalActions: true,
   showBulletin: true,
   showTodos: true,
@@ -287,7 +286,6 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
 
   const FULL_WIDTH_WIDGETS = new Set([
     "showBulletin",
-    "showInsightsActions",
     "showJournalActions",
   ])
 
@@ -524,12 +522,6 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
           if (!widgets.showRecentActivities || !stats?.recentActivities?.length) return null
           return wrapWithSpan(
             <RecentActivitiesWidget key="recent-activities" activities={stats.recentActivities} />,
-            widgetId,
-          )
-        case "showInsightsActions":
-          if (widgets.showInsightsActions === false || !practiceId) return null
-          return wrapWithSpan(
-            <JournalActionItemsCard key="insights-actions" practiceId={practiceId} className="col-span-full" />,
             widgetId,
           )
         case "showJournalActions":

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { ColorPicker } from "@/components/color-picker"
 import type { ShiftType } from "../types"
 
 interface ShiftTypeDialogProps {
@@ -22,25 +23,6 @@ interface ShiftTypeDialogProps {
   practiceId: string
   onSave: (data: Partial<ShiftType>) => Promise<void>
 }
-
-const PRESET_COLORS = [
-  "#ef4444", // red
-  "#f97316", // orange
-  "#f59e0b", // amber
-  "#eab308", // yellow
-  "#84cc16", // lime
-  "#22c55e", // green
-  "#10b981", // emerald
-  "#14b8a6", // teal
-  "#06b6d4", // cyan
-  "#0ea5e9", // sky
-  "#3b82f6", // blue
-  "#6366f1", // indigo
-  "#8b5cf6", // violet
-  "#a855f7", // purple
-  "#ec4899", // pink
-  "#f43f5e", // rose
-]
 
 export default function ShiftTypeDialog({
   open,
@@ -194,22 +176,11 @@ export default function ShiftTypeDialog({
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label>Farbe</Label>
-            <div className="flex gap-2 flex-wrap">
-              {PRESET_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`w-8 h-8 rounded-full border-2 transition-transform ${
-                    formData.color === color ? "border-foreground scale-110" : "border-transparent"
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setFormData({ ...formData, color })}
-                />
-              ))}
-            </div>
-          </div>
+          <ColorPicker
+            label="Farbe"
+            value={formData.color}
+            onChange={(color) => setFormData({ ...formData, color })}
+          />
 
           <div className="flex items-center justify-between">
             <Label htmlFor="is_active">Aktiv</Label>

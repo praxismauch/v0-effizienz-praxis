@@ -112,7 +112,7 @@ export default function SickLeavesTab({
         </Card>
       ) : (
         <div className="space-y-3">
-          {sickLeaves.map((leave) => {
+          {[...new Map(sickLeaves.map((l) => [l.id, l])).values()].map((leave) => {
             const member = getMember(leave.team_member_id)
             const ongoing = isOngoing(leave.end_date)
             return (

@@ -54,6 +54,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    if (!practices || !Array.isArray(practices)) {
+      Logger.info("api", "GET /api/practices - No practices found", { data: practices })
+      return NextResponse.json({ practices: [] })
+    }
+
     const countsMap = new Map<string, { memberCount: number; adminCount: number }>()
 
     const { data: userCounts, error: userCountError } = userCountsResult

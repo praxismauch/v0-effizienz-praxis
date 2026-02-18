@@ -7,7 +7,7 @@ export async function GET() {
     const supabase = await createAdminClient()
 
     const statuses = await getTicketStatuses()
-    const openStatuses = statuses
+    const openStatuses = (statuses || [])
       .filter((s) => s.value === "open" || s.value === "in_progress" || s.value === "pending")
       .map((s) => s.value)
 

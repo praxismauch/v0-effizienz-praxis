@@ -98,7 +98,7 @@ export const BulletinWidget = memo(function BulletinWidget({
   return (
     <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Pinned Posts Card */}
-      <Card className="p-5 border-muted">
+      <Card className="p-5 border-muted min-h-[140px]">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-start gap-3">
@@ -130,7 +130,7 @@ export const BulletinWidget = memo(function BulletinWidget({
       </Card>
 
       {/* New / Unread Posts Card */}
-      <Card className="p-5 border-muted">
+      <Card className="p-5 border-muted min-h-[140px]">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-start gap-3">

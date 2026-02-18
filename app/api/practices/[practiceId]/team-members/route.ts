@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { sortTeamMembersByRole } from "@/lib/team-role-order"
 import { handleApiError } from "@/lib/api-helpers"
-import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
+// Admin client no longer needed - using session-based client for all operations
 
 interface TeamMember {
   id: string
@@ -201,7 +202,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const practiceIdStr = String(practiceId)
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const body = await request.json()
 
@@ -312,7 +313,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const body = await request.json()
 
     const memberId = body.id || body.user_id

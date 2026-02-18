@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     const search = searchParams.get("search")
     const userId = searchParams.get("userId")
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     let query = supabase
       .from("bulletin_posts")
@@ -116,7 +116,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "Titel und Inhalt sind erforderlich" }, { status: 400 })
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const insertData = {
       practice_id: practiceId,

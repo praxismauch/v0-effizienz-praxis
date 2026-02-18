@@ -27,6 +27,7 @@ import { usePractice } from "@/contexts/practice-context"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { GoogleReviewsWidget } from "./google-reviews-widget"
 import { JournalActionItemsCard } from "@/components/dashboard/insights-action-items-card"
+import { BulletinWidget } from "@/components/dashboard/bulletin-widget"
 import { useTranslation } from "@/contexts/translation-context"
 import { PageHeader } from "@/components/page-layout"
 import {
@@ -527,6 +528,12 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
           if (widgets.showJournalActions === false || !practiceId) return null
           return wrapWithSpan(
             <JournalActionItemsCard key="journal-actions" practiceId={practiceId} className="col-span-full" />,
+            widgetId,
+          )
+        case "showBulletin":
+          if (widgets.showBulletin === false || !practiceId) return null
+          return wrapWithSpan(
+            <BulletinWidget key="bulletin" practiceId={practiceId} userId={userId} />,
             widgetId,
           )
         case "showQuickActions":

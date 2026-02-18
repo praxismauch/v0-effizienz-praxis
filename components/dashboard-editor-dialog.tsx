@@ -72,6 +72,7 @@ export interface WidgetConfig {
   showRecentActivities: boolean
   showGoogleReviews: boolean
   showTodos: boolean
+  showBulletin?: boolean
   showKPIs?: boolean
   showJournalActions?: boolean
   todosFilterWichtig?: boolean
@@ -194,6 +195,12 @@ export const WIDGET_DEFINITIONS = [
     label: "Aufgaben (Todos)",
     description: "Gefilterte Aufgabenliste mit konfigurierbaren Filtern",
     icon: CheckSquare,
+  },
+  {
+    id: "showBulletin",
+    label: "Schwarzes Brett",
+    description: "Neueste Beitraege vom Schwarzen Brett",
+    icon: FileText,
   },
 ]
 

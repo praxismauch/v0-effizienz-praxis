@@ -1,17 +1,55 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
+type Params = { practiceId: string; postId: string }
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<Params> }
+) {
+  try {
+    const { practiceId, postId } = await params
+    const supabase = await createAdminClient()
+
+    const { data, error } = await supabase
+      .from("bulletin_posts")
+      .select("*")
+      .eq("id", postId)
+      .eq("practice_id", practiceId)
+      .is("deleted_at", null)
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: "Beitrag nicht gefunden" }, { status: 404 })
+    }
+
+    // Get read count
+    const { count } = await supabase
+      .from("bulletin_read_status")
+      .select("*", { count: "exact", head: true })
+      .eq("post_id", postId)
+
+    return NextResponse.json({ post: { ...data, read_count: count || 0 } })
+  } catch (error) {
+    console.error("Error in bulletin GET:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ practiceId: string; postId: string }> }
+  { params }: { params: Promise<Params> }
 ) {
   try {
     const { practiceId, postId } = await params
     const body = await request.json()
-
     const supabase = await createAdminClient()
 
-    const allowedFields = ["title", "content", "is_pinned", "is_important"]
+    const allowedFields = [
+      "title", "content", "category", "priority", "visibility",
+      "visible_roles", "visible_user_ids", "is_pinned", "is_important",
+      "publish_at", "expires_at", "requires_confirmation", "is_archived",
+    ]
     const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
@@ -41,16 +79,16 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ practiceId: string; postId: string }> }
+  { params }: { params: Promise<Params> }
 ) {
   try {
     const { practiceId, postId } = await params
-
     const supabase = await createAdminClient()
 
+    // Soft delete (DSGVO-compliant)
     const { error } = await supabase
       .from("bulletin_posts")
-      .delete()
+      .update({ deleted_at: new Date().toISOString(), is_archived: true })
       .eq("id", postId)
       .eq("practice_id", practiceId)
 

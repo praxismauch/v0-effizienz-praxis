@@ -97,6 +97,7 @@ export type BadgeKey =
   | "leitbild"
   | "selfcheck"
   | "organigramm"
+  | "schwarzesBrett"
 
 export const DEFAULT_BADGE_COUNTS: Record<BadgeKey, number> = {
   tasks: 0,
@@ -133,6 +134,7 @@ export const DEFAULT_BADGE_COUNTS: Record<BadgeKey, number> = {
   leitbild: 0,
   selfcheck: 0,
   organigramm: 0,
+  schwarzesBrett: 0,
 }
 
 export const DEFAULT_BADGE_VISIBILITY: Record<string, boolean> = Object.keys(
@@ -170,6 +172,7 @@ export function getNavigationGroups(
           href: "/schwarzes-brett",
           icon: Clipboard,
           key: "schwarzesBrett",
+          badge: "schwarzesBrett",
         },
       ],
     },

@@ -36,6 +36,7 @@ const defaultBadges = {
   leitbild: 0,
   selfcheck: 0,
   organigramm: 0,
+  schwarzesBrett: 0,
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {

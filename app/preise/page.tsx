@@ -75,8 +75,8 @@ export default function PreisePage() {
     },
     {
       name: "Premium",
-      price_monthly: null,
-      price_yearly: null,
+      price_monthly: 29900,
+      price_yearly: 299900,
       old_price_monthly: null,
       old_price_yearly: null,
       description: "Für gehobene Ansprüche",

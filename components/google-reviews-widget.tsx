@@ -276,69 +276,76 @@ export function GoogleReviewsWidget({ practiceId, practiceName, practiceWebsiteU
         </div>
       </DialogContent>
 
-      <Card className="p-4">
+      <Card className="p-5 h-full">
         {isLoading ? (
-          <div className="flex items-center justify-center min-h-[80px]">
-            <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">
+              <RefreshCw className="h-5 w-5 animate-spin" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Google Bewertungen</p>
+              <p className="text-3xl font-bold tracking-tight mt-1 text-muted-foreground/30">--</p>
+            </div>
           </div>
         ) : !isConfigured ? (
-          <div className="flex flex-col items-center justify-center min-h-[80px] text-center space-y-2">
-            <div className="rounded-full bg-muted p-2">
-              <Star className="h-5 w-5 text-muted-foreground" />
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">
+              <Star className="h-5 w-5" />
             </div>
-            <p className="text-sm text-muted-foreground">Google Place ID nicht konfiguriert</p>
-            <Button onClick={() => setShowSetup(true)} size="sm" variant="outline">
-              Jetzt einrichten
-            </Button>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-muted-foreground">Google Bewertungen</p>
+              <p className="text-xs text-muted-foreground mt-1">Google Place ID nicht konfiguriert</p>
+              <Button onClick={() => setShowSetup(true)} size="sm" variant="outline" className="mt-2 h-7 text-xs">
+                Jetzt einrichten
+              </Button>
+            </div>
           </div>
         ) : (
-          <>
-            {/* Header row: Title left, Icon right */}
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Google Bewertungen</p>
-                {/* Large value - rating with stars */}
-                <div className="flex items-center gap-2">
-                  <p className="text-2xl font-bold">{averageRating.toFixed(1)}</p>
-                  <div className="flex items-center">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`h-4 w-4 ${
-                          star <= Math.round(averageRating)
-                            ? "text-yellow-500 fill-yellow-500"
-                            : "text-muted-foreground/30"
-                        }`}
-                      />
-                    ))}
-                  </div>
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">
+              <Star className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Google Bewertungen</p>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 -mr-1">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleRefresh} disabled={isLoading}>
+                      <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+                      Aktualisieren
+                    </DropdownMenuItem>
+                    <DialogTrigger asChild>
+                      <DropdownMenuItem>
+                        <Settings className="h-4 w-4 mr-2" />
+                        Einstellungen
+                      </DropdownMenuItem>
+                    </DialogTrigger>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-3xl font-bold tracking-tight">{averageRating.toFixed(1)}</p>
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-4 w-4 ${
+                        star <= Math.round(averageRating)
+                          ? "text-yellow-500 fill-yellow-500"
+                          : "text-muted-foreground/30"
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
-              {/* Icon with background + action buttons */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleRefresh} disabled={isLoading}>
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-                    Aktualisieren
-                  </DropdownMenuItem>
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Einstellungen
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <p className="text-xs text-muted-foreground mt-0.5">{totalReviews} Bewertungen</p>
             </div>
-            <div className="mt-2 flex items-center gap-1 text-xs">
-              <span className="text-muted-foreground">{totalReviews} Bewertungen</span>
-            </div>
-          </>
+          </div>
         )}
       </Card>
     </Dialog>

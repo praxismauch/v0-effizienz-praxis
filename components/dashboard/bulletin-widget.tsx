@@ -98,16 +98,16 @@ export const BulletinWidget = memo(function BulletinWidget({
   return (
     <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Pinned Posts Card */}
-      <Card className="p-6 border-muted">
+      <Card className="p-5 border-muted">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
-                <Pin className="h-4 w-4 text-emerald-600" />
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <Pin className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold">Angeheftet</h3>
-                <p className="text-xs text-muted-foreground">{pinnedPosts.length} Beiträge</p>
+                <p className="text-sm font-medium text-muted-foreground">Angeheftet</p>
+                <p className="text-3xl font-bold tracking-tight mt-1">{pinnedPosts.length}</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
@@ -130,16 +130,16 @@ export const BulletinWidget = memo(function BulletinWidget({
       </Card>
 
       {/* New / Unread Posts Card */}
-      <Card className="p-6 border-muted">
+      <Card className="p-5 border-muted">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-                <Bell className="h-4 w-4 text-blue-600" />
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <Bell className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold">Neue Beiträge</h3>
-                <p className="text-xs text-muted-foreground">{newPosts.length} ungelesen</p>
+                <p className="text-sm font-medium text-muted-foreground">Neue Beiträge</p>
+                <p className="text-3xl font-bold tracking-tight mt-1">{newPosts.length}</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>

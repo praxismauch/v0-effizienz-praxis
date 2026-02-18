@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Clock, Play, Square, Coffee, ExternalLink } from "lucide-react"
 import Link from "next/link"
@@ -99,69 +99,66 @@ export function TimeTrackingWidget({ practiceId, userId }: TimeTrackingWidgetPro
   }, [isOnBreak, activeBreak, currentBlock?.id, startBreak, endBreak, mutate, toast])
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className={`p-1.5 rounded-lg ${isActive ? "bg-green-500/10" : "bg-muted"}`}>
-              <Clock className={`h-4 w-4 ${isActive ? "text-green-600" : "text-muted-foreground"}`} />
-            </div>
-            <span className="text-sm font-medium">Zeiterfassung</span>
-          </div>
-          <Link href="/zeiterfassung" className="text-muted-foreground hover:text-foreground transition-colors">
-            <ExternalLink className="h-3.5 w-3.5" />
-            <span className="sr-only">Zur Zeiterfassung</span>
-          </Link>
+    <Card className="p-5 h-full">
+      <div className="flex items-start gap-3">
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-600"}`}>
+          <Clock className="h-5 w-5" />
         </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-muted-foreground">Zeiterfassung</p>
+            <Link href="/zeiterfassung" className="text-muted-foreground hover:text-foreground transition-colors">
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span className="sr-only">Zur Zeiterfassung</span>
+            </Link>
+          </div>
 
-        {isActive ? (
-          <div className="space-y-3">
-            <div className="text-center">
-              <p className="text-2xl font-mono font-bold tracking-wider">{elapsed}</p>
+          {isActive ? (
+            <div className="mt-1">
+              <p className="text-3xl font-bold tracking-tight font-mono">{elapsed}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {isOnBreak ? "In Pause" : "Arbeitszeit"}
               </p>
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  variant={isOnBreak ? "default" : "outline"}
+                  className="flex-1 h-8 text-xs"
+                  onClick={handleToggleBreak}
+                  disabled={actionLoading}
+                >
+                  <Coffee className="h-3.5 w-3.5 mr-1" />
+                  {isOnBreak ? "Weiter" : "Pause"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="flex-1 h-8 text-xs"
+                  onClick={handleClockOut}
+                  disabled={actionLoading}
+                >
+                  <Square className="h-3 w-3 mr-1" />
+                  Stopp
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
+          ) : (
+            <div className="mt-1">
+              <p className="text-3xl font-bold tracking-tight text-muted-foreground/50">--:--:--</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Nicht eingestempelt</p>
               <Button
                 size="sm"
-                variant={isOnBreak ? "default" : "outline"}
-                className="flex-1 h-8 text-xs"
-                onClick={handleToggleBreak}
+                className="w-full h-8 text-xs mt-3"
+                onClick={handleClockIn}
                 disabled={actionLoading}
               >
-                <Coffee className="h-3.5 w-3.5 mr-1" />
-                {isOnBreak ? "Weiter" : "Pause"}
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="flex-1 h-8 text-xs"
-                onClick={handleClockOut}
-                disabled={actionLoading}
-              >
-                <Square className="h-3 w-3 mr-1" />
-                Stopp
+                <Play className="h-3.5 w-3.5 mr-1" />
+                Einstempeln
               </Button>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="text-center py-1">
-              <p className="text-sm text-muted-foreground">Nicht eingestempelt</p>
-            </div>
-            <Button
-              size="sm"
-              className="w-full h-8 text-xs"
-              onClick={handleClockIn}
-              disabled={actionLoading}
-            >
-              <Play className="h-3.5 w-3.5 mr-1" />
-              Einstempeln
-            </Button>
-          </div>
-        )}
-      </CardContent>
+          )}
+        </div>
+      </div>
     </Card>
   )
 }

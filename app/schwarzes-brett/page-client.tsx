@@ -339,10 +339,10 @@ export default function SchwarzesBrettClient() {
 
   // Stats
   const stats = [
-    { label: "Gesamt", value: posts.length, icon: Clipboard },
-    { label: "Ungelesen", value: unreadCount, icon: EyeOff },
-    { label: "Dringend", value: urgentCount, icon: Flame },
-    { label: "Angeheftet", value: pinnedPosts.length, icon: Pin },
+    { label: "Gesamt", value: posts.length, icon: Clipboard, iconColor: "text-blue-600", bgColor: "bg-blue-500/10" },
+    { label: "Ungelesen", value: unreadCount, icon: EyeOff, iconColor: "text-amber-600", bgColor: "bg-amber-500/10" },
+    { label: "Dringend", value: urgentCount, icon: Flame, iconColor: "text-red-600", bgColor: "bg-red-500/10" },
+    { label: "Angeheftet", value: pinnedPosts.length, icon: Pin, iconColor: "text-emerald-600", bgColor: "bg-emerald-500/10" },
   ]
 
   return (
@@ -359,8 +359,8 @@ export default function SchwarzesBrettClient() {
           {stats.map((stat) => (
             <Card key={stat.label}>
               <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <stat.icon className="h-5 w-5 text-primary" />
+                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stat.value}</p>

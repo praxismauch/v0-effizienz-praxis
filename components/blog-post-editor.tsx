@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
-import { X } from "lucide-react"
+import { X, Sparkles, Loader2, Eye } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface BlogPost {
   id?: string
@@ -44,6 +45,8 @@ function BlogPostEditor({ post, open, onOpenChange, onSave }: BlogPostEditorProp
   })
   const [tagInput, setTagInput] = useState("")
   const [saving, setSaving] = useState(false)
+  const [improving, setImproving] = useState(false)
+  const [contentTab, setContentTab] = useState<string>("edit")
 
   useEffect(() => {
     if (post) {
@@ -100,6 +103,38 @@ function BlogPostEditor({ post, open, onOpenChange, onSave }: BlogPostEditorProp
     setFormData({ ...formData, tags: formData.tags.filter((t) => t !== tag) })
   }
 
+  const handleAIImprove = async () => {
+    if (!formData.content.trim()) return
+    setImproving(true)
+    try {
+      const response = await fetch("/api/super-admin/blog/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: `Verbessere und optimiere den folgenden Blog-Post-Inhalt. Behalte die Kernaussagen bei, verbessere Stil, Struktur und SEO: ${formData.content.substring(0, 500)}`,
+          category: formData.category || "Best Practices",
+          tone: "professional",
+          targetLength: "medium",
+        }),
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.content) {
+          setFormData((prev) => ({
+            ...prev,
+            content: data.content,
+            seo_title: data.seo_title || prev.seo_title,
+            seo_description: data.seo_description || prev.seo_description,
+          }))
+        }
+      }
+    } catch (error) {
+      console.error("AI improve failed:", error)
+    } finally {
+      setImproving(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -151,14 +186,54 @@ function BlogPostEditor({ post, open, onOpenChange, onSave }: BlogPostEditorProp
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Inhalt (HTML) *</Label>
-            <Textarea
-              id="content"
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              rows={10}
-              required
-            />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="content">Inhalt (HTML) *</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAIImprove}
+                disabled={improving || !formData.content.trim()}
+                className="gap-1.5"
+              >
+                {improving ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Wird verbessert...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    KI verbessern
+                  </>
+                )}
+              </Button>
+            </div>
+            <Tabs value={contentTab} onValueChange={setContentTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="edit">Editor</TabsTrigger>
+                <TabsTrigger value="preview" className="gap-1.5">
+                  <Eye className="h-3.5 w-3.5" />
+                  Vorschau
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="edit" className="mt-2">
+                <Textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  rows={12}
+                  className="font-mono text-sm"
+                  required
+                />
+              </TabsContent>
+              <TabsContent value="preview" className="mt-2">
+                <div
+                  className="min-h-[200px] max-h-[400px] overflow-y-auto rounded-md border p-4 prose prose-sm max-w-none dark:prose-invert"
+                  dangerouslySetInnerHTML={{ __html: formData.content || "<p class='text-muted-foreground'>Keine Vorschau verfuegbar</p>" }}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
 
           <div className="space-y-2">
@@ -204,13 +279,36 @@ function BlogPostEditor({ post, open, onOpenChange, onSave }: BlogPostEditorProp
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="seo_title">SEO-Titel</Label>
+              <Input
+                id="seo_title"
+                value={formData.seo_title || ""}
+                onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+                placeholder="SEO-optimierter Seitentitel (max 60 Zeichen)"
+                maxLength={60}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="seo_description">Meta-Description</Label>
+              <Input
+                id="seo_description"
+                value={formData.seo_description || ""}
+                onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+                placeholder="Meta-Beschreibung (max 155 Zeichen)"
+                maxLength={155}
+              />
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
             <Switch
               id="is_published"
               checked={formData.is_published}
               onCheckedChange={(checked) => setFormData({ ...formData, is_published: checked })}
             />
-            <Label htmlFor="is_published">Veröffentlicht</Label>
+            <Label htmlFor="is_published">Veroeffentlicht</Label>
           </div>
 
           <DialogFooter>

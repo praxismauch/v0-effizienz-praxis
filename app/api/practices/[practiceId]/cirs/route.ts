@@ -133,7 +133,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       contributing_factors,
       immediate_actions,
       is_anonymous,
-      status: "submitted",
+      status: "open",
     }
 
     if (!is_anonymous && user) {

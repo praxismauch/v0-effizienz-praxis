@@ -322,7 +322,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
   ]
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-7xl">
+    <div className="w-full p-4 md:p-6 space-y-6">
       {/* Stats Header with progress ring */}
       <TodoStatsHeader
         stats={stats}
@@ -381,7 +381,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
               className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
               <X className="h-3 w-3" />
-              Zurucksetzen
+              Zurücksetzen
             </Button>
           )}
         </div>
@@ -432,7 +432,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
                   Keine Ergebnisse
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 text-center max-w-sm">
-                  Fur Ihre aktuellen Filter und Suchbegriffe wurden keine Aufgaben gefunden
+                  Für Ihre aktuellen Filter und Suchbegriffe wurden keine Aufgaben gefunden
                 </p>
                 <Button
                   variant="outline"
@@ -443,7 +443,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
                     setStatusFilter("alle")
                   }}
                 >
-                  Filter zurucksetzen
+                  Filter zurücksetzen
                 </Button>
               </>
             ) : (
@@ -499,7 +499,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
         /* Kanban View */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <KanbanColumn
-            title="Hohe Prioritat"
+            title="Hohe Priorität"
             priority="high"
             todos={kanbanGroups.high}
             teamMembers={membersList}
@@ -515,7 +515,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
             onDragEnd={handleDragEnd}
           />
           <KanbanColumn
-            title="Mittlere Prioritat"
+            title="Mittlere Priorität"
             priority="medium"
             todos={kanbanGroups.medium}
             teamMembers={membersList}
@@ -531,7 +531,7 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
             onDragEnd={handleDragEnd}
           />
           <KanbanColumn
-            title="Niedrige Prioritat"
+            title="Niedrige Priorität"
             priority="low"
             todos={kanbanGroups.low}
             teamMembers={membersList}
@@ -623,15 +623,15 @@ export default function PageClient({ initialTodos, practiceId, user }: PageClien
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Aufgabe loschen?</AlertDialogTitle>
+            <AlertDialogTitle>Aufgabe löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Aktion kann nicht ruckgangig gemacht werden. Die Aufgabe wird permanent geloscht.
+              Diese Aktion kann nicht rückgängig gemacht werden. Die Aufgabe wird permanent gelöscht.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Loschen
+              Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

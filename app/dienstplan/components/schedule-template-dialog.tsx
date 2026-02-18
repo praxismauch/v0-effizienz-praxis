@@ -87,7 +87,9 @@ export default function ScheduleTemplateDialog({
         const data = await res.json()
         setTemplates(data.templates || [])
       } else {
-        throw new Error("Failed to load templates")
+        // Gracefully handle errors (e.g. 401 auth issues) - show empty list
+        console.error("Failed to load templates, status:", res.status)
+        setTemplates([])
       }
     } catch (error) {
       console.error("Error loading templates:", error)
@@ -225,7 +227,7 @@ export default function ScheduleTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -400,103 +402,86 @@ export default function ScheduleTemplateDialog({
                     </CardContent>
                   </Card>
                 ) : (
-                  <ScrollArea className="h-[250px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Wochentag</TableHead>
-                          <TableHead>Schichttyp</TableHead>
-                          <TableHead>Rolle (optional)</TableHead>
-                          <TableHead className="w-[50px]"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {templateShifts.map((shift, index) => (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <Select
-                                value={String(shift.day_of_week)}
-                                onValueChange={(val) =>
-                                  handleShiftChange(index, "day_of_week", parseInt(val))
-                                }
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {DAYS.map((day, i) => (
-                                    <SelectItem key={i} value={String(i)}>
-                                      {day}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={shift.shift_type_id}
-                                onValueChange={(val) =>
-                                  handleShiftChange(index, "shift_type_id", val)
-                                }
-                              >
-                                <SelectTrigger className="w-[160px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {shiftTypes && shiftTypes.length > 0 ? (
-                                    shiftTypes.map((st) => (
-                                      <SelectItem key={st.id} value={st.id}>
-                                        <div className="flex items-center gap-2">
-                                          <div
-                                            className="w-3 h-3 rounded-full"
-                                            style={{ backgroundColor: st.color }}
-                                          />
-                                          {st.name}
-                                        </div>
-                                      </SelectItem>
-                                    ))
-                                  ) : (
-                                    <SelectItem value="" disabled>
-                                      Keine Schichttypen verfügbar
-                                    </SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={shift.role_filter || "all"}
-                                onValueChange={(val) =>
-                                  handleShiftChange(index, "role_filter", val)
-                                }
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue placeholder="Alle Rollen" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="all">Alle Rollen</SelectItem>
-                                  {availableRoles.map((role) => (
-                                    <SelectItem key={role} value={role}>
-                                      {role}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveShift(index)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </ScrollArea>
+                  <div className="max-h-[300px] overflow-y-auto">
+                    <div className="space-y-2">
+                      {templateShifts.map((shift, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Select
+                            value={String(shift.day_of_week)}
+                            onValueChange={(val) =>
+                              handleShiftChange(index, "day_of_week", parseInt(val))
+                            }
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DAYS.map((day, i) => (
+                                <SelectItem key={i} value={String(i)}>
+                                  {day}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={shift.shift_type_id}
+                            onValueChange={(val) =>
+                              handleShiftChange(index, "shift_type_id", val)
+                            }
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {shiftTypes && shiftTypes.length > 0 ? (
+                                shiftTypes.map((st) => (
+                                  <SelectItem key={st.id} value={st.id}>
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className="w-3 h-3 rounded-full shrink-0"
+                                        style={{ backgroundColor: st.color }}
+                                      />
+                                      {st.name}
+                                    </div>
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="" disabled>
+                                  Keine Schichttypen
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={shift.role_filter || "all"}
+                            onValueChange={(val) =>
+                              handleShiftChange(index, "role_filter", val)
+                            }
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Alle Rollen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Alle Rollen</SelectItem>
+                              {availableRoles.map((role) => (
+                                <SelectItem key={role} value={role}>
+                                  {role}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="shrink-0"
+                            onClick={() => handleRemoveShift(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

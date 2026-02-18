@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import useSWR from "swr"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { Card, CardContent } from "@/components/ui/card"
@@ -27,6 +28,7 @@ export default function SkillsPageClient() {
   const { currentUser } = useUser()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { isAiEnabled } = useAiEnabled()
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog()
 
   const [mounted, setMounted] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -151,7 +153,11 @@ export default function SkillsPageClient() {
   }
 
   const handleDeleteSkill = async (skill: Skill) => {
-    if (!confirm(`Möchten Sie "${skill.name}" wirklich löschen?`)) return
+    const ok = await confirmDialog({
+      title: "Kompetenz löschen?",
+      description: `Möchten Sie "${skill.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`,
+    })
+    if (!ok) return
     try {
       const response = await fetch(`/api/practices/${practiceId}/skills/${skill.id}`, {
         method: "DELETE",
@@ -170,7 +176,7 @@ export default function SkillsPageClient() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="container mx-auto p-6 max-w-7xl space-y-6">
+        <div className="w-full p-6 space-y-6">
           <Skeleton className="h-8 w-48" />
           <div className="grid gap-4 md:grid-cols-2">
             <Skeleton className="h-32" />
@@ -184,7 +190,7 @@ export default function SkillsPageClient() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 max-w-7xl space-y-6">
+      <div className="w-full p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -375,6 +381,7 @@ export default function SkillsPageClient() {
           onSuccess={() => refreshSkills()}
         />
       </div>
+      <ConfirmDialog />
     </AppLayout>
   )
 }

@@ -26,11 +26,14 @@ export function DiagrammeTab() {
       const response = await fetch(`/api/practices/${currentPractice.id}/widgets`)
       if (response.ok) {
         const data = await response.json()
-        setWidgets(data.widgets || [])
+        const loaded = data.widgets || []
+        // If no widgets saved yet, show defaults
+        setWidgets(loaded.length > 0 ? loaded : getDefaultWidgets())
+      } else {
+        setWidgets(getDefaultWidgets())
       }
     } catch (error) {
       console.error("Error loading widgets:", error)
-      // Load default widgets as fallback
       setWidgets(getDefaultWidgets())
     } finally {
       setIsLoading(false)

@@ -57,6 +57,16 @@ import {
   AlertTriangle,
   ShoppingCart,
   Scan,
+  CalendarClock,
+  ShieldCheck,
+  ShieldAlert,
+  BookOpenCheck,
+  Crown,
+  Cpu,
+  Stethoscope,
+  HeartPulse,
+  Gauge,
+  UserCheck,
 } from "lucide-react"
 
 export const FEATURE_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -117,6 +127,16 @@ export const FEATURE_ICON_MAP: Record<string, React.ComponentType<{ className?: 
   AlertTriangle,
   ShoppingCart,
   Scan,
+  CalendarClock,
+  ShieldCheck,
+  ShieldAlert,
+  BookOpenCheck,
+  Crown,
+  Cpu,
+  Stethoscope,
+  HeartPulse,
+  Gauge,
+  UserCheck,
 }
 
 export function getFeatureIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -2424,6 +2444,468 @@ export const featuresData: FeatureData[] = [
     metaTitle: "Hilfe-Center | Effizienz Praxis",
     metaDescription:
       "KI-gestütztes Hilfesystem mit Tutorials, FAQ und direktem Support. Schnelle Antworten auf alle Fragen.",
+  },
+  // ===== NEW FEATURES =====
+  {
+    slug: "dashboard",
+    title: "Dashboard",
+    subtitle: "Zentrale Übersicht aller wichtigen Praxis-Kennzahlen",
+    description:
+      "Das Dashboard gibt Ihnen auf einen Blick den aktuellen Status Ihrer Praxis: Termine, Aufgaben, Team-Aktivitäten und wichtige KPIs – alles an einem Ort.",
+    detailedDescription: {
+      intro:
+        "Das Dashboard ist Ihr persönlicher Kontrollturm. Nach dem Login sehen Sie sofort, was heute ansteht, welche Aufgaben offen sind und wie Ihre Praxis performt. Statt sich durch verschiedene Module zu klicken, haben Sie alle relevanten Informationen übersichtlich zusammengefasst.",
+      howItWorks:
+        "Das Dashboard aggregiert Echtzeit-Daten aus allen Modulen: offene Aufgaben, heutige Termine, Krankmeldungen, ausstehende Genehmigungen, aktuelle Zeiterfassungen und KPI-Trends. Widgets können individuell angepasst und angeordnet werden. Wichtige Benachrichtigungen und Erinnerungen werden prominent angezeigt.",
+      whyItHelps:
+        "Statt morgens mehrere Systeme zu prüfen, starten Sie den Tag mit einer einzigen Übersicht. Sie erkennen sofort, wo Handlungsbedarf besteht, und können direkt zu den relevanten Bereichen navigieren. Das spart täglich wertvolle Minuten und reduziert die Gefahr, etwas zu übersehen.",
+    },
+    iconName: "LayoutDashboard",
+    color: "bg-blue-500/10 text-blue-600",
+    heroImage: "/features/dashboard-overview-blue-modern.jpg",
+    benefits: [
+      { title: "Sofort-Überblick", description: "Alle wichtigen Informationen auf einen Blick nach dem Login" },
+      { title: "Personalisierbar", description: "Widgets und Kennzahlen individuell anordnen" },
+      { title: "Echtzeit-Daten", description: "Automatische Aktualisierung aller Kennzahlen in Echtzeit" },
+      { title: "Schnellzugriff", description: "Direkt zu offenen Aufgaben, Terminen und Meldungen springen" },
+    ],
+    features: [
+      { title: "KPI-Widgets", description: "Konfigurierbare Kennzahlen-Kacheln mit Trend-Anzeige", iconName: "Gauge" },
+      { title: "Aufgaben-Übersicht", description: "Offene und fällige Aufgaben auf einen Blick", iconName: "CheckSquare" },
+      { title: "Team-Status", description: "Wer ist heute da, wer ist krank oder im Urlaub", iconName: "Users" },
+      { title: "Benachrichtigungen", description: "Wichtige Meldungen und Erinnerungen zentral gesammelt", iconName: "Bell" },
+    ],
+    useCases: [
+      { title: "Morgenroutine", description: "Starten Sie den Tag mit einer vollständigen Übersicht aller Praxis-Aktivitäten." },
+      { title: "Schnelle Entscheidungen", description: "Erkennen Sie auf einen Blick, wo heute Handlungsbedarf besteht." },
+    ],
+    faq: [
+      { question: "Kann ich das Dashboard anpassen?", answer: "Ja, Sie können Widgets hinzufügen, entfernen und die Anordnung nach Ihren Bedürfnissen ändern." },
+      { question: "Sehe ich nur meine eigenen Daten?", answer: "Je nach Rolle sehen Sie Ihre persönlichen oder teamweite Daten. Praxisinhaber haben die vollständige Übersicht." },
+    ],
+    relatedFeatureSlugs: ["ki-praxisanalyse", "praxis-auswertung", "aufgaben"],
+    metaTitle: "Dashboard | Zentrale Praxis-Übersicht | Effizienz Praxis",
+    metaDescription:
+      "Das Dashboard zeigt alle wichtigen Praxis-Kennzahlen auf einen Blick: Termine, Aufgaben, Team-Status und KPIs in einer personalisierbaren Übersicht.",
+  },
+  {
+    slug: "dienstplan",
+    title: "Dienstplan",
+    subtitle: "Schichtplanung und Dienste übersichtlich organisieren",
+    description:
+      "Erstellen Sie Dienstpläne für Ihr gesamtes Team mit Drag-and-Drop. Berücksichtigen Sie Wunschdienste, Qualifikationen und Arbeitszeitgesetze automatisch.",
+    detailedDescription: {
+      intro:
+        "Der Dienstplan digitalisiert Ihre komplette Schichtplanung. Statt Excel-Tabellen oder Papier-Aushänge nutzen Sie ein intelligentes System, das Verfügbarkeiten, Qualifikationen und rechtliche Vorgaben automatisch berücksichtigt. Ihr Team hat jederzeit mobil Zugriff auf den aktuellen Plan.",
+      howItWorks:
+        "Sie definieren Schichtmodelle und Besetzungsanforderungen. Das System berücksichtigt beim Erstellen des Plans automatisch Urlaubstage, Krankmeldungen, Teilzeit-Regelungen und Arbeitszeitgesetze. Mitarbeiter können Dienstwünsche und Tausch-Anfragen direkt im System eingeben. Änderungen werden in Echtzeit synchronisiert und das Team per Push-Benachrichtigung informiert.",
+      whyItHelps:
+        "Die Dienstplanung gehört zu den zeitaufwändigsten Verwaltungsaufgaben in einer Praxis. Unser System reduziert den Planungsaufwand um bis zu 70% und minimiert Konflikte durch transparente Regeln. Ihr Team hat immer den aktuellen Plan dabei und Sie behalten die volle Kontrolle über die Besetzung.",
+    },
+    iconName: "CalendarClock",
+    color: "bg-teal-500/10 text-teal-600",
+    heroImage: "/features/dienstplan-shift-planning-teal.jpg",
+    benefits: [
+      { title: "Drag-and-Drop Planung", description: "Intuitives Erstellen und Anpassen von Dienstplänen" },
+      { title: "Regelbasiert", description: "Automatische Berücksichtigung von Arbeitszeitgesetzen und Qualifikationen" },
+      { title: "Diensttausch", description: "Mitarbeiter können Tausch-Anfragen direkt im System stellen" },
+      { title: "Mobile Ansicht", description: "Jeder hat den aktuellen Plan immer auf dem Smartphone" },
+      { title: "Konflikterkennung", description: "Automatische Warnung bei Doppelbelegungen oder Verstößen" },
+    ],
+    features: [
+      { title: "Wochenplaner", description: "Übersichtliche Wochen- und Monatsansicht für die Planung", iconName: "Calendar" },
+      { title: "Schichtvorlagen", description: "Wiederverwendbare Vorlagen für wiederkehrende Dienstpläne", iconName: "Shuffle" },
+      { title: "Verfügbarkeiten", description: "Mitarbeiter geben Wünsche und Verfügbarkeiten selbst ein", iconName: "UserCheck" },
+      { title: "Besetzungsregeln", description: "Mindestbesetzung und Qualifikationsanforderungen pro Schicht", iconName: "Shield" },
+    ],
+    useCases: [
+      { title: "Wöchentliche Planung", description: "Erstellen Sie den Wochenplan für alle Mitarbeiter in wenigen Minuten." },
+      { title: "Vertretungsregelung", description: "Bei kurzfristigen Ausfällen schnell eine passende Vertretung finden." },
+      { title: "Urlaubsplanung", description: "Integrierte Urlaubsübersicht verhindert Engpässe bei der Besetzung." },
+    ],
+    faq: [
+      { question: "Werden Arbeitszeitgesetze automatisch geprüft?", answer: "Ja, das System prüft automatisch Ruhezeiten, Maximalarbeitszeiten und weitere gesetzliche Vorgaben." },
+      { question: "Können Mitarbeiter ihre Wunschdienste eingeben?", answer: "Ja, über die App können Mitarbeiter Verfügbarkeiten und Dienstwünsche direkt einreichen." },
+    ],
+    relatedFeatureSlugs: ["zeiterfassung", "kalender", "team-management"],
+    metaTitle: "Dienstplan | Schichtplanung für Arztpraxen | Effizienz Praxis",
+    metaDescription:
+      "Digitale Dienstplanung für Ihre Praxis: Drag-and-Drop Schichtplanung, automatische Regelprüfung und mobile Ansicht für das Team.",
+  },
+  {
+    slug: "zeiterfassung",
+    title: "Zeiterfassung",
+    subtitle: "Arbeitszeiten digital und gesetzeskonform erfassen",
+    description:
+      "Erfassen Sie Arbeitszeiten, Pausen und Überstunden einfach und rechtskonform. Automatische Berechnungen, Monatsübersichten und Export für die Lohnbuchhaltung.",
+    detailedDescription: {
+      intro:
+        "Die digitale Zeiterfassung ersetzt Stundenzettel und Excel-Tabellen durch ein modernes, gesetzeskonformes System. Mitarbeiter stempeln sich per App oder am Praxis-Terminal ein und aus. Alle Daten werden automatisch berechnet und stehen sofort für die Lohnbuchhaltung bereit.",
+      howItWorks:
+        "Mitarbeiter erfassen ihre Zeiten per Ein-Klick-Stempeln in der App. Pausen werden automatisch oder manuell erfasst. Das System berechnet Soll-/Ist-Stunden, Überstunden und Zuschläge automatisch. Monatsabschlüsse können per Knopfdruck erstellt und an die Lohnbuchhaltung exportiert werden. Korrekturen erfolgen transparent mit Genehmigungsworkflow.",
+      whyItHelps:
+        "Seit der Pflicht zur Arbeitszeiterfassung benötigt jede Praxis ein verlässliches System. Unsere Lösung erfüllt alle gesetzlichen Anforderungen, spart Zeit bei der Abrechnung und gibt Ihnen jederzeit einen Überblick über die tatsächlich geleisteten Arbeitsstunden Ihres Teams.",
+    },
+    iconName: "Clock",
+    color: "bg-slate-500/10 text-slate-600",
+    heroImage: "/features/zeiterfassung-time-tracking-slate.jpg",
+    benefits: [
+      { title: "Ein-Klick-Stempeln", description: "Einfaches Ein- und Ausstempeln per App oder Terminal" },
+      { title: "Gesetzeskonform", description: "Erfüllt alle Anforderungen der Arbeitszeiterfassungspflicht" },
+      { title: "Automatische Berechnung", description: "Soll-/Ist-Vergleich, Überstunden und Zuschläge automatisch" },
+      { title: "Export", description: "Nahtloser Export für DATEV und gängige Lohnbuchhaltungssysteme" },
+    ],
+    features: [
+      { title: "Stempeluhr", description: "Digitale Ein-/Ausstempelung mit Standort-Verifizierung", iconName: "Clock" },
+      { title: "Monatsübersicht", description: "Detaillierte Arbeitszeitübersicht pro Mitarbeiter und Monat", iconName: "Calendar" },
+      { title: "Überstundenkonto", description: "Automatische Überstundenberechnung und Kontoführung", iconName: "Activity" },
+      { title: "Pausenregelung", description: "Automatische Pausenerkennung und gesetzliche Pausenprüfung", iconName: "Shield" },
+    ],
+    useCases: [
+      { title: "Tägliches Stempeln", description: "Mitarbeiter stempeln sich morgens ein und abends aus – automatische Pausenerfassung inklusive." },
+      { title: "Monatsabschluss", description: "Am Monatsende exportieren Sie alle Zeiten für den Steuerberater mit einem Klick." },
+    ],
+    faq: [
+      { question: "Ist die Zeiterfassung DSGVO-konform?", answer: "Ja, alle Daten werden DSGVO-konform in Deutschland gespeichert und verarbeitet." },
+      { question: "Können Korrekturen vorgenommen werden?", answer: "Ja, mit einem transparenten Genehmigungsworkflow können Zeiten korrigiert werden." },
+    ],
+    relatedFeatureSlugs: ["dienstplan", "team-management", "kalender"],
+    metaTitle: "Zeiterfassung | Digitale Arbeitszeiterfassung für Arztpraxen | Effizienz Praxis",
+    metaDescription:
+      "Gesetzeskonforme digitale Zeiterfassung für Ihre Praxis: Ein-Klick-Stempeln, automatische Überstundenberechnung und Export für die Lohnbuchhaltung.",
+  },
+  {
+    slug: "hygieneplan",
+    title: "Hygieneplan",
+    subtitle: "RKI-konforme Hygienepläne erstellen und verwalten",
+    description:
+      "Erstellen Sie rechtssichere Hygienepläne nach RKI-Richtlinien. Mit KI-Unterstützung, automatischen Erinnerungen und vollständiger Dokumentation für Prüfungen.",
+    detailedDescription: {
+      intro:
+        "Der Hygieneplan ist eines der wichtigsten QM-Dokumente in jeder Arztpraxis. Unser System unterstützt Sie bei der Erstellung, Pflege und Überwachung RKI-konformer Hygienepläne. Von der Flächendesinfektion bis zur Aufbereitung von Medizinprodukten – alle Bereiche werden abgedeckt.",
+      howItWorks:
+        "Wählen Sie aus RKI-konformen Vorlagen oder erstellen Sie individuelle Hygienepläne. Die KI analysiert Ihre Praxisstruktur und schlägt passende Maßnahmen vor. Automatische Erinnerungen stellen sicher, dass Desinfektionsprotokolle und Reinigungspläne eingehalten werden. Bei Begehungen durch das Gesundheitsamt haben Sie alle Nachweise digital griffbereit.",
+      whyItHelps:
+        "Hygieneverstöße können zu empfindlichen Bußgeldern und Reputationsschäden führen. Unser System sorgt dafür, dass Sie jederzeit auf dem aktuellen Stand der RKI-Empfehlungen sind, alle Maßnahmen lückenlos dokumentiert werden und Ihr Team die Hygienestandards zuverlässig einhält.",
+    },
+    iconName: "ShieldCheck",
+    color: "bg-emerald-500/10 text-emerald-600",
+    benefits: [
+      { title: "RKI-konform", description: "Alle Pläne basieren auf aktuellen RKI-Richtlinien und Empfehlungen" },
+      { title: "KI-Unterstützung", description: "Automatische Vorschläge für Hygienemaßnahmen passend zu Ihrer Praxis" },
+      { title: "Prüfungssicher", description: "Vollständige Dokumentation für Begehungen und Audits" },
+      { title: "Automatische Erinnerungen", description: "Keine vergessenen Protokolle dank intelligenter Erinnerungen" },
+      { title: "Kategorisiert", description: "Übersichtliche Gliederung nach Bereichen und Maßnahmentypen" },
+    ],
+    features: [
+      { title: "RKI-Vorlagen", description: "Fertige Vorlagen nach aktuellen RKI-Empfehlungen", iconName: "Shield" },
+      { title: "Desinfektionsprotokolle", description: "Digitale Erfassung aller Reinigungs- und Desinfektionsmaßnahmen", iconName: "ClipboardCheck" },
+      { title: "KI-Hygiene-Analyse", description: "Automatische Analyse und Verbesserungsvorschläge für Ihre Hygienepläne", iconName: "Brain" },
+      { title: "Dokumenten-Export", description: "Export als PDF für Begehungen und externe Audits", iconName: "Download" },
+    ],
+    useCases: [
+      { title: "Gesundheitsamt-Begehung", description: "Alle Hygienedokumente digital und prüfungssicher auf Knopfdruck bereit." },
+      { title: "Neue Mitarbeiter", description: "Einweisung in Hygienestandards mit dokumentierter Kenntnisnahme." },
+      { title: "RKI-Aktualisierungen", description: "Bei neuen RKI-Empfehlungen werden Sie automatisch benachrichtigt." },
+    ],
+    faq: [
+      { question: "Werden die Vorlagen bei neuen RKI-Richtlinien aktualisiert?", answer: "Ja, unsere Vorlagen werden regelmäßig an aktuelle RKI-Empfehlungen angepasst. Sie werden bei relevanten Änderungen benachrichtigt." },
+      { question: "Kann ich den Hygieneplan an meine Praxis anpassen?", answer: "Ja, alle Vorlagen sind vollständig anpassbar. Sie können Bereiche, Maßnahmen und Intervalle individuell konfigurieren." },
+    ],
+    relatedFeatureSlugs: ["wissen-qm", "cirs-meldungen", "dokumente"],
+    metaTitle: "Hygieneplan | RKI-konforme Hygienepläne für Arztpraxen | Effizienz Praxis",
+    metaDescription:
+      "Erstellen Sie RKI-konforme Hygienepläne mit KI-Unterstützung. Automatische Erinnerungen, Desinfektionsprotokolle und prüfungssichere Dokumentation.",
+  },
+  {
+    slug: "cirs-meldungen",
+    title: "CIRS-Meldungen",
+    subtitle: "Verbesserungsmeldungen und Beinahe-Fehler systematisch erfassen",
+    description:
+      "Ein anonymes Meldesystem für Vorfälle und Beinahe-Fehler. Fördern Sie eine offene Fehlerkultur und verbessern Sie kontinuierlich die Patientensicherheit.",
+    detailedDescription: {
+      intro:
+        "CIRS (Critical Incident Reporting System) ist ein zentrales Element des Qualitätsmanagements. Unser Meldesystem ermöglicht es allen Mitarbeitern, Vorfälle, Beinahe-Fehler und Verbesserungsvorschläge einfach und bei Bedarf anonym zu melden. So schaffen Sie eine offene Fehlerkultur, die zur kontinuierlichen Verbesserung beiträgt.",
+      howItWorks:
+        "Mitarbeiter melden Vorfälle über ein einfaches Formular – optional anonym. Jede Meldung wird kategorisiert, einer Schweregrad-Stufe zugeordnet und durchläuft einen strukturierten Bearbeitungsworkflow. Das Qualitätsmanagement-Team analysiert die Meldungen, definiert Maßnahmen und dokumentiert die Umsetzung. Regelmäßige Auswertungen zeigen Häufungen und Trends.",
+      whyItHelps:
+        "Studien zeigen, dass eine offene Fehlerkultur die Patientensicherheit signifikant verbessert. Durch die systematische Erfassung und Analyse von Vorfällen erkennen Sie wiederkehrende Muster, können präventive Maßnahmen ergreifen und aus Beinahe-Fehlern lernen, bevor sie zu echten Schäden führen.",
+    },
+    iconName: "ShieldAlert",
+    color: "bg-red-500/10 text-red-600",
+    benefits: [
+      { title: "Anonyme Meldungen", description: "Mitarbeiter können Vorfälle anonym melden ohne Angst vor Konsequenzen" },
+      { title: "Strukturierter Workflow", description: "Jede Meldung durchläuft einen klaren Bearbeitungsprozess" },
+      { title: "Kategorisierung", description: "Automatische Zuordnung nach Kategorie und Schweregrad" },
+      { title: "Trendanalyse", description: "Erkennung von Häufungen und wiederkehrenden Mustern" },
+      { title: "Maßnahmen-Tracking", description: "Dokumentation und Nachverfolgung aller eingeleiteten Maßnahmen" },
+    ],
+    features: [
+      { title: "Meldeformular", description: "Einfaches, geführtes Formular für schnelle Meldungen", iconName: "FileText" },
+      { title: "Anonymitätsschutz", description: "Optionale Anonymisierung zum Schutz der Meldenden", iconName: "Shield" },
+      { title: "Schweregrad-Bewertung", description: "Standardisierte Risikobewertung jeder Meldung", iconName: "AlertTriangle" },
+      { title: "Auswertung", description: "Statistische Auswertungen und Trendberichte", iconName: "BarChart3" },
+    ],
+    useCases: [
+      { title: "Beinahe-Fehler melden", description: "Ein Mitarbeiter bemerkt eine Verwechslungsgefahr und meldet diese anonym im System." },
+      { title: "Quartals-Auswertung", description: "Analysieren Sie vierteljährlich alle Meldungen und leiten Sie Verbesserungsmaßnahmen ab." },
+    ],
+    faq: [
+      { question: "Können Meldungen wirklich anonym abgegeben werden?", answer: "Ja, bei anonymer Meldung werden keinerlei personenbezogene Daten gespeichert – auch nicht IP-Adressen." },
+      { question: "Ist CIRS gesetzlich vorgeschrieben?", answer: "Ein CIRS ist Teil des Qualitätsmanagements, das für Arztpraxen verpflichtend ist. Es zeigt Ihr Engagement für Patientensicherheit." },
+    ],
+    relatedFeatureSlugs: ["hygieneplan", "wissen-qm", "workflows-checklisten"],
+    metaTitle: "CIRS-Meldungen | Fehlermeldesystem für Arztpraxen | Effizienz Praxis",
+    metaDescription:
+      "Anonymes CIRS-Meldesystem für Vorfälle und Beinahe-Fehler. Fördern Sie eine offene Fehlerkultur und verbessern Sie die Patientensicherheit.",
+  },
+  {
+    slug: "academy",
+    title: "Academy",
+    subtitle: "E-Learning-Plattform mit Kursen und Onboarding",
+    description:
+      "Eine integrierte Lernplattform für Ihr Praxisteam. Vom strukturierten Onboarding neuer Mitarbeiter bis zu fortlaufenden Schulungen – alles digital und nachverfolgbar.",
+    detailedDescription: {
+      intro:
+        "Die Academy ist Ihre praxiseigene E-Learning-Plattform. Erstellen Sie Onboarding-Kurse, Pflichtschulungen und Weiterbildungsinhalte direkt im System. Mitarbeiter können Kurse in ihrem eigenen Tempo absolvieren und Sie behalten den Überblick über den Lernfortschritt.",
+      howItWorks:
+        "Erstellen Sie Kurse aus verschiedenen Bausteinen: Texte, Videos, Quizze und praktische Aufgaben. Ordnen Sie Kurse bestimmten Rollen oder Teams zu. Neue Mitarbeiter erhalten automatisch ihren Onboarding-Lernpfad. Das System trackt den Fortschritt, versendet Erinnerungen bei ausstehenden Pflichtschulungen und stellt Zertifikate nach erfolgreichem Abschluss aus.",
+      whyItHelps:
+        "Gut geschulte Mitarbeiter arbeiten effizienter und machen weniger Fehler. Die Academy standardisiert Ihr Wissen und macht es für alle zugänglich. Statt jede Schulung persönlich durchzuführen, können Sie Inhalte einmal erstellen und beliebig oft nutzen. Das spart Zeit und stellt sicher, dass alle den gleichen Wissensstand haben.",
+    },
+    iconName: "BookOpenCheck",
+    color: "bg-indigo-500/10 text-indigo-600",
+    benefits: [
+      { title: "Strukturiertes Onboarding", description: "Neue Mitarbeiter werden systematisch eingearbeitet" },
+      { title: "Pflichtschulungen", description: "Automatische Zuweisung und Erinnerung bei Pflichtschulungen" },
+      { title: "Fortschrittstracking", description: "Überblick über den Lernfortschritt aller Mitarbeiter" },
+      { title: "Zertifikate", description: "Automatische Zertifikatserstellung nach Kursabschluss" },
+    ],
+    features: [
+      { title: "Kurs-Builder", description: "Erstellen Sie Kurse aus Texten, Videos und Quizzen", iconName: "ListChecks" },
+      { title: "Lernpfade", description: "Definieren Sie aufeinander aufbauende Kurssequenzen", iconName: "Shuffle" },
+      { title: "Quiz-System", description: "Wissensüberprüfung mit automatischer Auswertung", iconName: "ClipboardCheck" },
+      { title: "Reporting", description: "Detaillierte Berichte über Kursabschlüsse und Wissenslücken", iconName: "BarChart3" },
+    ],
+    useCases: [
+      { title: "Onboarding", description: "Neue Mitarbeiter absolvieren einen strukturierten Einarbeitungsplan mit allen relevanten Kursen." },
+      { title: "Jährliche Pflichtschulung", description: "Brandschutz, Hygiene und Datenschutz als wiederkehrende Pflichtschulungen verwalten." },
+    ],
+    faq: [
+      { question: "Kann ich eigene Kursinhalte erstellen?", answer: "Ja, der integrierte Kurs-Builder ermöglicht das Erstellen von Kursen ohne technische Vorkenntnisse." },
+      { question: "Werden Kursabschlüsse dokumentiert?", answer: "Ja, alle Abschlüsse werden revisionssicher dokumentiert und Zertifikate automatisch erstellt." },
+    ],
+    relatedFeatureSlugs: ["fortbildung", "team-management", "wissen-qm"],
+    metaTitle: "Academy | E-Learning-Plattform für Arztpraxen | Effizienz Praxis",
+    metaDescription:
+      "Integrierte E-Learning-Plattform für Arztpraxen: Onboarding, Pflichtschulungen und Weiterbildung mit Fortschrittstracking und Zertifikaten.",
+  },
+  {
+    slug: "leadership",
+    title: "Leadership",
+    subtitle: "Führungskompetenzen entwickeln und Teamkultur stärken",
+    description:
+      "Tools und Frameworks für die Entwicklung Ihrer Führungskompetenzen. Stärken Sie Ihre Führungskultur mit strukturierten Feedback-Methoden und Coaching-Impulsen.",
+    detailedDescription: {
+      intro:
+        "Leadership in der Arztpraxis erfordert besondere Kompetenzen. Sie führen ein interdisziplinäres Team unter Zeitdruck und hoher Verantwortung. Unser Leadership-Modul bietet Ihnen praktische Werkzeuge, Frameworks und Reflexionshilfen, um Ihre Führungsarbeit kontinuierlich zu verbessern.",
+      howItWorks:
+        "Das Modul bietet Führungstipps, Selbstreflexions-Tools und Teamkultur-Analysen. Sie definieren Ihre Führungsgrundsätze, setzen sich Entwicklungsziele und erhalten regelmäßige Impulse. Anonymes Team-Feedback zeigt Ihnen, wie Ihre Führung wahrgenommen wird. Konkrete Handlungsempfehlungen helfen bei der Umsetzung.",
+      whyItHelps:
+        "Gute Führung ist der wichtigste Faktor für Mitarbeiterzufriedenheit und Teamperformance. Das Leadership-Modul gibt Ihnen Struktur und Orientierung – ohne dass Sie teure externe Coaching-Programme benötigen. Regelmäßige Reflexion und Feedback machen Sie zu einer besseren Führungskraft.",
+    },
+    iconName: "Crown",
+    color: "bg-amber-500/10 text-amber-600",
+    benefits: [
+      { title: "Selbstreflexion", description: "Strukturierte Tools zur Reflexion Ihres Führungsstils" },
+      { title: "Team-Feedback", description: "Anonymes Feedback von Ihrem Team zu Ihrer Führungsarbeit" },
+      { title: "Führungsgrundsätze", description: "Definieren und kommunizieren Sie Ihre Führungswerte" },
+      { title: "Coaching-Impulse", description: "Regelmäßige Impulse und Tipps für den Führungsalltag" },
+    ],
+    features: [
+      { title: "Führungsprofil", description: "Definieren Sie Ihren persönlichen Führungsstil und Ihre Werte", iconName: "Heart" },
+      { title: "360°-Feedback", description: "Anonymes Feedback aus verschiedenen Perspektiven", iconName: "Users" },
+      { title: "Entwicklungsziele", description: "Setzen Sie sich konkrete Ziele für Ihre Führungsentwicklung", iconName: "Target" },
+      { title: "Wissens-Bibliothek", description: "Artikel und Frameworks zu moderner Führung", iconName: "BookOpen" },
+    ],
+    useCases: [
+      { title: "Quartalsgespräche", description: "Nutzen Sie die Reflexions-Tools zur Vorbereitung auf Führungsgespräche." },
+      { title: "Teamkultur-Analyse", description: "Verstehen Sie, wie Ihr Team die Zusammenarbeit und Führung bewertet." },
+    ],
+    faq: [
+      { question: "Ist das Feedback wirklich anonym?", answer: "Ja, die Anonymität wird technisch garantiert. Es werden keine Rückschlüsse auf einzelne Personen ermöglicht." },
+      { question: "Brauche ich Führungserfahrung?", answer: "Nein, das Modul eignet sich sowohl für erfahrene Führungskräfte als auch für Einsteiger." },
+    ],
+    relatedFeatureSlugs: ["wellbeing", "mitarbeitergespraeche", "team-management"],
+    metaTitle: "Leadership | Führungsentwicklung für Arztpraxen | Effizienz Praxis",
+    metaDescription:
+      "Entwickeln Sie Ihre Führungskompetenzen mit strukturierten Tools: Selbstreflexion, Team-Feedback und Coaching-Impulse für Praxisinhaber.",
+  },
+  {
+    slug: "wellbeing",
+    title: "Mitarbeiter-Wellbeing",
+    subtitle: "Teamzufriedenheit messen und Wohlbefinden fördern",
+    description:
+      "Erfassen Sie die Stimmung und das Wohlbefinden Ihres Teams mit regelmäßigen Pulsbefragungen. Erkennen Sie Belastungen frühzeitig und fördern Sie eine positive Arbeitsatmosphäre.",
+    detailedDescription: {
+      intro:
+        "In Zeiten von Fachkräftemangel ist die Mitarbeiterzufriedenheit ein entscheidender Wettbewerbsfaktor. Das Wellbeing-Modul gibt Ihnen ein wissenschaftlich fundiertes Instrument, um die Zufriedenheit und das Wohlbefinden Ihres Teams kontinuierlich zu messen und gezielt zu verbessern.",
+      howItWorks:
+        "Regelmäßige, kurze Pulsbefragungen (2-3 Minuten) erfassen die Stimmung im Team. Die Ergebnisse werden anonymisiert ausgewertet und in Trends dargestellt. Bei kritischen Werten erhalten Sie automatische Benachrichtigungen. Das System schlägt evidenzbasierte Maßnahmen vor und hilft bei der Umsetzung.",
+      whyItHelps:
+        "Zufriedene Mitarbeiter sind produktiver, machen weniger Fehler und bleiben Ihnen länger treu. Regelmäßiges Wellbeing-Monitoring hilft Ihnen, Probleme frühzeitig zu erkennen – bevor sie zu Kündigungen führen. Die Investition in das Wohlbefinden Ihres Teams zahlt sich durch geringere Fluktuation und höhere Leistung aus.",
+    },
+    iconName: "Smile",
+    color: "bg-green-500/10 text-green-600",
+    benefits: [
+      { title: "Pulsbefragungen", description: "Kurze, regelmäßige Stimmungsabfragen in nur 2-3 Minuten" },
+      { title: "Anonyme Auswertung", description: "Ehrliche Rückmeldungen durch garantierte Anonymität" },
+      { title: "Trend-Erkennung", description: "Langfristige Trends in der Teamzufriedenheit erkennen" },
+      { title: "Frühwarnsystem", description: "Automatische Benachrichtigung bei kritischen Werten" },
+    ],
+    features: [
+      { title: "Stimmungsbarometer", description: "Schnelle tägliche oder wöchentliche Stimmungserfassung", iconName: "HeartPulse" },
+      { title: "Wellbeing-Index", description: "Zusammenfassender Score aus mehreren Dimensionen", iconName: "Gauge" },
+      { title: "Maßnahmen-Katalog", description: "Evidenzbasierte Vorschläge zur Verbesserung des Wohlbefindens", iconName: "Lightbulb" },
+      { title: "Team-Vergleich", description: "Anonymisierte Vergleiche zwischen Abteilungen oder Zeiträumen", iconName: "BarChart3" },
+    ],
+    useCases: [
+      { title: "Wöchentlicher Puls-Check", description: "Jeden Freitag bewerten Mitarbeiter ihre Woche in 2 Minuten – Sie erkennen Trends sofort." },
+      { title: "Nach Veränderungen", description: "Messen Sie die Stimmung gezielt nach organisatorischen Veränderungen." },
+    ],
+    faq: [
+      { question: "Wie oft sollten Befragungen durchgeführt werden?", answer: "Wir empfehlen wöchentliche Kurzbefragungen und monatliche ausführlichere Check-Ins." },
+      { question: "Kann ich sehen, wer was geantwortet hat?", answer: "Nein, die Anonymität ist technisch garantiert. Sie sehen nur aggregierte Ergebnisse." },
+    ],
+    relatedFeatureSlugs: ["leadership", "mitarbeitergespraeche", "team-management"],
+    metaTitle: "Mitarbeiter-Wellbeing | Teamzufriedenheit messen | Effizienz Praxis",
+    metaDescription:
+      "Messen Sie die Zufriedenheit Ihres Praxisteams mit Pulsbefragungen. Frühwarnsystem, Trend-Analysen und evidenzbasierte Maßnahmen für eine positive Arbeitsatmosphäre.",
+  },
+  {
+    slug: "mitarbeitergespraeche",
+    title: "Mitarbeitergespräche",
+    subtitle: "Strukturierte Feedbackgespräche planen und dokumentieren",
+    description:
+      "Führen Sie regelmäßige, strukturierte Mitarbeitergespräche mit Gesprächsleitfäden, Zielverfolgung und lückenloser Dokumentation.",
+    detailedDescription: {
+      intro:
+        "Regelmäßige Mitarbeitergespräche sind das Fundament guter Führung. Unser System unterstützt Sie bei der Planung, Durchführung und Nachbereitung – von Jahresgesprächen über Feedback-Runden bis zu Entwicklungsgesprächen. Alles wird dokumentiert und Vereinbarungen nachverfolgt.",
+      howItWorks:
+        "Planen Sie Gespräche im Kalender, wählen Sie passende Gesprächsleitfäden und bereiten Sie sich mit der Vorbereitungsvorlage vor. Während des Gesprächs dokumentieren Sie Themen, Vereinbarungen und Ziele direkt im System. Nach dem Gespräch können beide Seiten das Protokoll einsehen und bestätigen. Vereinbarte Maßnahmen werden automatisch als Aufgaben angelegt.",
+      whyItHelps:
+        "Ohne Struktur werden Mitarbeitergespräche oft aufgeschoben oder verlaufen unproduktiv. Unsere Leitfäden geben Ihnen einen roten Faden, die Dokumentation schafft Verbindlichkeit und die Zielverfolgung stellt sicher, dass Vereinbarungen auch umgesetzt werden. So werden Gespräche zu echten Entwicklungsgesprächen.",
+    },
+    iconName: "MessageSquare",
+    color: "bg-blue-500/10 text-blue-600",
+    benefits: [
+      { title: "Gesprächsleitfäden", description: "Strukturierte Vorlagen für verschiedene Gesprächstypen" },
+      { title: "Vorbereitung", description: "Checklisten und Vorbereitungsbögen für beide Seiten" },
+      { title: "Dokumentation", description: "Lückenlose, beidseitig bestätigte Gesprächsprotokolle" },
+      { title: "Ziel-Tracking", description: "Automatische Nachverfolgung vereinbarter Maßnahmen und Ziele" },
+    ],
+    features: [
+      { title: "Gesprächsvorlagen", description: "Vorgefertigte Leitfäden für Jahres-, Feedback- und Entwicklungsgespräche", iconName: "FileText" },
+      { title: "Terminplanung", description: "Automatische Erinnerungen an anstehende Gespräche", iconName: "Calendar" },
+      { title: "Zielvereinbarungen", description: "Gemeinsam definierte Ziele mit Meilensteinen und Fristen", iconName: "Target" },
+      { title: "Gesprächshistorie", description: "Vollständige Historie aller bisherigen Gespräche pro Mitarbeiter", iconName: "Archive" },
+    ],
+    useCases: [
+      { title: "Jahresgespräch", description: "Strukturiertes Jahresgespräch mit Rückblick, Zielbewertung und neuen Vereinbarungen." },
+      { title: "Probezeitgespräch", description: "Standardisierte Bewertung nach 3 und 6 Monaten mit klaren Kriterien." },
+    ],
+    faq: [
+      { question: "Können Mitarbeiter sich auch vorbereiten?", answer: "Ja, beide Seiten erhalten Vorbereitungsbögen und können vorab Themen einreichen." },
+      { question: "Wer hat Zugriff auf die Protokolle?", answer: "Nur der Mitarbeiter selbst und die direkte Führungskraft. Auf Wunsch kann der Zugang erweitert werden." },
+    ],
+    relatedFeatureSlugs: ["leadership", "wellbeing", "team-management"],
+    metaTitle: "Mitarbeitergespräche | Strukturierte Feedbackgespräche | Effizienz Praxis",
+    metaDescription:
+      "Führen Sie strukturierte Mitarbeitergespräche mit Leitfäden, Dokumentation und Zielverfolgung. Für Jahresgespräche, Feedback-Runden und Entwicklungsgespräche.",
+  },
+  {
+    slug: "selbst-check",
+    title: "Selbst-Check",
+    subtitle: "Persönliche Selbsteinschätzung und Entwicklungsziele",
+    description:
+      "Ermöglichen Sie Ihrem Team eine strukturierte Selbsteinschätzung der eigenen Kompetenzen und Leistung. Fördern Sie Eigenverantwortung und persönliche Entwicklung.",
+    detailedDescription: {
+      intro:
+        "Der Selbst-Check gibt jedem Teammitglied die Möglichkeit, die eigene Leistung und Kompetenzen regelmäßig zu reflektieren. Strukturierte Fragebögen und Bewertungsskalen machen die Selbsteinschätzung messbar und vergleichbar. Im Zusammenspiel mit Mitarbeitergesprächen entsteht ein vollständiges Bild der persönlichen Entwicklung.",
+      howItWorks:
+        "Mitarbeiter füllen regelmäßig einen Selbsteinschätzungsbogen aus, der fachliche und überfachliche Kompetenzen abdeckt. Die Ergebnisse werden in einem persönlichen Entwicklungsprofil zusammengefasst. Stärken und Entwicklungsfelder werden visuell dargestellt. Mitarbeiter können sich eigene Entwicklungsziele setzen und den Fortschritt verfolgen.",
+      whyItHelps:
+        "Selbstreflexion ist der erste Schritt zur Verbesserung. Der Selbst-Check fördert die Eigenverantwortung und gibt Mitarbeitern ein Werkzeug, ihre berufliche Entwicklung aktiv zu gestalten. Führungskräfte erhalten wertvolle Einblicke in die Selbstwahrnehmung ihres Teams.",
+    },
+    iconName: "ClipboardCheck",
+    color: "bg-purple-500/10 text-purple-600",
+    benefits: [
+      { title: "Strukturierte Reflexion", description: "Wissenschaftlich fundierte Fragebögen zur Selbsteinschätzung" },
+      { title: "Entwicklungsprofil", description: "Persönliches Kompetenzprofil mit Stärken und Entwicklungsfeldern" },
+      { title: "Zielplanung", description: "Eigene Entwicklungsziele setzen und Fortschritt verfolgen" },
+      { title: "Vergleich", description: "Abgleich von Selbst- und Fremdeinschätzung für ein realistisches Bild" },
+    ],
+    features: [
+      { title: "Kompetenz-Radar", description: "Visuelle Darstellung der Selbsteinschätzung als Radar-Diagramm", iconName: "Activity" },
+      { title: "Fortschritts-Tracking", description: "Verfolgen Sie Ihre Entwicklung über Zeit", iconName: "TrendingUp" },
+      { title: "Entwicklungsvorschläge", description: "KI-basierte Vorschläge für passende Weiterbildungen", iconName: "Lightbulb" },
+      { title: "Vergleichsansicht", description: "Abgleich von Selbst- und Führungskraft-Einschätzung", iconName: "ArrowRightLeft" },
+    ],
+    useCases: [
+      { title: "Vor Mitarbeitergesprächen", description: "Füllen Sie den Selbst-Check als Vorbereitung auf das Jahresgespräch aus." },
+      { title: "Quartalsreflexion", description: "Regelmäßige Standortbestimmung alle drei Monate." },
+    ],
+    faq: [
+      { question: "Sieht mein Vorgesetzter meine Selbsteinschätzung?", answer: "Nur wenn Sie dies aktiv freigeben, z.B. im Rahmen eines Mitarbeitergesprächs." },
+      { question: "Welche Kompetenzen werden abgefragt?", answer: "Fachliche, methodische, soziale und persönliche Kompetenzen – anpassbar an Ihre Praxis." },
+    ],
+    relatedFeatureSlugs: ["mitarbeitergespraeche", "skills-management", "fortbildung"],
+    metaTitle: "Selbst-Check | Persönliche Kompetenzeinschätzung | Effizienz Praxis",
+    metaDescription:
+      "Strukturierte Selbsteinschätzung für Praxismitarbeiter: Kompetenzbewertung, Entwicklungsprofil und persönliche Zielplanung.",
+  },
+  {
+    slug: "geraete",
+    title: "Geräte",
+    subtitle: "Medizingeräte, Einweisungen und Wartung verwalten",
+    description:
+      "Verwalten Sie alle medizinischen Geräte Ihrer Praxis: Einweisungen (MPBetreibV), Wartungsintervalle, Prüfprotokolle und den kompletten Gerätelebenszyklus.",
+    detailedDescription: {
+      intro:
+        "Die Geräteverwaltung digitalisiert das komplette Management Ihrer Medizingeräte. Von der Anschaffung über die Einweisung aller Mitarbeiter bis zur regelmäßigen Wartung und Sicherheitstechnischen Kontrolle (STK) – alles an einem Ort. Die lückenlose Dokumentation erfüllt alle Anforderungen der Medizinprodukte-Betreiberverordnung (MPBetreibV).",
+      howItWorks:
+        "Erfassen Sie alle Geräte mit technischen Daten, Standort und Verantwortlichen. Für jedes Gerät verwalten Sie Einweisungen (wer wurde wann eingewiesen), Wartungsintervalle und Prüfprotokolle. Automatische Erinnerungen stellen sicher, dass keine Wartung oder STK versäumt wird. Bei Neuanschaffungen wird automatisch eine Einweisungs-Checkliste für alle relevanten Mitarbeiter erstellt.",
+      whyItHelps:
+        "Die Dokumentation von Geräteeinweisungen und Wartungen ist gesetzlich vorgeschrieben. Lücken können bei Prüfungen zu Beanstandungen führen. Unser System macht die Dokumentation einfach und lückenlos. Sie sehen auf einen Blick, welche Mitarbeiter noch eine Einweisung benötigen und welche Wartungen anstehen.",
+    },
+    iconName: "Cpu",
+    color: "bg-cyan-500/10 text-cyan-600",
+    benefits: [
+      { title: "MPBetreibV-konform", description: "Vollständige Dokumentation nach Medizinprodukte-Betreiberverordnung" },
+      { title: "Einweisungsmanagement", description: "Übersicht über Einweisungen aller Mitarbeiter pro Gerät" },
+      { title: "Wartungsplanung", description: "Automatische Erinnerungen an anstehende Wartungen und STK" },
+      { title: "Geräte-Lebenszyklus", description: "Von der Anschaffung bis zur Außerbetriebnahme alles dokumentiert" },
+      { title: "Prüfungssicher", description: "Alle Nachweise für Behördenprüfungen jederzeit griffbereit" },
+    ],
+    features: [
+      { title: "Geräte-Datenbank", description: "Zentrale Verwaltung aller Medizingeräte mit technischen Daten", iconName: "Cpu" },
+      { title: "Einweisungsprotokoll", description: "Dokumentation und Tracking aller Geräteeinweisungen", iconName: "ClipboardCheck" },
+      { title: "Wartungskalender", description: "Automatisierte Wartungsplanung mit Erinnerungsfunktion", iconName: "Calendar" },
+      { title: "STK-Management", description: "Sicherheitstechnische Kontrollen planen und dokumentieren", iconName: "Shield" },
+    ],
+    useCases: [
+      { title: "Neue Mitarbeiterin", description: "Automatisch wird eine Einweisungsliste für alle relevanten Geräte erstellt." },
+      { title: "STK-Termin", description: "Das System erinnert rechtzeitig an die fällige Sicherheitstechnische Kontrolle." },
+      { title: "Begehung", description: "Alle Einweisungsprotokolle und Wartungsnachweise auf Knopfdruck bereit." },
+    ],
+    faq: [
+      { question: "Welche Geräte sollte ich erfassen?", answer: "Alle aktiven Medizinprodukte und Geräte, die einer Einweisungspflicht oder regelmäßigen Wartung unterliegen." },
+      { question: "Werden die Einweisungsprotokolle rechtlich anerkannt?", answer: "Ja, die digitale Dokumentation mit Zeitstempel und Bestätigung ist rechtlich anerkannt." },
+    ],
+    relatedFeatureSlugs: ["hygieneplan", "wissen-qm", "arbeitsmittel"],
+    metaTitle: "Geräte | Medizingeräte-Management für Arztpraxen | Effizienz Praxis",
+    metaDescription:
+      "Verwalten Sie Medizingeräte MPBetreibV-konform: Einweisungen, Wartungsplanung, STK-Management und prüfungssichere Dokumentation.",
   },
 ]
 

@@ -205,8 +205,8 @@ export function TemplateSelectionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Vorlage auswahlen</DialogTitle>
-          <DialogDescription>Wahlen Sie eine vorgefertigte Vorlage fur Ihre Umfrage.</DialogDescription>
+          <DialogTitle>Vorlage auswählen</DialogTitle>
+          <DialogDescription>Wählen Sie eine vorgefertigte Vorlage für Ihre Umfrage.</DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh]">
           <div className="grid gap-4 py-4">
@@ -308,7 +308,7 @@ export function AIGenerationDialog({
             <ul className="text-sm text-violet-600 space-y-1 list-disc list-inside">
               <li>Beschreiben Sie das Ziel der Umfrage</li>
               <li>Nennen Sie die Zielgruppe (Team, Patienten, etc.)</li>
-              <li>Erwahnen Sie spezifische Themen, die abgefragt werden sollen</li>
+              <li>Erwähnen Sie spezifische Themen, die abgefragt werden sollen</li>
             </ul>
           </div>
         </div>
@@ -361,7 +361,7 @@ export function ResultsDialog({ open, onOpenChange, survey }: ResultsDialogProps
             <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">Detaillierte Ergebnisansicht wird geladen...</p>
             <Button className="mt-4" onClick={() => router.push(`/surveys/${survey?.id}/results`)}>
-              Vollstandige Analyse offnen
+              Vollständige Analyse öffnen
             </Button>
           </div>
         </div>

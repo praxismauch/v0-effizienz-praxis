@@ -65,6 +65,7 @@ export async function getSidebarBadges(practiceId: string) {
     leitbild: 0,
     selfcheck: 0,
     organigramm: 0,
+    schwarzesBrett: 0,
   }
 
   try {
@@ -100,6 +101,7 @@ export async function getSidebarBadges(practiceId: string) {
     appraisals, skills, workplaces, rooms, equipment,
     dienstplan, zeiterfassung, analytics, knowledge,
     strategy, leadership, wellbeing, leitbild, selfcheck, organigramm,
+    schwarzesBrett,
   ] = await Promise.all([
     // Tasks (incomplete)
     safeCount(supabase.from("todos").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("completed", false)),
@@ -167,6 +169,8 @@ export async function getSidebarBadges(practiceId: string) {
     safeCount(supabase.from("user_self_checks").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).is("deleted_at", null)),
     // Organigramm (org chart positions)
     safeCount(supabase.from("org_chart_positions").select("*", { count: "exact", head: true }).eq("practice_id", practiceId)),
+    // Schwarzes Brett (active, non-archived bulletin posts)
+    safeCount(supabase.from("bulletin_posts").select("*", { count: "exact", head: true }).eq("practice_id", practiceId).eq("is_archived", false).is("deleted_at", null)),
   ])
 
     // Contacts count includes team members (as they are shown merged in the contacts list)
@@ -206,6 +210,7 @@ export async function getSidebarBadges(practiceId: string) {
       leitbild,
       selfcheck,
       organigramm,
+      schwarzesBrett,
     }
 
     return {

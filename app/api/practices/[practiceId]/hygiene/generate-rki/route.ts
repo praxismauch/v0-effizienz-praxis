@@ -80,7 +80,7 @@ Formatiere die Antwort als JSON mit folgender Struktur:
         title: `Hygieneplan: ${plan_type} - ${area}`,
         procedure: text,
         products_used: [],
-        rki_reference: "Bitte RKI-Richtlinien fuer weitere Details konsultieren",
+        rki_reference: "Bitte RKI-Richtlinien für weitere Details konsultieren",
       }
     }
 

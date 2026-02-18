@@ -144,6 +144,9 @@ export function TodoCard({
   const priorityInfo = getPriorityConfig(todo.priority)
   const daysUntilDue = getDaysUntilDue(todo.due_date || null)
   const overdue = isOverdue(todo.due_date || null, todo.status)
+  const assignee = todo.assigned_to
+    ? teamMembers?.find((m) => m.id === todo.assigned_to)
+    : undefined
 
   // List view - the richest layout
   if (viewMode === "list") {
@@ -531,13 +534,31 @@ export function TodoCard({
             </Button>
           </div>
 
-          <TodoMetadata
-            todo={todo}
-            teamMembers={teamMembers}
-            isOverdue={isOverdue}
-            getPriorityLabel={getPriorityLabel}
-            compact
-          />
+          {/* Compact metadata: due date + assignee */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {todo.due_date && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "gap-1 text-[10px] h-5 border",
+                  overdue
+                    ? "bg-destructive/10 text-destructive border-destructive/20"
+                    : "bg-secondary text-muted-foreground border-border"
+                )}
+              >
+                <Calendar className="h-2.5 w-2.5" />
+                {formatDateDE(new Date(todo.due_date))}
+              </Badge>
+            )}
+            {assignee && (
+              <Avatar className="h-5 w-5">
+                {assignee.avatar_url && <AvatarImage src={assignee.avatar_url} />}
+                <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
+                  {(assignee.name || assignee.email || "?").substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

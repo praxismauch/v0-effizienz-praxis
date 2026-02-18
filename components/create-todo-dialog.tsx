@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast"
 import { TodoAttachmentUpload } from "@/components/todo-attachment-upload"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
-import { Users, Loader2 } from "lucide-react"
+import { Users, Loader2, User } from "lucide-react"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { swrFetcher } from "@/lib/swr-fetcher"
 
@@ -282,14 +282,9 @@ function CreateTodoDialog({ open, onOpenChange }: CreateTodoDialogProps) {
                       className="flex items-center space-x-2 cursor-pointer flex-1"
                     >
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={member.avatar || ""} />
-                        <AvatarFallback className="text-xs">
-                          {member.name
-                            ?.split(" ")
-                            .map((n: string) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase() || "TM"}
+                        {member.avatar ? <AvatarImage src={member.avatar} /> : null}
+                        <AvatarFallback className="text-xs bg-muted">
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm">{member.name || member.email || "Unbekannt"}</span>

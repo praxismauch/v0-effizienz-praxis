@@ -133,7 +133,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       contributing_factors,
       immediate_actions,
       is_anonymous,
-      status: "submitted",
+      status: "open",
     }
 
     if (!is_anonymous && user) {
@@ -147,12 +147,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Build a safe base URL for internal API calls (avoid SSL issues with self-fetch)
+    const origin = request.headers.get("origin") 
+      || request.headers.get("x-forwarded-host") && `${request.headers.get("x-forwarded-proto") || "http"}://${request.headers.get("x-forwarded-host")}`
+      || process.env.NEXT_PUBLIC_APP_URL 
+      || "http://localhost:3000"
+    const baseApiUrl = `${origin}/api/practices/${practiceId}/cirs`
+
     // Generate AI suggestions if requested
     if (generate_ai_suggestions && incident) {
       try {
-        const aiResponse = await fetch(`${request.url}/${incident.id}/ai-suggestions`, {
+        const aiResponse = await fetch(`${baseApiUrl}/${incident.id}/ai-suggestions`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            ...(request.headers.get("cookie") ? { cookie: request.headers.get("cookie")! } : {}),
+          },
           body: JSON.stringify({ incident }),
         })
 
@@ -168,9 +178,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     // Add to knowledge base if requested
     if (add_to_knowledge && incident) {
       try {
-        const knowledgeResponse = await fetch(`${request.url}/${incident.id}/add-to-knowledge`, {
+        const knowledgeResponse = await fetch(`${baseApiUrl}/${incident.id}/add-to-knowledge`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            ...(request.headers.get("cookie") ? { cookie: request.headers.get("cookie")! } : {}),
+          },
           body: JSON.stringify({ incident }),
         })
 

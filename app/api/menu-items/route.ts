@@ -8,7 +8,7 @@ const t = (key: string, fallback: string) => fallback
 const getSuperAdminMenuItems = () => {
   return [
     { name: "Dashboard", href: "/super-admin", groupLabel: "Super Admin" },
-    { name: "Warteliste", href: "/super-admin/warteliste", groupLabel: "Super Admin" },
+    { name: "Warteliste", href: "/super-admin/waitlist", groupLabel: "Super Admin" },
     { name: "Tickets", href: "/super-admin/tickets", groupLabel: "Super Admin" },
     { name: "Verwaltung", href: "/super-admin/verwaltung", groupLabel: "Super Admin" },
     { name: "Zahlungen", href: "/super-admin/zahlungen", groupLabel: "Super Admin" },

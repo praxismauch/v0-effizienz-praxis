@@ -71,7 +71,7 @@ function SortableRow({
           {...listeners}
         >
           <GripVertical className="h-4 w-4" />
-          <span className="sr-only">Reihenfolge per Drag and Drop aendern</span>
+          <span className="sr-only">Reihenfolge per Drag and Drop ändern</span>
         </button>
       </TableCell>
       <TableCell className="text-muted-foreground tabular-nums">{team.display_order}</TableCell>

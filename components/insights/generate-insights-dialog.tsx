@@ -152,7 +152,7 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
   const [step, setStep] = useState(1)
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [periodType, setPeriodType] = useState<"weekly" | "monthly" | "quarterly" | "yearly">("monthly")
+  const [periodType, setPeriodType] = useState<"weekly" | "monthly" | "quarterly" | "yearly" | null>(null)
   const [periodOffset, setPeriodOffset] = useState(1)
   const [userNotes, setUserNotes] = useState("")
   const { user } = useAuth()
@@ -186,21 +186,29 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
       .then((prefs) => {
         if (prefs) {
           if (prefs.frequency) setPeriodType(prefs.frequency)
+          else if (!periodType) setPeriodType("monthly")
           if (typeof prefs.include_kpis === "boolean") setIncludeKpis(prefs.include_kpis)
           if (typeof prefs.include_team_data === "boolean") setIncludeTeamData(prefs.include_team_data)
           if (typeof prefs.include_self_check === "boolean") setIncludeSelfCheck(prefs.include_self_check)
           if (typeof prefs.generate_action_plan === "boolean") setGenerateActionPlan(prefs.generate_action_plan)
+        } else {
+          // No preferences saved yet, fallback to monthly
+          if (!periodType) setPeriodType("monthly")
         }
         setPreferencesLoaded(true)
       })
-      .catch(() => setPreferencesLoaded(true))
+      .catch(() => {
+        if (!periodType) setPeriodType("monthly")
+        setPreferencesLoaded(true)
+      })
   }, [open, preferencesLoaded, practiceId, currentUser?.practice_id])
 
   const getPeriodDates = () => {
     const now = new Date()
     let start: Date, end: Date
+    const effectivePeriod = periodType || "monthly"
 
-    switch (periodType) {
+    switch (effectivePeriod) {
       case "weekly":
         const targetWeek = subWeeks(now, periodOffset)
         start = startOfWeek(targetWeek, { weekStartsOn: 1 })
@@ -279,7 +287,7 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           practiceId: effectivePracticeId,
-          periodType,
+          periodType: periodType || "monthly",
           periodStart: format(start, "yyyy-MM-dd"),
           periodEnd: format(end, "yyyy-MM-dd"),
           userNotes,
@@ -412,9 +420,9 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
 
       <div className="space-y-2">
         <Label>Berichtszeitraum</Label>
-        <Select value={periodType} onValueChange={(v: any) => setPeriodType(v)}>
+        <Select value={periodType || ""} onValueChange={(v: any) => setPeriodType(v)} disabled={!preferencesLoaded}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder={!preferencesLoaded ? "Lade Einstellungen..." : undefined} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="weekly">Wochenbericht</SelectItem>
@@ -433,29 +441,29 @@ export function GenerateJournalDialog({ open, onOpenChange, practiceId, kpiCount
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="1">
-              {periodType === "weekly"
+              {(periodType || "monthly") === "weekly"
                 ? "Letzte Woche"
-                : periodType === "monthly"
+                : (periodType || "monthly") === "monthly"
                   ? "Letzter Monat"
-                  : periodType === "quarterly"
+                  : (periodType || "monthly") === "quarterly"
                     ? "Letztes Quartal"
                     : "Letztes Jahr"}
             </SelectItem>
             <SelectItem value="2">
-              {periodType === "weekly"
+              {(periodType || "monthly") === "weekly"
                 ? "Vorletzte Woche"
-                : periodType === "monthly"
+                : (periodType || "monthly") === "monthly"
                   ? "Vorletzter Monat"
-                  : periodType === "quarterly"
+                  : (periodType || "monthly") === "quarterly"
                     ? "Vorletztes Quartal"
                     : "Vorletztes Jahr"}
             </SelectItem>
             <SelectItem value="3">
-              {periodType === "weekly"
+              {(periodType || "monthly") === "weekly"
                 ? "Vor 3 Wochen"
-                : periodType === "monthly"
+                : (periodType || "monthly") === "monthly"
                   ? "Vor 3 Monaten"
-                  : periodType === "quarterly"
+                  : (periodType || "monthly") === "quarterly"
                     ? "Vor 3 Quartalen"
                     : "Vor 3 Jahren"}
             </SelectItem>

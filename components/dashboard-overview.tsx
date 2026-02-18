@@ -27,6 +27,8 @@ import { usePractice } from "@/contexts/practice-context"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { GoogleReviewsWidget } from "./google-reviews-widget"
 import { JournalActionItemsCard } from "@/components/dashboard/insights-action-items-card"
+import { BulletinWidget } from "@/components/dashboard/bulletin-widget"
+import { TimeTrackingWidget } from "@/components/dashboard/time-tracking-widget"
 import { useTranslation } from "@/contexts/translation-context"
 import { PageHeader } from "@/components/page-layout"
 import {
@@ -101,8 +103,9 @@ const DEFAULT_WIDGETS = {
   showTodaySchedule: true,
   showRecentActivities: true,
   showGoogleReviews: true,
-  showInsightsActions: true,
   showJournalActions: true,
+  showBulletin: true,
+  showTimeTracking: true,
   showTodos: true,
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
@@ -283,9 +286,22 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     fetchDashboardData()
   }, [fetchDashboardData])
 
+  const FULL_WIDTH_WIDGETS = new Set([
+    "showBulletin",
+    "showJournalActions",
+  ])
+
   const getColumnSpanClass = (widgetId: string): string => {
+    const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+    // 1. User's per-widget override from the editor dialog (Breite buttons)
+    const userSpan = widgets.columnSpans?.[widgetId]
+    // 2. Super-admin default from cockpit-settings API
     const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
-    const colSpan = setting?.column_span || 1
+    const adminSpan = setting?.column_span
+    // 3. Built-in default
+    const defaultSpan = FULL_WIDTH_WIDGETS.has(widgetId) ? 5 : 1
+    // User span > 0 takes priority, then admin, then default
+    const colSpan = (userSpan && userSpan > 0) ? userSpan : (adminSpan || defaultSpan)
 
     switch (colSpan) {
       case 2:
@@ -295,7 +311,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
       case 4:
         return "md:col-span-4"
       case 5:
-        return "md:col-span-5"
+        return "col-span-full"
       default:
         return ""
     }
@@ -517,16 +533,22 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             <RecentActivitiesWidget key="recent-activities" activities={stats.recentActivities} />,
             widgetId,
           )
-        case "showInsightsActions":
-          if (widgets.showInsightsActions === false || !practiceId) return null
-          return wrapWithSpan(
-            <JournalActionItemsCard key="insights-actions" practiceId={practiceId} className="col-span-full" />,
-            widgetId,
-          )
         case "showJournalActions":
           if (widgets.showJournalActions === false || !practiceId) return null
           return wrapWithSpan(
             <JournalActionItemsCard key="journal-actions" practiceId={practiceId} className="col-span-full" />,
+            widgetId,
+          )
+        case "showBulletin":
+          if (widgets.showBulletin === false || !practiceId) return null
+          return wrapWithSpan(
+            <BulletinWidget key="bulletin" practiceId={practiceId} userId={userId} />,
+            widgetId,
+          )
+        case "showTimeTracking":
+          if (widgets.showTimeTracking === false || !practiceId || !userId) return null
+          return wrapWithSpan(
+            <TimeTrackingWidget key="time-tracking" practiceId={practiceId} userId={userId} />,
             widgetId,
           )
         case "showQuickActions":
@@ -541,29 +563,70 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
       currentPractice,
       t,
       practiceId,
+      userId,
       cockpitCardSettings,
     ],
   )
 
   const orderedWidgets = useMemo(() => {
     const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
-    const order = widgets.widgetOrder || DEFAULT_ORDER
+    const savedOrder = widgets.widgetOrder || DEFAULT_ORDER
 
-    if (!Array.isArray(order)) {
-      console.error("[v0] widgetOrder is not an array:", order)
+    if (!Array.isArray(savedOrder)) {
+      console.error("[v0] widgetOrder is not an array:", savedOrder)
       return []
     }
+
+    // Ensure any new widget IDs from DEFAULT_ORDER are appended if missing from saved order
+    const order = [...savedOrder]
+    for (const id of DEFAULT_ORDER) {
+      if (!order.includes(id)) {
+        order.push(id)
+      }
+    }
+
     return order.map((id) => renderWidget(id)).filter(Boolean)
   }, [dashboardConfig, renderWidget])
 
-  const handleSaveConfig = useCallback((newConfig: { widgets: any }) => {
-    if (newConfig && newConfig.widgets) {
-      const widgets = newConfig.widgets.widgets || newConfig.widgets
-      setDashboardConfig({ widgets })
-    } else {
-      setDashboardConfig({ widgets: DEFAULT_WIDGETS })
+  const handleSaveConfig = useCallback(async (newConfig: { widgets: any }) => {
+    const widgets = newConfig?.widgets
+      ? (newConfig.widgets.widgets || newConfig.widgets)
+      : DEFAULT_WIDGETS
+    
+    // Update local state immediately
+    setDashboardConfig({ widgets })
+
+    // Persist to database
+    if (practiceId && userId) {
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/dashboard-preferences`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ config: { widgets } }),
+        })
+        if (!response.ok) {
+          console.error("Failed to save dashboard config:", await response.text())
+          toast({
+            title: "Fehler",
+            description: "Dashboard-Einstellungen konnten nicht gespeichert werden.",
+            variant: "destructive",
+          })
+        } else {
+          toast({
+            title: "Gespeichert",
+            description: "Dashboard-Einstellungen wurden erfolgreich gespeichert.",
+          })
+        }
+      } catch (err) {
+        console.error("Error saving dashboard config:", err)
+        toast({
+          title: "Fehler",
+          description: "Dashboard-Einstellungen konnten nicht gespeichert werden.",
+          variant: "destructive",
+        })
+      }
     }
-  }, [])
+  }, [practiceId, userId, toast])
 
   if (loading) {
     return (
@@ -588,7 +651,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     <div className="space-y-6 max-w-full">
       <PageHeader
         title="Cockpit"
-        subtitle="Willkommen zurueck! Hier ist ein 360 Grad Ueberblick ueber Ihre Praxis."
+        subtitle="Willkommen zurück! Hier ist ein 360-Grad-Überblick über Ihre Praxis."
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => setIsEditorOpen(true)}>

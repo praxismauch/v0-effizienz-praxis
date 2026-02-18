@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Shield, Plus, CheckCircle2, BookOpen } from "lucide-react"
+import { Shield, Plus, CheckCircle2, BookOpen, Eye } from "lucide-react"
 import { PLAN_TYPES, AREAS, FREQUENCIES, STATUS_OPTIONS, type HygienePlan } from "./hygiene-constants"
 
 interface HygienePlansTableProps {
@@ -20,6 +20,7 @@ interface HygienePlansTableProps {
   onCreateNew: () => void
   onExecute: (plan: HygienePlan) => void
   onAddToKnowledge: (plan: HygienePlan) => void
+  onViewDetail: (plan: HygienePlan) => void
 }
 
 export function HygienePlansTable({
@@ -28,6 +29,7 @@ export function HygienePlansTable({
   onCreateNew,
   onExecute,
   onAddToKnowledge,
+  onViewDetail,
 }: HygienePlansTableProps) {
   if (plans.length === 0) {
     return (
@@ -77,7 +79,11 @@ export function HygienePlansTable({
           </TableHeader>
           <TableBody>
             {plans.map((plan) => (
-              <TableRow key={plan.id}>
+              <TableRow
+                key={plan.id}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => onViewDetail(plan)}
+              >
                 <TableCell className="font-medium">
                   <div>
                     <div>{plan.title}</div>
@@ -102,11 +108,14 @@ export function HygienePlansTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => onExecute(plan)}>
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onViewDetail(plan) }}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onExecute(plan) }}>
                       <CheckCircle2 className="h-4 w-4 mr-1" />
                       Durchführen
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => onAddToKnowledge(plan)}>
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onAddToKnowledge(plan) }}>
                       <BookOpen className="h-4 w-4" />
                     </Button>
                   </div>

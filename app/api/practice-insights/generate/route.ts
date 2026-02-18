@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     const jsonShape: Record<string, string> = {
       summary: "Gesamtzusammenfassung...",
-      overview: "Detaillierte Uebersicht...",
+      overview: "Detaillierte Übersicht...",
       achievements: '["Erfolg 1", "Erfolg 2", ...]',
       challenges: '["Herausforderung 1", ...]',
     }
@@ -161,11 +161,11 @@ export async function POST(request: NextRequest) {
 
     const jsonExample = `{\n${Object.entries(jsonShape).map(([k, v]) => `  "${k}": ${v.startsWith("[") ? v : `"${v}"`}`).join(",\n")}\n}`
 
-    const prompt = `Du bist ein erfahrener Praxisberater fuer medizinische Praxen. Erstelle einen professionellen Praxis-Journalbericht fuer den Zeitraum ${effectivePeriodStart} bis ${effectivePeriodEnd}.
+    const prompt = `Du bist ein erfahrener Praxisberater für medizinische Praxen. Erstelle einen professionellen Praxis-Journalbericht für den Zeitraum ${effectivePeriodStart} bis ${effectivePeriodEnd}.
 
-${dataSections.length > 0 ? `VERFUEGBARE DATEN:\n${dataSections.join("\n\n")}` : "Keine spezifischen Daten verfuegbar."}
+${dataSections.length > 0 ? `VERFÜGBARE DATEN:\n${dataSections.join("\n\n")}` : "Keine spezifischen Daten verfügbar."}
 
-${selfCheckSummary ? `WOHLBEFINDEN & SELBSTEINSCHAETZUNG:\n${selfCheckSummary}\n` : ""}
+${selfCheckSummary ? `WOHLBEFINDEN & SELBSTEINSCHÄTZUNG:\n${selfCheckSummary}\n` : ""}
 ${userNotes ? `NOTIZEN DES PRAXISMANAGERS:\n${userNotes}` : ""}
 
 Erstelle einen strukturierten Bericht mit:

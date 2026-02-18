@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
     const { data: template, error } = await supabase
       .from("workflows")
       .insert({
-        title: body.name || body.title,
+        id: crypto.randomUUID(),
+        name: body.name || body.title,
         description: body.description,
         category: body.category,
-        steps: body.steps,
         is_template: true,
         status: "draft",
         priority: "medium",

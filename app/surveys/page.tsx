@@ -8,7 +8,17 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Search, Sparkles, ClipboardCheck, LayoutTemplate, Heart, Zap } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Plus, Search, Sparkles, ClipboardCheck, LayoutTemplate, Heart, Zap, Trash2 } from "lucide-react"
 import { AppLayout } from "@/components/app-layout"
 import { PageHeader } from "@/components/page-layout"
 import Logger from "@/lib/logger"
@@ -51,6 +61,7 @@ export default function SurveysPage() {
   const [showResultsDialog, setShowResultsDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Survey | null>(null)
   const [editSurveyData, setEditSurveyData] = useState<EditSurveyData>({
     title: "",
     description: "",
@@ -252,10 +263,51 @@ export default function SurveysPage() {
         body: JSON.stringify({ prompt: aiPrompt }),
       })
       if (response.ok) {
-        toast({ title: "Umfrage generiert", description: "Die KI hat eine Umfrage erstellt." })
+        const data = await response.json()
+        const generatedSurvey = data.survey
+
+        // Close AI dialog and reset prompt
         setShowAIDialog(false)
         setAIPrompt("")
+
+        // Refresh list so the new survey appears
         fetchSurveys()
+
+        // Open the edit dialog pre-filled with the generated survey
+        if (generatedSurvey) {
+          setSelectedSurvey(generatedSurvey)
+          setEditSurveyData({
+            title: generatedSurvey.title || "",
+            description: generatedSurvey.description || "",
+            target_audience: generatedSurvey.target_audience || "all",
+            is_anonymous: generatedSurvey.is_anonymous || false,
+            start_date: generatedSurvey.start_date || "",
+            end_date: generatedSurvey.end_date || "",
+            questions: [],
+          })
+          setShowEditDialog(true)
+
+          // Fetch the generated questions
+          try {
+            const qResponse = await fetch(
+              `/api/practices/${currentPractice.id}/surveys/${generatedSurvey.id}/questions`,
+              { credentials: "include" }
+            )
+            if (qResponse.ok) {
+              const qData = await qResponse.json()
+              setEditSurveyData((prev) => ({ ...prev, questions: qData.questions || [] }))
+            }
+          } catch {
+            // Questions will just be empty if fetch fails
+          }
+
+          toast({
+            title: "Umfrage generiert",
+            description: "Bitte überprüfen Sie die generierte Umfrage und passen Sie sie bei Bedarf an.",
+          })
+        }
+      } else {
+        throw new Error("Generation failed")
       }
     } catch {
       toast({ title: "Fehler", description: "Die Umfrage konnte nicht generiert werden.", variant: "destructive" })
@@ -435,7 +487,7 @@ export default function SurveysPage() {
           {/* Header */}
           <PageHeader
             title="Umfragen"
-            subtitle="Erstellen und verwalten Sie Umfragen fuer Ihr Team und Ihre Patienten"
+            subtitle="Erstellen und verwalten Sie Umfragen für Ihr Team und Ihre Patienten"
             icon={<ClipboardCheck className="h-8 w-8" />}
             actions={
               <>
@@ -554,7 +606,10 @@ export default function SurveysPage() {
                   key={survey.id}
                   survey={survey}
                   onEdit={openEditDialog}
-                  onDelete={handleDeleteSurvey}
+                    onDelete={(id) => {
+                      const survey = surveys.find((s) => s.id === id)
+                      if (survey) setDeleteTarget(survey)
+                    }}
                   onDuplicate={handleDuplicateSurvey}
                   onCopyLink={copyPublicLink}
                   onToggleStatus={handleToggleStatus}
@@ -602,6 +657,34 @@ export default function SurveysPage() {
         onSubmit={handleEditSurvey}
         isCreating={isCreating}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Umfrage löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie die Umfrage <span className="font-semibold text-foreground">{deleteTarget?.title}</span> wirklich
+              löschen? Alle zugehörigen Antworten und Ergebnisse werden ebenfalls entfernt. Diese Aktion kann nicht
+              rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  handleDeleteSurvey(deleteTarget.id)
+                  setDeleteTarget(null)
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Endgültig löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import useSWR from "swr"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BookOpen, Target, Sparkles } from "lucide-react"
@@ -49,54 +49,48 @@ export function JournalActionItemsCard({ practiceId }: Props) {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-32" />
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </CardContent>
+      <Card className="p-5 min-h-[140px]">
+        <div className="flex items-start gap-3">
+          <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+        </div>
       </Card>
     )
   }
 
   if (actionItems.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <BookOpen className="h-5 w-5 text-primary" />
-            Journal Handlungsempfehlungen
-          </CardTitle>
-          <CardDescription>Handlungsempfehlungen aus Ihrem letzten Journal</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6">
-            <Target className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground mb-4">Noch keine Handlungsempfehlungen vorhanden.</p>
+      <Card className="p-5 min-h-[140px]">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+            <BookOpen className="h-5 w-5" />
           </div>
-        </CardContent>
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Journal Handlungsempfehlungen</p>
+            <p className="text-3xl font-bold tracking-tight mt-1">0</p>
+            <p className="text-xs text-muted-foreground mt-1">Noch keine Handlungsempfehlungen vorhanden.</p>
+          </div>
+        </div>
       </Card>
     )
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Journal Handlungsempfehlungen
-            </CardTitle>
-            <CardDescription>{journalTitle}</CardDescription>
-          </div>
+    <Card className="p-5 min-h-[140px]">
+      <div className="flex items-start gap-3 mb-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+          <BookOpen className="h-5 w-5" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Journal Handlungsempfehlungen</p>
+          <p className="text-3xl font-bold tracking-tight mt-1">{actionItems.length}</p>
+          {journalTitle && <p className="text-xs text-muted-foreground mt-0.5">{journalTitle}</p>}
+        </div>
+      </div>
+      <div className="space-y-2">
         {actionItems.map((item) => (
           <div key={item.id} className={`p-3 rounded-lg border ${getPriorityColor(item.priority)}`}>
             <div className="flex items-start justify-between gap-2">
@@ -123,7 +117,7 @@ export function JournalActionItemsCard({ practiceId }: Props) {
             </div>
           </div>
         ))}
-      </CardContent>
+      </div>
     </Card>
   )
 }

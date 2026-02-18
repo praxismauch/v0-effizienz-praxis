@@ -1,6 +1,7 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { FileText, CheckCircle, Clock, BarChart3 } from "lucide-react"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import type { Workflow } from "../workflow-types"
 
 interface WorkflowStatsProps {
@@ -17,38 +18,30 @@ export function WorkflowStats({ workflows }: WorkflowStatsProps) {
 
   return (
     <div className="grid gap-4 md:grid-cols-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Gesamt</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.total}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Aktiv</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Entwürfe</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-yellow-600">{stats.draft}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Abgeschlossen</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-blue-600">{stats.completed}</div>
-        </CardContent>
-      </Card>
+      <StatCard
+        label="Gesamt"
+        value={stats.total}
+        icon={FileText}
+        {...statCardColors.primary}
+      />
+      <StatCard
+        label="Aktiv"
+        value={stats.active}
+        icon={CheckCircle}
+        {...statCardColors.green}
+      />
+      <StatCard
+        label="Entwürfe"
+        value={stats.draft}
+        icon={Clock}
+        {...statCardColors.amber}
+      />
+      <StatCard
+        label="Abgeschlossen"
+        value={stats.completed}
+        icon={BarChart3}
+        {...statCardColors.blue}
+      />
     </div>
   )
 }

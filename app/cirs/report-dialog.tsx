@@ -211,8 +211,8 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
             <div className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-amber-600" />
               <div>
-                <Label className="font-medium">{"Zur Wissensdatenbank hinzufugen"}</Label>
-                <p className="text-sm text-muted-foreground">{"Analyse und Losungen im Wissensbereich speichern"}</p>
+                <Label className="font-medium">{"Zur Wissensdatenbank hinzufügen"}</Label>
+                <p className="text-sm text-muted-foreground">{"Analyse und Lösungen im Wissensbereich speichern"}</p>
               </div>
             </div>
             <Switch checked={addToKnowledge} onCheckedChange={setAddToKnowledge} />

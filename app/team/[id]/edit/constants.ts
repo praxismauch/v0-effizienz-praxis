@@ -11,21 +11,21 @@ export const availablePermissions = [
   { id: "team", label: "Teamverwaltung", description: "Teammitglieder und Zuweisungen verwalten" },
   { id: "hiring", label: "Recruiting", description: "Stellenausschreibungen und Bewerber verwalten" },
   { id: "training", label: "Fortbildungen", description: "Fortbildungen und Schulungen verwalten" },
-  { id: "skills", label: "Kompetenzen", description: "Mitarbeiterkompetenzen und Fahigkeiten pflegen" },
-  { id: "responsibilities", label: "Zustandigkeiten", description: "Verantwortungsbereiche definieren" },
+  { id: "skills", label: "Kompetenzen", description: "Mitarbeiterkompetenzen und Fähigkeiten pflegen" },
+  { id: "responsibilities", label: "Zuständigkeiten", description: "Verantwortungsbereiche definieren" },
   // Planung & Organisation
   { id: "calendar", label: "Kalenderverwaltung", description: "Praxiskalender und Termine verwalten" },
   { id: "tasks", label: "Aufgaben", description: "Aufgaben erstellen und verwalten" },
   { id: "goals", label: "Ziele", description: "Praxis- und Teamziele definieren" },
-  { id: "workflows", label: "Workflows", description: "Arbeitsablaufe und Prozesse verwalten" },
+  { id: "workflows", label: "Workflows", description: "Arbeitsabläufe und Prozesse verwalten" },
   // Daten & Dokumente
   { id: "documents", label: "Dokumente", description: "Dokumente hochladen und verwalten" },
   { id: "knowledge", label: "Wissensdatenbank", description: "Wissensdatenbank pflegen und nutzen" },
-  { id: "contacts", label: "Kontakte", description: "Geschaftskontakte und Partner verwalten" },
+  { id: "contacts", label: "Kontakte", description: "Geschäftskontakte und Partner verwalten" },
   // Infrastruktur
-  { id: "rooms", label: "Raume", description: "Praxisraume verwalten" },
-  { id: "workplaces", label: "Arbeitsplatze", description: "Arbeitsplatze konfigurieren" },
-  { id: "equipment", label: "Ausstattung", description: "Gerate und Ausstattung verwalten" },
+  { id: "rooms", label: "Räume", description: "Praxisräume verwalten" },
+  { id: "workplaces", label: "Arbeitsplätze", description: "Arbeitsplätze konfigurieren" },
+  { id: "equipment", label: "Ausstattung", description: "Geräte und Ausstattung verwalten" },
   // Finanzen & Abrechnung
   { id: "billing", label: "Abrechnung", description: "Abrechnungs- und Finanzunterlagen verwalten" },
   { id: "reports", label: "Berichte", description: "Praxisberichte generieren und einsehen" },

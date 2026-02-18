@@ -126,8 +126,8 @@ export const CATEGORIES = [
   { value: "praxismanagement", label: "Praxismanagement" },
   { value: "kommunikation", label: "Kommunikation" },
   { value: "digitalisierung", label: "Digitalisierung" },
-  { value: "teamfuehrung", label: "Teamfuehrung" },
-  { value: "qualitaetsmanagement", label: "Qualitaetsmanagement" },
+  { value: "teamfuehrung", label: "Teamführung" },
+  { value: "qualitaetsmanagement", label: "Qualitätsmanagement" },
   { value: "abrechnung", label: "Abrechnung" },
   { value: "patientenbetreuung", label: "Patientenbetreuung" },
   { value: "hygiene", label: "Hygiene" },
@@ -151,11 +151,11 @@ export const BADGE_TYPES = [
 ]
 
 export const BADGE_RARITIES = [
-  { value: "common", label: "Gewoehnlich", color: "text-gray-500" },
-  { value: "uncommon", label: "Ungewoehnlich", color: "text-green-500" },
+  { value: "common", label: "Gewöhnlich", color: "text-gray-500" },
+  { value: "uncommon", label: "Ungewöhnlich", color: "text-green-500" },
   { value: "rare", label: "Selten", color: "text-blue-500" },
   { value: "epic", label: "Episch", color: "text-purple-500" },
-  { value: "legendary", label: "Legendaer", color: "text-amber-500" },
+  { value: "legendary", label: "Legendär", color: "text-amber-500" },
 ]
 
 export const BADGE_ICONS = [
@@ -172,9 +172,9 @@ export const BADGE_ICONS = [
 ]
 
 export const VISIBILITY_OPTIONS = [
-  { value: "public", label: "Oeffentlich", description: "Fuer alle Besucher sichtbar", icon: Globe },
-  { value: "logged_in", label: "Angemeldete Nutzer", description: "Nur fuer eingeloggte Benutzer", icon: Users },
-  { value: "premium", label: "Premium", description: "Nur fuer zahlende Abonnenten", icon: Crown },
+  { value: "public", label: "Öffentlich", description: "Für alle Besucher sichtbar", icon: Globe },
+  { value: "logged_in", label: "Angemeldete Nutzer", description: "Nur für eingeloggte Benutzer", icon: Users },
+  { value: "premium", label: "Premium", description: "Nur für zahlende Abonnenten", icon: Crown },
 ]
 
 export const TARGET_AUDIENCE_OPTIONS = [

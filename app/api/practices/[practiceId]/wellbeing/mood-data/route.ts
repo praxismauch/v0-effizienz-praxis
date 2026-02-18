@@ -14,8 +14,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("anonymous_mood_responses")
       .select("*")
       .eq("practice_id", practiceId)
-      .gte("submitted_at", thirtyDaysAgo)
-      .order("submitted_at", { ascending: true })
+      .gte("created_at", thirtyDaysAgo)
+      .order("created_at", { ascending: true })
 
     if (error) throw error
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Group by date for trends
     const trendsByDate: Record<string, any[]> = {}
     responses?.forEach((r) => {
-      const date = format(new Date(r.submitted_at), "yyyy-MM-dd")
+      const date = format(new Date(r.created_at), "yyyy-MM-dd")
       if (!trendsByDate[date]) trendsByDate[date] = []
       trendsByDate[date].push(r)
     })
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("anonymous_mood_responses")
       .select("id")
       .eq("practice_id", practiceId)
-      .gte("submitted_at", today)
+      .gte("created_at", today)
       .limit(1)
 
     return NextResponse.json({

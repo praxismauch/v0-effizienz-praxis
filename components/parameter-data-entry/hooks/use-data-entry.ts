@@ -300,12 +300,12 @@ export function useDataEntry() {
 
   const handleDeleteValue = async (valueId: string) => {
     if (!currentPractice?.id) return
-    if (!confirm(t("kpi.confirm_delete_value", "Wirklich loeschen?"))) return
+    if (!confirm(t("kpi.confirm_delete_value", "Wirklich löschen?"))) return
     try {
       const resp = await fetch(`/api/practices/${currentPractice.id}/parameter-values/${valueId}`, { method: "DELETE" })
       if (!resp.ok) throw new Error("Fehler")
       setParameterValues((prev) => prev.filter((v) => v.id !== valueId))
-    } catch { alert(t("kpi.error_deleting_value", "Fehler beim Loeschen")) }
+    } catch { alert(t("kpi.error_deleting_value", "Fehler beim Löschen")) }
   }
 
   // --- Navigation ---

@@ -370,7 +370,7 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">System-Diagramme</h3>
-              <Badge variant="outline">{systemDiagrams.length} verfugbar</Badge>
+              <Badge variant="outline">{systemDiagrams.length} verfügbar</Badge>
             </div>
             <div className="space-y-6">
               {systemDiagrams.map((d) => (
@@ -476,7 +476,7 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
                 <Sparkles className="h-4 w-4" />Mit KI erstellen
               </Button>
               <Button variant="outline" size="sm" className="gap-2 bg-transparent" onClick={() => setShowTileDialog(true)}>
-                <Plus className="h-4 w-4" />Kachel hinzufugen
+                <Plus className="h-4 w-4" />Kachel hinzufügen
               </Button>
             </div>
           </div>

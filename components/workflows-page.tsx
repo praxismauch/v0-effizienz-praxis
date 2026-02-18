@@ -191,11 +191,11 @@ function WorkflowsPage() {
         method: "DELETE",
       })
       if (!response.ok) throw new Error("Failed to delete")
-      toast({ title: "Erfolg", description: "Workflow-Vorlage wurde geloescht" })
+      toast({ title: "Erfolg", description: "Workflow-Vorlage wurde gelöscht" })
       setDeleteId(null)
       loadTemplates()
     } catch {
-      toast({ title: "Fehler", description: "Vorlage konnte nicht geloescht werden", variant: "destructive" })
+      toast({ title: "Fehler", description: "Vorlage konnte nicht gelöscht werden", variant: "destructive" })
     }
   }
 
@@ -242,11 +242,6 @@ function WorkflowsPage() {
       setIsCreateOpen(true)
       setAiDescription("")
       setAiCategory("")
-
-      toast({
-        title: "Workflow generiert",
-        description: `"${workflow.name}" mit ${workflow.steps?.length || 0} Schritten wurde generiert. Sie koennen die Vorlage nun anpassen und speichern.`,
-      })
     } catch (error) {
       toast({
         title: "Fehler",
@@ -348,7 +343,7 @@ function WorkflowsPage() {
                   <Input
                     value={step.assignedTo || ""}
                     onChange={(e) => updateStep(index, "assignedTo", e.target.value)}
-                    placeholder="Zustaendig (z.B. MFA)"
+                    placeholder="Zuständig (z.B. MFA)"
                     className="text-sm"
                   />
                   <div className="flex items-center gap-1">
@@ -402,7 +397,7 @@ function WorkflowsPage() {
           />
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" onClick={() => setIsAiOpen(true)} className="gap-1.5">
+          <Button onClick={() => setIsAiOpen(true)} className="gap-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
             <Sparkles className="h-4 w-4" />
             Mit KI generieren
           </Button>
@@ -624,7 +619,7 @@ function WorkflowsPage() {
               Workflow mit KI generieren
             </DialogTitle>
             <DialogDescription>
-              Beschreiben Sie den gewuenschten Workflow und die KI erstellt eine strukturierte Vorlage mit Schritten.
+              Beschreiben Sie den gewünschten Workflow und die KI erstellt eine strukturierte Vorlage mit Schritten.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -632,7 +627,7 @@ function WorkflowsPage() {
               <Label htmlFor="ai-desc">Beschreibung *</Label>
               <Textarea
                 id="ai-desc"
-                placeholder="Beispiel: Erstelle einen Workflow fuer die Patientenaufnahme, der die Anmeldung, Datenerfassung, Versicherungspruefung und Terminvergabe umfasst..."
+                placeholder="Beispiel: Erstelle einen Workflow für die Patientenaufnahme, der die Anmeldung, Datenerfassung, Versicherungsprüfung und Terminvergabe umfasst..."
                 value={aiDescription}
                 onChange={(e) => setAiDescription(e.target.value)}
                 rows={5}
@@ -679,9 +674,9 @@ function WorkflowsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Workflow-Vorlage loeschen?</AlertDialogTitle>
+            <AlertDialogTitle>Workflow-Vorlage löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Sind Sie sicher, dass Sie diese Vorlage loeschen moechten? Diese Aktion kann nicht rueckgaengig gemacht
+              Sind Sie sicher, dass Sie diese Vorlage löschen möchten? Diese Aktion kann nicht rückgängig gemacht
               werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -691,7 +686,7 @@ function WorkflowsPage() {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Loeschen
+              Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

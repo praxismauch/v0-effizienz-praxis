@@ -701,9 +701,9 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       items: [
         {
           id: "practices",
-          label: "Praxen",
+          label: "Praxen Verwaltung",
           icon: Building2,
-          href: "/super-admin/verwaltung?tab=practices",
+          href: "/super-admin/verwaltung",
           badge: true,
           badgeType: "practices" as const,
         },
@@ -711,7 +711,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           id: "users",
           label: "Benutzer",
           icon: Users,
-          href: "/super-admin/verwaltung?tab=users",
+          href: "/super-admin/users",
           badge: true,
           badgeType: "totalUsers" as const,
         },

@@ -23,7 +23,7 @@ export const categories = [
   { value: "documentation", label: "Dokumentation" },
   { value: "communication", label: "Kommunikation" },
   { value: "hygiene", label: "Hygiene" },
-  { value: "equipment", label: "Gerate/Ausstattung" },
+  { value: "equipment", label: "Geräte/Ausstattung" },
   { value: "organization", label: "Organisation" },
   { value: "other", label: "Sonstiges" },
 ]

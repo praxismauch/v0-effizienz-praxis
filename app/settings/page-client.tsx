@@ -5,7 +5,9 @@ import {
   Settings, 
   Building2, 
   Clock, 
+  Timer,
   Calendar, 
+  CalendarDays,
   Monitor, 
   Bell, 
   Mail, 
@@ -40,6 +42,8 @@ import { TeamRoleOrderSettings } from "@/components/settings/team-role-order-set
 import { PracticeParameterManagement } from "@/components/practice-parameter-management"
 import { InterfacesTab } from "@/components/settings/interfaces-tab"
 import { KnowledgeSettings } from "@/components/knowledge/knowledge-settings"
+import { DienstplanSettingsTab } from "@/components/settings/dienstplan-settings-tab"
+import { TimeTrackingSettingsTab } from "@/components/settings/time-tracking-settings-tab"
 
 export default function SettingsPageClient() {
   const { currentUser } = useUser()
@@ -99,9 +103,17 @@ export default function SettingsPageClient() {
               <Clock className="h-4 w-4" />
               <span>Arbeitszeiten</span>
             </TabsTrigger>
+            <TabsTrigger value="time-tracking" className="gap-2 whitespace-nowrap">
+              <Timer className="h-4 w-4" />
+              <span>Zeiterfassung</span>
+            </TabsTrigger>
             <TabsTrigger value="calendar" className="gap-2 whitespace-nowrap">
               <Calendar className="h-4 w-4" />
               <span>Kalender</span>
+            </TabsTrigger>
+            <TabsTrigger value="dienstplan" className="gap-2 whitespace-nowrap">
+              <CalendarDays className="h-4 w-4" />
+              <span>Dienstplan</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2 whitespace-nowrap">
               <Monitor className="h-4 w-4" />
@@ -166,9 +178,19 @@ export default function SettingsPageClient() {
             <WorkingHoursTab />
           </TabsContent>
 
+          {/* Time Tracking Settings Tab */}
+          <TabsContent value="time-tracking">
+            <TimeTrackingSettingsTab />
+          </TabsContent>
+
           {/* Calendar Settings Tab */}
           <TabsContent value="calendar">
             <CalendarSettingsTab />
+          </TabsContent>
+
+          {/* Dienstplan Settings Tab */}
+          <TabsContent value="dienstplan">
+            <DienstplanSettingsTab />
           </TabsContent>
 
           {/* Appearance Tab */}

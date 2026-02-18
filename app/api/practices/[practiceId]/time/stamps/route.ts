@@ -5,10 +5,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ practiceId: string }> }
 ) {
-  console.log("[v0] Stamps API - Starting POST handler")
   try {
     const { practiceId } = await params
-    console.log("[v0] Stamps API - practiceId:", practiceId)
     
     if (!practiceId) {
       return NextResponse.json({ error: "Practice ID required" }, { status: 400 })
@@ -18,8 +16,6 @@ export async function POST(
     const supabase = await createClient()
     const body = await request.json()
     const { user_id, action, location, comment } = body
-    
-    console.log("[v0] Stamps API - body:", { user_id, action, location, comment })
 
     if (!user_id) {
       return NextResponse.json({ error: "user_id is required" }, { status: 400 })

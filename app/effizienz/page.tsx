@@ -2,9 +2,15 @@ import type { Metadata } from "next"
 import { EffizienzPageClient } from "@/components/effizienz-page-client"
 
 export const metadata: Metadata = {
-  title: "Warum Effizienz entscheidend ist - Effizienz Praxis",
+  title: "Effizienz-Test für Ihre Arztpraxis | Optimierungspotenzial entdecken",
   description:
-    "Erfahren Sie, warum Effizienz der Schlüssel zu einer erfolgreichen Praxis ist. Machen Sie den Effizienz-Test und entdecken Sie Ihr Optimierungspotenzial.",
+    "Machen Sie den kostenlosen Effizienz-Test für Ihre Arztpraxis. Erfahren Sie in 3 Minuten, wo Ihre Praxis Optimierungspotenzial hat und wie Sie bis zu 30% Zeit sparen. Jetzt starten.",
+  alternates: { canonical: "/effizienz" },
+  openGraph: {
+    title: "Effizienz-Test: Wie effizient ist Ihre Praxis?",
+    description: "Kostenloser Effizienz-Test: Entdecken Sie in 3 Minuten das Optimierungspotenzial Ihrer Arztpraxis.",
+    url: "/effizienz",
+  },
 }
 
 export default function EffizienzPage() {

@@ -166,7 +166,7 @@ function CustomRuleForm({
           onChange={(e) => setFileGlob(e.target.value)}
         />
         <p className="text-xs text-muted-foreground">
-          Nur Dateien pruefen, deren Pfad diesen Text enthaelt.
+          Nur Dateien prüfen, deren Pfad diesen Text enthält.
         </p>
       </div>
 
@@ -176,7 +176,7 @@ function CustomRuleForm({
           onClick={handleSave}
           disabled={!title.trim() || !pattern.trim() || !message.trim() || !!patternError}
         >
-          {rule ? "Aktualisieren" : "Hinzufuegen"}
+          {rule ? "Aktualisieren" : "Hinzufügen"}
         </Button>
       </div>
     </div>
@@ -206,7 +206,7 @@ export function CustomRulesTab({ customRules, onAddOrUpdate, onDelete, onToggle 
                 Eigene Review-Regeln
               </CardTitle>
               <CardDescription>
-                Manuelle Pruefregeln, die bei jedem Code Review mit angewendet werden
+                Manuelle Prüfregeln, die bei jedem Code Review mit angewendet werden
               </CardDescription>
             </div>
             <Button
@@ -224,7 +224,7 @@ export function CustomRulesTab({ customRules, onAddOrUpdate, onDelete, onToggle 
             <div className="py-12 text-center text-muted-foreground">
               <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm font-medium">Keine eigenen Regeln definiert</p>
-              <p className="text-xs mt-1">Klicke auf &quot;Neue Regel&quot; um eine eigene Pruefregel hinzuzufuegen.</p>
+              <p className="text-xs mt-1">Klicke auf &quot;Neue Regel&quot; um eine eigene Prüfregel hinzuzufügen.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -281,7 +281,7 @@ export function CustomRulesTab({ customRules, onAddOrUpdate, onDelete, onToggle 
                         size="sm"
                         variant="ghost"
                         className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                        title="Loeschen"
+                        title="Löschen"
                         onClick={() => onDelete(rule.id)}
                       >
                         <XCircle className="h-3.5 w-3.5" />
@@ -299,9 +299,9 @@ export function CustomRulesTab({ customRules, onAddOrUpdate, onDelete, onToggle 
       <Dialog open={showRuleForm} onOpenChange={setShowRuleForm}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingRule ? "Regel bearbeiten" : "Neue Pruefregel"}</DialogTitle>
+            <DialogTitle>{editingRule ? "Regel bearbeiten" : "Neue Prüfregel"}</DialogTitle>
             <DialogDescription>
-              Definiere ein RegExp-Pattern, das bei jedem Code Review geprueft wird.
+              Definiere ein RegExp-Pattern, das bei jedem Code Review geprüft wird.
             </DialogDescription>
           </DialogHeader>
           <CustomRuleForm

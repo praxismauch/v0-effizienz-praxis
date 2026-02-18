@@ -110,8 +110,8 @@ function LoginForm() {
       if (error.message) {
         const msg = error.message.toLowerCase()
         if (msg.includes("genehmigung") || msg.includes("approval") || msg.includes("pending")) {
-          // Inactive user - redirect to pending page
-          router.push("/auth/pending-approval")
+          // Inactive user - redirect to pending page with email for activation request
+          router.push(`/auth/pending-approval?email=${encodeURIComponent(email)}`)
           return
         } else if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("fetch")) {
           errorMessage = "Verbindungsfehler - bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."

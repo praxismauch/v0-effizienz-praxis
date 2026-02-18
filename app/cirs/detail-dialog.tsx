@@ -74,7 +74,7 @@ export function DetailDialog({ open, onOpenChange, incident }: DetailDialogProps
 
           {incident.immediate_actions && (
             <div>
-              <Label className="font-semibold">{"Sofortmassnahmen"}</Label>
+              <Label className="font-semibold">{"Sofortmaßnahmen"}</Label>
               <p className="text-sm mt-2 whitespace-pre-wrap">{incident.immediate_actions}</p>
             </div>
           )}
@@ -92,7 +92,7 @@ export function DetailDialog({ open, onOpenChange, incident }: DetailDialogProps
 
         <div className="flex justify-end">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {"Schliessen"}
+            {"Schließen"}
           </Button>
         </div>
       </DialogContent>

@@ -110,7 +110,7 @@ export const CATEGORY_META: Record<Category, CategoryMeta> = {
   "error-handling": { label: "Fehlerbehandlung", icon: h(Bug, iconProps), color: "text-yellow-600" },
   typescript: { label: "TypeScript", icon: h(Code2, iconProps), color: "text-blue-600" },
   "nextjs-patterns": { label: "Next.js Patterns", icon: h(Layers, iconProps), color: "text-foreground" },
-  "code-quality": { label: "Code-Qualitaet", icon: h(FileCode, iconProps), color: "text-purple-600" },
+  "code-quality": { label: "Code-Qualität", icon: h(FileCode, iconProps), color: "text-purple-600" },
   accessibility: { label: "Barrierefreiheit", icon: h(Accessibility, iconProps), color: "text-teal-600" },
   "api-design": { label: "API Design", icon: h(Server, iconProps), color: "text-indigo-600" },
   database: { label: "Datenbank", icon: h(Database, iconProps), color: "text-emerald-600" },
@@ -226,9 +226,9 @@ export function generateAllRecommendationsPrompt(data: ReviewData): string {
 
   lines.push(`${"=".repeat(60)}`)
   lines.push("")
-  lines.push("Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitaetsprobleme.")
-  lines.push("Danach die Warnungen nach Prioritaet abarbeiten.")
-  lines.push("Info-Findings sind Verbesserungsvorschlaege fuer hoehere Code-Qualitaet.")
+  lines.push("Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitätsprobleme.")
+  lines.push("Danach die Warnungen nach Priorität abarbeiten.")
+  lines.push("Info-Findings sind Verbesserungsvorschläge für höhere Code-Qualität.")
 
   return lines.join("\n")
 }

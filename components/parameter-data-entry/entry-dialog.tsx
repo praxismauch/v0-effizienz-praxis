@@ -228,7 +228,7 @@ export function EntryDialog({
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {t("kpi.duplicate_entry_warning", "Ein Wert existiert bereits fuer diesen Parameter")}
+              {t("kpi.duplicate_entry_warning", "Ein Wert existiert bereits für diesen Parameter")}
               <div className="mt-2 p-2 bg-background rounded border">
                 <div className="font-medium">
                   {t("kpi.current_value", "Aktueller Wert:")} {String(duplicateWarning.existingValue.value)}
@@ -264,11 +264,11 @@ export function EntryDialog({
               setParameterId(v)
               setDuplicateWarning({ show: false, existingValue: null })
             }}>
-              <SelectTrigger><SelectValue placeholder={t("kpi.select_parameter", "Parameter auswahlen")} /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t("kpi.select_parameter", "Parameter auswählen")} /></SelectTrigger>
               <SelectContent>
                 {filteredParameters.length === 0 ? (
                   <div className="p-2 text-sm text-muted-foreground text-center">
-                    {t("kpi.no_parameters", "Keine Parameter verfuegbar")}
+                    {t("kpi.no_parameters", "Keine Parameter verfügbar")}
                   </div>
                 ) : filteredParameters.map((p) => (
                   <SelectItem key={p.id} value={p.id}>

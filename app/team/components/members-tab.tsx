@@ -11,20 +11,33 @@ import { Users, Calendar, Building2, Tag, Search, X } from "lucide-react"
 import type { TeamMember } from "../types"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-import { getRoleLabel, AVAILABLE_ROLES } from "@/lib/roles"
+import { getRoleLabel } from "@/lib/roles"
+import { getRoleSortIndex } from "@/lib/team-role-order"
 
 interface MembersTabProps {
   teamMembers: TeamMember[]
   teams?: Array<{ id: string; name: string; color?: string }>
+  roleOrder?: string[]
   onAddMember: () => void
   onEditMember: (member: TeamMember) => void
   onDeleteMember: (member: TeamMember) => void
 }
 
-export default function MembersTab({ teamMembers, teams = [], onAddMember, onEditMember, onDeleteMember }: MembersTabProps) {
+export default function MembersTab({ teamMembers, teams = [], roleOrder, onAddMember, onEditMember, onDeleteMember }: MembersTabProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+
+  // Derive available roles from actual team members, sorted by practice role order
+  const availableRoles = useMemo(() => {
+    const rolesSet = new Set<string>()
+    ;(teamMembers || []).forEach((m) => {
+      if (m.role) rolesSet.add(m.role)
+    })
+    return Array.from(rolesSet).sort((a, b) => {
+      return getRoleSortIndex(a, roleOrder) - getRoleSortIndex(b, roleOrder)
+    })
+  }, [teamMembers, roleOrder])
 
   const filteredMembers = useMemo(() => {
     let members = teamMembers || []
@@ -141,9 +154,9 @@ export default function MembersTab({ teamMembers, teams = [], onAddMember, onEdi
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle Gruppen</SelectItem>
-            {AVAILABLE_ROLES.map((role) => (
-              <SelectItem key={role.value} value={role.value}>
-                {role.label}
+            {availableRoles.map((role) => (
+              <SelectItem key={role} value={role}>
+                {getRoleLabel(role)}
               </SelectItem>
             ))}
           </SelectContent>

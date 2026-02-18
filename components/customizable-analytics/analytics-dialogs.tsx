@@ -170,10 +170,10 @@ export function CustomDiagramDialog({ open, onOpenChange, availableParameters, o
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label>KPI-Parameter auswahlen</Label>
+            <Label>KPI-Parameter auswählen</Label>
             <ScrollArea className="h-48 rounded-md border p-4">
               {availableParameters.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Keine KPI-Parameter verfugbar.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">Keine KPI-Parameter verfügbar.</p>
               ) : (
                 <div className="space-y-2">
                   {availableParameters.map((param: any) => (

@@ -138,7 +138,7 @@ export function AcademyPageClient() {
 
   return (
     <LandingPageLayout>
-      <div className="container mx-auto py-6 px-4 max-w-7xl">
+      <div className="w-full py-6 px-4">
         <BadgeEarnedPopup badge={pendingBadge} onClose={handleBadgePopupClose} />
         {content}
       </div>

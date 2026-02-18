@@ -1,3 +1,4 @@
+// Server and admin Supabase clients for route handlers and server components
 import { createServerClient as supabaseCreateServerClient } from "@supabase/ssr"
 import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js"
 import { getSupabaseUrl, getSupabaseAnonKey, getSupabaseServiceRoleKey, hasSupabaseConfig, hasSupabaseAdminConfig } from "./config"

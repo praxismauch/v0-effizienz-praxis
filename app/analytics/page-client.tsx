@@ -25,8 +25,8 @@ export default function AnalyticsPageClient() {
     <>
       <div className="flex items-center justify-between mb-4">
         <PageHeader
-          title={t("analytics.title", "Practice Analytics")}
-          subtitle={t("analytics.subtitle", "Comprehensive insights into your practice performance and care metrics")}
+          title={t("analytics.title", "Praxis-Auswertung")}
+          subtitle={t("analytics.subtitle", "Umfassende Einblicke in Ihre Praxisleistung und Versorgungskennzahlen")}
         />
         <AIAnalyticsInsightsDialog />
       </div>

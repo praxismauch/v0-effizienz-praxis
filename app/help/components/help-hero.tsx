@@ -88,7 +88,7 @@ export function HelpHero({ searchQuery, setSearchQuery, onSearchChange, onSearch
           >
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              <span>35+ Artikel</span>
+              <span>40+ Artikel</span>
             </div>
             <div className="flex items-center gap-2">
               <Video className="h-4 w-4" />

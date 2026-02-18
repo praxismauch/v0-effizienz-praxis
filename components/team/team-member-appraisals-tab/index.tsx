@@ -11,7 +11,7 @@ export function TeamMemberAppraisalsTab(props: AppraisalsTabProps) {
   const state = useAppraisals(props)
 
   if (!practiceId || !memberId) {
-    return <div>Keine Praxis-ID oder Mitarbeiter-ID verfuegbar</div>
+    return <div>Keine Praxis-ID oder Mitarbeiter-ID verfügbar</div>
   }
 
   if (state.loading && state.skills.length === 0) {

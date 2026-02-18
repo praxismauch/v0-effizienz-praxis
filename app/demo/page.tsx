@@ -5,9 +5,18 @@ import { ArrowRight, Calendar, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { LandingPageLayout } from "@/components/landing-page-layout"
 
-export const metadata = {
-  title: "Demo buchen - Effizienz Praxis",
-  description: "Buchen Sie eine persönliche Demo und entdecken Sie, wie unsere Plattform Ihre Praxisabläufe optimiert.",
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Kostenlose Demo buchen | Praxismanagement live erleben",
+  description:
+    "Buchen Sie Ihre persönliche Demo der Effizienz Praxis Software. Erleben Sie live, wie KI-gestütztes Praxismanagement Ihre Abläufe optimiert. Unverbindlich & kostenlos in 30 Minuten.",
+  alternates: { canonical: "/demo" },
+  openGraph: {
+    title: "Kostenlose Demo buchen | Effizienz Praxis",
+    description: "Persönliche Live-Demo: Erleben Sie modernes Praxismanagement mit KI. Unverbindlich in 30 Minuten.",
+    url: "/demo",
+  },
 }
 
 export default function DemoPage() {

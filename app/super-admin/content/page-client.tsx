@@ -16,7 +16,7 @@ const DocumentsManager = dynamic(() => import("@/components/documents-manager"),
   ssr: false,
 })
 
-const DefaultTeamsManager = dynamic(() => import("@/components/default-teams-manager"), {
+const TeamsManager = dynamic(() => import("@/components/super-admin/teams-manager"), {
   loading: () => (
     <div className="flex items-center justify-center p-8">
       <Loader2 className="h-8 w-8 animate-spin" />
@@ -107,7 +107,7 @@ function ContentManagementContent() {
         </TabsContent>
 
         <TabsContent value="teams" className="mt-6 space-y-4">
-          <DefaultTeamsManager />
+          <TeamsManager />
         </TabsContent>
 
         <TabsContent value="event-types" className="mt-6 space-y-4">

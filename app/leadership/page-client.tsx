@@ -169,11 +169,11 @@ export default function LeadershipPageClient() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 max-w-7xl space-y-6">
+      <div className="w-full p-6 space-y-6">
         {/* Header */}
         <PageHeader
-          title="Fuehrung & Wohlbefinden"
-          subtitle="PERMA-V basiertes Leadership Dashboard fuer nachhaltige Teamfuehrung"
+          title="Führung & Wohlbefinden"
+          subtitle="PERMA-V basiertes Leadership Dashboard für nachhaltige Teamführung"
           actions={
             <>
               <Button variant="outline" onClick={fetchPermaData} disabled={isLoading}>
@@ -182,7 +182,7 @@ export default function LeadershipPageClient() {
               </Button>
               <Button onClick={() => setShowAssessmentDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Selbsteinschaetzung
+                Selbsteinschätzung
               </Button>
             </>
           }

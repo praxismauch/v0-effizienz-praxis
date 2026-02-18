@@ -33,7 +33,7 @@ export function ScreenshotRunHistory({
               <History className="h-4 w-4" />
               Verlauf
             </CardTitle>
-            <CardDescription>{runs.length} gespeicherte Laeufe</CardDescription>
+            <CardDescription>{runs.length} gespeicherte Läufe</CardDescription>
           </div>
           <Button variant="ghost" size="sm" onClick={onLoadRuns} disabled={loadingRuns}>
             <RefreshCw className={`h-4 w-4 ${loadingRuns ? "animate-spin" : ""}`} />
@@ -48,7 +48,7 @@ export function ScreenshotRunHistory({
           </div>
         ) : runs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
-            Noch keine Laeufe gespeichert
+            Noch keine Läufe gespeichert
           </p>
         ) : (
           <ScrollArea className="h-[300px]">
@@ -82,7 +82,7 @@ export function ScreenshotRunHistory({
                       </Badge>
                       <button
                         type="button"
-                        title="Lauf loeschen"
+                        title="Lauf löschen"
                         className="p-1 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
                         onClick={(e) => {
                           e.stopPropagation()

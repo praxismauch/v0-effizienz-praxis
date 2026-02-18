@@ -32,7 +32,7 @@ export function OverviewTab({
       {/* Categories Grid */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Kategorien durchsuchen</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {categories.map((category) => {
             const Icon = category.icon
             return (

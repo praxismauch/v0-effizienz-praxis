@@ -63,9 +63,9 @@ export function AppraisalDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>
-            {editingAppraisal ? "Mitarbeitergespraech bearbeiten" : "Neues Mitarbeitergespraech"}
+            {editingAppraisal ? "Mitarbeitergespräch bearbeiten" : "Neues Mitarbeitergespräch"}
           </DialogTitle>
-          <DialogDescription>Strukturiertes Gespraech fuer {memberName}</DialogDescription>
+          <DialogDescription>Strukturiertes Gespräch für {memberName}</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
@@ -84,15 +84,15 @@ export function AppraisalDialog({
               <TabsContent value="performance" className="mt-0 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Gespraechsart</Label>
+                    <Label>Gesprächsart</Label>
                     <Select value={formData.appraisal_type || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, appraisal_type: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Gespraechsart waehlen" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Gesprächsart wählen" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="annual">Jahresgespraech</SelectItem>
-                        <SelectItem value="semi_annual">Halbjahresgespraech</SelectItem>
-                        <SelectItem value="quarterly">Quartalsgespraech</SelectItem>
-                        <SelectItem value="probation">Probezeit-Gespraech</SelectItem>
-                        <SelectItem value="ad_hoc">Zwischengespraech</SelectItem>
+                        <SelectItem value="annual">Jahresgespräch</SelectItem>
+                        <SelectItem value="semi_annual">Halbjahresgespräch</SelectItem>
+                        <SelectItem value="quarterly">Quartalsgespräch</SelectItem>
+                        <SelectItem value="probation">Probezeit-Gespräch</SelectItem>
+                        <SelectItem value="ad_hoc">Zwischengespräch</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -169,7 +169,7 @@ export function AppraisalDialog({
                   <div className="grid grid-cols-2 gap-4">
                     {aiSuggestions.strengths && (
                       <Card className="bg-emerald-50 border-emerald-200">
-                        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-emerald-700"><Award className="w-4 h-4" />Staerken (KI-Analyse)</CardTitle></CardHeader>
+                        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-emerald-700"><Award className="w-4 h-4" />Stärken (KI-Analyse)</CardTitle></CardHeader>
                         <CardContent><ul className="space-y-1">{aiSuggestions.strengths.map((s, i) => (<li key={i} className="text-sm flex items-start gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />{s}</li>))}</ul></CardContent>
                       </Card>
                     )}
@@ -269,8 +269,8 @@ export function AppraisalDialog({
                   <Card className="bg-muted/50">
                     <CardContent className="py-8 text-center">
                       <GraduationCap className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                      <p className="font-medium mb-1">Keine Skills verfuegbar</p>
-                      <p className="text-sm text-muted-foreground mb-4">Fuer diesen Mitarbeiter sind noch keine Skills definiert</p>
+                      <p className="font-medium mb-1">Keine Skills verfügbar</p>
+                      <p className="text-sm text-muted-foreground mb-4">Für diesen Mitarbeiter sind noch keine Skills definiert</p>
                       <Button variant="outline" size="sm" onClick={onRefreshCompetencies}><RefreshCw className="w-4 h-4 mr-2" />Skills laden</Button>
                     </CardContent>
                   </Card>
@@ -280,7 +280,7 @@ export function AppraisalDialog({
               {/* Goals Tab */}
               <TabsContent value="goals" className="mt-0 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Ziele setzen & ueberpruefen</h4>
+                  <h4 className="font-medium">Ziele setzen & überprüfen</h4>
                   <Button variant="outline" size="sm" onClick={() => onAIGenerate("goals")} disabled={aiLoading === "goals"}>
                     {aiLoading === "goals" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                     KI-Ziele vorschlagen
@@ -288,7 +288,7 @@ export function AppraisalDialog({
                 </div>
                 {aiSuggestions.goals && aiSuggestions.goals.length > 0 && (
                   <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />KI-Vorschlaege (basierend auf Skill-Gaps)</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />KI-Vorschläge (basierend auf Skill-Gaps)</CardTitle></CardHeader>
                     <CardContent className="space-y-2">
                       {aiSuggestions.goals.map((goal, idx) => (
                         <div key={idx} className="p-3 rounded-lg bg-background border flex items-start justify-between">
@@ -338,7 +338,7 @@ export function AppraisalDialog({
                             const updated = [...(formData.new_goals || [])]; updated[idx] = { ...updated[idx], priority: v }
                             setFormData((prev) => ({ ...prev, new_goals: updated }))
                           }}>
-                            <SelectTrigger><SelectValue placeholder="Prioritaet" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Priorität" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="high">Hoch</SelectItem>
                               <SelectItem value="medium">Mittel</SelectItem>
@@ -458,12 +458,12 @@ export function AppraisalDialog({
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label>Staerken</Label>
+                      <Label>Stärken</Label>
                       <Button variant="ghost" size="sm" onClick={() => onAIGenerate("feedback-strengths")} disabled={aiLoading === "feedback-strengths"}>
                         {aiLoading === "feedback-strengths" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       </Button>
                     </div>
-                    <Textarea placeholder="Welche besonderen Staerken zeigt der Mitarbeiter?" value={formData.strengths || ""} onChange={(e) => setFormData((prev) => ({ ...prev, strengths: e.target.value }))} rows={3} />
+                    <Textarea placeholder="Welche besonderen Stärken zeigt der Mitarbeiter?" value={formData.strengths || ""} onChange={(e) => setFormData((prev) => ({ ...prev, strengths: e.target.value }))} rows={3} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -481,12 +481,12 @@ export function AppraisalDialog({
                   </div>
                   <div className="space-y-2">
                     <Label>Herausforderungen</Label>
-                    <Textarea placeholder="Mit welchen Herausforderungen hatte der Mitarbeiter zu kaempfen?" value={formData.challenges || ""} onChange={(e) => setFormData((prev) => ({ ...prev, challenges: e.target.value }))} rows={3} />
+                    <Textarea placeholder="Mit welchen Herausforderungen hatte der Mitarbeiter zu kämpfen?" value={formData.challenges || ""} onChange={(e) => setFormData((prev) => ({ ...prev, challenges: e.target.value }))} rows={3} />
                   </div>
                   <Separator />
                   <div className="space-y-2">
-                    <Label>Selbsteinschaetzung des Mitarbeiters</Label>
-                    <Textarea placeholder="Wie schaetzt der Mitarbeiter seine eigene Leistung ein?" value={formData.employee_self_assessment || ""} onChange={(e) => setFormData((prev) => ({ ...prev, employee_self_assessment: e.target.value }))} rows={3} />
+                    <Label>Selbsteinschätzung des Mitarbeiters</Label>
+                    <Textarea placeholder="Wie schätzt der Mitarbeiter seine eigene Leistung ein?" value={formData.employee_self_assessment || ""} onChange={(e) => setFormData((prev) => ({ ...prev, employee_self_assessment: e.target.value }))} rows={3} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -495,7 +495,7 @@ export function AppraisalDialog({
                         {aiLoading === "feedback-overall" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       </Button>
                     </div>
-                    <Textarea placeholder="Gesamtfeedback der Fuehrungskraft" value={formData.manager_comments || ""} onChange={(e) => setFormData((prev) => ({ ...prev, manager_comments: e.target.value }))} rows={4} />
+                    <Textarea placeholder="Gesamtfeedback der Führungskraft" value={formData.manager_comments || ""} onChange={(e) => setFormData((prev) => ({ ...prev, manager_comments: e.target.value }))} rows={4} />
                   </div>
                 </div>
               </TabsContent>
@@ -511,7 +511,7 @@ export function AppraisalDialog({
                 </div>
                 {aiSuggestions.careerSteps && aiSuggestions.careerSteps.length > 0 && (
                   <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />KI-Karrierevorschlaege</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />KI-Karrierevorschläge</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
                       {aiSuggestions.careerSteps.map((step, idx) => (
                         <div key={idx} className="p-3 rounded-lg bg-background border">
@@ -536,11 +536,11 @@ export function AppraisalDialog({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Befoerderungsreife</Label>
+                      <Label>Beförderungsreife</Label>
                       <Select value={formData.promotion_readiness || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, promotion_readiness: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Einschaetzung waehlen" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Einschätzung wählen" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ready_now">Sofort befoerderbar</SelectItem>
+                          <SelectItem value="ready_now">Sofort beförderbar</SelectItem>
                           <SelectItem value="ready_6_months">In 6 Monaten</SelectItem>
                           <SelectItem value="ready_12_months">In 12 Monaten</SelectItem>
                           <SelectItem value="needs_development">Braucht Entwicklung</SelectItem>
@@ -551,7 +551,7 @@ export function AppraisalDialog({
                     <div className="space-y-2">
                       <Label>Nachfolgepotenzial</Label>
                       <Select value={formData.succession_potential || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, succession_potential: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Einschaetzung waehlen" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Einschätzung wählen" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="high">Hohes Potenzial</SelectItem>
                           <SelectItem value="medium">Mittleres Potenzial</SelectItem>
@@ -565,18 +565,18 @@ export function AppraisalDialog({
                   <div className="space-y-2">
                     <Label>Gehaltsempfehlung</Label>
                     <Select value={formData.salary_recommendation || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, salary_recommendation: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Empfehlung waehlen" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Empfehlung wählen" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="significant_increase">{'Deutliche Erhoehung (>10%)'}</SelectItem>
-                        <SelectItem value="moderate_increase">Moderate Erhoehung (5-10%)</SelectItem>
-                        <SelectItem value="small_increase">{'Kleine Erhoehung (<5%)'}</SelectItem>
-                        <SelectItem value="no_change">Keine Aenderung</SelectItem>
-                        <SelectItem value="review_needed">Ueberpruefung erforderlich</SelectItem>
+                        <SelectItem value="significant_increase">{'Deutliche Erhöhung (>10%)'}</SelectItem>
+                        <SelectItem value="moderate_increase">Moderate Erhöhung (5-10%)</SelectItem>
+                        <SelectItem value="small_increase">{'Kleine Erhöhung (<5%)'}</SelectItem>
+                        <SelectItem value="no_change">Keine Änderung</SelectItem>
+                        <SelectItem value="review_needed">Überprüfung erforderlich</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Naechstes Gespraech</Label>
+                    <Label>Nächstes Gespräch</Label>
                     <Input type="date" value={formData.next_review_date || ""} onChange={(e) => setFormData((prev) => ({ ...prev, next_review_date: e.target.value }))} />
                   </div>
                 </div>
@@ -588,7 +588,7 @@ export function AppraisalDialog({
         <DialogFooter className="mt-4">
           <div className="flex items-center gap-2 w-full">
             <Select value={formData.status || ""} onValueChange={(v) => setFormData((prev) => ({ ...prev, status: v }))}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status waehlen" /></SelectTrigger>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status wählen" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="draft">Entwurf</SelectItem>
                 <SelectItem value="scheduled">Geplant</SelectItem>

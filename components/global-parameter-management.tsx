@@ -903,7 +903,7 @@ export function GlobalParameterManagement() {
                     Globale KPI-Kategorien
                   </CardTitle>
                   <CardDescription>
-                    Erstellen und verwalten Sie thematische Gruppen fuer Kennzahlen. Praxen koennen diese Kategorien uebernehmen.
+                    Erstellen und verwalten Sie thematische Gruppen für Kennzahlen. Praxen können diese Kategorien übernehmen.
                   </CardDescription>
                 </div>
                 <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
@@ -917,7 +917,7 @@ export function GlobalParameterManagement() {
                     <DialogHeader>
                       <DialogTitle>Neue KPI-Kategorie erstellen</DialogTitle>
                       <DialogDescription>
-                        Erstellen Sie eine neue thematische Gruppe fuer Kennzahlen.
+                        Erstellen Sie eine neue thematische Gruppe für Kennzahlen.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -1590,7 +1590,7 @@ export function GlobalParameterManagement() {
             <DialogHeader>
               <DialogTitle>Globale KPI-Kategorie bearbeiten</DialogTitle>
               <DialogDescription>
-                Bearbeiten Sie die Kategorie-Details. Aenderungen stehen allen Praxen zur Verfuegung.
+                Bearbeiten Sie die Kategorie-Details. Änderungen stehen allen Praxen zur Verfügung.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">

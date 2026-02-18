@@ -366,12 +366,12 @@ export default function FeaturesClient() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {confirmDialog.action === "reset" ? "Einstellungen zurucksetzen?" : "Globale Einstellungen kopieren?"}
+              {confirmDialog.action === "reset" ? "Einstellungen zurücksetzen?" : "Globale Einstellungen kopieren?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmDialog.action === "reset" ? (
                 <>
-                  Alle praxis-spezifischen Einstellungen fur <strong>{selectedPracticeName}</strong> werden
+                  Alle praxis-spezifischen Einstellungen für <strong>{selectedPracticeName}</strong> werden
                   entfernt. Die Praxis verwendet dann wieder die globalen Einstellungen.
                 </>
               ) : (

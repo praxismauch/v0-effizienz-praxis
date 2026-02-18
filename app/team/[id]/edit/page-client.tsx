@@ -25,7 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import AppLayout from "@/components/app-layout"
-import ArbeitsmittelAssignments from "@/components/team/arbeitsmittel-assignments"
+
 import { useSWRConfig } from "swr"
 import { SWR_KEYS } from "@/lib/swr-keys"
 import { ProfileTab } from "./profile-tab"
@@ -208,12 +208,7 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => router.push("/team")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Zuruck zum Team
-            {(formData.firstName || formData.lastName) && (
-              <span className="ml-2 text-muted-foreground">
-                {"\u2022"} {formData.firstName} {formData.lastName}
-              </span>
-            )}
+            Zurück zum Team
           </Button>
           <div className="flex gap-2">
             {canDeleteMember && (
@@ -221,18 +216,18 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" disabled={isDeleting}>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    {isDeleting ? "Wird geloscht..." : "Mitglied loschen"}
+                    {isDeleting ? "Wird gelöscht..." : "Mitglied löschen"}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Teammitglied loschen?</AlertDialogTitle>
+                    <AlertDialogTitle>Teammitglied löschen?</AlertDialogTitle>
                     <AlertDialogDescription>
                       {"Sind Sie sicher, dass Sie "}
                       <span className="font-semibold">
                         {formData.firstName} {formData.lastName}
                       </span>
-                      {" loschen mochten? Das Mitglied wird deaktiviert und kann sich nicht mehr anmelden."}
+                      {" löschen möchten? Das Mitglied wird deaktiviert und kann sich nicht mehr anmelden."}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -287,7 +282,6 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
               <FileText className="h-3 w-3" />
               Dokumente
             </TabsTrigger>
-            <TabsTrigger value="arbeitsmittel">Arbeitsmittel</TabsTrigger>
             <TabsTrigger value="vaccinations" className="gap-1">
               <Syringe className="h-3 w-3" />
               Impfstatus
@@ -319,19 +313,6 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="arbeitsmittel" className="space-y-4">
-            {member ? (
-              <ArbeitsmittelAssignments teamMemberId={memberId} practiceId={member.practice_id || ""} />
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                  <Package className="h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Mitarbeiterdaten werden geladen...</p>
                 </CardContent>
               </Card>

@@ -191,7 +191,7 @@ export function FormScanTab({
             Form-Scan
           </CardTitle>
           <CardDescription>
-            Scannt alle Projekt-Dateien nach Formularen (fetch POST/PATCH/PUT), ordnet sie API-Routen und DB-Tabellen zu und prueft Feld-Kompatibilitaet.
+            Scannt alle Projekt-Dateien nach Formularen (fetch POST/PATCH/PUT), ordnet sie API-Routen und DB-Tabellen zu und prüft Feld-Kompatibilität.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -286,7 +286,7 @@ export function FormScanTab({
                   })
 
                   if (filtered.length === 0) {
-                    return <div className="py-8 text-center text-muted-foreground text-sm">Keine Ergebnisse fuer die ausgewaehlten Filter.</div>
+                    return <div className="py-8 text-center text-muted-foreground text-sm">Keine Ergebnisse für die ausgewählten Filter.</div>
                   }
 
                   // Group by component file
@@ -417,11 +417,11 @@ export function FormScanTab({
                                     if (result.formFields.length > 0) prompt += `- Formular-Felder: ${result.formFields.join(", ")}\n\n`
                                     prompt += `Probleme:\n`
                                     result.issues.forEach((i) => { prompt += `- ${i.severity.toUpperCase()}: ${i.message}\n` })
-                                    prompt += `\nBitte analysiere das Problem und behebe es. Fuer DB-Aenderungen nutze supabase_execute_sql.`
+                                    prompt += `\nBitte analysiere das Problem und behebe es. Für DB-Änderungen nutze supabase_execute_sql.`
                                     onCopy(prompt)
                                   }}>
                                     <Copy className="h-3 w-3 mr-1" />
-                                    Fix in v0 einfuegen
+                                    Fix in v0 einfügen
                                   </Button>
                                 )}
                               </CardContent>

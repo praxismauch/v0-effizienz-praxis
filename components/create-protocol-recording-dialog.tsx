@@ -494,7 +494,7 @@ export default function CreateProtocolRecordingDialog({
                 ) : (
                   <>
                     <FileAudio className="h-4 w-4" />
-                    Datei auswaehlen
+                    Datei auswählen
                   </>
                 )}
               </Button>

@@ -72,6 +72,13 @@ export function useAcademy() {
     color: "#3b82f6", rarity: "common", xp_reward: 50, is_active: true, criteria: {} as any,
   })
 
+  const [quizForm, setQuizForm] = useState({
+    title: "", description: "", quiz_type: "multiple_choice",
+    passing_score: 70, max_attempts: 3, time_limit_minutes: 15,
+    xp_reward: 50, randomize_questions: false, show_correct_answers: true,
+    course_id: "", module_id: "", lesson_id: "",
+  })
+
   // Fetch functions
   const fetchCourses = useCallback(async () => {
     try {
@@ -165,6 +172,13 @@ export function useAcademy() {
     color: "#3b82f6", rarity: "common", xp_reward: 50, is_active: true, criteria: {},
   })
 
+  const resetQuizForm = () => setQuizForm({
+    title: "", description: "", quiz_type: "multiple_choice",
+    passing_score: 70, max_attempts: 3, time_limit_minutes: 15,
+    xp_reward: 50, randomize_questions: false, show_correct_answers: true,
+    course_id: "", module_id: "", lesson_id: "",
+  })
+
   // Save handlers
   const handleSaveCourse = async () => {
     const isEditing = !!editingCourse
@@ -222,6 +236,29 @@ export function useAcademy() {
     }
   }
 
+  const handleSaveQuiz = async () => {
+    const isEditing = !!editingQuiz
+    const previousQuizzes = [...quizzes]
+    try {
+      const optimistic = { ...quizForm, id: editingQuiz?.id || `temp-${Date.now()}`, questions: editingQuiz?.questions || [] } as Quiz
+      setQuizzes(isEditing ? quizzes.map((q) => (q.id === editingQuiz!.id ? optimistic : q)) : [...quizzes, optimistic])
+      const url = isEditing
+        ? `/api/practices/${PRACTICE_ID}/academy/quizzes/${editingQuiz!.id}`
+        : `/api/practices/${PRACTICE_ID}/academy/quizzes`
+      const response = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(quizForm),
+      })
+      if (!response.ok) throw new Error("Failed")
+      toast({ title: isEditing ? "Quiz aktualisiert" : "Quiz erstellt", description: `"${quizForm.title}" erfolgreich.` })
+      setShowQuizDialog(false); setEditingQuiz(null); resetQuizForm(); fetchQuizzes()
+    } catch {
+      setQuizzes(previousQuizzes)
+      toast({ title: "Fehler", description: "Problem beim Speichern des Quiz.", variant: "destructive" })
+    }
+  }
+
   const handleDelete = async () => {
     if (!deleteItem) return
     const prev = { courses: [...courses], quizzes: [...quizzes], badges: [...badges], modules: [...courseModules] }
@@ -236,7 +273,7 @@ export function useAcademy() {
       }
       const response = await fetch(endpoint, { method: "DELETE" })
       if (!response.ok) throw new Error("Failed")
-      toast({ title: "Geloescht", description: `"${deleteItem.name}" wurde geloescht.` })
+      toast({ title: "Gelöscht", description: `"${deleteItem.name}" wurde gelöscht.` })
       setShowDeleteDialog(false); setDeleteItem(null)
       if (deleteItem.type === "course") fetchCourses()
       if (deleteItem.type === "quiz") fetchQuizzes()
@@ -244,7 +281,7 @@ export function useAcademy() {
       if (selectedCourse && (deleteItem.type === "module" || deleteItem.type === "lesson")) fetchCourseModules(selectedCourse.id)
     } catch {
       setCourses(prev.courses); setQuizzes(prev.quizzes); setBadges(prev.badges); setCourseModules(prev.modules)
-      toast({ title: "Fehler", description: "Problem beim Loeschen.", variant: "destructive" })
+      toast({ title: "Fehler", description: "Problem beim Löschen.", variant: "destructive" })
     }
   }
 
@@ -328,6 +365,20 @@ export function useAcademy() {
     setShowBadgeDialog(true)
   }
 
+  const openEditQuiz = (quiz: Quiz) => {
+    setEditingQuiz(quiz)
+    setQuizForm({
+      title: quiz.title || "", description: quiz.description || "",
+      quiz_type: quiz.quiz_type || "multiple_choice",
+      passing_score: quiz.passing_score || 70, max_attempts: quiz.max_attempts || 3,
+      time_limit_minutes: quiz.time_limit_minutes || 15, xp_reward: quiz.xp_reward || 50,
+      randomize_questions: quiz.randomize_questions || false,
+      show_correct_answers: quiz.show_correct_answers !== false,
+      course_id: quiz.course_id || "", module_id: quiz.module_id || "", lesson_id: quiz.lesson_id || "",
+    })
+    setShowQuizDialog(true)
+  }
+
   const handleSelectCourse = (course: Course) => {
     setSelectedCourse(course)
     fetchCourseModules(course.id)
@@ -364,11 +415,12 @@ export function useAcademy() {
     editingBadge, setEditingBadge, deleteItem, setDeleteItem,
     // Forms
     courseForm, setCourseForm, moduleForm, setModuleForm, lessonForm, setLessonForm, badgeForm, setBadgeForm,
+    quizForm, setQuizForm,
     // Actions
-    handleSaveCourse, handleSaveModule, handleSaveBadge, handleDelete,
+    handleSaveCourse, handleSaveModule, handleSaveBadge, handleSaveQuiz, handleDelete,
     handleGenerateAiCourse, handleSaveAiCourse,
-    openEditCourse, openEditBadge, handleSelectCourse, toggleModuleExpanded,
-    resetCourseForm, resetModuleForm, resetLessonForm, resetBadgeForm,
+    openEditCourse, openEditBadge, openEditQuiz, handleSelectCourse, toggleModuleExpanded,
+    resetCourseForm, resetModuleForm, resetLessonForm, resetBadgeForm, resetQuizForm,
     setSelectedCourse, fetchCourseModules,
   }
 }

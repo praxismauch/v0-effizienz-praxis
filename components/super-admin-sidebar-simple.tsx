@@ -48,6 +48,9 @@ import {
   MessageSquare,
   Cog,
   HardDrive,
+  CheckCircle2,
+  Search as SearchIcon,
+  UserCog,
 } from "lucide-react"
 
 type BadgeType =
@@ -442,9 +445,9 @@ export function SuperAdminSidebarSimple() {
       items: [
         {
           id: "practices",
-          label: "Praxen",
+          label: "Praxen Verwaltung",
           icon: Building2,
-          href: "/super-admin/verwaltung?tab=practices",
+          href: "/super-admin/verwaltung",
           badge: true,
           badgeType: "practices" as const,
         },
@@ -452,7 +455,7 @@ export function SuperAdminSidebarSimple() {
           id: "users",
           label: "Benutzer",
           icon: Users,
-          href: "/super-admin/verwaltung?tab=users",
+          href: "/super-admin/users",
           badge: true,
           badgeType: "totalUsers" as const,
         },
@@ -469,6 +472,18 @@ export function SuperAdminSidebarSimple() {
           href: "/super-admin/waitlist",
           badge: true,
           badgeType: "waitlist" as const,
+        },
+        {
+          id: "approvals",
+          label: "Genehmigungen",
+          icon: CheckCircle2,
+          href: "/super-admin/approvals",
+        },
+        {
+          id: "practice-management",
+          label: "Praxisverwaltung",
+          icon: UserCog,
+          href: "/super-admin/practice-management",
         },
       ],
     },
@@ -504,6 +519,12 @@ export function SuperAdminSidebarSimple() {
       id: "marketing",
       label: "Marketing",
       items: [
+        {
+          id: "marketing-seo",
+          label: "Marketing & SEO",
+          icon: SearchIcon,
+          href: "/super-admin/marketing",
+        },
         {
           id: "landingpages",
           label: "Landingpages",

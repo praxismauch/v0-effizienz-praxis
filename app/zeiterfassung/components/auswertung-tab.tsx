@@ -4,20 +4,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Download, Calendar, Clock, TrendingUp, BarChart3 } from "lucide-react"
+import { Loader2, Download, Calendar, Clock, TrendingUp, BarChart3, Building2, Home, Car } from "lucide-react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns"
 import { de } from "date-fns/locale"
-import type { TimeEntry } from "../types"
+import type { TimeBlock } from "../types"
 
 interface AuswertungTabProps {
-  timeEntries: TimeEntry[]
+  timeEntries: TimeBlock[]
   isLoading: boolean
   selectedMonth: Date
   onMonthChange: (date: Date) => void
 }
 
+const locationLabels: Record<string, string> = {
+  office: "Praxis vor Ort",
+  homeoffice: "Homeoffice",
+  mobile: "Mobil / Außentermin",
+}
+
 export default function AuswertungTab({
-  timeEntries,
+  timeEntries: blocks,
   isLoading,
   selectedMonth,
   onMonthChange,
@@ -26,29 +32,46 @@ export default function AuswertungTab({
   const monthEnd = endOfMonth(selectedMonth)
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
-  // Calculate statistics
-  const totalHours = timeEntries.reduce((sum, entry) => {
-    if (entry.total_hours) return sum + entry.total_hours
-    if (entry.start_time && entry.end_time) {
-      const start = new Date(`2000-01-01T${entry.start_time}`)
-      const end = new Date(`2000-01-01T${entry.end_time}`)
-      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-      return sum + Math.max(0, hours - (entry.break_duration || 0) / 60)
+  // Calculate statistics from TimeBlock fields
+  const totalNetMinutes = blocks.reduce((sum, block) => {
+    if (block.net_minutes) return sum + block.net_minutes
+    // Fallback: calculate from start_time / end_time
+    if (block.start_time && block.end_time) {
+      const start = new Date(`2000-01-01T${block.start_time}`)
+      const end = new Date(`2000-01-01T${block.end_time}`)
+      const minutes = (end.getTime() - start.getTime()) / 60000
+      return sum + Math.max(0, minutes - (block.break_minutes || 0))
     }
     return sum
   }, 0)
 
-  const workDays = timeEntries.filter((e) => e.start_time && e.end_time).length
-  const avgHoursPerDay = workDays > 0 ? totalHours / workDays : 0
+  const totalHours = totalNetMinutes / 60
+  const totalBreakMinutes = blocks.reduce((sum, b) => sum + (b.break_minutes || 0), 0)
 
-  const getEntriesForDay = (day: Date) => {
-    return timeEntries.filter((entry) => isSameDay(new Date(entry.date), day))
+  const workDays = blocks.filter((b) => b.start_time && (b.end_time || b.is_open)).length
+  const uniqueWorkDays = new Set(blocks.filter((b) => b.start_time).map((b) => b.date)).size
+  const avgHoursPerDay = uniqueWorkDays > 0 ? totalHours / uniqueWorkDays : 0
+
+  // Location breakdown
+  const locationBreakdown = blocks.reduce(
+    (acc, block) => {
+      const loc = block.work_location || "office"
+      acc[loc] = (acc[loc] || 0) + 1
+      return acc
+    },
+    {} as Record<string, number>
+  )
+
+  const getBlocksForDay = (day: Date) => {
+    return blocks.filter((block) => isSameDay(new Date(block.date), day))
   }
 
-  const formatDuration = (hours: number) => {
-    const h = Math.floor(hours)
-    const m = Math.round((hours - h) * 60)
-    return `${h}h ${m}m`
+  const formatDuration = (minutes: number) => {
+    if (!minutes || isNaN(minutes)) return "0h 0min"
+    const h = Math.floor(Math.abs(minutes) / 60)
+    const m = Math.round(Math.abs(minutes) % 60)
+    const sign = minutes < 0 ? "-" : ""
+    return `${sign}${h}h ${m}min`
   }
 
   // Generate month options (last 12 months)
@@ -102,7 +125,12 @@ export default function AuswertungTab({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-2xl font-bold">{formatDuration(totalHours)}</span>
+            <span className="text-2xl font-bold">{formatDuration(totalNetMinutes)}</span>
+            {totalBreakMinutes > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                davon {formatDuration(totalBreakMinutes)} Pause
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -114,7 +142,8 @@ export default function AuswertungTab({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-2xl font-bold">{workDays}</span>
+            <span className="text-2xl font-bold">{uniqueWorkDays}</span>
+            <p className="text-xs text-muted-foreground mt-1">{blocks.length} Einträge gesamt</p>
           </CardContent>
         </Card>
 
@@ -126,7 +155,7 @@ export default function AuswertungTab({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-2xl font-bold">{formatDuration(avgHoursPerDay)}</span>
+            <span className="text-2xl font-bold">{formatDuration(avgHoursPerDay * 60)}</span>
           </CardContent>
         </Card>
 
@@ -134,11 +163,21 @@ export default function AuswertungTab({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
-              Einträge
+              Arbeitsorte
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-2xl font-bold">{timeEntries.length}</span>
+            <div className="space-y-1">
+              {Object.entries(locationBreakdown).map(([loc, count]) => (
+                <div key={loc} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{locationLabels[loc] || loc}</span>
+                  <Badge variant="secondary" className="text-xs">{count}x</Badge>
+                </div>
+              ))}
+              {Object.keys(locationBreakdown).length === 0 && (
+                <span className="text-sm text-muted-foreground">Keine Daten</span>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -164,9 +203,18 @@ export default function AuswertungTab({
 
             {/* Days */}
             {daysInMonth.map((day) => {
-              const entries = getEntriesForDay(day)
-              const dayHours = entries.reduce((sum, e) => sum + (e.total_hours || 0), 0)
-              const hasEntries = entries.length > 0
+              const dayBlocks = getBlocksForDay(day)
+              const dayMinutes = dayBlocks.reduce((sum, b) => {
+                if (b.net_minutes) return sum + b.net_minutes
+                if (b.start_time && b.end_time) {
+                  const start = new Date(`2000-01-01T${b.start_time}`)
+                  const end = new Date(`2000-01-01T${b.end_time}`)
+                  return sum + Math.max(0, (end.getTime() - start.getTime()) / 60000 - (b.break_minutes || 0))
+                }
+                return sum
+              }, 0)
+              const dayHours = dayMinutes / 60
+              const hasEntries = dayBlocks.length > 0
               const isWeekend = day.getDay() === 0 || day.getDay() === 6
 
               return (
@@ -197,29 +245,41 @@ export default function AuswertungTab({
           <CardTitle>Detaillierte Einträge</CardTitle>
         </CardHeader>
         <CardContent>
-          {timeEntries.length === 0 ? (
+          {blocks.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">Keine Einträge für diesen Monat</p>
           ) : (
             <div className="space-y-2">
-              {timeEntries
+              {blocks
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                .map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{format(new Date(entry.date), "EEEE, dd.MM.yyyy", { locale: de })}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {entry.start_time} - {entry.end_time}
-                        {entry.break_duration ? ` (${entry.break_duration} Min. Pause)` : ""}
-                      </p>
+                .map((block) => {
+                  const netMin = block.net_minutes || 0
+                  return (
+                    <div key={block.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium">
+                          {format(new Date(block.date), "EEEE, dd.MM.yyyy", { locale: de })}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {block.start_time?.slice(0, 5)} - {block.end_time ? block.end_time.slice(0, 5) : "offen"}
+                          {block.break_minutes ? ` (${block.break_minutes} Min. Pause)` : ""}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="secondary">{formatDuration(netMin)}</Badge>
+                        {block.work_location && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {locationLabels[block.work_location] || block.work_location}
+                          </p>
+                        )}
+                        {block.is_open && (
+                          <Badge variant="outline" className="text-xs mt-1 text-orange-600 border-orange-300">
+                            Aktiv
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant="secondary">{formatDuration(entry.total_hours || 0)}</Badge>
-                      {entry.work_location && (
-                        <p className="text-xs text-muted-foreground mt-1">{entry.work_location}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
             </div>
           )}
         </CardContent>

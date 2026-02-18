@@ -51,7 +51,7 @@ export function SuperAdminAcademyManager() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{a.stats?.totalCourses || a.courses.length || 0}</div>
-            <p className="text-xs text-muted-foreground">{a.stats?.publishedCourses || a.courses.filter((c) => c.is_published).length || 0} veroeffentlicht</p>
+            <p className="text-xs text-muted-foreground">{a.stats?.publishedCourses || a.courses.filter((c) => c.is_published).length || 0} veröffentlicht</p>
           </CardContent>
         </Card>
         <Card>
@@ -139,12 +139,12 @@ export function SuperAdminAcademyManager() {
 
       <Tabs value={a.activeTab} onValueChange={a.setActiveTab}>
         <TabsList className="grid grid-cols-6 w-full max-w-3xl">
-          <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-2" />Uebersicht</TabsTrigger>
+          <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-2" />Übersicht</TabsTrigger>
           <TabsTrigger value="courses"><GraduationCap className="h-4 w-4 mr-2" />Kurse</TabsTrigger>
           <TabsTrigger value="quizzes"><HelpCircle className="h-4 w-4 mr-2" />Quizze</TabsTrigger>
           <TabsTrigger value="badges"><Award className="h-4 w-4 mr-2" />Badges</TabsTrigger>
           <TabsTrigger value="waitlist"><Users className="h-4 w-4 mr-2" />Warteliste</TabsTrigger>
-          <TabsTrigger value="content" disabled={!a.selectedCourse}><Layers className="h-4 w-4 mr-2" />Kursinhalt</TabsTrigger>
+          <TabsTrigger value="content"><Layers className="h-4 w-4 mr-2" />Kursinhalt</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">{renderOverview()}</TabsContent>
@@ -170,9 +170,17 @@ export function SuperAdminAcademyManager() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {a.filteredCourses.map((course) => (
-                  <Card key={course.id} className="overflow-hidden">
-                    <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                  <Card key={course.id} className="overflow-hidden group">
+                    <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative">
                       {course.thumbnail_url ? <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" /> : <GraduationCap className="h-12 w-12 text-primary/40" />}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                        <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full shadow-lg" onClick={() => a.openEditCourse(course)} title="Bearbeiten">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full shadow-lg text-destructive hover:text-destructive" onClick={() => { a.setDeleteItem({ type: "course", id: course.id, name: course.title }); a.setShowDeleteDialog(true) }} title="Löschen">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
@@ -182,13 +190,13 @@ export function SuperAdminAcademyManager() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => a.handleSelectCourse(course)}><Eye className="h-4 w-4 mr-2" />Inhalt verwalten</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => a.openEditCourse(course)}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "course", id: course.id, name: course.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Loeschen</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "course", id: course.id, name: course.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
                     </CardHeader>
                     <CardContent className="pb-4">
-                      <div className="flex items-center gap-2 flex-wrap">{diffBadge(course.difficulty_level)}<Badge variant="outline">{CATEGORIES.find((c) => c.value === course.category)?.label}</Badge>{course.is_published ? <Badge className="bg-green-500 text-white">Veroeffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}</div>
+                      <div className="flex items-center gap-2 flex-wrap">{diffBadge(course.difficulty_level)}<Badge variant="outline">{CATEGORIES.find((c) => c.value === course.category)?.label}</Badge>{course.is_published ? <Badge className="bg-green-500 text-white">Veröffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}</div>
                       <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground"><span className="flex items-center gap-1"><Clock className="h-3 w-3" />{course.estimated_hours}h</span><span className="flex items-center gap-1"><Zap className="h-3 w-3" />{course.xp_reward} XP</span><span className="flex items-center gap-1"><Users className="h-3 w-3" />{course.total_enrollments || 0}</span></div>
                     </CardContent>
                   </Card>
@@ -200,12 +208,12 @@ export function SuperAdminAcademyManager() {
 
         <TabsContent value="quizzes" className="mt-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between"><div><h3 className="text-lg font-medium">Quizze</h3></div><Button onClick={() => { a.setEditingQuiz(null); a.setShowQuizDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Quiz</Button></div>
+            <div className="flex items-center justify-between"><div><h3 className="text-lg font-medium">Quizze</h3></div><Button onClick={() => { a.resetQuizForm(); a.setEditingQuiz(null); a.setShowQuizDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Quiz</Button></div>
             {a.quizzes.length === 0 ? <Card><CardContent className="flex flex-col items-center justify-center py-12"><HelpCircle className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-medium">Keine Quizze</h3></CardContent></Card> : (
               <Table><TableHeader><TableRow><TableHead>Titel</TableHead><TableHead>Typ</TableHead><TableHead>Bestehensgrenze</TableHead><TableHead>Zeitlimit</TableHead><TableHead>XP</TableHead><TableHead className="text-right">Aktionen</TableHead></TableRow></TableHeader>
                 <TableBody>{a.quizzes.map((quiz) => (
                   <TableRow key={quiz.id}><TableCell className="font-medium">{quiz.title}</TableCell><TableCell><Badge variant="outline">{quiz.quiz_type}</Badge></TableCell><TableCell>{quiz.passing_score}%</TableCell><TableCell>{quiz.time_limit_minutes} Min</TableCell><TableCell>{quiz.xp_reward} XP</TableCell>
-                    <TableCell className="text-right"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => { a.setEditingQuiz(quiz); a.setShowQuizDialog(true) }}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "quiz", id: quiz.id, name: quiz.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Loeschen</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>
+                    <TableCell className="text-right"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => a.openEditQuiz(quiz)}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "quiz", id: quiz.id, name: quiz.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>
                 ))}</TableBody></Table>
             )}
           </div>
@@ -236,11 +244,11 @@ export function SuperAdminAcademyManager() {
         </TabsContent>
 
         <TabsContent value="content" className="mt-6">
-          {!a.selectedCourse ? (
-            <Card><CardContent className="flex flex-col items-center justify-center py-12"><Layers className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-medium">Kein Kurs ausgewaehlt</h3><Button className="mt-4 bg-transparent" variant="outline" onClick={() => a.setActiveTab("courses")}>Zur Kursliste</Button></CardContent></Card>
-          ) : (
+      {!a.selectedCourse ? (
+      <Card><CardContent className="flex flex-col items-center justify-center py-12 gap-4"><Layers className="h-12 w-12 text-muted-foreground" /><h3 className="text-lg font-medium">Kurs auswählen</h3><p className="text-sm text-muted-foreground">Wählen Sie einen Kurs, um dessen Inhalte zu verwalten.</p><Select onValueChange={(id) => { const course = a.courses.find((c) => c.id === id); if (course) a.handleSelectCourse(course) }}><SelectTrigger className="w-[320px]"><SelectValue placeholder="Kurs auswählen..." /></SelectTrigger><SelectContent>{a.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent></Select></CardContent></Card>
+      ) : (
             <div className="space-y-4">
-              <Card><CardHeader><div className="flex items-start justify-between"><div><CardTitle>{a.selectedCourse.title}</CardTitle><CardDescription>{a.selectedCourse.description}</CardDescription></div><Button variant="outline" onClick={() => a.setSelectedCourse(null)}>Zurueck</Button></div></CardHeader></Card>
+              <Card><CardHeader><div className="flex items-start justify-between"><div><CardTitle>{a.selectedCourse.title}</CardTitle><CardDescription>{a.selectedCourse.description}</CardDescription></div><Button variant="outline" onClick={() => a.setSelectedCourse(null)}>Zurück</Button></div></CardHeader></Card>
               <div className="flex justify-end"><Button onClick={() => { a.resetModuleForm(); a.setEditingModule(null); a.setShowModuleDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Modul</Button></div>
               {a.courseModules.length === 0 ? <Card><CardContent className="flex flex-col items-center py-12"><BookOpen className="h-12 w-12 text-muted-foreground mb-4" /><h3>Keine Module</h3></CardContent></Card> : (
                 <div className="space-y-3">
@@ -253,10 +261,10 @@ export function SuperAdminAcademyManager() {
                             <div><CardTitle className="text-base">Modul {idx + 1}: {module.title}</CardTitle><CardDescription>{module.lessons?.length || 0} Lektionen - {module.estimated_minutes} Min</CardDescription></div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {module.is_published ? <Badge className="bg-green-500 text-white">Veroeffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}
+                            {module.is_published ? <Badge className="bg-green-500 text-white">Veröffentlicht</Badge> : <Badge variant="secondary">Entwurf</Badge>}
                             <DropdownMenu><DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); a.setEditingModule(module); a.setModuleForm({ title: module.title, description: module.description, estimated_minutes: module.estimated_minutes, is_published: module.is_published }); a.setShowModuleDialog(true) }}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); a.setDeleteItem({ type: "module", id: module.id, name: module.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Loeschen</DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); a.setDeleteItem({ type: "module", id: module.id, name: module.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem>
                             </DropdownMenuContent></DropdownMenu>
                           </div>
                         </div>
@@ -272,7 +280,7 @@ export function SuperAdminAcademyManager() {
                               <div className="flex items-center gap-2">{lesson.is_published ? <Badge variant="outline" className="text-green-600 border-green-600">Live</Badge> : <Badge variant="outline">Entwurf</Badge>}
                                 <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-3 w-3" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => { a.setEditingLesson(lesson); a.setLessonForm({ title: lesson.title, description: lesson.description, content: lesson.content, lesson_type: lesson.lesson_type, video_url: lesson.video_url, video_duration_seconds: lesson.video_duration_seconds, estimated_minutes: lesson.estimated_minutes, xp_reward: lesson.xp_reward, is_published: lesson.is_published, is_free_preview: lesson.is_free_preview }); a.setShowLessonDialog(true) }}><Pencil className="h-4 w-4 mr-2" />Bearbeiten</DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "lesson", id: lesson.id, name: lesson.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Loeschen</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive" onClick={() => { a.setDeleteItem({ type: "lesson", id: lesson.id, name: lesson.title }); a.setShowDeleteDialog(true) }}><Trash2 className="h-4 w-4 mr-2" />Löschen</DropdownMenuItem>
                                 </DropdownMenuContent></DropdownMenu>
                               </div>
                             </div>
@@ -292,7 +300,7 @@ export function SuperAdminAcademyManager() {
       {/* Course Dialog */}
       <Dialog open={a.showCourseDialog} onOpenChange={a.setShowCourseDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{a.editingCourse ? "Kurs bearbeiten" : "Neuer Kurs"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{a.editingCourse ? "Kurs bearbeiten" : "Neuer Kurs"}</DialogTitle><DialogDescription>Kursdetails, Sichtbarkeit und Dozent konfigurieren.</DialogDescription></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2"><Label>Titel</Label><Input value={a.courseForm.title} onChange={(e) => a.setCourseForm({ ...a.courseForm, title: e.target.value })} /></div>
             <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.courseForm.description} onChange={(e) => a.setCourseForm({ ...a.courseForm, description: e.target.value })} rows={3} /></div>
@@ -310,8 +318,8 @@ export function SuperAdminAcademyManager() {
             <Separator />
             <div className="grid gap-2"><Label>Dozent</Label><Input value={a.courseForm.instructor_name} onChange={(e) => a.setCourseForm({ ...a.courseForm, instructor_name: e.target.value })} /></div>
             <Separator />
-            <div className="flex items-center justify-between"><div><Label>Veroeffentlicht</Label><p className="text-sm text-muted-foreground">Kurs sichtbar machen</p></div><Switch checked={a.courseForm.is_published} onCheckedChange={(c) => a.setCourseForm({ ...a.courseForm, is_published: c })} /></div>
-            <div className="flex items-center justify-between"><div><Label>Auf Landingpage</Label><p className="text-sm text-muted-foreground">Auf oeffentlicher Seite hervorheben</p></div><Switch checked={a.courseForm.is_landing_page_featured} onCheckedChange={(c) => a.setCourseForm({ ...a.courseForm, is_landing_page_featured: c })} /></div>
+            <div className="flex items-center justify-between"><div><Label>Veröffentlicht</Label><p className="text-sm text-muted-foreground">Kurs sichtbar machen</p></div><Switch checked={a.courseForm.is_published} onCheckedChange={(c) => a.setCourseForm({ ...a.courseForm, is_published: c })} /></div>
+            <div className="flex items-center justify-between"><div><Label>Auf Landingpage</Label><p className="text-sm text-muted-foreground">Auf öffentlicher Seite hervorheben</p></div><Switch checked={a.courseForm.is_landing_page_featured} onCheckedChange={(c) => a.setCourseForm({ ...a.courseForm, is_landing_page_featured: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => a.setShowCourseDialog(false)}>Abbrechen</Button><Button onClick={a.handleSaveCourse}><Save className="h-4 w-4 mr-2" />{a.editingCourse ? "Speichern" : "Erstellen"}</Button></DialogFooter>
         </DialogContent>
@@ -320,12 +328,12 @@ export function SuperAdminAcademyManager() {
       {/* Module Dialog */}
       <Dialog open={a.showModuleDialog} onOpenChange={a.setShowModuleDialog}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{a.editingModule ? "Modul bearbeiten" : "Neues Modul"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{a.editingModule ? "Modul bearbeiten" : "Neues Modul"}</DialogTitle><DialogDescription>Modulinformationen und Veröffentlichungsstatus festlegen.</DialogDescription></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2"><Label>Titel</Label><Input value={a.moduleForm.title} onChange={(e) => a.setModuleForm({ ...a.moduleForm, title: e.target.value })} /></div>
             <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.moduleForm.description} onChange={(e) => a.setModuleForm({ ...a.moduleForm, description: e.target.value })} rows={3} /></div>
             <div className="grid gap-2"><Label>Dauer (Min)</Label><Input type="number" value={a.moduleForm.estimated_minutes} onChange={(e) => a.setModuleForm({ ...a.moduleForm, estimated_minutes: Number(e.target.value) })} min={1} /></div>
-            <div className="flex items-center justify-between"><Label>Veroeffentlicht</Label><Switch checked={a.moduleForm.is_published} onCheckedChange={(c) => a.setModuleForm({ ...a.moduleForm, is_published: c })} /></div>
+            <div className="flex items-center justify-between"><Label>Veröffentlicht</Label><Switch checked={a.moduleForm.is_published} onCheckedChange={(c) => a.setModuleForm({ ...a.moduleForm, is_published: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => a.setShowModuleDialog(false)}>Abbrechen</Button><Button onClick={a.handleSaveModule}><Save className="h-4 w-4 mr-2" />{a.editingModule ? "Speichern" : "Erstellen"}</Button></DialogFooter>
         </DialogContent>
@@ -334,7 +342,7 @@ export function SuperAdminAcademyManager() {
       {/* Badge Dialog */}
       <Dialog open={a.showBadgeDialog} onOpenChange={a.setShowBadgeDialog}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{a.editingBadge ? "Badge bearbeiten" : "Neues Badge"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{a.editingBadge ? "Badge bearbeiten" : "Neues Badge"}</DialogTitle><DialogDescription>Badge-Typ, Seltenheit, Icon und XP-Belohnung konfigurieren.</DialogDescription></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2"><Label>Name</Label><Input value={a.badgeForm.name} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, name: e.target.value })} /></div>
             <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.badgeForm.description} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, description: e.target.value })} rows={2} /></div>
@@ -353,10 +361,36 @@ export function SuperAdminAcademyManager() {
         </DialogContent>
       </Dialog>
 
+      {/* Quiz Dialog */}
+      <Dialog open={a.showQuizDialog} onOpenChange={a.setShowQuizDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{a.editingQuiz ? "Quiz bearbeiten" : "Neues Quiz"}</DialogTitle><DialogDescription>Quiz-Einstellungen, Zeitlimit und Kurs-Zuordnung festlegen.</DialogDescription></DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2"><Label>Titel</Label><Input value={a.quizForm.title} onChange={(e) => a.setQuizForm({ ...a.quizForm, title: e.target.value })} placeholder="z.B. Hygiene-Grundlagen Quiz" /></div>
+            <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.quizForm.description} onChange={(e) => a.setQuizForm({ ...a.quizForm, description: e.target.value })} rows={3} placeholder="Kurze Beschreibung des Quiz..." /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2"><Label>Quiz-Typ</Label><Select value={a.quizForm.quiz_type} onValueChange={(v) => a.setQuizForm({ ...a.quizForm, quiz_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="multiple_choice">Multiple Choice</SelectItem><SelectItem value="true_false">Wahr/Falsch</SelectItem><SelectItem value="mixed">Gemischt</SelectItem></SelectContent></Select></div>
+              <div className="grid gap-2"><Label>Bestehensgrenze (%)</Label><Input type="number" value={a.quizForm.passing_score} onChange={(e) => a.setQuizForm({ ...a.quizForm, passing_score: Number(e.target.value) })} min={0} max={100} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="grid gap-2"><Label>Max. Versuche</Label><Input type="number" value={a.quizForm.max_attempts} onChange={(e) => a.setQuizForm({ ...a.quizForm, max_attempts: Number(e.target.value) })} min={1} /></div>
+              <div className="grid gap-2"><Label>Zeitlimit (Min)</Label><Input type="number" value={a.quizForm.time_limit_minutes} onChange={(e) => a.setQuizForm({ ...a.quizForm, time_limit_minutes: Number(e.target.value) })} min={1} /></div>
+              <div className="grid gap-2"><Label>XP-Belohnung</Label><Input type="number" value={a.quizForm.xp_reward} onChange={(e) => a.setQuizForm({ ...a.quizForm, xp_reward: Number(e.target.value) })} min={0} step={25} /></div>
+            </div>
+            <Separator />
+            <div className="grid gap-2"><Label>Kurs (optional)</Label><Select value={a.quizForm.course_id} onValueChange={(v) => a.setQuizForm({ ...a.quizForm, course_id: v })}><SelectTrigger><SelectValue placeholder="Kurs auswählen..." /></SelectTrigger><SelectContent><SelectItem value="">Kein Kurs</SelectItem>{a.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent></Select></div>
+            <Separator />
+            <div className="flex items-center justify-between"><div><Label>Fragen mischen</Label><p className="text-sm text-muted-foreground">Zufällige Reihenfolge der Fragen</p></div><Switch checked={a.quizForm.randomize_questions} onCheckedChange={(c) => a.setQuizForm({ ...a.quizForm, randomize_questions: c })} /></div>
+            <div className="flex items-center justify-between"><div><Label>Antworten anzeigen</Label><p className="text-sm text-muted-foreground">Korrekte Antworten nach Abgabe zeigen</p></div><Switch checked={a.quizForm.show_correct_answers} onCheckedChange={(c) => a.setQuizForm({ ...a.quizForm, show_correct_answers: c })} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => a.setShowQuizDialog(false)}>Abbrechen</Button><Button onClick={a.handleSaveQuiz}><Save className="h-4 w-4 mr-2" />{a.editingQuiz ? "Speichern" : "Erstellen"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* AI Course Dialog */}
       <Dialog open={a.showAiCourseDialog} onOpenChange={a.setShowAiCourseDialog}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" />Kurs mit KI erstellen</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" />Kurs mit KI erstellen</DialogTitle><DialogDescription>Beschreiben Sie den gewünschten Kurs und die KI generiert Struktur und Inhalte.</DialogDescription></DialogHeader>
           {!a.generatedCourse ? (
             <div className="grid gap-4 py-4">
               <div className="grid gap-2"><Label>Kursbeschreibung</Label><Textarea value={a.aiCourseDescription} onChange={(e) => a.setAiCourseDescription(e.target.value)} placeholder="Beschreiben Sie den Kurs..." rows={4} /></div>
@@ -381,8 +415,8 @@ export function SuperAdminAcademyManager() {
 
       {/* Delete Dialog */}
       <AlertDialog open={a.showDeleteDialog} onOpenChange={a.setShowDeleteDialog}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Sind Sie sicher?</AlertDialogTitle><AlertDialogDescription>{"Moechten Sie \"" + (a.deleteItem?.name || "") + "\" wirklich loeschen?"}</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={a.handleDelete} className="bg-destructive text-destructive-foreground">Loeschen</AlertDialogAction></AlertDialogFooter>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Sind Sie sicher?</AlertDialogTitle><AlertDialogDescription>{"Möchten Sie \"" + (a.deleteItem?.name || "") + "\" wirklich löschen?"}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={a.handleDelete} className="bg-destructive text-destructive-foreground">Löschen</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

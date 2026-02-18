@@ -8,13 +8,26 @@ import { getScoreColor } from "../types"
 import { getRoleLabel } from "@/lib/roles"
 
 interface TeamTabProps {
-  teamPerformance: TeamPerformance[]
+  teamMembers?: TeamPerformance[]
+  teamPerformance?: TeamPerformance[]
+  isLoading?: boolean
 }
 
-export default function TeamTab({ teamPerformance }: TeamTabProps) {
+export default function TeamTab({ teamMembers, teamPerformance, isLoading }: TeamTabProps) {
+  // Safely handle undefined props from parent components
+  const members = teamMembers || teamPerformance || []
+
+  if (isLoading) {
+    return <div className="text-center py-8 text-muted-foreground">Laden...</div>
+  }
+
+  if (members.length === 0) {
+    return <div className="text-center py-8 text-muted-foreground">Keine Teammitglieder gefunden.</div>
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {teamPerformance.map((member) => (
+      {members.map((member) => (
         <Card key={member.memberId}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">

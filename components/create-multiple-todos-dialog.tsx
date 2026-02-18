@@ -19,7 +19,7 @@ import { usePractice } from "@/contexts/practice-context"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
-import { Link2, ClipboardList, Plus, Trash2, Loader2, Sparkles, CheckCircle2 } from "lucide-react"
+import { Link2, ClipboardList, Plus, Trash2, Loader2, Sparkles, CheckCircle2, User } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -388,14 +388,9 @@ export function CreateMultipleTodosDialog({
                                   <SelectItem key={memberId} value={memberId}>
                                     <div className="flex items-center gap-2">
                                       <Avatar className="h-4 w-4">
-                                        <AvatarImage src={member.avatar || ""} />
-                                        <AvatarFallback className="text-[8px]">
-                                          {member.name
-                                            ?.split(" ")
-                                            .map((n: string) => n[0])
-                                            .join("")
-                                            .slice(0, 2)
-                                            .toUpperCase() || "TM"}
+                                        {member.avatar ? <AvatarImage src={member.avatar} /> : null}
+                                        <AvatarFallback className="text-[8px] bg-muted">
+                                          <User className="h-2.5 w-2.5 text-muted-foreground" />
                                         </AvatarFallback>
                                       </Avatar>
                                       {member.name || member.email}

@@ -1,27 +1,12 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function POST() {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createAdminClient()
 
-    // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Get user's practice_id from userprofiles
-    const { data: profile } = await supabase
-      .from("userprofiles")
-      .select("practice_id")
-      .eq("id", user.id)
-      .single()
-
-    const practiceId = profile?.practice_id
+    // Use practice_id "1" as default for admin context
+    const practiceId = "1"
 
     // Get all active templates
     const { data: templates, error: templatesError } = await supabase
@@ -49,7 +34,7 @@ export async function POST() {
         total_items: templates.length,
         completed_items: 0,
         progress: 0,
-        created_by: user.id,
+        created_by: "system",
         practice_id: practiceId,
       })
       .select()

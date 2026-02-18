@@ -88,9 +88,9 @@ interface PipelineStage {
 const STATUS_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
   new: { label: "Neu", className: "bg-blue-500 text-white" },
   contacted: { label: "Kontaktiert", className: "bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-300" },
-  first_interview: { label: "Erstgespraech", className: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300" },
+  first_interview: { label: "Erstgespräch", className: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300" },
   trial_work: { label: "Probearbeiten", className: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300" },
-  second_interview: { label: "Zweitgespraech", className: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300" },
+  second_interview: { label: "Zweitgespräch", className: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300" },
   interviewed: { label: "Interview", className: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300" },
   offer_extended: { label: "Angebot", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
   hired: { label: "Eingestellt", className: "bg-emerald-500 text-white" },

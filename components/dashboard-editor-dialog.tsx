@@ -72,8 +72,11 @@ export interface WidgetConfig {
   showRecentActivities: boolean
   showGoogleReviews: boolean
   showTodos: boolean
+  showBulletin?: boolean
   showKPIs?: boolean
   showJournalActions?: boolean
+  showTimeTracking?: boolean
+  columnSpans?: Record<string, number>
   todosFilterWichtig?: boolean
   todosFilterDringend?: boolean
   todosFilterPriority?: string
@@ -195,7 +198,19 @@ export const WIDGET_DEFINITIONS = [
     description: "Gefilterte Aufgabenliste mit konfigurierbaren Filtern",
     icon: CheckSquare,
   },
-]
+  {
+    id: "showBulletin",
+    label: "Schwarzes Brett",
+    description: "Neueste Beiträge vom Schwarzen Brett",
+    icon: FileText,
+  },
+  {
+    id: "showTimeTracking",
+    label: "Zeiterfassung",
+    description: "Ein-/Ausstempeln direkt vom Cockpit",
+    icon: Clock,
+  },
+  ]
 
 export const DEFAULT_ORDER = WIDGET_DEFINITIONS.map((w) => w.id)
 
@@ -218,6 +233,9 @@ const defaultWidgetConfig: WidgetConfig = {
   showTodos: true,
   showKPIs: true,
   showJournalActions: true,
+  showBulletin: true,
+  showTimeTracking: true,
+  columnSpans: {},
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
   todosFilterPriority: undefined,
@@ -225,13 +243,25 @@ const defaultWidgetConfig: WidgetConfig = {
   linebreaks: [],
 }
 
+const FULL_WIDTH_WIDGET_IDS = new Set(["showBulletin", "showJournalActions"])
+
+const COLUMN_OPTIONS = [
+  { value: 0, label: "Standard" },
+  { value: 1, label: "1 Spalte" },
+  { value: 2, label: "2 Spalten" },
+  { value: 3, label: "3 Spalten" },
+  { value: 4, label: "4 Spalten" },
+  { value: 5, label: "Volle Breite" },
+]
+
 interface SortableWidgetProps {
   widget: (typeof WIDGET_DEFINITIONS)[0]
   config: WidgetConfig
   setConfig: React.Dispatch<React.SetStateAction<WidgetConfig>>
+  defaultSpan?: number
 }
 
-function SortableWidget({ widget, config, setConfig }: SortableWidgetProps) {
+function SortableWidget({ widget, config, setConfig, defaultSpan }: SortableWidgetProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   })
@@ -274,6 +304,40 @@ function SortableWidget({ widget, config, setConfig }: SortableWidgetProps) {
           onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, [widget.id]: checked }))}
         />
       </div>
+
+      {isEnabled && (
+        <div className="mt-3 pl-12 flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground whitespace-nowrap">Breite:</Label>
+          <div className="flex gap-1">
+            {COLUMN_OPTIONS.map((opt) => {
+              const currentSpan = config.columnSpans?.[widget.id] || 0
+              const isSelected = currentSpan === opt.value
+              const computedDefault = FULL_WIDTH_WIDGET_IDS.has(widget.id) ? 5 : (defaultSpan || 1)
+              const displayLabel = opt.value === 0 ? `Std. (${computedDefault})` : String(opt.value === 5 ? "Voll" : opt.value)
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-input hover:border-primary/50"
+                  }`}
+                  title={opt.label}
+                  onClick={() =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      columnSpans: { ...(prev.columnSpans || {}), [widget.id]: opt.value },
+                    }))
+                  }
+                >
+                  {displayLabel}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {showSubOptions && (
         <div className="mt-4 pl-12 space-y-3 border-l-2 border-primary/20">
@@ -409,16 +473,43 @@ export function DashboardEditorDialog({
   }
 
   const initialWidgets = getWidgetsFromConfig(configProp || currentConfig)
+
+  // Ensure saved order includes all known widget IDs (handles newly added widgets)
+  const ensureCompleteOrder = (savedOrder: string[]): string[] => {
+    const order = [...savedOrder]
+    for (const id of DEFAULT_ORDER) {
+      if (!order.includes(id)) {
+        order.push(id)
+      }
+    }
+    return order
+  }
+
   const [config, setConfig] = useState<WidgetConfig>(initialWidgets)
-  const [widgetOrder, setWidgetOrder] = useState<string[]>(initialWidgets.widgetOrder || DEFAULT_ORDER)
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(ensureCompleteOrder(initialWidgets.widgetOrder || DEFAULT_ORDER))
   const [linebreaks, setLinebreaks] = useState<string[]>(initialWidgets.linebreaks || [])
+  const [adminDefaults, setAdminDefaults] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (open) {
       const widgets = getWidgetsFromConfig(configProp || currentConfig)
       setConfig(widgets)
-      setWidgetOrder(widgets.widgetOrder || DEFAULT_ORDER)
+      setWidgetOrder(ensureCompleteOrder(widgets.widgetOrder || DEFAULT_ORDER))
       setLinebreaks(widgets.linebreaks || [])
+
+      // Fetch super-admin default column spans (Vorlagen)
+      fetch("/api/cockpit-settings")
+        .then((res) => res.ok ? res.json() : { settings: [] })
+        .then((data) => {
+          const defaults: Record<string, number> = {}
+          for (const s of data.settings || []) {
+            if (s.widget_id && s.column_span) {
+              defaults[s.widget_id] = s.column_span
+            }
+          }
+          setAdminDefaults(defaults)
+        })
+        .catch(() => setAdminDefaults({}))
     }
   }, [open, configProp, currentConfig])
 
@@ -472,7 +563,12 @@ export function DashboardEditorDialog({
   >
 
   const handleSave = () => {
-    onSave({ widgets: { ...config, widgetOrder, linebreaks } })
+    // Clean columnSpans: remove entries with value 0 (= use default)
+    const cleanedSpans: Record<string, number> = {}
+    for (const [key, val] of Object.entries(config.columnSpans || {})) {
+      if (val && val > 0) cleanedSpans[key] = val
+    }
+    onSave({ widgets: { ...config, columnSpans: cleanedSpans, widgetOrder, linebreaks } })
     onOpenChange(false)
   }
 
@@ -505,7 +601,7 @@ export function DashboardEditorDialog({
                 item.type === "linebreak" ? (
                   <SortableLinebreak key={item.id} id={item.id} onRemove={handleRemoveLinebreak} />
                 ) : (
-                  <SortableWidget key={item.widget.id} widget={item.widget} config={config} setConfig={setConfig} />
+                  <SortableWidget key={item.widget.id} widget={item.widget} config={config} setConfig={setConfig} defaultSpan={adminDefaults[item.widget.id]} />
                 ),
               )}
             </SortableContext>

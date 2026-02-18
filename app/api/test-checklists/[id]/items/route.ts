@@ -1,10 +1,10 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = await createServerClient()
+    const supabase = await createAdminClient()
 
     const { data: items, error } = await supabase
       .from("test_checklist_items")

@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 // Define the complete sidebar navigation structure
@@ -75,15 +75,7 @@ const getNavigationGroups = () => [
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createServerClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const supabase = await createAdminClient()
 
     const body = await request.json()
     const { includeAdminOnly = true } = body
@@ -106,7 +98,6 @@ export async function POST(request: Request) {
           name: "Sidebar Navigation",
           description: "Tests für alle Sidebar-Menüpunkte und Navigation",
           color: "#6366f1",
-          icon: "navigation",
         })
         .select("id")
         .single()

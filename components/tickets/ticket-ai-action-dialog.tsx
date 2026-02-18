@@ -68,7 +68,7 @@ export function TicketAiActionDialog({ open, onOpenChange, actionText, isLoading
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Schliessen</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Schließen</Button>
           <Button onClick={handleCopy} disabled={!actionText} className="gap-2">
             {copied ? <><Check className="h-4 w-4" />Kopiert</> : <><Copy className="h-4 w-4" />In Zwischenablage kopieren</>}
           </Button>

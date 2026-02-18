@@ -40,7 +40,7 @@ import { useUser } from "@/contexts/user-context"
 
 export function SEOAnalyticsDashboard() {
   const { toast } = useToast()
-  const { isSuperAdmin } = useUser()
+  const { isSuperAdmin, currentUser } = useUser()
   const [keywordInput, setKeywordInput] = useState("")
   const [analyzingKeyword, setAnalyzingKeyword] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -359,13 +359,17 @@ export function SEOAnalyticsDashboard() {
       const response = await fetch("/api/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           title,
           description,
-          priority: priority || "medium",
+          priority: priority === "hoch" ? "high" : priority === "niedrig" ? "low" : "medium",
           category: category || "SEO",
-          type,
-          status: "Offen",
+          type: type === "Feature-Request" ? "feature_request" : "bug",
+          status: "open",
+          practice_id: currentUser?.practice_id || currentUser?.practiceId || null,
+          user_name: currentUser?.name || "SEO-Assistent",
+          user_email: currentUser?.email || "",
           metadata: {
             source: "seo-assistant",
             created_from: "ai-recommendation",

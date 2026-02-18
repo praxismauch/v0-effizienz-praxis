@@ -1,12 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 
 // GET /api/role-permissions
 export async function GET(request: NextRequest) {
   try {
+    // Try admin client first (bypasses RLS), fall back to regular authenticated client
     const supabaseAdmin = await createAdminClient()
+    const supabase = supabaseAdmin?.from ? supabaseAdmin : await createClient()
 
-    const { data: permissions, error } = await supabaseAdmin
+    const { data: permissions, error } = await supabase
       .from("role_permissions")
       .select("*")
       .order("role", { ascending: true })
@@ -60,8 +62,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const supabaseAdmin = await createAdminClient()
+    const supabase = supabaseAdmin?.from ? supabaseAdmin : await createClient()
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("role_permissions")
       .update(updates)
       .eq("role", role)

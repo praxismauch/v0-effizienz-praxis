@@ -22,7 +22,7 @@ interface PermissionDef {
 
 const permissionDefinitions: PermissionDef[] = [
   // ============================================
-  // Uebersicht
+  // Übersicht
   // ============================================
   { key: "dashboard", category: "Übersicht", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, false, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [true, false, false, false] },
   { key: "ai_analysis", category: "Übersicht", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
@@ -50,7 +50,7 @@ const permissionDefinitions: PermissionDef[] = [
   { key: "contacts", category: "Daten & Dokumente", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, true], manager: [true, true, true, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
 
   // ============================================
-  // Strategie & Fuehrung
+  // Strategie & Führung
   // ============================================
   { key: "strategy_journey", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
   { key: "leadership", category: "Strategie & Führung", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
@@ -111,7 +111,7 @@ const permissionDefinitions: PermissionDef[] = [
   { key: "seo", category: "Marketing", superadmin: [true, true, true, true], practiceadmin: [true, true, true, false], admin: [true, true, false, false], manager: [false, false, false, false], member: [false, false, false, false], viewer: [false, false, false, false], extern: [false, false, false, false] },
 
   // ============================================
-  // Qualitaetsmanagement
+  // Qualitätsmanagement
   // ============================================
   { key: "qm", category: "Qualitätsmanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },
   { key: "hygieneplan", category: "Qualitätsmanagement", superadmin: [true, true, true, true], practiceadmin: [true, true, true, true], admin: [true, true, true, false], manager: [true, true, false, false], member: [true, false, false, false], viewer: [true, false, false, false], extern: [false, false, false, false] },

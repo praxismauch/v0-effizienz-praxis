@@ -166,7 +166,7 @@ export function HeaderActions({ unreadMessagesCount }: HeaderActionsProps) {
               variant="ghost"
               size="icon"
               className="h-9 w-9 hidden sm:flex"
-              onClick={() => router.push("/help")}
+              onClick={() => window.open("/help", "_blank", "noopener,noreferrer")}
             >
               <HelpCircle className="h-4 w-4" />
             </Button>

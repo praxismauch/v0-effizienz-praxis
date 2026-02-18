@@ -65,13 +65,32 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
     format(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0), "yyyy-MM-dd")
   )
   
-  const { members: teamMembers, isLoading: teamLoading } = useTeamLiveView(practiceId)
+  const { members: teamMembers, isLoading: teamLoading, mutate: mutateTeam } = useTeamLiveView(practiceId)
   const { clockIn, clockOut, startBreak, endBreak } = useTimeActions(practiceId, user?.id)
   const { corrections: correctionRequests, mutate: mutateCorrectionRequests } = useCorrectionRequests(practiceId)
   const { issues: plausibilityIssues } = usePlausibilityIssues(practiceId)
   
   const homeofficePolicy = null
   const dataLoading = statusLoading || blocksLoading || teamLoading
+
+  // Auto-stop stale time blocks on page load
+  useEffect(() => {
+    if (practiceId) {
+      fetch(`/api/practices/${practiceId}/time/auto-stop`, { method: "POST" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.stopped > 0) {
+            toast.warning(`${data.stopped} vergessene Stempelung(en) wurden automatisch beendet`, {
+              duration: 8000,
+            })
+            mutate()
+            mutateBlocks()
+            mutateTeam()
+          }
+        })
+        .catch(() => {})
+    }
+  }, [practiceId])
 
   useEffect(() => {
     if (practiceId && userId) {
@@ -94,27 +113,27 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
         case "start":
           result = await clockIn(selectedLocation, stampComment)
           if (!result.success) throw new Error(result.error || "Einstempeln fehlgeschlagen")
-          await Promise.all([mutate(), mutateBlocks()])
+          await Promise.all([mutate(), mutateBlocks(), mutateTeam()])
           toast.success("Erfolgreich eingestempelt")
           break
         case "stop":
           result = await clockOut(undefined, stampComment)
           if (!result.success) throw new Error(result.error || "Ausstempeln fehlgeschlagen")
-          await Promise.all([mutate(), mutateBlocks()])
+          await Promise.all([mutate(), mutateBlocks(), mutateTeam()])
           toast.success("Erfolgreich ausgestempelt")
           break
         case "pause_start":
           if (!currentBlock?.id) throw new Error("Kein aktiver Zeitblock gefunden.")
           result = await startBreak(currentBlock.id)
           if (!result.success) throw new Error(result.error || "Pause starten fehlgeschlagen")
-          await Promise.all([mutate(), mutateBlocks()])
+          await Promise.all([mutate(), mutateBlocks(), mutateTeam()])
           toast.success("Pause gestartet")
           break
         case "pause_end":
           if (!activeBreak?.id) throw new Error("Keine aktive Pause gefunden")
           result = await endBreak(activeBreak.id)
           if (!result.success) throw new Error(result.error || "Pause beenden fehlgeschlagen")
-          await Promise.all([mutate(), mutateBlocks()])
+          await Promise.all([mutate(), mutateBlocks(), mutateTeam()])
           toast.success("Pause beendet")
           break
       }
@@ -188,7 +207,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      toast.success(`CSV-Export erfolgreich (${timeBlocks.length} Eintraege)`)
+      toast.success(`CSV-Export erfolgreich (${timeBlocks.length} Einträge)`)
     } else {
       toast.info("PDF-Export wird vorbereitet...")
     }
@@ -204,11 +223,11 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
 
   if (!practiceId || !user?.id) {
     return (
-      <div className="container mx-auto p-6 max-w-7xl">
+      <div className="w-full p-6">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Zugriff nicht moeglich</h2>
+            <h2 className="text-xl font-semibold mb-2">Zugriff nicht möglich</h2>
             <p className="text-muted-foreground text-center">
               {!user?.id 
                 ? "Bitte melden Sie sich an, um die Zeiterfassung zu nutzen." 
@@ -221,7 +240,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="w-full p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Zeiterfassung</h1>
         <p className="text-muted-foreground">Erfassen und verwalten Sie Ihre Arbeitszeiten</p>
@@ -288,7 +307,7 @@ export default function ZeiterfassungPageClient({ practiceId, userId }: Zeiterfa
             selectedMonth={selectedMonth}
             onMonthChange={setSelectedMonth}
             onEditBlock={() => toast.info("Bearbeitung wird noch implementiert")}
-            onDeleteBlock={() => toast.info("Loeschen wird noch implementiert")}
+            onDeleteBlock={() => toast.info("Löschen wird noch implementiert")}
           />
         </TabsContent>
 

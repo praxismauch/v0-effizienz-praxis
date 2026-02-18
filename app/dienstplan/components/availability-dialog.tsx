@@ -6,6 +6,7 @@ import { CalendarIcon } from "lucide-react"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -90,6 +91,9 @@ export default function AvailabilityDialog({
           <DialogTitle>
             {isEditing ? "Verfügbarkeit bearbeiten" : "Verfügbarkeit hinzufügen"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing ? "Bestehende Verfügbarkeit anpassen" : "Neue Verfügbarkeit für dieses Teammitglied festlegen"}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">

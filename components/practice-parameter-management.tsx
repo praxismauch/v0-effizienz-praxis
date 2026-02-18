@@ -130,7 +130,7 @@ export function PracticeParameterManagement() {
 
   const handleDelete = async (id: string) => {
     if (!currentPractice) return
-    if (!confirm(t("common.confirm_delete", "Sind Sie sicher, dass Sie diesen Parameter loeschen moechten?"))) return
+    if (!confirm(t("common.confirm_delete", "Sind Sie sicher, dass Sie diesen Parameter löschen möchten?"))) return
 
     try {
       const response = await fetch(`/api/practices/${currentPractice.id}/parameters/${id}`, {
@@ -143,8 +143,8 @@ export function PracticeParameterManagement() {
       }
 
       toast({
-        title: t("common.parameter_deleted", "Parameter geloescht"),
-        description: t("common.successfully_deleted", "Der Parameter wurde erfolgreich geloescht."),
+        title: t("common.parameter_deleted", "Parameter gelöscht"),
+        description: t("common.successfully_deleted", "Der Parameter wurde erfolgreich gelöscht."),
       })
 
       fetchParameters()
@@ -153,7 +153,7 @@ export function PracticeParameterManagement() {
       toast({
         title: t("common.error", "Fehler"),
         description:
-          err instanceof Error ? err.message : t("common.failed_to_delete_parameter", "Parameter konnte nicht geloescht werden"),
+          err instanceof Error ? err.message : t("common.failed_to_delete_parameter", "Parameter konnte nicht gelöscht werden"),
         variant: "destructive",
       })
     }

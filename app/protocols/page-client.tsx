@@ -343,7 +343,7 @@ export default function PageClient(_props: PageClientProps) {
     <div className="p-6 space-y-6">
       {/* Header */}
       <PageHeader
-        title="Gespraechsprotokolle"
+        title="Gesprächsprotokolle"
         subtitle="Nehmen Sie Meetings auf und erstellen Sie automatisch Protokolle"
         actions={
           <>

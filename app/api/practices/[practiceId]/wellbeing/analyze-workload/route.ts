@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .from("anonymous_mood_responses")
       .select("*")
       .eq("practice_id", practiceId)
-      .gte("submitted_at", thirtyDaysAgo.toISOString())
+      .gte("created_at", thirtyDaysAgo.toISOString())
 
     // Get team size
     const { data: teamMembers } = await supabase

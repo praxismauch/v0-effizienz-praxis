@@ -284,7 +284,7 @@ export default function ScheduleTab({
   <div className="flex flex-col gap-4">
   <div className="flex items-center justify-between">
     <CardTitle>Wochenplan</CardTitle>
-    <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)}>
+    <Button size="sm" onClick={() => setTemplateDialogOpen(true)}>
       <FileText className="h-4 w-4 mr-2" />
       Vorlagen
     </Button>
@@ -310,7 +310,7 @@ export default function ScheduleTab({
                 <SelectItem value="all">Alle Gruppen</SelectItem>
                 {availableRoles.map((role) => (
                   <SelectItem key={role} value={role}>
-                    {role}
+                    {getRoleLabel(role)}
                   </SelectItem>
                 ))}
               </SelectContent>

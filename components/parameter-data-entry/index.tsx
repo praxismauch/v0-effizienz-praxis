@@ -139,7 +139,7 @@ export function ParameterDataEntry(props: ParameterDataEntryProps) {
             <Card>
               <CardHeader>
                 <CardTitle>{t("kpi.parameters", "Praxisparameter")}</CardTitle>
-                <CardDescription>{t("kpi.parameters.description", "Parameter fuer Auswertung von Kennzahlen")}</CardDescription>
+                <CardDescription>{t("kpi.parameters.description", "Parameter für Auswertung von Kennzahlen")}</CardDescription>
               </CardHeader>
               <CardContent>
                 {/* Add Buttons */}

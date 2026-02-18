@@ -64,10 +64,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })
     }
 
-    const createdBy = body.created_by || body.createdBy
-    if (!createdBy) {
-      return NextResponse.json({ error: "created_by is required" }, { status: 400 })
-    }
+    const createdBy = body.created_by || body.createdBy || null
 
     let supabase
     try {
@@ -84,18 +81,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .insert({
         practice_id: practiceId,
         name: body.name,
+        title: body.title || body.name,
         description: body.description,
         provider: body.provider,
         category: body.category || "general",
+        format: body.format || null,
         duration_hours: body.duration_hours || body.durationHours || null,
-        cost: body.cost,
-        currency: body.currency || "EUR",
-        location: body.location,
+        cost: body.cost || null,
+        url: body.url || null,
         is_online: body.is_online || body.isOnline || false,
         registration_url: body.registration_url || body.registrationUrl || null,
-        max_participants: body.max_participants || body.maxParticipants || null,
-        recurrence_months: body.recurrence_months || body.recurrenceMonths || null,
         is_mandatory: body.is_mandatory || body.isMandatory || false,
+        is_active: true,
         created_by: createdBy,
       })
       .select()

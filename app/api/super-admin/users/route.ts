@@ -41,7 +41,14 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    const { data: users, error: usersError } = await supabase
+    // Pagination support (optional - backward compatible)
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get("page") || "0", 10)
+    const limit = parseInt(searchParams.get("limit") || "0", 10)
+    const search = searchParams.get("search") || ""
+    const isPaginated = page > 0 && limit > 0
+
+    let query = supabase
       .from("users")
       .select(`
         id,
@@ -57,8 +64,22 @@ export async function GET(request: NextRequest) {
         phone,
         avatar,
         approval_status
-      `)
+      `, { count: isPaginated ? "exact" : undefined })
       .order("created_at", { ascending: false })
+
+    // Apply search filter if provided
+    if (search) {
+      query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`)
+    }
+
+    // Apply pagination if requested
+    if (isPaginated) {
+      const from = (page - 1) * limit
+      const to = from + limit - 1
+      query = query.range(from, to)
+    }
+
+    const { data: users, error: usersError, count: totalCount } = await query
 
     if (usersError) {
       console.error("Error fetching users:", usersError)
@@ -157,11 +178,23 @@ export async function GET(request: NextRequest) {
       withoutPractice: transformedUsers.filter((u) => !u.practice_id && u.practices.length === 0).length,
     }
 
-    return NextResponse.json({
+    const response: Record<string, unknown> = {
       users: transformedUsers,
       stats,
       practices: practices?.map((p) => ({ id: p.id, name: p.name, color: p.color })) || [],
-    })
+    }
+
+    // Add pagination metadata if paginated request
+    if (isPaginated && totalCount !== null) {
+      response.pagination = {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      }
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error("Error in GET /api/super-admin/users:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -170,8 +203,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] POST /api/super-admin/users - Request received")
-    
     const userId = request.headers.get("x-user-id")
 
     if (!userId) {
@@ -181,8 +212,7 @@ export async function POST(request: NextRequest) {
       } = await authSupabase.auth.getUser()
 
       if (!authUser) {
-        console.log("[v0] POST users - No auth user")
-        return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
+      return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
       }
     }
 
@@ -192,7 +222,6 @@ export async function POST(request: NextRequest) {
     } = await authSupabase.auth.getUser()
 
     if (!authUser) {
-      console.log("[v0] POST users - No auth user (second check)")
       return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 })
     }
 
@@ -203,18 +232,14 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!userData || !isSuperAdminRole(userData.role)) {
-      console.log("[v0] POST users - Not super admin, role:", userData?.role)
       return NextResponse.json({ error: "Zugriff verweigert: Super-Admin-Berechtigung erforderlich" }, { status: 403 })
     }
 
     const body = await request.json()
     const { email, password, name, role, practiceId } = body
-    
-    console.log("[v0] POST users - Creating user:", { email, name, role, practiceId })
 
     // Validation - no empty values
     if (!email || !password || !name) {
-      console.log("[v0] POST users - Missing required fields")
       return NextResponse.json({ error: "E-Mail, Passwort und Name sind erforderlich" }, { status: 400 })
     }
 
@@ -238,12 +263,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (createAuthError || !authData.user) {
-      console.error("[v0] Error creating auth user:", createAuthError)
-      console.error("[v0] Auth error details:", {
-        message: createAuthError?.message,
-        status: createAuthError?.status,
-        name: createAuthError?.name,
-      })
+      console.error("Error creating auth user:", createAuthError?.message)
       return NextResponse.json(
         { error: createAuthError?.message || "Benutzer konnte nicht erstellt werden" },
         { status: 500 },
@@ -276,20 +296,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (createUserError) {
-      console.error("[v0] Error creating user record:", createUserError)
-      console.error("[v0] Error details:", {
-        message: createUserError.message,
-        code: createUserError.code,
-        details: createUserError.details,
-        hint: createUserError.hint,
-      })
+      console.error("Error creating user record:", createUserError.message)
       
       // Cleanup auth user on failure
       try {
         await supabase.auth.admin.deleteUser(authData.user.id)
-        console.log("[v0] Cleaned up auth user after DB error")
       } catch (cleanupError) {
-        console.error("[v0] Failed to cleanup auth user:", cleanupError)
+        console.error("Failed to cleanup auth user:", cleanupError)
       }
       
       return NextResponse.json(
@@ -324,8 +337,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("[v0] POST users - User created successfully:", newUser.id)
-    
     return NextResponse.json({
       success: true,
       user: {
@@ -339,8 +350,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("[v0] Exception in POST /api/super-admin/users:", error)
-    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
+    console.error("Error in POST /api/super-admin/users:", error)
     const message = error instanceof Error ? error.message : "Interner Serverfehler"
     return NextResponse.json({ error: message }, { status: 500 })
   }

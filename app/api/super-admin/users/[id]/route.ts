@@ -71,7 +71,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       },
     })
   } catch (error) {
-    console.error("[v0] Exception in GET /api/super-admin/users/[id]:", error)
+    console.error("Error in GET /api/super-admin/users/[id]:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -139,7 +139,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { data, error } = await supabase.from("users").update(updates).eq("id", id).select().single()
 
     if (error) {
-      console.error("[v0] Error updating user:", error)
+      console.error("Error updating user:", error)
       return NextResponse.json({ 
         error: "Benutzer konnte nicht aktualisiert werden", 
         details: error.message 
@@ -150,7 +150,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (email && email !== data.email) {
       const { error: authError } = await supabase.auth.admin.updateUserById(id, { email })
       if (authError) {
-        console.error("[v0] Error updating auth email:", authError)
+        console.error("Error updating auth email:", authError)
       }
     }
 
@@ -219,7 +219,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       },
     })
   } catch (error) {
-    console.error("[v0] Exception in PATCH /api/super-admin/users/[id]:", error)
+    console.error("Error in PATCH /api/super-admin/users/[id]:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -283,7 +283,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const { error: deleteError } = await supabase.from("users").delete().eq("id", id)
 
     if (deleteError) {
-      console.error("[v0] Error deleting user record:", deleteError)
+      console.error("Error deleting user record:", deleteError)
       return NextResponse.json({ error: "Benutzer konnte nicht gelöscht werden" }, { status: 500 })
     }
 
@@ -291,13 +291,13 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const { error: authDeleteError } = await supabase.auth.admin.deleteUser(id)
 
     if (authDeleteError) {
-      console.error("[v0] Error deleting auth user:", authDeleteError)
+      console.error("Error deleting auth user:", authDeleteError)
       // User record already deleted, log warning but don't fail
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Exception in DELETE /api/super-admin/users/[id]:", error)
+    console.error("Error in DELETE /api/super-admin/users/[id]:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

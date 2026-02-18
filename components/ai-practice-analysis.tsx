@@ -29,7 +29,7 @@ interface PracticeAnalysis {
   generatedAt: string
 }
 
-export function AIPracticeAnalysis() {
+export function AIPracticeAnalysis({ onScoreUpdate }: { onScoreUpdate?: (score: number) => void } = {}) {
   const { currentUser } = useUser()
   const { currentPractice } = usePractice()
   const { toast } = useToast() // Use the imported useToast hook
@@ -123,6 +123,9 @@ export function AIPracticeAnalysis() {
 
       const data = await response.json()
       setAnalysis(data)
+      if (data.overallScore != null && onScoreUpdate) {
+        onScoreUpdate(data.overallScore)
+      }
     } catch (error) {
       console.error("Fehler beim Abrufen der KI-Analyse:", error)
       toast({

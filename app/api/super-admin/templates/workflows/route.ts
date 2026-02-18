@@ -1,68 +1,76 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createServerClient, createAdminClient } from "@/lib/supabase/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
+
+async function requireSuperAdmin() {
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    throw { status: 401, message: "Unauthorized" }
+  }
+  const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
+  if (!isSuperAdminRole(userData?.role)) {
+    throw { status: 403, message: "Forbidden" }
+  }
+  return user
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    await requireSuperAdmin()
+    const adminClient = await createAdminClient()
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
-
-    if (!isSuperAdminRole(userData?.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    // Fetch workflow templates (workflows where is_template = true)
-    const { data: templates, error } = await supabase
+    // Fetch workflow templates with their steps
+    const { data: templates, error } = await adminClient
       .from("workflows")
-      .select("*")
+      .select("*, workflow_steps(id, title, description, step_order, status, assigned_to, estimated_duration)")
       .eq("is_template", true)
       .is("deleted_at", null)
       .order("name")
 
     if (error) throw error
 
-    return NextResponse.json({ templates })
+    // Map workflow_steps into the steps array expected by the frontend
+    const mapped = (templates || []).map((t: any) => ({
+      ...t,
+      steps: (t.workflow_steps || [])
+        .sort((a: any, b: any) => (a.step_order || 0) - (b.step_order || 0))
+        .map((s: any) => ({
+          title: s.title || "",
+          description: s.description || "",
+          assignedTo: s.assigned_to || "",
+          estimatedDuration: s.estimated_duration || 5,
+          dependencies: [],
+        })),
+      workflow_steps: undefined,
+    }))
+
+    return NextResponse.json({ templates: mapped })
   } catch (error: any) {
+    if (error.status === 401 || error.status === 403) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error("[v0] Error fetching workflow templates:", error)
-    // Return empty array on error to prevent UI crashes
     return NextResponse.json({ templates: [], error: error.message }, { status: 200 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
-
-    if (!isSuperAdminRole(userData?.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+    await requireSuperAdmin()
+    const adminClient = await createAdminClient()
 
     const body = await request.json()
     const { name, description, category, steps, is_active, hide_items_from_other_users } = body
 
-    // Insert workflow template (stored in workflows table with is_template = true)
-    const { data: template, error: insertError } = await supabase
+    // Insert workflow template using admin client (bypasses RLS)
+    const { data: template, error: insertError } = await adminClient
       .from("workflows")
       .insert({
+        id: crypto.randomUUID(),
         name,
         description,
         category,
@@ -79,18 +87,23 @@ export async function POST(request: NextRequest) {
     if (steps && Array.isArray(steps) && steps.length > 0) {
       const stepInserts = steps.map((step: any, idx: number) => ({
         workflow_id: template.id,
-        title: step.title || step.name,
+        title: step.title || step.name || "",
         description: step.description || "",
+        assigned_to: step.assignedTo || null,
+        estimated_duration: step.estimatedDuration || 5,
         step_order: idx + 1,
         status: "pending",
       }))
 
-      const { error: stepsError } = await supabase.from("workflow_steps").insert(stepInserts)
+      const { error: stepsError } = await adminClient.from("workflow_steps").insert(stepInserts)
       if (stepsError) console.error("Error inserting workflow steps:", stepsError)
     }
 
     return NextResponse.json({ template }, { status: 201 })
   } catch (error: any) {
+    if (error.status === 401 || error.status === 403) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error("[v0] Error creating workflow template:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

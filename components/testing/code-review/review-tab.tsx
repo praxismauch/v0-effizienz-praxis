@@ -204,7 +204,7 @@ export function ReviewTab({
                     if (f.code) prompt += `- Code: \`${f.code}\`\n`
                     if (f.fix) prompt += `- Fix: ${f.fix}\n\n`
                   })
-                  prompt += `Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitaetsprobleme.`
+                  prompt += `Bitte behebe SOFORT alle kritischen Sicherheits- und Stabilitätsprobleme.`
                   onShowPrompt(prompt, "Kritische Probleme")
                 }}
               >
@@ -227,8 +227,8 @@ export function ReviewTab({
             <Code2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
             <CardTitle>Professioneller Code Review</CardTitle>
             <CardDescription>
-              Scannt den gesamten Code wie ein erfahrener Entwickler und prueft auf Sicherheit,
-              Performance, TypeScript-Qualitaet, Next.js Best Practices, Barrierefreiheit und mehr.
+              Scannt den gesamten Code wie ein erfahrener Entwickler und prüft auf Sicherheit,
+              Performance, TypeScript-Qualität, Next.js Best Practices, Barrierefreiheit und mehr.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
@@ -394,7 +394,7 @@ export function ReviewTab({
 
             {filteredFindings.length === 0 && data.summary.totalFindings > 0 && (
               <div className="py-8 text-center text-muted-foreground text-sm">
-                Keine Findings fuer die aktuelle Filterauswahl.
+                Keine Findings für die aktuelle Filterauswahl.
               </div>
             )}
             {data.summary.totalFindings === 0 && (

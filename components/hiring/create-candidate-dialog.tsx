@@ -257,7 +257,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     if (skippedCount > 0) {
       toast({
         title: "Duplikate erkannt",
-        description: `${skippedCount} Dokument(e) bereits vorhanden und uebersprungen.`,
+        description: `${skippedCount} Dokument(e) bereits vorhanden und übersprungen.`,
       })
     }
 
@@ -453,7 +453,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
     if (skippedImgCount > 0) {
       toast({
         title: "Duplikate erkannt",
-        description: `${skippedImgCount} Bild(er) bereits vorhanden und uebersprungen.`,
+        description: `${skippedImgCount} Bild(er) bereits vorhanden und übersprungen.`,
       })
     }
 
@@ -732,7 +732,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
               <h3 className="font-semibold text-purple-900 dark:text-purple-100">KI-Dokumentenanalyse & Medien-Upload</h3>
             </div>
             <p className="text-sm text-purple-700 dark:text-purple-300 mb-4">
-              Laden Sie Dokumente und Bilder hoch - das System erkennt den Dateityp automatisch und verarbeitet alles fuer Sie.
+              Laden Sie Dokumente und Bilder hoch - das System erkennt den Dateityp automatisch und verarbeitet alles für Sie.
             </p>
 
             {/* Extraction Button - Always visible when files are uploaded */}
@@ -807,7 +807,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
                       Dateien hierher ziehen
                     </p>
                     <p className="text-xs text-purple-500 dark:text-purple-400">
-                      oder klicken zum Auswaehlen
+                      oder klicken zum Auswählen
                     </p>
                   </div>
                   <Input
@@ -823,7 +823,7 @@ function CreateCandidateDialog({ open, onOpenChange, onSuccess, onNavigateToTab 
                     <Button type="button" variant="secondary" size="sm" disabled={aiExtracting || isUploadingImages} asChild>
                       <span>
                         <Upload className="h-4 w-4 mr-2" />
-                        Dateien auswaehlen
+                        Dateien auswählen
                       </span>
                     </Button>
                   </Label>

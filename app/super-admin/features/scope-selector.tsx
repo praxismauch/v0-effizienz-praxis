@@ -34,7 +34,7 @@ export function ScopeSelector({
         <div className="flex flex-col sm:flex-row gap-4">
           <Select value={selectedPractice} onValueChange={onPracticeChange}>
             <SelectTrigger className="w-full sm:w-[300px]">
-              <SelectValue placeholder="Bereich auswahlen" />
+              <SelectValue placeholder="Bereich auswählen" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="global">
@@ -75,7 +75,7 @@ export function ScopeSelector({
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="sm" onClick={onResetAll}>
                       <RotateCcw className="h-4 w-4 mr-2" />
-                      {"Alle zurucksetzen"}
+                      {"Alle zurücksetzen"}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>

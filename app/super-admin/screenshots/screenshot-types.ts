@@ -51,7 +51,7 @@ export const VIEWPORT_SIZES: Record<string, { width: number; height: number }> =
 export const defaultPages = [
   // Public / Landing Pages
   { path: "/", name: "Landing Page" },
-  { path: "/about", name: "Ueber uns" },
+  { path: "/about", name: "Über uns" },
   { path: "/pricing", name: "Preise" },
   { path: "/features", name: "Features" },
   { path: "/contact", name: "Kontakt" },
@@ -59,7 +59,7 @@ export const defaultPages = [
   { path: "/auth/login", name: "Login" },
   { path: "/auth/register", name: "Registrierung" },
 
-  // App - Uebersicht
+  // App - Übersicht
   { path: "/dashboard", name: "Dashboard" },
   { path: "/analysis", name: "KI-Analyse" },
   { path: "/academy", name: "Academy" },
@@ -71,7 +71,7 @@ export const defaultPages = [
   { path: "/todos", name: "Aufgaben" },
   { path: "/goals", name: "Ziele" },
   { path: "/workflows", name: "Workflows" },
-  { path: "/responsibilities", name: "Zustaendigkeiten" },
+  { path: "/responsibilities", name: "Zuständigkeiten" },
 
   // App - Daten & Dokumente
   { path: "/analytics", name: "Kennzahlen" },
@@ -81,10 +81,10 @@ export const defaultPages = [
   { path: "/protocols", name: "Protokolle" },
   { path: "/cirs", name: "Verbesserungsmeldung" },
 
-  // App - Qualitaets-Management
+  // App - Qualitäts-Management
   { path: "/hygieneplan", name: "Hygieneplan" },
 
-  // App - Strategie & Fuehrung
+  // App - Strategie & Führung
   { path: "/strategy-journey", name: "Strategiepfad" },
   { path: "/leadership", name: "Leadership" },
   { path: "/wellbeing", name: "Mitarbeiter-Wellbeing" },
@@ -97,7 +97,7 @@ export const defaultPages = [
   // App - Team & Personal
   { path: "/hiring", name: "Personalsuche" },
   { path: "/team", name: "Team" },
-  { path: "/mitarbeitergespraeche", name: "Mitarbeitergespraeche" },
+  { path: "/mitarbeitergespraeche", name: "Mitarbeitergespräche" },
   { path: "/selbst-check", name: "Selbst-Check" },
   { path: "/skills", name: "Kompetenzen" },
   { path: "/organigramm", name: "Organigramm" },
@@ -106,20 +106,20 @@ export const defaultPages = [
   // App - Praxis & Einstellungen
   { path: "/contacts", name: "Kontakte" },
   { path: "/surveys", name: "Umfragen" },
-  { path: "/arbeitsplaetze", name: "Arbeitsplaetze" },
-  { path: "/rooms", name: "Raeume" },
+  { path: "/arbeitsplaetze", name: "Arbeitsplätze" },
+  { path: "/rooms", name: "Räume" },
   { path: "/arbeitsmittel", name: "Arbeitsmittel" },
   { path: "/inventory", name: "Material" },
-  { path: "/devices", name: "Geraete" },
+  { path: "/devices", name: "Geräte" },
   { path: "/settings", name: "Einstellungen" },
 
-  // Super Admin - Uebersicht
+  // Super Admin - Übersicht
   { path: "/super-admin", name: "SA Dashboard" },
 
   // Super Admin - Verwaltung
   { path: "/super-admin/tickets", name: "SA Tickets" },
-  { path: "/super-admin/verwaltung?tab=practices", name: "SA Praxen" },
-  { path: "/super-admin/verwaltung?tab=users", name: "SA Benutzer" },
+  { path: "/super-admin/verwaltung", name: "SA Praxen" },
+  { path: "/super-admin/users", name: "SA Benutzer" },
   { path: "/super-admin/user-rights", name: "SA Benutzerrechte" },
   { path: "/super-admin/kpi-kategorien", name: "SA KPI-Kategorien" },
   { path: "/super-admin/content?tab=skills", name: "SA Vorlagen: Skills" },
@@ -180,12 +180,11 @@ export function formatDuration(start: string, end: string | null) {
 }
 
 /**
- * Capture a screenshot by loading the page in a hidden iframe,
- * rendering it to a canvas via html2canvas, converting to PNG,
- * and uploading to Vercel Blob.
+ * Capture a screenshot by calling the server-side Puppeteer API.
  * 
- * This runs entirely client-side, inheriting the user's auth session.
- * practice_id=1 is always appended.
+ * The server-side approach uses a headless Chromium browser to render
+ * the page and take a screenshot, avoiding cross-origin iframe restrictions.
+ * Auth cookies are forwarded automatically via the fetch request.
  */
 export async function captureScreenshot(
   url: string,
@@ -194,133 +193,38 @@ export async function captureScreenshot(
   practiceId: string = "1"
 ): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
   try {
-    // Ensure we have an absolute URL (handle relative paths and empty baseUrl)
-    let absoluteUrl = url
-    if (!url.startsWith("http")) {
-      const origin = typeof window !== "undefined" ? window.location.origin : ""
-      absoluteUrl = `${origin}${url.startsWith("/") ? "" : "/"}${url}`
-    }
-
-    // Inject practice_id into URL
-    const urlObj = new URL(absoluteUrl)
-    if (!urlObj.searchParams.has("practice_id")) {
-      urlObj.searchParams.set("practice_id", practiceId)
-    }
-    const targetUrl = urlObj.toString()
-
-    const size = VIEWPORT_SIZES[viewport] || VIEWPORT_SIZES.desktop
-
-    // Load html2canvas dynamically
-    const html2canvasModule = await import("html2canvas")
-    const html2canvas = html2canvasModule.default
-
-    // Create a hidden iframe to load the page
-    const iframe = document.createElement("iframe")
-    iframe.style.position = "fixed"
-    iframe.style.top = "-10000px"
-    iframe.style.left = "-10000px"
-    iframe.style.width = `${size.width}px`
-    iframe.style.height = `${size.height}px`
-    iframe.style.border = "none"
-    iframe.style.opacity = "0"
-    iframe.style.pointerEvents = "none"
-    document.body.appendChild(iframe)
-
+    // Extract just the path if a full URL was provided
+    let pagePath = url
     try {
-      // Load the page in the iframe (same-origin, inherits session cookies)
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error("Seite konnte nicht geladen werden (Timeout)"))
-        }, 30000)
-
-        iframe.onload = () => {
-          clearTimeout(timeout)
-          resolve()
-        }
-        iframe.onerror = () => {
-          clearTimeout(timeout)
-          reject(new Error("Iframe-Laden fehlgeschlagen"))
-        }
-        iframe.src = targetUrl
-      })
-
-      // Wait for page content to settle (lazy loading, animations)
-      await new Promise((r) => setTimeout(r, 3000))
-
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
-      if (!iframeDoc || !iframeDoc.body) {
-        throw new Error("Iframe-Inhalt nicht zugreifbar")
-      }
-
-      // Use html2canvas to capture the full iframe document
-      const canvas = await html2canvas(iframeDoc.body, {
-        width: size.width,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        windowWidth: size.width,
-        windowHeight: size.height,
-        scrollX: 0,
-        scrollY: 0,
-      })
-
-      // Convert canvas to PNG blob
-      const pngBlob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(
-          (blob) => {
-            if (blob) resolve(blob)
-            else reject(new Error("Canvas-zu-PNG-Konvertierung fehlgeschlagen"))
-          },
-          "image/png",
-          1.0
-        )
-      })
-
-      // Upload to Vercel Blob via the upload API
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
-      const safeName = pageName.replace(/[^a-zA-Z0-9-]/g, "_").toLowerCase()
-      const filename = `screenshots/${safeName}_${viewport}_${timestamp}.png`
-
-      const uploadRes = await fetch(`/api/super-admin/screenshot-upload`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          filename,
-          contentType: "image/png",
-          imageBase64: await blobToBase64(pngBlob),
-        }),
-      })
-
-      const uploadData = await uploadRes.json()
-      if (!uploadRes.ok || !uploadData.url) {
-        throw new Error(uploadData.error || "Upload fehlgeschlagen")
-      }
-
-      return { success: true, imageUrl: uploadData.url }
-    } finally {
-      // Clean up iframe
-      if (iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe)
-      }
+      const urlObj = new URL(url)
+      pagePath = urlObj.pathname + urlObj.search
+    } catch {
+      // url is already a path
     }
+
+    const res = await fetch("/api/super-admin/screenshot-capture", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        url: pagePath,
+        viewport,
+        pageName,
+        practiceId,
+      }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || "Screenshot fehlgeschlagen" }
+    }
+
+    return { success: true, imageUrl: data.imageUrl }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Screenshot fehlgeschlagen"
     return { success: false, error: message }
   }
-}
-
-function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const result = reader.result as string
-      // Strip the data URL prefix to get just the base64 string
-      resolve(result.split(",")[1])
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
 }
 
 export function statusBadgeVariant(status: string): "default" | "secondary" | "destructive" | "outline" {

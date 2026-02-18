@@ -6,6 +6,12 @@ export async function POST(request: NextRequest) {
   try {
     const { imageUrl, practice_id, created_by } = await request.json()
 
+    if (!imageUrl) {
+      return NextResponse.json({ error: "Kein Bild-URL angegeben" }, { status: 400 })
+    }
+
+    console.log("[v0] AI extract: Processing image URL:", imageUrl.substring(0, 80))
+
     // Use AI to extract contact information from the image
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
@@ -19,15 +25,18 @@ export async function POST(request: NextRequest) {
             },
             {
               type: "image",
-              image: imageUrl,
+              image: new URL(imageUrl),
             },
           ],
         },
       ],
     })
 
-    // Parse the AI response
-    const extractedData = JSON.parse(text)
+    console.log("[v0] AI extract: Raw response:", text.substring(0, 200))
+
+    // Parse the AI response - handle markdown code blocks
+    const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim()
+    const extractedData = JSON.parse(cleanedText)
 
     // Calculate confidence (simplified)
     const filledFields = Object.values(extractedData).filter((v) => v !== null).length

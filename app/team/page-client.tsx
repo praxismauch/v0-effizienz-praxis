@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
@@ -46,18 +47,21 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
 
   // Data states - initialize with server data
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialData?.teamMembers || [])
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog()
   const [teams, setTeams] = useState<Team[]>(initialData?.teams || [])
   const [staffingPlans, setStaffingPlans] = useState<StaffingPlan[]>(initialData?.staffingPlans || [])
+  const [roleOrder, setRoleOrder] = useState<string[]>([])
 
   // Fetch data function
   const fetchData = useCallback(async () => {
     if (!practiceId) return
 
     try {
-      const [membersRes, teamsRes, staffingRes] = await Promise.all([
+      const [membersRes, teamsRes, staffingRes, roleOrderRes] = await Promise.all([
         fetch(`/api/practices/${practiceId}/team-members`),
         fetch(`/api/practices/${practiceId}/teams`),
         fetch(`/api/practices/${practiceId}/staffing-plans`),
+        fetch(`/api/practices/${practiceId}/settings/team-role-order`),
       ])
 
       if (membersRes.ok) {
@@ -71,6 +75,10 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
       if (staffingRes.ok) {
         const data = await staffingRes.json()
         setStaffingPlans(() => data.staffingPlans || [])
+      }
+      if (roleOrderRes.ok) {
+        const data = await roleOrderRes.json()
+        setRoleOrder(data.roleOrder || [])
       }
     } catch (error) {
       console.error("Error fetching team data:", error)
@@ -90,7 +98,11 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
   const handleAddMember = () => router.push("/team/add")
   const handleEditMember = (member: TeamMember) => router.push(`/team/${member.id}`)
   const handleDeleteMember = async (member: TeamMember) => {
-    if (!confirm(`${member.first_name} ${member.last_name} wirklich entfernen?`)) return
+    const ok = await confirmDialog({
+      title: "Mitarbeiter entfernen?",
+      description: `Möchten Sie ${member.first_name} ${member.last_name} wirklich aus dem Team entfernen? Diese Aktion kann nicht rückgängig gemacht werden.`,
+    })
+    if (!ok) return
     try {
       const res = await fetch(`/api/practices/${practiceId}/team-members/${member.id}`, {
         method: "DELETE",
@@ -136,7 +148,7 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl space-y-6">
+    <div className="w-full p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -202,6 +214,7 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
               <MembersTab
                 teamMembers={teamMembers}
                 teams={teams}
+                roleOrder={roleOrder}
                 onAddMember={handleAddMember}
                 onEditMember={handleEditMember}
                 onDeleteMember={handleDeleteMember}
@@ -231,6 +244,7 @@ export default function TeamPageClient({ initialData, practiceId, userId }: Team
 
 
       </Tabs>
+      <ConfirmDialog />
     </div>
   )
 }

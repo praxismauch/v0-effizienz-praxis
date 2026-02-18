@@ -34,12 +34,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .from("training_events")
       .select(`
         *,
-        training_course:training_courses(id, name, category),
         registrations:training_event_registrations(
           id,
           team_member_id,
           status,
-          team_member:team_members(id, first_name, last_name)
+          completed_at
         )
       `)
       .eq("practice_id", practiceId)

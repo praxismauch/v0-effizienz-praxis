@@ -201,7 +201,7 @@ function SortableEventRow({
           {...listeners}
         >
           <GripVertical className="h-4 w-4" />
-          <span className="sr-only">Reihenfolge aendern</span>
+          <span className="sr-only">Reihenfolge ändern</span>
         </button>
       </TableCell>
       <TableCell>

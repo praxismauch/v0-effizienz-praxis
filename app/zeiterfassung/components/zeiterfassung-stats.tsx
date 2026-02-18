@@ -58,7 +58,7 @@ export function ZeiterfassungStats({
         value={`${monthH}h ${monthM}min`}
         icon={CalendarCheck}
         {...statCardColors.success}
-        description={`${timeBlocks.length} Eintraege`}
+        description={`${timeBlocks.length} Einträge`}
       />
       <StatCard
         label="Korrekturen"

@@ -1,17 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-let _supabase: ReturnType<typeof createClient> | null = null
-function getSupabase() {
-  if (!_supabase) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!url || !key) throw new Error("Supabase not configured")
-    _supabase = createClient(url, key, { auth: { persistSession: false } })
-  }
-  return _supabase
-}
-const supabase = new Proxy({} as ReturnType<typeof createClient>, { get: (_, prop) => (getSupabase() as any)[prop] })
+import { createAdminClient } from "@/lib/supabase/server"
 
 interface QuizQuestion {
   options?: QuizOption[]
@@ -33,6 +21,7 @@ interface Quiz {
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     await params
+    const supabase = await createAdminClient()
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get("course_id")
     const moduleId = searchParams.get("module_id")
@@ -90,6 +79,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     await params
+    const supabase = await createAdminClient()
     const body = await request.json()
     const { questions, ...quizData } = body
 

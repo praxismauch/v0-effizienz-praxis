@@ -351,9 +351,9 @@ export function ScreenshotsPageClient() {
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Lauf wirklich loeschen?</AlertDialogTitle>
+            <AlertDialogTitle>Lauf wirklich löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Dieser Screenshot-Lauf und alle zugehoerigen Ergebnisse werden unwiderruflich geloescht.
+              Dieser Screenshot-Lauf und alle zugehörigen Ergebnisse werden unwiderruflich gelöscht.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -367,7 +367,7 @@ export function ScreenshotsPageClient() {
                 }
               }}
             >
-              Loeschen
+              Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

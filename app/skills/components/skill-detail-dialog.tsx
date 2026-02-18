@@ -54,36 +54,35 @@ export function SkillDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Award className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl">{skill.name}</DialogTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge
-                    variant="outline"
-                    className={categoryColors[skill.category || "other"]}
-                  >
-                    <Tag className="h-3 w-3 mr-1" />
-                    {categoryLabels[skill.category || "other"]}
-                  </Badge>
-                  {createdDate && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {createdDate}
-                    </span>
-                  )}
-                </div>
+        <DialogHeader className="pr-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Award className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl">{skill.name}</DialogTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge
+                  variant="outline"
+                  className={categoryColors[skill.category || "other"]}
+                >
+                  <Tag className="h-3 w-3 mr-1" />
+                  {categoryLabels[skill.category || "other"]}
+                </Badge>
+                {createdDate && (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    {createdDate}
+                  </span>
+                )}
               </div>
             </div>
-            {onEdit && (
+          </div>
+          {onEdit && (
+            <div className="pt-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0"
                 onClick={() => {
                   onOpenChange(false)
                   onEdit(skill)
@@ -92,8 +91,8 @@ export function SkillDetailDialog({
                 <Edit className="h-4 w-4 mr-1" />
                 Bearbeiten
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </DialogHeader>
 
         {skill.description && (

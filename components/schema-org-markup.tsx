@@ -78,6 +78,7 @@ export function SchemaOrgMarkup() {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": "https://effizienz-praxis.de/#organization",
     name: "Effizienz Praxis",
     legalName: "Effizienz Praxis GmbH",
     url: "https://effizienz-praxis.de",
@@ -211,18 +212,54 @@ export function SchemaOrgMarkup() {
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": "https://effizienz-praxis.de/#website",
     name: "Effizienz Praxis",
     url: "https://effizienz-praxis.de",
-    description: "Moderne Praxismanagement Software für Arztpraxen und MVZ",
+    description: "Moderne Praxismanagement Software für Arztpraxen, Zahnarztpraxen und MVZ in Deutschland",
     inLanguage: "de-DE",
+    publisher: {
+      "@id": "https://effizienz-praxis.de/#organization",
+    },
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: "https://effizienz-praxis.de/suche?q={search_term_string}",
+        urlTemplate: "https://effizienz-praxis.de/alle-funktionen?q={search_term_string}",
       },
       "query-input": "required name=search_term_string",
     },
+  }
+
+  // HowTo Schema - Onboarding steps (rich snippet)
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "So starten Sie mit Effizienz Praxis in 3 Schritten",
+    description: "Einfache Einrichtung Ihrer Praxismanagement-Software in wenigen Minuten.",
+    totalTime: "PT15M",
+    step: [
+      {
+        "@type": "HowToStep",
+        position: 1,
+        name: "Kostenlos registrieren",
+        text: "Erstellen Sie Ihr kostenloses Konto in unter 2 Minuten. Keine Kreditkarte erforderlich.",
+        url: "https://effizienz-praxis.de/auth/sign-up",
+      },
+      {
+        "@type": "HowToStep",
+        position: 2,
+        name: "Praxis einrichten",
+        text: "Laden Sie Ihre Mitarbeiterdaten hoch und konfigurieren Sie Teams, Rollen und Zuständigkeiten.",
+        url: "https://effizienz-praxis.de/demo",
+      },
+      {
+        "@type": "HowToStep",
+        position: 3,
+        name: "Sofort loslegen",
+        text: "Starten Sie mit Aufgabenverwaltung, Dienstplanung und KI-gestützter Mitarbeiterentwicklung.",
+        url: "https://effizienz-praxis.de/dashboard",
+      },
+    ],
   }
 
   // Service Schema - Main services offered
@@ -374,6 +411,14 @@ export function SchemaOrgMarkup() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbSchema),
+        }}
+      />
+
+      {/* HowTo Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(howToSchema),
         }}
       />
     </>

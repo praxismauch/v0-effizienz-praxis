@@ -1,4 +1,12 @@
+import type { Metadata } from "next"
 import { LandingPageLayout } from "@/components/landing-page-layout"
+
+export const metadata: Metadata = {
+  title: "Produktupdates | Neueste Verbesserungen & Features",
+  description:
+    "Aktuelle Produktupdates und Verbesserungen der Effizienz Praxis Software. Neue Funktionen, Bugfixes und Performance-Optimierungen im Überblick.",
+  alternates: { canonical: "/updates" },
+}
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"

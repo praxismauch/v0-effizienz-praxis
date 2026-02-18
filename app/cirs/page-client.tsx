@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Plus, Search, Filter, X } from "lucide-react"
+import { Shield, Plus, Search, Filter, X, ClipboardList, AlertTriangle, ShieldAlert, Flame } from "lucide-react"
+import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
@@ -57,7 +58,7 @@ export default function CIRSPageClient() {
       }
     } catch (error) {
       console.error("Error fetching incidents:", error)
-      const errorMessage = error instanceof Error ? error.message : "Vorfalle konnten nicht geladen werden."
+      const errorMessage = error instanceof Error ? error.message : "Vorfälle konnten nicht geladen werden."
       const isSchemaError = errorMessage.includes("schema cache") || errorMessage.includes("PGRST205")
       toast({
         title: "Fehler beim Laden",
@@ -75,30 +76,45 @@ export default function CIRSPageClient() {
     if (!currentPractice?.id) return
     if (!data.title || !data.description) {
       toast({
-        title: "Unvollstandige Angaben",
-        description: "Bitte fullen Sie mindestens Titel und Beschreibung aus.",
+        title: "Unvollständige Angaben",
+        description: "Bitte füllen Sie mindestens Titel und Beschreibung aus.",
         variant: "destructive",
       })
       return
     }
 
-    const response = await fetch(`/api/practices/${currentPractice.id}/cirs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
-
-    if (response.ok) {
-      toast({
-        title: "Vorfall gemeldet",
-        description: data.is_anonymous
-          ? "Ihr anonymer Bericht wurde erfolgreich ubermittelt."
-          : "Ihr Bericht wurde erfolgreich ubermittelt.",
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/cirs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       })
-      setShowReportDialog(false)
-      fetchIncidents()
-    } else {
-      throw new Error("Failed to submit incident")
+
+      if (response.ok) {
+        toast({
+          title: "Vorfall gemeldet",
+          description: data.is_anonymous
+            ? "Ihr anonymer Bericht wurde erfolgreich übermittelt."
+            : "Ihr Bericht wurde erfolgreich übermittelt.",
+        })
+        setShowReportDialog(false)
+        fetchIncidents()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error("CIRS submit error:", errorData)
+        toast({
+          title: "Fehler",
+          description: errorData.error || "Vorfall konnte nicht gemeldet werden.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("CIRS submit exception:", error)
+      toast({
+        title: "Fehler",
+        description: "Vorfall konnte nicht gemeldet werden. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -133,50 +149,42 @@ export default function CIRSPageClient() {
           }
         />
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Gesamt</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">{"Gemeldete Vorfalle"}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Fehler</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.errors}</div>
-              <p className="text-xs text-muted-foreground mt-1">{"Tatsachliche Fehler"}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Beinahe-Fehler</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.nearErrors}</div>
-              <p className="text-xs text-muted-foreground mt-1">Rechtzeitig erkannt</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Kritisch</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.critical}</div>
-              <p className="text-xs text-muted-foreground mt-1">{"Hohe Prioritat"}</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard
+            label="Gesamt"
+            value={stats.total}
+            icon={ClipboardList}
+            description="Gemeldete Vorfälle"
+            {...statCardColors.primary}
+          />
+          <StatCard
+            label="Fehler"
+            value={stats.errors}
+            icon={AlertTriangle}
+            description="Tatsächliche Fehler"
+            {...statCardColors.red}
+          />
+          <StatCard
+            label="Beinahe-Fehler"
+            value={stats.nearErrors}
+            icon={ShieldAlert}
+            description="Rechtzeitig erkannt"
+            {...statCardColors.amber}
+          />
+          <StatCard
+            label="Kritisch"
+            value={stats.critical}
+            icon={Flame}
+            description="Hohe Priorität"
+            {...statCardColors.orange}
+          />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={"Vorfalle durchsuchen..."}
+              placeholder={"Vorfälle durchsuchen..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-9"
@@ -223,20 +231,20 @@ export default function CIRSPageClient() {
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">Alle</TabsTrigger>
             <TabsTrigger value="submitted">Eingereicht</TabsTrigger>
-            <TabsTrigger value="under_review">{"In Prufung"}</TabsTrigger>
+            <TabsTrigger value="under_review">{"In Prüfung"}</TabsTrigger>
             <TabsTrigger value="analyzed">Analysiert</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-4 mt-6">
             {loading ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">{"Vorfalle werden geladen..."}</p>
+                <p className="text-muted-foreground">{"Vorfälle werden geladen..."}</p>
               </div>
             ) : filteredIncidents.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-lg font-medium mb-2">Keine Vorfalle vorhanden</p>
+                  <p className="text-lg font-medium mb-2">Keine Vorfälle vorhanden</p>
                   <p className="text-muted-foreground mb-4">
                     Melden Sie Fehler oder Beinahe-Fehler, um die Patientensicherheit zu verbessern
                   </p>

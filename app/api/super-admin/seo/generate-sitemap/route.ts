@@ -1,39 +1,50 @@
 import { NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { getAllFeatureSlugs } from "@/lib/features-data"
 
 export async function POST() {
   try {
-    const supabase = await createAdminClient()
-
     const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "https://effizienz-praxis.de"
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://effizienz-praxis.de")
 
-    const routes = [
+    const featureSlugs = getAllFeatureSlugs()
+    const now = new Date().toISOString()
+
+    const staticRoutes = [
       { url: "/", priority: "1.0", changefreq: "daily" },
-      { url: "/dashboard", priority: "0.9", changefreq: "daily" },
-      { url: "/team", priority: "0.8", changefreq: "weekly" },
-      { url: "/ziele", priority: "0.8", changefreq: "weekly" },
-      { url: "/aufgaben", priority: "0.8", changefreq: "daily" },
-      { url: "/analytics", priority: "0.7", changefreq: "weekly" },
-      { url: "/kalender", priority: "0.7", changefreq: "daily" },
-      { url: "/settings", priority: "0.6", changefreq: "monthly" },
-      { url: "/personal", priority: "0.7", changefreq: "weekly" },
-      { url: "/workflows", priority: "0.7", changefreq: "weekly" },
-      { url: "/dokumente", priority: "0.7", changefreq: "weekly" },
-      { url: "/wissen", priority: "0.6", changefreq: "weekly" },
-      { url: "/protocols", priority: "0.7", changefreq: "weekly" },
+      { url: "/effizienz", priority: "0.9", changefreq: "weekly" },
+      { url: "/preise", priority: "0.9", changefreq: "weekly" },
+      { url: "/demo", priority: "0.9", changefreq: "weekly" },
+      { url: "/ueber-uns", priority: "0.8", changefreq: "monthly" },
+      { url: "/kontakt", priority: "0.8", changefreq: "monthly" },
+      { url: "/karriere", priority: "0.7", changefreq: "weekly" },
+      { url: "/sicherheit", priority: "0.7", changefreq: "monthly" },
+      { url: "/blog", priority: "0.8", changefreq: "daily" },
+      { url: "/updates", priority: "0.7", changefreq: "weekly" },
+      { url: "/whats-new", priority: "0.7", changefreq: "weekly" },
+      { url: "/help", priority: "0.6", changefreq: "monthly" },
+      { url: "/impressum", priority: "0.5", changefreq: "yearly" },
+      { url: "/datenschutz", priority: "0.5", changefreq: "yearly" },
+      { url: "/agb", priority: "0.5", changefreq: "yearly" },
+      { url: "/auth/login", priority: "0.4", changefreq: "monthly" },
+      { url: "/auth/sign-up", priority: "0.4", changefreq: "monthly" },
     ]
 
-    // Generate XML sitemap
+    const featureRoutes = featureSlugs.map((slug) => ({
+      url: `/features/${slug}`,
+      priority: "0.8",
+      changefreq: "monthly",
+    }))
+
+    const allRoutes = [...staticRoutes, ...featureRoutes]
+
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${routes
+${allRoutes
   .map(
     (route) => `  <url>
     <loc>${appUrl}${route.url}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
+    <lastmod>${now}</lastmod>
     <changefreq>${route.changefreq}</changefreq>
     <priority>${route.priority}</priority>
   </url>`,
@@ -41,17 +52,16 @@ ${routes
   .join("\n")}
 </urlset>`
 
-    // In a production environment, you would save this to a file or database
-    // For now, we'll just return the URL where it should be accessible
-    const sitemapUrl = `${appUrl}/sitemap.xml`
-
     return NextResponse.json({
       success: true,
-      sitemapUrl,
-      message: "Sitemap erfolgreich generiert",
+      sitemapUrl: `${appUrl}/sitemap.xml`,
+      totalUrls: allRoutes.length,
+      featurePages: featureRoutes.length,
+      message: `Sitemap erfolgreich generiert mit ${allRoutes.length} URLs (davon ${featureRoutes.length} Feature-Seiten)`,
+      preview: sitemap,
     })
   } catch (error) {
     console.error("Error generating sitemap:", error)
-    return NextResponse.json({ error: "Failed to generate sitemap" }, { status: 500 })
+    return NextResponse.json({ error: "Sitemap konnte nicht generiert werden" }, { status: 500 })
   }
 }

@@ -294,8 +294,9 @@ export function EditCandidateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2 xl:grid xl:grid-cols-[3fr_2fr]">
-          {/* Left Column */}
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden max-h-[calc(98vh-140px)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto flex-1 pr-1 pb-4">
+          {/* Left Column - Personal Info & Work */}
           <div className="space-y-4 min-w-0">
             <div className="space-y-2">
               <Label htmlFor="job_posting">
@@ -327,7 +328,7 @@ export function EditCandidateDialog({
               />
             </div>
 
-              <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="first_name">{t("hiring.editCandidateDialog.firstName", "Vorname")} *</Label>
                 <Input
@@ -582,8 +583,8 @@ export function EditCandidateDialog({
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-4 min-w-0">
+          {/* Right Column - Events, Documents & Dates */}
+          <div className="space-y-4 min-w-0 md:border-l md:pl-6">
             {/* Candidate Events Section */}
             <div className="border rounded-lg p-4">
               <CandidateEventsManager 
@@ -601,7 +602,7 @@ export function EditCandidateDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="first_contact_date">
-                  {t("hiring.editCandidateDialog.firstContactDate", "Monat / Jahr der ersten Kontaktaufnahme")}
+                  {t("hiring.editCandidateDialog.firstContactDate", "Erste Kontaktaufnahme")}
                 </Label>
                 <Input
                   id="first_contact_date"
@@ -624,8 +625,9 @@ export function EditCandidateDialog({
               </div>
             </div>
           </div>
+          </div>
 
-          <DialogFooter className="xl:col-span-2 flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-4 border-t mt-2 shrink-0">
             <Button
               type="button"
               onClick={() => setShowInterviewGenerator(true)}

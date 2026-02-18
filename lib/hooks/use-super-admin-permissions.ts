@@ -2,6 +2,7 @@
 
 import useSWR from "swr"
 import { toast } from "sonner"
+import { SHARED_SWR_CONFIG } from "@/lib/swr-config"
 
 // Types
 export interface Permission {
@@ -37,20 +38,9 @@ export interface PermissionsResponse {
   error?: string
 }
 
-// Fetcher with error handling
-const fetcher = async (url: string): Promise<PermissionsResponse> => {
-  const res = await fetch(url)
-  if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.error || "Fehler beim Laden der Berechtigungen")
-  }
-  return res.json()
-}
-
 export function useSuperAdminPermissions() {
-  const { data, error, isLoading, mutate } = useSWR<PermissionsResponse>("/api/super-admin/permissions", fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 5000,
+  const { data, error, isLoading, mutate } = useSWR<PermissionsResponse>("/api/super-admin/permissions", {
+    ...SHARED_SWR_CONFIG,
   })
 
   // Update permission

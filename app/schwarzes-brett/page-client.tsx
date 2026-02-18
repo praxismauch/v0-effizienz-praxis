@@ -350,8 +350,8 @@ export default function SchwarzesBrettClient() {
       <div className="space-y-6">
         <PageHeader
           title="Schwarzes Brett"
-          description="Zentrale Kommunikationsplattform für Ankündigungen, Hinweise und wichtige Mitteilungen."
-          icon={Clipboard}
+          subtitle="Zentrale Kommunikationsplattform fuer Ankuendigungen, Hinweise und wichtige Mitteilungen."
+          icon={<Clipboard className="h-7 w-7" />}
         />
 
         {/* Stats Cards */}

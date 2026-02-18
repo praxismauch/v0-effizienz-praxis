@@ -14,6 +14,7 @@ import {
   isPublicRoute, 
   dispatchAuthRecovered 
 } from "@/lib/user-utils"
+import { fetchUserProfile, onProfileFetched, fetchSuperAdminUsers } from "@/lib/user-fetch-profile"
 
 // Re-export User type for consumers
 export type { User }
@@ -233,57 +234,18 @@ export function UserProvider({
               return
             }
 
-            const { data: profile, error: profileError } = await supabase
-              .from("users")
-              .select(
-                "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
-              )
-              .eq("id", authUser.id)
-              .maybeSingle()
-
-            if (profileError) {
-              throw new Error(profileError.message || "Error fetching user profile")
-            }
-
-            if (!profile) {
-              // Auto-create profile via API
-              const createResponse = await fetch("/api/auth/ensure-profile", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: authUser.id,
-                  email: authUser.email,
-                  name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || null,
-                  firstName: authUser.user_metadata?.first_name || null,
-                  lastName: authUser.user_metadata?.last_name || null,
-                }),
-              })
-              
-              if (!createResponse.ok) {
-                const errorData = await createResponse.json().catch(() => ({ error: "Unknown error" }))
-                throw new Error(`Failed to create user profile: ${errorData.error || createResponse.statusText}`)
-              }
-              
-              const responseData = await createResponse.json()
-              const createdProfile = responseData.user
-              if (!createdProfile) {
-                throw new Error("Profile creation returned no data")
-              }
-              
-              const user = mapProfileToUser(createdProfile, authUser.email)
+            const user = await fetchUserProfile(
+              supabase,
+              authUser.id,
+              authUser.email,
+              authUser.user_metadata,
+            )
+            if (user) {
               setCurrentUser(user)
               await persistUserToStorage(user)
               hasFetchedUser.current = true
-              dispatchAuthRecovered()
-              return
+              onProfileFetched()
             }
-
-            const user = mapProfileToUser(profile, authUser.email)
-            setCurrentUser(user)
-            await persistUserToStorage(user)
-            hasFetchedUser.current = true
-            dispatchAuthRecovered()
           },
           {
             maxAttempts: 3,
@@ -352,56 +314,18 @@ export function UserProvider({
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         if (session?.user) {
           try {
-            const { data: profile, error: profileError } = await supabase
-              .from("users")
-              .select(
-                "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
-              )
-              .eq("id", session.user.id)
-              .maybeSingle()
-
-            if (profileError) {
-              Logger.error("context", "Error fetching user profile", profileError.message)
-              return
-            }
-
-            if (!profile) {
-              // Auto-create profile via API
-              const createResponse = await fetch("/api/auth/ensure-profile", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: session.user.id,
-                  email: session.user.email,
-                  name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || null,
-                  firstName: session.user.user_metadata?.first_name || null,
-                  lastName: session.user.user_metadata?.last_name || null,
-                }),
-              })
-              
-              if (!createResponse.ok) {
-                return
-              }
-              
-              const { user: createdProfile } = await createResponse.json()
-              if (!createdProfile) {
-                return
-              }
-              
-              const user = mapProfileToUser(createdProfile, session.user.email)
+            const user = await fetchUserProfile(
+              supabase,
+              session.user.id,
+              session.user.email,
+              session.user.user_metadata,
+            )
+            if (user) {
               setCurrentUser(user)
               await persistUserToStorage(user)
               hasFetchedUser.current = true
-              dispatchAuthRecovered()
-              return
+              onProfileFetched()
             }
-
-            const user = mapProfileToUser(profile, session.user.email)
-            setCurrentUser(user)
-            await persistUserToStorage(user)
-            hasFetchedUser.current = true
-            dispatchAuthRecovered()
           } catch (error) {
             Logger.error("context", "Error fetching user profile in auth state change", error)
           }
@@ -422,29 +346,8 @@ export function UserProvider({
     if (!isSuperAdminRole(currentUser.role)) return
     if (hasFetchedSuperAdmins.current) return
 
-    const fetchSuperAdmins = async () => {
-      hasFetchedSuperAdmins.current = true
-
-      try {
-        const response = await fetch("/api/super-admin/users", {
-          credentials: "include",
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          if (data.users) {
-            const admins = data.users
-              .filter((u: any) => isSuperAdminRole(u.role))
-              .map((u: any) => mapProfileToUser(u))
-            setSuperAdmins(admins)
-          }
-        }
-      } catch (error) {
-        Logger.error("context", "Error fetching super admins", error)
-      }
-    }
-
-    fetchSuperAdmins()
+    hasFetchedSuperAdmins.current = true
+    fetchSuperAdminUsers().then(setSuperAdmins)
   }, [currentUser])
 
   const isAdmin = useMemo(() => {

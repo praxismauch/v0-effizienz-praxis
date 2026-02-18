@@ -1,42 +1,14 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-  Award,
-  Rocket,
-  BookOpen,
-  GraduationCap,
-  Flame,
-  Crown,
-  Target,
-  Sunrise,
-  Moon,
-  Users,
-  MessageCircle,
-  Star,
-  Sparkles,
-  X,
-  Zap,
-  Trophy,
-  Medal,
-  Heart,
-  Gem,
-} from "lucide-react"
+import { Sparkles, X, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import confetti from "canvas-confetti"
+import { type BadgeData, iconMap, rarityConfig } from "./badge/badge-config"
+import { triggerBadgeConfetti } from "./badge/badge-confetti"
+import { Award } from "lucide-react"
 
-interface BadgeData {
-  id: string
-  name: string
-  description: string
-  icon_name: string
-  color: string
-  rarity: string
-  points: number
-}
+export type { BadgeData }
 
 interface BadgeEarnedPopupProps {
   badge: BadgeData | null
@@ -45,196 +17,27 @@ interface BadgeEarnedPopupProps {
   autoCloseDelay?: number
 }
 
-const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  award: Award,
-  rocket: Rocket,
-  "book-open": BookOpen,
-  "graduation-cap": GraduationCap,
-  flame: Flame,
-  crown: Crown,
-  target: Target,
-  sunrise: Sunrise,
-  moon: Moon,
-  users: Users,
-  "message-circle": MessageCircle,
-  star: Star,
-  zap: Zap,
-  trophy: Trophy,
-  medal: Medal,
-  heart: Heart,
-  gem: Gem,
-  sparkles: Sparkles,
-}
-
-const rarityConfig: Record<
-  string,
-  {
-    label: string
-    gradient: string
-    glow: string
-    particles: number
-    ringCount: number
-    pulseIntensity: number
-    shakeIntensity: number
-  }
-> = {
-  common: {
-    label: "Gewöhnlich",
-    gradient: "from-slate-400 via-gray-500 to-slate-600",
-    glow: "shadow-slate-400/60",
-    particles: 50,
-    ringCount: 1,
-    pulseIntensity: 1.05,
-    shakeIntensity: 0,
-  },
-  uncommon: {
-    label: "Ungewöhnlich",
-    gradient: "from-emerald-400 via-green-500 to-teal-600",
-    glow: "shadow-emerald-400/60",
-    particles: 80,
-    ringCount: 2,
-    pulseIntensity: 1.1,
-    shakeIntensity: 2,
-  },
-  rare: {
-    label: "Selten",
-    gradient: "from-blue-400 via-indigo-500 to-purple-600",
-    glow: "shadow-blue-400/70",
-    particles: 120,
-    ringCount: 3,
-    pulseIntensity: 1.15,
-    shakeIntensity: 3,
-  },
-  epic: {
-    label: "Episch",
-    gradient: "from-violet-400 via-purple-500 to-fuchsia-600",
-    glow: "shadow-purple-500/80",
-    particles: 180,
-    ringCount: 4,
-    pulseIntensity: 1.2,
-    shakeIntensity: 5,
-  },
-  legendary: {
-    label: "Legendär",
-    gradient: "from-amber-400 via-orange-500 to-red-500",
-    glow: "shadow-amber-500/90",
-    particles: 300,
-    ringCount: 5,
-    pulseIntensity: 1.25,
-    shakeIntensity: 8,
-  },
-}
-
 export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseDelay = 10000 }: BadgeEarnedPopupProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [showContent, setShowContent] = useState(false)
 
-  const triggerConfetti = useCallback(() => {
-    if (!badge) return
-
-    const rarity = rarityConfig[badge.rarity] || rarityConfig.common
-    const particleCount = rarity.particles
-
-    // Initial big burst from center
-    confetti({
-      particleCount: particleCount,
-      spread: 100,
-      origin: { y: 0.5, x: 0.5 },
-      colors: [badge.color, "#FFD700", "#FFA500", "#FF69B4", "#00CED1", "#7C3AED"],
-      startVelocity: 45,
-      gravity: 0.8,
-      scalar: 1.2,
-    })
-
-    // Delayed side bursts
-    setTimeout(() => {
-      // Left burst
-      confetti({
-        particleCount: particleCount / 2,
-        angle: 60,
-        spread: 70,
-        origin: { x: 0, y: 0.5 },
-        colors: [badge.color, "#FFD700", "#FF69B4"],
-        startVelocity: 50,
-      })
-      // Right burst
-      confetti({
-        particleCount: particleCount / 2,
-        angle: 120,
-        spread: 70,
-        origin: { x: 1, y: 0.5 },
-        colors: [badge.color, "#FFD700", "#00CED1"],
-        startVelocity: 50,
-      })
-    }, 150)
-
-    // Top burst for rare+
-    if (["rare", "epic", "legendary"].includes(badge.rarity)) {
-      setTimeout(() => {
-        confetti({
-          particleCount: particleCount / 3,
-          angle: 270,
-          spread: 80,
-          origin: { x: 0.5, y: 0 },
-          colors: [badge.color, "#FFD700"],
-          startVelocity: 35,
-          gravity: 1.2,
-        })
-      }, 300)
-    }
-
-    // Extra sparkle shower for epic+
-    if (["epic", "legendary"].includes(badge.rarity)) {
-      const sparkleInterval = setInterval(() => {
-        confetti({
-          particleCount: 15,
-          spread: 360,
-          startVelocity: 15,
-          decay: 0.92,
-          origin: { x: Math.random(), y: Math.random() * 0.4 },
-          colors: ["#FFD700", "#FFA500", badge.color],
-          shapes: ["star"],
-          scalar: 0.8,
-        })
-      }, 200)
-      setTimeout(() => clearInterval(sparkleInterval), 2500)
-    }
-
-    // Legendary gets continuous golden rain
-    if (badge.rarity === "legendary") {
-      const goldRainInterval = setInterval(() => {
-        confetti({
-          particleCount: 8,
-          spread: 120,
-          startVelocity: 25,
-          decay: 0.94,
-          origin: { x: 0.2 + Math.random() * 0.6, y: -0.1 },
-          colors: ["#FFD700", "#FFA500", "#FFEC8B"],
-          gravity: 1.5,
-          scalar: 1.1,
-        })
-      }, 150)
-      setTimeout(() => clearInterval(goldRainInterval), 3500)
-    }
-  }, [badge])
+  const handleClose = useCallback(() => {
+    setIsVisible(false)
+    setTimeout(onClose, 600)
+  }, [onClose])
 
   useEffect(() => {
     if (badge) {
       setIsVisible(true)
-      // Stagger content appearance
       setTimeout(() => setShowContent(true), 200)
-      // Delay confetti for dramatic reveal
-      setTimeout(triggerConfetti, 400)
+      setTimeout(() => triggerBadgeConfetti(badge.color, badge.rarity), 400)
 
       if (autoClose) {
-        const timer = setTimeout(() => {
-          setIsVisible(false)
-          setTimeout(onClose, 600)
-        }, autoCloseDelay)
+        const timer = setTimeout(handleClose, autoCloseDelay)
         return () => clearTimeout(timer)
       }
     }
-  }, [badge, autoClose, autoCloseDelay, onClose, triggerConfetti])
+  }, [badge, autoClose, autoCloseDelay, handleClose])
 
   if (!badge) return null
 
@@ -250,10 +53,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md"
-          onClick={() => {
-            setIsVisible(false)
-            setTimeout(onClose, 600)
-          }}
+          onClick={handleClose}
         >
           <motion.div
             initial={{ scale: 0.2, opacity: 0, rotateY: -180, y: 100 }}
@@ -262,11 +62,9 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
               opacity: 1,
               rotateY: 0,
               y: 0,
-              // Shake effect based on rarity
-              x:
-                rarity.shakeIntensity > 0
-                  ? [0, -rarity.shakeIntensity, rarity.shakeIntensity, -rarity.shakeIntensity, 0]
-                  : 0,
+              x: rarity.shakeIntensity > 0
+                ? [0, -rarity.shakeIntensity, rarity.shakeIntensity, -rarity.shakeIntensity, 0]
+                : 0,
             }}
             exit={{ scale: 0.2, opacity: 0, y: 50 }}
             transition={{
@@ -278,6 +76,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
             className="relative max-w-lg w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Glow rings */}
             {[...Array(rarity.ringCount)].map((_, i) => (
               <motion.div
                 key={i}
@@ -302,6 +101,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
 
             {/* Main card */}
             <div className="relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 rounded-3xl p-10 border border-white/20 overflow-hidden shadow-2xl">
+              {/* Floating particles */}
               <div className="absolute inset-0 overflow-hidden">
                 {[...Array(40)].map((_, i) => (
                   <motion.div
@@ -332,10 +132,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
 
               {/* Close button */}
               <button
-                onClick={() => {
-                  setIsVisible(false)
-                  setTimeout(onClose, 600)
-                }}
+                onClick={handleClose}
                 className="absolute top-5 right-5 text-white/40 hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
               >
                 <X className="h-7 w-7" />
@@ -345,6 +142,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
               <AnimatePresence>
                 {showContent && (
                   <div className="relative z-10 text-center">
+                    {/* Header */}
                     <motion.div
                       initial={{ y: -30, opacity: 0, scale: 0.8 }}
                       animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -368,34 +166,25 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                       </motion.div>
                     </motion.div>
 
+                    {/* Badge icon with rotating rings */}
                     <motion.div
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ delay: 0.2, type: "spring", duration: 1, bounce: 0.4 }}
                       className="relative mx-auto mb-8"
                     >
-                      {/* Outer rotating rings */}
                       {[...Array(3)].map((_, i) => (
                         <motion.div
                           key={i}
                           className={`absolute rounded-full bg-gradient-to-r ${rarity.gradient}`}
-                          style={{
-                            inset: `${-8 - i * 8}px`,
-                            padding: "2px",
-                            opacity: 0.6 - i * 0.15,
-                          }}
+                          style={{ inset: `${-8 - i * 8}px`, padding: "2px", opacity: 0.6 - i * 0.15 }}
                           animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
-                          transition={{
-                            duration: 10 + i * 5,
-                            repeat: Number.POSITIVE_INFINITY,
-                            ease: "linear",
-                          }}
+                          transition={{ duration: 10 + i * 5, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
                         >
                           <div className="w-full h-full rounded-full bg-gray-900" />
                         </motion.div>
                       ))}
 
-                      {/* Badge container - much bigger */}
                       <motion.div
                         className={`relative w-44 h-44 rounded-full flex items-center justify-center shadow-2xl ${rarity.glow}`}
                         style={{
@@ -412,19 +201,12 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                         }}
                         transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
                       >
-                        {/* Inner glow */}
                         <div
                           className="absolute inset-4 rounded-full"
-                          style={{
-                            background: `radial-gradient(circle, ${badge.color}30 0%, transparent 70%)`,
-                          }}
+                          style={{ background: `radial-gradient(circle, ${badge.color}30 0%, transparent 70%)` }}
                         />
-
                         <motion.div
-                          animate={{
-                            scale: [1, 1.15, 1],
-                            rotate: [0, 5, -5, 0],
-                          }}
+                          animate={{ scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }}
                           transition={{ duration: 2.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
                         >
                           <IconComponent
@@ -434,6 +216,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                         </motion.div>
                       </motion.div>
 
+                      {/* Orbiting stars */}
                       {[...Array(12)].map((_, i) => {
                         const angle = (i / 12) * Math.PI * 2
                         const radius = 100
@@ -445,17 +228,8 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                               left: `calc(50% + ${Math.cos(angle) * radius}px - 8px)`,
                               top: `calc(50% + ${Math.sin(angle) * radius}px - 8px)`,
                             }}
-                            animate={{
-                              scale: [0, 1.5, 0],
-                              opacity: [0, 1, 0],
-                              rotate: [0, 180],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Number.POSITIVE_INFINITY,
-                              delay: i * 0.15,
-                              ease: "easeInOut",
-                            }}
+                            animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0], rotate: [0, 180] }}
+                            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, delay: i * 0.15, ease: "easeInOut" }}
                           >
                             <Star className="h-4 w-4 text-yellow-300" fill="currentColor" />
                           </motion.div>
@@ -463,6 +237,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                       })}
                     </motion.div>
 
+                    {/* Badge name */}
                     <motion.h2
                       initial={{ y: 30, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -473,7 +248,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                       {badge.name}
                     </motion.h2>
 
-                    {/* Rarity badge - bigger */}
+                    {/* Rarity label */}
                     <motion.div
                       initial={{ scale: 0, rotate: -10 }}
                       animate={{ scale: 1, rotate: 0 }}
@@ -488,7 +263,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                       </span>
                     </motion.div>
 
-                    {/* Description - bigger */}
+                    {/* Description */}
                     <motion.p
                       initial={{ y: 30, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -498,6 +273,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                       {badge.description}
                     </motion.p>
 
+                    {/* Points */}
                     <motion.div
                       initial={{ scale: 0, rotate: -20 }}
                       animate={{ scale: 1, rotate: 0 }}
@@ -525,7 +301,7 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                       </motion.div>
                     </motion.div>
 
-                    {/* Action button - bigger and more prominent */}
+                    {/* Action button */}
                     <motion.div
                       initial={{ y: 30, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -533,15 +309,12 @@ export function BadgeEarnedPopup({ badge, onClose, autoClose = false, autoCloseD
                     >
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Button
-                          onClick={() => {
-                            setIsVisible(false)
-                            setTimeout(onClose, 600)
-                          }}
+                          onClick={handleClose}
                           className={`w-full bg-gradient-to-r ${rarity.gradient} hover:opacity-90 text-white font-bold py-4 text-lg rounded-xl shadow-xl transition-all`}
                           style={{ boxShadow: `0 8px 30px ${badge.color}40` }}
                         >
                           <Sparkles className="h-5 w-5 mr-2" />
-                          Großartig!
+                          Grossartig!
                           <Sparkles className="h-5 w-5 ml-2" />
                         </Button>
                       </motion.div>

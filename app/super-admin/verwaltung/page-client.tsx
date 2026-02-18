@@ -1,7 +1,7 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Building2, Users, Shield, UsersRound } from "lucide-react"
+import { Building2, Users, UsersRound } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
@@ -20,14 +20,12 @@ const TeamsManager = dynamic(() => import("@/components/super-admin/teams-manage
   loading: () => <div className="animate-pulse h-96 bg-muted rounded-lg" />,
 })
 
-const PermissionsManager = dynamic(() => import("@/components/super-admin/permissions-manager"), {
-  loading: () => <div className="animate-pulse h-96 bg-muted rounded-lg" />,
-})
-
 function VerwaltungContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const activeTab = searchParams.get("tab") || "practices"
+  const tabParam = searchParams.get("tab") || "practices"
+  // Redirect old "permissions" tab to user-rights page
+  const activeTab = tabParam === "permissions" ? "practices" : tabParam
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -39,11 +37,11 @@ function VerwaltungContent() {
     <div className="space-y-6">
       <PageHeader
         title="Verwaltung"
-        subtitle="Verwalten Sie Praxen, Benutzer, Teams und Berechtigungen"
+        subtitle="Verwalten Sie Praxen, Benutzer und Teams"
       />
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="practices" className="gap-2">
             <Building2 className="h-4 w-4" />
             Praxen
@@ -55,10 +53,6 @@ function VerwaltungContent() {
           <TabsTrigger value="teams" className="gap-2">
             <UsersRound className="h-4 w-4" />
             Teams
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-2">
-            <Shield className="h-4 w-4" />
-            Berechtigungen
           </TabsTrigger>
         </TabsList>
 
@@ -72,10 +66,6 @@ function VerwaltungContent() {
 
         <TabsContent value="teams" className="mt-6 space-y-4">
           <TeamsManager />
-        </TabsContent>
-
-        <TabsContent value="permissions" className="mt-6 space-y-4">
-          <PermissionsManager />
         </TabsContent>
       </Tabs>
     </div>

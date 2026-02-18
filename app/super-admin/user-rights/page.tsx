@@ -4,9 +4,12 @@ import { Suspense, useState } from "react"
 import { UserRightsManager } from "@/components/user-rights-manager"
 import { RolesOverview } from "@/components/super-admin/roles-overview"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users } from "lucide-react"
+import { Shield, Users, Settings2 } from "lucide-react"
+import dynamic from "next/dynamic"
 
-export const dynamic = "force-dynamic"
+const PermissionsManager = dynamic(() => import("@/components/super-admin/permissions-manager"), {
+  loading: () => <div className="animate-pulse h-96 bg-muted rounded-lg" />,
+})
 
 export default function UserRightsPage() {
   const [activeTab, setActiveTab] = useState("roles")
@@ -18,7 +21,7 @@ export default function UserRightsPage() {
           <Shield className="h-8 w-8 text-primary" />
           Benutzerrechte
         </h1>
-        <p className="text-muted-foreground mt-2">Verwalten Sie Rollen und Berechtigungen</p>
+        <p className="text-muted-foreground mt-2">Verwalten Sie Rollen, Berechtigungen und die Berechtigungs-Matrix</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -30,6 +33,10 @@ export default function UserRightsPage() {
           <TabsTrigger value="permissions" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Berechtigungen
+          </TabsTrigger>
+          <TabsTrigger value="matrix" className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4" />
+            Berechtigungs-Verwaltung
           </TabsTrigger>
         </TabsList>
 
@@ -50,6 +57,10 @@ export default function UserRightsPage() {
           >
             <UserRightsManager />
           </Suspense>
+        </TabsContent>
+
+        <TabsContent value="matrix" className="mt-6">
+          <PermissionsManager />
         </TabsContent>
       </Tabs>
     </div>

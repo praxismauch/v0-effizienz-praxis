@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
@@ -13,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     const search = searchParams.get("search")
     const userId = searchParams.get("userId")
 
-    const supabase = await createAdminClient()
+    const supabase = hasSupabaseAdminConfig() ? createAdminClient() : await createClient()
 
     let query = supabase
       .from("bulletin_posts")

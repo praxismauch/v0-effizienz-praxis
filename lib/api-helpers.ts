@@ -1,6 +1,7 @@
 import "server-only"
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
 import { isSuperAdminRole, isPracticeAdminRole, isManagerRole } from "@/lib/auth-utils"
 
 export interface ApiAuthResult {
@@ -26,8 +27,8 @@ export interface PracticeAuthResult extends ApiAuthResult {
  * We just need to read the user from the already-refreshed session.
  */
 export async function authenticateApiRequest(): Promise<ApiAuthResult> {
-  const adminClient = await createAdminClient()
   const supabase = await createClient()
+  const adminClient = hasSupabaseAdminConfig() ? await createAdminClient() : supabase
 
   // Get user from session - proxy has already refreshed it
   const {

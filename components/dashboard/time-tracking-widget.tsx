@@ -46,7 +46,7 @@ export function TimeTrackingWidget({ practiceId, userId }: TimeTrackingWidgetPro
   const handleClockIn = useCallback(async () => {
     setActionLoading(true)
     try {
-      const result = await clockIn("dashboard")
+      const result = await clockIn("office")
       if (result.success) {
         toast({ title: "Eingestempelt", description: "Zeiterfassung gestartet." })
         mutate()

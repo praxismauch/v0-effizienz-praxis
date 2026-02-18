@@ -9,7 +9,55 @@ declare global {
   var __supabaseAdminWarningShown: boolean | undefined
 }
 
-export function createAdminClient(): ReturnType<typeof createSupabaseClient> | null {
+/**
+ * Creates a mock Supabase client that supports full method chaining.
+ * Used as a fallback when Supabase credentials are not configured.
+ */
+function createMockClient(): ReturnType<typeof createSupabaseClient> {
+  const mockResult = { data: null, error: null, count: null, status: 200, statusText: "OK" }
+
+  function createChainable(): Record<string, unknown> {
+    const chainable: Record<string, unknown> = { ...mockResult }
+    const handler = () => createChainable()
+    const methods = [
+      "select", "insert", "update", "delete", "upsert",
+      "eq", "neq", "gt", "gte", "lt", "lte",
+      "like", "ilike", "is", "in", "contains", "containedBy",
+      "range", "textSearch", "match", "not", "or", "and", "filter",
+      "order", "limit", "offset", "single", "maybeSingle", "csv",
+      "returns", "throwOnError", "abortSignal", "rollback",
+    ]
+    for (const method of methods) {
+      chainable[method] = handler
+    }
+    chainable.then = (resolve: (value: typeof mockResult) => void) => Promise.resolve(resolve(mockResult))
+    return chainable
+  }
+
+  return {
+    auth: {
+      getUser: async () => ({ data: { user: null }, error: null }),
+      getSession: async () => ({ data: { session: null }, error: null }),
+      signOut: async () => ({ error: null }),
+      admin: {
+        listUsers: async () => ({ data: { users: [] }, error: null }),
+      },
+    },
+    from: () => createChainable(),
+    rpc: async () => mockResult,
+    storage: {
+      from: () => ({
+        upload: async () => ({ data: null, error: null }),
+        download: async () => ({ data: null, error: null }),
+        getPublicUrl: () => ({ data: { publicUrl: "" } }),
+        remove: async () => ({ data: null, error: null }),
+        list: async () => ({ data: null, error: null }),
+      }),
+    },
+  } as unknown as ReturnType<typeof createSupabaseClient>
+}
+
+export function createAdminClient(): ReturnType<typeof createSupabaseClient> {
   if (globalThis.__supabaseAdminClientStandalone) {
     return globalThis.__supabaseAdminClientStandalone
   }
@@ -19,10 +67,10 @@ export function createAdminClient(): ReturnType<typeof createSupabaseClient> | n
 
   if (!hasSupabaseAdminConfig()) {
     if (!globalThis.__supabaseAdminWarningShown) {
-      console.warn("Supabase admin client not configured - using session client as fallback")
+      console.warn("[v0] Supabase admin client not configured - using mock client fallback")
       globalThis.__supabaseAdminWarningShown = true
     }
-    return null
+    return createMockClient()
   }
 
   globalThis.__supabaseAdminClientStandalone = createSupabaseClient(supabaseUrl, serviceRoleKey, {

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { sortTeamMembersByRole } from "@/lib/team-role-order"
 import { handleApiError } from "@/lib/api-helpers"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 
 interface TeamMember {
   id: string

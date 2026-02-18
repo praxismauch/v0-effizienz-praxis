@@ -28,7 +28,7 @@ function VerwaltungContent() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Praxenverwaltung"
+        title="Praxen Verwaltung"
         subtitle="Verwalten Sie alle Praxen im System"
       />
 

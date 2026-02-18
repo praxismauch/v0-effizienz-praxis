@@ -445,7 +445,7 @@ export function SuperAdminSidebarSimple() {
       items: [
         {
           id: "practices",
-          label: "Praxen",
+          label: "Praxen Verwaltung",
           icon: Building2,
           href: "/super-admin/verwaltung",
           badge: true,

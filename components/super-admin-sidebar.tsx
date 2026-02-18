@@ -701,7 +701,7 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
       items: [
         {
           id: "practices",
-          label: "Praxen",
+          label: "Praxen Verwaltung",
           icon: Building2,
           href: "/super-admin/verwaltung",
           badge: true,

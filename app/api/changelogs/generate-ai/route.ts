@@ -4,54 +4,52 @@ import { NextResponse } from "next/server"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { previousVersion, currentVersion, changeList } = body
+    const { currentVersion, changeList } = body
 
-    if (!changeList || changeList.length === 0) {
-      return NextResponse.json(
-        {
-          error: "No changes provided",
-        },
-        { status: 400 },
-      )
+    if (!changeList || !Array.isArray(changeList) || changeList.length === 0) {
+      return NextResponse.json({ error: "No changes provided" }, { status: 400 })
     }
 
-    const prompt = `You are a technical writer creating user-friendly release notes for a medical practice management software.
+    const prompt = `Du bist ein technischer Redakteur fuer ein medizinisches Praxis-Management-SaaS namens "Effizienz Praxis".
+Analysiere die folgenden Aenderungen und erstelle einen professionellen, strukturierten Changelog-Eintrag auf Deutsch.
 
-Previous Version: ${previousVersion || "N/A"}
-Current Version: ${currentVersion}
+Aktuelle Version: ${currentVersion || "nicht angegeben"}
 
-Raw changes:
+Rohe Aenderungsliste:
 ${changeList.map((change: string, idx: number) => `${idx + 1}. ${change}`).join("\n")}
 
-Please analyze these changes and create a well-structured changelog entry with:
-1. A catchy title for this release
-2. A brief description (2-3 sentences) highlighting the most important improvements
-3. Categorized changes in JSON format with categories like "New Features", "Improvements", "Bug Fixes", "Security"
+Regeln:
+- Kategorisiere jede Aenderung in die passende Kategorie: "Neue Funktionen", "Verbesserungen", "Fehlerbehebungen", "Sicherheit", oder "Sonstiges"
+- Formuliere jede Aenderung professionell und klar verstaendlich fuer Praxis-Mitarbeiter
+- Der Titel soll kurz und praegnant sein (z.B. "Optimiertes Dashboard & neue KI-Funktionen")
+- Die Beschreibung soll 2-3 Saetze lang sein und den Mehrwert fuer den Nutzer hervorheben
+- Schlage eine passende Versionsnummer vor (semver)
+- Bestimme ob es major/minor/patch ist
 
-Return ONLY a valid JSON object in this exact format:
+Antworte NUR mit einem validen JSON-Objekt in exakt diesem Format:
 {
-  "title": "Release title here",
-  "description": "Brief description here",
+  "title": "Release-Titel hier",
+  "description": "Kurze Beschreibung hier (2-3 Saetze)",
   "changes": [
     {
-      "category": "New Features",
-      "items": ["User-friendly description of feature 1", "User-friendly description of feature 2"]
+      "category": "Neue Funktionen",
+      "items": ["Beschreibung der Funktion 1", "Beschreibung der Funktion 2"]
     },
     {
-      "category": "Improvements",
-      "items": ["User-friendly description of improvement 1"]
+      "category": "Verbesserungen",
+      "items": ["Beschreibung der Verbesserung 1"]
     }
-  ]
-}
-
-Make the descriptions clear, concise, and focused on user benefits. Use German language for the output.`
+  ],
+  "suggestedVersion": "1.2.0",
+  "change_type": "minor"
+}`
 
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
       prompt,
     })
 
-    // Parse the AI response
+    // Parse the AI response - extract JSON from the text
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       throw new Error("AI response did not contain valid JSON")
@@ -62,6 +60,9 @@ Make the descriptions clear, concise, and focused on user benefits. Use German l
     return NextResponse.json(result)
   } catch (error) {
     console.error("[v0] Error generating AI changelog:", error)
-    return NextResponse.json({ error: "Failed to generate changelog with AI" }, { status: 500 })
+    return NextResponse.json(
+      { error: "KI-Generierung fehlgeschlagen. Bitte versuchen Sie es erneut." },
+      { status: 500 }
+    )
   }
 }

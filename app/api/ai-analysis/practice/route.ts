@@ -252,6 +252,17 @@ export async function POST(request: Request) {
       qualityCircleSessions, // Quality circle sessions
       wellbeingSuggestions, // Wellbeing suggestions
       workloadAnalysis, // Workload analysis
+      bulletinPosts, // Schwarzes Brett posts
+      bulletinReadStatus, // Schwarzes Brett read confirmations
+      holidayRequests, // Holiday/vacation requests
+      hygienePlans, // Hygiene plans
+      hygienePlanExecutions, // Hygiene plan executions
+      cirsIncidents, // CIRS incident reports
+      trainingCourses, // Training courses
+      trainingEvents, // Training events
+      medicalDevices, // Medical devices
+      sickLeaves, // Sick leave records
+      practiceJournals, // Practice journal entries
     ] = await Promise.all([
       supabase.from("practices").select("*").eq("id", practiceId).single(),
       supabase
@@ -449,8 +460,20 @@ export async function POST(request: Request) {
           .select("*")
           .eq("practice_id", practiceId)
           .order("created_at", { ascending: false })
-          .limit(1),
+          .limit(50),
       ),
+      // Missing data sources
+      safeQuery(supabase.from("bulletin_posts").select("*").eq("practice_id", practiceId).eq("is_archived", false).is("deleted_at", null)),
+      safeQuery(supabase.from("bulletin_read_status").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("holiday_requests").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("hygiene_plans").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("hygiene_plan_executions").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("cirs_incidents").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("training_courses").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("training_events").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("medical_devices").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("sick_leaves").select("*").eq("practice_id", practiceId)),
+      safeQuery(supabase.from("practice_journals").select("*").eq("practice_id", practiceId).order("created_at", { ascending: false }).limit(50)),
     ])
 
     const [ticketStatusesConfig, ticketPrioritiesConfig] = await Promise.all([
@@ -682,6 +705,54 @@ totalApplications > 0 ? ((acceptedApplications / totalApplications) * 100).toFix
     const analyticsParameterTrackingConsistency =
       totalAnalyticsParameters > 0 ? ((recentAnalyticsParameters / totalAnalyticsParameters) * 100).toFixed(1) : "0"
 
+    // Schwarzes Brett
+    const totalBulletinPosts = bulletinPosts.data?.length || 0
+    const pinnedBulletinPosts = bulletinPosts.data?.filter((p: any) => p.is_pinned)?.length || 0
+    const bulletinWithConfirmation = bulletinPosts.data?.filter((p: any) => p.requires_confirmation)?.length || 0
+    const totalReadConfirmations = bulletinReadStatus.data?.length || 0
+    const bulletinCategories = [...new Set(bulletinPosts.data?.map((p: any) => p.category).filter(Boolean))].length
+
+    // Holiday / Urlaub
+    const totalHolidayRequests = holidayRequests.data?.length || 0
+    const pendingHolidays = holidayRequests.data?.filter((h: any) => h.status === "pending")?.length || 0
+    const approvedHolidays = holidayRequests.data?.filter((h: any) => h.status === "approved")?.length || 0
+    const rejectedHolidays = holidayRequests.data?.filter((h: any) => h.status === "rejected")?.length || 0
+
+    // Hygiene
+    const totalHygienePlans = hygienePlans.data?.length || 0
+    const activeHygienePlans = hygienePlans.data?.filter((h: any) => h.is_active)?.length || 0
+    const totalHygieneExecutions = hygienePlanExecutions.data?.length || 0
+    const completedHygieneExecutions = hygienePlanExecutions.data?.filter((e: any) => e.status === "completed")?.length || 0
+    const hygieneComplianceRate = totalHygieneExecutions > 0 ? ((completedHygieneExecutions / totalHygieneExecutions) * 100).toFixed(1) : "0"
+
+    // CIRS
+    const totalCirsIncidents = cirsIncidents.data?.length || 0
+    const openCirsIncidents = cirsIncidents.data?.filter((c: any) => c.status === "open" || c.status === "in_progress")?.length || 0
+    const resolvedCirsIncidents = cirsIncidents.data?.filter((c: any) => c.status === "resolved" || c.status === "closed")?.length || 0
+    const cirsSeverityHigh = cirsIncidents.data?.filter((c: any) => c.severity === "high" || c.severity === "critical")?.length || 0
+
+    // Training / Fortbildung
+    const totalTrainingCourses = trainingCourses.data?.length || 0
+    const totalTrainingEvents = trainingEvents.data?.length || 0
+    const upcomingTrainingEvents = trainingEvents.data?.filter((e: any) => new Date(e.start_date) > new Date())?.length || 0
+
+    // Medical Devices / Medizingeräte
+    const totalMedicalDevices = medicalDevices.data?.length || 0
+    const devicesNeedingMaintenance = medicalDevices.data?.filter((d: any) => {
+      if (!d.next_maintenance_date) return false
+      return new Date(d.next_maintenance_date) <= new Date()
+    })?.length || 0
+
+    // Sick Leave / Krankmeldungen
+    const totalSickLeaves = sickLeaves.data?.length || 0
+    const currentSickLeaves = sickLeaves.data?.filter((s: any) => {
+      const end = s.end_date ? new Date(s.end_date) : new Date()
+      return end >= new Date()
+    })?.length || 0
+
+    // Practice Journal / Praxisjournal
+    const totalJournalEntries = practiceJournals.data?.length || 0
+
     const hasSettings = !!practiceSettings.data
 
     let datenspendeContext = ""
@@ -841,6 +912,47 @@ PRAXISDATEN - UMFASSENDE VOLLSTÄNDIGE ANALYSE:
 - Benutzereinstellungen: ${userPreferencesCount}
 - Systemübersetzungen geladen: ${translations.data?.length || 0}
 
+📋 SCHWARZES BRETT (Bulletin Board):
+- Aktive Beiträge: ${totalBulletinPosts}
+- Angeheftete Beiträge: ${pinnedBulletinPosts}
+- Beiträge mit Lesebestätigung: ${bulletinWithConfirmation}
+- Lesebestätigungen gesamt: ${totalReadConfirmations}
+- Verwendete Kategorien: ${bulletinCategories}
+
+🏖️ URLAUBSMANAGEMENT:
+- Urlaubsanträge gesamt: ${totalHolidayRequests}
+- Offene Anträge: ${pendingHolidays}
+- Genehmigte Anträge: ${approvedHolidays}
+- Abgelehnte Anträge: ${rejectedHolidays}
+
+🧹 HYGIENE-MANAGEMENT:
+- Hygienepläne gesamt: ${totalHygienePlans} (${activeHygienePlans} aktiv)
+- Durchführungen gesamt: ${totalHygieneExecutions}
+- Abgeschlossene Durchführungen: ${completedHygieneExecutions}
+- Hygiene-Compliance-Rate: ${hygieneComplianceRate}%
+
+⚠️ CIRS-MELDUNGEN (Critical Incident Reporting):
+- Meldungen gesamt: ${totalCirsIncidents}
+- Offene Meldungen: ${openCirsIncidents}
+- Abgeschlossene Meldungen: ${resolvedCirsIncidents}
+- Hohe/Kritische Schwere: ${cirsSeverityHigh}
+
+📚 FORT- & WEITERBILDUNG:
+- Schulungskurse: ${totalTrainingCourses}
+- Schulungsveranstaltungen: ${totalTrainingEvents}
+- Bevorstehende Veranstaltungen: ${upcomingTrainingEvents}
+
+🏥 MEDIZINGERÄTE:
+- Geräte gesamt: ${totalMedicalDevices}
+- Geräte mit überfälliger Wartung: ${devicesNeedingMaintenance}
+
+🤒 KRANKMELDUNGEN:
+- Krankmeldungen gesamt: ${totalSickLeaves}
+- Aktuell krank gemeldet: ${currentSickLeaves}
+
+📔 PRAXISJOURNAL:
+- Journal-Einträge: ${totalJournalEntries}
+
 DATENSPENDE-KONTEXT:
 ${datenspendeContext}
 
@@ -906,6 +1018,26 @@ Erstelle eine JSON-Antwort mit folgendem Format:
       "score": <Bewertung der Wissensdatenbank>,
       "findings": ["<Erkenntnisse über die Wissensdatenbank>"],
       "recommendations": ["<Empfehlungen für die Wissensdatenbank>"]
+    },
+    "hygiene": {
+      "score": <Bewertung des Hygienemanagements>,
+      "findings": ["<Erkenntnisse über Hygiene>"],
+      "recommendations": ["<Empfehlungen für Hygiene>"]
+    },
+    "safety": {
+      "score": <Bewertung der Patientensicherheit/CIRS>,
+      "findings": ["<Erkenntnisse über CIRS und Sicherheit>"],
+      "recommendations": ["<Empfehlungen für Patientensicherheit>"]
+    },
+    "training": {
+      "score": <Bewertung der Fortbildung>,
+      "findings": ["<Erkenntnisse über Fortbildung>"],
+      "recommendations": ["<Empfehlungen für Fortbildung>"]
+    },
+    "communication": {
+      "score": <Bewertung der internen Kommunikation>,
+      "findings": ["<Erkenntnisse über Schwarzes Brett und Kommunikation>"],
+      "recommendations": ["<Empfehlungen für Kommunikation>"]
     }
   }
 }
@@ -926,6 +1058,13 @@ WICHTIGE ANALYSEKRITERIEN:
    - Datenqualität (KPI-Tracking, Dokumenten-Tagging, Transaktions-Kategorisierung)
    - Team-Balance (Abteilungsverteilung, Vertragsabdeckung)
    - Systemaktivität und Engagement
+   - Hygiene-Compliance (Durchführungsrate, aktive Pläne)
+   - CIRS-Meldungen (offene Vorfälle, Schweregrad-Verteilung)
+   - Fortbildungsaktivität (Kurse, bevorstehende Events)
+   - Medizingeräte-Wartung (überfällige Wartungen)
+   - Krankenstand (aktuelle Ausfälle, Trends)
+   - Interne Kommunikation (Schwarzes Brett Nutzung, Lesebestätigungen)
+   - Urlaubsmanagement (offene Anträge, Genehmigungsrate)
 
 BEWERTUNGSSKALA:
 - 90-100: Exzellent - Best Practice Level

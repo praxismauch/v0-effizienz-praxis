@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import useSWR from "swr"
 import AIPracticeAnalysis from "@/components/ai-practice-analysis"
 import { AIAnalysisHistoryTable } from "@/components/profile/ai-analysis-history-table"
 import AIPracticeChatDialog from "@/components/ai-practice-chat-dialog"
@@ -24,6 +25,8 @@ import {
 } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const sampleQuestions = [
   {
@@ -49,6 +52,19 @@ export default function AnalysisPageClient() {
   const { currentPractice } = usePractice()
   const [chatOpen, setChatOpen] = useState(false)
   const [selectedQuestion, setSelectedQuestion] = useState("")
+  const [lastScore, setLastScore] = useState<number | null>(null)
+
+  const practiceId = currentPractice?.id
+  const { data: badgeData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/sidebar-badges` : null,
+    fetcher,
+  )
+
+  const badges = badgeData?.badges || {}
+  const activeGoals = badges.goals || 0
+  const teamSize = badges.teamMembers || 0
+  const totalTasks = badges.tasks || 0
+  const totalDocuments = badges.documents || 0
 
   const handleQuestionClick = (question: string) => {
     setSelectedQuestion(question)
@@ -73,10 +89,16 @@ export default function AnalysisPageClient() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-1 px-4 pb-3 pt-0">
-              <div className="text-3xl font-bold">85/100</div>
+              <div className="text-3xl font-bold">{lastScore != null ? `${lastScore}/100` : "–"}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <ArrowUp className="h-3 w-3 text-emerald-500" />
-                <span className="text-emerald-600">+5</span> seit letzter Analyse
+                {lastScore != null ? (
+                  <>
+                    <ArrowUp className="h-3 w-3 text-emerald-500" />
+                    Aktuelle Bewertung
+                  </>
+                ) : (
+                  "Analyse starten für Score"
+                )}
               </p>
             </CardContent>
           </Card>
@@ -87,38 +109,38 @@ export default function AnalysisPageClient() {
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-1 px-4 pb-3 pt-0">
-              <div className="text-3xl font-bold">12</div>
+              <div className="text-3xl font-bold">{activeGoals}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                <span className="text-emerald-600">8</span> abgeschlossen
+                Ziele aktiv verfolgt
               </p>
             </CardContent>
           </Card>
 
           <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Team-Performance</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Team-Mitglieder</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-1 px-4 pb-3 pt-0">
-              <div className="text-3xl font-bold">92%</div>
+              <div className="text-3xl font-bold">{teamSize}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Activity className="h-3 w-3 text-blue-500" />
-                Auslastung optimal
+                Aktive Mitglieder
               </p>
             </CardContent>
           </Card>
 
           <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Analysen</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Dokumente</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-1 px-4 pb-3 pt-0">
-              <div className="text-3xl font-bold">24</div>
+              <div className="text-3xl font-bold">{totalDocuments}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock className="h-3 w-3 text-amber-500" />
-                Letzte vor 2 Std.
+                {totalTasks} offene Aufgaben
               </p>
             </CardContent>
           </Card>
@@ -137,7 +159,7 @@ export default function AnalysisPageClient() {
           </TabsList>
 
           <TabsContent value="current" className="mt-6">
-            <AIPracticeAnalysis />
+            <AIPracticeAnalysis onScoreUpdate={(score) => setLastScore(score)} />
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">

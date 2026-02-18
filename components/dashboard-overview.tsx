@@ -290,9 +290,16 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
   ])
 
   const getColumnSpanClass = (widgetId: string): string => {
+    const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+    // 1. User's per-widget override from the editor dialog (Breite buttons)
+    const userSpan = widgets.columnSpans?.[widgetId]
+    // 2. Super-admin default from cockpit-settings API
     const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
+    const adminSpan = setting?.column_span
+    // 3. Built-in default
     const defaultSpan = FULL_WIDTH_WIDGETS.has(widgetId) ? 5 : 1
-    const colSpan = setting?.column_span || defaultSpan
+    // User span > 0 takes priority, then admin, then default
+    const colSpan = (userSpan && userSpan > 0) ? userSpan : (adminSpan || defaultSpan)
 
     switch (colSpan) {
       case 2:

@@ -146,7 +146,7 @@ export default function SchwarzesBrettClient() {
   const [filterUnread, setFilterUnread] = useState(false)
   const [sortBy, setSortBy] = useState("newest")
   const [showFilters, setShowFilters] = useState(false)
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list")
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid")
 
   // Orga categories from database
   const [orgaCategories, setOrgaCategories] = useState<OrgaCategoryItem[]>([])
@@ -644,7 +644,7 @@ export default function SchwarzesBrettClient() {
             {/* Publish / Expire dates */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="publish_at">Veröffentlichung</Label>
+                <Label htmlFor="publish_at">Ver��ffentlichung</Label>
                 <Input
                   id="publish_at"
                   type="datetime-local"

@@ -28,6 +28,7 @@ import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { GoogleReviewsWidget } from "./google-reviews-widget"
 import { JournalActionItemsCard } from "@/components/dashboard/insights-action-items-card"
 import { BulletinWidget } from "@/components/dashboard/bulletin-widget"
+import { TimeTrackingWidget } from "@/components/dashboard/time-tracking-widget"
 import { useTranslation } from "@/contexts/translation-context"
 import { PageHeader } from "@/components/page-layout"
 import {
@@ -104,6 +105,7 @@ const DEFAULT_WIDGETS = {
   showGoogleReviews: true,
   showJournalActions: true,
   showBulletin: true,
+  showTimeTracking: true,
   showTodos: true,
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
@@ -543,6 +545,12 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             <BulletinWidget key="bulletin" practiceId={practiceId} userId={userId} />,
             widgetId,
           )
+        case "showTimeTracking":
+          if (widgets.showTimeTracking === false || !practiceId || !userId) return null
+          return wrapWithSpan(
+            <TimeTrackingWidget key="time-tracking" practiceId={practiceId} userId={userId} />,
+            widgetId,
+          )
         case "showQuickActions":
           return null
         default:
@@ -555,6 +563,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
       currentPractice,
       t,
       practiceId,
+      userId,
       cockpitCardSettings,
     ],
   )

@@ -75,6 +75,7 @@ export interface WidgetConfig {
   showBulletin?: boolean
   showKPIs?: boolean
   showJournalActions?: boolean
+  showTimeTracking?: boolean
   columnSpans?: Record<string, number>
   todosFilterWichtig?: boolean
   todosFilterDringend?: boolean
@@ -203,7 +204,13 @@ export const WIDGET_DEFINITIONS = [
     description: "Neueste Beiträge vom Schwarzen Brett",
     icon: FileText,
   },
-]
+  {
+    id: "showTimeTracking",
+    label: "Zeiterfassung",
+    description: "Ein-/Ausstempeln direkt vom Cockpit",
+    icon: Clock,
+  },
+  ]
 
 export const DEFAULT_ORDER = WIDGET_DEFINITIONS.map((w) => w.id)
 
@@ -227,6 +234,7 @@ const defaultWidgetConfig: WidgetConfig = {
   showKPIs: true,
   showJournalActions: true,
   showBulletin: true,
+  showTimeTracking: true,
   columnSpans: {},
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,

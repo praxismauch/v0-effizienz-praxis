@@ -6,6 +6,7 @@ import { getSupabaseUrl, getSupabaseServiceRoleKey, hasSupabaseAdminConfig } fro
 
 declare global {
   var __supabaseAdminClientStandalone: ReturnType<typeof createSupabaseClient> | undefined
+  var __supabaseAdminWarningShown: boolean | undefined
 }
 
 export function createAdminClient(): ReturnType<typeof createSupabaseClient> | null {
@@ -17,7 +18,10 @@ export function createAdminClient(): ReturnType<typeof createSupabaseClient> | n
   const serviceRoleKey = getSupabaseServiceRoleKey()
 
   if (!hasSupabaseAdminConfig()) {
-    console.warn("Supabase admin client not configured - add credentials to lib/supabase/config.ts")
+    if (!globalThis.__supabaseAdminWarningShown) {
+      console.warn("Supabase admin client not configured - using session client as fallback")
+      globalThis.__supabaseAdminWarningShown = true
+    }
     return null
   }
 

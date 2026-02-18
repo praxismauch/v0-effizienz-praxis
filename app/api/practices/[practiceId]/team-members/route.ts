@@ -46,6 +46,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
     const supabase = await getApiClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 })
+    }
 
     let customRoleOrder: string[] | undefined
     try {

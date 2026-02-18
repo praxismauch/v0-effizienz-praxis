@@ -151,11 +151,11 @@ export const BADGE_TYPES = [
 ]
 
 export const BADGE_RARITIES = [
-  { value: "common", label: "Gewoehnlich", color: "text-gray-500" },
-  { value: "uncommon", label: "Ungewoehnlich", color: "text-green-500" },
+  { value: "common", label: "Gewöhnlich", color: "text-gray-500" },
+  { value: "uncommon", label: "Ungewöhnlich", color: "text-green-500" },
   { value: "rare", label: "Selten", color: "text-blue-500" },
   { value: "epic", label: "Episch", color: "text-purple-500" },
-  { value: "legendary", label: "Legendaer", color: "text-amber-500" },
+  { value: "legendary", label: "Legendär", color: "text-amber-500" },
 ]
 
 export const BADGE_ICONS = [

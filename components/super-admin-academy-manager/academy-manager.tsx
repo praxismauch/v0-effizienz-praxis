@@ -300,7 +300,7 @@ export function SuperAdminAcademyManager() {
       {/* Course Dialog */}
       <Dialog open={a.showCourseDialog} onOpenChange={a.setShowCourseDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{a.editingCourse ? "Kurs bearbeiten" : "Neuer Kurs"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{a.editingCourse ? "Kurs bearbeiten" : "Neuer Kurs"}</DialogTitle><DialogDescription>Kursdetails, Sichtbarkeit und Dozent konfigurieren.</DialogDescription></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2"><Label>Titel</Label><Input value={a.courseForm.title} onChange={(e) => a.setCourseForm({ ...a.courseForm, title: e.target.value })} /></div>
             <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.courseForm.description} onChange={(e) => a.setCourseForm({ ...a.courseForm, description: e.target.value })} rows={3} /></div>
@@ -328,7 +328,7 @@ export function SuperAdminAcademyManager() {
       {/* Module Dialog */}
       <Dialog open={a.showModuleDialog} onOpenChange={a.setShowModuleDialog}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{a.editingModule ? "Modul bearbeiten" : "Neues Modul"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{a.editingModule ? "Modul bearbeiten" : "Neues Modul"}</DialogTitle><DialogDescription>Modulinformationen und Veröffentlichungsstatus festlegen.</DialogDescription></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2"><Label>Titel</Label><Input value={a.moduleForm.title} onChange={(e) => a.setModuleForm({ ...a.moduleForm, title: e.target.value })} /></div>
             <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.moduleForm.description} onChange={(e) => a.setModuleForm({ ...a.moduleForm, description: e.target.value })} rows={3} /></div>
@@ -342,7 +342,7 @@ export function SuperAdminAcademyManager() {
       {/* Badge Dialog */}
       <Dialog open={a.showBadgeDialog} onOpenChange={a.setShowBadgeDialog}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{a.editingBadge ? "Badge bearbeiten" : "Neues Badge"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{a.editingBadge ? "Badge bearbeiten" : "Neues Badge"}</DialogTitle><DialogDescription>Badge-Typ, Seltenheit, Icon und XP-Belohnung konfigurieren.</DialogDescription></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2"><Label>Name</Label><Input value={a.badgeForm.name} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, name: e.target.value })} /></div>
             <div className="grid gap-2"><Label>Beschreibung</Label><Textarea value={a.badgeForm.description} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, description: e.target.value })} rows={2} /></div>

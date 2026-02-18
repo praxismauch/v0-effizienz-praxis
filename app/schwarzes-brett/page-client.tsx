@@ -59,6 +59,8 @@ import {
   Users,
   Shield,
   Flame,
+  LayoutGrid,
+  List,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useUser } from "@/contexts/user-context"
@@ -147,6 +149,7 @@ export default function SchwarzesBrettClient() {
   const [filterUnread, setFilterUnread] = useState(false)
   const [sortBy, setSortBy] = useState("newest")
   const [showFilters, setShowFilters] = useState(false)
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list")
 
   // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -381,6 +384,26 @@ export default function SchwarzesBrettClient() {
               </TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2">
+              <div className="flex items-center rounded-md border">
+                <Button
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8 rounded-r-none"
+                  onClick={() => setViewMode("list")}
+                  title="Listenansicht"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8 rounded-l-none"
+                  onClick={() => setViewMode("grid")}
+                  title="Kachelansicht"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </div>
               <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
                 <Filter className="h-4 w-4 mr-1" />
                 Filter
@@ -466,6 +489,7 @@ export default function SchwarzesBrettClient() {
               onArchive={handleArchive}
               onViewDetail={openDetailView}
               isAuthorOrAdmin={isAuthorOrAdmin}
+              viewMode={viewMode}
             />
           </TabsContent>
 
@@ -483,6 +507,7 @@ export default function SchwarzesBrettClient() {
               onViewDetail={openDetailView}
               isAuthorOrAdmin={isAuthorOrAdmin}
               isArchiveView
+              viewMode={viewMode}
             />
           </TabsContent>
         </Tabs>
@@ -763,6 +788,7 @@ function PostList({
   onViewDetail,
   isAuthorOrAdmin,
   isArchiveView = false,
+  viewMode = "list",
 }: {
   posts: BulletinPost[]
   pinnedPosts: BulletinPost[]
@@ -776,6 +802,7 @@ function PostList({
   onViewDetail: (p: BulletinPost) => void
   isAuthorOrAdmin: (p: BulletinPost) => boolean
   isArchiveView?: boolean
+  viewMode?: "list" | "grid"
 }) {
   if (isLoading) {
     return (
@@ -810,6 +837,9 @@ function PostList({
     )
   }
 
+  const isGrid = viewMode === "grid"
+  const gridClass = isGrid ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-3"
+
   return (
     <div className="space-y-4">
       {/* Pinned */}
@@ -818,18 +848,21 @@ function PostList({
           <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Pin className="h-4 w-4" />Angeheftet ({pinnedPosts.length})
           </h3>
-          {pinnedPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onTogglePin={onTogglePin}
-              onArchive={onArchive}
-              onClick={() => onViewDetail(post)}
-              canManage={isAuthorOrAdmin(post)}
-            />
-          ))}
+          <div className={gridClass}>
+            {pinnedPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onTogglePin={onTogglePin}
+                onArchive={onArchive}
+                onClick={() => onViewDetail(post)}
+                canManage={isAuthorOrAdmin(post)}
+                viewMode={viewMode}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -841,18 +874,21 @@ function PostList({
               Beiträge ({regularPosts.length})
             </h3>
           )}
-          {regularPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onTogglePin={onTogglePin}
-              onArchive={onArchive}
-              onClick={() => onViewDetail(post)}
-              canManage={isAuthorOrAdmin(post)}
-            />
-          ))}
+          <div className={gridClass}>
+            {regularPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onTogglePin={onTogglePin}
+                onArchive={onArchive}
+                onClick={() => onViewDetail(post)}
+                canManage={isAuthorOrAdmin(post)}
+                viewMode={viewMode}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -867,6 +903,7 @@ function PostCard({
   onArchive,
   onClick,
   canManage,
+  viewMode = "list",
 }: {
   post: BulletinPost
   onEdit: (p: BulletinPost) => void
@@ -875,39 +912,47 @@ function PostCard({
   onArchive: (p: BulletinPost) => void
   onClick: () => void
   canManage: boolean
+  viewMode?: "list" | "grid"
 }) {
   const priorityConfig = PRIORITIES.find((p) => p.value === post.priority) || PRIORITIES[0]
+  const isGrid = viewMode === "grid"
 
   return (
     <Card
-      className={`cursor-pointer transition-colors hover:bg-muted/50 ${priorityConfig.bg} ${!post.is_read ? "border-l-4 border-l-primary" : ""}`}
+      className={`cursor-pointer transition-colors hover:bg-muted/50 ${priorityConfig.bg} ${!post.is_read ? "border-l-4 border-l-primary" : ""} ${isGrid ? "flex flex-col h-full" : ""}`}
       onClick={onClick}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-4">
+      <CardHeader className={isGrid ? "pb-2 flex-1" : "pb-2"}>
+        <div className={isGrid ? "space-y-2" : "flex items-start justify-between gap-4"}>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <CardTitle className="text-base">{post.title}</CardTitle>
+              {!post.is_read && <Badge className="text-xs">Neu</Badge>}
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
               {post.is_pinned && (
                 <Badge variant="secondary" className="text-xs"><Pin className="h-3 w-3 mr-1" />Angeheftet</Badge>
               )}
               <PriorityBadge priority={post.priority} />
               <CategoryBadge category={post.category} />
-              {!post.is_read && <Badge className="text-xs">Neu</Badge>}
               {post.requires_confirmation && (
                 <Badge variant="outline" className="text-xs"><CheckCircle2 className="h-3 w-3 mr-1" />Bestätigung</Badge>
               )}
             </div>
-            <CardDescription className="flex items-center gap-3 mt-1 flex-wrap">
+            <CardDescription className={`flex items-center gap-3 mt-2 flex-wrap ${isGrid ? "text-xs" : ""}`}>
               <span className="flex items-center gap-1"><User className="h-3 w-3" />{post.author_name}</span>
               <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDate(post.created_at)}</span>
-              <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{post.read_count} gelesen</span>
-              {post.visibility === "roles" && (
-                <span className="flex items-center gap-1"><Users className="h-3 w-3" />{post.visible_roles?.length || 0} Rollen</span>
+              {!isGrid && (
+                <>
+                  <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{post.read_count} gelesen</span>
+                  {post.visibility === "roles" && (
+                    <span className="flex items-center gap-1"><Users className="h-3 w-3" />{post.visible_roles?.length || 0} Rollen</span>
+                  )}
+                </>
               )}
             </CardDescription>
           </div>
-          {canManage && (
+          {canManage && !isGrid && (
             <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
               <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onTogglePin(post)} title={post.is_pinned ? "Lösen" : "Anpinnen"}>
                 <Pin className={`h-4 w-4 ${post.is_pinned ? "text-primary" : ""}`} />
@@ -925,8 +970,24 @@ function PostCard({
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground line-clamp-2 whitespace-pre-wrap">{post.content}</p>
+      <CardContent className={isGrid ? "pt-0" : ""}>
+        <p className={`text-sm text-muted-foreground whitespace-pre-wrap ${isGrid ? "line-clamp-3" : "line-clamp-2"}`}>{post.content}</p>
+        {canManage && isGrid && (
+          <div className="flex items-center gap-1 mt-3 border-t pt-2" onClick={(e) => e.stopPropagation()}>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onTogglePin(post)} title={post.is_pinned ? "Lösen" : "Anpinnen"}>
+              <Pin className={`h-3.5 w-3.5 ${post.is_pinned ? "text-primary" : ""}`} />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onEdit(post)} title="Bearbeiten">
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onArchive(post)} title={post.is_archived ? "Wiederherstellen" : "Archivieren"}>
+              <Archive className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => onDelete(post)} title="Deaktivieren">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

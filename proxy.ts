@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("[proxy] Missing Supabase environment variables")
+    // In preview/development without Supabase configured, allow all routes
     return supabaseResponse
   }
 

@@ -40,7 +40,7 @@ export const StatCard = memo(function StatCard({
 }: StatCardProps) {
   return (
     <Link href={href}>
-      <Card className="p-5 hover:shadow-md transition-shadow cursor-pointer h-full">
+      <Card className="p-5 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[140px]">
         <div className="flex items-start gap-3">
           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${colorClasses[color] || colorClasses.blue}`}>
             <Icon className="h-5 w-5" />

@@ -1,7 +1,5 @@
 "use client"
 
-import { memo } from "react"
-import { useRouter } from "next/navigation"
 import { LazyDashboardOverview } from "@/components/lazy-components"
 import { OnboardingWrapper } from "@/components/onboarding/onboarding-wrapper"
 import { AlertCircle, RefreshCw } from "lucide-react"
@@ -22,8 +20,6 @@ interface DashboardPageClientProps {
 }
 
 export default function DashboardPageClient({ initialData, practiceId, userId, userName }: DashboardPageClientProps) {
-  const router = useRouter()
-
   // If no practice ID, show error
   if (!practiceId) {
     return (
@@ -39,7 +35,7 @@ export default function DashboardPageClient({ initialData, practiceId, userId, u
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.refresh()} variant="outline" className="w-full bg-transparent">
+            <Button onClick={() => window.location.reload()} variant="outline" className="w-full bg-transparent">
               <RefreshCw className="mr-2 h-4 w-4" />
               Erneut versuchen
             </Button>

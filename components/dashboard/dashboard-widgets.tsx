@@ -107,7 +107,7 @@ export const KPIWidget = memo(function KPIWidget({
   const trend = kpiTrend || 5
 
   return (
-    <Card className="p-5 hover:shadow-md transition-shadow h-full">
+    <Card className="p-5 hover:shadow-md transition-shadow h-full min-h-[140px]">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
           <TrendingUp className="h-5 w-5" />

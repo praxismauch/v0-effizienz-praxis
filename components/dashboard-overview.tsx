@@ -588,14 +588,45 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     return order.map((id) => renderWidget(id)).filter(Boolean)
   }, [dashboardConfig, renderWidget])
 
-  const handleSaveConfig = useCallback((newConfig: { widgets: any }) => {
-    if (newConfig && newConfig.widgets) {
-      const widgets = newConfig.widgets.widgets || newConfig.widgets
-      setDashboardConfig({ widgets })
-    } else {
-      setDashboardConfig({ widgets: DEFAULT_WIDGETS })
+  const handleSaveConfig = useCallback(async (newConfig: { widgets: any }) => {
+    const widgets = newConfig?.widgets
+      ? (newConfig.widgets.widgets || newConfig.widgets)
+      : DEFAULT_WIDGETS
+    
+    // Update local state immediately
+    setDashboardConfig({ widgets })
+
+    // Persist to database
+    if (practiceId && userId) {
+      try {
+        const response = await fetch(`/api/practices/${practiceId}/dashboard-preferences`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ config: { widgets } }),
+        })
+        if (!response.ok) {
+          console.error("Failed to save dashboard config:", await response.text())
+          toast({
+            title: "Fehler",
+            description: "Dashboard-Einstellungen konnten nicht gespeichert werden.",
+            variant: "destructive",
+          })
+        } else {
+          toast({
+            title: "Gespeichert",
+            description: "Dashboard-Einstellungen wurden erfolgreich gespeichert.",
+          })
+        }
+      } catch (err) {
+        console.error("Error saving dashboard config:", err)
+        toast({
+          title: "Fehler",
+          description: "Dashboard-Einstellungen konnten nicht gespeichert werden.",
+          variant: "destructive",
+        })
+      }
     }
-  }, [])
+  }, [practiceId, userId, toast])
 
   if (loading) {
     return (

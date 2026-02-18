@@ -74,6 +74,7 @@ export interface WidgetConfig {
   showTodos: boolean
   showBulletin?: boolean
   showKPIs?: boolean
+  showInsightsActions?: boolean
   showJournalActions?: boolean
   todosFilterWichtig?: boolean
   todosFilterDringend?: boolean
@@ -179,6 +180,12 @@ export const WIDGET_DEFINITIONS = [
     icon: Rss,
   },
   {
+    id: "showInsightsActions",
+    label: "KI-Insights Handlungsempfehlungen",
+    description: "KI-generierte Erkenntnisse und Empfehlungen",
+    icon: TrendingUp,
+  },
+  {
     id: "showJournalActions",
     label: "Journal Handlungsempfehlungen",
     description: "KI-generierte Handlungsempfehlungen aus dem Journal",
@@ -224,7 +231,9 @@ const defaultWidgetConfig: WidgetConfig = {
   showGoogleReviews: true,
   showTodos: true,
   showKPIs: true,
+  showInsightsActions: true,
   showJournalActions: true,
+  showBulletin: true,
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
   todosFilterPriority: undefined,
@@ -416,15 +425,27 @@ export function DashboardEditorDialog({
   }
 
   const initialWidgets = getWidgetsFromConfig(configProp || currentConfig)
+
+  // Ensure saved order includes all known widget IDs (handles newly added widgets)
+  const ensureCompleteOrder = (savedOrder: string[]): string[] => {
+    const order = [...savedOrder]
+    for (const id of DEFAULT_ORDER) {
+      if (!order.includes(id)) {
+        order.push(id)
+      }
+    }
+    return order
+  }
+
   const [config, setConfig] = useState<WidgetConfig>(initialWidgets)
-  const [widgetOrder, setWidgetOrder] = useState<string[]>(initialWidgets.widgetOrder || DEFAULT_ORDER)
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(ensureCompleteOrder(initialWidgets.widgetOrder || DEFAULT_ORDER))
   const [linebreaks, setLinebreaks] = useState<string[]>(initialWidgets.linebreaks || [])
 
   useEffect(() => {
     if (open) {
       const widgets = getWidgetsFromConfig(configProp || currentConfig)
       setConfig(widgets)
-      setWidgetOrder(widgets.widgetOrder || DEFAULT_ORDER)
+      setWidgetOrder(ensureCompleteOrder(widgets.widgetOrder || DEFAULT_ORDER))
       setLinebreaks(widgets.linebreaks || [])
     }
   }, [open, configProp, currentConfig])

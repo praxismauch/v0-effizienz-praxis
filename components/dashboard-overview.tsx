@@ -104,6 +104,7 @@ const DEFAULT_WIDGETS = {
   showGoogleReviews: true,
   showInsightsActions: true,
   showJournalActions: true,
+  showBulletin: true,
   showTodos: true,
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
@@ -561,12 +562,21 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
 
   const orderedWidgets = useMemo(() => {
     const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
-    const order = widgets.widgetOrder || DEFAULT_ORDER
+    const savedOrder = widgets.widgetOrder || DEFAULT_ORDER
 
-    if (!Array.isArray(order)) {
-      console.error("[v0] widgetOrder is not an array:", order)
+    if (!Array.isArray(savedOrder)) {
+      console.error("[v0] widgetOrder is not an array:", savedOrder)
       return []
     }
+
+    // Ensure any new widget IDs from DEFAULT_ORDER are appended if missing from saved order
+    const order = [...savedOrder]
+    for (const id of DEFAULT_ORDER) {
+      if (!order.includes(id)) {
+        order.push(id)
+      }
+    }
+
     return order.map((id) => renderWidget(id)).filter(Boolean)
   }, [dashboardConfig, renderWidget])
 

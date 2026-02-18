@@ -118,8 +118,8 @@ export const defaultPages = [
 
   // Super Admin - Verwaltung
   { path: "/super-admin/tickets", name: "SA Tickets" },
-  { path: "/super-admin/verwaltung?tab=practices", name: "SA Praxen" },
-  { path: "/super-admin/verwaltung?tab=users", name: "SA Benutzer" },
+  { path: "/super-admin/verwaltung", name: "SA Praxen" },
+  { path: "/super-admin/users", name: "SA Benutzer" },
   { path: "/super-admin/user-rights", name: "SA Benutzerrechte" },
   { path: "/super-admin/kpi-kategorien", name: "SA KPI-Kategorien" },
   { path: "/super-admin/content?tab=skills", name: "SA Vorlagen: Skills" },

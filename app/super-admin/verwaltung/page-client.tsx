@@ -1,7 +1,7 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Building2, Users, UsersRound } from "lucide-react"
+import { Building2, Users } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
@@ -16,16 +16,12 @@ const UsersManager = dynamic(() => import("@/components/super-admin/users-manage
   loading: () => <div className="animate-pulse h-96 bg-muted rounded-lg" />,
 })
 
-const TeamsManager = dynamic(() => import("@/components/super-admin/teams-manager"), {
-  loading: () => <div className="animate-pulse h-96 bg-muted rounded-lg" />,
-})
-
 function VerwaltungContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const tabParam = searchParams.get("tab") || "practices"
-  // Redirect old "permissions" tab to user-rights page
-  const activeTab = tabParam === "permissions" ? "practices" : tabParam
+  // Redirect old tabs that have been moved elsewhere
+  const activeTab = (tabParam === "permissions" || tabParam === "teams") ? "practices" : tabParam
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -37,11 +33,11 @@ function VerwaltungContent() {
     <div className="space-y-6">
       <PageHeader
         title="Verwaltung"
-        subtitle="Verwalten Sie Praxen, Benutzer und Teams"
+        subtitle="Verwalten Sie Praxen und Benutzer"
       />
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="practices" className="gap-2">
             <Building2 className="h-4 w-4" />
             Praxen
@@ -49,10 +45,6 @@ function VerwaltungContent() {
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
             Benutzer
-          </TabsTrigger>
-          <TabsTrigger value="teams" className="gap-2">
-            <UsersRound className="h-4 w-4" />
-            Teams
           </TabsTrigger>
         </TabsList>
 
@@ -62,10 +54,6 @@ function VerwaltungContent() {
 
         <TabsContent value="users" className="mt-6 space-y-4">
           <UsersManager />
-        </TabsContent>
-
-        <TabsContent value="teams" className="mt-6 space-y-4">
-          <TeamsManager />
         </TabsContent>
       </Tabs>
     </div>

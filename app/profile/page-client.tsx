@@ -80,7 +80,7 @@ export default function ProfilePageClient() {
           preferred_language: data.user.preferred_language,
         })
       }
-      toast({ title: "Profil aktualisiert", description: "Ihre Anderungen wurden erfolgreich gespeichert." })
+      toast({ title: "Profil aktualisiert", description: "Ihre Änderungen wurden erfolgreich gespeichert." })
     } catch (error) {
       console.error("Error saving profile:", error)
       toast({ title: "Fehler", description: "Profil konnte nicht gespeichert werden.", variant: "destructive" })
@@ -97,7 +97,7 @@ export default function ProfilePageClient() {
     const labels: Record<string, string> = {
       superadmin: "Super Admin",
       admin: "Administrator",
-      doctor: "Arzt/Arztin",
+      doctor: "Arzt/Ärztin",
       nurse: "MFA/Pflege",
       receptionist: "Empfang",
     }
@@ -106,11 +106,11 @@ export default function ProfilePageClient() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <PageHeader
           title="Mein Profil"
-          subtitle="Verwalten Sie Ihre persoenlichen Informationen und Einstellungen"
+          subtitle="Verwalten Sie Ihre persönlichen Informationen und Einstellungen"
         />
 
         {/* Profile Overview Card */}
@@ -173,9 +173,9 @@ export default function ProfilePageClient() {
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Einzelne Gruppe offnen</Label>
+                    <Label>Einzelne Gruppe öffnen</Label>
                     <p className="text-sm text-muted-foreground">
-                      Wenn aktiviert, wird beim Offnen einer Menugruppe die vorherige automatisch geschlossen
+                      Wenn aktiviert, wird beim Öffnen einer Menügruppe die vorherige automatisch geschlossen
                     </p>
                   </div>
                   <Switch checked={singleGroupMode} onCheckedChange={setSingleGroupMode} />

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clipboard, Pin, Flame, AlertTriangle, ArrowRight, Eye } from "lucide-react"
+import { Pin, Flame, AlertTriangle, ArrowRight, Bell } from "lucide-react"
 
 interface BulletinPost {
   id: string
@@ -16,6 +16,43 @@ interface BulletinPost {
   is_read: boolean
   author_name: string
   created_at: string
+  content?: string
+}
+
+function PostItem({ post }: { post: BulletinPost }) {
+  return (
+    <Link
+      href="/schwarzes-brett"
+      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          {!post.is_read && (
+            <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+          )}
+          <p className={`text-sm font-medium truncate ${!post.is_read ? "text-foreground" : "text-muted-foreground"}`}>
+            {post.title}
+          </p>
+          {post.priority === "urgent" && <Flame className="h-3 w-3 text-red-500 shrink-0" />}
+          {post.priority === "important" && <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />}
+        </div>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {post.author_name} &middot; {new Date(post.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+        </p>
+      </div>
+    </Link>
+  )
+}
+
+function SkeletonCard() {
+  return (
+    <Card className="p-6 border-muted">
+      <div className="flex items-center gap-3">
+        <div className="h-5 w-5 animate-pulse bg-muted rounded" />
+        <div className="h-4 w-32 animate-pulse bg-muted rounded" />
+      </div>
+    </Card>
+  )
 }
 
 export const BulletinWidget = memo(function BulletinWidget({
@@ -36,7 +73,7 @@ export const BulletinWidget = memo(function BulletinWidget({
         const res = await fetch(`/api/practices/${practiceId}/bulletin?${params}`)
         if (!res.ok) return
         const data = await res.json()
-        setPosts((data.posts || []).slice(0, 5))
+        setPosts(data.posts || [])
       } catch {
         // silent
       } finally {
@@ -46,69 +83,83 @@ export const BulletinWidget = memo(function BulletinWidget({
     fetchPosts()
   }, [practiceId, userId])
 
-  const unreadCount = posts.filter((p) => !p.is_read).length
+  const pinnedPosts = posts.filter((p) => p.is_pinned).slice(0, 5)
+  const newPosts = posts.filter((p) => !p.is_read).slice(0, 5)
 
   if (isLoading) {
     return (
-      <Card className="p-6 border-muted col-span-full">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-pulse bg-muted rounded" />
-          <div className="h-4 w-32 animate-pulse bg-muted rounded" />
-        </div>
-      </Card>
+      <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
     )
   }
 
   return (
-    <Card className="p-6 border-muted col-span-full">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clipboard className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Neues vom Schwarzen Brett</h2>
-            {unreadCount > 0 && (
-              <Badge>{unreadCount} ungelesen</Badge>
-            )}
-          </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/schwarzes-brett">
-              Alle anzeigen
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Link>
-          </Button>
-        </div>
-
-        {posts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Keine aktuellen Beiträge.</p>
-        ) : (
-          <div className="space-y-2">
-            {posts.map((post) => (
-              <Link
-                key={post.id}
-                href="/schwarzes-brett"
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {!post.is_read && (
-                      <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
-                    )}
-                    <p className={`text-sm font-medium truncate ${!post.is_read ? "text-foreground" : "text-muted-foreground"}`}>
-                      {post.title}
-                    </p>
-                    {post.is_pinned && <Pin className="h-3 w-3 text-muted-foreground shrink-0" />}
-                    {post.priority === "urgent" && <Flame className="h-3 w-3 text-red-500 shrink-0" />}
-                    {post.priority === "important" && <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {post.author_name} &middot; {new Date(post.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
-                  </p>
-                </div>
+    <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Pinned Posts Card */}
+      <Card className="p-6 border-muted">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+                <Pin className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold">Angeheftet</h3>
+                <p className="text-xs text-muted-foreground">{pinnedPosts.length} Beiträge</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
+              <Link href="/schwarzes-brett">
+                Alle <ArrowRight className="h-3 w-3 ml-1" />
               </Link>
-            ))}
+            </Button>
           </div>
-        )}
-      </div>
-    </Card>
+
+          {pinnedPosts.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">Keine angehefteten Beiträge.</p>
+          ) : (
+            <div className="-mx-2">
+              {pinnedPosts.map((post) => (
+                <PostItem key={post.id} post={post} />
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* New / Unread Posts Card */}
+      <Card className="p-6 border-muted">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
+                <Bell className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold">Neue Beiträge</h3>
+                <p className="text-xs text-muted-foreground">{newPosts.length} ungelesen</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
+              <Link href="/schwarzes-brett">
+                Alle <ArrowRight className="h-3 w-3 ml-1" />
+              </Link>
+            </Button>
+          </div>
+
+          {newPosts.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">Alles gelesen -- keine neuen Beiträge.</p>
+          ) : (
+            <div className="-mx-2">
+              {newPosts.map((post) => (
+                <PostItem key={post.id} post={post} />
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
   )
 })

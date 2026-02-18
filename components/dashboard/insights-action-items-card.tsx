@@ -49,7 +49,7 @@ export function JournalActionItemsCard({ practiceId }: Props) {
 
   if (loading) {
     return (
-      <Card className="p-5">
+      <Card className="p-5 min-h-[140px]">
         <div className="flex items-start gap-3">
           <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
           <div className="flex-1 space-y-2">
@@ -63,7 +63,7 @@ export function JournalActionItemsCard({ practiceId }: Props) {
 
   if (actionItems.length === 0) {
     return (
-      <Card className="p-5">
+      <Card className="p-5 min-h-[140px]">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
             <BookOpen className="h-5 w-5" />
@@ -79,7 +79,7 @@ export function JournalActionItemsCard({ practiceId }: Props) {
   }
 
   return (
-    <Card className="p-5">
+    <Card className="p-5 min-h-[140px]">
       <div className="flex items-start gap-3 mb-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
           <BookOpen className="h-5 w-5" />

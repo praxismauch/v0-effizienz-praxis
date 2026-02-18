@@ -33,6 +33,7 @@ import {
   Shield,
   TrendingUp,
   FileCheck,
+  Clipboard,
   type LucideIcon,
 } from "lucide-react"
 
@@ -163,6 +164,12 @@ export function getNavigationGroups(
           href: "/academy",
           icon: GraduationCap,
           key: "academy",
+        },
+        {
+          name: t("sidebar.schwarzesBrett", "Schwarzes Brett"),
+          href: "/schwarzes-brett",
+          icon: Clipboard,
+          key: "schwarzesBrett",
         },
       ],
     },

@@ -64,10 +64,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       return NextResponse.json({ error: "Practice ID is required" }, { status: 400 })
     }
 
-    const createdBy = body.created_by || body.createdBy
-    if (!createdBy) {
-      return NextResponse.json({ error: "created_by is required" }, { status: 400 })
-    }
+    const createdBy = body.created_by || body.createdBy || null
 
     let supabase
     try {

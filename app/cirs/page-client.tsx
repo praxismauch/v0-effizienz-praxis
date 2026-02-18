@@ -83,23 +83,38 @@ export default function CIRSPageClient() {
       return
     }
 
-    const response = await fetch(`/api/practices/${currentPractice.id}/cirs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
-
-    if (response.ok) {
-      toast({
-        title: "Vorfall gemeldet",
-        description: data.is_anonymous
-          ? "Ihr anonymer Bericht wurde erfolgreich übermittelt."
-          : "Ihr Bericht wurde erfolgreich übermittelt.",
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/cirs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       })
-      setShowReportDialog(false)
-      fetchIncidents()
-    } else {
-      throw new Error("Failed to submit incident")
+
+      if (response.ok) {
+        toast({
+          title: "Vorfall gemeldet",
+          description: data.is_anonymous
+            ? "Ihr anonymer Bericht wurde erfolgreich übermittelt."
+            : "Ihr Bericht wurde erfolgreich übermittelt.",
+        })
+        setShowReportDialog(false)
+        fetchIncidents()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error("CIRS submit error:", errorData)
+        toast({
+          title: "Fehler",
+          description: errorData.error || "Vorfall konnte nicht gemeldet werden.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("CIRS submit exception:", error)
+      toast({
+        title: "Fehler",
+        description: "Vorfall konnte nicht gemeldet werden. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
     }
   }
 

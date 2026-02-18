@@ -294,7 +294,7 @@ export function EditCandidateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2 xl:grid xl:grid-cols-[3fr_2fr]">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 overflow-y-auto max-h-[calc(98vh-140px)] pr-2">
           {/* Left Column */}
           <div className="space-y-4 min-w-0">
             <div className="space-y-2">
@@ -327,7 +327,7 @@ export function EditCandidateDialog({
               />
             </div>
 
-              <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="first_name">{t("hiring.editCandidateDialog.firstName", "Vorname")} *</Label>
                 <Input
@@ -598,34 +598,32 @@ export function EditCandidateDialog({
               <CandidateDocumentsUpload documents={documents} onDocumentsChange={setDocuments} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="first_contact_date">
-                  {t("hiring.editCandidateDialog.firstContactDate", "Monat / Jahr der ersten Kontaktaufnahme")}
-                </Label>
-                <Input
-                  id="first_contact_date"
-                  type="date"
-                  value={formData.first_contact_date}
-                  onChange={(e) => setFormData({ ...formData, first_contact_date: e.target.value })}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="first_contact_date">
+                {t("hiring.editCandidateDialog.firstContactDate", "Erste Kontaktaufnahme")}
+              </Label>
+              <Input
+                id="first_contact_date"
+                type="date"
+                value={formData.first_contact_date}
+                onChange={(e) => setFormData({ ...formData, first_contact_date: e.target.value })}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="availability_date">
-                  {t("hiring.editCandidateDialog.availableFrom", "Verfügbarkeit ab")}
-                </Label>
-                <Input
-                  id="availability_date"
-                  type="date"
-                  value={formData.availability_date}
-                  onChange={(e) => setFormData({ ...formData, availability_date: e.target.value })}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="availability_date">
+                {t("hiring.editCandidateDialog.availableFrom", "Verfügbarkeit ab")}
+              </Label>
+              <Input
+                id="availability_date"
+                type="date"
+                value={formData.availability_date}
+                onChange={(e) => setFormData({ ...formData, availability_date: e.target.value })}
+              />
             </div>
           </div>
 
-          <DialogFooter className="xl:col-span-2 flex-col sm:flex-row gap-2">
+          <DialogFooter className="md:col-span-2 flex-col sm:flex-row gap-2 pt-2 border-t">
             <Button
               type="button"
               onClick={() => setShowInterviewGenerator(true)}

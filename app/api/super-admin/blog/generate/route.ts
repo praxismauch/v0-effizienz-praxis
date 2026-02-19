@@ -1,12 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { createGroq } from "@ai-sdk/groq"
 import { createClient } from "@/lib/supabase/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
-
-const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY,
-})
 
 export async function POST(request: NextRequest) {
   try {

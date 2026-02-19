@@ -59,19 +59,55 @@ export const WeeklyTasksWidget = memo(function WeeklyTasksWidget({ data }: { dat
 })
 
 export const TodayScheduleWidget = memo(function TodayScheduleWidget({ data }: { data: TodayScheduleData[] }) {
+  const totalAppointments = data.reduce((sum, d) => sum + (d.appointments || 0), 0)
+  const maxAppointments = Math.max(...data.map((d) => d.appointments || 0), 1)
+
   return (
     <Card className="p-5 border-muted col-span-full">
       <div className="space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-            <CalendarDays className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Heutiger Terminplan</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Verteilung der Termine über den Tag</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <CalendarDays className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Heutiger Terminplan</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {totalAppointments} {totalAppointments === 1 ? "Termin" : "Termine"} heute
+              </p>
+            </div>
           </div>
         </div>
-        <LineChart data={data} />
+
+        {data.length === 0 ? (
+          <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+            Keine Termine heute
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {data.map((slot, index) => {
+              const barWidth = Math.max(((slot.appointments || 0) / maxAppointments) * 100, 4)
+              return (
+                <div key={index} className="flex items-center gap-3">
+                  <span className="text-xs font-mono text-muted-foreground w-12 shrink-0 text-right">
+                    {slot.time}
+                  </span>
+                  <div className="flex-1 h-7 bg-muted/40 rounded-md overflow-hidden relative">
+                    <div
+                      className="h-full bg-blue-500/20 rounded-md transition-all"
+                      style={{ width: `${barWidth}%` }}
+                    />
+                    {slot.appointments > 0 && (
+                      <span className="absolute inset-y-0 left-2 flex items-center text-xs font-medium text-blue-700">
+                        {slot.appointments}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </Card>
   )

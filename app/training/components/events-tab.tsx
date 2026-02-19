@@ -80,11 +80,13 @@ export function EventsTab({ events, courses, practiceId, onEventsChange, onDelet
 
     setIsSaving(true)
     try {
+      // Strip fields that don't exist in the DB
+      const { currency, training_course_id, ...apiData } = formData as any
       if (editingEvent) {
         const res = await fetch(`/api/practices/${practiceId}/training/events/${editingEvent.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(apiData),
         })
         if (!res.ok) throw new Error("Update failed")
         const data = await res.json()
@@ -94,7 +96,7 @@ export function EventsTab({ events, courses, practiceId, onEventsChange, onDelet
         const res = await fetch(`/api/practices/${practiceId}/training/events`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formData, created_by: currentUser?.id }),
+          body: JSON.stringify({ ...apiData, created_by: currentUser?.id }),
         })
         if (!res.ok) throw new Error("Create failed")
         const data = await res.json()

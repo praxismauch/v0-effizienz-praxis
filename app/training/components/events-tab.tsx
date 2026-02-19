@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -29,14 +29,19 @@ interface EventsTabProps {
   practiceId: string
   onEventsChange: React.Dispatch<React.SetStateAction<TrainingEvent[]>>
   onDelete: (id: string, name: string) => void
+  createTrigger?: number
 }
 
-export function EventsTab({ events, courses, practiceId, onEventsChange, onDelete }: EventsTabProps) {
+export function EventsTab({ events, courses, practiceId, onEventsChange, onDelete, createTrigger }: EventsTabProps) {
   const { currentUser } = useUser()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<TrainingEvent | null>(null)
   const [formData, setFormData] = useState(INITIAL_EVENT_FORM)
   const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (createTrigger && createTrigger > 0) openCreate()
+  }, [createTrigger])
 
   const openCreate = () => {
     setEditingEvent(null)
@@ -110,13 +115,6 @@ export function EventsTab({ events, courses, practiceId, onEventsChange, onDelet
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neues Event
-        </Button>
-      </div>
-
       {events.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">

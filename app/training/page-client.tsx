@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -9,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 import { fetchWithRetry, safeJsonParse } from "@/lib/fetch-with-retry"
-import { Search, Calendar, Award, Euro, BookOpen, Filter } from "lucide-react"
+import { Search, Calendar, Award, Euro, BookOpen, Filter, Plus } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +44,7 @@ export default function TrainingPageClient() {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
+  const [createTrigger, setCreateTrigger] = useState(0)
 
   // Data states - using useState with functional updates
   const [courses, setCourses] = useState<TrainingCourse[]>([])
@@ -291,6 +293,13 @@ export default function TrainingPageClient() {
                 </SelectContent>
               </Select>
             )}
+            <Button onClick={() => setCreateTrigger((c) => c + 1)} className="ml-auto shrink-0">
+              <Plus className="h-4 w-4 mr-2" />
+              {activeTab === "courses" && "Neuer Kurs"}
+              {activeTab === "events" && "Neues Event"}
+              {activeTab === "certifications" && "Neue Zertifizierung"}
+              {activeTab === "budgets" && "Neues Budget"}
+            </Button>
           </div>
         </div>
 
@@ -300,6 +309,7 @@ export default function TrainingPageClient() {
             practiceId={practiceId!}
             onCoursesChange={setCourses}
             onDelete={(id, name) => handleDeleteItem("course", id, name)}
+            createTrigger={createTrigger}
           />
         </TabsContent>
 
@@ -310,6 +320,7 @@ export default function TrainingPageClient() {
             practiceId={practiceId!}
             onEventsChange={setEvents}
             onDelete={(id, name) => handleDeleteItem("event", id, name)}
+            createTrigger={createTrigger}
           />
         </TabsContent>
 
@@ -319,11 +330,12 @@ export default function TrainingPageClient() {
             practiceId={practiceId!}
             onCertificationsChange={setCertifications}
             onDelete={(id, name) => handleDeleteItem("certification", id, name)}
+            createTrigger={createTrigger}
           />
         </TabsContent>
 
         <TabsContent value="budgets">
-          <BudgetsTab budgets={budgets} practiceId={practiceId!} onBudgetsChange={setBudgets} />
+          <BudgetsTab budgets={budgets} practiceId={practiceId!} onBudgetsChange={setBudgets} createTrigger={createTrigger} />
         </TabsContent>
       </Tabs>
 

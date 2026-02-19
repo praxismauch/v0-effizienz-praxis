@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -28,14 +28,19 @@ interface CertificationsTabProps {
   practiceId: string
   onCertificationsChange: React.Dispatch<React.SetStateAction<Certification[]>>
   onDelete: (id: string, name: string) => void
+  createTrigger?: number
 }
 
-export function CertificationsTab({ certifications, practiceId, onCertificationsChange, onDelete }: CertificationsTabProps) {
+export function CertificationsTab({ certifications, practiceId, onCertificationsChange, onDelete, createTrigger }: CertificationsTabProps) {
   const { currentUser } = useUser()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCert, setEditingCert] = useState<Certification | null>(null)
   const [formData, setFormData] = useState(INITIAL_CERTIFICATION_FORM)
   const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (createTrigger && createTrigger > 0) openCreate()
+  }, [createTrigger])
 
   const openCreate = () => {
     setEditingCert(null)
@@ -101,15 +106,8 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neue Zertifizierung
-        </Button>
-      </div>
-
-      {certifications.length === 0 ? (
+  <div className="space-y-4">
+  {certifications.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Award className="h-12 w-12 text-muted-foreground mb-4" />

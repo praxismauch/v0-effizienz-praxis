@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -37,6 +37,7 @@ interface BudgetsTabProps {
   budgets: TrainingBudget[]
   practiceId: string
   onBudgetsChange: React.Dispatch<React.SetStateAction<TrainingBudget[]>>
+  createTrigger?: number
 }
 
 interface BudgetFormState {
@@ -55,7 +56,7 @@ const EMPTY_FORM: BudgetFormState = {
   notes: "",
 }
 
-export function BudgetsTab({ budgets, practiceId, onBudgetsChange }: BudgetsTabProps) {
+export function BudgetsTab({ budgets, practiceId, onBudgetsChange, createTrigger }: BudgetsTabProps) {
   const { currentUser } = useUser()
   const { teamMembers } = useTeam()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -63,6 +64,10 @@ export function BudgetsTab({ budgets, practiceId, onBudgetsChange }: BudgetsTabP
   const [formData, setFormData] = useState<BudgetFormState>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<TrainingBudget | null>(null)
+
+  useEffect(() => {
+    if (createTrigger && createTrigger > 0) openCreate()
+  }, [createTrigger])
 
   const openCreate = () => {
     setEditingBudget(null)
@@ -143,24 +148,16 @@ export function BudgetsTab({ budgets, practiceId, onBudgetsChange }: BudgetsTabP
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {budgets.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              Gesamt: <span className="font-semibold text-foreground">{totalBudget.toLocaleString("de-DE")} EUR</span>
-              {totalUsed > 0 && (
-                <span className="ml-2">
-                  | Verwendet: <span className="font-semibold text-foreground">{totalUsed.toLocaleString("de-DE")} EUR</span>
-                </span>
-              )}
-            </div>
+      {budgets.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Gesamt: <span className="font-semibold text-foreground">{totalBudget.toLocaleString("de-DE")} EUR</span>
+          {totalUsed > 0 && (
+            <span className="ml-2">
+              | Verwendet: <span className="font-semibold text-foreground">{totalUsed.toLocaleString("de-DE")} EUR</span>
+            </span>
           )}
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neues Budget
-        </Button>
-      </div>
+      )}
 
       {budgets.length === 0 ? (
         <Card>

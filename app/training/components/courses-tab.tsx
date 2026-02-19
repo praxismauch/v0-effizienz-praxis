@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +27,7 @@ interface CoursesTabProps {
   practiceId: string
   onCoursesChange: React.Dispatch<React.SetStateAction<TrainingCourse[]>>
   onDelete: (id: string, name: string) => void
+  createTrigger?: number
 }
 
 const EMPTY_FORM: Partial<TrainingCourse> = {
@@ -44,11 +45,15 @@ const EMPTY_FORM: Partial<TrainingCourse> = {
   max_participants: 0,
 }
 
-export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: CoursesTabProps) {
+export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete, createTrigger }: CoursesTabProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<TrainingCourse | null>(null)
   const [formData, setFormData] = useState<Partial<TrainingCourse>>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (createTrigger && createTrigger > 0) openCreate()
+  }, [createTrigger])
 
   const openCreate = () => {
     setEditingCourse(null)
@@ -127,13 +132,6 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: C
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neuer Kurs
-        </Button>
-      </div>
-
       {courses.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">

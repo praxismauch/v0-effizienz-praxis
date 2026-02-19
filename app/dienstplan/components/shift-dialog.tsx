@@ -57,9 +57,9 @@ export default function ShiftDialog({
   const isEditing = !!shift
   const { toast } = useToast()
 
-  // Consistent member ID extraction - must match everywhere
+  // Consistent member ID extraction - always use member.id (primary key from team_members table)
   const getMemberId = (member: TeamMember) => 
-    (member as any).user_id || member.id || (member as any).team_member_id || ""
+    member.id || (member as any).team_member_id || ""
 
   const [formData, setFormData] = useState({
     team_member_id: "",

@@ -18,7 +18,7 @@ export async function GET(
     }
 
     const { data, error } = await supabase
-      .from("schedule_templates")
+      .from("shift_templates")
       .select("*")
       .eq("practice_id", practiceId)
       .order("created_at", { ascending: false })
@@ -56,7 +56,7 @@ export async function POST(
     }
 
     const { data, error } = await supabase
-      .from("schedule_templates")
+      .from("shift_templates")
       .insert({
         practice_id: practiceId,
         name: body.name,

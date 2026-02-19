@@ -10,7 +10,7 @@ export async function GET(
     const supabase = await createClient()
 
     const { data, error } = await supabase
-      .from("schedule_templates")
+      .from("shift_templates")
       .select("*")
       .eq("id", templateId)
       .eq("practice_id", practiceId)
@@ -35,7 +35,7 @@ export async function PUT(
     const supabase = await createClient()
 
     const { data, error } = await supabase
-      .from("schedule_templates")
+      .from("shift_templates")
       .update({
         name: body.name,
         description: body.description,
@@ -66,7 +66,7 @@ export async function DELETE(
     const supabase = await createClient()
 
     const { error } = await supabase
-      .from("schedule_templates")
+      .from("shift_templates")
       .delete()
       .eq("id", templateId)
       .eq("practice_id", practiceId)

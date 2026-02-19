@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
     // Build query
     let query = supabase
-      .from("ai_analyses")
+      .from("roi_analyses")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     // If table doesn't exist, return empty array gracefully
     if (error) {
       if (error.code === "42P01" || error.code === "PGRST204" || error.message?.includes("does not exist")) {
-        console.log("[v0] ai_analyses table does not exist, returning empty array")
+        console.log("[v0] roi_analyses table does not exist, returning empty array")
         return NextResponse.json({ analyses: [] })
       }
       console.error("[v0] Error fetching AI analyses:", error)
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     }
 
     const { data, error } = await supabase
-      .from("ai_analyses")
+      .from("roi_analyses")
       .insert({
         user_id,
         practice_id,
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     if (error) {
       // If table doesn't exist, log and return gracefully
       if (error.code === "42P01" || error.code === "PGRST204") {
-        console.warn("[v0] ai_analyses table does not exist")
+        console.warn("[v0] roi_analyses table does not exist")
         return NextResponse.json({ error: "Analysis history not available" }, { status: 503 })
       }
       console.error("[v0] Error saving AI analysis:", error)

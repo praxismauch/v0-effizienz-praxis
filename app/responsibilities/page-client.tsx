@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import { Badge } from "@/components/ui/badge"
 import ResponsibilityFormDialog from "@/components/responsibility-form-dialog"
 import { AIResponsibilityGeneratorDialog } from "@/components/responsibilities/ai-responsibility-generator-dialog"
@@ -192,20 +193,14 @@ export default function ResponsibilitiesPageClient() {
                 {teamMembers.map((member) => {
                   const memberId = member.user_id || member.id || member.team_member_id
                   if (!memberId) return null
-                  const memberColor = getMemberTeamColor(member)
                   return (
-                    <SelectItem key={memberId} value={memberId}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="h-3 w-3 rounded-full flex-shrink-0" 
-                          style={{ 
-                            backgroundColor: memberColor || '#9CA3AF',
-                            border: memberColor ? 'none' : '1px solid #D1D5DB'
-                          }}
-                        />
-                        <span>{member.first_name} {member.last_name}</span>
-                      </div>
-                    </SelectItem>
+                    <TeamMemberSelectItem
+                      key={memberId}
+                      value={memberId}
+                      firstName={member.first_name}
+                      lastName={member.last_name}
+                      avatarUrl={member.avatar_url}
+                    />
                   )
                 })}
               </SelectContent>

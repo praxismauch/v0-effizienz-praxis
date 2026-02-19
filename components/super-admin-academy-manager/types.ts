@@ -103,10 +103,14 @@ export interface AcademyBadge {
   badge_type: string
   icon_name: string
   icon_url: string
+  icon?: string
   color: string
   rarity: string
   xp_reward: number
   criteria: any
+  criteria_type?: string
+  criteria_value?: string
+  category?: string
   is_active: boolean
   display_order: number
 }
@@ -139,6 +143,27 @@ export const DIFFICULTY_LEVELS = [
   { value: "beginner", label: "Einsteiger", color: "bg-green-500" },
   { value: "intermediate", label: "Fortgeschritten", color: "bg-yellow-500" },
   { value: "advanced", label: "Experte", color: "bg-red-500" },
+]
+
+export const CRITERIA_TYPES = [
+  { value: "", label: "Keine (manuell)", description: "Badge wird manuell durch einen Admin vergeben, kein automatischer Auslöser." },
+  { value: "welcome_tour", label: "Welcome Tour abgeschlossen", description: "Wird automatisch vergeben, wenn ein Benutzer die Einführungstour beim ersten Login abschließt." },
+  { value: "profile_complete", label: "Profil vollständig ausgefüllt", description: "Ausgelöst, wenn alle Pflichtfelder im Benutzerprofil (Name, Rolle, Kontakt, Avatar) ausgefüllt sind." },
+  { value: "first_login", label: "Erster Login", description: "Wird beim allerersten erfolgreichen Login eines neuen Benutzers vergeben." },
+  { value: "course_complete", label: "Kurs abgeschlossen", description: "Ausgelöst, wenn ein bestimmter Kurs vollständig abgeschlossen wurde. Kurs-ID im Wert-Feld angeben." },
+  { value: "courses_completed", label: "Anzahl Kurse abgeschlossen", description: "Wird vergeben, wenn der Benutzer eine bestimmte Anzahl an Kursen abgeschlossen hat (z.B. 3, 5, 10)." },
+  { value: "streak_days", label: "Tage-Streak erreicht", description: "Ausgelöst bei einer ununterbrochenen Login-Serie über die angegebene Anzahl an Tagen." },
+  { value: "first_ticket", label: "Erstes Ticket erstellt", description: "Wird vergeben, wenn der Benutzer sein erstes Support-Ticket im Ticketsystem erstellt." },
+  { value: "first_protocol", label: "Erstes Protokoll erstellt", description: "Ausgelöst, wenn der Benutzer sein erstes Protokoll (z.B. Teambesprechung, QM) anlegt." },
+  { value: "first_document", label: "Erstes Dokument hochgeladen", description: "Wird vergeben, wenn der Benutzer zum ersten Mal ein Dokument in die Dokumentenverwaltung hochlädt." },
+  { value: "first_survey", label: "Erste Umfrage beantwortet", description: "Ausgelöst, wenn der Benutzer zum ersten Mal an einer Praxis-Umfrage teilnimmt." },
+  { value: "first_cirs", label: "Ersten CIRS-Fall gemeldet", description: "Wird vergeben, wenn der Benutzer seinen ersten CIRS-Vorfall (Critical Incident Reporting) meldet." },
+  { value: "self_check_complete", label: "Selbst-Check abgeschlossen", description: "Ausgelöst, wenn der Benutzer eine Selbstbewertung oder einen Kompetenz-Check vollständig durchführt." },
+  { value: "team_lead", label: "Teamleiter-Rolle zugewiesen", description: "Wird automatisch vergeben, sobald einem Benutzer die Teamleiter-Rolle zugewiesen wird." },
+  { value: "zeiterfassung_week", label: "1 Woche Zeiterfassung", description: "Ausgelöst, wenn der Benutzer eine vollständige Arbeitswoche (5 Tage) in der Zeiterfassung protokolliert hat." },
+  { value: "goals_achieved", label: "Anzahl Ziele erreicht", description: "Wird vergeben, wenn der Benutzer eine bestimmte Anzahl an persönlichen oder Praxis-Zielen erreicht hat." },
+  { value: "quiz_perfect", label: "Quiz mit 100% bestanden", description: "Ausgelöst, wenn ein Quiz mit voller Punktzahl (100%) beim ersten Versuch bestanden wird." },
+  { value: "manual", label: "Manuell vergeben", description: "Badge wird ausschließlich manuell durch einen Admin vergeben, z.B. für besondere Leistungen." },
 ]
 
 export const BADGE_TYPES = [

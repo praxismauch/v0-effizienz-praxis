@@ -479,12 +479,7 @@ export function SuperAdminSidebarSimple() {
           icon: CheckCircle2,
           href: "/super-admin/approvals",
         },
-        {
-          id: "practice-management",
-          label: "Praxisverwaltung",
-          icon: UserCog,
-          href: "/super-admin/practice-management",
-        },
+
       ],
     },
     {

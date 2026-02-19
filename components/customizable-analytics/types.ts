@@ -30,7 +30,7 @@ export interface DashboardTile {
 export const defaultSystemDiagrams: SystemDiagram[] = [
   {
     id: "analytics-overview",
-    title: "Praxiswachstum & Ubersicht",
+    title: "Praxiswachstum & Übersicht",
     description: "Wachstumstrends, Aufgabenverteilung und Teamzufriedenheit",
     component: "AnalyticsOverview",
     category: "overview",
@@ -40,7 +40,7 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   {
     id: "performance-metrics",
     title: "Leistungskennzahlen",
-    description: "Effizienz- und Qualitatsmetriken der Praxis",
+    description: "Effizienz- und Qualitätsmetriken der Praxis",
     component: "PerformanceMetrics",
     category: "performance",
     isFavorite: false,
@@ -57,7 +57,7 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   },
   {
     id: "sick-days",
-    title: "Kranktage Ubersicht",
+    title: "Kranktage Übersicht",
     description: "Verteilung der Kranktage nach Monat und Mitarbeiter",
     component: "SickDaysChart",
     category: "overview",

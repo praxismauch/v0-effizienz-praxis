@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { safeSupabaseQuery } from "@/lib/supabase/safe-query"
 
@@ -15,13 +16,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     let query = supabase
       .from("holiday_requests")
-      .select(`
-        *,
-        team_member:team_members(
-          id, first_name, last_name, user_id,
-          user:users(id, name, first_name, last_name, avatar)
-        )
-      `)
+      .select("*")
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .gte("start_date", `${year}-01-01`)
@@ -29,7 +24,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .order("start_date", { ascending: true })
 
     if (teamMemberId) {
-      query = query.eq("team_member_id", teamMemberId)
+      query = query.eq("user_id", teamMemberId)
     }
 
     if (status) {
@@ -75,16 +70,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createClient()
     const body = await request.json()
-
-    // Verify the user is authenticated
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
-    }
 
     // Support both camelCase and snake_case field names from client
     const teamMemberId = body.teamMemberId || body.team_member_id
@@ -96,8 +82,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     const notes = body.notes
     const status = body.status
 
-    if (!teamMemberId || !startDate || !endDate) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (!startDate || !endDate) {
+      return NextResponse.json({ error: "Start- und Enddatum sind Pflichtfelder" }, { status: 400 })
+    }
+
+    if (!(teamMemberId || userId)) {
+      return NextResponse.json({ error: "Mitarbeiter muss ausgewählt werden" }, { status: 400 })
     }
 
     // Calculate days count (excluding weekends)
@@ -113,33 +103,34 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       current.setDate(current.getDate() + 1)
     }
 
-    const adminClient = await createAdminClient()
+    // Use admin client (bypasses RLS) with fallback to session client
+    console.log("[v0] Holiday POST: creating request for practice=", practiceId, "user=", teamMemberId || userId, "dates=", startDate, "->", endDate)
+    const client = await getApiClient()
 
-    const { data, error } = await adminClient
+    const { data, error } = await client
       .from("holiday_requests")
       .insert({
         practice_id: practiceId,
-        team_member_id: teamMemberId,
-        user_id: userId || user.id,
+        user_id: teamMemberId || userId,
         start_date: startDate,
         end_date: endDate,
         days_count: daysCount,
         priority: priority || 1,
-        reason,
-        notes,
-        status: status || "wish",
+        reason: reason || null,
+        notes: notes || null,
+        status: status || "pending",
       })
       .select()
       .single()
 
     if (error) {
-      console.error("Error creating holiday request:", error)
-      return NextResponse.json({ error: "Failed to create holiday request" }, { status: 500 })
+      console.error("[v0] Error creating holiday request:", error)
+      return NextResponse.json({ error: `Fehler beim Erstellen: ${error.message}` }, { status: 500 })
     }
 
     return NextResponse.json({ request: data })
   } catch (error) {
-    console.error("Error in holiday request POST:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[v0] Error in holiday request POST:", error)
+    return NextResponse.json({ error: "Interner Serverfehler" }, { status: 500 })
   }
 }

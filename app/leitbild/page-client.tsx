@@ -218,12 +218,12 @@ export default function LeitbildPageClient() {
       const response = await fetch(`/api/leitbild/versions/${versionToDelete.id}?practiceId=${currentPractice.id}`, { method: "DELETE" })
       if (!response.ok) throw new Error("Failed to delete")
       setVersions((prev) => prev.filter((v) => v.id !== versionToDelete.id))
-      toast.success(t("leitbild.versionDeleted", "Version geloscht"))
+      toast.success(t("leitbild.versionDeleted", "Version gelöscht"))
       setIsDeleteDialogOpen(false)
       setVersionToDelete(null)
     } catch (error) {
       console.error("Error deleting version:", error)
-      toast.error(t("leitbild.deleteError", "Fehler beim Loschen der Version"))
+      toast.error(t("leitbild.deleteError", "Fehler beim Löschen der Version"))
     }
   }
 

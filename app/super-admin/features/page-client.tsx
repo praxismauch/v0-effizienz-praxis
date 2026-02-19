@@ -131,13 +131,13 @@ export default function FeaturesClient() {
           delete newOverrides[featureKey]
           return newOverrides
         })
-        toast.success("Auf globale Einstellung zuruckgesetzt")
+        toast.success("Auf globale Einstellung zurückgesetzt")
       } else {
-        toast.error("Fehler beim Zurucksetzen")
+        toast.error("Fehler beim Zurücksetzen")
       }
     } catch (error) {
       console.error("Error resetting feature:", error)
-      toast.error("Fehler beim Zurucksetzen")
+      toast.error("Fehler beim Zurücksetzen")
     } finally {
       setSaving(null)
     }
@@ -156,7 +156,7 @@ export default function FeaturesClient() {
         }),
       })
       if (response.ok) {
-        toast.success(action === "reset" ? "Alle Einstellungen zuruckgesetzt" : "Globale Einstellungen kopiert")
+        toast.success(action === "reset" ? "Alle Einstellungen zurückgesetzt" : "Globale Einstellungen kopiert")
         loadFeatures()
       } else {
         toast.error("Fehler bei der Aktion")
@@ -386,7 +386,7 @@ export default function FeaturesClient() {
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction onClick={() => handleBulkAction(confirmDialog.action)}>
-              {confirmDialog.action === "reset" ? "Zurucksetzen" : "Kopieren"}
+              {confirmDialog.action === "reset" ? "Zurücksetzen" : "Kopieren"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,19 +1,12 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import type { SupabaseClient } from "@supabase/supabase-js"
+import { useRouter } from "next/navigation"
 import { isSuperAdminRole, isPracticeAdminRole } from "@/lib/auth-utils"
 import Logger from "@/lib/logger"
-import { encryptStorage, decryptStorage, isStorageExpired } from "@/lib/storage-utils"
-import { retryWithBackoff, isAuthError } from "@/lib/retry-utils"
-import { 
-  type User, 
-  mapProfileToUser, 
-  isPublicRoute, 
-  dispatchAuthRecovered 
-} from "@/lib/user-utils"
+import { useAuthSession } from "@/hooks/use-auth-session"
+import { fetchSuperAdminUsers } from "@/lib/user-fetch-profile"
+import type { User } from "@/lib/user-utils"
 
 // Re-export User type for consumers
 export type { User }
@@ -48,403 +41,20 @@ export function UserProvider({
   children: ReactNode
   initialUser?: User | null
 }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(initialUser || null)
-  const [loading, setLoading] = useState(!initialUser)
+  const { currentUser, setCurrentUser, loading, getSupabase, clearUser } = useAuthSession(initialUser)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [superAdmins, setSuperAdmins] = useState<User[]>([])
-  const [mounted, setMounted] = useState(false)
   const [sessionVerified, setSessionVerified] = useState(false)
-
-  const router = useRouter()
-  const pathname = usePathname()
-  const hasFetchedUser = useRef(false)
   const hasFetchedSuperAdmins = useRef(false)
-  const fetchAttempts = useRef(0)
-  const lastFetchTime = useRef(0)
-  const MAX_FETCH_ATTEMPTS = 3
-  const FETCH_COOLDOWN_MS = 2000
+  const router = useRouter()
 
-  const supabaseRef = useRef<SupabaseClient | null>(null)
-  const getSupabase = useCallback(() => {
-    if (typeof window === "undefined") return null
-    if (!supabaseRef.current) {
-      try {
-        supabaseRef.current = createClient()
-      } catch {
-        return null
-      }
-    }
-    return supabaseRef.current
-  }, [])
-
-  // Removed debug logging
-
-  const persistUserToStorage = useCallback(async (user: User | null) => {
-    if (typeof window === "undefined") return
-
-    if (user) {
-      try {
-        const encrypted = await encryptStorage(user, 86400)
-        sessionStorage.setItem("effizienz_current_user", encrypted)
-      } catch (error) {
-        Logger.error("context", "Error persisting user", error)
-      }
-    } else {
-      try {
-        sessionStorage.removeItem("effizienz_current_user")
-      } catch (error) {
-        Logger.error("context", "Error clearing storage", error)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Restore user from storage - runs only once on mount
-  useEffect(() => {
-    if (!mounted) return
-    if (hasFetchedUser.current) return
-    if (initialUser) {
-      hasFetchedUser.current = true
-      setLoading(false)
-      return
-    }
-
-    const restoreUser = async () => {
-      try {
-        const stored = sessionStorage.getItem("effizienz_current_user")
-        if (stored) {
-          if (isStorageExpired(stored)) {
-            sessionStorage.removeItem("effizienz_current_user")
-            return
-          }
-
-          const parsedUser = await decryptStorage(stored)
-          if (parsedUser) {
-            setCurrentUser(parsedUser as User)
-            hasFetchedUser.current = true
-            setLoading(false)
-            return
-          } else {
-            sessionStorage.removeItem("effizienz_current_user")
-          }
-        }
-      } catch (e) {
-        sessionStorage.removeItem("effizienz_current_user")
-      }
-    }
-
-    restoreUser()
-  }, [mounted, initialUser])
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    if (!mounted) return
-    if (hasFetchedUser.current) {
-      return
-    }
-    if (currentUser || initialUser) {
-      hasFetchedUser.current = true
-      setLoading(false)
-      return
-    }
-    if (isPublicRoute(pathname)) {
-      setLoading(false)
-      return
-    }
-
-    const fetchUser = async () => {
-      // Loop prevention: check if we're fetching too frequently
-      const now = Date.now()
-      if (now - lastFetchTime.current < FETCH_COOLDOWN_MS) {
-        setLoading(false)
-        return
-      }
-      
-      // Loop prevention: check max attempts
-      fetchAttempts.current += 1
-      if (fetchAttempts.current > MAX_FETCH_ATTEMPTS) {
-        hasFetchedUser.current = true
-        setLoading(false)
-        return
-      }
-      
-      lastFetchTime.current = now
-      
-      try {
-        await retryWithBackoff(
-          async () => {
-            const DEV_USER_EMAIL = process.env.NEXT_PUBLIC_DEV_USER_EMAIL
-            const IS_DEV_MODE =
-              process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
-
-            if (IS_DEV_MODE) {
-              if (!DEV_USER_EMAIL) {
-                throw new Error("Dev mode enabled but NEXT_PUBLIC_DEV_USER_EMAIL not set")
-              }
-
-              const response = await fetch("/api/auth/dev-user", {
-                credentials: "include",
-              })
-
-              if (!response.ok) {
-                throw new Error(`Dev user fetch failed: ${response.status}`)
-              }
-
-              const data = await response.json()
-              if (!data.user) {
-                throw new Error("No user data in dev response")
-              }
-
-              const user = mapProfileToUser(data.user, DEV_USER_EMAIL)
-              setCurrentUser(user)
-              await persistUserToStorage(user)
-              hasFetchedUser.current = true
-              dispatchAuthRecovered()
-              return
-            }
-
-            const supabase = getSupabase()
-            if (!supabase) {
-              throw new Error("Supabase client not available")
-            }
-
-            let authUser = null
-            let authError = null
-            
-            try {
-              const result = await supabase.auth.getUser()
-              authUser = result.data?.user
-              authError = result.error
-            } catch (fetchError: unknown) {
-              // Handle network errors gracefully - user is not logged in
-              const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError)
-              if (errorMessage.includes("fetch") || errorMessage.includes("Failed") || errorMessage.includes("network")) {
-                throw new Error("Network error - no session available")
-              }
-              throw fetchError
-            }
-
-            if (authError || !authUser) {
-              // No session is a normal state, not an error - user is not logged in
-              setLoading(false)
-              return
-            }
-
-            const { data: profile, error: profileError } = await supabase
-              .from("users")
-              .select(
-                "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
-              )
-              .eq("id", authUser.id)
-              .maybeSingle()
-
-            if (profileError) {
-              throw new Error(profileError.message || "Error fetching user profile")
-            }
-
-            if (!profile) {
-              // Auto-create profile via API
-              const createResponse = await fetch("/api/auth/ensure-profile", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: authUser.id,
-                  email: authUser.email,
-                  name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || null,
-                  firstName: authUser.user_metadata?.first_name || null,
-                  lastName: authUser.user_metadata?.last_name || null,
-                }),
-              })
-              
-              if (!createResponse.ok) {
-                const errorData = await createResponse.json().catch(() => ({ error: "Unknown error" }))
-                throw new Error(`Failed to create user profile: ${errorData.error || createResponse.statusText}`)
-              }
-              
-              const responseData = await createResponse.json()
-              const createdProfile = responseData.user
-              if (!createdProfile) {
-                throw new Error("Profile creation returned no data")
-              }
-              
-              const user = mapProfileToUser(createdProfile, authUser.email)
-              setCurrentUser(user)
-              await persistUserToStorage(user)
-              hasFetchedUser.current = true
-              dispatchAuthRecovered()
-              return
-            }
-
-            const user = mapProfileToUser(profile, authUser.email)
-            setCurrentUser(user)
-            await persistUserToStorage(user)
-            hasFetchedUser.current = true
-            dispatchAuthRecovered()
-          },
-          {
-            maxAttempts: 3,
-            initialDelay: 1000,
-          },
-        )
-      } catch (error) {
-        Logger.error("context", "Error fetching user after retries", error)
-        if (isAuthError(error)) {
-          hasFetchedUser.current = true
-        }
-        setCurrentUser(null)
-        await persistUserToStorage(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUser()
-  }, [pathname, initialUser, router, persistUserToStorage, getSupabase, mounted])
-
-  // Use a ref to track if we already have a subscription to prevent duplicates
-  const authSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null)
-  // Use a ref for currentUser in the auth callback to avoid re-subscribing
-  const currentUserRef = useRef<User | null>(currentUser)
-  
-  // Keep the ref in sync with state
-  useEffect(() => {
-    currentUserRef.current = currentUser
-  }, [currentUser])
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    if (!mounted) return
-    const IS_DEV_MODE = process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true" && process.env.NODE_ENV !== "production"
-
-    if (IS_DEV_MODE) return
-
-    // Prevent duplicate subscriptions
-    if (authSubscriptionRef.current) return
-
-    const supabase = getSupabase()
-    if (!supabase) return
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Loop prevention for auth state changes
-      const now = Date.now()
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        if (now - lastFetchTime.current < FETCH_COOLDOWN_MS) {
-          return
-        }
-        // Use ref instead of state to avoid re-subscribing
-        if (hasFetchedUser.current && currentUserRef.current) {
-          return
-        }
-        lastFetchTime.current = now
-      }
-
-      if (event === "SIGNED_OUT") {
-        setCurrentUser(null)
-        await persistUserToStorage(null)
-        hasFetchedUser.current = false
-        fetchAttempts.current = 0
-      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        if (session?.user) {
-          try {
-            const { data: profile, error: profileError } = await supabase
-              .from("users")
-              .select(
-                "id, name, email, role, avatar, practice_id, is_active, created_at, preferred_language, first_name, last_name",
-              )
-              .eq("id", session.user.id)
-              .maybeSingle()
-
-            if (profileError) {
-              Logger.error("context", "Error fetching user profile", profileError.message)
-              return
-            }
-
-            if (!profile) {
-              // Auto-create profile via API
-              const createResponse = await fetch("/api/auth/ensure-profile", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: session.user.id,
-                  email: session.user.email,
-                  name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || null,
-                  firstName: session.user.user_metadata?.first_name || null,
-                  lastName: session.user.user_metadata?.last_name || null,
-                }),
-              })
-              
-              if (!createResponse.ok) {
-                return
-              }
-              
-              const { user: createdProfile } = await createResponse.json()
-              if (!createdProfile) {
-                return
-              }
-              
-              const user = mapProfileToUser(createdProfile, session.user.email)
-              setCurrentUser(user)
-              await persistUserToStorage(user)
-              hasFetchedUser.current = true
-              dispatchAuthRecovered()
-              return
-            }
-
-            const user = mapProfileToUser(profile, session.user.email)
-            setCurrentUser(user)
-            await persistUserToStorage(user)
-            hasFetchedUser.current = true
-            dispatchAuthRecovered()
-          } catch (error) {
-            Logger.error("context", "Error fetching user profile in auth state change", error)
-          }
-        }
-      }
-    })
-
-    authSubscriptionRef.current = subscription
-
-    return () => {
-      subscription.unsubscribe()
-      authSubscriptionRef.current = null
-    }
-  }, [mounted, getSupabase, persistUserToStorage])
-
+  // Fetch super admins
   useEffect(() => {
     if (!currentUser) return
     if (!isSuperAdminRole(currentUser.role)) return
     if (hasFetchedSuperAdmins.current) return
-
-    const fetchSuperAdmins = async () => {
-      hasFetchedSuperAdmins.current = true
-
-      try {
-        const response = await fetch("/api/super-admin/users", {
-          credentials: "include",
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          if (data.users) {
-            const admins = data.users
-              .filter((u: any) => isSuperAdminRole(u.role))
-              .map((u: any) => mapProfileToUser(u))
-            setSuperAdmins(admins)
-          }
-        }
-      } catch (error) {
-        Logger.error("context", "Error fetching super admins", error)
-      }
-    }
-
-    fetchSuperAdmins()
+    hasFetchedSuperAdmins.current = true
+    fetchSuperAdminUsers().then(setSuperAdmins)
   }, [currentUser])
 
   const isAdmin = useMemo(() => {
@@ -461,12 +71,8 @@ export function UserProvider({
     setIsLoggingOut(true)
     try {
       const supabase = getSupabase()
-      if (supabase) {
-        await supabase.auth.signOut()
-      }
-      setCurrentUser(null)
-      await persistUserToStorage(null)
-      hasFetchedUser.current = false
+      if (supabase) await supabase.auth.signOut()
+      await clearUser()
       setSessionVerified(false)
       router.push("/auth/login")
     } catch (error) {
@@ -474,7 +80,7 @@ export function UserProvider({
     } finally {
       setIsLoggingOut(false)
     }
-  }, [getSupabase, persistUserToStorage, router])
+  }, [getSupabase, clearUser, router])
 
   const createSuperAdmin = useCallback((userData: Omit<User, "id" | "joinedAt">) => {
     const newAdmin: User = {
@@ -492,9 +98,7 @@ export function UserProvider({
 
   const deleteSuperAdmin = useCallback(
     (id: string) => {
-      if (currentUser?.id === id) {
-        return { success: false, error: "Cannot delete your own account" }
-      }
+      if (currentUser?.id === id) return { success: false, error: "Cannot delete your own account" }
       setSuperAdmins((prev) => prev.filter((admin) => admin.id !== id))
       return { success: true }
     },
@@ -516,12 +120,7 @@ export function UserProvider({
   const contextValue = useMemo(
     () => ({
       currentUser,
-      setCurrentUser: (user: User) => {
-        setCurrentUser(user)
-        persistUserToStorage(user).catch((error) => {
-          Logger.error("context", "Error persisting user in setCurrentUser", error)
-        })
-      },
+      setCurrentUser,
       currentPractice,
       isAdmin,
       isSuperAdmin,
@@ -535,19 +134,9 @@ export function UserProvider({
       signOut,
     }),
     [
-      currentUser,
-      currentPractice,
-      isAdmin,
-      isSuperAdmin,
-      loading,
-      isLoggingOut,
-      superAdmins,
-      createSuperAdmin,
-      updateSuperAdmin,
-      deleteSuperAdmin,
-      toggleSuperAdminStatus,
-      signOut,
-      persistUserToStorage,
+      currentUser, setCurrentUser, currentPractice, isAdmin, isSuperAdmin,
+      loading, isLoggingOut, superAdmins, createSuperAdmin, updateSuperAdmin,
+      deleteSuperAdmin, toggleSuperAdminStatus, signOut,
     ],
   )
 

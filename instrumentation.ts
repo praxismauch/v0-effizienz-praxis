@@ -1,15 +1,17 @@
 export async function register() {
-  // Increase EventEmitter max listeners to prevent warnings from
-  // multiple parallel Supabase client connections sharing sockets
-  if (typeof process !== "undefined" && process.setMaxListeners) {
-    process.setMaxListeners(25)
-  }
+  // Only run Node.js-specific code in the Node.js runtime (not Edge)
+  if (typeof globalThis.EdgeRuntime === "undefined") {
+    try {
+      // Increase EventEmitter max listeners to prevent warnings from
+      // multiple parallel Supabase client connections sharing sockets
+      if (typeof process !== "undefined" && typeof process.setMaxListeners === "function") {
+        process.setMaxListeners(25)
+      }
 
-  // Also increase for EventEmitter default
-  try {
-    const { EventEmitter } = await import("events")
-    EventEmitter.defaultMaxListeners = 25
-  } catch {
-    // Ignore if events module is not available
+      const { EventEmitter } = await import("events")
+      EventEmitter.defaultMaxListeners = 25
+    } catch {
+      // Ignore if events module is not available (Edge runtime)
+    }
   }
 }

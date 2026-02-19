@@ -43,7 +43,7 @@ interface PracticeContextType {
   refreshPractices: () => Promise<void>
 }
 
-const PracticeContext = createContext<PracticeContextType | undefined>(undefined)
+export const PracticeContext = createContext<PracticeContextType | undefined>(undefined)
 
 export function PracticeProvider({ children }: { children: ReactNode }) {
   const [currentPracticeState, setCurrentPracticeState] = useState<Practice | null>(null)

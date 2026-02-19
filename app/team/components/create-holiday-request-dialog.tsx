@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { usePractice } from "@/contexts/practice-context"
 import { toast } from "sonner"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import type { TeamMember, HolidayRequest } from "../types"
 
 interface CreateHolidayRequestDialogProps {
@@ -85,8 +86,8 @@ export default function CreateHolidayRequestDialog({
       )
 
       if (res.ok) {
-        const newRequest = await res.json()
-        onRequestCreated(newRequest)
+        const data = await res.json()
+        onRequestCreated(data.request || data)
         toast.success("Urlaubsantrag erfolgreich erstellt")
         setFormData({
           team_member_id: "",
@@ -97,8 +98,8 @@ export default function CreateHolidayRequestDialog({
         })
         onOpenChange(false)
       } else {
-        const error = await res.json()
-        toast.error(error.message || "Fehler beim Erstellen des Antrags")
+        const errorData = await res.json().catch(() => ({ error: `Serverfehler (${res.status})` }))
+        toast.error(errorData.error || errorData.message || "Fehler beim Erstellen des Antrags")
       }
     } catch (error) {
       console.error("Error creating holiday request:", error)
@@ -137,9 +138,13 @@ export default function CreateHolidayRequestDialog({
                   const memberId = member.user_id || member.id || member.team_member_id
                   if (!memberId) return null
                   return (
-                    <SelectItem key={memberId} value={memberId}>
-                      {member.first_name} {member.last_name}
-                    </SelectItem>
+                    <TeamMemberSelectItem
+                      key={memberId}
+                      value={memberId}
+                      firstName={member.first_name}
+                      lastName={member.last_name}
+                      avatarUrl={member.avatar_url}
+                    />
                   )
                 })}
               </SelectContent>

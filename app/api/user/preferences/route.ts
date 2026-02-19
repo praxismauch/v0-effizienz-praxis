@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     let data, error
     try {
-      const supabase = await createAdminClient()
+      const supabase = hasSupabaseAdminConfig() ? await createAdminClient() : await createClient()
       const result = await supabase.from("user_preferences").select("*").eq("user_id", userId).maybeSingle()
       data = result.data
       error = result.error

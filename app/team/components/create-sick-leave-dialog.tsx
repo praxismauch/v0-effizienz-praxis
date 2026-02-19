@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Loader2 } from "lucide-react"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import type { SickLeave, TeamMember } from "../types"
 
 interface CreateSickLeaveDialogProps {
@@ -115,18 +116,13 @@ export default function CreateSickLeaveDialog({
                     const memberId = member.user_id || member.id || member.team_member_id
                     if (!memberId) return null
                     return (
-                      <SelectItem key={memberId} value={memberId}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
-                            <AvatarFallback className="text-xs">
-                              {member.first_name?.[0]}
-                              {member.last_name?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          {member.first_name} {member.last_name}
-                        </div>
-                      </SelectItem>
+                      <TeamMemberSelectItem
+                        key={memberId}
+                        value={memberId}
+                        firstName={member.first_name}
+                        lastName={member.last_name}
+                        avatarUrl={member.avatar_url}
+                      />
                     )
                   })}
                 </SelectContent>

@@ -70,6 +70,7 @@ export function useAcademy() {
   const [badgeForm, setBadgeForm] = useState({
     name: "", description: "", badge_type: "achievement", icon_name: "trophy",
     color: "#3b82f6", rarity: "common", xp_reward: 50, is_active: true, criteria: {} as any,
+    criteria_type: "", criteria_value: "",
   })
 
   const [quizForm, setQuizForm] = useState({
@@ -170,6 +171,7 @@ export function useAcademy() {
   const resetBadgeForm = () => setBadgeForm({
     name: "", description: "", badge_type: "achievement", icon_name: "trophy",
     color: "#3b82f6", rarity: "common", xp_reward: 50, is_active: true, criteria: {},
+    criteria_type: "", criteria_value: "",
   })
 
   const resetQuizForm = () => setQuizForm({
@@ -361,6 +363,7 @@ export function useAcademy() {
       badge_type: badge.badge_type || "achievement", icon_name: badge.icon_name || "trophy",
       color: badge.color || "#3b82f6", rarity: badge.rarity || "common",
       xp_reward: badge.xp_reward || 50, is_active: badge.is_active !== false, criteria: badge.criteria || {},
+      criteria_type: badge.criteria_type || "", criteria_value: badge.criteria_value || "",
     })
     setShowBadgeDialog(true)
   }

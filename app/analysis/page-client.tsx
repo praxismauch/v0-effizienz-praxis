@@ -8,21 +8,8 @@ import AIPracticeChatDialog from "@/components/ai-practice-chat-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  MessageSquare,
-  History,
-  Sparkles,
-  TrendingUp,
-  Target,
-  Users,
-  FileText,
-  ArrowUp,
-  CheckCircle2,
-  Clock,
-  Activity,
-  Workflow,
-  Heart,
-} from "lucide-react"
+import { PageHeader, StatsCards } from "@/components/page-layout"
+import { MessageSquare, History, Sparkles, TrendingUp, Target, Users, FileText, Clock, Workflow, Heart } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { usePractice } from "@/contexts/practice-context"
 
@@ -81,79 +68,51 @@ export default function AnalysisPageClient() {
   return (
     <>
       <div className="space-y-6">
-        {/* Stats cards */}
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Praxis-Score</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="space-y-1 px-4 pb-3 pt-0">
-              <div className="text-3xl font-bold">{lastScore != null ? `${lastScore}/100` : "–"}</div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                {lastScore != null ? (
-                  <>
-                    <ArrowUp className="h-3 w-3 text-emerald-500" />
-                    Aktuelle Bewertung
-                  </>
-                ) : (
-                  "Analyse starten für Score"
-                )}
-              </p>
-            </CardContent>
-          </Card>
+        <PageHeader
+          title="KI-Analyse"
+          subtitle="Lassen Sie Ihre Praxis von der KI analysieren und erhalten Sie Optimierungsvorschläge"
+        />
 
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Aktive Ziele</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="space-y-1 px-4 pb-3 pt-0">
-              <div className="text-3xl font-bold">{activeGoals}</div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                Ziele aktiv verfolgt
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Team-Mitglieder</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="space-y-1 px-4 pb-3 pt-0">
-              <div className="text-3xl font-bold">{teamSize}</div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Activity className="h-3 w-3 text-blue-500" />
-                Aktive Mitglieder
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Dokumente</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="space-y-1 px-4 pb-3 pt-0">
-              <div className="text-3xl font-bold">{totalDocuments}</div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3 text-amber-500" />
-                {totalTasks} offene Aufgaben
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <StatsCards
+          columns={4}
+          cards={[
+            {
+              label: "Praxis-Score",
+              value: lastScore != null ? `${lastScore}/100` : "\u2013",
+              icon: TrendingUp,
+              color: "primary",
+              description: lastScore != null ? "Aktuelle Bewertung" : "Analyse starten für Score",
+            },
+            {
+              label: "Aktive Ziele",
+              value: activeGoals,
+              icon: Target,
+              color: "success",
+              description: "Ziele aktiv verfolgt",
+            },
+            {
+              label: "Team-Mitglieder",
+              value: teamSize,
+              icon: Users,
+              color: "blue",
+              description: "Aktive Mitglieder",
+            },
+            {
+              label: "Dokumente",
+              value: totalDocuments,
+              icon: FileText,
+              color: "amber",
+              description: `${totalTasks} offene Aufgaben`,
+            },
+          ]}
+        />
 
         <Tabs defaultValue="current" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-12">
-            <TabsTrigger value="current" className="gap-2 text-base py-3 px-4">
-              <Sparkles className="h-5 w-5" />
+          <TabsList className="grid w-full grid-cols-2 h-auto gap-1">
+            <TabsTrigger value="current" className="gap-2 hover:ring-2 hover:ring-primary/20 hover:shadow-sm transition-all duration-200">
               Aktuelle Analyse
             </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2 text-base py-3 px-4">
-              <History className="h-5 w-5" />
+            <TabsTrigger value="history" className="gap-2 hover:ring-2 hover:ring-primary/20 hover:shadow-sm transition-all duration-200">
               Verlauf
             </TabsTrigger>
           </TabsList>

@@ -99,7 +99,7 @@ export function VersionHistoryDialog({
                         onClick={() => onDelete(version)}
                       >
                         <Trash2 className="mr-1 h-3 w-3" />
-                        {t("common.delete", "Loschen")}
+                        {t("common.delete", "Löschen")}
                       </Button>
                     )}
                   </div>
@@ -142,7 +142,7 @@ export function DeleteVersionDialog({ isOpen, onOpenChange, onConfirm, t }: Dele
         <AlertDialogFooter>
           <AlertDialogCancel>{t("common.cancel", "Abbrechen")}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-red-600 hover:bg-red-700">
-            {t("common.delete", "Loschen")}
+            {t("common.delete", "Löschen")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

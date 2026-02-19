@@ -18,7 +18,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     const [requestsRes, teamMembersRes, contractsRes, blockedPeriodsRes, bankHolidaysRes] = await Promise.all([
       supabase
         .from("holiday_requests")
-        .select("*, team_member:team_members(id, first_name, last_name)")
+        .select("*")
         .eq("practice_id", practiceId)
         .is("deleted_at", null)
         .gte("start_date", `${targetYear}-01-01`)
@@ -59,12 +59,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       const workingDaysPartTime = (hoursPerWeek / fullTimeHours) * workingDaysFulltime
       const holidayEntitlement = Math.ceil((workingDaysPartTime / workingDaysFulltime) * holidayDaysFulltime)
 
-      const usedDays = requests
-        .filter((r: any) => r.team_member_id === member.id && ["approved", "requested"].includes(r.status))
+      const memberRequests = requests.filter((r: any) => r.user_id === member.id || r.user_id === member.user_id)
+      const usedDays = memberRequests
+        .filter((r: any) => ["approved", "requested"].includes(r.status))
         .reduce((sum: number, r: any) => sum + (r.days_count || 0), 0)
 
-      const wishedDays = requests
-        .filter((r: any) => r.team_member_id === member.id && r.status === "wish")
+      const wishedDays = memberRequests
+        .filter((r: any) => r.status === "wish")
         .reduce((sum: number, r: any) => sum + (r.days_count || 0), 0)
 
       return {
@@ -87,6 +88,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       })
     }
 
+    // Map requests to member names for the prompt
+    const getRequestMemberName = (r: any) => {
+      const member = teamMembers.find((m: any) => m.id === r.user_id || m.user_id === r.user_id)
+      return member ? `${member.first_name} ${member.last_name}` : "Unbekannt"
+    }
+
     const prompt = `Du bist ein KI-Assistent für Urlaubsplanung in einer medizinischen Praxis.
 
 Analysiere die folgenden Urlaubswünsche und erstelle einen optimalen Urlaubsplan.
@@ -98,7 +105,7 @@ URLAUBSWÜNSCHE:
 ${wishRequests
   .map(
     (r: any) =>
-      `- ${r.team_member?.first_name} ${r.team_member?.last_name}: ${r.start_date} bis ${r.end_date} (${r.days_count} Tage, Priorität: ${r.priority}/5)${r.reason ? `, Grund: ${r.reason}` : ""}`,
+      `- ${getRequestMemberName(r)}: ${r.start_date} bis ${r.end_date} (${r.days_count} Tage, Priorität: ${r.priority}/5)${r.reason ? `, Grund: ${r.reason}` : ""}`,
   )
   .join("\n")}
 

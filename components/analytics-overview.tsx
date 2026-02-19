@@ -96,7 +96,7 @@ export function AnalyticsOverview() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Teamzufriedenheit</CardTitle>
-          <CardDescription>Wochentliche Zufriedenheitswerte und Rucklaufquoten</CardDescription>
+          <CardDescription>Wöchentliche Zufriedenheitswerte und Rücklaufquoten</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={200}>

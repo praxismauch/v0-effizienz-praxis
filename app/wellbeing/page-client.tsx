@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useUser } from "@/contexts/user-context"
 import AppLayout from "@/components/app-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useToast } from "@/hooks/use-toast"
 import {
   Heart,
   Brain,
@@ -26,18 +25,7 @@ import {
 } from "lucide-react"
 import { startOfWeek } from "date-fns"
 import { de } from "date-fns/locale"
-
-import type {
-  MoodSurvey,
-  MoodResponse,
-  WorkloadAnalysis,
-  WellbeingSuggestion,
-  Kudos,
-  TeamMember,
-  KudosForm,
-} from "./types"
 import { getBurnoutRiskLabel } from "./types"
-
 import { OverviewTab } from "./components/overview-tab"
 import { WorkloadTab } from "./components/workload-tab"
 import { SuggestionsTab } from "./components/suggestions-tab"
@@ -45,375 +33,55 @@ import { KudosTab } from "./components/kudos-tab"
 import { MoodSurveyDialog } from "./components/mood-survey-dialog"
 import { KudosDialog } from "./components/kudos-dialog"
 import { PageHeader } from "@/components/page-layout"
+import { useWellbeing } from "./hooks/use-wellbeing"
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function getMoodIcon(value: number) {
+  if (value >= 4) return <Smile className="h-5 w-5 text-green-500" />
+  if (value >= 3) return <Meh className="h-5 w-5 text-yellow-500" />
+  return <Frown className="h-5 w-5 text-red-500" />
+}
+
+function getMoodColor(value: number) {
+  if (value >= 4) return "text-green-500"
+  if (value >= 3) return "text-yellow-500"
+  return "text-red-500"
+}
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export default function WellbeingPageClient() {
   const { user, currentPractice } = useUser()
-  const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState("overview")
-  const [isLoading, setIsLoading] = useState(true)
-
-  // State for mood surveys
-  const [surveys, setSurveys] = useState<MoodSurvey[]>([])
   const [showSurveyDialog, setShowSurveyDialog] = useState(false)
-  const [activeSurvey, setActiveSurvey] = useState<MoodSurvey | null>(null)
-
-  // State for mood response form
-  const [moodResponse, setMoodResponse] = useState<MoodResponse>({
-    energy_level: 3,
-    stress_level: 3,
-    work_satisfaction: 3,
-    team_harmony: 3,
-    work_life_balance: 3,
-    leadership_support: 3,
-    growth_opportunities: 3,
-    workload_fairness: 3,
-  })
-  const [positiveFeedback, setPositiveFeedback] = useState("")
-  const [improvementSuggestions, setImprovementSuggestions] = useState("")
-  const [concerns, setConcerns] = useState("")
-  const [isSubmittingMood, setIsSubmittingMood] = useState(false)
-  const [hasSubmittedToday, setHasSubmittedToday] = useState(false)
-
-  // State for workload analysis
-  const [workloadAnalysis, setWorkloadAnalysis] = useState<WorkloadAnalysis | null>(null)
-  const [isAnalyzingWorkload, setIsAnalyzingWorkload] = useState(false)
-
-  // State for suggestions
-  const [suggestions, setSuggestions] = useState<WellbeingSuggestion[]>([])
-  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false)
-
-  // State for kudos
-  const [kudosList, setKudosList] = useState<Kudos[]>([])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [showKudosDialog, setShowKudosDialog] = useState(false)
-  const [kudosForm, setKudosForm] = useState<KudosForm>({
-    to_user_id: "",
-    category: "",
-    message: "",
-    is_anonymous: false,
-  })
-  const [isSubmittingKudos, setIsSubmittingKudos] = useState(false)
 
-  // Aggregated mood data for charts
-  const [moodTrends, setMoodTrends] = useState<any[]>([])
-  const [moodAverages, setMoodAverages] = useState<MoodResponse | null>(null)
-
-  // Load initial data
-  useEffect(() => {
-    if (currentPractice?.id) {
-      loadAllData()
-    } else {
-      setIsLoading(false)
-    }
-  }, [currentPractice?.id])
-
-  const loadAllData = async () => {
-    setIsLoading(true)
-    try {
-      await Promise.all([
-        loadSurveys(),
-        loadMoodData(),
-        loadWorkloadAnalysis(),
-        loadSuggestions(),
-        loadKudos(),
-        loadTeamMembers(),
-      ])
-    } catch (error) {
-      console.error("[v0] Error loading all data:", error)
-    }
-    setIsLoading(false)
-  }
-
-  const loadSurveys = async () => {
-    try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/surveys`)
-      if (res.ok) {
-        const data = await res.json()
-        setSurveys(data.surveys || [])
-        const active = data.surveys?.find((s: MoodSurvey) => s.is_active)
-        setActiveSurvey(active || null)
-      }
-    } catch (error) {
-      console.error("Error loading surveys:", error)
-    }
-  }
-
-  const loadMoodData = async () => {
-    try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/mood-data`)
-      if (res.ok) {
-        const data = await res.json()
-        setMoodTrends(data.trends || [])
-        setMoodAverages(data.averages || null)
-        setHasSubmittedToday(data.hasSubmittedToday || false)
-      }
-    } catch (error) {
-      console.error("Error loading mood data:", error)
-    }
-  }
-
-  const loadWorkloadAnalysis = async () => {
-    try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/workload-analysis`)
-      if (res.ok) {
-        const data = await res.json()
-        setWorkloadAnalysis(data.analysis || null)
-      }
-    } catch (error) {
-      console.error("Error loading workload analysis:", error)
-    }
-  }
-
-  const loadSuggestions = async () => {
-    try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/suggestions`)
-      if (res.ok) {
-        const data = await res.json()
-        setSuggestions(data.suggestions || [])
-      }
-    } catch (error) {
-      console.error("Error loading suggestions:", error)
-    }
-  }
-
-  const loadKudos = async () => {
-    try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/kudos`)
-      if (res.ok) {
-        const data = await res.json()
-        setKudosList(data.kudos || [])
-      }
-    } catch (error) {
-      console.error("Error loading kudos:", error)
-    }
-  }
-
-  const loadTeamMembers = async () => {
-    try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/team-members`)
-      if (res.ok) {
-        const data = await res.json()
-        setTeamMembers(Array.isArray(data) ? data : data.teamMembers || [])
-      }
-    } catch (error) {
-      console.error("Error loading team members:", error)
-    }
-  }
-
-  const handleStartFirstSurvey = async () => {
-    if (!currentPractice?.id) return
-    try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/wellbeing/surveys`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "Wöchentliche Stimmungsumfrage",
-          description: "Anonyme Umfrage zur Team-Stimmung",
-          survey_type: "weekly",
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setActiveSurvey(data.survey)
-        setSurveys([data.survey, ...surveys])
-        setShowSurveyDialog(true)
-        toast({
-          title: "Umfrage erstellt",
-          description: "Die erste Stimmungsumfrage wurde gestartet.",
-        })
-      } else {
-        throw new Error("Failed to create survey")
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Umfrage konnte nicht erstellt werden.",
-        variant: "destructive",
-      })
-      console.error("[v0] Error creating survey:", error)
-    }
-  }
-
-  const handleSubmitMoodResponse = async () => {
-    if (!currentPractice?.id) return
-    setIsSubmittingMood(true)
-    try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/wellbeing/mood-response`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          survey_id: activeSurvey?.id,
-          ...moodResponse,
-          positive_feedback: positiveFeedback,
-          improvement_suggestions: improvementSuggestions,
-          concerns,
-        }),
-      })
-      if (res.ok) {
-        toast({
-          title: "Feedback gesendet",
-          description: "Vielen Dank für Ihr anonymes Feedback!",
-        })
-        setHasSubmittedToday(true)
-        setShowSurveyDialog(false)
-        setPositiveFeedback("")
-        setImprovementSuggestions("")
-        setConcerns("")
-        loadMoodData()
-      } else {
-        throw new Error("Failed to submit")
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Feedback konnte nicht gesendet werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmittingMood(false)
-    }
-  }
-
-  const handleAnalyzeWorkload = async () => {
-    if (!currentPractice?.id) return
-    setIsAnalyzingWorkload(true)
-    try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/wellbeing/analyze-workload`, {
-        method: "POST",
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setWorkloadAnalysis(data.analysis)
-        toast({
-          title: "Analyse abgeschlossen",
-          description: "Die Arbeitsbelastungs-Analyse wurde erstellt.",
-        })
-      } else {
-        throw new Error("Failed to analyze")
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Die Analyse konnte nicht durchgeführt werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsAnalyzingWorkload(false)
-    }
-  }
-
-  const handleGenerateSuggestions = async () => {
-    if (!currentPractice?.id) return
-    setIsGeneratingSuggestions(true)
-    try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/wellbeing/generate-suggestions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mood_averages: moodAverages,
-          workload_analysis: workloadAnalysis,
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setSuggestions([...suggestions, ...(data.suggestions || [])])
-        toast({
-          title: "Vorschläge generiert",
-          description: "KI-basierte Wellbeing-Vorschläge wurden erstellt.",
-        })
-      } else {
-        throw new Error("Failed to generate")
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Vorschläge konnten nicht generiert werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsGeneratingSuggestions(false)
-    }
-  }
-
-  const handleSendKudos = async () => {
-    if (!currentPractice?.id || !kudosForm.to_user_id || !kudosForm.category || !kudosForm.message) {
-      toast({
-        title: "Felder ausfüllen",
-        description: "Bitte wählen Sie eine Person, Kategorie und schreiben Sie eine Nachricht.",
-        variant: "destructive",
-      })
-      return
-    }
-    setIsSubmittingKudos(true)
-    try {
-      const res = await fetch(`/api/practices/${currentPractice.id}/wellbeing/kudos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...kudosForm,
-          from_user_id: user?.id,
-        }),
-      })
-      if (res.ok) {
-        toast({
-          title: "Kudos gesendet!",
-          description: "Ihre Anerkennung wurde gesendet.",
-        })
-        setShowKudosDialog(false)
-        setKudosForm({
-          to_user_id: "",
-          category: "",
-          message: "",
-          is_anonymous: false,
-        })
-        loadKudos()
-      } else {
-        throw new Error("Failed to send kudos")
-      }
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Kudos konnten nicht gesendet werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmittingKudos(false)
-    }
-  }
-
-  const handleReactToKudos = async (kudosId: string, emoji: string) => {
-    try {
-      const res = await fetch(`/api/practices/${currentPractice?.id}/wellbeing/kudos/${kudosId}/react`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emoji }),
-      })
-      if (res.ok) {
-        loadKudos()
-      }
-    } catch (error) {
-      console.error("Error reacting to kudos:", error)
-    }
-  }
-
-  const getMoodIcon = (value: number) => {
-    if (value >= 4) return <Smile className="h-5 w-5 text-green-500" />
-    if (value >= 3) return <Meh className="h-5 w-5 text-yellow-500" />
-    return <Frown className="h-5 w-5 text-red-500" />
-  }
-
-  const getMoodColor = (value: number) => {
-    if (value >= 4) return "text-green-500"
-    if (value >= 3) return "text-yellow-500"
-    return "text-red-500"
-  }
-
-  const getBurnoutRiskColor = (score: number) => {
-    if (score >= 70) return "bg-red-500"
-    if (score >= 40) return "bg-yellow-500"
-    return "bg-green-500"
-  }
+  const {
+    isLoading,
+    moodResponse, setMoodResponse,
+    positiveFeedback, setPositiveFeedback,
+    improvementSuggestions, setImprovementSuggestions,
+    concerns, setConcerns,
+    isSubmittingMood,
+    hasSubmittedToday,
+    workloadAnalysis,
+    isAnalyzingWorkload,
+    suggestions,
+    isGeneratingSuggestions,
+    kudosList,
+    teamMembers,
+    kudosForm, setKudosForm,
+    isSubmittingKudos,
+    moodTrends,
+    moodAverages,
+    handleSubmitMoodResponse,
+    handleAnalyzeWorkload,
+    handleGenerateSuggestions,
+    handleSendKudos,
+    handleReactToKudos,
+  } = useWellbeing({ practiceId: currentPractice?.id, userId: user?.id })
 
   if (isLoading) {
     return (
@@ -425,10 +93,15 @@ export default function WellbeingPageClient() {
     )
   }
 
+  const weeklyKudosCount = kudosList.filter((k) => {
+    const created = new Date(k.created_at)
+    const weekStart = startOfWeek(new Date(), { locale: de })
+    return created >= weekStart
+  }).length
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6 space-y-6">
-        {/* Header */}
         <PageHeader
           title="Mitarbeiter-Wellbeing"
           subtitle="Burnout-Praevention, anonyme Stimmungsumfragen und Peer-Recognition"
@@ -510,15 +183,7 @@ export default function WellbeingPageClient() {
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {
-                  kudosList.filter((k) => {
-                    const created = new Date(k.created_at)
-                    const weekStart = startOfWeek(new Date(), { locale: de })
-                    return created >= weekStart
-                  }).length
-                }
-              </div>
+              <div className="text-2xl font-bold text-primary">{weeklyKudosCount}</div>
               <p className="text-xs text-muted-foreground mt-1">Anerkennungen</p>
             </CardContent>
           </Card>
@@ -555,82 +220,48 @@ export default function WellbeingPageClient() {
             <TabsTrigger value="kudos">
               <Award className="h-4 w-4 mr-2" />
               Kudos
-              {kudosList.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {kudosList.length}
-                </Badge>
-              )}
+              {kudosList.length > 0 && <Badge variant="secondary" className="ml-2">{kudosList.length}</Badge>}
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <OverviewTab
-              moodTrends={moodTrends}
-              moodAverages={moodAverages}
-              kudosList={kudosList}
-              workloadAnalysis={workloadAnalysis}
-              onStartFirstSurvey={handleStartFirstSurvey}
+              moodTrends={moodTrends} moodAverages={moodAverages}
+              kudosList={kudosList} workloadAnalysis={workloadAnalysis}
+              onStartFirstSurvey={() => setShowSurveyDialog(true)}
               onShowKudosDialog={() => setShowKudosDialog(true)}
               onSwitchToKudosTab={() => setActiveTab("kudos")}
             />
           </TabsContent>
 
-          {/* Workload Analysis Tab */}
           <TabsContent value="workload" className="space-y-6">
-            <WorkloadTab
-              workloadAnalysis={workloadAnalysis}
-              isAnalyzingWorkload={isAnalyzingWorkload}
-              onAnalyzeWorkload={handleAnalyzeWorkload}
-            />
+            <WorkloadTab workloadAnalysis={workloadAnalysis} isAnalyzingWorkload={isAnalyzingWorkload} onAnalyzeWorkload={handleAnalyzeWorkload} />
           </TabsContent>
 
-          {/* Suggestions Tab */}
           <TabsContent value="suggestions" className="space-y-6">
-            <SuggestionsTab
-              suggestions={suggestions}
-              isGeneratingSuggestions={isGeneratingSuggestions}
-              onGenerateSuggestions={handleGenerateSuggestions}
-            />
+            <SuggestionsTab suggestions={suggestions} isGeneratingSuggestions={isGeneratingSuggestions} onGenerateSuggestions={handleGenerateSuggestions} />
           </TabsContent>
 
-          {/* Kudos Tab */}
           <TabsContent value="kudos" className="space-y-6">
-            <KudosTab
-              kudosList={kudosList}
-              onShowKudosDialog={() => setShowKudosDialog(true)}
-              onReactToKudos={handleReactToKudos}
-            />
+            <KudosTab kudosList={kudosList} onShowKudosDialog={() => setShowKudosDialog(true)} onReactToKudos={handleReactToKudos} />
           </TabsContent>
         </Tabs>
 
-        {/* Mood Survey Dialog */}
         <MoodSurveyDialog
-          open={showSurveyDialog}
-          onOpenChange={setShowSurveyDialog}
-          moodResponse={moodResponse}
-          onMoodResponseChange={setMoodResponse}
-          positiveFeedback={positiveFeedback}
-          onPositiveFeedbackChange={setPositiveFeedback}
-          improvementSuggestions={improvementSuggestions}
-          onImprovementSuggestionsChange={setImprovementSuggestions}
-          concerns={concerns}
-          onConcernsChange={setConcerns}
-          isSubmitting={isSubmittingMood}
-          hasSubmittedToday={hasSubmittedToday}
+          open={showSurveyDialog} onOpenChange={setShowSurveyDialog}
+          moodResponse={moodResponse} onMoodResponseChange={setMoodResponse}
+          positiveFeedback={positiveFeedback} onPositiveFeedbackChange={setPositiveFeedback}
+          improvementSuggestions={improvementSuggestions} onImprovementSuggestionsChange={setImprovementSuggestions}
+          concerns={concerns} onConcernsChange={setConcerns}
+          isSubmitting={isSubmittingMood} hasSubmittedToday={hasSubmittedToday}
           onSubmit={handleSubmitMoodResponse}
         />
 
-        {/* Kudos Dialog */}
         <KudosDialog
-          open={showKudosDialog}
-          onOpenChange={setShowKudosDialog}
-          kudosForm={kudosForm}
-          onKudosFormChange={setKudosForm}
-          teamMembers={teamMembers}
-          currentUserId={user?.id}
-          isSubmitting={isSubmittingKudos}
-          onSubmit={handleSendKudos}
+          open={showKudosDialog} onOpenChange={setShowKudosDialog}
+          kudosForm={kudosForm} onKudosFormChange={setKudosForm}
+          teamMembers={teamMembers} currentUserId={user?.id}
+          isSubmitting={isSubmittingKudos} onSubmit={handleSendKudos}
         />
       </div>
     </AppLayout>

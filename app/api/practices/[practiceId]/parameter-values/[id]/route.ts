@@ -19,8 +19,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .select(
         `
         *,
-        parameter:analytics_parameters(id, name, category, unit, data_type),
-        user:users(id, name)
+        parameter:analytics_parameters(id, name, category, unit, data_type)
       `,
       )
       .single()

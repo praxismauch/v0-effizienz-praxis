@@ -348,11 +348,11 @@ export default function ErrorLogsPageClient() {
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
-                {selectedLogs.length} {"Log(s) ausgewahlt"}
+                {selectedLogs.length} {"Log(s) ausgewählt"}
               </span>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("acknowledged")}>
-                  {"Bestatigen"}
+                  {"Bestätigen"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("investigating")}>
                   In Bearbeitung

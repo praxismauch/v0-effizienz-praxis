@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send } from "lucide-react"
@@ -404,15 +405,14 @@ export default function CommunicationPage() {
                           const memberId = member.user_id || member.id || member.team_member_id
                           if (!memberId) return null
                           return (
-                            <SelectItem key={memberId} value={memberId}>
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarFallback className="text-xs">{member.first_name?.[0]}</AvatarFallback>
-                                </Avatar>
-                                {member.first_name} {member.last_name}
-                                <span className="text-muted-foreground">({getRoleLabel(member.role)})</span>
-                              </div>
-                            </SelectItem>
+                            <TeamMemberSelectItem
+                              key={memberId}
+                              value={memberId}
+                              firstName={member.first_name}
+                              lastName={member.last_name}
+                              avatarUrl={member.avatar_url}
+                              role={getRoleLabel(member.role)}
+                            />
                           )
                         })}
                       </SelectContent>

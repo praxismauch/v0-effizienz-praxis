@@ -1,7 +1,7 @@
 export const availablePermissions = [
   { id: "all", label: "Alle Berechtigungen", description: "Voller Zugriff auf alle Systemfunktionen" },
-  // Ubersicht
-  { id: "dashboard", label: "Dashboard", description: "Ubersichtsseite und Statistiken anzeigen" },
+  // Übersicht
+  { id: "dashboard", label: "Dashboard", description: "Übersichtsseite und Statistiken anzeigen" },
   { id: "analytics", label: "Analysen", description: "Praxisanalysen und Auswertungen einsehen" },
   // Praxismanagement
   { id: "leitbild", label: "Leitbild", description: "Praxisleitbild und Vision verwalten" },

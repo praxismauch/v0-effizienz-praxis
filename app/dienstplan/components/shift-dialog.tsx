@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import type { Shift, ShiftType, TeamMember } from "../types"
 
 interface ShiftDialogProps {
@@ -57,6 +58,10 @@ export default function ShiftDialog({
   const isEditing = !!shift
   const { toast } = useToast()
 
+  // Consistent member ID extraction - always use member.id (primary key from team_members table)
+  const getMemberId = (member: TeamMember) => 
+    member.id || (member as any).team_member_id || ""
+
   const [formData, setFormData] = useState({
     team_member_id: "",
     shift_type_id: "",
@@ -74,7 +79,7 @@ export default function ShiftDialog({
       setIsSubmitting(false)
       
       if (shift) {
-        console.log("[v0] ShiftDialog: Editing existing shift", { shift_date: shift.shift_date })
+        
         setFormData({
           team_member_id: shift.team_member_id || "",
           shift_type_id: shift.shift_type_id || "",
@@ -88,9 +93,20 @@ export default function ShiftDialog({
         
         // Use defaultDate and defaultTeamMemberId if provided, otherwise use selectedDate and selectedMemberId
         const dateStr = defaultDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")
-        const memberId = defaultTeamMemberId || selectedMemberId || ""
+        const rawMemberId = defaultTeamMemberId || selectedMemberId || ""
         
-        console.log("[v0] ShiftDialog: Creating new shift", { dateStr, memberId, defaultDate, selectedDate })
+        // Resolve the member ID to match the Select values (which use getMemberId)
+        // The incoming selectedMemberId might be member.id, but Select values use user_id || id
+        let memberId = rawMemberId
+        if (rawMemberId && teamMembers.length > 0) {
+          const matched = teamMembers.find((m) => {
+            const mid = getMemberId(m)
+            return mid === rawMemberId || m.id === rawMemberId || (m as any).user_id === rawMemberId
+          })
+          if (matched) {
+            memberId = getMemberId(matched)
+          }
+        }
         
         setFormData({
           team_member_id: memberId,
@@ -120,7 +136,6 @@ export default function ShiftDialog({
 
     setIsSubmitting(true)
     try {
-      console.log("[v0] Saving shift with data:", formData)
       await onSave({
         team_member_id: formData.team_member_id,
         shift_type_id: formData.shift_type_id,
@@ -130,10 +145,9 @@ export default function ShiftDialog({
         notes: formData.notes || undefined,
         status: "scheduled",
       })
-      console.log("[v0] Shift saved successfully")
       // Don't close dialog or reset state here - let parent handle it after refresh
     } catch (error) {
-      console.error("[v0] Error saving shift:", error)
+      
       setIsSubmitting(false)
       toast({ title: "Fehler beim Speichern", variant: "destructive" })
     }
@@ -167,12 +181,16 @@ export default function ShiftDialog({
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-[300px]">
                 {teamMembers.map((member) => {
-                  const memberId = member.user_id || member.id || member.team_member_id
+                  const memberId = getMemberId(member)
                   if (!memberId) return null
                   return (
-                    <SelectItem key={memberId} value={memberId}>
-                      {member.first_name} {member.last_name}
-                    </SelectItem>
+                    <TeamMemberSelectItem
+                      key={memberId}
+                      value={memberId}
+                      firstName={member.first_name}
+                      lastName={member.last_name}
+                      avatarUrl={member.avatar_url}
+                    />
                   )
                 })}
               </SelectContent>

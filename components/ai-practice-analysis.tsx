@@ -21,6 +21,22 @@ interface AnalysisInsight {
   metric?: string
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  team: "Team",
+  finance: "Finanzen",
+  patientSatisfaction: "Patientenzufriedenheit (Google)",
+  support: "Support",
+  goals: "Ziele",
+  recruiting: "Recruiting",
+  workflows: "Arbeitsabläufe",
+  documents: "Dokumente",
+  knowledge: "Wissensdatenbank",
+  hygiene: "Hygiene",
+  safety: "Patientensicherheit",
+  training: "Fortbildung",
+  communication: "Kommunikation",
+}
+
 interface PracticeAnalysis {
   overallScore: number
   insights: AnalysisInsight[]
@@ -83,27 +99,38 @@ export function AIPracticeAnalysis({ onScoreUpdate }: { onScoreUpdate?: (score: 
     setProgressMessage("Analysedaten werden geladen...")
 
     try {
+      const startTime = Date.now()
       const progressInterval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000
         setProgress((prev) => {
-          if (prev < 20) {
+          // Phase 1: 0-30% in first 5s (data loading)
+          if (elapsed < 5) {
             setProgressMessage("Praxisdaten werden abgerufen...")
-            return prev + 5
-          } else if (prev < 40) {
+            return Math.min(30, Math.round(elapsed * 6))
+          }
+          // Phase 2: 30-55% in 5-15s (team analysis)
+          if (elapsed < 15) {
             setProgressMessage("Team-Performance wird analysiert...")
-            return prev + 4
-          } else if (prev < 60) {
+            return Math.min(55, 30 + Math.round((elapsed - 5) * 2.5))
+          }
+          // Phase 3: 55-75% in 15-30s (KPI calculation)
+          if (elapsed < 30) {
             setProgressMessage("KPIs werden berechnet...")
-            return prev + 3
-          } else if (prev < 80) {
+            return Math.min(75, 55 + Math.round((elapsed - 15) * 1.33))
+          }
+          // Phase 4: 75-88% in 30-60s (AI recommendations)
+          if (elapsed < 60) {
             setProgressMessage("KI-Empfehlungen werden generiert...")
-            return prev + 2
-          } else if (prev < 90) {
+            return Math.min(88, 75 + Math.round((elapsed - 30) * 0.43))
+          }
+          // Phase 5: 88-95% after 60s (preparing results)
+          if (prev < 95) {
             setProgressMessage("Ergebnisse werden aufbereitet...")
-            return prev + 1
+            return Math.min(95, prev + 0.2)
           }
           return prev
         })
-      }, 200)
+      }, 500)
 
       const response = await fetch("/api/ai-analysis/practice", {
         method: "POST",
@@ -326,7 +353,7 @@ export function AIPracticeAnalysis({ onScoreUpdate }: { onScoreUpdate?: (score: 
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
                   <Badge variant={getInsightBadgeVariant(insight.type)} className="text-xs">
-                    {insight.category}
+                    {CATEGORY_LABELS[insight.category] || insight.category}
                   </Badge>
                   {insight.metric && (
                     <span className="text-xs font-medium text-muted-foreground">{insight.metric}</span>

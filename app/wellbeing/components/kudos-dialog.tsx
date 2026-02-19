@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
@@ -51,15 +52,12 @@ export function KudosDialog({
                 {teamMembers
                   .filter((m) => m.id !== currentUserId)
                   .map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={member.avatar || "/placeholder.svg"} />
-                          <AvatarFallback>{member.name?.[0]}</AvatarFallback>
-                        </Avatar>
-                        {member.name}
-                      </div>
-                    </SelectItem>
+                    <TeamMemberSelectItem
+                      key={member.id}
+                      value={member.id}
+                      name={member.name}
+                      avatarUrl={member.avatar || member.avatar_url}
+                    />
                   ))}
               </SelectContent>
             </Select>

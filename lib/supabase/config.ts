@@ -11,6 +11,8 @@
  * 
  * Fallback: SUPABASE_URL / SUPABASE_ANON_KEY are used when NEXT_PUBLIC_ variants
  * are not available (e.g. server-side in v0 preview before build inlines them).
+ * 
+ * Updated: All admin client functions now return mock/fallback clients instead of null.
  */
 
 // Get environment variables - read directly from process.env each time (no caching)

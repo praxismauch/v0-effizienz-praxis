@@ -130,7 +130,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const updatePayload: Record<string, any> = {
       updated_at: new Date().toISOString(),
     }
-    const allowedFields = ["name", "address", "phone", "fax", "email", "website", "description", "type", "specialty", "logo_url", "street", "city", "zip_code"]
+    const allowedFields = ["name", "address", "phone", "fax", "email", "website", "description", "type", "specialty", "logo_url", "street", "city", "zip_code", "bundesland"]
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         updatePayload[field] = body[field]

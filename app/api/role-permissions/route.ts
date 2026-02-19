@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
 
 // GET /api/role-permissions
 export async function GET(request: NextRequest) {
   try {
     // Try admin client first (bypasses RLS), fall back to regular authenticated client
-    const supabaseAdmin = await createAdminClient()
-    const supabase = supabaseAdmin?.from ? supabaseAdmin : await createClient()
+    const supabase = hasSupabaseAdminConfig() ? await createAdminClient() : await createClient()
 
     const { data: permissions, error } = await supabase
       .from("role_permissions")
@@ -61,8 +61,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const supabaseAdmin = await createAdminClient()
-    const supabase = supabaseAdmin?.from ? supabaseAdmin : await createClient()
+    const supabase = hasSupabaseAdminConfig() ? await createAdminClient() : await createClient()
 
     const { data, error } = await supabase
       .from("role_permissions")

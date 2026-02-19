@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import {
   Dialog,
   DialogContent,
@@ -863,9 +864,13 @@ export function DeviceTrainingManagement({ devices }: { devices: Device[] }) {
                       const memberId = member.user_id || member.id || member.team_member_id
                       if (!memberId) return null
                       return (
-                        <SelectItem key={memberId} value={memberId}>
-                          {member.first_name} {member.last_name}
-                        </SelectItem>
+                        <TeamMemberSelectItem
+                          key={memberId}
+                          value={memberId}
+                          firstName={member.first_name}
+                          lastName={member.last_name}
+                          avatarUrl={member.avatar_url}
+                        />
                       )
                     })}
                   </SelectContent>

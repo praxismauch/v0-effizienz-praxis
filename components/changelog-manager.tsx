@@ -43,6 +43,7 @@ export function ChangelogManager() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
+  const [aiCategorizedChanges, setAiCategorizedChanges] = useState<Change[] | null>(null)
 
   const [formData, setFormData] = useState({
     version: "",
@@ -104,15 +105,23 @@ export function ChangelogManager() {
 
       const result = await response.json()
 
+      // Auto-populate title, description, version, and change type from AI
       setFormData((prev) => ({
         ...prev,
-        title: result.title,
-        description: result.description,
+        title: result.title || prev.title,
+        description: result.description || prev.description,
+        version: result.suggestedVersion || prev.version,
+        change_type: result.change_type || prev.change_type,
       }))
+
+      // Store AI-categorized changes for save
+      if (result.changes && Array.isArray(result.changes)) {
+        setAiCategorizedChanges(result.changes)
+      }
 
       toast({
         title: t("common.success", "Erfolg"),
-        description: t("whats_new.ai_generated_success", "KI hat Changelog-Inhalt erfolgreich generiert"),
+        description: t("whats_new.ai_generated_success", "KI hat Changelog-Inhalt erfolgreich generiert und kategorisiert"),
       })
     } catch (error) {
       console.error("[v0] AI Error:", error)
@@ -128,11 +137,22 @@ export function ChangelogManager() {
 
   const handleSave = async () => {
     try {
-      const changes: Change[] = formData.rawChanges
+      // Use AI-categorized changes if available, otherwise smart-categorize locally
+      const changes: Change[] = aiCategorizedChanges || formData.rawChanges
         .split("\n")
         .filter((line) => line.trim())
         .reduce((acc: Change[], line) => {
-          const category = "Updates"
+          const lower = line.toLowerCase()
+          let category = "Sonstiges"
+          if (lower.includes("neu") || lower.includes("hinzugefügt") || lower.includes("feature") || lower.includes("erstellt")) {
+            category = "Neue Funktionen"
+          } else if (lower.includes("verbessert") || lower.includes("optimiert") || lower.includes("aktualisiert") || lower.includes("überarbeitet")) {
+            category = "Verbesserungen"
+          } else if (lower.includes("behoben") || lower.includes("fix") || lower.includes("korrigiert") || lower.includes("fehler")) {
+            category = "Fehlerbehebungen"
+          } else if (lower.includes("sicherheit") || lower.includes("security") || lower.includes("auth")) {
+            category = "Sicherheit"
+          }
           const existing = acc.find((c) => c.category === category)
           if (existing) {
             existing.items.push(line.trim())
@@ -241,6 +261,7 @@ export function ChangelogManager() {
       rawChanges: "",
     })
     setEditingId(null)
+    setAiCategorizedChanges(null)
   }
 
   const openEditDialog = (changelog: Changelog) => {
@@ -401,9 +422,28 @@ export function ChangelogManager() {
               <span className="text-primary font-medium">
                 {aiLoading
                   ? t("whats_new.generating", "Generiere...")
-                  : t("whats_new.generate_with_ai", "Mit KI generieren")}
+                  : t("whats_new.generate_with_ai", "Mit KI kategorisieren & generieren")}
               </span>
             </Button>
+
+            {aiCategorizedChanges && aiCategorizedChanges.length > 0 && (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">KI-Kategorisierung</p>
+                {aiCategorizedChanges.map((section, idx) => (
+                  <div key={idx}>
+                    <p className="text-sm font-semibold text-foreground">{section.category}</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {section.items.map((item, itemIdx) => (
+                        <li key={itemIdx} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <span className="text-primary mt-0.5">-</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div>
               <Label htmlFor="title">{t("whats_new.title_label", "Titel")}</Label>

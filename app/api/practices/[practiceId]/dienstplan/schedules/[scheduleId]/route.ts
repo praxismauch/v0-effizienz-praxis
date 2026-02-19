@@ -10,12 +10,13 @@ export async function PUT(
     const body = await request.json()
     const supabase = await createClient()
 
-    // First, save to history
+    // First, save current state to history
     const { data: existing } = await supabase.from("shift_schedules").select("*").eq("id", scheduleId).single()
 
     if (existing) {
       await supabase.from("shift_schedules_history").insert({
-        shift_id: scheduleId,
+        shift_schedule_id: scheduleId,
+        practice_id: practiceId,
         team_member_id: existing.team_member_id,
         shift_type_id: existing.shift_type_id,
         shift_date: existing.shift_date,
@@ -24,27 +25,27 @@ export async function PUT(
         break_minutes: existing.break_minutes,
         status: existing.status,
         notes: existing.notes,
-        changed_by: body.changed_by,
-        change_reason: body.change_reason,
+        changed_by: body.changed_by || null,
+        change_type: "update",
       })
     }
 
-    // Update the schedule
+    // Update the schedule - only set columns that exist
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    }
+    if (body.team_member_id !== undefined) updateData.team_member_id = body.team_member_id
+    if (body.shift_type_id !== undefined) updateData.shift_type_id = body.shift_type_id
+    if (body.shift_date !== undefined) updateData.shift_date = body.shift_date
+    if (body.start_time !== undefined) updateData.start_time = body.start_time
+    if (body.end_time !== undefined) updateData.end_time = body.end_time
+    if (body.break_minutes !== undefined) updateData.break_minutes = body.break_minutes
+    if (body.status !== undefined) updateData.status = body.status
+    if (body.notes !== undefined) updateData.notes = body.notes
+
     const { data: schedule, error } = await supabase
       .from("shift_schedules")
-      .update({
-        team_member_id: body.team_member_id,
-        shift_type_id: body.shift_type_id,
-        shift_date: body.shift_date,
-        start_time: body.start_time,
-        end_time: body.end_time,
-        break_minutes: body.break_minutes,
-        status: body.status,
-        notes: body.notes,
-        version: (existing?.version || 0) + 1,
-        previous_version_id: scheduleId,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", scheduleId)
       .eq("practice_id", practiceId)
       .select()

@@ -38,14 +38,22 @@ function useLiveMinutes(members: TeamMember[]) {
 
   return (member: TeamMember) => {
     const clockIn = (member as any).clock_in_time
+    const completedMins = (member as any).completed_minutes || member.today_minutes || 0
+
+    // Not actively clocked in: just show completed minutes
     if (!clockIn || (member.current_status !== "working" && member.current_status !== "break")) {
-      return member.today_minutes || 0
+      return completedMins
     }
+
+    // Parse the ISO clock_in_time and compute live elapsed
     const start = new Date(clockIn).getTime()
-    if (isNaN(start)) return member.today_minutes || 0
+    if (isNaN(start)) return completedMins
+
     const breakMins = (member as any).break_minutes || 0
-    const elapsedMin = Math.floor((now - start) / 60000) - breakMins
-    return Math.max(0, elapsedMin)
+    const activeElapsed = Math.max(0, Math.floor((now - start) / 60000) - breakMins)
+
+    // Total = completed blocks today + live elapsed from current active block
+    return completedMins + activeElapsed
   }
 }
 

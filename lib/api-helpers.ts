@@ -1,6 +1,7 @@
 import "server-only"
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
 import { isSuperAdminRole, isPracticeAdminRole, isManagerRole } from "@/lib/auth-utils"
 
 export interface ApiAuthResult {
@@ -26,8 +27,8 @@ export interface PracticeAuthResult extends ApiAuthResult {
  * We just need to read the user from the already-refreshed session.
  */
 export async function authenticateApiRequest(): Promise<ApiAuthResult> {
-  const adminClient = await createAdminClient()
   const supabase = await createClient()
+  const adminClient = hasSupabaseAdminConfig() ? await createAdminClient() : supabase
 
   // Get user from session - proxy has already refreshed it
   const {
@@ -53,11 +54,19 @@ export async function authenticateApiRequest(): Promise<ApiAuthResult> {
   }
 
   // Get user data using admin client (bypasses RLS)
-  const { data: userData, error: userError } = await adminClient
+  let userData: any = null
+  let userError: any = null
+  
+  // Try admin client first, then fall back to session client
+  const lookupClient = hasSupabaseAdminConfig() ? adminClient : supabase
+  const { data: uData, error: uError } = await lookupClient
     .from("users")
     .select("id, email, role, practice_id")
     .eq("id", user.id)
     .single()
+  
+  userData = uData
+  userError = uError
 
   if (userError || !userData) {
     throw new ApiError("Benutzerdaten nicht gefunden", 404)

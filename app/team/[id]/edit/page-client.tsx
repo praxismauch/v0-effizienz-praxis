@@ -73,7 +73,7 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <h2 className="text-2xl font-semibold mb-2">Teammitglied nicht gefunden</h2>
-            <p className="text-muted-foreground mb-4">Das gesuchte Teammitglied existiert nicht oder wurde geloscht.</p>
+            <p className="text-muted-foreground mb-4">Das gesuchte Teammitglied existiert nicht oder wurde gelöscht.</p>
             <Button onClick={() => router.push("/team")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Zuruck zum Team
@@ -190,12 +190,12 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
         method: "DELETE",
       })
       const responseData = await response.json()
-      if (!response.ok) throw new Error(responseData.error || "Fehler beim Loschen")
+      if (!response.ok) throw new Error(responseData.error || "Fehler beim Löschen")
       removeTeamMember(memberId)
       toast.success(`${member.name || `${formData.firstName} ${formData.lastName}`} wurde deaktiviert`)
       router.push("/team")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Fehler beim Loschen des Teammitglieds")
+      toast.error(error instanceof Error ? error.message : "Fehler beim Löschen des Teammitglieds")
     } finally {
       setIsDeleting(false)
     }
@@ -240,7 +240,7 @@ export default function EditTeamMemberPage({ initialMember }: EditTeamMemberPage
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       disabled={isDeleting}
                     >
-                      {isDeleting ? "Wird geloscht..." : "Loschen"}
+                      {isDeleting ? "Wird gelöscht..." : "Löschen"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

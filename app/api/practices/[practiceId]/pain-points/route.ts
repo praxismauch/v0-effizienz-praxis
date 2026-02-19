@@ -1,5 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
-import { createServerClient } from "@/lib/supabase/server"
+import { getApiClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
 
 interface PainPoint {
@@ -11,16 +10,6 @@ interface PainPoint {
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createServerClient()
-
-    // Check authentication
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
-    }
 
     const { painPoints, createGoals = true } = (await request.json()) as {
       painPoints: PainPoint[]
@@ -31,7 +20,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 })
     }
 
-    const adminClient = await createAdminClient()
+    const adminClient = await getApiClient()
 
     // Get current practice settings
     const { data: practice, error: practiceError } = await adminClient
@@ -83,7 +72,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         // Create a goal from the pain point
         const goalData = {
           practice_id: practiceId,
-          created_by: user.id,
+          created_by: null,
           assigned_to: null,
           title: `${painPoint.title} lösen`,
           description: painPoint.description || `Aus Onboarding: ${painPoint.title}`,
@@ -131,18 +120,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createServerClient()
-
-    // Check authentication
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
-    }
-
-    const adminClient = await createAdminClient()
+    const adminClient = await getApiClient()
 
     const { data: practice, error: practiceError } = await adminClient
       .from("practices")

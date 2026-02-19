@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import { Loader2, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { MONTHS, YEARS, CURRENT_YEAR } from "./report-types"
@@ -91,9 +92,12 @@ export function GenerateReportDialog({
               </SelectTrigger>
               <SelectContent>
                 {teamMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
-                  </SelectItem>
+                  <TeamMemberSelectItem
+                    key={member.id}
+                    value={member.id}
+                    name={member.name}
+                    avatarUrl={(member as any).avatar_url}
+                  />
                 ))}
               </SelectContent>
             </Select>

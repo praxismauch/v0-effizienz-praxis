@@ -7,73 +7,10 @@ import { useUser } from "./user-context"
 import { SWR_KEYS, DEFAULT_PRACTICE_ID } from "@/lib/swr-keys"
 import { swrFetcher, mutationFetcher } from "@/lib/swr-fetcher"
 import { toast } from "sonner"
+import type { WorkflowStep, Workflow, WorkflowTemplate, OrgaCategory } from "@/lib/workflow-types"
 
-export interface WorkflowStep {
-  id: string
-  title: string
-  description?: string
-  assignedTo?: string
-  assignedUserId?: string
-  estimatedDuration?: number
-  dependencies: string[]
-  status: "pending" | "in-progress" | "completed" | "blocked"
-  completedAt?: string
-  completedBy?: string
-  notes?: string
-  dueDate?: string
-  parentStepId?: string
-  isSubitem?: boolean
-  subitems?: WorkflowStep[]
-}
-
-export interface Workflow {
-  id: string
-  title: string
-  description?: string
-  category: string
-  priority: "low" | "medium" | "high" | "urgent"
-  status: "draft" | "active" | "paused" | "completed" | "archived"
-  createdBy: string
-  createdAt: string
-  updatedAt: string
-  practiceId: string
-  teamIds: string[]
-  steps: WorkflowStep[]
-  isTemplate: boolean
-  templateId?: string
-  estimatedTotalDuration?: number
-  actualDuration?: number
-  startedAt?: string
-  completedAt?: string
-  hideItemsFromOtherUsers?: boolean
-}
-
-export interface WorkflowTemplate {
-  id: string
-  title: string
-  description?: string
-  category: string
-  steps: Omit<WorkflowStep, "id" | "status" | "completedAt" | "completedBy" | "notes">[]
-  estimatedDuration: number
-  createdBy: string
-  createdAt: string
-  isPublic: boolean
-  practiceId?: string
-  hideItemsFromOtherUsers?: boolean
-}
-
-export interface OrgaCategory {
-  id: string
-  name: string
-  description?: string
-  color: string
-  icon: string
-  is_active: boolean
-  display_order: number
-  practice_id: string | null
-  created_at: string
-  updated_at: string
-}
+// Re-export types for consumers
+export type { WorkflowStep, Workflow, WorkflowTemplate, OrgaCategory }
 
 interface WorkflowContextType {
   workflows: Workflow[]

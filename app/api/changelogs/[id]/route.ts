@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
 import { NextResponse } from "next/server"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,7 +17,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const body = await request.json()
     const { version, title, description, changes, change_type, is_published } = body
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
 
@@ -27,12 +28,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (change_type !== undefined) updateData.change_type = change_type
     if (is_published !== undefined) {
       updateData.is_published = is_published
-      if (is_published && !body.published_at) {
+      if (is_published) {
         updateData.published_at = new Date().toISOString()
+      } else {
+        updateData.published_at = null
       }
     }
 
-    const { data, error } = await supabase.from("changelogs").update(updateData).eq("id", id).select().maybeSingle()
+    const adminClient = hasSupabaseAdminConfig() ? await createAdminClient() : supabase
+
+    const { data, error } = await adminClient
+      .from("changelogs")
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .maybeSingle()
 
     if (error) {
       console.error("[v0] Error updating changelog:", error)
@@ -62,7 +72,13 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { error } = await supabase.from("changelogs").delete().eq("id", id)
+    const adminClient = hasSupabaseAdminConfig() ? await createAdminClient() : supabase
+
+    // Soft delete
+    const { error } = await adminClient
+      .from("changelogs")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id)
 
     if (error) throw error
 

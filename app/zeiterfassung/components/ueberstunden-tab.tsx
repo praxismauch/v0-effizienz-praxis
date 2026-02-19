@@ -33,6 +33,7 @@ interface UeberstundenTabProps {
 
 // Format minutes to hours with sign
 const formatOvertimeMinutes = (minutes: number) => {
+  if (!minutes || isNaN(minutes)) return "0:00"
   const h = Math.floor(Math.abs(minutes) / 60)
   const m = Math.abs(minutes) % 60
   const sign = minutes < 0 ? "-" : minutes > 0 ? "+" : ""
@@ -41,6 +42,7 @@ const formatOvertimeMinutes = (minutes: number) => {
 
 // Format hours decimal to hours:minutes
 const formatHours = (hours: number) => {
+  if (!hours || isNaN(hours)) return "0:00"
   const h = Math.floor(hours)
   const m = Math.round((hours - h) * 60)
   return `${h}:${m.toString().padStart(2, "0")}`

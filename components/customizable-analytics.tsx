@@ -216,7 +216,7 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
     const updated = tiles.filter((t) => t.id !== tileId)
     setTiles(updated)
     saveTilesSettings(updated)
-    toast.success("Kachel geloscht")
+    toast.success("Kachel gelöscht")
   }
 
   const toggleTileDashboard = (tileId: string) => {
@@ -459,7 +459,7 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
               <CardContent className="py-12 text-center">
                 <LayoutDashboard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">{t("analytics.noDashboard", "Keine Dashboard-Elemente")}</h3>
-                <p className="text-sm text-muted-foreground">Fugen Sie Diagramme oder Kacheln zum Dashboard hinzu</p>
+                <p className="text-sm text-muted-foreground">Fügen Sie Diagramme oder Kacheln zum Dashboard hinzu</p>
               </CardContent>
             </Card>
           ) : null}

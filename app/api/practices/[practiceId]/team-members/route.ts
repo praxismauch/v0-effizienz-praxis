@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { sortTeamMembersByRole } from "@/lib/team-role-order"
 import { handleApiError } from "@/lib/api-helpers"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 
 interface TeamMember {
   id: string
@@ -15,6 +15,9 @@ interface TeamMember {
   created_at: string
   first_name: string | null
   last_name: string | null
+  email?: string | null
+  position?: string | null
+  skills?: string[]
 }
 
 interface TeamAssignment {
@@ -41,11 +44,19 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelay = 10
   throw lastError
 }
 
+async function getSupabaseClient() {
+  const client = await createClient()
+  if (!client || typeof client.from !== "function") {
+    throw new Error("Failed to create Supabase client")
+  }
+  return client
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
-    const supabase = await createAdminClient()
+    const supabase = await getSupabaseClient()
 
     let customRoleOrder: string[] | undefined
     try {
@@ -119,7 +130,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         console.error("Error fetching team assignments:", assignError)
       }
 
-      // Fetch avatars from users table
       try {
         const { data: usersData } = await supabase
           .from("users")
@@ -127,7 +137,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .in("id", userIds)
 
         if (usersData) {
-          userAvatars = usersData.reduce((acc: Record<string, string | null>, user: any) => {
+          userAvatars = usersData.reduce((acc: Record<string, string | null>, user: { id: string; avatar: string | null }) => {
             acc[user.id] = user.avatar
             return acc
           }, {})
@@ -148,7 +158,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       return {
         id: memberId,
-        team_member_id: member.id, // Always include the team_members table ID
+        team_member_id: member.id,
         user_id: member.user_id,
         first_name: firstName,
         last_name: lastName,
@@ -173,7 +183,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         lastActive: new Date().toISOString(),
         skills: member.skills || [],
         team_ids: member.user_id
-          ? teamAssignments.filter((ta: any) => ta.user_id === member.user_id).map((ta: any) => ta.team_id)
+          ? teamAssignments.filter((ta) => ta.user_id === member.user_id).map((ta) => ta.team_id)
           : [],
         teamIds: member.user_id
           ? teamAssignments.filter((ta) => ta.user_id === member.user_id).map((ta) => ta.team_id)
@@ -184,7 +194,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const sortedTeamMembers = sortTeamMembersByRole(teamMembers, customRoleOrder)
     return NextResponse.json({ teamMembers: sortedTeamMembers || [] })
-  } catch (error: any) {
+  } catch (error) {
     if (isRateLimitError(error)) {
       return NextResponse.json(
         { error: "Service temporarily unavailable", retryable: true },
@@ -198,11 +208,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-
     const practiceIdStr = String(practiceId)
-
-    const supabase = await createAdminClient()
-
+    const supabase = await getSupabaseClient()
     const body = await request.json()
 
     const firstName = body.firstName?.trim()
@@ -220,7 +227,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const fullName = `${firstName} ${lastName}`.trim()
     const userRole = body.role || "user"
     let userId: string | null = null
-
     const currentDate = new Date().toISOString().split("T")[0]
 
     if (body.email && body.email.trim() !== "") {
@@ -311,8 +317,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { practiceId } = await params
     const practiceIdStr = String(practiceId)
-
-    const supabase = await createAdminClient()
+    const supabase = await getSupabaseClient()
     const body = await request.json()
 
     const memberId = body.id || body.user_id
@@ -331,21 +336,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (lastName) teamMemberUpdates.last_name = lastName
     }
 
-    if (body.role !== undefined) {
-      teamMemberUpdates.role = body.role
-    }
-
-    if (body.department !== undefined) {
-      teamMemberUpdates.department = body.department
-    }
-
-    if (body.isActive !== undefined) {
-      teamMemberUpdates.status = body.isActive ? "active" : "inactive"
-    }
-
-    if (body.status !== undefined) {
-      teamMemberUpdates.status = body.status
-    }
+    if (body.role !== undefined) teamMemberUpdates.role = body.role
+    if (body.department !== undefined) teamMemberUpdates.department = body.department
+    if (body.isActive !== undefined) teamMemberUpdates.status = body.isActive ? "active" : "inactive"
+    if (body.status !== undefined) teamMemberUpdates.status = body.status
 
     if (Object.keys(teamMemberUpdates).length > 0) {
       const { error: memberError } = await supabase
@@ -374,21 +368,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
-    if (body.email !== undefined && body.email?.trim()) {
-      userUpdates.email = body.email.trim()
-    }
-
-    if (body.role !== undefined) {
-      userUpdates.role = body.role
-    }
-
-    if (body.avatar !== undefined) {
-      userUpdates.avatar = body.avatar
-    }
-
-    if (body.isActive !== undefined) {
-      userUpdates.is_active = body.isActive
-    }
+    if (body.email !== undefined && body.email?.trim()) userUpdates.email = body.email.trim()
+    if (body.role !== undefined) userUpdates.role = body.role
+    if (body.avatar !== undefined) userUpdates.avatar = body.avatar
+    if (body.isActive !== undefined) userUpdates.is_active = body.isActive
 
     if (Object.keys(userUpdates).length > 0) {
       const { error: userError } = await supabase

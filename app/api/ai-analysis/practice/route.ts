@@ -957,90 +957,20 @@ DATENSPENDE-KONTEXT:
 ${datenspendeContext}
 
 ANALYSEANFORDERUNGEN:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Erstelle eine JSON-Antwort mit folgendem Format:
+Erstelle eine JSON-Antwort mit folgendem Format (KOMPAKT, keine langen Texte):
 {
-  "overallScore": <Zahl zwischen 0-100, gewichtet nach Bedeutung der Bereiche>,
-  "summary": "<Umfassende Zusammenfassung in 2-3 Sätzen mit den wichtigsten Erkenntnissen und Handlungsbedarf>",
-  "insights": [
-    {
-      "type": "success|warning|improvement",
-      "category": "<Kategorie>",
-      "title": "<Titel>",
-      "description": "<Beschreibung>",
-      "metric": "<Optionale Metrik>"
-    }
-  ],
-  "recommendations": ["<Handlungsempfehlung 1>", "<Handlungsempfehlung 2>", ...],
+  "overallScore": <0-100>,
+  "summary": "<2-3 Sätze Zusammenfassung>",
+  "insights": [{"type":"success|warning|improvement","category":"<Kat>","title":"<Titel>","description":"<1-2 Sätze>","metric":"<Wert>"}],
+  "recommendations": ["<Empfehlung 1>", ...],
   "categories": {
-    "team": {
-      "score": <Bewertung des Teams>,
-      "findings": ["<Erkenntnisse über das Team>"],
-      "recommendations": ["<Empfehlungen für das Team>"]
-    },
-    "finance": {
-      "score": <Bewertung der Finanzen>,
-      "findings": ["<Erkenntnisse über Finanzen>"],
-      "recommendations": ["<Empfehlungen für Finanzen>"]
-    },
-    "patientSatisfaction": {
-      "score": <Bewertung der Patientenzufriedenheit>,
-      "findings": ["<Erkenntnisse über Patientenfeedback>"],
-      "recommendations": ["<Empfehlungen für Patientenzufriedenheit>"]
-    },
-    "support": {
-      "score": <Bewertung des Supportmanagements>,
-      "findings": ["<Erkenntnisse über Support>"],
-      "recommendations": ["<Empfehlungen für Support>"]
-    },
-    "goals": {
-      "score": <Bewertung der Ziele>,
-      "findings": ["<Erkenntnisse über die Ziele>"],
-      "recommendations": ["<Empfehlungen für die Ziele>"]
-    },
-    "recruiting": {
-      "score": <Bewertung des Recruitings>,
-      "findings": ["<Erkenntnisse über das Recruiting>"],
-      "recommendations": ["<Empfehlungen für das Recruiting>"]
-    },
-    "workflows": {
-      "score": <Bewertung der Workflows>,
-      "findings": ["<Erkenntnisse über die Workflows>"],
-      "recommendations": ["<Empfehlungen für die Workflows>"]
-    },
-    "documents": {
-      "score": <Bewertung der Dokumente>,
-      "findings": ["<Erkenntnisse über die Dokumente>"],
-      "recommendations": ["<Empfehlungen für die Dokumente>"]
-    },
-    "knowledge": {
-      "score": <Bewertung der Wissensdatenbank>,
-      "findings": ["<Erkenntnisse über die Wissensdatenbank>"],
-      "recommendations": ["<Empfehlungen für die Wissensdatenbank>"]
-    },
-    "hygiene": {
-      "score": <Bewertung des Hygienemanagements>,
-      "findings": ["<Erkenntnisse über Hygiene>"],
-      "recommendations": ["<Empfehlungen für Hygiene>"]
-    },
-    "safety": {
-      "score": <Bewertung der Patientensicherheit/CIRS>,
-      "findings": ["<Erkenntnisse über CIRS und Sicherheit>"],
-      "recommendations": ["<Empfehlungen für Patientensicherheit>"]
-    },
-    "training": {
-      "score": <Bewertung der Fortbildung>,
-      "findings": ["<Erkenntnisse über Fortbildung>"],
-      "recommendations": ["<Empfehlungen für Fortbildung>"]
-    },
-    "communication": {
-      "score": <Bewertung der internen Kommunikation>,
-      "findings": ["<Erkenntnisse über Schwarzes Brett und Kommunikation>"],
-      "recommendations": ["<Empfehlungen für Kommunikation>"]
-    }
+    "<key>": {"score":<0-100>,"findings":["..."],"recommendations":["..."]}
   }
 }
+Kategorie-Keys: team, finance, patientSatisfaction, support, goals, recruiting, workflows, documents, knowledge, hygiene, safety, training, communication.
+Jede Kategorie braucht score, 1-2 findings, 1-2 recommendations. Halte Texte KURZ und PRÄZISE.
 
 WICHTIGE ANALYSEKRITERIEN:
 1. **Diversität der Erkenntnisse**: 10-15 Insights aus ALLEN verfügbaren Kategorien (Team, Finanzen, Patientenfeedback, Support, Recruiting, etc.)
@@ -1079,10 +1009,10 @@ Sei konstruktiv, aber ehrlich. Hebe Stärken hervor UND identifiziere konkrete V
     let analysis
     try {
       const { text } = await generateText({
-        model: "anthropic/claude-sonnet-4-20250514",
+        model: "anthropic/claude-sonnet-4.6",
         prompt: fullPrompt,
-        maxOutputTokens: 8000,
-        temperature: 0.5,
+        maxOutputTokens: 4000,
+        temperature: 0.3,
       })
 
       const jsonMatch = text.match(/\{[\s\S]*\}/)

@@ -36,12 +36,12 @@ export const getDienstplanData = cache(async (
         .eq("practice_id", practiceId)
         .is("deleted_at", null),
       
-      // Shift types
+      // Shift types - fetch all (including inactive) so schedules referencing them display correctly
       supabase
         .from("shift_types")
         .select("*")
         .eq("practice_id", practiceId)
-        .eq("is_active", true)
+        .is("deleted_at", null)
         .order("name"),
       
       // Schedules for the week

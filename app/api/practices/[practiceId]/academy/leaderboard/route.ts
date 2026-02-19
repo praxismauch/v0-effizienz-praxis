@@ -31,19 +31,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       timeFilter = monthAgo.toISOString()
     }
 
-    // Get user progress from enrollments
+    // Get user progress from enrollments (no FK on user_id, so no join)
     let query = supabase
       .from("academy_enrollments")
-      .select(`
-        user_id,
-        progress_percentage,
-        completed_at,
-        users:user_id (
-          id,
-          name,
-          email
-        )
-      `)
+      .select("user_id, progress_percentage, completed_at")
       .eq("practice_id", practiceId)
 
     if (timeFilter) {

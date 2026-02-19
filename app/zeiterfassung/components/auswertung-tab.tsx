@@ -32,18 +32,23 @@ export default function AuswertungTab({
   const monthEnd = endOfMonth(selectedMonth)
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
-  // Calculate statistics from TimeBlock fields
-  const totalNetMinutes = blocks.reduce((sum, block) => {
-    if (block.net_minutes) return sum + block.net_minutes
+  // Safely extract net minutes from a block
+  const getBlockMinutes = (block: TimeBlock): number => {
+    if (typeof block.net_minutes === "number" && !isNaN(block.net_minutes)) return block.net_minutes
     // Fallback: calculate from start_time / end_time
     if (block.start_time && block.end_time) {
       const start = new Date(`2000-01-01T${block.start_time}`)
       const end = new Date(`2000-01-01T${block.end_time}`)
-      const minutes = (end.getTime() - start.getTime()) / 60000
-      return sum + Math.max(0, minutes - (block.break_minutes || 0))
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const minutes = (end.getTime() - start.getTime()) / 60000
+        return Math.max(0, minutes - (block.break_minutes || 0))
+      }
     }
-    return sum
-  }, 0)
+    return 0
+  }
+
+  // Calculate statistics from TimeBlock fields
+  const totalNetMinutes = blocks.reduce((sum, block) => sum + getBlockMinutes(block), 0)
 
   const totalHours = totalNetMinutes / 60
   const totalBreakMinutes = blocks.reduce((sum, b) => sum + (b.break_minutes || 0), 0)
@@ -204,15 +209,7 @@ export default function AuswertungTab({
             {/* Days */}
             {daysInMonth.map((day) => {
               const dayBlocks = getBlocksForDay(day)
-              const dayMinutes = dayBlocks.reduce((sum, b) => {
-                if (b.net_minutes) return sum + b.net_minutes
-                if (b.start_time && b.end_time) {
-                  const start = new Date(`2000-01-01T${b.start_time}`)
-                  const end = new Date(`2000-01-01T${b.end_time}`)
-                  return sum + Math.max(0, (end.getTime() - start.getTime()) / 60000 - (b.break_minutes || 0))
-                }
-                return sum
-              }, 0)
+              const dayMinutes = dayBlocks.reduce((sum, b) => sum + getBlockMinutes(b), 0)
               const dayHours = dayMinutes / 60
               const hasEntries = dayBlocks.length > 0
               const isWeekend = day.getDay() === 0 || day.getDay() === 6

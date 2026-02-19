@@ -4,6 +4,7 @@ import { isSuperAdminRole } from "@/lib/auth-utils"
 
 async function requireSuperAdmin() {
   const supabase = await createServerClient()
+  const adminClient = await createAdminClient()
   const {
     data: { user },
     error: authError,
@@ -11,7 +12,8 @@ async function requireSuperAdmin() {
   if (authError || !user) {
     throw { status: 401, message: "Unauthorized" }
   }
-  const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
+  // Use admin client to bypass RLS when looking up user role
+  const { data: userData } = await adminClient.from("users").select("role").eq("id", user.id).single()
   if (!isSuperAdminRole(userData?.role)) {
     throw { status: 403, message: "Forbidden" }
   }

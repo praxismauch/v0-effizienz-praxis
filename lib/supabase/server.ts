@@ -19,12 +19,20 @@ let _devUserCache: { id: string; email: string } | null = null
 
 /**
  * Look up the dev user from the database (cached).
- * Used as a fallback when Supabase Auth returns no session.
+ * Uses the service role key to bypass RLS since we have no auth session yet.
  */
-async function getDevUser(client: SupabaseClient): Promise<{ id: string; email: string } | null> {
+async function getDevUser(): Promise<{ id: string; email: string } | null> {
   if (_devUserCache) return _devUserCache
   try {
-    const { data } = await client
+    const url = getSupabaseUrl()
+    const serviceKey = getSupabaseServiceRoleKey()
+    if (!url || !serviceKey) return null
+
+    // Create a one-off service role client (bypasses RLS)
+    const adminClient = createSupabaseClient(url, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+    const { data } = await adminClient
       .from("users")
       .select("id, email")
       .eq("email", DEV_USER_EMAIL)
@@ -118,10 +126,18 @@ export async function createClient() {
   // without a real Supabase Auth session (e.g. in v0 preview environment).
   const originalGetUser = realClient.auth.getUser.bind(realClient.auth)
   realClient.auth.getUser = async (...args: Parameters<typeof originalGetUser>) => {
-    const result = await originalGetUser(...args)
-    if (!result.data.user) {
+    let result: any
+    try {
+      result = await originalGetUser(...args)
+    } catch {
+      // getUser threw (e.g. network error) — treat as no session
+      result = { data: { user: null }, error: { message: "Auth session missing!" } }
+    }
+
+    const hasUser = result?.data?.user
+    if (!hasUser) {
       // No auth session — look up the dev user from the DB as a fallback
-      const devUser = await getDevUser(realClient)
+      const devUser = await getDevUser()
       if (devUser) {
         return {
           data: {

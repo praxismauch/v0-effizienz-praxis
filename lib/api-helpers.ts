@@ -54,11 +54,19 @@ export async function authenticateApiRequest(): Promise<ApiAuthResult> {
   }
 
   // Get user data using admin client (bypasses RLS)
-  const { data: userData, error: userError } = await adminClient
+  let userData: any = null
+  let userError: any = null
+  
+  // Try admin client first, then fall back to session client
+  const lookupClient = hasSupabaseAdminConfig() ? adminClient : supabase
+  const { data: uData, error: uError } = await lookupClient
     .from("users")
     .select("id, email, role, practice_id")
     .eq("id", user.id)
     .single()
+  
+  userData = uData
+  userError = uError
 
   if (userError || !userData) {
     throw new ApiError("Benutzerdaten nicht gefunden", 404)

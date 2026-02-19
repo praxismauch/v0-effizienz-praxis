@@ -1,11 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { isSuperAdminRole } from "@/lib/auth-utils"
+import { hasSupabaseAdminConfig } from "@/lib/supabase/config"
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const adminClient = hasSupabaseAdminConfig() ? await createAdminClient() : supabase
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -14,7 +16,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
+    // Use admin client for role lookup to bypass RLS
+    const { data: userData } = await adminClient.from("users").select("role").eq("id", user.id).single()
     if (!isSuperAdminRole(userData?.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Action: suggest topics
     if (action === "suggest-topics") {
-      const { data: existingPosts } = await supabase
+      const { data: existingPosts } = await adminClient
         .from("blog_posts")
         .select("title, category, tags")
         .order("created_at", { ascending: false })

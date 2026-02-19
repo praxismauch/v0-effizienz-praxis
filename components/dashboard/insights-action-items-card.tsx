@@ -103,12 +103,12 @@ export function JournalActionItemsCard({ practiceId }: Props) {
       </Link>
       <div className="space-y-1.5">
         {actionItems.map((item) => (
-          <div key={item.id} className={`px-2.5 py-1.5 rounded-md border flex items-center justify-between gap-2 ${getPriorityColor(item.priority)}`}>
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              {item.ai_generated && <Sparkles className="h-3 w-3 text-primary flex-shrink-0" />}
-              <span className="font-medium text-xs truncate">{item.title}</span>
+          <div key={item.id} className={`px-3 py-2 rounded-md border flex items-center justify-between gap-2 ${getPriorityColor(item.priority)}`}>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {item.ai_generated && <Sparkles className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
+              <span className="font-medium text-sm truncate">{item.title}</span>
             </div>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 flex-shrink-0">
+            <Badge variant="outline" className="text-xs px-2 py-0.5 flex-shrink-0">
               {item.priority === "urgent"
                 ? "Dringend"
                 : item.priority === "high"

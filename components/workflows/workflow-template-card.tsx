@@ -34,7 +34,7 @@ export function WorkflowTemplateCard({
           onClick={onToggleExpand}
           className="text-muted-foreground hover:text-foreground shrink-0"
         >
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

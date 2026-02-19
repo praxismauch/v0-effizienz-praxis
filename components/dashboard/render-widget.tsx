@@ -184,10 +184,11 @@ export function useDashboardWidgets({
 
       const wrapWithSpan = (content: React.ReactNode, id: string) => {
         if (forEditMode) return content
+        const rowClass = getRowSpanClass(id, dashboardConfig, cockpitCardSettings)
         return (
           <div
             key={id}
-            className={`${getColumnSpanClass(id, dashboardConfig, cockpitCardSettings)} ${getRowSpanClass(id, dashboardConfig, cockpitCardSettings)}`}
+            className={`${getColumnSpanClass(id, dashboardConfig, cockpitCardSettings)} ${rowClass} [&>*]:h-full`}
             style={getMinHeightStyle(id, cockpitCardSettings)}
           >
             {content}

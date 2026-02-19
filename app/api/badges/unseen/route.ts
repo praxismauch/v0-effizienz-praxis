@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get("userId")
 

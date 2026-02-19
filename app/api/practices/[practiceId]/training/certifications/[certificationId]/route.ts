@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 export async function PATCH(
@@ -9,19 +9,33 @@ export async function PATCH(
     const { practiceId, certificationId } = await params
     const body = await request.json()
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
-    const allowedFields = [
-      "name", "description", "issuing_body", "category",
-      "validity_months", "reminder_days", "is_mandatory"
-    ]
+    // Map client field names to actual DB column names
+    const fieldMap: Record<string, string> = {
+      name: "name",
+      description: "description",
+      category: "category",
+      issuing_authority: "issuing_authority",
+      validity_months: "validity_months",
+      is_mandatory: "is_mandatory",
+      icon: "icon",
+      color: "color",
+      team_id: "team_id",
+      required_for: "required_for",
+      // Client sends reminder_days_before, DB column is renewal_reminder_days
+      reminder_days_before: "renewal_reminder_days",
+      renewal_reminder_days: "renewal_reminder_days",
+    }
 
     const updateData: Record<string, unknown> = {}
-    for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field]
+    for (const [clientField, dbField] of Object.entries(fieldMap)) {
+      if (body[clientField] !== undefined) {
+        updateData[dbField] = body[clientField]
       }
     }
+
+    updateData.updated_at = new Date().toISOString()
 
     const { data, error } = await supabase
       .from("certifications")
@@ -50,7 +64,7 @@ export async function DELETE(
   try {
     const { practiceId, certificationId } = await params
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const { error } = await supabase
       .from("certifications")

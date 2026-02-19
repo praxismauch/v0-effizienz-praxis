@@ -21,6 +21,22 @@ interface AnalysisInsight {
   metric?: string
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  team: "Team",
+  finance: "Finanzen",
+  patientSatisfaction: "Patientenzufriedenheit",
+  support: "Support",
+  goals: "Ziele",
+  recruiting: "Recruiting",
+  workflows: "Arbeitsabl\u00e4ufe",
+  documents: "Dokumente",
+  knowledge: "Wissensdatenbank",
+  hygiene: "Hygiene",
+  safety: "Patientensicherheit",
+  training: "Fortbildung",
+  communication: "Kommunikation",
+}
+
 interface PracticeAnalysis {
   overallScore: number
   insights: AnalysisInsight[]
@@ -337,7 +353,7 @@ export function AIPracticeAnalysis({ onScoreUpdate }: { onScoreUpdate?: (score: 
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
                   <Badge variant={getInsightBadgeVariant(insight.type)} className="text-xs">
-                    {insight.category}
+                    {CATEGORY_LABELS[insight.category] || insight.category}
                   </Badge>
                   {insight.metric && (
                     <span className="text-xs font-medium text-muted-foreground">{insight.metric}</span>

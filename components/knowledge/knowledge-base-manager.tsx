@@ -19,9 +19,6 @@ import {
   FileText,
   Loader2,
   Archive,
-  ShieldCheck,
-  Cpu,
-  GraduationCap,
   ShieldAlert,
 } from "lucide-react"
 import { AiSearchDialog } from "./ai-search-dialog"
@@ -45,9 +42,6 @@ import type { KnowledgeArticle, OrgaCategory, MedicalDevice, InventoryItem, Work
 import { convertDeviceToArticle, convertInventoryToArticle, convertWorkEquipmentToArticle } from "./article-converters"
 import { KnowledgeStatCards } from "./knowledge-stat-cards"
 import { ArticleList } from "./article-list"
-import { QmHygieneTab } from "./qm-hygiene-tab"
-import { QmDevicesTab } from "./qm-devices-tab"
-import { QmTrainingTab } from "./qm-training-tab"
 import { QmCirsTab } from "./qm-cirs-tab"
 
 
@@ -305,18 +299,6 @@ export function KnowledgeBaseManager() {
               <Archive className="h-4 w-4" />
               Archiviert
             </TabsTrigger>
-            <TabsTrigger value="hygiene" className="gap-2 flex-1">
-              <ShieldCheck className="h-4 w-4" />
-              Hygieneplan
-            </TabsTrigger>
-            <TabsTrigger value="devices" className="gap-2 flex-1">
-              <Cpu className="h-4 w-4" />
-              Geräte
-            </TabsTrigger>
-            <TabsTrigger value="training" className="gap-2 flex-1">
-              <GraduationCap className="h-4 w-4" />
-              Schulungen
-            </TabsTrigger>
             <TabsTrigger value="cirs" className="gap-2 flex-1">
               <ShieldAlert className="h-4 w-4" />
               CIRS
@@ -355,18 +337,6 @@ export function KnowledgeBaseManager() {
               articles={filteredArticles}
               status="archived"
             />
-          </TabsContent>
-
-          <TabsContent value="hygiene" className="mt-6">
-            <QmHygieneTab />
-          </TabsContent>
-
-          <TabsContent value="devices" className="mt-6">
-            <QmDevicesTab />
-          </TabsContent>
-
-          <TabsContent value="training" className="mt-6">
-            <QmTrainingTab />
           </TabsContent>
 
           <TabsContent value="cirs" className="mt-6">

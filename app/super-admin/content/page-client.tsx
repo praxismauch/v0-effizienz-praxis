@@ -1,13 +1,13 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Workflow, CheckSquare, FileText, UsersRound, Calendar, BookOpen } from "lucide-react"
+import { Workflow, CheckSquare, FolderOpen, UsersRound, Calendar, BookOpen } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
 
-const DocumentsManager = dynamic(() => import("@/components/documents-manager"), {
+const FolderTemplatesManager = dynamic(() => import("@/components/super-admin/folder-templates-manager"), {
   loading: () => (
     <div className="flex items-center justify-center p-8">
       <Loader2 className="h-8 w-8 animate-spin" />
@@ -90,8 +90,8 @@ function ContentManagementContent() {
             Checklisten
           </TabsTrigger>
           <TabsTrigger value="dokumente" className="gap-2">
-            <FileText className="h-4 w-4" />
-            Dokumente
+            <FolderOpen className="h-4 w-4" />
+            Ordner-Vorlagen
           </TabsTrigger>
           <TabsTrigger value="teams" className="gap-2">
             <UsersRound className="h-4 w-4" />
@@ -116,7 +116,7 @@ function ContentManagementContent() {
         </TabsContent>
 
         <TabsContent value="dokumente" className="mt-6 space-y-4">
-          <DocumentsManager />
+          <FolderTemplatesManager />
         </TabsContent>
 
         <TabsContent value="teams" className="mt-6 space-y-4">

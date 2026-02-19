@@ -152,7 +152,7 @@ function SortableEditWidget({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className={`${getSpanClass(span)} ${getRowSpanClass(rowSpan)} group relative`}>
+    <div ref={setNodeRef} style={style} className={`${getSpanClass(span)} ${getRowSpanClass(rowSpan)} self-start group relative pb-3`}>
       {/* Edit overlay controls */}
       <div className="absolute -top-2 -right-2 z-20 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button
@@ -165,52 +165,54 @@ function SortableEditWidget({
         </Button>
       </div>
 
-      {/* Drag handle + column/row controls at bottom */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background border rounded-full shadow-md px-2 py-0.5">
-        <div
-          {...attributes}
-          {...listeners}
-          className="p-0.5 cursor-grab active:cursor-grabbing touch-none"
-        >
-          <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
-        </div>
-        <div className="w-px h-4 bg-border" />
-        <Columns className="h-3 w-3 text-muted-foreground" />
-        {SPAN_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            className={`w-5 h-5 text-[10px] rounded-full font-medium transition-colors ${
-              span === opt.value
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted text-muted-foreground"
-            }`}
-            onClick={() => onChangeSpan(opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
-        <div className="w-px h-4 bg-border" />
-        <Rows3 className="h-3 w-3 text-muted-foreground" />
-        {ROW_SPAN_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            className={`w-5 h-5 text-[10px] rounded-full font-medium transition-colors ${
-              rowSpan === opt.value
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted text-muted-foreground"
-            }`}
-            onClick={() => onChangeRowSpan(opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
       {/* Widget content with edit ring */}
       <div className="ring-2 ring-transparent group-hover:ring-primary/30 rounded-lg transition-all">
         {children}
+      </div>
+
+      {/* Drag handle + column/row controls at bottom - relative to card content */}
+      <div className="flex justify-center mt-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 bg-background border rounded-full shadow-md px-2 py-0.5">
+          <div
+            {...attributes}
+            {...listeners}
+            className="p-0.5 cursor-grab active:cursor-grabbing touch-none"
+          >
+            <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+          <div className="w-px h-4 bg-border" />
+          <Columns className="h-3 w-3 text-muted-foreground" />
+          {SPAN_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`w-5 h-5 text-[10px] rounded-full font-medium transition-colors ${
+                span === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted text-muted-foreground"
+              }`}
+              onClick={() => onChangeSpan(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+          <div className="w-px h-4 bg-border" />
+          <Rows3 className="h-3 w-3 text-muted-foreground" />
+          {ROW_SPAN_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`w-5 h-5 text-[10px] rounded-full font-medium transition-colors ${
+                rowSpan === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted text-muted-foreground"
+              }`}
+              onClick={() => onChangeRowSpan(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

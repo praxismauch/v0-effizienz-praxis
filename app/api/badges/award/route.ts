@@ -1,6 +1,58 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
+// System badges that are auto-created when first triggered
+const SYSTEM_BADGES: Record<string, { name: string; description: string; icon_name: string; color: string; xp_reward: number; criteria_type: string }> = {
+  welcome_tour: {
+    name: "Welcome Tour",
+    description: "Willkommen! Du hast die Einführungstour erfolgreich abgeschlossen.",
+    icon_name: "Rocket",
+    color: "#6366f1",
+    xp_reward: 50,
+    criteria_type: "welcome_tour",
+  },
+  first_login: {
+    name: "Erster Login",
+    description: "Du hast dich zum ersten Mal angemeldet.",
+    icon_name: "LogIn",
+    color: "#22c55e",
+    xp_reward: 10,
+    criteria_type: "first_login",
+  },
+  profile_complete: {
+    name: "Profil komplett",
+    description: "Du hast dein Profil vollständig ausgefüllt.",
+    icon_name: "UserCheck",
+    color: "#3b82f6",
+    xp_reward: 30,
+    criteria_type: "profile_complete",
+  },
+  first_ticket: {
+    name: "Erstes Ticket",
+    description: "Du hast dein erstes Ticket erstellt.",
+    icon_name: "Ticket",
+    color: "#f59e0b",
+    xp_reward: 20,
+    criteria_type: "first_ticket",
+  },
+  first_protocol: {
+    name: "Erstes Protokoll",
+    description: "Du hast dein erstes Protokoll erstellt.",
+    icon_name: "FileText",
+    color: "#8b5cf6",
+    xp_reward: 20,
+    criteria_type: "first_protocol",
+  },
+  first_document: {
+    name: "Erstes Dokument",
+    description: "Du hast dein erstes Dokument hochgeladen.",
+    icon_name: "Upload",
+    color: "#06b6d4",
+    xp_reward: 20,
+    criteria_type: "first_document",
+  },
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createAdminClient()
@@ -10,6 +62,8 @@ export async function POST(request: NextRequest) {
     if (!userId || !practiceId || !badgeId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
+
+    console.log("[v0] Badge award request:", { userId, practiceId, badgeId })
 
     // Get the badge by id first, then fallback to criteria_type
     let badge: any = null
@@ -33,8 +87,36 @@ export async function POST(request: NextRequest) {
       badge = badgeByCriteria
     }
 
+    // If badge not found, auto-create it if it's a known system badge
+    if (!badge && SYSTEM_BADGES[badgeId]) {
+      console.log("[v0] Auto-creating system badge:", badgeId)
+      const systemBadge = SYSTEM_BADGES[badgeId]
+      const { data: newBadge, error: createError } = await supabase
+        .from("academy_badges")
+        .insert({
+          name: systemBadge.name,
+          description: systemBadge.description,
+          icon_name: systemBadge.icon_name,
+          color: systemBadge.color,
+          xp_reward: systemBadge.xp_reward,
+          criteria_type: systemBadge.criteria_type,
+          criteria_value: "",
+          is_active: true,
+          practice_id: practiceId,
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error("[v0] Error creating system badge:", createError)
+        return NextResponse.json({ error: "Failed to create system badge" }, { status: 500 })
+      }
+      badge = newBadge
+      console.log("[v0] System badge created:", badge.id)
+    }
+
     if (!badge) {
-      console.error("Badge not found:", badgeId)
+      console.error("[v0] Badge not found and not a system badge:", badgeId)
       return NextResponse.json({ error: "Badge not found" }, { status: 404 })
     }
 
@@ -47,6 +129,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (existingBadge) {
+      console.log("[v0] Badge already earned:", badge.name)
       return NextResponse.json({
         message: "Badge already earned",
         badge,
@@ -67,10 +150,11 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error("Error awarding badge:", insertError)
+      console.error("[v0] Error awarding badge:", insertError)
       return NextResponse.json({ error: "Failed to award badge" }, { status: 500 })
     }
 
+    console.log("[v0] Badge awarded successfully:", badge.name, "to user:", userId)
     return NextResponse.json({
       success: true,
       badge,
@@ -78,7 +162,7 @@ export async function POST(request: NextRequest) {
       alreadyEarned: false,
     })
   } catch (error) {
-    console.error("Error in badge award:", error)
+    console.error("[v0] Error in badge award:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

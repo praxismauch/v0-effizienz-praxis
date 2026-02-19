@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, X } from "lucide-react"
 import { categoryLabels } from "@/app/workflows/workflow-types"
+import { DEFAULT_ROLE_ORDER } from "@/lib/team-role-order"
 
 interface WorkflowStep {
   title: string
@@ -164,12 +165,22 @@ export function WorkflowFormDialog({
                           className="text-sm resize-none"
                         />
                         <div className="grid grid-cols-2 gap-2">
-                          <Input
+                          <Select
                             value={step.assignedTo || ""}
-                            onChange={(e) => updateStep(index, "assignedTo", e.target.value)}
-                            placeholder="Zustaendig (z.B. MFA)"
-                            className="text-sm"
-                          />
+                            onValueChange={(value) => updateStep(index, "assignedTo", value)}
+                          >
+                            <SelectTrigger className="text-sm">
+                              <SelectValue placeholder="Zuständig" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DEFAULT_ROLE_ORDER.map((role) => (
+                                <SelectItem key={role} value={role}>
+                                  {role}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="Praxismanager">Praxismanager</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <div className="flex items-center gap-1">
                             <Input
                               type="number"

@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 function isRateLimitError(error: unknown): boolean {
@@ -22,7 +22,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ courses: [] })
@@ -68,7 +68,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ error: "Zu viele Anfragen" }, { status: 429 })

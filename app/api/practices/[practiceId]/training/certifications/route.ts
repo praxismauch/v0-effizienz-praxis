@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 function isRateLimitError(error: unknown): boolean {
@@ -24,7 +24,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ certifications: [] })
@@ -81,7 +81,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ error: "Zu viele Anfragen, bitte versuchen Sie es später erneut" }, { status: 429 })
@@ -98,7 +98,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         category: body.category || "general",
         issuing_authority: body.issuing_authority || body.issuingAuthority || null,
         validity_months: body.validity_months || body.validityMonths || null,
-        reminder_days_before: body.reminder_days_before || body.reminderDaysBefore || 30,
+        renewal_reminder_days: body.renewal_reminder_days || body.reminder_days_before || body.reminderDaysBefore || 30,
         is_mandatory: body.is_mandatory || body.isMandatory || false,
         icon: body.icon,
         color: body.color || "#3B82F6",

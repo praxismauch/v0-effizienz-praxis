@@ -57,7 +57,7 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
       category: cert.category || "pflicht",
       validity_months: cert.validity_months || 12,
       is_mandatory: cert.is_mandatory || false,
-      reminder_days_before: cert.reminder_days_before || 30,
+      reminder_days_before: cert.renewal_reminder_days || cert.reminder_days_before || 30,
       icon: cert.icon || "award",
       color: cert.color || "blue",
     })
@@ -148,7 +148,7 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Erinnerung:</span>
-                    <span>{cert.reminder_days_before || 30} Tage vorher</span>
+                    <span>{cert.renewal_reminder_days || cert.reminder_days_before || 30} Tage vorher</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t">

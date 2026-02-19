@@ -323,9 +323,17 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
   }
 
   const getRowSpanClass = (widgetId: string): string => {
+    // First check user-saved rowSpans from WidgetConfig
+    const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+    const userRowSpan = widgets.rowSpans?.[widgetId]
+    if (userRowSpan && userRowSpan > 1) {
+      if (userRowSpan === 3) return "md:row-span-3"
+      return "md:row-span-2"
+    }
+    // Fallback to cockpit card settings from admin
     const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
     const rowSpan = setting?.row_span || 1
-
+    if (rowSpan === 3) return "md:row-span-3"
     return rowSpan === 2 ? "md:row-span-2" : ""
   }
 

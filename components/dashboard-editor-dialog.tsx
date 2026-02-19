@@ -77,6 +77,7 @@ export interface WidgetConfig {
   showJournalActions?: boolean
   showTimeTracking?: boolean
   columnSpans?: Record<string, number>
+  rowSpans?: Record<string, number>
   todosFilterWichtig?: boolean
   todosFilterDringend?: boolean
   todosFilterPriority?: string

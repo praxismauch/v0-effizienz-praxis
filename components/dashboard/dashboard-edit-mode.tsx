@@ -38,6 +38,7 @@ import {
   Plus,
   Minus,
   Columns,
+  Rows3,
   Save,
   XCircle,
   RotateCcw,
@@ -71,6 +72,12 @@ const SPAN_OPTIONS = [
   { value: 5, label: "Full" },
 ]
 
+const ROW_SPAN_OPTIONS = [
+  { value: 1, label: "1x" },
+  { value: 2, label: "2x" },
+  { value: 3, label: "3x" },
+]
+
 const getSpanClass = (span: number): string => {
   switch (span) {
     case 2: return "md:col-span-2"
@@ -81,21 +88,33 @@ const getSpanClass = (span: number): string => {
   }
 }
 
+const getRowSpanClass = (rowSpan: number): string => {
+  switch (rowSpan) {
+    case 2: return "md:row-span-2"
+    case 3: return "md:row-span-3"
+    default: return ""
+  }
+}
+
 // --- Sortable Widget Wrapper ---
 
 function SortableEditWidget({
   id,
   children,
   span,
+  rowSpan,
   onRemove,
   onChangeSpan,
+  onChangeRowSpan,
   isLinebreak,
 }: {
   id: string
   children: React.ReactNode
   span: number
+  rowSpan: number
   onRemove: () => void
   onChangeSpan: (span: number) => void
+  onChangeRowSpan: (rowSpan: number) => void
   isLinebreak: boolean
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
@@ -133,7 +152,7 @@ function SortableEditWidget({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className={`${getSpanClass(span)} group relative`}>
+    <div ref={setNodeRef} style={style} className={`${getSpanClass(span)} ${getRowSpanClass(rowSpan)} group relative`}>
       {/* Edit overlay controls */}
       <div className="absolute -top-2 -right-2 z-20 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button
@@ -146,7 +165,7 @@ function SortableEditWidget({
         </Button>
       </div>
 
-      {/* Drag handle + column controls at bottom */}
+      {/* Drag handle + column/row controls at bottom */}
       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background border rounded-full shadow-md px-2 py-0.5">
         <div
           {...attributes}
@@ -167,6 +186,22 @@ function SortableEditWidget({
                 : "hover:bg-muted text-muted-foreground"
             }`}
             onClick={() => onChangeSpan(opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
+        <div className="w-px h-4 bg-border" />
+        <Rows3 className="h-3 w-3 text-muted-foreground" />
+        {ROW_SPAN_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            className={`w-5 h-5 text-[10px] rounded-full font-medium transition-colors ${
+              rowSpan === opt.value
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted text-muted-foreground"
+            }`}
+            onClick={() => onChangeRowSpan(opt.value)}
           >
             {opt.label}
           </button>
@@ -333,6 +368,13 @@ export function DashboardEditMode({
     }))
   }, [])
 
+  const handleChangeRowSpan = useCallback((widgetId: string, rowSpan: number) => {
+    setLocalConfig((prev) => ({
+      ...prev,
+      rowSpans: { ...(prev.rowSpans || {}), [widgetId]: rowSpan },
+    }))
+  }, [])
+
   const handleAddLinebreak = useCallback(() => {
     const newId = `linebreak_${Date.now()}`
     setLinebreaks((prev) => [...prev, newId])
@@ -344,9 +386,14 @@ export function DashboardEditMode({
     for (const [key, val] of Object.entries(localConfig.columnSpans || {})) {
       if (val && val > 0) cleanedSpans[key] = val
     }
+    const cleanedRowSpans: Record<string, number> = {}
+    for (const [key, val] of Object.entries(localConfig.rowSpans || {})) {
+      if (val && val > 1) cleanedRowSpans[key] = val
+    }
     onSave({
       ...localConfig,
       columnSpans: cleanedSpans,
+      rowSpans: Object.keys(cleanedRowSpans).length > 0 ? cleanedRowSpans : undefined,
       widgetOrder: order,
       linebreaks,
     })
@@ -372,6 +419,10 @@ export function DashboardEditMode({
 
   const getCurrentSpan = (widgetId: string): number => {
     return localConfig.columnSpans?.[widgetId] || getColumnSpan(widgetId)
+  }
+
+  const getCurrentRowSpan = (widgetId: string): number => {
+    return localConfig.rowSpans?.[widgetId] || 1
   }
 
   return (
@@ -445,8 +496,10 @@ export function DashboardEditMode({
                 key={id}
                 id={id}
                 span={isLinebreakWidget(id) ? 5 : getCurrentSpan(id)}
+                rowSpan={isLinebreakWidget(id) ? 1 : getCurrentRowSpan(id)}
                 onRemove={() => handleRemoveWidget(id)}
                 onChangeSpan={(span) => handleChangeSpan(id, span)}
+                onChangeRowSpan={(rs) => handleChangeRowSpan(id, rs)}
                 isLinebreak={isLinebreakWidget(id)}
               >
                 {renderWidgetPreview(id)}

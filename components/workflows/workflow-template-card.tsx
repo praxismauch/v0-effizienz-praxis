@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { Pencil, Trash2, Workflow, ChevronDown, ChevronUp, Clock, Users } from "lucide-react"
 import type { WorkflowTemplate, WorkflowStep } from "@/hooks/use-workflow-templates"
 
@@ -12,6 +13,7 @@ interface WorkflowTemplateCardProps {
   onToggleExpand: () => void
   onEdit: () => void
   onDelete: () => void
+  onToggleActive: () => void
 }
 
 export function WorkflowTemplateCard({
@@ -20,6 +22,7 @@ export function WorkflowTemplateCard({
   onToggleExpand,
   onEdit,
   onDelete,
+  onToggleActive,
 }: WorkflowTemplateCardProps) {
   const stepsCount = template.steps?.length || 0
   const duration = template.steps?.reduce((sum, s) => sum + (s.estimatedDuration || 0), 0) || 0
@@ -36,9 +39,20 @@ export function WorkflowTemplateCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-medium truncate">{template.name}</h3>
-            <Badge variant={template.is_active ? "default" : "secondary"} className="shrink-0">
-              {template.is_active ? "Aktiv" : "Inaktiv"}
-            </Badge>
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleActive() }}
+              className="flex items-center gap-1.5 shrink-0"
+              title={template.is_active ? "Klicken zum Deaktivieren" : "Klicken zum Aktivieren"}
+            >
+              <Switch
+                checked={template.is_active}
+                className="scale-75"
+                tabIndex={-1}
+              />
+              <span className={`text-xs font-medium ${template.is_active ? "text-primary" : "text-muted-foreground"}`}>
+                {template.is_active ? "Aktiv" : "Inaktiv"}
+              </span>
+            </button>
           </div>
           {template.description && (
             <p className="text-sm text-muted-foreground truncate mt-0.5">{template.description}</p>

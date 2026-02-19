@@ -35,7 +35,7 @@ import {
 } from "@/hooks/use-workflow-templates"
 
 function WorkflowsPage() {
-  const { templates, isLoading, isSaving, handleCreate, handleUpdate, handleDelete, handleAiGenerate } =
+  const { templates, isLoading, isSaving, handleCreate, handleUpdate, handleDelete, handleAiGenerate, handleToggleActive } =
     useWorkflowTemplates()
 
   const [searchTerm, setSearchTerm] = useState("")
@@ -174,6 +174,7 @@ function WorkflowsPage() {
               onToggleExpand={() => toggleExpanded(template.id)}
               onEdit={() => openEdit(template)}
               onDelete={() => setDeleteId(template.id)}
+              onToggleActive={() => handleToggleActive(template)}
             />
           ))}
         </div>

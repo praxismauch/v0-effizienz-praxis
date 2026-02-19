@@ -177,6 +177,26 @@ export function useWorkflowTemplates() {
     }
   }, [toast])
 
+  const handleToggleActive = useCallback(async (template: WorkflowTemplate) => {
+    try {
+      const response = await fetch(`/api/super-admin/templates/workflows/${template.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !template.is_active }),
+      })
+      if (!response.ok) throw new Error("Failed to toggle")
+      toast({
+        title: "Erfolg",
+        description: `Vorlage wurde ${!template.is_active ? "aktiviert" : "deaktiviert"}`,
+      })
+      loadTemplates()
+      return true
+    } catch {
+      toast({ title: "Fehler", description: "Status konnte nicht geändert werden", variant: "destructive" })
+      return false
+    }
+  }, [toast, loadTemplates])
+
   return {
     templates,
     isLoading,
@@ -185,5 +205,6 @@ export function useWorkflowTemplates() {
     handleUpdate,
     handleDelete,
     handleAiGenerate,
+    handleToggleActive,
   }
 }

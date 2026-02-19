@@ -182,7 +182,7 @@ export function SuperAdminAcademyManager() {
       </div>
 
       <Tabs value={a.activeTab} onValueChange={a.setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-2" />Übersicht</TabsTrigger>
           <TabsTrigger value="courses"><GraduationCap className="h-4 w-4 mr-2" />Kurse</TabsTrigger>
           <TabsTrigger value="quizzes"><HelpCircle className="h-4 w-4 mr-2" />Quizze</TabsTrigger>

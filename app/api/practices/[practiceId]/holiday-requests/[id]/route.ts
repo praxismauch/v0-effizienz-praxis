@@ -9,13 +9,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     const { data, error } = await supabase
       .from("holiday_requests")
-      .select(`
-        *,
-        team_member:team_members(
-          id, first_name, last_name, user_id,
-          user:users(id, name, first_name, last_name, avatar)
-        )
-      `)
+      .select("*")
       .eq("id", id)
       .eq("practice_id", practiceId)
       .is("deleted_at", null)

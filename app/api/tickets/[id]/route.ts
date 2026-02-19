@@ -19,8 +19,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       .from("tickets")
       .select(`
         *,
-        user:users(name, email, avatar),
-        comments:ticket_comments(*, user:users(name, email, avatar))
+        comments:ticket_comments(*)
       `)
       .eq("id", id)
       .maybeSingle()

@@ -10,7 +10,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   let query = supabase.from("document_permissions").select(`
       *,
-      user:users(id, name, email),
       team:teams(id, name)
     `)
 

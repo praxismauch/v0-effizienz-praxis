@@ -59,13 +59,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     if (budgetIds.length > 0) {
       const { data: usageData, error: usageError } = await supabase
         .from("training_budget_usage")
-        .select(`
-          *,
-          team_member:team_members(id, first_name, last_name),
-          training_course:training_courses(id, name)
-        `)
+        .select("*")
         .in("budget_id", budgetIds)
-        .is("deleted_at", null)
 
       if (usageError) {
         console.error("Error fetching usage:", usageError)
@@ -76,8 +71,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     // Calculate remaining budget for each
     const budgetsWithRemaining = (budgets || []).map((budget) => {
-      const budgetUsage = (usage as { budget_id: string; amount: number; status: string }[]).filter(
-        (u) => u.budget_id === budget.id && u.status === "approved",
+      const budgetUsage = (usage as { budget_id: string; amount: number }[]).filter(
+        (u) => u.budget_id === budget.id,
       )
       const totalUsed = budgetUsage.reduce((sum, u) => sum + (u.amount || 0), 0)
       return {

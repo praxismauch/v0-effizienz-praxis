@@ -28,7 +28,7 @@ export function ScopeSelector({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-medium">Einstellungsbereich</CardTitle>
-        <CardDescription>{"Wahlen Sie, ob Sie globale oder praxis-spezifische Einstellungen bearbeiten"}</CardDescription>
+        <CardDescription>{"Wählen Sie, ob Sie globale oder praxis-spezifische Einstellungen bearbeiten"}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-4">

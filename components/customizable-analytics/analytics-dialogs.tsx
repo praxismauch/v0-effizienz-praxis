@@ -90,7 +90,7 @@ export function AIGenerationDialog({
           </div>
           {aiMode === "diagram" && availableParameters.length > 0 && (
             <div className="text-xs text-muted-foreground">
-              <p className="font-medium mb-1">Verfugbare KPI-Parameter:</p>
+              <p className="font-medium mb-1">Verfügbare KPI-Parameter:</p>
               <p className="truncate">{availableParameters.map((p: any) => p.name).join(", ")}</p>
             </div>
           )}
@@ -195,7 +195,7 @@ export function CustomDiagramDialog({ open, onOpenChange, availableParameters, o
                 </div>
               )}
             </ScrollArea>
-            <p className="text-xs text-muted-foreground">{selectedParams.length} Parameter ausgewahlt</p>
+            <p className="text-xs text-muted-foreground">{selectedParams.length} Parameter ausgewählt</p>
           </div>
         </div>
         <div className="flex justify-end gap-2">

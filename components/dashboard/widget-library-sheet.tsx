@@ -19,7 +19,7 @@ export function WidgetLibrary({ enabledWidgets, onToggleWidget, onAddLinebreak }
       {disabledWidgets.length > 0 && (
         <div>
           <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-            Verfugbare Widgets
+            Verfügbare Widgets
           </h4>
           <div className="space-y-2">
             {disabledWidgets.map((widget) => {
@@ -80,7 +80,7 @@ export function WidgetLibrary({ enabledWidgets, onToggleWidget, onAddLinebreak }
 
       <Button variant="outline" className="w-full gap-2" onClick={onAddLinebreak}>
         <Minus className="h-4 w-4" />
-        Trennlinie hinzufugen
+        Trennlinie hinzufügen
       </Button>
     </div>
   )

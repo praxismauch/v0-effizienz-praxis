@@ -218,8 +218,8 @@ export function EntryDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="flex items-center gap-1 flex-wrap">
             <span>{interval === "weekly"
-              ? t("kpi.select_week_and_enter_values", "Wahlen Sie eine Kalenderwoche")
-              : t("kpi.enter_value_for", "Wert eingeben fuer")}</span>
+              ? t("kpi.select_week_and_enter_values", "Wählen Sie eine Kalenderwoche")
+              : t("kpi.enter_value_for", "Wert eingeben für")}</span>
             {renderPeriodPicker()}
           </DialogDescription>
         </DialogHeader>

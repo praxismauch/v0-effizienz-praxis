@@ -206,7 +206,7 @@ export function CaptchaModal({
                   Neue Aufgabe
                 </Button>
                 <Button size="sm" onClick={handleMathSubmit} disabled={!mathAnswer}>
-                  Bestatigen
+                  Bestätigen
                 </Button>
               </div>
             </div>

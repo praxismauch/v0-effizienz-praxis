@@ -51,7 +51,7 @@ export function EditValueDialog({
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <div className="p-3 text-sm text-muted-foreground border-b">
-              {t("kpi.select_date_for_week", "Wahlen Sie ein Datum, um die Woche auszuwahlen")}
+              {t("kpi.select_date_for_week", "Wählen Sie ein Datum, um die Woche auszuwählen")}
             </div>
             <CalendarComponent mode="single" selected={currentDate}
               onSelect={(date) => {
@@ -165,7 +165,7 @@ export function EditValueDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("kpi.edit_value", "Wert bearbeiten")}</DialogTitle>
-          <DialogDescription>{t("kpi.edit_value_description", "Andern Sie den Wert und die Notizen.")}</DialogDescription>
+          <DialogDescription>{t("kpi.edit_value_description", "Ändern Sie den Wert und die Notizen.")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           {editingValue && (

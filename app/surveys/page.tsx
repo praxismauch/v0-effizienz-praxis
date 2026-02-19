@@ -227,7 +227,7 @@ export default function SurveysPage() {
         credentials: "include",
         body: JSON.stringify({
           title: `Team Stimmungsbarometer - KW ${getWeekNumber(today)}`,
-          description: "Wochentliche Kurzumfrage zur Team-Stimmung",
+          description: "Wöchentliche Kurzumfrage zur Team-Stimmung",
           survey_type: "internal",
           target_audience: "all",
           is_anonymous: true,
@@ -237,12 +237,12 @@ export default function SurveysPage() {
           questions: [
             { question_text: "Wie zufrieden bist du diese Woche mit deiner Arbeit?", question_type: "scale", is_required: true, order_index: 1 },
             { question_text: "Wie hoch ist dein aktuelles Stresslevel?", question_type: "scale", is_required: true, order_index: 2 },
-            { question_text: "Wie gut fuhlst du dich im Team unterstutzt?", question_type: "scale", is_required: true, order_index: 3 },
+            { question_text: "Wie gut fühlst du dich im Team unterstützt?", question_type: "scale", is_required: true, order_index: 3 },
           ],
         }),
       })
       if (response.ok) {
-        toast({ title: "Stimmungsbarometer erstellt", description: "Die wochentliche Umfrage wurde erstellt." })
+        toast({ title: "Stimmungsbarometer erstellt", description: "Die wöchentliche Umfrage wurde erstellt." })
         fetchSurveys()
       }
     } catch {
@@ -325,10 +325,10 @@ export default function SurveysPage() {
       })
       if (response.ok) {
         setSurveys(surveys.filter((s) => s.id !== surveyId))
-        toast({ title: "Umfrage geloscht", description: "Die Umfrage wurde erfolgreich geloscht." })
+        toast({ title: "Umfrage gelöscht", description: "Die Umfrage wurde erfolgreich gelöscht." })
       }
     } catch {
-      toast({ title: "Fehler", description: "Die Umfrage konnte nicht geloscht werden.", variant: "destructive" })
+      toast({ title: "Fehler", description: "Die Umfrage konnte nicht gelöscht werden.", variant: "destructive" })
     }
   }
 
@@ -564,7 +564,7 @@ export default function SurveysPage() {
                 className="gap-2 bg-transparent"
               >
                 <Zap className="h-4 w-4" />
-                Wochentliche Stimmungsumfrage
+                Wöchentliche Stimmungsumfrage
               </Button>
             </div>
           </div>

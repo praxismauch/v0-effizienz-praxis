@@ -198,7 +198,7 @@ export function DashboardEditMode({
               <SheetContent side="right" className="w-[380px] sm:w-[420px]">
                 <SheetHeader>
                   <SheetTitle>Widget-Bibliothek</SheetTitle>
-                  <SheetDescription>Widgets zum Dashboard hinzufugen oder entfernen</SheetDescription>
+                  <SheetDescription>Widgets zum Dashboard hinzufügen oder entfernen</SheetDescription>
                 </SheetHeader>
                 <div className="mt-6 overflow-y-auto max-h-[calc(100vh-120px)] pr-1">{libraryContent}</div>
               </SheetContent>
@@ -206,7 +206,7 @@ export function DashboardEditMode({
 
             <Button variant="ghost" size="sm" onClick={handleReset} className="gap-2 text-muted-foreground">
               <RotateCcw className="h-4 w-4" />
-              Zurucksetzen
+              Zurücksetzen
             </Button>
             <Button variant="ghost" size="sm" onClick={onCancel} className="gap-2 text-muted-foreground">
               <XCircle className="h-4 w-4" />
@@ -251,18 +251,18 @@ export function DashboardEditMode({
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <Columns className="h-12 w-12 text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">Keine Widgets aktiviert</p>
-          <p className="text-sm text-muted-foreground/70 mb-4">Offnen Sie die Widget-Bibliothek um Widgets hinzuzufugen</p>
+          <p className="text-sm text-muted-foreground/70 mb-4">Öffnen Sie die Widget-Bibliothek um Widgets hinzuzufügen</p>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Library className="h-4 w-4" />
-                Widget-Bibliothek offnen
+                Widget-Bibliothek öffnen
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[380px] sm:w-[420px]">
               <SheetHeader>
                 <SheetTitle>Widget-Bibliothek</SheetTitle>
-                <SheetDescription>Widgets zum Dashboard hinzufugen oder entfernen</SheetDescription>
+                <SheetDescription>Widgets zum Dashboard hinzufügen oder entfernen</SheetDescription>
               </SheetHeader>
               <div className="mt-6 overflow-y-auto max-h-[calc(100vh-120px)] pr-1">{libraryContent}</div>
             </SheetContent>

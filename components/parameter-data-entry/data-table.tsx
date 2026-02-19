@@ -166,7 +166,7 @@ export function DataTable({
                         <Button variant="ghost" size="sm" onClick={() => onEditValue(value)} className="h-8 w-8 p-0" title={t("kpi.edit", "Bearbeiten")}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => onDeleteValue(value.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive" title={t("kpi.delete", "Loschen")}>
+                        <Button variant="ghost" size="sm" onClick={() => onDeleteValue(value.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive" title={t("kpi.delete", "Löschen")}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

@@ -1,14 +1,12 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
-import { headers } from "next/headers"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Providers } from "@/components/providers"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { getCurrentUserProfile } from "@/lib/auth/get-current-user"
-import { isPublicRoute } from "@/lib/constants/routes"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -111,17 +109,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  // Next.js 16: headers() and cookies() must be awaited
-  const headersList = await headers()
-  const pathname = headersList.get("x-pathname") || headersList.get("x-invoke-path") || "/"
-
   let initialUser = null
-  if (!isPublicRoute(pathname)) {
-    try {
-      initialUser = await getCurrentUserProfile()
-    } catch {
-      // Silently fail - user will be redirected to login if needed
-    }
+  try {
+    initialUser = await getCurrentUserProfile()
+  } catch {
+    // Silently fail - user will be redirected to login if needed
   }
 
   // Use static default to prevent hydration mismatch

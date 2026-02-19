@@ -114,19 +114,56 @@ export const TodayScheduleWidget = memo(function TodayScheduleWidget({ data }: {
 })
 
 export const ActivityChartWidget = memo(function ActivityChartWidget({ data }: { data: ActivityData[] }) {
+  const totalActivity = data.reduce((sum, d) => sum + (d.value || 0), 0)
+  const maxValue = Math.max(...data.map((d) => d.value || 0), 1)
+
   return (
     <Card className="p-5 border-muted col-span-full">
       <div className="space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-            <Activity className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Aktivität</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Praxisaktivität der letzten 7 Tage</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+              <Activity className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{"Aktivit\u00e4t"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {totalActivity} {"Aktionen in den letzten 7 Tagen"}
+              </p>
+            </div>
           </div>
         </div>
-        <AreaChart data={data} />
+
+        {data.length === 0 ? (
+          <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+            {"Keine Daten verf\u00fcgbar"}
+          </div>
+        ) : (
+          <div className="flex items-end gap-1.5 h-28">
+            {data.map((item, index) => {
+              const barHeight = Math.max(((item.value || 0) / maxValue) * 100, 4)
+              const dateLabel = item.date.length > 5
+                ? new Date(item.date).toLocaleDateString("de-DE", { weekday: "short" })
+                : item.date
+              return (
+                <div key={index} className="flex-1 flex flex-col items-center gap-1.5">
+                  <div className="w-full flex flex-col items-center justify-end h-20">
+                    {item.value > 0 && (
+                      <span className="text-[10px] font-medium text-muted-foreground mb-0.5">
+                        {item.value}
+                      </span>
+                    )}
+                    <div
+                      className="w-full max-w-8 bg-teal-500/20 rounded-t transition-all hover:bg-teal-500/30"
+                      style={{ height: `${barHeight}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{dateLabel}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </Card>
   )

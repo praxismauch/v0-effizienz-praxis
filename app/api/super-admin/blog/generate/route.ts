@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       const existingCategories = [...new Set(existingPosts?.map((p) => p.category).filter(Boolean))].join(", ") || "Keine"
 
       const { text } = await generateText({
-        model: groq("llama-3.3-70b-versatile"),
+        model: "groq/llama-3.3-70b-versatile",
         prompt: `Du bist ein Content-Stratege fuer eine Praxismanagement-Software fuer Arztpraxen in Deutschland.
 
 Bestehende Blog-Posts: ${existingTitles}
@@ -78,7 +78,7 @@ Keine andere Ausgabe, kein Markdown, nur reines JSON.`,
     const keywordInstruction = keywords?.length ? `\nIntegriere folgende Keywords natuerlich: ${keywords.join(", ")}` : ""
 
     const { text } = await generateText({
-      model: groq("llama-3.3-70b-versatile"),
+      model: "groq/llama-3.3-70b-versatile",
       prompt: `Du bist ein erfahrener Fachautor fuer Praxismanagement und Gesundheitswesen in Deutschland.
 
 AUFGABE: Schreibe einen hochwertigen Blog-Post zum Thema "${topic}".

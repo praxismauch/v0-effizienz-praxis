@@ -20,13 +20,13 @@ interface AreaChartData {
 
 export const BarChart = memo(function BarChart({ data }: { data: BarChartData[] }) {
   if (!data || data.length === 0) {
-    return <div className="h-64 flex items-center justify-center text-muted-foreground">Keine Daten verfügbar</div>
+    return <div className="py-6 flex items-center justify-center text-sm text-muted-foreground">Keine Daten verfügbar</div>
   }
 
   const maxValue = Math.max(...data.flatMap((d) => [d.completed, d.pending]), 1)
 
   return (
-    <div className="h-64 flex items-end justify-around gap-2 px-4">
+    <div className="h-40 flex items-end justify-around gap-2 px-4">
       {data.map((item, index) => {
         const completedHeight = ((item.completed || 0) / maxValue) * 100
         const pendingHeight = ((item.pending || 0) / maxValue) * 100
@@ -55,7 +55,7 @@ export const BarChart = memo(function BarChart({ data }: { data: BarChartData[] 
 
 export const LineChart = memo(function LineChart({ data }: { data: LineChartData[] }) {
   if (!data || data.length === 0) {
-    return <div className="h-64 flex items-center justify-center text-muted-foreground">Keine Daten verfügbar</div>
+    return <div className="py-6 flex items-center justify-center text-sm text-muted-foreground">Keine Daten verfügbar</div>
   }
 
   const maxValue = Math.max(...data.map((d) => d.appointments), 1)
@@ -102,7 +102,7 @@ export const LineChart = memo(function LineChart({ data }: { data: LineChartData
 
 export const AreaChart = memo(function AreaChart({ data }: { data: AreaChartData[] }) {
   if (!data || data.length === 0) {
-    return <div className="h-64 flex items-center justify-center text-muted-foreground">Keine Daten verfügbar</div>
+    return <div className="py-6 flex items-center justify-center text-sm text-muted-foreground">Keine Daten verfügbar</div>
   }
 
   const maxValue = Math.max(...data.map((d) => d.value), 1)

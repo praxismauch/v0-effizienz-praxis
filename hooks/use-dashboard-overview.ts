@@ -147,7 +147,8 @@ export function useDashboardOverview({
   const [isEditMode, setIsEditMode] = useState(false)
   const [cockpitCardSettings, setCockpitCardSettings] = useState<CockpitCardSetting[]>([])
 
-  const hasLoadedRef = useRef(!!initialData)
+  const hasLoadedStatsRef = useRef(!!initialData)
+  const hasLoadedConfigRef = useRef(false)
   const loadingPracticeIdRef = useRef<string | null>(initialData ? practiceId : null)
 
   // Fetch cockpit card settings once on mount
@@ -166,39 +167,49 @@ export function useDashboardOverview({
     fetchCockpitSettings()
   }, [])
 
-  // Fetch main dashboard data
+  // Always fetch dashboard preferences (config) on mount — separate from stats
+  useEffect(() => {
+    if (!practiceId || !userId || hasLoadedConfigRef.current) return
+    hasLoadedConfigRef.current = true
+
+    const fetchPreferences = async () => {
+      try {
+        const preferences = await safeFetch<{ config: any }>(
+          `/api/practices/${practiceId}/dashboard-preferences?userId=${userId}`,
+          null,
+        )
+        if (preferences?.config) {
+          const savedWidgets = preferences.config.widgets || preferences.config
+          const mergedWidgets = { ...DEFAULT_WIDGETS, ...savedWidgets }
+          console.log("[v0] Loaded dashboard config: widgetOrder=", mergedWidgets.widgetOrder?.slice(0, 5), "columnSpans=", mergedWidgets.columnSpans)
+          setDashboardConfig({ widgets: mergedWidgets })
+        } else {
+          console.log("[v0] No saved dashboard config found, using defaults")
+        }
+      } catch (err) {
+        console.error("[v0] Error fetching dashboard preferences:", err)
+      }
+    }
+    fetchPreferences()
+  }, [practiceId, userId])
+
+  // Fetch main dashboard stats (can skip if initialData was provided)
   const fetchDashboardData = useCallback(async () => {
     if (!practiceId || practiceId === "undefined" || practiceId === "null" || practiceId === "0") return
     if (!userId) return
-    if (loadingPracticeIdRef.current === practiceId && hasLoadedRef.current) return
+    if (loadingPracticeIdRef.current === practiceId && hasLoadedStatsRef.current) return
 
     loadingPracticeIdRef.current = practiceId
     setLoading(true)
     setError(null)
 
     try {
-      const preferences = await safeFetch(
-        `/api/practices/${practiceId}/dashboard-preferences?userId=${userId}`,
-        null,
-      )
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
       const [statsData, activities] = await Promise.all([
         safeFetch(`/api/practices/${practiceId}/dashboard-stats`, null),
         safeFetch(`/api/dashboard/recent-activities?practiceId=${practiceId}&limit=5`, null),
       ])
-      await new Promise((resolve) => setTimeout(resolve, 100))
 
       await safeFetch(`/api/practices/${practiceId}/documents?limit=5`, null)
-
-      if (preferences?.config) {
-        // The saved config is { widgets: WidgetConfig }
-        // Handle both cases: config.widgets exists, or config IS the WidgetConfig
-        const savedWidgets = preferences.config.widgets || preferences.config
-        const mergedWidgets = { ...DEFAULT_WIDGETS, ...savedWidgets }
-        console.log("[v0] Loaded dashboard config: widgetOrder=", mergedWidgets.widgetOrder?.slice(0, 5), "columnSpans=", mergedWidgets.columnSpans)
-        setDashboardConfig({ widgets: mergedWidgets })
-      }
 
       setStats({
         teamMembers: statsData?.teamMembers || 0,
@@ -229,7 +240,7 @@ export function useDashboardOverview({
         filteredTodos: statsData?.filteredTodos,
       })
 
-      hasLoadedRef.current = true
+      hasLoadedStatsRef.current = true
     } catch (err) {
       console.error("[v0] Dashboard fetch error:", err)
       setError("Fehler beim Laden des Dashboards")
@@ -240,7 +251,8 @@ export function useDashboardOverview({
 
   useEffect(() => {
     if (loadingPracticeIdRef.current !== practiceId) {
-      hasLoadedRef.current = false
+      hasLoadedStatsRef.current = false
+      hasLoadedConfigRef.current = false
     }
     fetchDashboardData()
   }, [fetchDashboardData])

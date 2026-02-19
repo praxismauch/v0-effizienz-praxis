@@ -108,13 +108,11 @@ export default function AnalysisPageClient() {
         />
 
         <Tabs defaultValue="current" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-12">
-            <TabsTrigger value="current" className="gap-2 text-base py-3 px-4">
-              <Sparkles className="h-5 w-5" />
+          <TabsList className="grid w-full grid-cols-2 h-auto gap-1">
+            <TabsTrigger value="current" className="gap-2 hover:ring-2 hover:ring-primary/20 hover:shadow-sm transition-all duration-200">
               Aktuelle Analyse
             </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2 text-base py-3 px-4">
-              <History className="h-5 w-5" />
+            <TabsTrigger value="history" className="gap-2 hover:ring-2 hover:ring-primary/20 hover:shadow-sm transition-all duration-200">
               Verlauf
             </TabsTrigger>
           </TabsList>

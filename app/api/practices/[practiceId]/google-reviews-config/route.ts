@@ -37,7 +37,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
 
       if (!data) {
-        return NextResponse.json({ error: "Practice not found", placeId: null }, { status: 404 })
+        // Practice not found or no settings — return placeId: null (not an error for the widget)
+        return NextResponse.json({ placeId: null })
       }
 
       const placeId = data?.settings?.googlePlaceId || null

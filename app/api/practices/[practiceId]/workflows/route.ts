@@ -55,6 +55,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const workflows = data || []
 
+    // Fetch steps for all workflows
+    const workflowIds = workflows.map((w: any) => w.id)
+    let stepsMap: Record<string, any[]> = {}
+
+    if (workflowIds.length > 0) {
+      try {
+        const { data: allSteps } = await supabase
+          .from("workflow_steps")
+          .select("id, workflow_id, title, description, step_order, status, responsible_role, estimated_minutes, assigned_to, completed_at, is_optional")
+          .in("workflow_id", workflowIds)
+          .is("deleted_at", null)
+          .order("step_order", { ascending: true })
+
+        for (const step of (allSteps || [])) {
+          if (!stepsMap[step.workflow_id]) stepsMap[step.workflow_id] = []
+          stepsMap[step.workflow_id].push(step)
+        }
+      } catch (stepsError) {
+        Logger.warn("api", "Could not fetch workflow steps", { error: stepsError })
+      }
+    }
+
     const transformedWorkflows = workflows.map((workflow: any) => ({
       id: workflow.id,
       title: workflow.name,
@@ -67,7 +89,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       updatedAt: workflow.updated_at,
       practiceId: workflow.practice_id,
       teamIds: workflow.team_ids || [],
-      steps: [], // No steps - table does not exist
+      steps: (stepsMap[workflow.id] || []).map((s: any) => ({
+        id: s.id,
+        title: s.title || "",
+        description: s.description || "",
+        assignedTo: s.assigned_to || s.responsible_role || "",
+        estimatedDuration: s.estimated_minutes || 5,
+        status: s.status,
+        completedAt: s.completed_at,
+        isOptional: s.is_optional || false,
+      })),
       isTemplate: workflow.is_template,
       templateId: workflow.template_id,
       estimatedTotalDuration: workflow.estimated_total_duration,
@@ -141,6 +172,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
+    // Insert steps if provided
+    let savedSteps: any[] = []
+    if (body.steps && Array.isArray(body.steps) && body.steps.length > 0) {
+      const stepInserts = body.steps.map((step: any, idx: number) => ({
+        workflow_id: workflowId,
+        practice_id: practiceId,
+        title: step.title || step.name || "",
+        description: step.description || "",
+        responsible_role: step.assignedTo || null,
+        estimated_minutes: step.estimatedDuration || 5,
+        step_order: idx + 1,
+        status: "pending",
+      }))
+
+      const { data: stepsData, error: stepsError } = await supabase
+        .from("workflow_steps")
+        .insert(stepInserts)
+        .select()
+
+      if (stepsError) {
+        Logger.warn("api", "Could not insert workflow steps", { error: stepsError.message })
+      } else {
+        savedSteps = stepsData || []
+      }
+    }
+
     const response = {
       id: workflow.id,
       title: workflow.name,
@@ -157,7 +214,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       templateId: workflow.template_id,
       estimatedTotalDuration: body.estimatedTotalDuration,
       hideItemsFromOtherUsers: workflow.hide_items_from_other_users,
-      steps: [], // No steps - table does not exist
+      steps: savedSteps.map((s: any) => ({
+        id: s.id,
+        title: s.title || "",
+        description: s.description || "",
+        assignedTo: s.responsible_role || "",
+        estimatedDuration: s.estimated_minutes || 5,
+        status: s.status,
+      })),
     }
 
     return NextResponse.json(response)
@@ -221,6 +285,46 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "Workflow nicht gefunden" }, { status: 404 })
     }
 
+    // Update steps if provided
+    let savedSteps: any[] = []
+    if (updates.steps !== undefined && Array.isArray(updates.steps)) {
+      // Delete old steps (soft delete)
+      await supabase.from("workflow_steps").delete().eq("workflow_id", id)
+
+      if (updates.steps.length > 0) {
+        const stepInserts = updates.steps.map((step: any, idx: number) => ({
+          workflow_id: id,
+          practice_id: practiceId,
+          title: step.title || step.name || "",
+          description: step.description || "",
+          responsible_role: step.assignedTo || null,
+          estimated_minutes: step.estimatedDuration || 5,
+          step_order: idx + 1,
+          status: step.status || "pending",
+        }))
+
+        const { data: stepsData, error: stepsError } = await supabase
+          .from("workflow_steps")
+          .insert(stepInserts)
+          .select()
+
+        if (stepsError) {
+          Logger.warn("api", "Could not update workflow steps", { error: stepsError.message })
+        } else {
+          savedSteps = stepsData || []
+        }
+      }
+    } else {
+      // Load existing steps
+      const { data: existingSteps } = await supabase
+        .from("workflow_steps")
+        .select("*")
+        .eq("workflow_id", id)
+        .is("deleted_at", null)
+        .order("step_order", { ascending: true })
+      savedSteps = existingSteps || []
+    }
+
     const response = {
       id: workflow.id,
       title: workflow.name,
@@ -236,7 +340,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       isTemplate: workflow.is_template,
       templateId: workflow.template_id,
       hideItemsFromOtherUsers: workflow.hide_items_from_other_users,
-      steps: [], // No steps - table does not exist
+      steps: savedSteps.map((s: any) => ({
+        id: s.id,
+        title: s.title || "",
+        description: s.description || "",
+        assignedTo: s.responsible_role || "",
+        estimatedDuration: s.estimated_minutes || 5,
+        status: s.status,
+      })),
     }
 
     return NextResponse.json(response)

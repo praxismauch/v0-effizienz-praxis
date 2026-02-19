@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +27,7 @@ interface CoursesTabProps {
   practiceId: string
   onCoursesChange: React.Dispatch<React.SetStateAction<TrainingCourse[]>>
   onDelete: (id: string, name: string) => void
+  createTrigger?: number
 }
 
 const EMPTY_FORM: Partial<TrainingCourse> = {
@@ -44,11 +45,15 @@ const EMPTY_FORM: Partial<TrainingCourse> = {
   max_participants: 0,
 }
 
-export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: CoursesTabProps) {
+export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete, createTrigger }: CoursesTabProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<TrainingCourse | null>(null)
   const [formData, setFormData] = useState<Partial<TrainingCourse>>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (createTrigger && createTrigger > 0) openCreate()
+  }, [createTrigger])
 
   const openCreate = () => {
     setEditingCourse(null)
@@ -89,10 +94,12 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: C
         : `/api/practices/${practiceId}/training/courses`
       const method = isEdit ? "PUT" : "POST"
 
+      // Strip fields that don't exist in the DB
+      const { location, max_participants, ...apiData } = formData as any
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(apiData),
       })
 
       if (!res.ok) {
@@ -127,13 +134,6 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: C
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neuer Kurs
-        </Button>
-      </div>
-
       {courses.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -149,16 +149,31 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: C
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.map((course) => (
-            <Card key={course.id} className="hover:shadow-md transition-shadow">
+            <Card key={course.id} className="group relative hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg">{course.name}</CardTitle>
                     <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                   </div>
-                  <Badge variant={course.is_mandatory ? "destructive" : "secondary"}>
-                    {course.is_mandatory ? "Pflicht" : "Optional"}
-                  </Badge>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="outline" size="icon" className="h-7 w-7 bg-background" onClick={() => openEdit(course)}>
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 bg-background text-destructive hover:text-destructive"
+                        onClick={() => onDelete(course.id, course.name)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <Badge variant={course.is_mandatory ? "destructive" : "secondary"} className="ml-1">
+                      {course.is_mandatory ? "Pflicht" : "Optional"}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -192,21 +207,6 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: C
                       {(course.cost || 0).toLocaleString("de-DE")} {course.currency || "EUR"}
                     </span>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(course)}>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Bearbeiten
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive bg-transparent"
-                    onClick={() => onDelete(course.id, course.name)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               </CardContent>
             </Card>

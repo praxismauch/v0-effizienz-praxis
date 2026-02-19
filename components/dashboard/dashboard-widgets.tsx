@@ -37,7 +37,7 @@ export const WeeklyTasksWidget = memo(function WeeklyTasksWidget({ data }: { dat
 
   return (
     <Link href="/todos" className="flex flex-col flex-1 min-h-0">
-    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-auto">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-hidden">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -106,7 +106,7 @@ export const TodayScheduleWidget = memo(function TodayScheduleWidget({ data }: {
 
   return (
     <Link href="/calendar" className="flex flex-col flex-1 min-h-0">
-    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-auto">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-hidden">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -164,7 +164,7 @@ export const ActivityChartWidget = memo(function ActivityChartWidget({ data }: {
 
   return (
     <Link href="/analytics" className="flex flex-col flex-1 min-h-0">
-    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-auto">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-hidden">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -229,19 +229,19 @@ export const KPIWidget = memo(function KPIWidget({
 
   return (
     <Link href="/analytics" className="flex flex-col flex-1 min-h-0">
-    <Card className="p-5 hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-auto">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          <TrendingUp className="h-5 w-5" />
+    <Card className="p-3.5 hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-hidden">
+      <div className="flex items-start gap-2.5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <TrendingUp className="h-4.5 w-4.5" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-muted-foreground">Praxis-Score</p>
-          <p className="text-3xl font-bold tracking-tight mt-1">{score}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">von 100 Punkten</p>
+          <p className="text-xs font-medium text-muted-foreground leading-tight">Praxis-Score</p>
+          <p className="text-2xl font-bold tracking-tight mt-0.5">{score}</p>
+          <p className="text-xs text-muted-foreground">von 100 Punkten</p>
         </div>
       </div>
       {trend !== 0 && (
-        <div className="mt-3 flex items-center gap-1 text-xs">
+        <div className="mt-2 flex items-center gap-1 text-xs">
           {trend >= 0 ? (
             <TrendingUp className="h-3 w-3 text-green-500" />
           ) : (
@@ -264,7 +264,7 @@ export const RecentActivitiesWidget = memo(function RecentActivitiesWidget({
   activities: RecentActivity[] 
 }) {
   return (
-    <Card className="p-5 border-muted col-span-full flex-1 overflow-auto">
+    <Card className="p-5 border-muted col-span-full flex-1 overflow-hidden">
       <div className="space-y-4">
         <Link href="/todos" className="flex items-start justify-between hover:opacity-80 transition-opacity">
           <div className="flex items-start gap-3">

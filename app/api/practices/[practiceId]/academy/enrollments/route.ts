@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server-admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createClient()
+    const supabase = await getApiClient()
 
     const effectivePracticeId = await getValidatedPracticeId(practiceId)
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createClient()
+    const supabase = await getApiClient()
 
     const effectivePracticeId = await getValidatedPracticeId(practiceId)
 

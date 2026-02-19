@@ -13,7 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, X } from "lucide-react"
+import { categoryLabels } from "@/app/workflows/workflow-types"
+import { DEFAULT_ROLE_ORDER } from "@/lib/team-role-order"
 
 interface WorkflowStep {
   title: string
@@ -111,12 +114,21 @@ export function WorkflowFormDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="wf-cat">Kategorie</Label>
-              <Input
-                id="wf-cat"
+              <Select
                 value={formData.category}
-                onChange={(e) => onFormChange({ ...formData, category: e.target.value })}
-                placeholder="z.B. Patientenmanagement"
-              />
+                onValueChange={(value) => onFormChange({ ...formData, category: value })}
+              >
+                <SelectTrigger id="wf-cat">
+                  <SelectValue placeholder="Kategorie wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(categoryLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Steps editor */}
@@ -153,12 +165,22 @@ export function WorkflowFormDialog({
                           className="text-sm resize-none"
                         />
                         <div className="grid grid-cols-2 gap-2">
-                          <Input
+                          <Select
                             value={step.assignedTo || ""}
-                            onChange={(e) => updateStep(index, "assignedTo", e.target.value)}
-                            placeholder="Zustaendig (z.B. MFA)"
-                            className="text-sm"
-                          />
+                            onValueChange={(value) => updateStep(index, "assignedTo", value)}
+                          >
+                            <SelectTrigger className="text-sm">
+                              <SelectValue placeholder="Zuständig" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DEFAULT_ROLE_ORDER.map((role) => (
+                                <SelectItem key={role} value={role}>
+                                  {role}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="Praxismanager">Praxismanager</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <div className="flex items-center gap-1">
                             <Input
                               type="number"

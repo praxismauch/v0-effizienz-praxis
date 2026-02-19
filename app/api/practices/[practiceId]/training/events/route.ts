@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 function isRateLimitError(error: unknown): boolean {
@@ -22,7 +22,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ events: [] })
@@ -32,15 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     const { data, error } = await supabase
       .from("training_events")
-      .select(`
-        *,
-        registrations:training_event_registrations(
-          id,
-          team_member_id,
-          status,
-          completed_at
-        )
-      `)
+      .select("*")
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .order("start_date", { ascending: true })
@@ -79,7 +71,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ error: "Zu viele Anfragen" }, { status: 429 })
@@ -91,21 +83,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .from("training_events")
       .insert({
         practice_id: practiceId,
-        training_course_id: body.training_course_id || body.trainingCourseId || null,
         title: body.title,
-        description: body.description,
+        description: body.description || null,
+        event_type: body.event_type || null,
         start_date: body.start_date || body.startDate,
         end_date: body.end_date || body.endDate,
         start_time: body.start_time || body.startTime || null,
         end_time: body.end_time || body.endTime || null,
-        location: body.location,
+        location: body.location || null,
         is_online: body.is_online || body.isOnline || false,
         meeting_link: body.meeting_link || body.meetingLink || null,
         max_participants: body.max_participants || body.maxParticipants || null,
-        registration_deadline: body.registration_deadline || body.registrationDeadline || null,
         cost_per_person: body.cost_per_person || body.costPerPerson || null,
-        currency: body.currency || "EUR",
-        notes: body.notes,
+        is_mandatory: body.is_mandatory || false,
+        status: body.status || "geplant",
+        trainer: body.trainer || null,
+        category: body.category || null,
+        training_type: body.training_type || null,
+        notes: body.notes || null,
         created_by: createdBy,
       })
       .select()

@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 export async function PATCH(
@@ -9,11 +9,12 @@ export async function PATCH(
     const { practiceId, budgetId } = await params
     const body = await request.json()
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const allowedFields = [
       "year",
       "budget_amount",
+      "spent_amount",
       "currency",
       "team_member_id",
       "team_id",
@@ -31,16 +32,14 @@ export async function PATCH(
     if (updateData.team_member_id === "") updateData.team_member_id = null
     if (updateData.team_id === "") updateData.team_id = null
 
+    updateData.updated_at = new Date().toISOString()
+
     const { data, error } = await supabase
       .from("training_budgets")
       .update(updateData)
       .eq("id", budgetId)
       .eq("practice_id", practiceId)
-      .select(`
-        *,
-        team_member:team_members(id, first_name, last_name),
-        team:teams(id, name, color)
-      `)
+      .select("*")
       .single()
 
     if (error) {
@@ -62,7 +61,7 @@ export async function DELETE(
   try {
     const { practiceId, budgetId } = await params
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     // Soft delete
     const { error } = await supabase

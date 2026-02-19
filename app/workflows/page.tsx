@@ -227,7 +227,7 @@ export default function WorkflowsPage() {
         title="Workflow Management"
         subtitle={`Verwalten Sie strukturierte Arbeitsabläufe für ${currentPractice.name}`}
       />
-      <div className="space-y-6">
+      <div className="mt-6 space-y-6">
         <div className="flex items-center justify-end">
           <div className="flex gap-2">
             <Button

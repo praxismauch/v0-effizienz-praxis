@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { getApiClient } from "@/lib/supabase/admin"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json([])
     }
     const practiceIdStr = String(practiceId)
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get("user_id")
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
     const body = await request.json()
 
     const badgeData = {

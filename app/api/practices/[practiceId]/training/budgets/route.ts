@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 function isRateLimitError(error: unknown): boolean {
@@ -24,7 +24,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ budgets: [], usage: [] })
@@ -35,11 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     // Fetch budgets
     const { data: budgets, error: budgetsError } = await supabase
       .from("training_budgets")
-      .select(`
-        *,
-        team_member:team_members(id, first_name, last_name),
-        team:teams(id, name, color)
-      `)
+      .select("*")
       .eq("practice_id", practiceId)
       .eq("year", Number.parseInt(year))
       .is("deleted_at", null)
@@ -52,37 +48,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ error: budgetsError.message }, { status: 500 })
     }
 
-    // Fetch usage for these budgets
-    const budgetIds = (budgets || []).map((b) => b.id)
-    let usage: unknown[] = []
-
-    if (budgetIds.length > 0) {
-      const { data: usageData, error: usageError } = await supabase
-        .from("training_budget_usage")
-        .select("*")
-        .in("budget_id", budgetIds)
-
-      if (usageError) {
-        console.error("Error fetching usage:", usageError)
-      } else {
-        usage = usageData || []
-      }
-    }
-
-    // Calculate remaining budget for each
+    // Calculate remaining budget using spent_amount from the budget record itself
     const budgetsWithRemaining = (budgets || []).map((budget) => {
-      const budgetUsage = (usage as { budget_id: string; amount: number }[]).filter(
-        (u) => u.budget_id === budget.id,
-      )
-      const totalUsed = budgetUsage.reduce((sum, u) => sum + (u.amount || 0), 0)
+      const spentAmount = budget.spent_amount || 0
       return {
         ...budget,
-        used_amount: totalUsed,
-        remaining_amount: budget.budget_amount - totalUsed,
+        used_amount: spentAmount,
+        remaining_amount: (budget.budget_amount || 0) - spentAmount,
       }
     })
 
-    return NextResponse.json({ budgets: budgetsWithRemaining, usage })
+    return NextResponse.json({ budgets: budgetsWithRemaining })
   } catch (error) {
     if (isRateLimitError(error)) {
       return NextResponse.json({ budgets: [], usage: [] })
@@ -108,7 +84,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ error: "Zu viele Anfragen" }, { status: 429 })
@@ -116,18 +92,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       throw err
     }
 
+    // Build insert payload, only include team_member_id if explicitly provided (must be a valid team_members FK)
+    const insertData: Record<string, unknown> = {
+      practice_id: practiceId,
+      team_id: body.team_id || body.teamId || null,
+      year: body.year || new Date().getFullYear(),
+      budget_amount: body.budget_amount || body.budgetAmount,
+      currency: body.currency || "EUR",
+      notes: body.notes || null,
+      created_by: createdBy,
+    }
+    // Only set team_member_id if explicitly provided and not the auth user ID
+    if (body.team_member_id && body.team_member_id !== createdBy) {
+      insertData.team_member_id = body.team_member_id
+    }
+
     const { data, error } = await supabase
       .from("training_budgets")
-      .insert({
-        practice_id: practiceId,
-        team_member_id: body.team_member_id || body.teamMemberId || null,
-        team_id: body.team_id || body.teamId || null,
-        year: body.year || new Date().getFullYear(),
-        budget_amount: body.budget_amount || body.budgetAmount,
-        currency: body.currency || "EUR",
-        notes: body.notes,
-        created_by: createdBy,
-      })
+      .insert(insertData)
       .select()
       .single()
 

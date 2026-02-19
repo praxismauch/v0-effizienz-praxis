@@ -132,6 +132,7 @@ export default function HygienePlanClient() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<HygienePlan | null>(null)
+  const [editingPlan, setEditingPlan] = useState<HygienePlan | null>(null)
   const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
@@ -139,6 +140,54 @@ export default function HygienePlanClient() {
       loadHygienePlans()
     }
   }, [currentPractice?.id])
+
+  const deletePlan = async (planId: string) => {
+    if (!currentPractice?.id) return
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/hygiene-plans/${planId}`, {
+        method: "DELETE",
+      })
+      if (response.ok) {
+        setHygienePlans((prev) => prev.filter((p) => p.id !== planId))
+        toast.success("Hygieneplan erfolgreich gelöscht")
+      } else {
+        toast.error("Fehler beim Löschen des Hygieneplans")
+      }
+    } catch (error) {
+      console.error("Error deleting hygiene plan:", error)
+      toast.error("Fehler beim Löschen des Hygieneplans")
+    }
+  }
+
+  const updatePlan = async (planId: string, updates: Partial<HygienePlan>) => {
+    if (!currentPractice?.id) return
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/hygiene-plans/${planId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: updates.title,
+          description: updates.description,
+          area: updates.category || updates.area,
+          frequency: updates.frequency,
+          status: updates.status,
+        }),
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setHygienePlans((prev) =>
+          prev.map((p) => (p.id === planId ? { ...p, ...data.hygienePlan, category: data.hygienePlan?.area || p.category } : p))
+        )
+        toast.success("Hygieneplan erfolgreich aktualisiert")
+        setEditingPlan(null)
+      } else {
+        toast.error("Fehler beim Aktualisieren des Hygieneplans")
+      }
+    } catch (error) {
+      console.error("Error updating hygiene plan:", error)
+      toast.error("Fehler beim Aktualisieren des Hygieneplans")
+    }
+  }
 
   const loadHygienePlans = async () => {
     try {
@@ -176,10 +225,10 @@ export default function HygienePlanClient() {
           userId: currentUser?.id,
         }),
       })
-      console.log("[v0] AI hygiene plan response status:", response.status)
+      console.log("[v0] AI hygiene plan response status:", response.status, response.statusText)
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] AI hygiene plan created:", data.hygienePlan?.id)
+        console.log("[v0] AI hygiene plan created:", data.hygienePlan?.id, "title:", data.hygienePlan?.title)
         toast.success("KI-Hygieneplan erfolgreich erstellt")
         // Map DB 'area' to 'category' for UI
         const newPlan = { ...data.hygienePlan, category: data.hygienePlan?.category || data.hygienePlan?.area || category }
@@ -391,10 +440,20 @@ export default function HygienePlanClient() {
                         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedPlan(plan) }}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingPlan(plan) }}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (confirm("Möchten Sie diesen Hygieneplan wirklich löschen?")) {
+                              deletePlan(plan.id)
+                            }
+                          }}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -432,6 +491,16 @@ export default function HygienePlanClient() {
             plan={selectedPlan}
             open={!!selectedPlan}
             onOpenChange={(open) => !open && setSelectedPlan(null)}
+          />
+        )}
+
+        {/* Edit Plan Dialog */}
+        {editingPlan && (
+          <EditPlanDialog
+            plan={editingPlan}
+            open={!!editingPlan}
+            onOpenChange={(open) => !open && setEditingPlan(null)}
+            onSave={(updates) => updatePlan(editingPlan.id, updates)}
           />
         )}
       </div>
@@ -963,6 +1032,129 @@ function CreateHygienePlanDialog({
                 <Plus className="h-4 w-4 mr-2" />
                 Plan erstellen
               </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Edit Plan Dialog Component
+function EditPlanDialog({
+  plan,
+  open,
+  onOpenChange,
+  onSave,
+}: {
+  plan: HygienePlan
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSave: (updates: Partial<HygienePlan>) => void
+}) {
+  const [saving, setSaving] = useState(false)
+  const [title, setTitle] = useState(plan.title)
+  const [description, setDescription] = useState(plan.description || "")
+  const [category, setCategory] = useState(plan.category || plan.area || "")
+  const [frequency, setFrequency] = useState(plan.frequency || "")
+  const [status, setStatus] = useState(plan.status || "active")
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      toast.error("Bitte geben Sie einen Titel ein")
+      return
+    }
+    setSaving(true)
+    try {
+      await onSave({ title: title.trim(), description: description.trim(), category, frequency, status })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit className="h-5 w-5 text-primary" />
+            Hygieneplan bearbeiten
+          </DialogTitle>
+          <DialogDescription>
+            Bearbeiten Sie die Details dieses Hygieneplans.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">Titel *</Label>
+            <Input id="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-desc">Beschreibung</Label>
+            <Textarea id="edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Kategorie</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Kategorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Häufigkeit</Label>
+              <Select value={frequency} onValueChange={setFrequency}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Häufigkeit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Täglich</SelectItem>
+                  <SelectItem value="weekly">Wöchentlich</SelectItem>
+                  <SelectItem value="monthly">Monatlich</SelectItem>
+                  <SelectItem value="quarterly">Quartalsweise</SelectItem>
+                  <SelectItem value="yearly">Jährlich</SelectItem>
+                  <SelectItem value="as_needed">Bei Bedarf</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                  <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Abbrechen
+          </Button>
+          <Button onClick={handleSave} disabled={saving || !title.trim()}>
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Wird gespeichert...
+              </>
+            ) : (
+              "Speichern"
             )}
           </Button>
         </DialogFooter>

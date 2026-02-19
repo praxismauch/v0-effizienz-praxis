@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { normalizeRoleKey, getRoleConfig, type NormalizedRoleKey } from "@/lib/roles"
 
 export type UserRole =
@@ -111,11 +111,23 @@ export async function requireAuth(): Promise<AuthUser> {
     throw new Error("Nicht authentifiziert")
   }
 
-  const { data: userData, error: userError } = await supabase
+  let { data: userData, error: userError } = await supabase
     .from("users")
     .select("id, email, name, role, practice_id, is_active, avatar, preferred_language")
     .eq("id", user.id)
     .single()
+
+  // If RLS blocks the query (no real auth session), retry with admin client
+  if (userError || !userData) {
+    const adminClient = await createAdminClient()
+    const { data: adminData, error: adminError } = await adminClient
+      .from("users")
+      .select("id, email, name, role, practice_id, is_active, avatar, preferred_language")
+      .eq("id", user.id)
+      .single()
+    userData = adminData
+    userError = adminError
+  }
 
   if (userError || !userData) {
     throw new Error("Benutzerdaten nicht gefunden")

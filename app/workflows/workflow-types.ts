@@ -13,6 +13,7 @@ export interface Workflow {
   priority?: "low" | "medium" | "high" | "urgent"
   team_ids?: string[]
   estimated_duration?: number
+  estimated_minutes?: number
 }
 
 export const categoryLabels: Record<string, string> = {

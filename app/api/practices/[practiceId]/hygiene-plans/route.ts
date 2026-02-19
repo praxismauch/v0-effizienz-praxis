@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
     console.log("[v0] GET hygiene-plans for practice:", practiceId)
-    const supabase = createAdminClient()
+    const supabase = await getApiClient()
 
     const { data: hygienePlans, error } = await supabase
       .from("hygiene_plans")
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = createAdminClient()
+    const supabase = await getApiClient()
     const body = await request.json()
 
     const { title, description, category, frequency, status, userId } = body

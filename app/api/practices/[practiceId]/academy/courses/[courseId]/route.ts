@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
     }
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const { data: course, error } = await supabase
       .from("academy_courses")
@@ -49,7 +49,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     console.log("[v0] Updating course:", courseId)
 
@@ -97,7 +97,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
     }
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     console.log("[v0] Soft deleting course:", courseId)
 

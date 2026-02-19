@@ -1,18 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient, createAdminClient } from "@/lib/supabase/server"
-import { isSuperAdminRole } from "@/lib/auth-utils"
+import { createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth-utils"
 
 async function authorize() {
-  const supabase = await createServerClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) return { error: "Unauthorized", status: 401, adminClient: null }
-  const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
-  if (!isSuperAdminRole(userData?.role)) return { error: "Forbidden", status: 403, adminClient: null }
-  const adminClient = await createAdminClient()
-  return { error: null, status: 200, adminClient }
+  try {
+    await requireSuperAdmin()
+    const adminClient = await createAdminClient()
+    return { error: null, status: 200, adminClient }
+  } catch {
+    return { error: "Unauthorized", status: 401, adminClient: null }
+  }
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -52,8 +49,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           workflow_id: id,
           title: step.title || step.name || "",
           description: step.description || "",
-          assigned_to: step.assignedTo || null,
-          estimated_duration: step.estimatedDuration || 5,
+          responsible_role: step.assignedTo || null,
+          estimated_minutes: step.estimatedDuration || 5,
           step_order: idx + 1,
           status: "pending",
         }))

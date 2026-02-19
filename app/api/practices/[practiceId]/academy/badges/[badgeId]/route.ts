@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server-admin"
+import { getApiClient } from "@/lib/supabase/admin"
 
 interface BadgeUpdateData {
   name?: string
@@ -27,7 +27,7 @@ export async function GET(
   try {
     const { badgeId } = await params
 
-    const supabase = await createClient()
+    const supabase = await getApiClient()
 
     const { data: badge, error } = await supabase
       .from("academy_badges")
@@ -60,7 +60,7 @@ export async function PUT(
   try {
     const { badgeId } = await params
 
-    const supabase = await createClient()
+    const supabase = await getApiClient()
     const body = await request.json()
 
     const updateData: BadgeUpdateData = {
@@ -121,7 +121,7 @@ export async function DELETE(
   try {
     const { badgeId } = await params
 
-    const supabase = await createClient()
+    const supabase = await getApiClient()
 
     const { data: badge, error } = await supabase
       .from("academy_badges")

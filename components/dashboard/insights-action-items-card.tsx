@@ -86,44 +86,37 @@ export function JournalActionItemsCard({ practiceId }: Props) {
 
   return (
     <Card className="p-5 flex-1 overflow-auto">
-      <Link href="/practice-insights" className="flex items-start justify-between mb-4 hover:opacity-80 transition-opacity">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-            <BookOpen className="h-5 w-5" />
+      <Link href="/practice-insights" className="flex items-center justify-between mb-3 hover:opacity-80 transition-opacity">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+            <BookOpen className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Journal Handlungsempfehlungen</p>
-            <p className="text-3xl font-bold tracking-tight mt-1">{actionItems.length}</p>
-            {journalTitle && <p className="text-xs text-muted-foreground mt-0.5">{journalTitle}</p>}
+            <p className="text-xs font-medium text-muted-foreground leading-tight">Journal Handlungsempfehlungen</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-xl font-bold tracking-tight">{actionItems.length}</p>
+              {journalTitle && <p className="text-[10px] text-muted-foreground">{journalTitle}</p>}
+            </div>
           </div>
         </div>
-        <ArrowUpRight className="h-4 w-4 text-muted-foreground mt-1" />
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
       </Link>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {actionItems.map((item) => (
-          <div key={item.id} className={`p-3 rounded-lg border ${getPriorityColor(item.priority)}`}>
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  {item.ai_generated && <Sparkles className="h-3 w-3 text-primary flex-shrink-0" />}
-                  <span className="font-medium text-sm truncate">{item.title}</span>
-                </div>
-                {item.due_date && (
-                  <p className="text-xs text-muted-foreground">
-                    Fällig: {new Date(item.due_date).toLocaleDateString("de-DE")}
-                  </p>
-                )}
-              </div>
-              <Badge variant="outline" className="text-xs flex-shrink-0">
-                {item.priority === "urgent"
-                  ? "Dringend"
-                  : item.priority === "high"
-                    ? "Hoch"
-                    : item.priority === "medium"
-                      ? "Mittel"
-                      : "Niedrig"}
-              </Badge>
+          <div key={item.id} className={`px-3 py-2 rounded-md border flex items-center justify-between gap-2 ${getPriorityColor(item.priority)}`}>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {item.ai_generated && <Sparkles className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
+              <span className="font-medium text-sm truncate">{item.title}</span>
             </div>
+            <Badge variant="outline" className="text-xs px-2 py-0.5 flex-shrink-0">
+              {item.priority === "urgent"
+                ? "Dringend"
+                : item.priority === "high"
+                  ? "Hoch"
+                  : item.priority === "medium"
+                    ? "Mittel"
+                    : "Niedrig"}
+            </Badge>
           </div>
         ))}
       </div>

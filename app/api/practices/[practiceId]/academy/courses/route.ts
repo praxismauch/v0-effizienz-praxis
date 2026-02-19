@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
     }
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const { data: courses, error } = await supabase
       .from("academy_courses")
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const body = await request.json()
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const courseData = {
       ...body,

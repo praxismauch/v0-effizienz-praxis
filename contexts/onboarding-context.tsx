@@ -341,7 +341,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     // Award "Welcome Tour" badge
     if (currentUser?.id && practiceId) {
       try {
-        await fetch("/api/badges/award", {
+        const badgeResponse = await fetch("/api/badges/award", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -350,8 +350,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             badgeId: "welcome_tour",
           }),
         })
-      } catch {
-        // Badge award is non-critical, don't block onboarding completion
+        if (badgeResponse.ok) {
+          const badgeData = await badgeResponse.json()
+          if (badgeData.success && !badgeData.alreadyEarned) {
+            Logger.info("onboarding", "Welcome Tour badge awarded", { userId: currentUser.id })
+          }
+        } else {
+          Logger.warn("onboarding", "Badge award failed", { status: badgeResponse.status })
+        }
+      } catch (error) {
+        Logger.warn("onboarding", "Badge award request failed", { error })
       }
     }
   }, [saveProgressToDb, steps, currentUser?.id, practiceId])

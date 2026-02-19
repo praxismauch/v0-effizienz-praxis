@@ -1,23 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient, createAdminClient } from "@/lib/supabase/server"
-import { isSuperAdminRole } from "@/lib/auth-utils"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin as authRequireSuperAdmin } from "@/lib/auth-utils"
 
 async function requireSuperAdmin() {
-  const supabase = await createServerClient()
-  const adminClient = await createAdminClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) {
+  try {
+    const user = await authRequireSuperAdmin()
+    return { id: user.id, email: user.email }
+  } catch {
     throw { status: 401, message: "Unauthorized" }
   }
-  // Use admin client to bypass RLS when looking up user role
-  const { data: userData } = await adminClient.from("users").select("role").eq("id", user.id).single()
-  if (!isSuperAdminRole(userData?.role)) {
-    throw { status: 403, message: "Forbidden" }
-  }
-  return user
 }
 
 export async function GET(request: NextRequest) {
@@ -42,8 +33,9 @@ export async function GET(request: NextRequest) {
     if (templateIds.length > 0) {
       const { data: allSteps } = await adminClient
         .from("workflow_steps")
-        .select("id, workflow_id, title, description, step_order, status, assigned_to, estimated_duration")
+        .select("id, workflow_id, title, description, step_order, status, assigned_to, responsible_role, estimated_minutes")
         .in("workflow_id", templateIds)
+        .is("deleted_at", null)
         .order("step_order", { ascending: true })
 
       // Group steps by workflow_id
@@ -59,8 +51,8 @@ export async function GET(request: NextRequest) {
       steps: (stepsMap[t.id] || []).map((s: any) => ({
         title: s.title || "",
         description: s.description || "",
-        assignedTo: s.assigned_to || "",
-        estimatedDuration: s.estimated_duration || 5,
+        assignedTo: s.assigned_to || s.responsible_role || "",
+        estimatedDuration: s.estimated_minutes || 5,
         dependencies: [],
       })),
     }))
@@ -106,8 +98,8 @@ export async function POST(request: NextRequest) {
         workflow_id: template.id,
         title: step.title || step.name || "",
         description: step.description || "",
-        assigned_to: step.assignedTo || null,
-        estimated_duration: step.estimatedDuration || 5,
+        responsible_role: step.assignedTo || null,
+        estimated_minutes: step.estimatedDuration || 5,
         step_order: idx + 1,
         status: "pending",
       }))

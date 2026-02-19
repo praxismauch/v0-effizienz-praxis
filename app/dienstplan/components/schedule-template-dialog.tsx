@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getRoleLabel } from "@/lib/roles"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { useScheduleTemplates } from "../hooks/use-schedule-templates"
@@ -220,7 +221,7 @@ export default function ScheduleTemplateDialog({
                           <SelectTrigger className="flex-1"><SelectValue placeholder="Alle Rollen" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">Alle Rollen</SelectItem>
-                            {availableRoles.map((role) => <SelectItem key={role} value={role}>{role}</SelectItem>)}
+                            {availableRoles.map((role) => <SelectItem key={role} value={role}>{getRoleLabel(role)}</SelectItem>)}
                           </SelectContent>
                         </Select>
                         <Button variant="ghost" size="icon" className="shrink-0" onClick={() => handleRemoveShift(index)}>

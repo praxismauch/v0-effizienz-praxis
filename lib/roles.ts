@@ -125,6 +125,15 @@ export const AVAILABLE_ROLES = Object.values(ROLE_CONFIG)
     badgeColor: role.badgeColor,
   }))
 
+// Medical / profession-specific role labels (not system roles but team member positions)
+export const PROFESSION_LABELS: Record<string, string> = {
+  doctor: "Arzt/Ärztin",
+  arzt: "Arzt/Ärztin",
+  nurse: "Pflegekraft",
+  mfa: "MFA",
+  praxisinhaber: "Praxisinhaber/in",
+}
+
 // Role aliases mapping (for backwards compatibility)
 export const ROLE_ALIASES: Record<string, NormalizedRoleKey> = {
   super_admin: "superadmin",
@@ -171,8 +180,13 @@ export function getRoleConfig(role: string | null | undefined): RoleConfig | nul
  * Get role label for display
  */
 export function getRoleLabel(role: string | null | undefined): string {
+  if (!role) return "Unbekannt"
+  // Check profession/medical labels first (case-insensitive)
+  const profLabel = PROFESSION_LABELS[role.toLowerCase()]
+  if (profLabel) return profLabel
+  // Then check system role config
   const config = getRoleConfig(role)
-  return config?.label || role || "Unbekannt"
+  return config?.label || role
 }
 
 /**

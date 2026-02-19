@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 export async function PATCH(
@@ -9,7 +9,7 @@ export async function PATCH(
     const { practiceId, courseId } = await params
     const body = await request.json()
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const allowedFields = [
       "name", "title", "description", "provider", "category",
@@ -63,7 +63,7 @@ export async function DELETE(
   try {
     const { practiceId, courseId } = await params
 
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const { error } = await supabase
       .from("training_courses")

@@ -80,8 +80,9 @@ export function EventsTab({ events, courses, practiceId, onEventsChange, onDelet
 
     setIsSaving(true)
     try {
-      // Strip fields that don't exist in the DB
-      const { currency, training_course_id, ...apiData } = formData as any
+      // Strip fields that don't exist in the DB and clean empty strings for UUID fields
+      const { currency, training_course_id, team_id, ...apiData } = formData as any
+      if (team_id && team_id.trim()) apiData.team_id = team_id
       if (editingEvent) {
         const res = await fetch(`/api/practices/${practiceId}/training/events/${editingEvent.id}`, {
           method: "PATCH",

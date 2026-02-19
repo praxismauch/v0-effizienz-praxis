@@ -149,10 +149,25 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: C
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.map((course) => (
-            <Card key={course.id} className="hover:shadow-md transition-shadow">
+            <Card key={course.id} className="group relative hover:shadow-md transition-shadow">
+              {/* Hover action buttons */}
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="outline" size="icon" className="h-8 w-8 bg-background shadow-sm" onClick={() => openEdit(course)}>
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 bg-background shadow-sm text-destructive hover:text-destructive"
+                  onClick={() => onDelete(course.id, course.name)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
+                  <div className="flex-1 pr-16">
                     <CardTitle className="text-lg">{course.name}</CardTitle>
                     <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                   </div>
@@ -192,21 +207,6 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete }: C
                       {(course.cost || 0).toLocaleString("de-DE")} {course.currency || "EUR"}
                     </span>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(course)}>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Bearbeiten
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive bg-transparent"
-                    onClick={() => onDelete(course.id, course.name)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               </CardContent>
             </Card>

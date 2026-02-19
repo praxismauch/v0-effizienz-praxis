@@ -14,10 +14,30 @@ import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
 import { Loader2, Save, Building2, MapPin, Phone, Mail, Globe, X, ChevronsUpDown, Printer } from "lucide-react"
 
+const BUNDESLAENDER = [
+  "Baden-Württemberg",
+  "Bayern",
+  "Berlin",
+  "Brandenburg",
+  "Bremen",
+  "Hamburg",
+  "Hessen",
+  "Mecklenburg-Vorpommern",
+  "Niedersachsen",
+  "Nordrhein-Westfalen",
+  "Rheinland-Pfalz",
+  "Saarland",
+  "Sachsen",
+  "Sachsen-Anhalt",
+  "Schleswig-Holstein",
+  "Thüringen",
+]
+
 interface PracticeSettings {
   name: string
   street: string
   zipCity: string
+  bundesland: string
   phone: string
   fax: string
   email: string
@@ -43,6 +63,7 @@ export function PracticeSettingsTab() {
     name: "",
     street: "",
     zipCity: "",
+    bundesland: "",
     phone: "",
     fax: "",
     email: "",
@@ -72,6 +93,7 @@ export function PracticeSettingsTab() {
         name: currentPractice.name || "",
         street,
         zipCity,
+        bundesland: (currentPractice as any).bundesland || "",
         phone: currentPractice.phone || "",
         fax: currentPractice.fax || "",
         email: currentPractice.email || "",
@@ -109,8 +131,8 @@ export function PracticeSettingsTab() {
       const city = zipCityParts.slice(1).join(" ") || ""
       const address = [settings.street, city, zip].filter(Boolean).join(", ")
 
-      const { street, zipCity, specializations, ...rest } = settings
-      const payload = { ...rest, address, street: settings.street, zip_code: zip, city, specialty: specializations.join(", ") }
+      const { street, zipCity, specializations, bundesland, ...rest } = settings
+      const payload = { ...rest, address, street: settings.street, zip_code: zip, city, bundesland, specialty: specializations.join(", ") }
 
       const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
         method: "PATCH",
@@ -315,6 +337,27 @@ onValueChange={(value) => setSettings({ ...settings, type: value })}
                 onChange={(e) => setSettings({ ...settings, zipCity: e.target.value })}
                 placeholder="87616 Marktoberdorf"
               />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="bundesland">Bundesland</Label>
+              <Select
+                value={settings.bundesland}
+                onValueChange={(value) => setSettings({ ...settings, bundesland: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Bundesland auswählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BUNDESLAENDER.map((land) => (
+                    <SelectItem key={land} value={land}>
+                      {land}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

@@ -5,6 +5,8 @@ export interface TeamMember {
   role?: string
   avatar_url?: string
   email?: string
+  department?: string | null
+  position?: string | null
 }
 
 export interface ShiftType {

@@ -66,6 +66,7 @@ export default function ScheduleTab({
   // Filter state
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedRole, setSelectedRole] = useState<string>("all")
+  const [selectedGroup, setSelectedGroup] = useState<string>("all")
   
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -147,11 +148,20 @@ export default function ScheduleTab({
     }
   }
 
-  // Get unique roles from team members for the filter dropdown
-  const availableRoles = useMemo(() => {
-    const roles = new Set<string>()
+  // Get unique groups (departments) from team members
+  const availableGroups = useMemo(() => {
+    const groups = new Set<string>()
     ;(teamMembers || []).forEach((member) => {
-      if (member.role) roles.add(member.role)
+      if (member.department) groups.add(member.department)
+    })
+    return Array.from(groups).sort()
+  }, [teamMembers])
+
+  // Get unique roles from team members for the filter dropdown
+> const availableRoles = useMemo(() => {
+  const roles = new Set<string>()
+  ;(teamMembers || []).forEach((member) => {
+  if (member.role) roles.add(member.role)
     })
     return Array.from(roles).sort()
   }, [teamMembers])
@@ -162,9 +172,10 @@ export default function ScheduleTab({
       const fullName = `${member.first_name} ${member.last_name}`.toLowerCase()
       const matchesSearch = searchQuery === "" || fullName.includes(searchQuery.toLowerCase())
       const matchesRole = selectedRole === "all" || member.role === selectedRole
-      return matchesSearch && matchesRole
+      const matchesGroup = selectedGroup === "all" || member.department === selectedGroup
+      return matchesSearch && matchesRole && matchesGroup
     })
-  }, [teamMembers, searchQuery, selectedRole])
+  }, [teamMembers, searchQuery, selectedRole, selectedGroup])
 
   // Memoize shifts by date and member for efficient lookups
   const shiftsByDateAndMember = React.useMemo(() => {

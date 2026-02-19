@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { usePathname } from "next/navigation"
 import { useUser } from "@/contexts/user-context"
-import { usePractice } from "@/contexts/practice-context"
+import { usePracticeOptional } from "@/contexts/practice-context"
 import { useTranslation } from "@/contexts/translation-context"
 import Logger from "@/lib/logger"
 import {
@@ -17,7 +17,8 @@ import {
 export function useSidebarPreferences() {
   const pathname = usePathname()
   const { currentUser } = useUser()
-  const { currentPractice } = usePractice()
+  const practiceCtx = usePracticeOptional()
+  const currentPractice = practiceCtx?.currentPractice ?? null
   const { t } = useTranslation()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const hasRestoredScroll = useRef(false)

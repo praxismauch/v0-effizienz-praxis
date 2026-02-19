@@ -193,7 +193,7 @@ export function useDashboardWidgets({
         return (
           <div
             key={id}
-            className={`${colClass} ${rowClass} self-stretch [&>*]:h-full`}
+            className={`${colClass} ${rowClass} self-stretch [&>*]:h-full [&>*]:overflow-auto`}
             style={getMinHeightStyle(id, cockpitCardSettings)}
           >
             {content}

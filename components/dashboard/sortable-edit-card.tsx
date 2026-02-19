@@ -108,7 +108,7 @@ export function SortableEditWidget({
       </div>
 
       {/* Widget content — always fills the full grid cell height */}
-      <div className="ring-2 ring-transparent group-hover:ring-primary/30 rounded-lg transition-all h-full [&>*]:h-full">
+      <div className="ring-2 ring-transparent group-hover:ring-primary/30 rounded-lg transition-all h-full [&>*]:h-full [&>*]:overflow-auto">
         {children}
       </div>
 

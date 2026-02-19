@@ -224,7 +224,7 @@ export function DashboardEditMode({
       {/* Sortable Grid */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <SortableContext items={visibleItems} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 min-w-0 auto-rows-[minmax(180px,auto)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 min-w-0 auto-rows-[180px]">
             {visibleItems.map((id) => (
               <SortableEditWidget
                 key={id}

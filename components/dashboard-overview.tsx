@@ -109,7 +109,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 min-w-0 auto-rows-[minmax(180px,auto)]">{orderedWidgets}</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 min-w-0 auto-rows-[180px]">{orderedWidgets}</div>
 
       <DashboardEditorDialog
         open={isEditorOpen}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
@@ -16,12 +16,16 @@ import {
   Sparkles,
   MessageSquare,
   CheckSquare,
+  Timer,
 } from "lucide-react"
 import { ReferralDialog } from "@/components/referral-dialog"
 import ReportBugDialog from "@/components/report-bug-dialog"
 import AIPracticeChatDialog from "@/components/ai-practice-chat-dialog"
 import CreateTodoDialog from "@/components/create-todo-dialog"
 import { UserMenu } from "./user-menu"
+import { usePractice } from "@/contexts/practice-context"
+import { useUser } from "@/contexts/user-context"
+import { useTimeTrackingStatus } from "@/hooks/use-time-tracking"
 
 interface HeaderActionsProps {
   unreadMessagesCount: number
@@ -30,6 +34,37 @@ interface HeaderActionsProps {
 export function HeaderActions({ unreadMessagesCount }: HeaderActionsProps) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
+  const { currentPractice } = usePractice()
+  const { currentUser } = useUser()
+
+  const { status, currentBlock } = useTimeTrackingStatus(
+    currentPractice?.id || null,
+    currentUser?.id
+  )
+
+  const isTimerActive = status === "working" || status === "break"
+
+  // Live elapsed time
+  const [elapsed, setElapsed] = useState("")
+  useEffect(() => {
+    if (!isTimerActive || !currentBlock?.start_time) {
+      setElapsed("")
+      return
+    }
+    const tick = () => {
+      const start = new Date(currentBlock.start_time).getTime()
+      const diff = Math.max(0, Date.now() - start)
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setElapsed(
+        `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
+      )
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [isTimerActive, currentBlock?.start_time])
 
   const [referralDialogOpen, setReferralDialogOpen] = useState(false)
   const [isBugReportOpen, setIsBugReportOpen] = useState(false)
@@ -43,6 +78,37 @@ export function HeaderActions({ unreadMessagesCount }: HeaderActionsProps) {
         <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden">
           <Search className="h-4 w-4" />
         </Button>
+
+        {/* Timer Active Indicator */}
+        {isTimerActive && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 gap-1.5 px-2.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 relative"
+                onClick={() => router.push("/zeiterfassung")}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <Timer className="h-4 w-4" />
+                {elapsed && (
+                  <span className="text-xs font-mono font-semibold hidden sm:inline">
+                    {elapsed}
+                  </span>
+                )}
+                {status === "break" && (
+                  <span className="text-[10px] font-medium text-amber-500 hidden sm:inline">Pause</span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Zeiterfassung aktiv{status === "break" ? " (Pause)" : ""} {elapsed ? `- ${elapsed}` : ""}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         {/* AI Chat Button */}
         <Tooltip>

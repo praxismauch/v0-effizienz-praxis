@@ -184,8 +184,8 @@ export const BulletinWidget = memo(function BulletinWidget({
         {displayPosts.length === 0 ? (
           <p className="text-xs text-muted-foreground py-2">
             {activeTab === "pinned"
-              ? "Keine angehefteten Beitr\u00e4ge."
-              : "Alles gelesen \u2013 keine neuen Beitr\u00e4ge."}
+              ? "Keine angehefteten Beiträge."
+              : "Alles gelesen – keine neuen Beiträge."}
           </p>
         ) : (
           <div className="-mx-2">

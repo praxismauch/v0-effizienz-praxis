@@ -45,7 +45,7 @@ export const WeeklyTasksWidget = memo(function WeeklyTasksWidget({ data }: { dat
               <CheckSquare className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">{"W\u00f6chentliche Aufgaben"}</p>
+              <p className="text-sm font-semibold text-foreground">{"Wöchentliche Aufgaben"}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {totalCompleted} erledigt, {totalPending} ausstehend
               </p>
@@ -172,7 +172,7 @@ export const ActivityChartWidget = memo(function ActivityChartWidget({ data }: {
               <Activity className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">{"Aktivit\u00e4t"}</p>
+              <p className="text-sm font-semibold text-foreground">{"Aktivität"}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {totalActivity} {"Aktionen in den letzten 7 Tagen"}
               </p>
@@ -183,7 +183,7 @@ export const ActivityChartWidget = memo(function ActivityChartWidget({ data }: {
 
         {data.length === 0 ? (
           <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-            {"Keine Daten verf\u00fcgbar"}
+            {"Keine Daten verfügbar"}
           </div>
         ) : (
           <div className="flex items-end gap-1.5 h-28">

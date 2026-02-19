@@ -124,8 +124,7 @@ Keine andere Ausgabe, kein Markdown, nur reines JSON.`,
       // Generate slug from title
       const slug = generated.title
         .toLowerCase()
-        .replace(/[aeoeue]/g, (m: string) => ({ ae: "ae", oe: "oe", ue: "ue" })[m] || m)
-        .replace(/[aoeuss]/g, (m: string) => ({ "\u00e4": "ae", "\u00f6": "oe", "\u00fc": "ue", "\u00df": "ss" })[m] || m)
+        .replace(/[äöüß]/g, (m: string) => ({ "ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss" })[m] || m)
         .replace(/[^\w\s-]/g, "")
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-")

@@ -28,7 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   support: "Support",
   goals: "Ziele",
   recruiting: "Recruiting",
-  workflows: "Arbeitsabl\u00e4ufe",
+  workflows: "Arbeitsabläufe",
   documents: "Dokumente",
   knowledge: "Wissensdatenbank",
   hygiene: "Hygiene",

@@ -70,7 +70,7 @@ export default function AnalysisPageClient() {
       <div className="space-y-6">
         <PageHeader
           title="KI-Analyse"
-          subtitle="Lassen Sie Ihre Praxis von der KI analysieren und erhalten Sie Optimierungsvorschl\u00e4ge"
+          subtitle="Lassen Sie Ihre Praxis von der KI analysieren und erhalten Sie Optimierungsvorschläge"
         />
 
         <StatsCards
@@ -81,7 +81,7 @@ export default function AnalysisPageClient() {
               value: lastScore != null ? `${lastScore}/100` : "\u2013",
               icon: TrendingUp,
               color: "primary",
-              description: lastScore != null ? "Aktuelle Bewertung" : "Analyse starten f\u00fcr Score",
+              description: lastScore != null ? "Aktuelle Bewertung" : "Analyse starten für Score",
             },
             {
               label: "Aktive Ziele",

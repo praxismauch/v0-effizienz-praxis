@@ -148,7 +148,7 @@ export const DIFFICULTY_LEVELS = [
 export const CRITERIA_TYPES = [
   { value: "", label: "Keine (manuell)" },
   { value: "welcome_tour", label: "Welcome Tour abgeschlossen" },
-  { value: "profile_complete", label: "Profil vollst\u00e4ndig ausgef\u00fcllt" },
+  { value: "profile_complete", label: "Profil vollständig ausgefüllt" },
   { value: "first_login", label: "Erster Login" },
   { value: "course_complete", label: "Kurs abgeschlossen" },
   { value: "courses_completed", label: "Anzahl Kurse abgeschlossen" },

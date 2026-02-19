@@ -338,7 +338,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
   }
 
   const renderWidget = useCallback(
-    (widgetId: string) => {
+    (widgetId: string, forEditMode = false) => {
       const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
 
       if (isLinebreakWidget(widgetId)) {
@@ -349,21 +349,41 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
         )
       }
 
-      const wrapWithSpan = (content: React.ReactNode, id: string) => (
-        <div key={id} className={`${getColumnSpanClass(id)} ${getRowSpanClass(id)}`} style={getMinHeightStyle(id)}>
-          {content}
-        </div>
-      )
+      // In edit mode, skip the wrap-with-span since the editor handles layout
+      const wrapWithSpan = (content: React.ReactNode, id: string) => {
+        if (forEditMode) return content
+        return (
+          <div key={id} className={`${getColumnSpanClass(id)} ${getRowSpanClass(id)}`} style={getMinHeightStyle(id)}>
+            {content}
+          </div>
+        )
+      }
+
+      // In edit mode, use stats or sensible defaults so widgets always render
+      const s = stats || {
+        teamMembers: 0, activeGoals: 0, workflows: 0, documents: 0,
+        teamMembersTrend: 0, goalsTrend: 0, workflowsTrend: 0, documentsTrend: 0,
+        activityData: [], openTasks: 0, tasksTrend: 0, todayAppointments: 0,
+        appointmentsTrend: 0, kpiScore: 0, kpiTrend: 0, drafts: 0, draftsTrend: 0,
+        activeCandidates: 0, candidatesTrend: 0, openPositions: 0, applications: 0,
+        recruitingTrend: 0, filteredTodos: 0,
+        weeklyTasksData: [{ day: "Mo", completed: 3, pending: 2 }],
+        todayScheduleData: [{ time: "09:00", appointments: 2 }],
+        recentActivities: [],
+      }
+
+      // In edit mode, skip the enabled check — always render the widget preview
+      const isEnabled = (key: keyof typeof widgets) => forEditMode || widgets[key]
 
       switch (widgetId) {
         case "showTeamMembers":
-          if (!widgets.showTeamMembers || !stats) return null
+          if (!isEnabled("showTeamMembers")) return null
           return wrapWithSpan(
             <StatCard
               key="team"
               title={t("Team-Mitglieder", "Team-Mitglieder")}
-              value={stats.teamMembers}
-              trend={stats.teamMembersTrend}
+              value={s.teamMembers}
+              trend={s.teamMembersTrend}
               icon={Users}
               color="blue"
               href="/team"
@@ -371,13 +391,13 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showGoals":
-          if (!widgets.showGoals || !stats) return null
+          if (!isEnabled("showGoals")) return null
           return wrapWithSpan(
             <StatCard
               key="goals"
               title={t("Aktive Ziele", "Aktive Ziele")}
-              value={stats.activeGoals}
-              trend={stats.goalsTrend}
+              value={s.activeGoals}
+              trend={s.goalsTrend}
               icon={Target}
               color="green"
               href="/goals"
@@ -385,13 +405,13 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showWorkflows":
-          if (!widgets.showWorkflows || !stats) return null
+          if (!isEnabled("showWorkflows")) return null
           return wrapWithSpan(
             <StatCard
               key="workflows"
               title={t("Workflows", "Workflows")}
-              value={stats.workflows}
-              trend={stats.workflowsTrend}
+              value={s.workflows}
+              trend={s.workflowsTrend}
               icon={Workflow}
               color="purple"
               href="/workflows"
@@ -399,13 +419,13 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showDocuments":
-          if (!widgets.showDocuments || !stats) return null
+          if (!isEnabled("showDocuments")) return null
           return wrapWithSpan(
             <StatCard
               key="documents"
               title={t("Dokumente", "Dokumente")}
-              value={stats.documents}
-              trend={stats.documentsTrend}
+              value={s.documents}
+              trend={s.documentsTrend}
               icon={FileText}
               color="amber"
               href="/documents"
@@ -413,28 +433,28 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showRecruiting":
-          if (!widgets.showRecruiting || !stats || stats.openPositions === undefined) return null
+          if (!isEnabled("showRecruiting")) return null
           return wrapWithSpan(
             <StatCard
               key="recruiting"
               title={t("Offene Stellen", "Offene Stellen")}
-              value={stats.openPositions || 0}
-              trend={stats.recruitingTrend}
+              value={s.openPositions || 0}
+              trend={s.recruitingTrend}
               icon={Briefcase}
               color="pink"
               href="/hiring"
-              subtitle={`${stats.applications || 0} Bewerbungen`}
+              subtitle={`${s.applications || 0} Bewerbungen`}
             />,
             widgetId,
           )
         case "showOpenTasks":
-          if (!widgets.showOpenTasks || !stats || stats.openTasks === undefined) return null
+          if (!isEnabled("showOpenTasks")) return null
           return wrapWithSpan(
             <StatCard
               key="openTasks"
               title={t("Offene Aufgaben", "Offene Aufgaben")}
-              value={stats.openTasks}
-              trend={stats.tasksTrend}
+              value={s.openTasks || 0}
+              trend={s.tasksTrend}
               icon={CheckSquare}
               color="orange"
               href="/todos"
@@ -442,13 +462,13 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showTodayAppointments":
-          if (!widgets.showTodayAppointments || !stats || stats.todayAppointments === undefined) return null
+          if (!isEnabled("showTodayAppointments")) return null
           return wrapWithSpan(
             <StatCard
               key="appointments"
               title={t("Termine heute", "Termine heute")}
-              value={stats.todayAppointments}
-              trend={stats.appointmentsTrend}
+              value={s.todayAppointments || 0}
+              trend={s.appointmentsTrend}
               icon={Calendar}
               color="blue"
               href="/calendar"
@@ -456,13 +476,13 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showActiveCandidates":
-          if (!widgets.showActiveCandidates || !stats || stats.activeCandidates === undefined) return null
+          if (!isEnabled("showActiveCandidates")) return null
           return wrapWithSpan(
             <StatCard
               key="candidates"
               title={t("Aktive Kandidaten", "Aktive Kandidaten")}
-              value={stats.activeCandidates}
-              trend={stats.candidatesTrend}
+              value={s.activeCandidates || 0}
+              trend={s.candidatesTrend}
               icon={Users}
               color="green"
               href="/hiring"
@@ -470,13 +490,13 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showDrafts":
-          if (!widgets.showDrafts || !stats || stats.drafts === undefined) return null
+          if (!isEnabled("showDrafts")) return null
           return wrapWithSpan(
             <StatCard
               key="drafts"
               title={t("Entwürfe", "Entwürfe")}
-              value={stats.drafts}
-              trend={stats.draftsTrend}
+              value={s.drafts || 0}
+              trend={s.draftsTrend}
               icon={FileText}
               color="gray"
               href="/goals?tab=draft"
@@ -484,12 +504,12 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showTodos":
-          if (!widgets.showTodos || !stats || stats.filteredTodos === undefined) return null
+          if (!isEnabled("showTodos")) return null
           return wrapWithSpan(
             <StatCard
               key="filtered-todos"
               title={t("Gefilterte Aufgaben", "Gefilterte Aufgaben")}
-              value={stats.filteredTodos}
+              value={s.filteredTodos || 0}
               icon={CheckSquare}
               color="purple"
               href="/todos"
@@ -497,61 +517,65 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
             widgetId,
           )
         case "showGoogleReviews":
-          if (!widgets.showGoogleReviews || !currentPractice) return null
+          if (!isEnabled("showGoogleReviews")) return null
+          if (!currentPractice && !forEditMode) return null
           return wrapWithSpan(
             <GoogleReviewsWidget
               key="google-reviews"
-              practiceId={currentPractice.id}
-              practiceName={currentPractice.name}
-              practiceWebsiteUrl={currentPractice.website}
+              practiceId={currentPractice?.id || practiceId}
+              practiceName={currentPractice?.name || "Praxis"}
+              practiceWebsiteUrl={currentPractice?.website}
             />,
             widgetId,
           )
 
         case "showWeeklyTasks":
-          if (!widgets.showWeeklyTasks || !stats?.weeklyTasksData) return null
+          if (!isEnabled("showWeeklyTasks")) return null
           return wrapWithSpan(
-            <WeeklyTasksWidget key="weekly-tasks" data={stats.weeklyTasksData} />,
+            <WeeklyTasksWidget key="weekly-tasks" data={s.weeklyTasksData || [{ day: "Mo", completed: 3, pending: 2 }]} />,
             widgetId,
           )
         case "showTodaySchedule":
-          if (!widgets.showTodaySchedule || !stats?.todayScheduleData) return null
+          if (!isEnabled("showTodaySchedule")) return null
           return wrapWithSpan(
-            <TodayScheduleWidget key="today-schedule" data={stats.todayScheduleData} />,
+            <TodayScheduleWidget key="today-schedule" data={s.todayScheduleData || [{ time: "09:00", appointments: 2 }]} />,
             widgetId,
           )
         case "showActivityChart":
-          if (!widgets.showActivityChart || !stats?.activityData) return null
+          if (!isEnabled("showActivityChart")) return null
           return wrapWithSpan(
-            <ActivityChartWidget key="activity-chart" data={stats.activityData} />,
+            <ActivityChartWidget key="activity-chart" data={s.activityData || []} />,
             widgetId,
           )
         case "showKPIs":
-          if (!widgets.showKPIs || !stats) return null
+          if (!isEnabled("showKPIs")) return null
           return wrapWithSpan(
-            <KPIWidget key="kpis" kpiScore={stats.kpiScore} kpiTrend={stats.kpiTrend} />,
+            <KPIWidget key="kpis" kpiScore={s.kpiScore} kpiTrend={s.kpiTrend} />,
             widgetId,
           )
         case "showRecentActivities":
-          if (!widgets.showRecentActivities || !stats?.recentActivities?.length) return null
+          if (!isEnabled("showRecentActivities")) return null
           return wrapWithSpan(
-            <RecentActivitiesWidget key="recent-activities" activities={stats.recentActivities} />,
+            <RecentActivitiesWidget key="recent-activities" activities={s.recentActivities || []} />,
             widgetId,
           )
         case "showJournalActions":
-          if (widgets.showJournalActions === false || !practiceId) return null
+          if (!isEnabled("showJournalActions")) return null
+          if (!practiceId && !forEditMode) return null
           return wrapWithSpan(
             <JournalActionItemsCard key="journal-actions" practiceId={practiceId} className="col-span-full" />,
             widgetId,
           )
         case "showBulletin":
-          if (widgets.showBulletin === false || !practiceId) return null
+          if (!isEnabled("showBulletin")) return null
+          if (!practiceId && !forEditMode) return null
           return wrapWithSpan(
             <BulletinWidget key="bulletin" practiceId={practiceId} userId={userId} />,
             widgetId,
           )
         case "showTimeTracking":
-          if (widgets.showTimeTracking === false || !practiceId || !userId) return null
+          if (!isEnabled("showTimeTracking")) return null
+          if ((!practiceId || !userId) && !forEditMode) return null
           return wrapWithSpan(
             <TimeTrackingWidget key="time-tracking" practiceId={practiceId} userId={userId} />,
             widgetId,
@@ -679,7 +703,7 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
           linebreaks={currentLinebreaks}
           onSave={handleEditModeSave}
           onCancel={() => setIsEditMode(false)}
-          renderWidgetPreview={renderWidget}
+          renderWidgetPreview={(id) => renderWidget(id, true)}
           getColumnSpan={getNumericColumnSpan}
         />
       </div>

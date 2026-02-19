@@ -265,7 +265,7 @@ export function SuperAdminAcademyManager() {
 
         <TabsContent value="badges" className="mt-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between"><div><h3 className="text-lg font-medium">Gamification Badges</h3></div><div className="flex gap-2"><Button variant="outline" onClick={handleAiSuggestBadges} disabled={aiSuggestingBadges}><Sparkles className="h-4 w-4 mr-2" />{aiSuggestingBadges ? "KI denkt..." : "KI-Vorschl\u00e4ge"}</Button><Button onClick={() => { a.resetBadgeForm(); a.setEditingBadge(null); a.setShowBadgeDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Badge</Button></div></div>
+            <div className="flex items-center justify-between"><div><h3 className="text-lg font-medium">Gamification Badges</h3></div><div className="flex gap-2"><Button variant="outline" onClick={handleAiSuggestBadges} disabled={aiSuggestingBadges}><Sparkles className="h-4 w-4 mr-2" />{aiSuggestingBadges ? "KI denkt..." : "KI-Vorschläge"}</Button><Button onClick={() => { a.resetBadgeForm(); a.setEditingBadge(null); a.setShowBadgeDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Badge</Button></div></div>
             {a.badges.length === 0 ? <Card><CardContent className="flex flex-col items-center justify-center py-12"><Award className="h-12 w-12 text-muted-foreground mb-4" /><h3>Keine Badges</h3></CardContent></Card> : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {a.badges.map((badge) => (
@@ -400,7 +400,7 @@ export function SuperAdminAcademyManager() {
               <div className="grid gap-2"><ColorPicker value={a.badgeForm.color} onChange={(color) => a.setBadgeForm({ ...a.badgeForm, color })} label="Farbe" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2"><Label>Ausl\u00f6ser (Aktion)</Label><Select value={a.badgeForm.criteria_type} onValueChange={(v) => a.setBadgeForm({ ...a.badgeForm, criteria_type: v })}><SelectTrigger><SelectValue placeholder="Aktion w\u00e4hlen..." /></SelectTrigger><SelectContent>{CRITERIA_TYPES.map((c) => <SelectItem key={c.value || "__none"} value={c.value || "__none"}>{c.label}</SelectItem>)}</SelectContent></Select></div>
+              <div className="grid gap-2"><Label>Auslöser (Aktion)</Label><Select value={a.badgeForm.criteria_type} onValueChange={(v) => a.setBadgeForm({ ...a.badgeForm, criteria_type: v })}><SelectTrigger><SelectValue placeholder="Aktion wählen..." /></SelectTrigger><SelectContent>{CRITERIA_TYPES.map((c) => <SelectItem key={c.value || "__none"} value={c.value || "__none"}>{c.label}</SelectItem>)}</SelectContent></Select></div>
               <div className="grid gap-2"><Label>Wert</Label><Input value={a.badgeForm.criteria_value} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, criteria_value: e.target.value })} placeholder="z.B. completed, 5, course-id" /></div>
             </div>
             <div className="grid gap-2"><Label>XP</Label><Input type="number" value={a.badgeForm.xp_reward} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, xp_reward: Number(e.target.value) })} min={0} step={25} /></div>

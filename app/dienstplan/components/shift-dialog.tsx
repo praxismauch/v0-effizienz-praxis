@@ -78,7 +78,7 @@ export default function ShiftDialog({
       setIsSubmitting(false)
       
       if (shift) {
-        console.log("[v0] ShiftDialog: Editing existing shift", { shift_date: shift.shift_date })
+        
         setFormData({
           team_member_id: shift.team_member_id || "",
           shift_type_id: shift.shift_type_id || "",
@@ -135,7 +135,6 @@ export default function ShiftDialog({
 
     setIsSubmitting(true)
     try {
-      console.log("[v0] Saving shift with data:", formData)
       await onSave({
         team_member_id: formData.team_member_id,
         shift_type_id: formData.shift_type_id,
@@ -145,10 +144,9 @@ export default function ShiftDialog({
         notes: formData.notes || undefined,
         status: "scheduled",
       })
-      console.log("[v0] Shift saved successfully")
       // Don't close dialog or reset state here - let parent handle it after refresh
     } catch (error) {
-      console.error("[v0] Error saving shift:", error)
+      
       setIsSubmitting(false)
       toast({ title: "Fehler beim Speichern", variant: "destructive" })
     }

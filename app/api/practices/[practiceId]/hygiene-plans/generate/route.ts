@@ -137,23 +137,20 @@ Stelle sicher, dass der Plan:
     }
 
     if (!hygienePlan) {
-      console.error("[v0] Insert returned null data (mock client?)")
-      // Return the parsed AI plan directly so the UI still works
-      return NextResponse.json({
-        hygienePlan: {
-          id: crypto.randomUUID(),
-          ...insertPayload,
-          content: parsedPlan.content || {},
-          tags: parsedPlan.tags || [],
-          is_rki_template: false,
-          rki_reference_url: parsedPlan.rki_reference_url || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      }, { status: 201 })
+      console.log("[v0] DB insert returned no data, returning AI plan directly")
+      const fallbackPlan = {
+        id: crypto.randomUUID(),
+        ...insertPayload,
+        content: parsedPlan.content || {},
+        tags: parsedPlan.tags || [],
+        is_rki_template: false,
+        rki_reference_url: parsedPlan.rki_reference_url || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      return NextResponse.json({ hygienePlan: fallbackPlan }, { status: 201 })
     }
 
-    console.log("[v0] Saved AI-generated hygiene plan:", hygienePlan.id)
     return NextResponse.json({ hygienePlan }, { status: 201 })
   } catch (error) {
     console.error("[v0] Error generating hygiene plan:", error)

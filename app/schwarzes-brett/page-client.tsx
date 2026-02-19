@@ -413,15 +413,15 @@ export default function SchwarzesBrettClient() {
 
         {/* Tabs: Active / Archive */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList className="w-full sm:w-auto grid grid-cols-2">
+          <div className="space-y-4">
+            <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="aktiv">Aktiv ({activCount})</TabsTrigger>
               <TabsTrigger value="archiv">
                 <Archive className="h-4 w-4 mr-1" />
                 Archiv ({archivCount})
               </TabsTrigger>
             </TabsList>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-end gap-2">
               <div className="flex items-center rounded-md border">
                 <Button
                   variant={viewMode === "list" ? "secondary" : "ghost"}

@@ -190,12 +190,16 @@ export function OnboardingWizard() {
   const handleNext = async () => {
     if (currentStepData?.id === "pain-points") {
       const filledPainPoints = painPoints.filter((p) => p.title.trim())
-      if (filledPainPoints.length === 0) {
-        toast.error("Bitte geben Sie mindestens ein Problem ein")
-        return
+      if (filledPainPoints.length > 0) {
+        try {
+          await savePainPoints()
+          toast.success("Ihre Herausforderungen wurden gespeichert")
+        } catch {
+          // Save failed but don't block navigation
+          toast.error("Speichern fehlgeschlagen, aber Sie können fortfahren")
+        }
       }
-      await savePainPoints()
-      toast.success("Ihre Herausforderungen wurden gespeichert")
+      // Allow proceeding even without pain points
     }
 
     completeStep(currentStepData.id)

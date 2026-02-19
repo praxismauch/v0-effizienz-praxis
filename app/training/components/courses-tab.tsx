@@ -149,7 +149,7 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete, cre
           {courses.map((course) => (
             <Card key={course.id} className="group relative hover:shadow-md transition-shadow">
               {/* Hover action buttons */}
-              <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button variant="outline" size="icon" className="h-8 w-8 bg-background shadow-sm" onClick={() => openEdit(course)}>
                   <Edit className="h-3.5 w-3.5" />
                 </Button>

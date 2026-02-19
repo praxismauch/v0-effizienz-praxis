@@ -68,7 +68,6 @@ export default function ScheduleTab({
   
   // Filter state
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedRole, setSelectedRole] = useState<string>("all")
   const [selectedGroup, setSelectedGroup] = useState<string>("all")
   
   // Dialog state
@@ -160,26 +159,16 @@ export default function ScheduleTab({
     return Array.from(groups).sort()
   }, [teamMembers])
 
-  // Get unique roles from team members for the filter dropdown
-  const availableRoles = useMemo(() => {
-    const roles = new Set<string>()
-    ;(teamMembers || []).forEach((member) => {
-      if (member.role) roles.add(member.role)
-    })
-    return Array.from(roles).sort()
-  }, [teamMembers])
-
-  // Filter team members by search query and role
+  // Filter team members by search query and group
   const filteredTeamMembers = useMemo(() => {
     return (teamMembers || []).filter((member) => {
       const fullName = `${member.first_name} ${member.last_name}`.toLowerCase()
       const matchesSearch = searchQuery === "" || fullName.includes(searchQuery.toLowerCase())
-      const matchesRole = selectedRole === "all" || member.role === selectedRole
       const memberTeamIds = member.team_ids || member.teamIds || []
-  const matchesGroup = selectedGroup === "all" || memberTeamIds.includes(selectedGroup)
-      return matchesSearch && matchesRole && matchesGroup
+      const matchesGroup = selectedGroup === "all" || memberTeamIds.includes(selectedGroup)
+      return matchesSearch && matchesGroup
     })
-  }, [teamMembers, searchQuery, selectedRole, selectedGroup])
+  }, [teamMembers, searchQuery, selectedGroup])
 
   // Memoize shifts by date and member for efficient lookups
   const shiftsByDateAndMember = React.useMemo(() => {
@@ -332,23 +321,10 @@ export default function ScheduleTab({
               </SelectContent>
             </Select>
             )}
-            {/* Role filter */}
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Alle Rollen" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle Rollen</SelectItem>
-                {availableRoles.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {getRoleLabel(role)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
           </div>
           {/* Filter info */}
-          {(searchQuery || selectedRole !== "all" || selectedGroup !== "all") && (
+          {(searchQuery || selectedGroup !== "all") && (
             <p className="text-sm text-muted-foreground">
               {filteredTeamMembers.length} von {teamMembers?.length || 0} Mitarbeitern angezeigt
             </p>

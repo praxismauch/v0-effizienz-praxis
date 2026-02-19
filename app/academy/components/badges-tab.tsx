@@ -122,7 +122,13 @@ export function BadgesTab({ isAuthenticated, userBadges, onSwitchTab }: BadgesTa
       {userBadges.map((userBadge) => {
         const IconComponent = getIconComponent(userBadge.badge?.icon_name || "award")
         return (
-          <Card key={userBadge.id} className="text-center p-6">
+          <Card key={userBadge.id} className="group relative text-center p-6">
+            <button
+              className="absolute top-3 right-3 h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted"
+              title="Erneut anzeigen"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
             <div
               className="h-16 w-16 rounded-full mx-auto flex items-center justify-center mb-4"
               style={{ backgroundColor: `${userBadge.badge?.color}20` }}
@@ -132,7 +138,7 @@ export function BadgesTab({ isAuthenticated, userBadges, onSwitchTab }: BadgesTa
             <h3 className="font-semibold">{userBadge.badge?.name}</h3>
             <p className="text-sm text-muted-foreground mt-1">{userBadge.badge?.description}</p>
             <Badge variant="outline" className="mt-3">
-              {userBadge.badge?.rarity}
+              {RARITY_LABELS[userBadge.badge?.rarity || "common"] || userBadge.badge?.rarity}
             </Badge>
             <p className="text-xs text-muted-foreground mt-2">
               Verdient am {new Date(userBadge.earned_at).toLocaleDateString("de-DE")}

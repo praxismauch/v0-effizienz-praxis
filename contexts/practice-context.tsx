@@ -220,9 +220,4 @@ export function usePractice() {
   return context
 }
 
-/** Safe version that returns undefined when outside PracticeProvider (e.g. public pages) */
-export function usePracticeOptional() {
-  return useContext(PracticeContext)
-}
-
 export default PracticeProvider

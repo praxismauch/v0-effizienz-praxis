@@ -16,51 +16,48 @@ export function createClient(): SupabaseClient {
   const supabaseAnonKey = getSupabaseAnonKey()
 
   if (!hasSupabaseConfig()) {
-    // Supabase not configured - return cached mock client
-    if (!browserClient) {
-      const mockResult = { data: null, error: null, count: null, status: 200, statusText: "OK" }
+    // Supabase not configured - return mock client with full method chaining support
+    const mockResult = { data: null, error: null, count: null, status: 200, statusText: "OK" }
 
-      function createChainable(): Record<string, unknown> {
-        const chainable: Record<string, unknown> = { ...mockResult }
-        const handler = () => createChainable()
-        const methods = [
-          "select", "insert", "update", "delete", "upsert",
-          "eq", "neq", "gt", "gte", "lt", "lte",
-          "like", "ilike", "is", "in", "contains", "containedBy",
-          "range", "textSearch", "match", "not", "or", "and", "filter",
-          "order", "limit", "offset", "single", "maybeSingle", "csv",
-          "returns", "throwOnError", "abortSignal", "rollback",
-        ]
-        for (const method of methods) {
-          chainable[method] = handler
-        }
-        chainable.then = (resolve: (value: typeof mockResult) => void) => Promise.resolve(resolve(mockResult))
-        return chainable
+    function createChainable(): Record<string, unknown> {
+      const chainable: Record<string, unknown> = { ...mockResult }
+      const handler = () => createChainable()
+      const methods = [
+        "select", "insert", "update", "delete", "upsert",
+        "eq", "neq", "gt", "gte", "lt", "lte",
+        "like", "ilike", "is", "in", "contains", "containedBy",
+        "range", "textSearch", "match", "not", "or", "and", "filter",
+        "order", "limit", "offset", "single", "maybeSingle", "csv",
+        "returns", "throwOnError", "abortSignal", "rollback",
+      ]
+      for (const method of methods) {
+        chainable[method] = handler
       }
-
-      browserClient = {
-        auth: {
-          getUser: async () => ({ data: { user: null }, error: null }),
-          getSession: async () => ({ data: { session: null }, error: null }),
-          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-          signOut: async () => ({ error: null }),
-          signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
-          signUp: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
-        },
-        from: () => createChainable(),
-        rpc: async () => mockResult,
-        storage: {
-          from: () => ({
-            upload: async () => ({ data: null, error: null }),
-            download: async () => ({ data: null, error: null }),
-            getPublicUrl: () => ({ data: { publicUrl: "" } }),
-            remove: async () => ({ data: null, error: null }),
-            list: async () => ({ data: null, error: null }),
-          }),
-        },
-      } as unknown as SupabaseClient
+      chainable.then = (resolve: (value: typeof mockResult) => void) => Promise.resolve(resolve(mockResult))
+      return chainable
     }
-    return browserClient
+
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signOut: async () => ({ error: null }),
+        signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
+        signUp: async () => ({ data: { user: null, session: null }, error: { message: "Supabase not configured" } }),
+      },
+      from: () => createChainable(),
+      rpc: async () => mockResult,
+      storage: {
+        from: () => ({
+          upload: async () => ({ data: null, error: null }),
+          download: async () => ({ data: null, error: null }),
+          getPublicUrl: () => ({ data: { publicUrl: "" } }),
+          remove: async () => ({ data: null, error: null }),
+          list: async () => ({ data: null, error: null }),
+        }),
+      },
+    } as unknown as SupabaseClient
   }
 
   browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey)

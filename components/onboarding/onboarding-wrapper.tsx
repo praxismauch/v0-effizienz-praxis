@@ -2,17 +2,36 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import { usePractice } from "@/contexts/practice-context"
+import { useState, useEffect, useContext } from "react"
 import { useUser } from "@/contexts/user-context"
 import { OnboardingWizard } from "./onboarding-wizard"
+
+// Import PracticeContext directly to do a safe check without throwing
+import { PracticeContext } from "@/contexts/practice-context"
 
 interface OnboardingWrapperProps {
   children: React.ReactNode
 }
 
 export function OnboardingWrapper({ children }: OnboardingWrapperProps) {
-  const { currentPractice, isLoading: practiceLoading } = usePractice()
+  const practiceContext = useContext(PracticeContext)
+
+  // If PracticeProvider is not in the tree yet (e.g. during SSR), just render children
+  if (!practiceContext) {
+    return <>{children}</>
+  }
+
+  return <OnboardingWrapperInner practiceContext={practiceContext}>{children}</OnboardingWrapperInner>
+}
+
+function OnboardingWrapperInner({
+  children,
+  practiceContext,
+}: {
+  children: React.ReactNode
+  practiceContext: NonNullable<ReturnType<typeof useContext<typeof PracticeContext>>>
+}) {
+  const { currentPractice, isLoading: practiceLoading } = practiceContext!
   const { currentUser, loading: userLoading } = useUser()
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [hasChecked, setHasChecked] = useState(false)

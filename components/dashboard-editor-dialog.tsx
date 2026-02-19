@@ -255,6 +255,13 @@ const COLUMN_OPTIONS = [
   { value: 5, label: "Volle Breite" },
 ]
 
+const ROW_SPAN_OPTIONS = [
+  { value: 0, label: "Standard" },
+  { value: 1, label: "1x" },
+  { value: 2, label: "2x" },
+  { value: 3, label: "3x" },
+]
+
 interface SortableWidgetProps {
   widget: (typeof WIDGET_DEFINITIONS)[0]
   config: WidgetConfig
@@ -307,35 +314,67 @@ function SortableWidget({ widget, config, setConfig, defaultSpan }: SortableWidg
       </div>
 
       {isEnabled && (
-        <div className="mt-3 pl-12 flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground whitespace-nowrap">Breite:</Label>
-          <div className="flex gap-1">
-            {COLUMN_OPTIONS.map((opt) => {
-              const currentSpan = config.columnSpans?.[widget.id] || 0
-              const isSelected = currentSpan === opt.value
-              const computedDefault = FULL_WIDTH_WIDGET_IDS.has(widget.id) ? 5 : (defaultSpan || 1)
-              const displayLabel = opt.value === 0 ? `Std. (${computedDefault})` : String(opt.value === 5 ? "Voll" : opt.value)
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  className={`px-2 py-0.5 text-xs rounded border transition-colors ${
-                    isSelected
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-input hover:border-primary/50"
-                  }`}
-                  title={opt.label}
-                  onClick={() =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      columnSpans: { ...(prev.columnSpans || {}), [widget.id]: opt.value },
-                    }))
-                  }
-                >
-                  {displayLabel}
-                </button>
-              )
-            })}
+        <div className="mt-3 pl-12 space-y-2">
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap w-12">Breite:</Label>
+            <div className="flex gap-1">
+              {COLUMN_OPTIONS.map((opt) => {
+                const currentSpan = config.columnSpans?.[widget.id] || 0
+                const isSelected = currentSpan === opt.value
+                const computedDefault = FULL_WIDTH_WIDGET_IDS.has(widget.id) ? 5 : (defaultSpan || 1)
+                const displayLabel = opt.value === 0 ? `Std. (${computedDefault})` : String(opt.value === 5 ? "Voll" : opt.value)
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-input hover:border-primary/50"
+                    }`}
+                    title={opt.label}
+                    onClick={() =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        columnSpans: { ...(prev.columnSpans || {}), [widget.id]: opt.value },
+                      }))
+                    }
+                  >
+                    {displayLabel}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap w-12">Hohe:</Label>
+            <div className="flex gap-1">
+              {ROW_SPAN_OPTIONS.map((opt) => {
+                const currentRowSpan = config.rowSpans?.[widget.id] || 0
+                const isSelected = currentRowSpan === opt.value
+                const displayLabel = opt.value === 0 ? "Std. (1)" : opt.label
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-input hover:border-primary/50"
+                    }`}
+                    title={opt.label}
+                    onClick={() =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        rowSpans: { ...(prev.rowSpans || {}), [widget.id]: opt.value },
+                      }))
+                    }
+                  >
+                    {displayLabel}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -569,7 +608,20 @@ export function DashboardEditorDialog({
     for (const [key, val] of Object.entries(config.columnSpans || {})) {
       if (val && val > 0) cleanedSpans[key] = val
     }
-    onSave({ widgets: { ...config, columnSpans: cleanedSpans, widgetOrder, linebreaks } })
+    // Clean rowSpans: remove entries with value 0 or 1 (= use default)
+    const cleanedRowSpans: Record<string, number> = {}
+    for (const [key, val] of Object.entries(config.rowSpans || {})) {
+      if (val && val > 1) cleanedRowSpans[key] = val
+    }
+    onSave({
+      widgets: {
+        ...config,
+        columnSpans: cleanedSpans,
+        rowSpans: Object.keys(cleanedRowSpans).length > 0 ? cleanedRowSpans : undefined,
+        widgetOrder,
+        linebreaks,
+      },
+    })
     onOpenChange(false)
   }
 

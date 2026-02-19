@@ -177,9 +177,13 @@ export default function SchwarzesBrettClient() {
   const [formData, setFormData] = useState(defaultFormData)
 
   const fetchPosts = useCallback(async () => {
-    if (!practiceId) return
-    try {
-      const params = new URLSearchParams()
+  console.log("[v0] fetchPosts called, practiceId=", practiceId, "activeTab=", activeTab)
+  if (!practiceId) {
+  console.log("[v0] fetchPosts: no practiceId, aborting")
+  return
+  }
+  try {
+  const params = new URLSearchParams()
       if (filterCategory !== "all") params.set("category", filterCategory)
       if (filterPriority !== "all") params.set("priority", filterPriority)
       if (filterUnread) params.set("unread", "true")
@@ -188,10 +192,13 @@ export default function SchwarzesBrettClient() {
       if (currentUser?.id) params.set("userId", currentUser.id)
       params.set("archived", activeTab === "archiv" ? "true" : "false")
 
-      const res = await fetch(`/api/practices/${practiceId}/bulletin?${params}`)
-      if (!res.ok) throw new Error("Fetch failed")
-      const data = await res.json()
-      setPosts(data.posts || [])
+  const url = `/api/practices/${practiceId}/bulletin?${params}`
+  console.log("[v0] fetchPosts: calling", url)
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
+  const data = await res.json()
+  console.log("[v0] fetchPosts: got", (data.posts || []).length, "posts")
+  setPosts(data.posts || [])
 
       // Fetch counts for both tabs
       const countActive = fetch(`/api/practices/${practiceId}/bulletin?archived=false&count_only=true${currentUser?.id ? `&userId=${currentUser.id}` : ""}`)
@@ -213,10 +220,13 @@ export default function SchwarzesBrettClient() {
   }, [practiceId, filterCategory, filterPriority, filterUnread, sortBy, searchQuery, currentUser?.id, activeTab])
 
   useEffect(() => {
-    if (practiceId) {
-      setIsLoading(true)
-      fetchPosts()
-    }
+  if (practiceId) {
+  console.log("[v0] SchwarzesBrett: triggering fetchPosts, practiceId=", practiceId)
+  setIsLoading(true)
+  fetchPosts()
+  } else {
+  console.log("[v0] SchwarzesBrett: no practiceId yet, skipping fetch")
+  }
   }, [fetchPosts, practiceId])
 
   const markAsRead = useCallback(async (postId: string) => {

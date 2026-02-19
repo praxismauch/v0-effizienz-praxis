@@ -15,6 +15,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     const supabase = await createClient()
 
+    console.log("[v0] Bulletin GET: practiceId=", practiceId, "archived=", archived, "userId=", userId)
+
     let query = supabase
       .from("bulletin_posts")
       .select("*")
@@ -58,6 +60,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     }
 
     const { data: posts, error } = await query
+
+    console.log("[v0] Bulletin GET: query returned", posts?.length ?? 0, "posts, error=", error?.message || "none")
 
     if (error) {
       console.error("Error fetching bulletin posts:", error)

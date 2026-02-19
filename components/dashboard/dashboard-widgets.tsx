@@ -36,8 +36,8 @@ export const WeeklyTasksWidget = memo(function WeeklyTasksWidget({ data }: { dat
   const maxValue = Math.max(...data.flatMap((d) => [(d.completed || 0), (d.pending || 0)]), 1)
 
   return (
-    <Link href="/todos">
-    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer">
+    <Link href="/todos" className="flex flex-col flex-1 min-h-0">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-auto">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -105,8 +105,8 @@ export const TodayScheduleWidget = memo(function TodayScheduleWidget({ data }: {
   const maxAppointments = Math.max(...data.map((d) => d.appointments || 0), 1)
 
   return (
-    <Link href="/calendar">
-    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer">
+    <Link href="/calendar" className="flex flex-col flex-1 min-h-0">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-auto">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -163,8 +163,8 @@ export const ActivityChartWidget = memo(function ActivityChartWidget({ data }: {
   const maxValue = Math.max(...data.map((d) => d.value || 0), 1)
 
   return (
-    <Link href="/analytics">
-    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer">
+    <Link href="/analytics" className="flex flex-col flex-1 min-h-0">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-auto">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -228,8 +228,8 @@ export const KPIWidget = memo(function KPIWidget({
   const trend = kpiTrend || 5
 
   return (
-    <Link href="/analytics">
-    <Card className="p-5 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[140px]">
+    <Link href="/analytics" className="flex flex-col flex-1 min-h-0">
+    <Card className="p-5 hover:shadow-md transition-shadow cursor-pointer flex-1 overflow-auto">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
           <TrendingUp className="h-5 w-5" />
@@ -264,7 +264,7 @@ export const RecentActivitiesWidget = memo(function RecentActivitiesWidget({
   activities: RecentActivity[] 
 }) {
   return (
-    <Card className="p-5 border-muted col-span-full">
+    <Card className="p-5 border-muted col-span-full flex-1 overflow-auto">
       <div className="space-y-4">
         <Link href="/todos" className="flex items-start justify-between hover:opacity-80 transition-opacity">
           <div className="flex items-start gap-3">

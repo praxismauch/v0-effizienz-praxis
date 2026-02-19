@@ -99,7 +99,7 @@ export function TimeTrackingWidget({ practiceId, userId }: TimeTrackingWidgetPro
   }, [isOnBreak, activeBreak, currentBlock?.id, startBreak, endBreak, mutate, toast])
 
   return (
-    <Card className="p-5 h-full min-h-[140px]">
+    <Card className="p-5 flex-1 overflow-auto">
       <div className="flex items-start gap-3">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-600"}`}>
           <Clock className="h-5 w-5" />

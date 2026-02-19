@@ -276,7 +276,7 @@ export function GoogleReviewsWidget({ practiceId, practiceName, practiceWebsiteU
         </div>
       </DialogContent>
 
-      <Card className="p-5 h-full min-h-[140px]">
+      <Card className="p-5 flex-1 overflow-auto">
         {isLoading ? (
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">

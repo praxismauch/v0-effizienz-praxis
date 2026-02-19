@@ -50,7 +50,7 @@ export function JournalActionItemsCard({ practiceId }: Props) {
 
   if (loading) {
     return (
-      <Card className="p-5 min-h-[140px]">
+      <Card className="p-5 flex-1 overflow-auto">
         <div className="flex items-start gap-3">
           <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
           <div className="flex-1 space-y-2">
@@ -64,8 +64,8 @@ export function JournalActionItemsCard({ practiceId }: Props) {
 
   if (actionItems.length === 0) {
     return (
-      <Link href="/practice-insights">
-      <Card className="p-5 min-h-[140px] hover:shadow-md transition-shadow cursor-pointer">
+      <Link href="/practice-insights" className="flex flex-col flex-1 min-h-0">
+      <Card className="p-5 flex-1 overflow-auto hover:shadow-md transition-shadow cursor-pointer">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
@@ -85,7 +85,7 @@ export function JournalActionItemsCard({ practiceId }: Props) {
   }
 
   return (
-    <Card className="p-5 min-h-[140px]">
+    <Card className="p-5 flex-1 overflow-auto">
       <Link href="/practice-insights" className="flex items-start justify-between mb-4 hover:opacity-80 transition-opacity">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">

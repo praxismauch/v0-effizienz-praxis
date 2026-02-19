@@ -99,7 +99,7 @@ export function SortableEditWidget({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className={`${getSpanClass(span)} ${getRowSpanClass(rowSpan)} self-stretch group relative pb-3`}>
+    <div ref={setNodeRef} style={style} className={`${getSpanClass(span)} ${getRowSpanClass(rowSpan)} overflow-hidden group relative pb-3`}>
       {/* Remove button */}
       <div className="absolute -top-3 -right-3 z-[100] flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-lg" onClick={onRemove}>
@@ -108,7 +108,7 @@ export function SortableEditWidget({
       </div>
 
       {/* Widget content — always fills the full grid cell height */}
-      <div className="ring-2 ring-transparent group-hover:ring-primary/30 rounded-lg transition-all h-full [&>*]:h-full [&>*]:overflow-auto">
+      <div className="ring-2 ring-transparent group-hover:ring-primary/30 rounded-lg transition-all h-full overflow-hidden [&>*]:h-full [&>*]:overflow-auto">
         {children}
       </div>
 

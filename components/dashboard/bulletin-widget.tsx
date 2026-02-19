@@ -127,7 +127,7 @@ export const BulletinWidget = memo(function BulletinWidget({
 
   if (isLoading) {
     return (
-      <Card className="p-5 border-muted min-h-[140px]">
+      <Card className="p-5 border-muted flex-1 overflow-auto">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 animate-pulse bg-muted rounded-xl" />
           <div className="space-y-2">
@@ -140,7 +140,7 @@ export const BulletinWidget = memo(function BulletinWidget({
   }
 
   return (
-    <Card className="p-5 border-muted min-h-[140px]">
+    <Card className="p-5 border-muted flex-1 overflow-auto">
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">

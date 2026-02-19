@@ -100,16 +100,8 @@ export function getRowSpanClass(
   return ""
 }
 
-export function getMinHeightStyle(
-  widgetId: string,
-  cockpitCardSettings: CockpitCardSetting[],
-): React.CSSProperties {
-  const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
-  if (setting?.min_height && setting.min_height !== "auto") {
-    return { minHeight: setting.min_height }
-  }
-  return {}
-}
+// Heights are now strictly controlled by grid row spans (1x=180px, 2x, 3x).
+// getMinHeightStyle is no longer used to avoid overriding grid dimensions.
 
 export function getNumericColumnSpan(
   widgetId: string,
@@ -193,8 +185,7 @@ export function useDashboardWidgets({
         return (
           <div
             key={id}
-            className={`${colClass} ${rowClass} self-stretch [&>*]:h-full [&>*]:overflow-auto`}
-            style={getMinHeightStyle(id, cockpitCardSettings)}
+            className={`${colClass} ${rowClass} flex flex-col overflow-hidden`}
           >
             {content}
           </div>

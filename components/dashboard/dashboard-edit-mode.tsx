@@ -154,14 +154,14 @@ function SortableEditWidget({
   return (
     <div ref={setNodeRef} style={style} className={`${getSpanClass(span)} ${getRowSpanClass(rowSpan)} self-start group relative pb-3`}>
       {/* Edit overlay controls */}
-      <div className="absolute -top-2 -right-2 z-20 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute -top-3 -right-3 z-[100] flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button
           variant="destructive"
           size="icon"
-          className="h-6 w-6 rounded-full shadow-md"
+          className="h-8 w-8 rounded-full shadow-lg"
           onClick={onRemove}
         >
-          <X className="h-3 w-3" />
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
@@ -171,22 +171,22 @@ function SortableEditWidget({
       </div>
 
       {/* Drag handle + column/row controls at bottom - relative to card content */}
-      <div className="flex justify-center mt-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="flex items-center gap-1 bg-background border rounded-full shadow-md px-2 py-0.5">
+      <div className="relative flex justify-center mt-2 z-[100] opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 bg-background border rounded-full shadow-lg px-3 py-1.5">
           <div
             {...attributes}
             {...listeners}
-            className="p-0.5 cursor-grab active:cursor-grabbing touch-none"
+            className="p-1 cursor-grab active:cursor-grabbing touch-none"
           >
-            <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="w-px h-4 bg-border" />
-          <Columns className="h-3 w-3 text-muted-foreground" />
+          <div className="w-px h-5 bg-border" />
+          <Columns className="h-3.5 w-3.5 text-muted-foreground" />
           {SPAN_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               type="button"
-              className={`w-5 h-5 text-[10px] rounded-full font-medium transition-colors ${
+              className={`w-7 h-7 text-xs rounded-full font-medium transition-colors ${
                 span === opt.value
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted text-muted-foreground"
@@ -196,13 +196,13 @@ function SortableEditWidget({
               {opt.label}
             </button>
           ))}
-          <div className="w-px h-4 bg-border" />
-          <Rows3 className="h-3 w-3 text-muted-foreground" />
+          <div className="w-px h-5 bg-border" />
+          <Rows3 className="h-3.5 w-3.5 text-muted-foreground" />
           {ROW_SPAN_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               type="button"
-              className={`w-5 h-5 text-[10px] rounded-full font-medium transition-colors ${
+              className={`w-7 h-7 text-xs rounded-full font-medium transition-colors ${
                 rowSpan === opt.value
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted text-muted-foreground"

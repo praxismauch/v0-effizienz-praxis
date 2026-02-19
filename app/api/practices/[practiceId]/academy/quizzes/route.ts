@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { getApiClient } from "@/lib/supabase/admin"
 
 interface QuizQuestion {
   options?: QuizOption[]
@@ -21,7 +21,7 @@ interface Quiz {
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     await params
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get("course_id")
     const moduleId = searchParams.get("module_id")
@@ -79,7 +79,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     await params
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
     const body = await request.json()
     const { questions, ...quizData } = body
 

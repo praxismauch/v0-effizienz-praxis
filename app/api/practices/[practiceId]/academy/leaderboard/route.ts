@@ -14,13 +14,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const searchParams = request.nextUrl.searchParams
-    const period = searchParams.get("period") || "all" // all, weekly, monthly
+    const period = searchParams.get("period") || "all"
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
-    console.log("[v0] Academy leaderboard - Practice ID:", practiceId, "Period:", period, "Limit:", limit)
-
     // Calculate time filter for period
-    let timeFilter = null
+    let timeFilter: string | null = null
     if (period === "weekly") {
       const weekAgo = new Date()
       weekAgo.setDate(weekAgo.getDate() - 7)
@@ -45,7 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (enrollError) {
       console.error("[v0] Enrollment query error:", enrollError)
-      throw enrollError
+      return NextResponse.json([], { status: 200 })
     }
 
     // Get badges earned per user
@@ -58,7 +56,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: userBadges } = await badgeQuery
 
     // Aggregate user stats
-    const userStatsMap = new Map()
+    const userStatsMap = new Map<string, any>()
 
     enrollments?.forEach((enrollment: any) => {
       const userId = enrollment.user_id
@@ -114,14 +112,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         average_progress: user.courses_enrolled > 0 ? Math.round(user.total_progress / user.courses_enrolled) : 0,
         score: user.courses_completed * 100 + user.badges_earned * 50 + user.total_progress,
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a: any, b: any) => b.score - a.score)
       .slice(0, limit)
-      .map((user, index) => ({
+      .map((user: any, index: number) => ({
         rank: index + 1,
         ...user,
       }))
 
-    console.log("[v0] Leaderboard result:", leaderboard.length, "users")
     return NextResponse.json(leaderboard)
   } catch (error: any) {
     console.error("[v0] Error fetching leaderboard:", error)

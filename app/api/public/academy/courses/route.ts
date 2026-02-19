@@ -1,10 +1,10 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 // Public endpoint - no authentication required
 export async function GET() {
   try {
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const { count } = await supabase.from("academy_courses").select("*", { count: "exact", head: true })
 

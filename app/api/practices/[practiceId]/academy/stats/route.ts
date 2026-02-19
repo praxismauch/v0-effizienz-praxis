@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { getApiClient } from "@/lib/supabase/admin"
 import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId: rawPracticeId } = await params
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
 
     const practiceId = await getValidatedPracticeId(rawPracticeId)
 

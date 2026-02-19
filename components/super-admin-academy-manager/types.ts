@@ -103,10 +103,14 @@ export interface AcademyBadge {
   badge_type: string
   icon_name: string
   icon_url: string
+  icon?: string
   color: string
   rarity: string
   xp_reward: number
   criteria: any
+  criteria_type?: string
+  criteria_value?: string
+  category?: string
   is_active: boolean
   display_order: number
 }
@@ -139,6 +143,27 @@ export const DIFFICULTY_LEVELS = [
   { value: "beginner", label: "Einsteiger", color: "bg-green-500" },
   { value: "intermediate", label: "Fortgeschritten", color: "bg-yellow-500" },
   { value: "advanced", label: "Experte", color: "bg-red-500" },
+]
+
+export const CRITERIA_TYPES = [
+  { value: "", label: "Keine (manuell)" },
+  { value: "welcome_tour", label: "Welcome Tour abgeschlossen" },
+  { value: "profile_complete", label: "Profil vollst\u00e4ndig ausgef\u00fcllt" },
+  { value: "first_login", label: "Erster Login" },
+  { value: "course_complete", label: "Kurs abgeschlossen" },
+  { value: "courses_completed", label: "Anzahl Kurse abgeschlossen" },
+  { value: "streak_days", label: "Tage-Streak erreicht" },
+  { value: "first_ticket", label: "Erstes Ticket erstellt" },
+  { value: "first_protocol", label: "Erstes Protokoll erstellt" },
+  { value: "first_document", label: "Erstes Dokument hochgeladen" },
+  { value: "first_survey", label: "Erste Umfrage beantwortet" },
+  { value: "first_cirs", label: "Ersten CIRS-Fall gemeldet" },
+  { value: "self_check_complete", label: "Selbst-Check abgeschlossen" },
+  { value: "team_lead", label: "Teamleiter-Rolle zugewiesen" },
+  { value: "zeiterfassung_week", label: "1 Woche Zeiterfassung" },
+  { value: "goals_achieved", label: "Anzahl Ziele erreicht" },
+  { value: "quiz_perfect", label: "Quiz mit 100% bestanden" },
+  { value: "manual", label: "Manuell vergeben" },
 ]
 
 export const BADGE_TYPES = [

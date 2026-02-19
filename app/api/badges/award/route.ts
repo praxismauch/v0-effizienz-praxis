@@ -11,14 +11,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Get the badge by badge_id
-    const { data: badge, error: badgeError } = await supabase
+    // Get the badge by id first, then fallback to criteria_type
+    let badge: any = null
+
+    const { data: badgeById } = await supabase
       .from("academy_badges")
       .select("*")
-      .eq("badge_id", badgeId)
-      .single()
+      .eq("id", badgeId)
+      .maybeSingle()
 
-    if (badgeError || !badge) {
+    if (badgeById) {
+      badge = badgeById
+    } else {
+      // Fallback: find by criteria_type (for action-based awards like "welcome_tour")
+      const { data: badgeByCriteria } = await supabase
+        .from("academy_badges")
+        .select("*")
+        .eq("criteria_type", badgeId)
+        .eq("is_active", true)
+        .maybeSingle()
+      badge = badgeByCriteria
+    }
+
+    if (!badge) {
       console.error("Badge not found:", badgeId)
       return NextResponse.json({ error: "Badge not found" }, { status: 404 })
     }
@@ -29,7 +44,7 @@ export async function POST(request: NextRequest) {
       .select("id")
       .eq("user_id", userId)
       .eq("badge_id", badge.id)
-      .single()
+      .maybeSingle()
 
     if (existingBadge) {
       return NextResponse.json({

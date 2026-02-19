@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Separator } from "@/components/ui/separator"
 import { ColorPicker } from "@/components/color-picker"
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,7 @@ import {
 } from "lucide-react"
 import { useAcademy } from "./hooks/use-academy"
 import {
-  CATEGORIES, DIFFICULTY_LEVELS, BADGE_TYPES, BADGE_RARITIES, BADGE_ICONS, VISIBILITY_OPTIONS,
+  CATEGORIES, DIFFICULTY_LEVELS, BADGE_TYPES, BADGE_RARITIES, BADGE_ICONS, CRITERIA_TYPES, VISIBILITY_OPTIONS,
   getDifficultyBadge, getBadgeIcon,
 } from "./types"
 
@@ -38,6 +39,49 @@ export function SuperAdminAcademyManager() {
   const badgeIconEl = (iconName: string) => {
     const Icon = getBadgeIcon(iconName)
     return <Icon className="h-5 w-5" />
+  }
+
+  const [aiSuggestingBadges, setAiSuggestingBadges] = useState(false)
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([])
+  const [showAiSuggestionsDialog, setShowAiSuggestionsDialog] = useState(false)
+
+  const handleAiSuggestBadges = async () => {
+    setAiSuggestingBadges(true)
+    try {
+      const res = await fetch("/api/ai/suggest-badges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ existingBadges: a.badges }),
+      })
+      const data = await res.json()
+      if (data.suggestions) {
+        setAiSuggestions(data.suggestions)
+        setShowAiSuggestionsDialog(true)
+      }
+    } catch (err) {
+      console.error("AI badge suggestion error:", err)
+    } finally {
+      setAiSuggestingBadges(false)
+    }
+  }
+
+  const handleAcceptSuggestion = (suggestion: any) => {
+    a.setBadgeForm({
+      name: suggestion.name || "",
+      description: suggestion.description || "",
+      badge_type: suggestion.badge_type || "achievement",
+      icon_name: "trophy",
+      color: suggestion.color || "#3b82f6",
+      rarity: suggestion.rarity || "common",
+      xp_reward: suggestion.xp_reward || 50,
+      is_active: true,
+      criteria: {},
+      criteria_type: suggestion.criteria_type || "",
+      criteria_value: suggestion.criteria_value || "",
+    })
+    a.setEditingBadge(null)
+    setShowAiSuggestionsDialog(false)
+    a.setShowBadgeDialog(true)
   }
 
   // Render overview tab
@@ -221,14 +265,15 @@ export function SuperAdminAcademyManager() {
 
         <TabsContent value="badges" className="mt-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between"><div><h3 className="text-lg font-medium">Gamification Badges</h3></div><Button onClick={() => { a.resetBadgeForm(); a.setEditingBadge(null); a.setShowBadgeDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Badge</Button></div>
+            <div className="flex items-center justify-between"><div><h3 className="text-lg font-medium">Gamification Badges</h3></div><div className="flex gap-2"><Button variant="outline" onClick={handleAiSuggestBadges} disabled={aiSuggestingBadges}><Sparkles className="h-4 w-4 mr-2" />{aiSuggestingBadges ? "KI denkt..." : "KI-Vorschl\u00e4ge"}</Button><Button onClick={() => { a.resetBadgeForm(); a.setEditingBadge(null); a.setShowBadgeDialog(true) }}><Plus className="h-4 w-4 mr-2" />Neues Badge</Button></div></div>
             {a.badges.length === 0 ? <Card><CardContent className="flex flex-col items-center justify-center py-12"><Award className="h-12 w-12 text-muted-foreground mb-4" /><h3>Keine Badges</h3></CardContent></Card> : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {a.badges.map((badge) => (
                   <Card key={badge.id} className="overflow-hidden"><CardContent className="pt-6"><div className="flex flex-col items-center text-center">
                     <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3" style={{ backgroundColor: badge.color + "20", color: badge.color }}>{badgeIconEl(badge.icon_name)}</div>
                     <h4 className="font-medium">{badge.name}</h4><p className="text-sm text-muted-foreground line-clamp-2 mt-1">{badge.description}</p>
-                    <div className="flex items-center gap-2 mt-3"><Badge variant="outline" className={BADGE_RARITIES.find((r) => r.value === badge.rarity)?.color}>{BADGE_RARITIES.find((r) => r.value === badge.rarity)?.label}</Badge><Badge variant="secondary"><Zap className="h-3 w-3 mr-1" />{badge.xp_reward} XP</Badge></div>
+                    <div className="flex items-center gap-2 mt-3 flex-wrap justify-center"><Badge variant="outline" className={BADGE_RARITIES.find((r) => r.value === badge.rarity)?.color}>{BADGE_RARITIES.find((r) => r.value === badge.rarity)?.label}</Badge><Badge variant="secondary"><Zap className="h-3 w-3 mr-1" />{badge.xp_reward} XP</Badge></div>
+                    {badge.criteria_type && <div className="mt-2"><Badge variant="outline" className="text-xs text-primary">{CRITERIA_TYPES.find((c) => c.value === badge.criteria_type)?.label || badge.criteria_type}{badge.criteria_value ? `: ${badge.criteria_value}` : ""}</Badge></div>}
                   </div></CardContent><CardFooter className="justify-center gap-2 border-t pt-4">
                     <Button variant="outline" size="sm" onClick={() => a.openEditBadge(badge)}><Pencil className="h-3 w-3 mr-1" />Bearbeiten</Button>
                     <Button variant="outline" size="sm" className="text-destructive hover:text-destructive bg-transparent" onClick={() => { a.setDeleteItem({ type: "badge", id: badge.id, name: badge.name }); a.setShowDeleteDialog(true) }}><Trash2 className="h-3 w-3" /></Button>
@@ -354,6 +399,10 @@ export function SuperAdminAcademyManager() {
               <div className="grid gap-2"><Label>Icon</Label><Select value={a.badgeForm.icon_name} onValueChange={(v) => a.setBadgeForm({ ...a.badgeForm, icon_name: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{BADGE_ICONS.map((i) => { const Ic = i.icon; return <SelectItem key={i.value} value={i.value}><div className="flex items-center gap-2"><Ic className="h-4 w-4" />{i.label || i.value}</div></SelectItem> })}</SelectContent></Select></div>
               <div className="grid gap-2"><ColorPicker value={a.badgeForm.color} onChange={(color) => a.setBadgeForm({ ...a.badgeForm, color })} label="Farbe" /></div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2"><Label>Ausl\u00f6ser (Aktion)</Label><Select value={a.badgeForm.criteria_type} onValueChange={(v) => a.setBadgeForm({ ...a.badgeForm, criteria_type: v })}><SelectTrigger><SelectValue placeholder="Aktion w\u00e4hlen..." /></SelectTrigger><SelectContent>{CRITERIA_TYPES.map((c) => <SelectItem key={c.value || "__none"} value={c.value || "__none"}>{c.label}</SelectItem>)}</SelectContent></Select></div>
+              <div className="grid gap-2"><Label>Wert</Label><Input value={a.badgeForm.criteria_value} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, criteria_value: e.target.value })} placeholder="z.B. completed, 5, course-id" /></div>
+            </div>
             <div className="grid gap-2"><Label>XP</Label><Input type="number" value={a.badgeForm.xp_reward} onChange={(e) => a.setBadgeForm({ ...a.badgeForm, xp_reward: Number(e.target.value) })} min={0} step={25} /></div>
             <div className="flex items-center justify-between"><Label>Aktiv</Label><Switch checked={a.badgeForm.is_active} onCheckedChange={(c) => a.setBadgeForm({ ...a.badgeForm, is_active: c })} /></div>
           </div>
@@ -409,6 +458,42 @@ export function SuperAdminAcademyManager() {
             {!a.generatedCourse ? <Button onClick={a.handleGenerateAiCourse} disabled={a.aiCourseGenerating}>{a.aiCourseGenerating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generiere...</> : <><Wand2 className="h-4 w-4 mr-2" />Generieren</>}</Button> : (
               <div className="flex gap-2"><Button variant="outline" onClick={() => a.setGeneratedCourse(null)}><RefreshCw className="h-4 w-4 mr-2" />Neu</Button><Button onClick={a.handleSaveAiCourse}><Save className="h-4 w-4 mr-2" />Speichern</Button></div>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Badge Suggestions Dialog */}
+      <Dialog open={showAiSuggestionsDialog} onOpenChange={setShowAiSuggestionsDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" />KI-Badge-Vorschl{"ä"}ge</DialogTitle>
+            <DialogDescription>W{"ä"}hlen Sie einen Vorschlag aus, um ihn als neues Badge zu {"ü"}bernehmen.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {aiSuggestions.map((s, i) => (
+              <Card key={i} className="cursor-pointer hover:border-primary transition-colors" onClick={() => handleAcceptSuggestion(s)}>
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl shrink-0">{s.icon || "🏆"}</div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium">{s.name}</h4>
+                      <p className="text-sm text-muted-foreground mt-0.5">{s.description}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        <Badge variant="outline" className="text-xs">{CRITERIA_TYPES.find((c) => c.value === s.criteria_type)?.label || s.criteria_type}</Badge>
+                        <Badge variant="secondary" className="text-xs">{s.xp_reward} XP</Badge>
+                        <Badge variant="outline" className="text-xs">{BADGE_RARITIES.find((r) => r.value === s.rarity)?.label || s.rarity}</Badge>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="shrink-0"><Plus className="h-4 w-4" /></Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {aiSuggestions.length === 0 && <p className="text-center text-muted-foreground py-8">Keine Vorschl{"ä"}ge verf{"ü"}gbar</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAiSuggestionsDialog(false)}>Schlie{"ß"}en</Button>
+            <Button variant="outline" onClick={handleAiSuggestBadges} disabled={aiSuggestingBadges}><RefreshCw className="h-4 w-4 mr-2" />Neue Vorschl{"ä"}ge</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

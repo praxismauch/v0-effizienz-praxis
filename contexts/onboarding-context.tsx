@@ -337,7 +337,24 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       isCompleted: true,
       steps: steps.map((s) => ({ ...s, completed: true })),
     })
-  }, [saveProgressToDb, steps])
+
+    // Award "Welcome Tour" badge
+    if (currentUser?.id && practiceId) {
+      try {
+        await fetch("/api/badges/award", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: currentUser.id,
+            practiceId,
+            badgeId: "welcome_tour",
+          }),
+        })
+      } catch {
+        // Badge award is non-critical, don't block onboarding completion
+      }
+    }
+  }, [saveProgressToDb, steps, currentUser?.id, practiceId])
 
   const resetOnboarding = useCallback(async () => {
     setHasCompletedOnboarding(false)

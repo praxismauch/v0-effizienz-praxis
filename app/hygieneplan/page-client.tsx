@@ -140,6 +140,24 @@ export default function HygienePlanClient() {
     }
   }, [currentPractice?.id])
 
+  const deletePlan = async (planId: string) => {
+    if (!currentPractice?.id) return
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/hygiene-plans/${planId}`, {
+        method: "DELETE",
+      })
+      if (response.ok) {
+        setHygienePlans((prev) => prev.filter((p) => p.id !== planId))
+        toast.success("Hygieneplan erfolgreich gelöscht")
+      } else {
+        toast.error("Fehler beim Löschen des Hygieneplans")
+      }
+    } catch (error) {
+      console.error("Error deleting hygiene plan:", error)
+      toast.error("Fehler beim Löschen des Hygieneplans")
+    }
+  }
+
   const loadHygienePlans = async () => {
     try {
       const response = await fetch(`/api/practices/${currentPractice?.id}/hygiene-plans`)
@@ -394,7 +412,17 @@ export default function HygienePlanClient() {
                         <Button variant="ghost" size="icon">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (confirm("Möchten Sie diesen Hygieneplan wirklich löschen?")) {
+                              deletePlan(plan.id)
+                            }
+                          }}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

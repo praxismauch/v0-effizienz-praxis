@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
 
-    const supabase = createClient()
+    const supabase = await createAdminClient()
     const body = await request.json()
 
     const badgeData = {

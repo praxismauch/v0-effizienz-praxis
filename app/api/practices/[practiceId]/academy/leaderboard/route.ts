@@ -5,7 +5,7 @@ import { getValidatedPracticeId } from "@/lib/auth/get-user-practice"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId: rawPracticeId } = await params
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const practiceId = await getValidatedPracticeId(rawPracticeId)
 

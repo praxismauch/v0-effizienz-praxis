@@ -27,7 +27,7 @@ export async function GET(
   try {
     const { badgeId } = await params
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data: badge, error } = await supabase
       .from("academy_badges")
@@ -60,7 +60,7 @@ export async function PUT(
   try {
     const { badgeId } = await params
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const body = await request.json()
 
     const updateData: BadgeUpdateData = {
@@ -121,7 +121,7 @@ export async function DELETE(
   try {
     const { badgeId } = await params
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data: badge, error } = await supabase
       .from("academy_badges")

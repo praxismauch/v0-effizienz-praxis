@@ -27,7 +27,7 @@ export async function DELETE(
     }
 
     const { error } = await supabase
-      .from("ai_analyses")
+      .from("roi_analyses")
       .delete()
       .eq("id", id)
 
@@ -72,7 +72,7 @@ export async function GET(
     }
 
     const { data, error } = await supabase
-      .from("ai_analyses")
+      .from("roi_analyses")
       .select("*")
       .eq("id", id)
       .single()

@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
 import { Pencil, Trash2, Workflow, ChevronDown, ChevronUp, Clock, Users } from "lucide-react"
-import type { WorkflowTemplate, WorkflowStep } from "@/hooks/use-workflow-templates"
+import type { WorkflowTemplate } from "@/hooks/use-workflow-templates"
 
 interface WorkflowTemplateCardProps {
   template: WorkflowTemplate
@@ -25,28 +25,32 @@ export function WorkflowTemplateCard({
   onToggleActive,
 }: WorkflowTemplateCardProps) {
   const stepsCount = template.steps?.length || 0
-  const duration = template.steps?.reduce((sum, s) => sum + (s.estimatedDuration || 0), 0) || 0
+  const duration = template.steps?.reduce((sum: number, s: any) => sum + (s.estimatedDuration || 0), 0) || 0
 
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center gap-4 p-4">
-        <button
+        <div
           onClick={onToggleExpand}
-          className="text-muted-foreground hover:text-foreground shrink-0"
+          className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggleExpand() }}
         >
           {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </button>
-        <div className="flex-1 min-w-0">
+        </div>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={onToggleExpand}>
           <div className="flex items-center gap-2">
             <h3 className="font-medium truncate">{template.name}</h3>
             <div
-              role="group"
               onClick={(e) => { e.stopPropagation(); onToggleActive() }}
               className="flex items-center gap-1.5 shrink-0 cursor-pointer"
+              role="group"
               title={template.is_active ? "Klicken zum Deaktivieren" : "Klicken zum Aktivieren"}
             >
               <Switch
                 checked={template.is_active}
+                onCheckedChange={() => onToggleActive()}
                 className="scale-75"
                 tabIndex={-1}
               />
@@ -84,7 +88,7 @@ export function WorkflowTemplateCard({
       {isExpanded && template.steps && template.steps.length > 0 && (
         <div className="border-t px-4 py-3 bg-muted/30">
           <div className="space-y-2">
-            {template.steps.map((step, i) => (
+            {template.steps.map((step: any, i: number) => (
               <div key={i} className="flex items-start gap-3 text-sm">
                 <span className="text-muted-foreground font-mono text-xs mt-0.5 w-5 shrink-0 text-right">
                   {i + 1}.

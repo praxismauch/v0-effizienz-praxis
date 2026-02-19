@@ -19,7 +19,16 @@ import {
   Medal,
   Crown,
   Sparkles,
+  RotateCcw,
 } from "lucide-react"
+
+const RARITY_LABELS: Record<string, string> = {
+  common: "Gewöhnlich",
+  uncommon: "Ungewöhnlich",
+  rare: "Selten",
+  epic: "Episch",
+  legendary: "Legendär",
+}
 import Link from "next/link"
 import type { UserBadge } from "../types"
 

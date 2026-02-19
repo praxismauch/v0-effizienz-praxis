@@ -1,23 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient, createAdminClient } from "@/lib/supabase/server"
-import { isSuperAdminRole } from "@/lib/auth-utils"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin as authRequireSuperAdmin } from "@/lib/auth-utils"
 
 async function requireSuperAdmin() {
-  const supabase = await createServerClient()
-  const adminClient = await createAdminClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) {
+  try {
+    const user = await authRequireSuperAdmin()
+    return { id: user.id, email: user.email }
+  } catch {
     throw { status: 401, message: "Unauthorized" }
   }
-  // Use admin client to bypass RLS when looking up user role
-  const { data: userData } = await adminClient.from("users").select("role").eq("id", user.id).single()
-  if (!isSuperAdminRole(userData?.role)) {
-    throw { status: 403, message: "Forbidden" }
-  }
-  return user
 }
 
 export async function GET(request: NextRequest) {

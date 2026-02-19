@@ -37,12 +37,28 @@ import { DEFAULT_WIDGETS } from "@/hooks/use-dashboard-overview"
 
 export const FULL_WIDTH_WIDGETS = new Set(["showBulletin", "showJournalActions"])
 
+// Safely resolve the flat WidgetConfig from either shape:
+// - { widgets: WidgetConfig }  (wrapper from hook)
+// - WidgetConfig               (flat, as typed)
+export function resolveWidgets(cfg: any): WidgetConfig {
+  if (!cfg) return DEFAULT_WIDGETS
+  // If cfg has a nested `widgets` property that looks like a WidgetConfig
+  if (cfg.widgets && typeof cfg.widgets === "object" && ("showGoals" in cfg.widgets || "widgetOrder" in cfg.widgets)) {
+    return cfg.widgets
+  }
+  // cfg is already a flat WidgetConfig
+  if ("showGoals" in cfg || "widgetOrder" in cfg) {
+    return cfg as WidgetConfig
+  }
+  return DEFAULT_WIDGETS
+}
+
 export function getColumnSpanClass(
   widgetId: string,
   dashboardConfig: DashboardConfig | null,
   cockpitCardSettings: CockpitCardSetting[],
 ): string {
-  const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+  const widgets = resolveWidgets(dashboardConfig)
   const userSpan = widgets.columnSpans?.[widgetId]
   const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
   const adminSpan = setting?.column_span
@@ -68,7 +84,7 @@ export function getRowSpanClass(
   dashboardConfig: DashboardConfig | null,
   cockpitCardSettings: CockpitCardSetting[],
 ): string {
-  const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+  const widgets = resolveWidgets(dashboardConfig)
   const userRowSpan = widgets.rowSpans?.[widgetId]
   if (userRowSpan && userRowSpan > 1) {
     if (userRowSpan === 3) return "md:row-span-3"
@@ -96,7 +112,7 @@ export function getNumericColumnSpan(
   dashboardConfig: DashboardConfig | null,
   cockpitCardSettings: CockpitCardSetting[],
 ): number {
-  const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+  const widgets = resolveWidgets(dashboardConfig)
   const userSpan = widgets.columnSpans?.[widgetId]
   const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
   const adminSpan = setting?.column_span
@@ -156,7 +172,7 @@ export function useDashboardWidgets({
 
   const renderWidget = useCallback(
     (widgetId: string, forEditMode = false) => {
-      const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+      const widgets = resolveWidgets(dashboardConfig)
 
       if (isLinebreakWidget(widgetId)) {
         return (
@@ -311,7 +327,7 @@ export function useDashboardWidgets({
   )
 
   const orderedWidgets = useMemo(() => {
-    const widgets = dashboardConfig?.widgets || DEFAULT_WIDGETS
+    const widgets = resolveWidgets(dashboardConfig)
     const savedOrder = widgets.widgetOrder || DEFAULT_ORDER
 
     if (!Array.isArray(savedOrder)) {

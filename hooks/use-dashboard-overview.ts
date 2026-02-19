@@ -4,10 +4,15 @@ import type React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useToast } from "@/hooks/use-toast"
 import {
-  type DashboardConfig,
   type WidgetConfig,
   DEFAULT_ORDER,
 } from "@/components/dashboard-editor-dialog"
+
+// Internal wrapper type — keeps widgets nested under a `widgets` key
+// so the rest of the app always accesses dashboardConfig.widgets.*
+interface DashboardConfigWrapper {
+  widgets: WidgetConfig
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -135,8 +140,8 @@ export function useDashboardOverview({
   )
   const [loading, setLoading] = useState(!initialData)
   const [error, setError] = useState<string | null>(null)
-  const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({
-    widgets: DEFAULT_WIDGETS,
+  const [dashboardConfig, setDashboardConfig] = useState<DashboardConfigWrapper>({
+    widgets: { ...DEFAULT_WIDGETS },
   })
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -187,9 +192,12 @@ export function useDashboardOverview({
       await safeFetch(`/api/practices/${practiceId}/documents?limit=5`, null)
 
       if (preferences?.config) {
-        setDashboardConfig({
-          widgets: { ...DEFAULT_WIDGETS, ...(preferences.config.widgets || {}) },
-        })
+        // The saved config is { widgets: WidgetConfig }
+        // Handle both cases: config.widgets exists, or config IS the WidgetConfig
+        const savedWidgets = preferences.config.widgets || preferences.config
+        const mergedWidgets = { ...DEFAULT_WIDGETS, ...savedWidgets }
+        console.log("[v0] Loaded dashboard config: widgetOrder=", mergedWidgets.widgetOrder?.slice(0, 5), "columnSpans=", mergedWidgets.columnSpans)
+        setDashboardConfig({ widgets: mergedWidgets })
       }
 
       setStats({
@@ -237,33 +245,50 @@ export function useDashboardOverview({
     fetchDashboardData()
   }, [fetchDashboardData])
 
-  // Save config
+  // Save config -- accepts either { widgets: WidgetConfig } or a flat WidgetConfig
   const handleSaveConfig = useCallback(
-    async (newConfig: { widgets: any }) => {
-      const widgets = newConfig?.widgets
-        ? newConfig.widgets.widgets || newConfig.widgets
-        : DEFAULT_WIDGETS
+    async (newConfig: { widgets?: any } | WidgetConfig) => {
+      // Normalize: extract the flat WidgetConfig regardless of wrapping
+      let flatWidgets: WidgetConfig
+      if (newConfig && "widgets" in newConfig && newConfig.widgets && typeof newConfig.widgets === "object" && "showGoals" in newConfig.widgets) {
+        // Wrapped: { widgets: WidgetConfig }
+        flatWidgets = { ...DEFAULT_WIDGETS, ...newConfig.widgets }
+      } else if (newConfig && "showGoals" in newConfig) {
+        // Already flat WidgetConfig
+        flatWidgets = { ...DEFAULT_WIDGETS, ...(newConfig as WidgetConfig) }
+      } else {
+        console.error("[v0] handleSaveConfig: unexpected shape, using defaults", newConfig)
+        flatWidgets = { ...DEFAULT_WIDGETS }
+      }
 
-      setDashboardConfig({ widgets })
+      console.log("[v0] handleSaveConfig: saving widgetOrder=", flatWidgets.widgetOrder?.slice(0, 5), "linebreaks=", flatWidgets.linebreaks, "columnSpans=", flatWidgets.columnSpans)
+
+      setDashboardConfig({ widgets: flatWidgets })
 
       if (practiceId && userId) {
         try {
+          const payload = { userId, config: { widgets: flatWidgets } }
+          console.log("[v0] handleSaveConfig: POSTing to API, practiceId=", practiceId)
           const response = await fetch(`/api/practices/${practiceId}/dashboard-preferences`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, config: { widgets } }),
+            body: JSON.stringify(payload),
           })
           if (!response.ok) {
             const errText = await response.text()
             console.error("[v0] Failed to save dashboard config:", response.status, errText)
             toast({ title: "Fehler", description: "Dashboard-Einstellungen konnten nicht gespeichert werden.", variant: "destructive" })
           } else {
+            const result = await response.json()
+            console.log("[v0] handleSaveConfig: saved successfully, result=", result?.success)
             toast({ title: "Gespeichert", description: "Dashboard-Einstellungen wurden erfolgreich gespeichert." })
           }
         } catch (err) {
           console.error("[v0] Error saving dashboard config:", err)
           toast({ title: "Fehler", description: "Dashboard-Einstellungen konnten nicht gespeichert werden.", variant: "destructive" })
         }
+      } else {
+        console.error("[v0] handleSaveConfig: missing practiceId or userId!", { practiceId, userId })
       }
     },
     [practiceId, userId, toast],
@@ -271,6 +296,7 @@ export function useDashboardOverview({
 
   const handleEditModeSave = useCallback(
     (updatedWidgets: WidgetConfig) => {
+      console.log("[v0] handleEditModeSave called, widgetOrder=", updatedWidgets.widgetOrder?.slice(0, 5), "columnSpans=", updatedWidgets.columnSpans)
       setIsEditMode(false)
       handleSaveConfig({ widgets: updatedWidgets })
     },

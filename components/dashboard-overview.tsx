@@ -13,7 +13,7 @@ import { usePractice } from "@/contexts/practice-context"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
 import { PageHeader } from "@/components/page-layout"
 import { useDashboardOverview, type DashboardInitialData } from "@/hooks/use-dashboard-overview"
-import { useDashboardWidgets } from "@/components/dashboard/render-widget"
+import { useDashboardWidgets, resolveWidgets } from "@/components/dashboard/render-widget"
 
 interface DashboardOverviewProps {
   practiceId: string
@@ -67,7 +67,8 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
     )
   }
 
-  const currentWidgets = dashboardConfig?.widgets
+  // dashboardConfig may be { widgets: WidgetConfig } (from hook) or flat WidgetConfig
+  const currentWidgets = resolveWidgets(dashboardConfig)
   const currentOrder = currentWidgets?.widgetOrder || DEFAULT_ORDER
   const currentLinebreaks = currentWidgets?.linebreaks || []
 

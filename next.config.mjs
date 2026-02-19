@@ -35,8 +35,8 @@ const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["googleapis", "nodemailer", "bcryptjs", "@sparticuz/chromium", "puppeteer-core"],
   
-  // Next.js 16: React Compiler for automatic memoization
-  reactCompiler: true,
+  // React Compiler requires babel-plugin-react-compiler to be installed
+  // reactCompiler: true,
   
   // Next.js 16: Experimental features
   experimental: {

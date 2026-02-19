@@ -58,6 +58,7 @@ function createMockClient(): ReturnType<typeof createSupabaseClient> {
 }
 
 export function createAdminClient(): ReturnType<typeof createSupabaseClient> {
+  // Return cached real client if available
   if (globalThis.__supabaseAdminClientStandalone) {
     return globalThis.__supabaseAdminClientStandalone
   }
@@ -65,14 +66,18 @@ export function createAdminClient(): ReturnType<typeof createSupabaseClient> {
   const supabaseUrl = getSupabaseUrl()
   const serviceRoleKey = getSupabaseServiceRoleKey()
 
-  if (!hasSupabaseAdminConfig()) {
+  // If config is not available yet, return mock but DON'T cache it
+  // so next call will try again (env vars may load later)
+  if (!supabaseUrl || !serviceRoleKey) {
     if (!globalThis.__supabaseAdminWarningShown) {
-      console.warn("[v0] Supabase admin client not configured - using mock client fallback")
+      console.warn("[v0] Supabase admin client not configured - using mock client fallback. URL=", !!supabaseUrl, "ServiceKey=", !!serviceRoleKey)
       globalThis.__supabaseAdminWarningShown = true
     }
     return createMockClient()
   }
 
+  // Config is available -- create and cache the real client
+  globalThis.__supabaseAdminWarningShown = false // reset warning flag
   globalThis.__supabaseAdminClientStandalone = createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,

@@ -86,8 +86,8 @@ export default function CreateHolidayRequestDialog({
       )
 
       if (res.ok) {
-        const newRequest = await res.json()
-        onRequestCreated(newRequest)
+        const data = await res.json()
+        onRequestCreated(data.request || data)
         toast.success("Urlaubsantrag erfolgreich erstellt")
         setFormData({
           team_member_id: "",
@@ -98,8 +98,8 @@ export default function CreateHolidayRequestDialog({
         })
         onOpenChange(false)
       } else {
-        const error = await res.json()
-        toast.error(error.message || "Fehler beim Erstellen des Antrags")
+        const errorData = await res.json().catch(() => ({ error: `Serverfehler (${res.status})` }))
+        toast.error(errorData.error || errorData.message || "Fehler beim Erstellen des Antrags")
       }
     } catch (error) {
       console.error("Error creating holiday request:", error)

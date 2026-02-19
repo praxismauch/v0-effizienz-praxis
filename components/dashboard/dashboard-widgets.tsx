@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { Card } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Clock, CheckSquare, CalendarDays, Activity } from "lucide-react"
-import { BarChart, LineChart, AreaChart } from "./charts"
+// Charts are now inline - no longer using charts.tsx SVG components
 
 interface WeeklyTasksData {
   day: string
@@ -30,26 +30,64 @@ interface RecentActivity {
 }
 
 export const WeeklyTasksWidget = memo(function WeeklyTasksWidget({ data }: { data: WeeklyTasksData[] }) {
+  const totalCompleted = data.reduce((sum, d) => sum + (d.completed || 0), 0)
+  const totalPending = data.reduce((sum, d) => sum + (d.pending || 0), 0)
+  const maxValue = Math.max(...data.flatMap((d) => [(d.completed || 0), (d.pending || 0)]), 1)
+
   return (
     <Card className="p-5 border-muted col-span-full">
       <div className="space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
-            <CheckSquare className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Wöchentliche Aufgaben</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Erledigte und ausstehende Aufgaben diese Woche</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+              <CheckSquare className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{"W\u00f6chentliche Aufgaben"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {totalCompleted} erledigt, {totalPending} ausstehend
+              </p>
+            </div>
           </div>
         </div>
-        <BarChart data={data} />
-        <div className="flex items-center justify-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-primary rounded" />
+
+        {data.length === 0 ? (
+          <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+            Keine Daten verfügbar
+          </div>
+        ) : (
+          <div className="flex items-end gap-2 h-32">
+            {data.map((item, index) => {
+              const completedH = Math.max(((item.completed || 0) / maxValue) * 100, 2)
+              const pendingH = Math.max(((item.pending || 0) / maxValue) * 100, 2)
+              return (
+                <div key={index} className="flex-1 flex flex-col items-center gap-1.5">
+                  <div className="w-full flex gap-1 items-end h-24">
+                    <div
+                      className="flex-1 bg-primary/80 rounded-t transition-all hover:bg-primary"
+                      style={{ height: `${completedH}%` }}
+                      title={`Erledigt: ${item.completed}`}
+                    />
+                    <div
+                      className="flex-1 bg-muted rounded-t transition-all hover:bg-muted/80"
+                      style={{ height: `${pendingH}%` }}
+                      title={`Ausstehend: ${item.pending}`}
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{item.day}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <div className="flex items-center justify-center gap-6 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 bg-primary/80 rounded-sm" />
             <span className="text-muted-foreground">Erledigt</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-muted rounded" />
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 bg-muted rounded-sm" />
             <span className="text-muted-foreground">Ausstehend</span>
           </div>
         </div>

@@ -39,9 +39,10 @@ export function WorkflowTemplateCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-medium truncate">{template.name}</h3>
-            <button
+            <div
+              role="group"
               onClick={(e) => { e.stopPropagation(); onToggleActive() }}
-              className="flex items-center gap-1.5 shrink-0"
+              className="flex items-center gap-1.5 shrink-0 cursor-pointer"
               title={template.is_active ? "Klicken zum Deaktivieren" : "Klicken zum Aktivieren"}
             >
               <Switch
@@ -52,7 +53,7 @@ export function WorkflowTemplateCard({
               <span className={`text-xs font-medium ${template.is_active ? "text-primary" : "text-muted-foreground"}`}>
                 {template.is_active ? "Aktiv" : "Inaktiv"}
               </span>
-            </button>
+            </div>
           </div>
           {template.description && (
             <p className="text-sm text-muted-foreground truncate mt-0.5">{template.description}</p>

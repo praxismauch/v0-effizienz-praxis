@@ -229,22 +229,65 @@ export async function GET(request: NextRequest) {
     const now = new Date()
 
     // Get active schedules that should run now
-    const { data: schedules, error: schedulesError } = await supabase
-      .from("backup_schedules")
-      .select("*")
-      .eq("is_active", true)
-      .lte("next_run_at", now.toISOString())
+    let schedules: any[] = []
+    try {
+      const { data, error: schedulesError } = await supabase
+        .from("backup_schedules")
+        .select("*")
+        .eq("is_active", true)
+        .lte("next_run_at", now.toISOString())
 
-    if (schedulesError) {
-      console.error("[v0] Daily backup cron: Error fetching schedules:", schedulesError)
-      throw schedulesError
+      if (schedulesError) {
+        console.error("[v0] Daily backup cron: Error fetching schedules:", schedulesError)
+        // Continue with fallback instead of throwing
+      } else {
+        schedules = data || []
+      }
+    } catch (err) {
+      console.error("[v0] Daily backup cron: backup_schedules table may not exist, using fallback:", err)
     }
 
-    console.log(`[v0] Daily backup cron: Found ${schedules?.length || 0} schedules due to run`)
+    // Fallback: If no schedules are due, create a default full backup
+    if (schedules.length === 0) {
+      console.log("[v0] Daily backup cron: No schedules due. Creating fallback full backup...")
+      // Get all active practices
+      const { data: practices } = await supabase
+        .from("practices")
+        .select("id")
+        .limit(10)
+
+      if (practices && practices.length > 0) {
+        for (const p of practices) {
+          schedules.push({
+            id: `fallback-${p.id}`,
+            practice_id: p.id,
+            backup_scope: "full",
+            schedule_type: "daily",
+            time_of_day: "02:00",
+            retention_days: 30,
+            _isFallback: true,
+          })
+        }
+      } else {
+        // No practices found, create a single global backup
+        schedules.push({
+          id: "fallback-global",
+          practice_id: null,
+          backup_scope: "full",
+          schedule_type: "daily",
+          time_of_day: "02:00",
+          retention_days: 30,
+          _isFallback: true,
+        })
+      }
+      console.log(`[v0] Daily backup cron: Created ${schedules.length} fallback schedule(s)`)
+    } else {
+      console.log(`[v0] Daily backup cron: Found ${schedules.length} schedules due to run`)
+    }
 
     const results = []
 
-    for (const schedule of schedules || []) {
+    for (const schedule of schedules) {
       try {
         const tablesToBackup =
           schedule.backup_scope === "full" ? [...GLOBAL_TABLES, ...PRACTICE_TABLES] : PRACTICE_TABLES
@@ -330,22 +373,24 @@ export async function GET(request: NextRequest) {
 
         if (backupError) throw backupError
 
-        // Update schedule
-        const nextRun = calculateNextRun(
-          schedule.schedule_type,
-          schedule.time_of_day,
-          schedule.day_of_week,
-          schedule.day_of_month,
-        )
+        // Update schedule (skip for fallback schedules)
+        if (!schedule._isFallback) {
+          const nextRun = calculateNextRun(
+            schedule.schedule_type,
+            schedule.time_of_day,
+            schedule.day_of_week,
+            schedule.day_of_month,
+          )
 
-        await supabase
-          .from("backup_schedules")
-          .update({
-            last_run_at: now.toISOString(),
-            next_run_at: nextRun,
-            updated_at: now.toISOString(),
-          })
-          .eq("id", schedule.id)
+          await supabase
+            .from("backup_schedules")
+            .update({
+              last_run_at: now.toISOString(),
+              next_run_at: nextRun,
+              updated_at: now.toISOString(),
+            })
+            .eq("id", schedule.id)
+        }
 
         // Clean up old backups based on retention
         if (schedule.retention_days) {

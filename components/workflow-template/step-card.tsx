@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { isActiveMember } from "@/lib/utils/team-member-filter"
@@ -122,12 +123,12 @@ export function StepCard({
                   <SelectContent>
                     <SelectItem value="default">Nicht zugewiesen</SelectItem>
                     {teamMembers.filter(isActiveMember).map((member) => (
-                      <SelectItem key={member.id} value={member.userId || member.id}>
-                        <div className="flex items-center gap-2">
-                          <User className="h-3 w-3" />
-                          {member.name}
-                        </div>
-                      </SelectItem>
+                      <TeamMemberSelectItem
+                        key={member.id}
+                        value={member.userId || member.id}
+                        name={member.name}
+                        avatarUrl={member.avatar}
+                      />
                     ))}
                   </SelectContent>
                 </Select>
@@ -239,11 +240,14 @@ export function StepCard({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="default">Nicht zugewiesen</SelectItem>
-                            {teamMembers.filter(isActiveMember).map((member) => (
-                              <SelectItem key={member.id} value={member.userId || member.id}>
-                                {member.name}
-                              </SelectItem>
-                            ))}
+                    {teamMembers.filter(isActiveMember).map((member) => (
+                      <TeamMemberSelectItem
+                        key={member.id}
+                        value={member.userId || member.id}
+                        name={member.name}
+                        avatarUrl={member.avatar}
+                      />
+                    ))}
                           </SelectContent>
                         </Select>
                         <Input

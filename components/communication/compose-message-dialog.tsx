@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import type { TeamMember, NewMessageData } from "./types"
@@ -76,9 +77,14 @@ export function ComposeMessageDialog({ teamMembers, onSend }: ComposeMessageDial
                   const memberId = member.user_id || member.id || member.team_member_id
                   if (!memberId) return null
                   return (
-                    <SelectItem key={memberId} value={memberId}>
-                      {member.first_name} {member.last_name} ({getRoleLabel(member.role)})
-                    </SelectItem>
+                    <TeamMemberSelectItem
+                      key={memberId}
+                      value={memberId}
+                      firstName={member.first_name}
+                      lastName={member.last_name}
+                      avatarUrl={member.avatar_url}
+                      role={getRoleLabel(member.role)}
+                    />
                   )
                 })}
               </SelectContent>

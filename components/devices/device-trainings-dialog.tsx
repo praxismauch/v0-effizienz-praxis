@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "@/hooks/use-toast"
@@ -247,13 +248,16 @@ export function DeviceTrainingsDialog({ open, onOpenChange, device }: DeviceTrai
                         const tmId = (member as any).team_member_id || member.id
                         if (!tmId) return null
                         const userId = member.user_id || member.id
+                        const needsTraining = !trainedMemberIds.has(tmId) && !trainedMemberIds.has(userId || "")
                         return (
-                          <SelectItem key={tmId} value={tmId}>
-                            {member.first_name} {member.last_name}
-                            {!trainedMemberIds.has(tmId) && !trainedMemberIds.has(userId || "") && (
-                              <span className="text-yellow-600 ml-2">(nicht eingewiesen)</span>
-                            )}
-                          </SelectItem>
+                          <TeamMemberSelectItem
+                            key={tmId}
+                            value={tmId}
+                            firstName={member.first_name}
+                            lastName={member.last_name}
+                            avatarUrl={member.avatar_url}
+                            role={needsTraining ? "(nicht eingewiesen)" : undefined}
+                          />
                         )
                       })}
                     </SelectContent>

@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import type { Shift, ShiftType, TeamMember } from "../types"
 
 interface ShiftDialogProps {
@@ -183,9 +184,13 @@ export default function ShiftDialog({
                   const memberId = getMemberId(member)
                   if (!memberId) return null
                   return (
-                    <SelectItem key={memberId} value={memberId}>
-                      {member.first_name} {member.last_name}
-                    </SelectItem>
+                    <TeamMemberSelectItem
+                      key={memberId}
+                      value={memberId}
+                      firstName={member.first_name}
+                      lastName={member.last_name}
+                      avatarUrl={member.avatar_url}
+                    />
                   )
                 })}
               </SelectContent>

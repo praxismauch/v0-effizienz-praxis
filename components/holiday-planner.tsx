@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import {
   Dialog,
   DialogContent,
@@ -723,12 +724,16 @@ export function HolidayPlanner() {
                       <SelectValue placeholder="Mitarbeiter auswählen" />
                     </SelectTrigger>
                     <SelectContent>
-                      {teamMembers?.filter(isActiveMember).map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.first_name} {m.last_name}
-                          {m.id === currentTeamMember?.id && " (Ich)"}
-                        </SelectItem>
-                      ))}
+                  {teamMembers?.filter(isActiveMember).map((m) => (
+                    <TeamMemberSelectItem
+                      key={m.id}
+                      value={m.id}
+                      firstName={m.first_name}
+                      lastName={m.last_name}
+                      avatarUrl={m.avatar_url}
+                      name={m.id === currentTeamMember?.id ? `${m.first_name} ${m.last_name} (Ich)` : undefined}
+                    />
+                  ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1056,9 +1061,13 @@ export function HolidayPlanner() {
                     <SelectContent>
                       <SelectItem value="all">Alle Mitarbeiter</SelectItem>
                       {teamMembers?.filter(isActiveMember).map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.first_name} {m.last_name}
-                        </SelectItem>
+                        <TeamMemberSelectItem
+                          key={m.id}
+                          value={m.id}
+                          firstName={m.first_name}
+                          lastName={m.last_name}
+                          avatarUrl={m.avatar_url}
+                        />
                       ))}
                     </SelectContent>
                   </Select>

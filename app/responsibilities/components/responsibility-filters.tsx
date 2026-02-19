@@ -3,6 +3,7 @@
 import { Search, Filter, User } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 
 interface TeamMember {
   id: string
@@ -57,9 +58,13 @@ export function ResponsibilityFilters({
               const memberId = member.user_id || member.id || member.team_member_id
               if (!memberId) return null
               return (
-                <SelectItem key={memberId} value={memberId}>
-                  {member.first_name} {member.last_name}
-                </SelectItem>
+                <TeamMemberSelectItem
+                  key={memberId}
+                  value={memberId}
+                  firstName={member.first_name}
+                  lastName={member.last_name}
+                  avatarUrl={member.avatar_url}
+                />
               )
             })}
           </SelectContent>

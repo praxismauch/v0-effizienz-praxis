@@ -37,6 +37,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { type TimeBlock, type TeamMember, type Team, formatMinutes, calculateWorkDuration } from "../lib/time-helpers"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import { WeeklyStatsCard } from "./weekly-stats-card"
 import { TeamStatsCard } from "./team-stats-card"
 
@@ -336,9 +337,13 @@ export default function ZeitLogsTab({
                     const memberId = member.user_id || member.id || member.team_member_id
                     if (!memberId) return null
                     return (
-                      <SelectItem key={memberId} value={memberId}>
-                        {member.first_name} {member.last_name}
-                      </SelectItem>
+                      <TeamMemberSelectItem
+                        key={memberId}
+                        value={memberId}
+                        firstName={member.first_name}
+                        lastName={member.last_name}
+                        avatarUrl={member.avatar_url}
+                      />
                     )
                   })}
                 </SelectContent>

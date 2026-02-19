@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { usePractice } from "@/contexts/practice-context"
 import { toast } from "sonner"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import type { TeamMember, HolidayRequest } from "../types"
 
 interface CreateHolidayRequestDialogProps {
@@ -137,9 +138,13 @@ export default function CreateHolidayRequestDialog({
                   const memberId = member.user_id || member.id || member.team_member_id
                   if (!memberId) return null
                   return (
-                    <SelectItem key={memberId} value={memberId}>
-                      {member.first_name} {member.last_name}
-                    </SelectItem>
+                    <TeamMemberSelectItem
+                      key={memberId}
+                      value={memberId}
+                      firstName={member.first_name}
+                      lastName={member.last_name}
+                      avatarUrl={member.avatar_url}
+                    />
                   )
                 })}
               </SelectContent>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TeamMemberSelectItem } from "@/components/team-member-select-item"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -235,17 +236,14 @@ export function ProtocolFormDialog({
                                 const memberId = member.user_id || member.id || member.team_member_id
                                 if (!memberId) return null
                                 return (
-                                  <SelectItem key={memberId} value={memberId}>
-                                    <div className="flex items-center gap-2">
-                                      <Avatar className="h-5 w-5">
-                                        <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
-                                        <AvatarFallback className="text-xs">
-                                          {member.name?.charAt(0) || "?"}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      {member.name}
-                                    </div>
-                                  </SelectItem>
+                                  <TeamMemberSelectItem
+                                    key={memberId}
+                                    value={memberId}
+                                    name={member.name}
+                                    firstName={member.first_name}
+                                    lastName={member.last_name}
+                                    avatarUrl={member.avatar_url}
+                                  />
                                 )
                               })}
                             </SelectContent>

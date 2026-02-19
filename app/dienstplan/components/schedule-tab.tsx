@@ -27,13 +27,14 @@ import { useToast } from "@/hooks/use-toast"
 import ShiftDialog from "./shift-dialog"
 import SwapRequestDialog from "./swap-request-dialog"
 import ScheduleTemplateDialog from "./schedule-template-dialog"
-import type { TeamMember, Shift, ShiftType, ScheduleTemplate } from "../types"
+import type { TeamMember, Shift, ShiftType, ScheduleTemplate, Team } from "../types"
 
 interface ScheduleTabProps {
   weekDays: Date[]
   teamMembers: TeamMember[]
   schedules: Shift[]
   shiftTypes: ShiftType[]
+  teams?: Team[]
   practiceId: string
   onRefresh: () => Promise<void>
   setSchedules: React.Dispatch<React.SetStateAction<Shift[]>>
@@ -52,6 +53,7 @@ export default function ScheduleTab({
   teamMembers: teamMembersProp,
   schedules: schedulesProp,
   shiftTypes: shiftTypesProp,
+  teams: teamsProp,
   practiceId,
   onRefresh,
   setSchedules,
@@ -61,6 +63,7 @@ export default function ScheduleTab({
   const teamMembers = teamMembersProp || []
   const schedules = schedulesProp || []
   const shiftTypes = shiftTypesProp || []
+  const teams = teamsProp || []
   const { toast } = useToast()
   
   // Filter state
@@ -172,7 +175,8 @@ export default function ScheduleTab({
       const fullName = `${member.first_name} ${member.last_name}`.toLowerCase()
       const matchesSearch = searchQuery === "" || fullName.includes(searchQuery.toLowerCase())
       const matchesRole = selectedRole === "all" || member.role === selectedRole
-      const matchesGroup = selectedGroup === "all" || member.department === selectedGroup
+      const memberTeamIds = member.team_ids || member.teamIds || []
+  const matchesGroup = selectedGroup === "all" || memberTeamIds.includes(selectedGroup)
       return matchesSearch && matchesRole && matchesGroup
     })
   }, [teamMembers, searchQuery, selectedRole, selectedGroup])
@@ -311,14 +315,30 @@ export default function ScheduleTab({
                 className="pl-9"
               />
             </div>
-            {/* Role/Group filter */}
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
+            {/* Team/Group filter */}
+            {teams.length > 0 && (
+            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Alle Gruppen" />
+                <SelectValue placeholder="Alle Teams" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alle Gruppen</SelectItem>
+                <SelectItem value="all">Alle Teams</SelectItem>
+                {teams.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            )}
+            {/* Role filter */}
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Alle Rollen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Rollen</SelectItem>
                 {availableRoles.map((role) => (
                   <SelectItem key={role} value={role}>
                     {getRoleLabel(role)}
@@ -328,7 +348,7 @@ export default function ScheduleTab({
             </Select>
           </div>
           {/* Filter info */}
-          {(searchQuery || selectedRole !== "all") && (
+          {(searchQuery || selectedRole !== "all" || selectedGroup !== "all") && (
             <p className="text-sm text-muted-foreground">
               {filteredTeamMembers.length} von {teamMembers?.length || 0} Mitarbeitern angezeigt
             </p>

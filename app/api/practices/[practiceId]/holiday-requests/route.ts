@@ -15,13 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     let query = supabase
       .from("holiday_requests")
-      .select(`
-        *,
-        team_member:team_members(
-          id, first_name, last_name, user_id,
-          user:users(id, name, first_name, last_name, avatar)
-        )
-      `)
+      .select("*")
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .gte("start_date", `${year}-01-01`)
@@ -29,7 +23,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .order("start_date", { ascending: true })
 
     if (teamMemberId) {
-      query = query.eq("team_member_id", teamMemberId)
+      query = query.eq("user_id", teamMemberId)
     }
 
     if (status) {
@@ -119,8 +113,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .from("holiday_requests")
       .insert({
         practice_id: practiceId,
-        team_member_id: teamMemberId,
-        user_id: userId || user.id,
+        user_id: teamMemberId || userId || user.id,
         start_date: startDate,
         end_date: endDate,
         days_count: daysCount,

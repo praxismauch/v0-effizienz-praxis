@@ -409,6 +409,7 @@ export default function DienstplanPageClient({
             schedules={schedules}
             teamMembers={teamMembers}
             shiftTypes={shiftTypes}
+            teams={teams}
             practiceId={practiceId}
             onRefresh={fetchData}
             setSchedules={setSchedules}

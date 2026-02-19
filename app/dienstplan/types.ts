@@ -7,6 +7,14 @@ export interface TeamMember {
   email?: string
   department?: string | null
   position?: string | null
+  team_ids?: string[]
+  teamIds?: string[]
+}
+
+export interface Team {
+  id: string
+  name: string
+  practice_id?: string
 }
 
 export interface ShiftType {

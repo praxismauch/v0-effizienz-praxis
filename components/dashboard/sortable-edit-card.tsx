@@ -99,7 +99,7 @@ export function SortableEditWidget({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className={`${getSpanClass(span)} ${getRowSpanClass(rowSpan)} overflow-visible group relative pb-3`}>
+    <div ref={setNodeRef} style={{ ...style, overflow: "visible" }} className={`${getSpanClass(span)} ${getRowSpanClass(rowSpan)} group relative`}>
       {/* Remove button */}
       <div className="absolute -top-3 -right-3 z-[100] flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-lg" onClick={onRemove}>
@@ -107,14 +107,14 @@ export function SortableEditWidget({
         </Button>
       </div>
 
-      {/* Widget content — always fills the full grid cell height */}
-      <div className="ring-2 ring-transparent group-hover:ring-primary/30 rounded-lg transition-all h-full overflow-hidden [&>*]:h-full [&>*]:overflow-auto">
+      {/* Widget content — fills most of grid cell height, leaving room for controls */}
+      <div className="ring-2 ring-transparent group-hover:ring-primary/30 rounded-lg transition-all h-[calc(100%-2rem)] overflow-hidden [&>*]:h-full [&>*]:overflow-hidden">
         {children}
       </div>
 
-      {/* Drag handle + span controls */}
-      <div className="relative flex justify-center mt-2 z-[100] opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="flex items-center gap-1.5 bg-background border rounded-full shadow-lg px-3 py-1.5">
+      {/* Drag handle + span controls — sits below the card in the remaining space */}
+      <div className="flex justify-center mt-1 z-[100] opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 bg-background border rounded-full shadow-lg px-3 py-1">
           <div {...attributes} {...listeners} className="p-1 cursor-grab active:cursor-grabbing touch-none">
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </div>

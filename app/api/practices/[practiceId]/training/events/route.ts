@@ -32,15 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     const { data, error } = await supabase
       .from("training_events")
-      .select(`
-        *,
-        registrations:training_event_registrations(
-          id,
-          team_member_id,
-          status,
-          completed_at
-        )
-      `)
+      .select("*")
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .order("start_date", { ascending: true })

@@ -2,7 +2,8 @@
 
 import { memo } from "react"
 import { Card } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, Clock, CheckSquare, CalendarDays, Activity } from "lucide-react"
+import { TrendingUp, TrendingDown, Clock, CheckSquare, CalendarDays, Activity, ArrowUpRight } from "lucide-react"
+import Link from "next/link"
 // Charts are now inline - no longer using charts.tsx SVG components
 
 interface WeeklyTasksData {
@@ -35,7 +36,8 @@ export const WeeklyTasksWidget = memo(function WeeklyTasksWidget({ data }: { dat
   const maxValue = Math.max(...data.flatMap((d) => [(d.completed || 0), (d.pending || 0)]), 1)
 
   return (
-    <Card className="p-5 border-muted col-span-full">
+    <Link href="/todos">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -49,6 +51,7 @@ export const WeeklyTasksWidget = memo(function WeeklyTasksWidget({ data }: { dat
               </p>
             </div>
           </div>
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
         </div>
 
         {data.length === 0 ? (
@@ -93,6 +96,7 @@ export const WeeklyTasksWidget = memo(function WeeklyTasksWidget({ data }: { dat
         </div>
       </div>
     </Card>
+    </Link>
   )
 })
 
@@ -101,7 +105,8 @@ export const TodayScheduleWidget = memo(function TodayScheduleWidget({ data }: {
   const maxAppointments = Math.max(...data.map((d) => d.appointments || 0), 1)
 
   return (
-    <Card className="p-5 border-muted col-span-full">
+    <Link href="/calendar">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -115,6 +120,7 @@ export const TodayScheduleWidget = memo(function TodayScheduleWidget({ data }: {
               </p>
             </div>
           </div>
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
         </div>
 
         {data.length === 0 ? (
@@ -148,6 +154,7 @@ export const TodayScheduleWidget = memo(function TodayScheduleWidget({ data }: {
         )}
       </div>
     </Card>
+    </Link>
   )
 })
 
@@ -156,7 +163,8 @@ export const ActivityChartWidget = memo(function ActivityChartWidget({ data }: {
   const maxValue = Math.max(...data.map((d) => d.value || 0), 1)
 
   return (
-    <Card className="p-5 border-muted col-span-full">
+    <Link href="/analytics">
+    <Card className="p-5 border-muted col-span-full hover:shadow-md transition-shadow cursor-pointer">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
@@ -170,6 +178,7 @@ export const ActivityChartWidget = memo(function ActivityChartWidget({ data }: {
               </p>
             </div>
           </div>
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
         </div>
 
         {data.length === 0 ? (
@@ -204,6 +213,7 @@ export const ActivityChartWidget = memo(function ActivityChartWidget({ data }: {
         )}
       </div>
     </Card>
+    </Link>
   )
 })
 
@@ -218,7 +228,8 @@ export const KPIWidget = memo(function KPIWidget({
   const trend = kpiTrend || 5
 
   return (
-    <Card className="p-5 hover:shadow-md transition-shadow h-full min-h-[140px]">
+    <Link href="/analytics">
+    <Card className="p-5 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[140px]">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
           <TrendingUp className="h-5 w-5" />
@@ -243,6 +254,7 @@ export const KPIWidget = memo(function KPIWidget({
         </div>
       )}
     </Card>
+    </Link>
   )
 })
 
@@ -254,15 +266,18 @@ export const RecentActivitiesWidget = memo(function RecentActivitiesWidget({
   return (
     <Card className="p-5 border-muted col-span-full">
       <div className="space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-            <Clock className="h-5 w-5" />
+        <Link href="/todos" className="flex items-start justify-between hover:opacity-80 transition-opacity">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Letzte Aktivitäten</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Die neuesten Ereignisse in Ihrer Praxis</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Letzte Aktivitäten</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Die neuesten Ereignisse in Ihrer Praxis</p>
-          </div>
-        </div>
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground mt-1" />
+        </Link>
         <div className="space-y-3">
           {activities.slice(0, 5).map((activity) => (
             <div

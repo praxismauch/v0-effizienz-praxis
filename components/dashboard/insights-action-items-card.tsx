@@ -4,7 +4,8 @@ import useSWR from "swr"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { BookOpen, Target, Sparkles } from "lucide-react"
+import { BookOpen, Target, Sparkles, ArrowUpRight } from "lucide-react"
+import Link from "next/link"
 
 interface ActionItem {
   id: string
@@ -63,33 +64,41 @@ export function JournalActionItemsCard({ practiceId }: Props) {
 
   if (actionItems.length === 0) {
     return (
-      <Card className="p-5 min-h-[140px]">
+      <Link href="/practice-insights">
+      <Card className="p-5 min-h-[140px] hover:shadow-md transition-shadow cursor-pointer">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Journal Handlungsempfehlungen</p>
+              <p className="text-3xl font-bold tracking-tight mt-1">0</p>
+              <p className="text-xs text-muted-foreground mt-1">Noch keine Handlungsempfehlungen vorhanden.</p>
+            </div>
+          </div>
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </Card>
+      </Link>
+    )
+  }
+
+  return (
+    <Card className="p-5 min-h-[140px]">
+      <Link href="/practice-insights" className="flex items-start justify-between mb-4 hover:opacity-80 transition-opacity">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
             <BookOpen className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Journal Handlungsempfehlungen</p>
-            <p className="text-3xl font-bold tracking-tight mt-1">0</p>
-            <p className="text-xs text-muted-foreground mt-1">Noch keine Handlungsempfehlungen vorhanden.</p>
+            <p className="text-3xl font-bold tracking-tight mt-1">{actionItems.length}</p>
+            {journalTitle && <p className="text-xs text-muted-foreground mt-0.5">{journalTitle}</p>}
           </div>
         </div>
-      </Card>
-    )
-  }
-
-  return (
-    <Card className="p-5 min-h-[140px]">
-      <div className="flex items-start gap-3 mb-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-          <BookOpen className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Journal Handlungsempfehlungen</p>
-          <p className="text-3xl font-bold tracking-tight mt-1">{actionItems.length}</p>
-          {journalTitle && <p className="text-xs text-muted-foreground mt-0.5">{journalTitle}</p>}
-        </div>
-      </div>
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground mt-1" />
+      </Link>
       <div className="space-y-2">
         {actionItems.map((item) => (
           <div key={item.id} className={`p-3 rounded-lg border ${getPriorityColor(item.priority)}`}>

@@ -14,7 +14,7 @@ export async function PATCH(
     const allowedFields = [
       "name", "title", "description", "provider", "category",
       "format", "duration_hours", "cost", "url", "is_online",
-      "registration_url", "is_mandatory", "is_active", "max_participants", "location"
+      "registration_url", "is_mandatory", "is_active"
     ]
 
     const updateData: Record<string, unknown> = {}

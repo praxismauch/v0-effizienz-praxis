@@ -94,10 +94,12 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete, cre
         : `/api/practices/${practiceId}/training/courses`
       const method = isEdit ? "PUT" : "POST"
 
+      // Strip fields that don't exist in the DB
+      const { location, max_participants, ...apiData } = formData as any
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(apiData),
       })
 
       if (!res.ok) {
@@ -148,30 +150,30 @@ export function CoursesTab({ courses, practiceId, onCoursesChange, onDelete, cre
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.map((course) => (
             <Card key={course.id} className="group relative hover:shadow-md transition-shadow">
-              {/* Hover action buttons */}
-              <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="outline" size="icon" className="h-8 w-8 bg-background shadow-sm" onClick={() => openEdit(course)}>
-                  <Edit className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 bg-background shadow-sm text-destructive hover:text-destructive"
-                  onClick={() => onDelete(course.id, course.name)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1 pr-16">
+                  <div className="flex-1">
                     <CardTitle className="text-lg">{course.name}</CardTitle>
                     <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                   </div>
-                  <Badge variant={course.is_mandatory ? "destructive" : "secondary"}>
-                    {course.is_mandatory ? "Pflicht" : "Optional"}
-                  </Badge>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="outline" size="icon" className="h-7 w-7 bg-background" onClick={() => openEdit(course)}>
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 bg-background text-destructive hover:text-destructive"
+                        onClick={() => onDelete(course.id, course.name)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <Badge variant={course.is_mandatory ? "destructive" : "secondary"} className="ml-1">
+                      {course.is_mandatory ? "Pflicht" : "Optional"}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>

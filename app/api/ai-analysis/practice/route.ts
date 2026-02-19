@@ -1009,7 +1009,7 @@ Sei konstruktiv, aber ehrlich. Hebe Stärken hervor UND identifiziere konkrete V
     let analysis
     try {
       const { text } = await generateText({
-        model: "anthropic/claude-sonnet-4-20250514",
+        model: "anthropic/claude-sonnet-4.6",
         prompt: fullPrompt,
         maxOutputTokens: 4000,
         temperature: 0.3,

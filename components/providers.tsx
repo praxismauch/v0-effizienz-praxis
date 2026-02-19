@@ -1,6 +1,6 @@
 "use client"
 
-import React, { type ReactNode } from "react"
+import React from "react"
 import { UserProvider, type User } from "@/contexts/user-context"
 import { PracticeProvider } from "@/contexts/practice-context"
 import { TeamProvider } from "@/contexts/team-context"
@@ -16,57 +16,33 @@ import GlobalDragPrevention from "@/components/global-drag-prevention"
 import { SWRProvider } from "@/lib/swr-config"
 import { ErrorBoundary } from "@/components/error-boundary"
 
-const PUBLIC_ROUTES = [
-  "/",
-  // Auth routes
-  "/login",
-  "/register",
-  "/auth/login",
-  "/auth/register",
-  "/auth/sign-up",
-  "/auth/reset-password",
-  "/auth/callback",
-  "/auth/pending-approval",
-  "/auth/sign-up-success",
-  // Landing pages
-  "/features",
-  "/effizienz",
-  "/about",
-  "/contact",
-  "/kontakt",
-  "/preise",
-  "/coming-soon",
-  "/demo",
-  "/help",
-  "/careers",
-  "/karriere",
-  "/ueber-uns",
-  "/team",
-  "/info",
-  "/wunschpatient",
-  "/whats-new",
-  "/updates",
-  "/blog",
-  // Legal pages
-  "/impressum",
-  "/datenschutz",
-  "/agb",
-  "/sicherheit",
-  "/cookies",
-]
-
-const PUBLIC_ROUTE_PREFIXES = ["/features/", "/blog/", "/auth/"]
-
-function isPublicRoute(pathname: string): boolean {
-  // Check exact matches
-  if (PUBLIC_ROUTES.includes(pathname)) return true
-
-  // Check prefix matches for dynamic routes
-  for (const prefix of PUBLIC_ROUTE_PREFIXES) {
-    if (pathname.startsWith(prefix)) return true
-  }
-
-  return false
+/**
+ * Heavy dashboard-only providers.
+ * Only rendered when an authenticated user is available.
+ * This avoids loading ~1,800 lines of context code on public pages.
+ */
+function DashboardProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <PracticeProvider>
+      <SidebarSettingsProvider>
+        <OnboardingProvider>
+          <TeamProvider>
+            <TodoProvider>
+              <CalendarProvider>
+                <WorkflowProvider>
+                  <AnalyticsDataProvider>
+                    <RoutePersistence />
+                    <GlobalDragPrevention />
+                    {children}
+                  </AnalyticsDataProvider>
+                </WorkflowProvider>
+              </CalendarProvider>
+            </TodoProvider>
+          </TeamProvider>
+        </OnboardingProvider>
+      </SidebarSettingsProvider>
+    </PracticeProvider>
+  )
 }
 
 export function Providers({
@@ -76,31 +52,19 @@ export function Providers({
   children: React.ReactNode
   initialUser?: User | null
 }) {
+  const isAuthenticated = !!initialUser
+
   return (
     <SWRProvider>
       <UserProvider initialUser={initialUser}>
         <TranslationProvider>
-          <PracticeProvider>
-            <SidebarSettingsProvider>
-              <OnboardingProvider>
-                <TeamProvider>
-                  <TodoProvider>
-                    <CalendarProvider>
-                      <WorkflowProvider>
-                        <AnalyticsDataProvider>
-                          <ErrorBoundary>
-                            <RoutePersistence />
-                            <GlobalDragPrevention />
-                            {children}
-                          </ErrorBoundary>
-                        </AnalyticsDataProvider>
-                      </WorkflowProvider>
-                    </CalendarProvider>
-                  </TodoProvider>
-                </TeamProvider>
-              </OnboardingProvider>
-            </SidebarSettingsProvider>
-          </PracticeProvider>
+          <ErrorBoundary>
+            {isAuthenticated ? (
+              <DashboardProviders>{children}</DashboardProviders>
+            ) : (
+              children
+            )}
+          </ErrorBoundary>
         </TranslationProvider>
       </UserProvider>
     </SWRProvider>

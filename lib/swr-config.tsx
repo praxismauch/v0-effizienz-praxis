@@ -57,7 +57,7 @@ const fetcher = async (url: string) => {
 export const SHARED_SWR_CONFIG = {
   revalidateOnFocus: false,
   dedupingInterval: 2000,
-  errorRetryCount: 2,
+  errorRetryCount: 3,
   errorRetryInterval: 1000,
 } as const
 
@@ -86,7 +86,7 @@ export function SWRProvider({ children }: { children: ReactNode }) {
     shouldRetryOnError: (error: any) => {
       const status = error?.status
 
-      // List of all status codes that should NOT retry
+      // Client errors that should NOT retry (request is inherently wrong)
       const noRetryStatuses = [
         400, // Bad Request - malformed query, won't fix itself
         401, // Unauthorized - need to re-authenticate
@@ -96,20 +96,27 @@ export function SWRProvider({ children }: { children: ReactNode }) {
         409, // Conflict
         410, // Gone
         422, // Unprocessable Entity - validation error
-        429, // Too Many Requests - rate limited (could retry with backoff, but safer to stop)
-        500, // Internal Server Error
         501, // Not Implemented
-        502, // Bad Gateway
-        503, // Service Unavailable
-        504, // Gateway Timeout
       ]
 
       if (noRetryStatuses.includes(status)) {
         return false
       }
 
-      // Only retry on network errors or unknown errors
+      // Retry transient errors: 429, 500, 502, 503, 504, network errors
       return true
+    },
+
+    // Exponential backoff: 1s, 2s, 4s, 8s... capped at 30s
+    onErrorRetry: (error: any, _key: string, _config: any, revalidate: any, { retryCount }: { retryCount: number }) => {
+      const status = error?.status
+
+      // Don't retry client errors
+      if (status && status >= 400 && status < 500) return
+
+      // Exponential backoff with jitter, capped at 30s
+      const delay = Math.min(1000 * Math.pow(2, retryCount) + Math.random() * 500, 30000)
+      setTimeout(() => revalidate({ retryCount }), delay)
     },
 
     onError: (error: unknown, key: string) => {

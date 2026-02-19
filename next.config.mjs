@@ -35,8 +35,8 @@ const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["googleapis", "nodemailer", "bcryptjs", "@sparticuz/chromium", "puppeteer-core"],
   
-  // Next.js 16: React Compiler (moved from experimental in v16)
-  reactCompiler: false, // Enable when ready for React Compiler
+  // Next.js 16: React Compiler for automatic memoization
+  reactCompiler: true,
   
   // Next.js 16: Experimental features
   experimental: {
@@ -44,6 +44,7 @@ const nextConfig = {
     // Optimize package imports for faster builds and smaller bundles
     optimizePackageImports: [
       'lucide-react',
+      'framer-motion',
       '@radix-ui/react-icons',
       '@radix-ui/react-avatar',
       '@radix-ui/react-dialog',
@@ -51,6 +52,11 @@ const nextConfig = {
       '@radix-ui/react-popover',
       '@radix-ui/react-select',
       '@radix-ui/react-tabs',
+      '@radix-ui/react-tooltip',
+      '@radix-ui/react-accordion',
+      '@tiptap/core',
+      '@tiptap/react',
+      '@tiptap/starter-kit',
       'date-fns',
       'recharts',
       '@supabase/supabase-js',
@@ -59,66 +65,32 @@ const nextConfig = {
       'sonner',
       'react-hook-form',
       'zod',
+      'xlsx',
+      'docx',
+      'dequal',
     ],
   },
   
-  // Webpack optimizations for bundle size
+  // Webpack: extend (not override) Next.js defaults for large libraries
   webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Ensure proper code splitting for large libraries
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // Supabase client - load on demand only
-            supabase: {
-              name: 'supabase',
-              test: /[\\/]node_modules[\\/](@supabase)[\\/]/,
-              priority: 10,
-              reuseExistingChunk: true,
-            },
-            // SWR - load on demand only
-            swr: {
-              name: 'swr',
-              test: /[\\/]node_modules[\\/](swr)[\\/]/,
-              priority: 10,
-              reuseExistingChunk: true,
-            },
-            // Charts library - load on demand
-            recharts: {
-              name: 'recharts',
-              test: /[\\/]node_modules[\\/](recharts|d3-.*)[\\/]/,
-              priority: 10,
-              reuseExistingChunk: true,
-            },
-            // Common React libraries
-            react: {
-              name: 'react',
-              test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
-              priority: 20,
-              reuseExistingChunk: true,
-            },
-            // UI components that are used everywhere
-            ui: {
-              name: 'ui',
-              test: /[\\/]node_modules[\\/](@radix-ui)[\\/]/,
-              priority: 15,
-              reuseExistingChunk: true,
-            },
-            // Other vendor libraries
-            lib: {
-              name: 'lib',
-              test: /[\\/]node_modules[\\/]/,
-              priority: 5,
-              minChunks: 2,
-              reuseExistingChunk: true,
-            },
-          },
+    if (!isServer && config.optimization?.splitChunks?.cacheGroups) {
+      // Add custom cache groups without disabling Next.js defaults
+      Object.assign(config.optimization.splitChunks.cacheGroups, {
+        recharts: {
+          name: 'recharts',
+          test: /[\\/]node_modules[\\/](recharts|d3-.*)[\\/]/,
+          priority: 30,
+          reuseExistingChunk: true,
+          enforce: true,
         },
-      }
+        tiptap: {
+          name: 'tiptap',
+          test: /[\\/]node_modules[\\/](@tiptap|prosemirror-.*)[\\/]/,
+          priority: 30,
+          reuseExistingChunk: true,
+          enforce: true,
+        },
+      })
     }
     return config
   },

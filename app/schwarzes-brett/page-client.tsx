@@ -404,7 +404,7 @@ export default function SchwarzesBrettClient() {
         {/* Tabs: Active / Archive */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList>
+            <TabsList className="w-full sm:w-auto grid grid-cols-2">
               <TabsTrigger value="aktiv">Aktiv ({activCount})</TabsTrigger>
               <TabsTrigger value="archiv">
                 <Archive className="h-4 w-4 mr-1" />

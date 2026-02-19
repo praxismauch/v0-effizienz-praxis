@@ -5,7 +5,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 })
 
 /** @type {import('next').NextConfig} */
-// Force cache invalidation - ghost directory cleanup
+// Force Turbopack cache invalidation after revert - v51
 const nextConfig = {
   // TypeScript build errors are currently ignored to allow rapid development
   // Enable strict type checking once the codebase matures and types are properly defined

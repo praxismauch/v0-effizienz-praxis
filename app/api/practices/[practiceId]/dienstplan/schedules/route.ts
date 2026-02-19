@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     let query = supabase
       .from("shift_schedules")
-      .select("*")
+      .select("*, shift_type:shift_types(*)")
       .eq("practice_id", practiceId)
       .neq("status", "cancelled")
       .order("shift_date")

@@ -50,7 +50,9 @@ const ScheduleCell = React.memo(function ScheduleCell({
         </div>
       ) : (
         shifts.map((shift) => {
-          const shiftType = getShiftType(shift.shift_type_id)
+          // Try lookup first, then fall back to embedded shift_type on the shift object
+          const shiftType = getShiftType(shift.shift_type_id) || shift.shift_type
+          const displayName = shiftType?.short_name || shiftType?.name || shift.shift_type_id?.slice(0, 4) || "?"
           const Icon = shiftType ? getShiftIcon(shiftType.name) : Clock
           return (
             <div
@@ -62,7 +64,7 @@ const ScheduleCell = React.memo(function ScheduleCell({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Icon className="h-3 w-3" />
-                  <span className="font-medium">{shiftType?.short_name || "?"}</span>
+                  <span className="font-medium">{displayName}</span>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

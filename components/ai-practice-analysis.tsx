@@ -24,7 +24,7 @@ interface AnalysisInsight {
 const CATEGORY_LABELS: Record<string, string> = {
   team: "Team",
   finance: "Finanzen",
-  patientSatisfaction: "Patientenzufriedenheit",
+  patientSatisfaction: "Patientenzufriedenheit (Google)",
   support: "Support",
   goals: "Ziele",
   recruiting: "Recruiting",

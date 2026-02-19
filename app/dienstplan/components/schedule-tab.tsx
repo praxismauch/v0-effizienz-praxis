@@ -158,10 +158,10 @@ export default function ScheduleTab({
   }, [teamMembers])
 
   // Get unique roles from team members for the filter dropdown
-> const availableRoles = useMemo(() => {
-  const roles = new Set<string>()
-  ;(teamMembers || []).forEach((member) => {
-  if (member.role) roles.add(member.role)
+  const availableRoles = useMemo(() => {
+    const roles = new Set<string>()
+    ;(teamMembers || []).forEach((member) => {
+      if (member.role) roles.add(member.role)
     })
     return Array.from(roles).sort()
   }, [teamMembers])

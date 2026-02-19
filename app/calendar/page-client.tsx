@@ -164,11 +164,11 @@ export default function CalendarPageClient({ initialEvents, practiceId, user }: 
   }, [events, searchTerm, selectedTypes, selectedPriorities, sortBy])
 
   const upcomingEvents = useMemo(() => {
-    const now = new Date()
-    const sevenDaysLater = addDays(now, 7)
+    // Use start of today (local time) so today's events are always included
+    const todayStr = format(new Date(), "yyyy-MM-dd")
+    const thirtyDaysLaterStr = format(addDays(new Date(), 30), "yyyy-MM-dd")
     return filteredAndSortedEvents.filter((e) => {
-      const eventDate = new Date(e.startDate)
-      return eventDate >= now && eventDate <= sevenDaysLater
+      return e.startDate >= todayStr && e.startDate <= thirtyDaysLaterStr
     })
   }, [filteredAndSortedEvents])
 
@@ -334,8 +334,8 @@ export default function CalendarPageClient({ initialEvents, practiceId, user }: 
         <TabsContent value="upcoming">
           <EventList
             events={upcomingEvents}
-            title="Kommende Termine (nächste 7 Tage)"
-            emptyMessage="Keine kommenden Termine"
+            title="Kommende Termine (nächste 30 Tage)"
+            emptyMessage="Keine kommenden Termine in den nächsten 30 Tagen"
             onEventClick={handleEventClick}
           />
         </TabsContent>

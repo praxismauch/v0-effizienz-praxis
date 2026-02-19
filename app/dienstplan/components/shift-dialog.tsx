@@ -57,6 +57,10 @@ export default function ShiftDialog({
   const isEditing = !!shift
   const { toast } = useToast()
 
+  // Consistent member ID extraction - must match everywhere
+  const getMemberId = (member: TeamMember) => 
+    (member as any).user_id || member.id || (member as any).team_member_id || ""
+
   const [formData, setFormData] = useState({
     team_member_id: "",
     shift_type_id: "",
@@ -88,9 +92,20 @@ export default function ShiftDialog({
         
         // Use defaultDate and defaultTeamMemberId if provided, otherwise use selectedDate and selectedMemberId
         const dateStr = defaultDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")
-        const memberId = defaultTeamMemberId || selectedMemberId || ""
+        const rawMemberId = defaultTeamMemberId || selectedMemberId || ""
         
-        console.log("[v0] ShiftDialog: Creating new shift", { dateStr, memberId, defaultDate, selectedDate })
+        // Resolve the member ID to match the Select values (which use getMemberId)
+        // The incoming selectedMemberId might be member.id, but Select values use user_id || id
+        let memberId = rawMemberId
+        if (rawMemberId && teamMembers.length > 0) {
+          const matched = teamMembers.find((m) => {
+            const mid = getMemberId(m)
+            return mid === rawMemberId || m.id === rawMemberId || (m as any).user_id === rawMemberId
+          })
+          if (matched) {
+            memberId = getMemberId(matched)
+          }
+        }
         
         setFormData({
           team_member_id: memberId,
@@ -167,7 +182,7 @@ export default function ShiftDialog({
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-[300px]">
                 {teamMembers.map((member) => {
-                  const memberId = member.user_id || member.id || member.team_member_id
+                  const memberId = getMemberId(member)
                   if (!memberId) return null
                   return (
                     <SelectItem key={memberId} value={memberId}>

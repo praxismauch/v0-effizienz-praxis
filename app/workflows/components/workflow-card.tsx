@@ -93,10 +93,10 @@ export function WorkflowCard({ workflow, viewMode, onEdit, onDelete, onToggleSta
               </div>
               <Progress value={progress} className="h-2" />
             </div>
-            {workflow.estimated_duration && (
+            {(workflow.estimated_duration || workflow.estimated_minutes) && (
               <div className="text-sm text-muted-foreground">
                 <Clock className="inline h-3 w-3 mr-1" />
-                {workflow.estimated_duration} Min.
+                {workflow.estimated_duration || workflow.estimated_minutes} Min.
               </div>
             )}
           </div>

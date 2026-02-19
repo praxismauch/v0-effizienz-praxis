@@ -52,8 +52,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           workflow_id: id,
           title: step.title || step.name || "",
           description: step.description || "",
-          assigned_to: step.assignedTo || null,
-          estimated_duration: step.estimatedDuration || 5,
+          responsible_role: step.assignedTo || null,
+          estimated_minutes: step.estimatedDuration || 5,
           step_order: idx + 1,
           status: "pending",
         }))

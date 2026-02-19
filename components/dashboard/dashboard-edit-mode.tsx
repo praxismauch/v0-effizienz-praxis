@@ -31,6 +31,7 @@ import {
 import { Columns, Save, XCircle, RotateCcw, Library } from "lucide-react"
 import {
   WIDGET_DEFINITIONS,
+  DEFAULT_ROW_SPANS,
   isLinebreakWidget,
   type WidgetConfig,
 } from "@/components/dashboard/editor-constants"
@@ -135,12 +136,12 @@ export function DashboardEditMode({
     }
     const cleanedRowSpans: Record<string, number> = {}
     for (const [key, val] of Object.entries(localConfig.rowSpans || {})) {
-      if (val && val > 1) cleanedRowSpans[key] = val
+      if (val && val > 0) cleanedRowSpans[key] = val
     }
     onSave({
       ...localConfig,
       columnSpans: cleanedSpans,
-      rowSpans: Object.keys(cleanedRowSpans).length > 0 ? cleanedRowSpans : undefined,
+      rowSpans: cleanedRowSpans,
       widgetOrder: order,
       linebreaks,
     })
@@ -163,7 +164,7 @@ export function DashboardEditMode({
   }
 
   const getCurrentSpan = (widgetId: string): number => localConfig.columnSpans?.[widgetId] || getColumnSpan(widgetId)
-  const getCurrentRowSpan = (widgetId: string): number => localConfig.rowSpans?.[widgetId] || 1
+  const getCurrentRowSpan = (widgetId: string): number => localConfig.rowSpans?.[widgetId] || DEFAULT_ROW_SPANS[widgetId] || 1
 
   const libraryContent = (
     <WidgetLibrary

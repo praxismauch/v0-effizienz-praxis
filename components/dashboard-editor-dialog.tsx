@@ -27,6 +27,7 @@ export {
   isLinebreakWidget,
   WIDGET_DEFINITIONS,
   DEFAULT_ORDER,
+  DEFAULT_ROW_SPANS,
   defaultWidgetConfig,
   FULL_WIDTH_WIDGET_IDS,
   COLUMN_OPTIONS,
@@ -143,13 +144,13 @@ export function DashboardEditorDialog({
     }
     const cleanedRowSpans: Record<string, number> = {}
     for (const [key, val] of Object.entries(config.rowSpans || {})) {
-      if (val && val > 1) cleanedRowSpans[key] = val
+      if (val && val > 0) cleanedRowSpans[key] = val
     }
     onSave({
       widgets: {
         ...config,
         columnSpans: cleanedSpans,
-        rowSpans: Object.keys(cleanedRowSpans).length > 0 ? cleanedRowSpans : undefined,
+        rowSpans: cleanedRowSpans,
         widgetOrder,
         linebreaks,
       },

@@ -81,6 +81,35 @@ export const WIDGET_DEFINITIONS = [
 
 export const DEFAULT_ORDER = WIDGET_DEFINITIONS.map((w) => w.id)
 
+// ── Predefined row heights per widget ──────────────────────────────────────────
+// Every widget MUST be exactly 1x, 2x, or 3x.
+// Cards that show only a number/stat => 1x
+// Cards with a chart or list          => 2x
+// Cards with rich/long content        => 3x
+
+export const DEFAULT_ROW_SPANS: Record<string, number> = {
+  showTeamMembers: 1,
+  showGoals: 1,
+  showWorkflows: 1,
+  showDocuments: 1,
+  showRecruiting: 1,
+  showOpenTasks: 1,
+  showTodayAppointments: 1,
+  showActiveCandidates: 1,
+  showDrafts: 1,
+  showTodos: 1,
+  showKPIs: 1,
+  showGoogleReviews: 2,
+  showWeeklyTasks: 2,
+  showTodaySchedule: 2,
+  showActivityChart: 2,
+  showRecentActivities: 2,
+  showTimeTracking: 2,
+  showQuickActions: 1,
+  showJournalActions: 2,
+  showBulletin: 2,
+}
+
 // ── Default config ─────────────────────────────────────────────────────────────
 
 export const defaultWidgetConfig: WidgetConfig = {
@@ -105,6 +134,7 @@ export const defaultWidgetConfig: WidgetConfig = {
   showBulletin: true,
   showTimeTracking: true,
   columnSpans: {},
+  rowSpans: { ...DEFAULT_ROW_SPANS },
   todosFilterWichtig: undefined,
   todosFilterDringend: undefined,
   todosFilterPriority: undefined,

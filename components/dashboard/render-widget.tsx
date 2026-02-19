@@ -15,6 +15,7 @@ import {
   type DashboardConfig,
   type WidgetConfig,
   DEFAULT_ORDER,
+  DEFAULT_ROW_SPANS,
   isLinebreakWidget,
 } from "@/components/dashboard-editor-dialog"
 import { GoogleReviewsWidget } from "@/components/google-reviews-widget"
@@ -85,15 +86,18 @@ export function getRowSpanClass(
   cockpitCardSettings: CockpitCardSetting[],
 ): string {
   const widgets = resolveWidgets(dashboardConfig)
+  // Priority: user setting > admin setting > predefined default > 1
   const userRowSpan = widgets.rowSpans?.[widgetId]
-  if (userRowSpan && userRowSpan > 1) {
-    if (userRowSpan === 3) return "md:row-span-3"
-    return "md:row-span-2"
-  }
   const setting = cockpitCardSettings.find((s) => s.widget_id === widgetId)
-  const rowSpan = setting?.row_span || 1
+  const adminRowSpan = setting?.row_span
+  const defaultRowSpan = DEFAULT_ROW_SPANS[widgetId] || 1
+  const rowSpan = (userRowSpan && userRowSpan > 0 ? userRowSpan : null)
+    ?? (adminRowSpan && adminRowSpan > 0 ? adminRowSpan : null)
+    ?? defaultRowSpan
+
   if (rowSpan === 3) return "md:row-span-3"
-  return rowSpan === 2 ? "md:row-span-2" : ""
+  if (rowSpan === 2) return "md:row-span-2"
+  return ""
 }
 
 export function getMinHeightStyle(
@@ -184,11 +188,12 @@ export function useDashboardWidgets({
 
       const wrapWithSpan = (content: React.ReactNode, id: string) => {
         if (forEditMode) return content
+        const colClass = getColumnSpanClass(id, dashboardConfig, cockpitCardSettings)
         const rowClass = getRowSpanClass(id, dashboardConfig, cockpitCardSettings)
         return (
           <div
             key={id}
-            className={`${getColumnSpanClass(id, dashboardConfig, cockpitCardSettings)} ${rowClass} [&>*]:h-full`}
+            className={`${colClass} ${rowClass} self-stretch [&>*]:h-full`}
             style={getMinHeightStyle(id, cockpitCardSettings)}
           >
             {content}

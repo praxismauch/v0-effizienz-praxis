@@ -176,10 +176,10 @@ export default function HygienePlanClient() {
           userId: currentUser?.id,
         }),
       })
-      console.log("[v0] AI hygiene plan response status:", response.status)
+      console.log("[v0] AI hygiene plan response status:", response.status, response.statusText)
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] AI hygiene plan created:", data.hygienePlan?.id)
+        console.log("[v0] AI hygiene plan created:", data.hygienePlan?.id, "title:", data.hygienePlan?.title)
         toast.success("KI-Hygieneplan erfolgreich erstellt")
         // Map DB 'area' to 'category' for UI
         const newPlan = { ...data.hygienePlan, category: data.hygienePlan?.category || data.hygienePlan?.area || category }

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { generateText } from "ai"
 
 const RKI_SYSTEM_PROMPT = `Du bist ein Experte für Hygiene und Infektionsprävention mit tiefem Wissen über die Richtlinien des Robert Koch-Instituts (RKI).
@@ -18,7 +17,6 @@ export async function POST(
   context: { params: Promise<{ practiceId: string }> },
 ) {
   const { practiceId } = await context.params
-  const supabase = await createClient()
 
   try {
     const body = await request.json()

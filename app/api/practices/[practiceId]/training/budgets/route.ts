@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 function isRateLimitError(error: unknown): boolean {
@@ -24,7 +24,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ budgets: [], usage: [] })
@@ -35,11 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
     // Fetch budgets
     const { data: budgets, error: budgetsError } = await supabase
       .from("training_budgets")
-      .select(`
-        *,
-        team_member:team_members(id, first_name, last_name),
-        team:teams(id, name, color)
-      `)
+      .select("*")
       .eq("practice_id", practiceId)
       .eq("year", Number.parseInt(year))
       .is("deleted_at", null)
@@ -108,7 +104,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
 
     let supabase
     try {
-      supabase = await createAdminClient()
+      supabase = await getApiClient()
     } catch (err) {
       if (isRateLimitError(err)) {
         return NextResponse.json({ error: "Zu viele Anfragen" }, { status: 429 })

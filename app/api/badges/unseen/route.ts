@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { getApiClient } from "@/lib/supabase/admin"
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createAdminClient()
+    const supabase = await getApiClient()
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get("userId")
 
@@ -11,15 +11,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 })
     }
 
-    // Get unseen badges
-    const { data: unseenBadges, error } = await supabase
+    // Get recently earned badges (earned in the last 24 hours)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const { data: recentBadges, error } = await supabase
       .from("academy_user_badges")
       .select(`
         *,
         badge:academy_badges(*)
       `)
       .eq("user_id", userId)
-      .is("seen_at", null)
+      .gte("earned_at", oneDayAgo)
       .order("earned_at", { ascending: true })
 
     if (error) {
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([])
     }
 
-    return NextResponse.json(unseenBadges || [])
+    return NextResponse.json(recentBadges || [])
   } catch (error) {
     console.error("Error in unseen badges:", error)
     return NextResponse.json([])
@@ -35,29 +36,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createAdminClient()
-    const body = await request.json()
-    const { badgeIds } = body
-
-    if (!badgeIds || !Array.isArray(badgeIds)) {
-      return NextResponse.json({ error: "Missing badgeIds" }, { status: 400 })
-    }
-
-    // Mark badges as seen
-    const { error } = await supabase
-      .from("academy_user_badges")
-      .update({ seen_at: new Date().toISOString() })
-      .in("id", badgeIds)
-
-    if (error) {
-      console.error("Error marking badges as seen:", error)
-      return NextResponse.json({ error: "Failed to mark badges as seen" }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Error in mark seen:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
+  // No seen_at column exists, so this is a no-op that returns success
+  return NextResponse.json({ success: true })
 }

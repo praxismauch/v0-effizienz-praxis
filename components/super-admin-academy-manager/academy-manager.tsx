@@ -182,11 +182,12 @@ export function SuperAdminAcademyManager() {
       </div>
 
       <Tabs value={a.activeTab} onValueChange={a.setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-2" />Übersicht</TabsTrigger>
           <TabsTrigger value="courses"><GraduationCap className="h-4 w-4 mr-2" />Kurse</TabsTrigger>
           <TabsTrigger value="quizzes"><HelpCircle className="h-4 w-4 mr-2" />Quizze</TabsTrigger>
           <TabsTrigger value="badges"><Award className="h-4 w-4 mr-2" />Badges</TabsTrigger>
+          <TabsTrigger value="triggers"><Zap className="h-4 w-4 mr-2" />Auslöser</TabsTrigger>
           <TabsTrigger value="waitlist"><Users className="h-4 w-4 mr-2" />Warteliste</TabsTrigger>
           <TabsTrigger value="content"><Layers className="h-4 w-4 mr-2" />Kursinhalt</TabsTrigger>
         </TabsList>
@@ -281,6 +282,53 @@ export function SuperAdminAcademyManager() {
                 ))}
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="triggers" className="mt-6">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-medium">Auslöser (Aktionen)</h3>
+              <p className="text-sm text-muted-foreground">Definierte Aktionen, die automatisch Badges vergeben. Diese Auslöser werden bei der Badge-Konfiguration zugewiesen.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {CRITERIA_TYPES.filter(c => c.value !== "").map((criteria) => {
+                const linkedBadges = a.badges.filter(b => b.criteria_type === criteria.value)
+                return (
+                  <Card key={criteria.value}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Zap className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-sm font-semibold">{criteria.label}</CardTitle>
+                            <code className="text-xs text-muted-foreground font-mono">{criteria.value}</code>
+                          </div>
+                        </div>
+                        {linkedBadges.length > 0 && (
+                          <Badge variant="secondary" className="shrink-0">{linkedBadges.length} Badge{linkedBadges.length !== 1 ? "s" : ""}</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm text-muted-foreground leading-relaxed">{criteria.description}</p>
+                      {linkedBadges.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t">
+                          {linkedBadges.map(badge => (
+                            <Badge key={badge.id} variant="outline" className="text-xs gap-1" style={{ borderColor: badge.color + "60", color: badge.color }}>
+                              {badgeIconEl(badge.icon_name)}
+                              {badge.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
           </div>
         </TabsContent>
 

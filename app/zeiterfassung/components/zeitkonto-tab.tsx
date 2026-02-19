@@ -24,6 +24,7 @@ export default function ZeitkontoTab({
   onResolveIssue,
 }: ZeitkontoTabProps) {
   const formatHours = (hours: number) => {
+    if (hours == null || isNaN(hours)) return "+0h 0m"
     const h = Math.floor(Math.abs(hours))
     const m = Math.round((Math.abs(hours) - h) * 60)
     const sign = hours < 0 ? "-" : "+"
@@ -69,7 +70,7 @@ export default function ZeitkontoTab({
           <CardContent>
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-muted-foreground" />
-              <span className="text-2xl font-bold">{timeBalance?.target_hours || 0}h</span>
+              <span className="text-2xl font-bold">{isNaN(timeBalance?.target_hours as number) ? 0 : (timeBalance?.target_hours || 0)}h</span>
             </div>
           </CardContent>
         </Card>
@@ -81,7 +82,7 @@ export default function ZeitkontoTab({
           <CardContent>
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-muted-foreground" />
-              <span className="text-2xl font-bold">{timeBalance?.actual_hours || 0}h</span>
+              <span className="text-2xl font-bold">{isNaN(timeBalance?.actual_hours as number) ? 0 : (timeBalance?.actual_hours || 0)}h</span>
             </div>
           </CardContent>
         </Card>

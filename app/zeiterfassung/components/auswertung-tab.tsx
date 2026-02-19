@@ -48,9 +48,12 @@ export default function AuswertungTab({
   }
 
   // Calculate statistics from TimeBlock fields
-  const totalNetMinutes = blocks.reduce((sum, block) => sum + getBlockMinutes(block), 0)
+  const totalNetMinutes = blocks.reduce((sum, block) => {
+    const mins = getBlockMinutes(block)
+    return sum + (isNaN(mins) ? 0 : mins)
+  }, 0)
 
-  const totalHours = totalNetMinutes / 60
+  const totalHours = isNaN(totalNetMinutes) ? 0 : totalNetMinutes / 60
   const totalBreakMinutes = blocks.reduce((sum, b) => sum + (b.break_minutes || 0), 0)
 
   const workDays = blocks.filter((b) => b.start_time && (b.end_time || b.is_open)).length
@@ -209,8 +212,11 @@ export default function AuswertungTab({
             {/* Days */}
             {daysInMonth.map((day) => {
               const dayBlocks = getBlocksForDay(day)
-              const dayMinutes = dayBlocks.reduce((sum, b) => sum + getBlockMinutes(b), 0)
-              const dayHours = dayMinutes / 60
+              const dayMinutes = dayBlocks.reduce((sum, b) => {
+                const mins = getBlockMinutes(b)
+                return sum + (isNaN(mins) ? 0 : mins)
+              }, 0)
+              const dayHours = isNaN(dayMinutes) ? 0 : dayMinutes / 60
               const hasEntries = dayBlocks.length > 0
               const isWeekend = day.getDay() === 0 || day.getDay() === 6
 

@@ -26,8 +26,9 @@ export default function HolidaysTab({
 }: HolidaysTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const getMember = (memberId: string) => {
-    return teamMembers.find((m) => m.id === memberId)
+  const getMember = (request: HolidayRequest) => {
+    const id = request.team_member_id || request.user_id
+    return teamMembers.find((m) => m.id === id)
   }
 
   const getStatusBadge = (status: string) => {
@@ -74,7 +75,15 @@ export default function HolidaysTab({
       ) : (
         <div className="space-y-3">
           {holidayRequests.map((request) => {
-            const member = getMember(request.team_member_id)
+            const member = getMember(request)
+            const daysCount = request.days_count ?? "–"
+            const createdAt = request.created_at
+              ? new Date(request.created_at).toLocaleDateString("de-DE", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })
+              : null
             return (
               <Card key={request.id}>
                 <CardContent className="p-4">
@@ -87,14 +96,23 @@ export default function HolidaysTab({
                           {member?.last_name?.[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
+                      <div className="space-y-0.5">
                         <p className="font-medium">
                           {member?.first_name} {member?.last_name}
                         </p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3" />
+                          <Calendar className="h-3 w-3" />
                           {new Date(request.start_date).toLocaleDateString("de-DE")} -{" "}
                           {new Date(request.end_date).toLocaleDateString("de-DE")}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {daysCount} {Number(daysCount) === 1 ? "Tag" : "Tage"}
+                          </span>
+                          {createdAt && (
+                            <span>Erstellt: {createdAt}</span>
+                          )}
                         </div>
                       </div>
                     </div>

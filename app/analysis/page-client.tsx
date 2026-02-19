@@ -71,7 +71,6 @@ export default function AnalysisPageClient() {
         <PageHeader
           title="KI-Analyse"
           subtitle="Lassen Sie Ihre Praxis von der KI analysieren und erhalten Sie Optimierungsvorschl\u00e4ge"
-          icon={<Sparkles className="h-7 w-7" />}
         />
 
         <StatsCards

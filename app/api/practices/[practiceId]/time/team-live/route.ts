@@ -64,37 +64,33 @@ export async function GET(
     }
 
     // Combine data for each member
-    const now = new Date()
     const members = teamMembers.map((member) => {
       const activeBlock = (activeBlocks || []).find((b) => b.user_id === member.user_id)
       const activeBreak = activeBlock
         ? activeBreaks.find((br: any) => br.time_block_id === activeBlock.id)
         : null
 
-      // Calculate today's total minutes (completed blocks + active block live time)
+      // Calculate completed minutes from closed blocks today only
       const memberTodayBlocks = (todayBlocks || []).filter((b) => b.user_id === member.user_id)
-      let todayMinutes = 0
+      let completedMinutes = 0
       for (const block of memberTodayBlocks) {
-        if (block.net_minutes) {
-          todayMinutes += block.net_minutes
-        } else if (block.is_open && block.start_time) {
-          // Active block: calculate live elapsed minutes
-          const startStr = block.date + "T" + block.start_time
-          const start = new Date(startStr)
-          const elapsed = Math.floor((now.getTime() - start.getTime()) / 60000)
-          todayMinutes += Math.max(0, elapsed) - (block.break_minutes || 0)
+        if (!block.is_open && block.net_minutes) {
+          completedMinutes += block.net_minutes
         }
       }
 
       // Map to the shape expected by TeamLiveTab
       const currentStatus = activeBreak ? "break" : activeBlock ? "working" : "absent"
 
-      // Provide clock_in_time so the client can compute a live counter
+      // Provide clock_in_time as a proper ISO timestamp so the client can compute a live counter
       let clockInTime: string | null = null
-      if (activeBlock?.start_time) {
-        // start_time could be "HH:mm" or "HH:mm:ss" – turn it into a full ISO string
-        const timePart = activeBlock.start_time.length <= 8 ? activeBlock.start_time : activeBlock.start_time
-        clockInTime = `${activeBlock.date}T${timePart}`
+      if (activeBlock?.start_time && activeBlock?.date) {
+        // Build ISO string and convert to UTC so client gets a timezone-safe value
+        const localStr = `${activeBlock.date}T${activeBlock.start_time}`
+        const localDate = new Date(localStr)
+        if (!isNaN(localDate.getTime())) {
+          clockInTime = localDate.toISOString()
+        }
       }
 
       return {
@@ -105,7 +101,8 @@ export async function GET(
         avatar_url: (member as any).avatar_url || null,
         current_status: currentStatus,
         current_location: activeBlock?.work_location || null,
-        today_minutes: todayMinutes,
+        today_minutes: completedMinutes,
+        completed_minutes: completedMinutes,
         clock_in_time: clockInTime,
         break_minutes: activeBlock?.break_minutes || 0,
       }

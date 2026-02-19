@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Edit, Trash2, Play, Pause, Eye, Users, Clock } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Edit, Trash2, Play, Pause, Eye, Users, Clock, MoreHorizontal } from "lucide-react"
 import type { Workflow } from "@/contexts/workflow-context"
 import { getStepProgress, getPriorityColor, getStatusColor, canStartStep, getPriorityLabel, getStatusLabel } from "./workflow-helpers"
 
@@ -35,35 +36,36 @@ export function WorkflowCard({
             <CardTitle className="text-lg">{workflow.title}</CardTitle>
             {workflow.description && <CardDescription className="text-sm">{workflow.description}</CardDescription>}
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onToggleStatus(workflow)}
-              title={workflow.status === "active" ? "Pausieren" : "Starten"}
-            >
-              {workflow.status === "active" ? (
-                <Pause className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-              ) : (
-                <Play className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-              )}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onEdit(workflow.id)} title="Bearbeiten">
-              <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onView(workflow.id)} title="Details anzeigen">
-              <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(workflow.id)}
-              title="Löschen"
-              className="hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-600 transition-colors" />
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Aktionen</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onView(workflow.id)}>
+                <Eye className="mr-2 h-4 w-4" />
+                Details anzeigen
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(workflow.id)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Bearbeiten
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onToggleStatus(workflow)}>
+                {workflow.status === "active" ? (
+                  <><Pause className="mr-2 h-4 w-4" />Pausieren</>
+                ) : (
+                  <><Play className="mr-2 h-4 w-4" />Aktivieren</>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onDelete(workflow.id)} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Löschen
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -312,6 +312,8 @@ export default function ScheduleTab({
         shiftTypes={shiftTypes}
         availableRoles={availableRoles}
         onApplyTemplate={handleApplyTemplate}
+        currentSchedules={schedules}
+        weekDays={weekDays}
       />
     </Card>
   )

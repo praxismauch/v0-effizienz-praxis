@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
-import type { ScheduleTemplate, ScheduleTemplateShift, ShiftType } from "../types"
+import type { Shift, ScheduleTemplate, ScheduleTemplateShift, ShiftType } from "../types"
 
 export function useScheduleTemplates(
   practiceId: string,
@@ -65,6 +66,57 @@ export function useScheduleTemplates(
     setTemplateShifts(template.shifts || [])
     setActiveTab("edit")
   }, [])
+
+  const handleCreateFromCurrentPlan = useCallback((currentSchedules: Shift[], weekDays: Date[]) => {
+    if (!currentSchedules || currentSchedules.length === 0) {
+      toast({
+        title: "Keine Schichten",
+        description: "Der aktuelle Wochenplan enthält keine Schichten zum Importieren.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Build a day-of-week index from actual dates
+    const dayIndexByDate = new Map<string, number>()
+    weekDays.forEach((d, i) => {
+      dayIndexByDate.set(format(d, "yyyy-MM-dd"), i)
+    })
+
+    // Convert current shifts to template shifts (deduplicated by day + shift_type)
+    const seen = new Set<string>()
+    const importedShifts: ScheduleTemplateShift[] = []
+
+    for (const shift of currentSchedules) {
+      const dateStr = shift.shift_date || shift.date
+      const dayIndex = dayIndexByDate.get(dateStr ?? "")
+      if (dayIndex === undefined || !shift.shift_type_id) continue
+
+      const key = `${dayIndex}-${shift.shift_type_id}`
+      if (seen.has(key)) continue
+      seen.add(key)
+
+      importedShifts.push({
+        day_of_week: dayIndex,
+        shift_type_id: shift.shift_type_id,
+        role_filter: undefined,
+      })
+    }
+
+    // Sort by day, then shift type
+    importedShifts.sort((a, b) => a.day_of_week - b.day_of_week)
+
+    setEditingTemplate(null)
+    setTemplateName("Vorlage aus aktuellem Plan")
+    setTemplateDescription(`Erstellt am ${format(new Date(), "dd.MM.yyyy")}`)
+    setTemplateShifts(importedShifts)
+    setActiveTab("edit")
+
+    toast({
+      title: "Plan importiert",
+      description: `${importedShifts.length} Schichten aus dem aktuellen Plan übernommen.`,
+    })
+  }, [toast])
 
   const handleAddShift = useCallback(() => {
     const newShift: ScheduleTemplateShift = {
@@ -188,6 +240,7 @@ export function useScheduleTemplates(
     templateShifts,
     handleNewTemplate,
     handleEditTemplate,
+    handleCreateFromCurrentPlan,
     handleAddShift,
     handleRemoveShift,
     handleShiftChange,

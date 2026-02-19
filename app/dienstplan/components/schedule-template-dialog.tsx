@@ -17,7 +17,8 @@ import { getRoleLabel } from "@/lib/roles"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { useScheduleTemplates } from "../hooks/use-schedule-templates"
-import type { ShiftType, ScheduleTemplate } from "../types"
+import type { ShiftType, Shift, ScheduleTemplate } from "../types"
+import { Copy } from "lucide-react"
 
 const DAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
 
@@ -28,11 +29,14 @@ interface ScheduleTemplateDialogProps {
   shiftTypes: ShiftType[]
   availableRoles: string[]
   onApplyTemplate: (template: ScheduleTemplate) => void
+  currentSchedules?: Shift[]
+  weekDays?: Date[]
 }
 
 export default function ScheduleTemplateDialog({
   open, onOpenChange, practiceId, shiftTypes: shiftTypesProp,
   availableRoles: availableRolesProp, onApplyTemplate,
+  currentSchedules, weekDays,
 }: ScheduleTemplateDialogProps) {
   const shiftTypes = shiftTypesProp || []
   const availableRoles = availableRolesProp || []
@@ -42,7 +46,7 @@ export default function ScheduleTemplateDialog({
     templates, isLoading, isSaving, activeTab, setActiveTab,
     editingTemplate, templateName, setTemplateName,
     templateDescription, setTemplateDescription, templateShifts,
-    handleNewTemplate, handleEditTemplate, handleAddShift,
+    handleNewTemplate, handleEditTemplate, handleCreateFromCurrentPlan, handleAddShift,
     handleRemoveShift, handleShiftChange, handleSaveTemplate,
     handleDeleteTemplate, getShiftTypeName, getShiftTypeColor,
   } = useScheduleTemplates(practiceId, shiftTypes, open)
@@ -78,7 +82,13 @@ export default function ScheduleTemplateDialog({
           </TabsList>
 
           <TabsContent value="templates" className="mt-4">
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end gap-2 mb-4">
+              {currentSchedules && currentSchedules.length > 0 && weekDays && (
+                <Button variant="outline" onClick={() => handleCreateFromCurrentPlan(currentSchedules, weekDays)}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Aus aktuellem Plan
+                </Button>
+              )}
               <Button onClick={handleNewTemplate}>
                 <Plus className="h-4 w-4 mr-2" />
                 Neue Vorlage

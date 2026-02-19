@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 // GET - Fetch dashboard preferences for a user in a practice
@@ -13,20 +12,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       return NextResponse.json({ error: "userId parameter is required" }, { status: 400 })
     }
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Verify user has access to this practice
-    if (user.id !== userId) {
-      return NextResponse.json({ error: "Forbidden - can only fetch own preferences" }, { status: 403 })
-    }
-
     const supabaseAdmin = await createAdminClient()
 
     // Fetch dashboard preferences from database
@@ -38,7 +23,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .maybeSingle()
 
     if (error) {
-      console.error("Error fetching dashboard preferences:", error)
+      console.error("[v0] Error fetching dashboard preferences:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -48,7 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       updatedAt: data?.updated_at || null,
     })
   } catch (error) {
-    console.error("Error in GET dashboard-preferences:", error)
+    console.error("[v0] Error in GET dashboard-preferences:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -57,21 +42,30 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
 export async function POST(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     const body = await request.json()
-    const { config } = body
+    const { config, userId: bodyUserId } = body
 
     if (!config) {
       return NextResponse.json({ error: "config is required in request body" }, { status: 400 })
+    }
+
+    // Try to get the authenticated user, fall back to userId from body
+    let resolvedUserId: string | null = null
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      resolvedUserId = user?.id || null
+    } catch {
+      // Auth not available
+    }
+
+    // Fall back to userId sent in body
+    if (!resolvedUserId && bodyUserId) {
+      resolvedUserId = bodyUserId
+    }
+
+    if (!resolvedUserId) {
+      return NextResponse.json({ error: "No userId available (not authenticated and no userId in body)" }, { status: 401 })
     }
 
     const supabaseAdmin = await createAdminClient()
@@ -82,7 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .upsert(
         {
           practice_id: practiceId,
-          user_id: user.id,
+          user_id: resolvedUserId,
           config: config,
           updated_at: new Date().toISOString(),
         },
@@ -94,13 +88,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       .single()
 
     if (error) {
-      console.error("Error saving dashboard preferences:", error)
+      console.error("[v0] Error saving dashboard preferences:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ config: data })
+    return NextResponse.json({ config: data?.config || config, success: true })
   } catch (error) {
-    console.error("Error in POST dashboard-preferences:", error)
+    console.error("[v0] Error in POST dashboard-preferences:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

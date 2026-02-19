@@ -648,10 +648,11 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
         const response = await fetch(`/api/practices/${practiceId}/dashboard-preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ config: { widgets } }),
+          body: JSON.stringify({ userId, config: { widgets } }),
         })
         if (!response.ok) {
-          console.error("Failed to save dashboard config:", await response.text())
+          const errText = await response.text()
+          console.error("[v0] Failed to save dashboard config:", response.status, errText)
           toast({
             title: "Fehler",
             description: "Dashboard-Einstellungen konnten nicht gespeichert werden.",
@@ -664,13 +665,15 @@ export function DashboardOverview({ practiceId, userId, initialData }: Dashboard
           })
         }
       } catch (err) {
-        console.error("Error saving dashboard config:", err)
+        console.error("[v0] Error saving dashboard config:", err)
         toast({
           title: "Fehler",
           description: "Dashboard-Einstellungen konnten nicht gespeichert werden.",
           variant: "destructive",
         })
       }
+    } else {
+      console.warn("[v0] Cannot save dashboard config - missing practiceId or userId:", { practiceId, userId })
     }
   }, [practiceId, userId, toast])
 

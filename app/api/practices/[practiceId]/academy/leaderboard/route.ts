@@ -65,8 +65,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       if (!userStatsMap.has(userId)) {
         userStatsMap.set(userId, {
           user_id: userId,
-          name: enrollment.users?.name || "Unknown User",
-          email: enrollment.users?.email,
+          name: "Nutzer",
+          email: null,
           total_progress: 0,
           courses_enrolled: 0,
           courses_completed: 0,
@@ -81,6 +81,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         userStats.courses_completed++
       }
     })
+
+    // Fetch user names from team_members if we have user IDs
+    const userIds = Array.from(userStatsMap.keys())
+    if (userIds.length > 0) {
+      const { data: members } = await supabase
+        .from("team_members")
+        .select("user_id, name, email")
+        .in("user_id", userIds)
+
+      members?.forEach((m: any) => {
+        if (userStatsMap.has(m.user_id)) {
+          const stats = userStatsMap.get(m.user_id)
+          stats.name = m.name || "Nutzer"
+          stats.email = m.email
+        }
+      })
+    }
 
     // Add badge counts
     userBadges?.forEach((badge: any) => {

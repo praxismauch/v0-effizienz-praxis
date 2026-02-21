@@ -15,13 +15,29 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/hooks/use-toast"
+import { X, Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+const PRAXIS_ARTEN = [
+  { value: "einzelpraxis", label: "Einzelpraxis" },
+  { value: "bag", label: "Berufsausübungsgemeinschaft (BAG)" },
+  { value: "mvz", label: "Medizinisches Versorgungszentrum (MVZ)" },
+  { value: "praxisgemeinschaft", label: "Praxisgemeinschaft" },
+  { value: "facharzt", label: "Facharztpraxis" },
+  { value: "zahnarzt", label: "Zahnarztpraxis" },
+  { value: "other", label: "Sonstige" },
+]
 
 interface Practice {
   id: string
   name: string
   type: string
+  specialization?: string
   street: string
   city: string
   zipCode: string
@@ -72,9 +88,11 @@ export function EditPracticeSuperAdminDialog({
   onSuccess,
 }: EditPracticeSuperAdminDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fachrichtungenOpen, setFachrichtungenOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
+    praxisArt: "",
+    fachrichtungen: [] as string[],
     street: "",
     city: "",
     zipCode: "",
@@ -88,9 +106,13 @@ export function EditPracticeSuperAdminDialog({
 
   useEffect(() => {
     if (practice) {
+      const existingFachrichtungen = practice.specialization
+        ? practice.specialization.split(",").map((s) => s.trim()).filter(Boolean)
+        : []
       setFormData({
         name: practice.name,
-        type: practice.type,
+        praxisArt: practice.type || "",
+        fachrichtungen: existingFachrichtungen,
         street: practice.street || "",
         city: practice.city || "",
         zipCode: practice.zipCode || "",
@@ -107,7 +129,7 @@ export function EditPracticeSuperAdminDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.name || !formData.type) {
+    if (!formData.name || !formData.praxisArt) {
       toast({
         title: "Fehler",
         description: "Bitte füllen Sie alle Pflichtfelder aus.",
@@ -122,7 +144,13 @@ export function EditPracticeSuperAdminDialog({
       const response = await fetch(`/api/practices/${practice.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          type: formData.praxisArt,
+          specialization: formData.fachrichtungen.join(", "),
+          praxisArt: undefined,
+          fachrichtungen: undefined,
+        }),
       })
 
       if (!response.ok) {
@@ -173,26 +201,100 @@ export function EditPracticeSuperAdminDialog({
               />
             </div>
 
-            {/* Practice Type */}
+            {/* Praxisart */}
             <div className="grid gap-2">
-              <Label htmlFor="type">
-                Fachrichtung <span className="text-destructive">*</span>
+              <Label>
+                Praxisart <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
+                value={formData.praxisArt}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, praxisArt: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Praxisart wählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRACTICE_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
+                  {PRAXIS_ARTEN.map((art) => (
+                    <SelectItem key={art.value} value={art.value}>
+                      {art.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Fachrichtungen Multi-Select */}
+            <div className="grid gap-2">
+              <Label>Fachrichtungen</Label>
+              <Popover open={fachrichtungenOpen} onOpenChange={setFachrichtungenOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={fachrichtungenOpen}
+                    className="w-full justify-between h-auto min-h-10 font-normal"
+                    type="button"
+                  >
+                    {formData.fachrichtungen.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {formData.fachrichtungen.map((f) => (
+                          <Badge key={f} variant="secondary" className="text-xs">
+                            {f}
+                            <button
+                              type="button"
+                              className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  fachrichtungen: prev.fachrichtungen.filter((x) => x !== f),
+                                }))
+                              }}
+                            >
+                              <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Fachrichtungen wählen...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Fachrichtung suchen..." />
+                    <CommandList>
+                      <CommandEmpty>Keine Fachrichtung gefunden.</CommandEmpty>
+                      <CommandGroup>
+                        {PRACTICE_TYPES.map((type) => (
+                          <CommandItem
+                            key={type}
+                            value={type}
+                            onSelect={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                fachrichtungen: prev.fachrichtungen.includes(type)
+                                  ? prev.fachrichtungen.filter((t) => t !== type)
+                                  : [...prev.fachrichtungen, type],
+                              }))
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.fachrichtungen.includes(type) ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            {type}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Address */}
@@ -317,7 +419,7 @@ export function EditPracticeSuperAdminDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={!formData.name || !formData.type || isSubmitting}>
+            <Button type="submit" disabled={!formData.name || !formData.praxisArt || isSubmitting}>
               {isSubmitting ? "Wird gespeichert..." : "Änderungen speichern"}
             </Button>
           </DialogFooter>

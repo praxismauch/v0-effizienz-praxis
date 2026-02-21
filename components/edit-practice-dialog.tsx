@@ -14,15 +14,20 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { AddressInput } from "@/components/address-input"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import { Loader2, X, Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface Practice {
   id: number
   name: string
   type: string
+  specialization?: string
   street: string
   city: string
   zipCode: string
@@ -31,6 +36,16 @@ interface Practice {
   website: string
   isActive: boolean
 }
+
+const PRAXIS_ARTEN = [
+  { value: "einzelpraxis", label: "Einzelpraxis" },
+  { value: "bag", label: "Berufsausübungsgemeinschaft (BAG)" },
+  { value: "mvz", label: "Medizinisches Versorgungszentrum (MVZ)" },
+  { value: "praxisgemeinschaft", label: "Praxisgemeinschaft" },
+  { value: "facharzt", label: "Facharztpraxis" },
+  { value: "zahnarzt", label: "Zahnarztpraxis" },
+  { value: "other", label: "Sonstige" },
+]
 
 interface EditPracticeDialogProps {
   open: boolean
@@ -47,10 +62,12 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
   const [practiceTypes, setPracticeTypes] = useState<PracticeType[]>([])
   const [isLoadingTypes, setIsLoadingTypes] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fachrichtungenOpen, setFachrichtungenOpen] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
+    praxisArt: "",
+    fachrichtungen: [] as string[],
     address: {
       street: "",
       city: "",
@@ -93,9 +110,14 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
 
   useEffect(() => {
     if (practice) {
+      // Parse existing specialization (comma-separated) into array
+      const existingFachrichtungen = practice.specialization
+        ? practice.specialization.split(",").map((s) => s.trim()).filter(Boolean)
+        : []
       setFormData({
         name: practice.name,
-        type: practice.type,
+        praxisArt: practice.type || "",
+        fachrichtungen: existingFachrichtungen,
         address: {
           street: practice.street || "",
           city: practice.city || "",
@@ -111,10 +133,10 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!practice || !formData.name || !formData.type) {
+    if (!practice || !formData.name || !formData.praxisArt) {
       toast({
         title: "Validierungsfehler",
-        description: "Bitte füllen Sie alle Pflichtfelder aus.",
+        description: "Bitte füllen Sie alle Pflichtfelder aus (Name und Praxisart).",
         variant: "destructive",
       })
       return
@@ -129,7 +151,8 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
         },
         body: JSON.stringify({
           name: formData.name,
-          type: formData.type,
+          type: formData.praxisArt,
+          specialization: formData.fachrichtungen.join(", "),
           street: formData.address.street,
           city: formData.address.city,
           zipCode: formData.address.zipCode,
@@ -165,9 +188,13 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
 
   const handleCancel = () => {
     if (practice) {
+      const existingFachrichtungen = practice.specialization
+        ? practice.specialization.split(",").map((s) => s.trim()).filter(Boolean)
+        : []
       setFormData({
         name: practice.name,
-        type: practice.type,
+        praxisArt: practice.type || "",
+        fachrichtungen: existingFachrichtungen,
         address: {
           street: practice.street || "",
           city: practice.city || "",
@@ -208,24 +235,99 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="type">Typ *</Label>
+              <Label>Praxisart *</Label>
               <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
-                required
-                disabled={isLoadingTypes || isSubmitting}
+                value={formData.praxisArt}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, praxisArt: value }))}
+                disabled={isSubmitting}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={isLoadingTypes ? "Laden..." : "Praxistyp wählen"} />
+                  <SelectValue placeholder="Praxisart wählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  {practiceTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.name}>
-                      {type.name}
+                  {PRAXIS_ARTEN.map((art) => (
+                    <SelectItem key={art.value} value={art.value}>
+                      {art.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Fachrichtungen</Label>
+              <Popover open={fachrichtungenOpen} onOpenChange={setFachrichtungenOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={fachrichtungenOpen}
+                    className="w-full justify-between h-auto min-h-10 font-normal"
+                    type="button"
+                    disabled={isLoadingTypes || isSubmitting}
+                  >
+                    {formData.fachrichtungen.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {formData.fachrichtungen.map((f) => (
+                          <Badge key={f} variant="secondary" className="text-xs">
+                            {f}
+                            <button
+                              type="button"
+                              className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  fachrichtungen: prev.fachrichtungen.filter((x) => x !== f),
+                                }))
+                              }}
+                            >
+                              <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {isLoadingTypes ? "Laden..." : "Fachrichtungen wählen..."}
+                      </span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Fachrichtung suchen..." />
+                    <CommandList>
+                      <CommandEmpty>Keine Fachrichtung gefunden.</CommandEmpty>
+                      <CommandGroup>
+                        {practiceTypes.map((type) => (
+                          <CommandItem
+                            key={type.id}
+                            value={type.name}
+                            onSelect={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                fachrichtungen: prev.fachrichtungen.includes(type.name)
+                                  ? prev.fachrichtungen.filter((t) => t !== type.name)
+                                  : [...prev.fachrichtungen, type.name],
+                              }))
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.fachrichtungen.includes(type.name) ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            {type.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="grid gap-2">
@@ -297,7 +399,7 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
             <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={!formData.name || !formData.type || isSubmitting || isLoadingTypes}>
+            <Button type="submit" disabled={!formData.name || !formData.praxisArt || isSubmitting || isLoadingTypes}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Praxis aktualisieren
             </Button>

@@ -130,8 +130,27 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {certifications.map((cert) => (
-            <Card key={cert.id}>
+          {certifications.map((cert) => {
+            const files: UploadedFile[] = (cert as any).default_files || []
+            const previewImage = files.find((f) => f.type?.startsWith("image/"))
+            return (
+            <Card key={cert.id} className="overflow-hidden">
+              {previewImage && (
+                <a href={previewImage.url} target="_blank" rel="noopener noreferrer" className="block">
+                  <div className="relative h-36 w-full bg-muted">
+                    <img
+                      src={previewImage.url}
+                      alt={`Vorschau: ${cert.name}`}
+                      className="h-full w-full object-cover"
+                    />
+                    {files.filter((f) => f.type?.startsWith("image/")).length > 1 && (
+                      <span className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-xs font-medium backdrop-blur-sm">
+                        +{files.filter((f) => f.type?.startsWith("image/")).length - 1}
+                      </span>
+                    )}
+                  </div>
+                </a>
+              )}
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -160,10 +179,10 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
                     <span>{cert.renewal_reminder_days || cert.reminder_days_before || 30} Tage vorher</span>
                   </div>
                 </div>
-                {((cert as any).default_files?.length > 0) && (
+                {files.length > 0 && (
                   <div className="flex items-center gap-1.5 mt-2 text-sm text-muted-foreground">
                     <FileText className="h-3.5 w-3.5" />
-                    <span>{(cert as any).default_files.length} Datei(en) angehängt</span>
+                    <span>{files.length} Datei(en) angehängt</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t">
@@ -182,7 +201,8 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
                 </div>
               </CardContent>
             </Card>
-          ))}
+            )
+          })}
         </div>
       )}
 

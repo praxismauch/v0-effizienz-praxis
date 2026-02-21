@@ -11,7 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { PanelLeft, Clock } from "lucide-react"
+import { PanelLeft, Clock, Menu } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
@@ -42,8 +42,16 @@ function AppHeader() {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
-      {/* Mobile Sidebar Trigger */}
-      <SidebarTrigger className="-ml-1 md:hidden" />
+      {/* Mobile Sidebar Trigger - hamburger menu */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="-ml-1 md:hidden h-9 w-9"
+        onClick={toggleSidebar}
+        aria-label="Menu oeffnen"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
 
       {sidebarState === "collapsed" && (
         <Button variant="ghost" size="icon" onClick={toggleSidebar} className="-ml-1 hidden md:flex h-9 w-9">

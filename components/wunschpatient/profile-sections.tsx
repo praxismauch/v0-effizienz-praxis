@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Heart,
@@ -16,7 +18,10 @@ import {
   Brain,
   Stethoscope,
   User,
+  CreditCard,
+  ArrowRight,
 } from "lucide-react"
+import { CreateIgelDialog } from "@/components/igel/create-igel-dialog"
 import {
   getFamilyStatusLabel,
   getHealthConsciousnessLabel,
@@ -309,27 +314,99 @@ export function CommunicationTipsCard({ tips }: { tips: string }) {
   )
 }
 
+const SELBSTZAHLER_KEYWORDS = [
+  "check-up", "checkup", "check up", "vorsorge", "prävention", "igel",
+  "selbstzahler", "premium", "coaching", "ernährung", "stoffwechsel",
+  "infusion", "aufbaukur", "reisemedizin", "sportmedizin", "naturheilkunde",
+  "akupunktur", "osteopathie", "laser", "ultraschall", "mesotherapie",
+  "vitamin", "hormon", "anti-aging", "ästhetik", "schlafdiagnostik",
+  "stressdiagnostik", "leistungsdiagnostik", "individuelle", "zusatz",
+]
+
+function isSelbstzahlerService(service: string): boolean {
+  const lower = service.toLowerCase()
+  return SELBSTZAHLER_KEYWORDS.some((kw) => lower.includes(kw))
+}
+
 export function ServiceRecommendationsCard({ services }: { services: string[] }) {
+  const [igelDialogOpen, setIgelDialogOpen] = useState(false)
+  const [selectedService, setSelectedService] = useState("")
+
   if (!services || services.length === 0) return null
+
+  const selbstzahlerServices = services.filter(isSelbstzahlerService)
+  const otherServices = services.filter((s) => !isSelbstzahlerService(s))
+
   return (
-    <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 border-green-200 dark:border-green-800/30">
-      <CardContent className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-1.5 rounded-lg bg-green-200 dark:bg-green-800/50">
-            <Sparkles className="h-4 w-4 text-green-700 dark:text-green-400" />
-          </div>
-          <h3 className="font-semibold">Empfohlene Leistungen</h3>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-2">
-          {services.map((service, index) => (
-            <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-white/60 dark:bg-white/5">
-              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-              <span className="text-sm">{service}</span>
+    <>
+      <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 border-green-200 dark:border-green-800/30">
+        <CardContent className="p-6 space-y-5">
+          {/* All recommended services */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 rounded-lg bg-green-200 dark:bg-green-800/50">
+                <Sparkles className="h-4 w-4 text-green-700 dark:text-green-400" />
+              </div>
+              <h3 className="font-semibold">Empfohlene Leistungen</h3>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            {otherServices.length > 0 && (
+              <div className="grid sm:grid-cols-2 gap-2">
+                {otherServices.map((service, index) => (
+                  <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-white/60 dark:bg-white/5">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    <span className="text-sm">{service}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Selbstzahlerleistungen sub-section */}
+          {selbstzahlerServices.length > 0 && (
+            <div className="pt-4 border-t border-green-200 dark:border-green-800/30">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                  <CreditCard className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                </div>
+                <h4 className="font-medium text-sm">Potenzielle Selbstzahlerleistungen (IGeL)</h4>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Diese Leistungen eignen sich besonders als Selbstzahlerangebote. Analysieren Sie die Rentabilität direkt.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {selbstzahlerServices.map((service, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-amber-50/80 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-800/30"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Euro className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                      <span className="text-sm truncate">{service}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/30 flex-shrink-0"
+                      onClick={() => { setSelectedService(service); setIgelDialogOpen(true) }}
+                    >
+                      Analysieren
+                      <ArrowRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <CreateIgelDialog
+        open={igelDialogOpen}
+        onOpenChange={setIgelDialogOpen}
+        onSuccess={() => setIgelDialogOpen(false)}
+        prefillServiceName={selectedService}
+      />
+    </>
   )
 }
 

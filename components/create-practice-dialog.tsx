@@ -25,12 +25,29 @@ import { cn } from "@/lib/utils"
 interface CreatePracticeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-interface PracticeType {
-  id: string
-  name: string
-}
+const PRACTICE_TYPES = [
+  "Allgemeinmedizin",
+  "Innere Medizin",
+  "Paediatrie",
+  "Kardiologie",
+  "Dermatologie",
+  "Orthopaedie",
+  "Gynaekologie",
+  "HNO",
+  "Neurologie",
+  "Psychiatrie",
+  "Urologie",
+  "Augenheilkunde",
+  "Radiologie",
+  "Anaesthesie",
+  "Chirurgie",
+  "Zahnarzt",
+  "Physiotherapie",
+  "Andere",
+]
 
 const BUNDESLAENDER = [
   "Baden-Wuerttemberg",
@@ -51,194 +68,94 @@ const BUNDESLAENDER = [
   "Thueringen",
 ]
 
-export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialogProps) {
-  const [practiceTypes, setPracticeTypes] = useState<PracticeType[]>([])
-  const [practiceForms, setPracticeForms] = useState<{ id: string; value: string; label: string }[]>([])
-  const [isLoadingTypes, setIsLoadingTypes] = useState(true)
+export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePracticeDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const [showAiInput, setShowAiInput] = useState(false)
-  const [aiUrl, setAiUrl] = useState("")
-  const [isAiExtracting, setIsAiExtracting] = useState(false)
-
-  const [typesOpen, setTypesOpen] = useState(false)
-  const [formData, setFormData] = useState({
-    name: "",
-    praxisArt: "",
-    types: [] as string[],
-    bundesland: "",
-    address: {
-      street: "",
-      city: "",
-      zipCode: "",
-    },
-    phone: "",
-    email: "",
-    website: "",
-    isActive: true,
-  })
+  const [fachrichtungenOpen, setFachrichtungenOpen] = useState(false)
+  const [practiceForms, setPracticeForms] = useState<{ id: string; value: string; label: string }[]>([])
+  const [step, setStep] = useState(1)
 
   useEffect(() => {
     if (open) {
-      loadPracticeTypes()
-      loadPracticeForms()
+      fetch("/api/practice-forms")
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) setPracticeForms(data)
+        })
+        .catch(() => {})
     }
   }, [open])
 
-  const loadPracticeForms = async () => {
-    try {
-      const response = await fetch("/api/practice-forms")
-      if (response.ok) {
-        const data = await response.json()
-        setPracticeForms(data || [])
-      }
-    } catch (error) {
-      console.error("Error loading practice forms:", error)
-    }
+  const [formData, setFormData] = useState({
+    name: "",
+    praxisArt: "",
+    fachrichtungen: [] as string[],
+    bundesland: "",
+    street: "",
+    city: "",
+    zipCode: "",
+    phone: "",
+    email: "",
+    website: "",
+    description: "",
+  })
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      praxisArt: "",
+      fachrichtungen: [],
+      bundesland: "",
+      street: "",
+      city: "",
+      zipCode: "",
+      phone: "",
+      email: "",
+      website: "",
+      description: "",
+    })
+    setStep(1)
   }
 
-  const loadPracticeTypes = async () => {
-    setIsLoadingTypes(true)
-    try {
-      const response = await fetch("/api/practice-types")
-      if (response.ok) {
-        const data = await response.json()
-        setPracticeTypes(data || [])
-      } else {
-        throw new Error("Failed to load practice types")
-      }
-    } catch (error) {
-      console.error("Error loading practice types:", error)
-      toast({
-        title: "Warnung",
-        description: "Praxistypen konnten nicht geladen werden. Bitte versuchen Sie es spaeter erneut.",
-        variant: "destructive",
-      })
-      setPracticeTypes([])
-    } finally {
-      setIsLoadingTypes(false)
-    }
-  }
-
-  const handleAiExtract = async () => {
-    if (!aiUrl.trim()) {
-      toast({ title: "Bitte geben Sie eine URL ein.", variant: "destructive" })
-      return
-    }
-
-    setIsAiExtracting(true)
-    try {
-      const response = await fetch("/api/practices/ai-extract-from-website", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: aiUrl.trim() }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || "Fehler bei der KI-Analyse")
-      }
-
-      const data = result.data
-      if (!data) {
-        throw new Error("Keine Daten von der KI-Analyse erhalten")
-      }
-
-      const matchedTypes: string[] = []
-      if (data.fachrichtungen && Array.isArray(data.fachrichtungen)) {
-        for (const fach of data.fachrichtungen) {
-          const match = practiceTypes.find(
-            (pt) =>
-              pt.name.toLowerCase() === fach.toLowerCase() ||
-              pt.name.toLowerCase().includes(fach.toLowerCase()) ||
-              fach.toLowerCase().includes(pt.name.toLowerCase()),
-          )
-          if (match && !matchedTypes.includes(match.name)) {
-            matchedTypes.push(match.name)
-          }
-        }
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        name: data.name || prev.name,
-        praxisArt: data.praxisArt || prev.praxisArt,
-        types: matchedTypes.length > 0 ? matchedTypes : prev.types,
-        bundesland: data.bundesland || prev.bundesland,
-        address: {
-          street: data.street || prev.address.street,
-          city: data.city || prev.address.city,
-          zipCode: data.zipCode || prev.address.zipCode,
-        },
-        phone: data.phone || prev.phone,
-        email: data.email || prev.email,
-        website: data.website || result.websiteUrl || prev.website,
-      }))
-
-      setShowAiInput(false)
-
-      const filledFields = [
-        data.name && "Name",
-        data.praxisArt && "Praxisart",
-        matchedTypes.length > 0 && "Fachrichtungen",
-        data.bundesland && "Bundesland",
-        (data.street || data.city) && "Adresse",
-        data.phone && "Telefon",
-        data.email && "E-Mail",
-      ].filter(Boolean)
-
-      toast({
-        title: "KI-Analyse abgeschlossen",
-        description: `${filledFields.length} Felder ausgefuellt: ${filledFields.join(", ")}. Bitte pruefen Sie die Angaben.`,
-      })
-    } catch (error: any) {
-      toast({
-        title: "Fehler bei der KI-Analyse",
-        description: error.message || "Die Website konnte nicht analysiert werden.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsAiExtracting(false)
-    }
-  }
+  useEffect(() => {
+    if (!open) resetForm()
+  }, [open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.praxisArt || formData.types.length === 0 || !formData.bundesland) {
+
+    if (!formData.name || !formData.praxisArt || !formData.bundesland) {
       toast({
-        title: "Validierungsfehler",
-        description: "Bitte fuellen Sie alle Pflichtfelder aus (Name, Praxisart, mind. eine Fachrichtung und Bundesland).",
+        title: "Fehler",
+        description: "Bitte fuellen Sie alle Pflichtfelder aus (Name, Praxisart und Bundesland).",
         variant: "destructive",
       })
       return
     }
 
     setIsSubmitting(true)
+
     try {
       const response = await fetch("/api/practices", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           type: formData.praxisArt,
-          specialization: formData.types.join(", "),
+          specialization: formData.fachrichtungen.join(", "),
           bundesland: formData.bundesland,
-          street: formData.address.street,
-          city: formData.address.city,
-          zipCode: formData.address.zipCode,
+          street: formData.street,
+          city: formData.city,
+          zip_code: formData.zipCode,
           phone: formData.phone,
           email: formData.email,
           website: formData.website,
-          isActive: formData.isActive,
+          description: formData.description,
         }),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || errorData.message || "Fehler beim Erstellen der Praxis")
+        const error = await response.json()
+        throw new Error(error.message || "Praxis konnte nicht erstellt werden")
       }
 
       toast({
@@ -246,28 +163,14 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         description: `Praxis "${formData.name}" wurde erfolgreich erstellt.`,
       })
 
-      setFormData({
-        name: "",
-        praxisArt: "",
-        types: [],
-        bundesland: "",
-        address: {
-          street: "",
-          city: "",
-          zipCode: "",
-        },
-        phone: "",
-        email: "",
-        website: "",
-        isActive: true,
-      })
-
+      onSuccess?.()
       onOpenChange(false)
+      resetForm()
     } catch (error) {
       console.error("Error creating practice:", error)
       toast({
         title: "Fehler",
-        description: error instanceof Error ? error.message : "Die Praxis konnte nicht erstellt werden.",
+        description: error instanceof Error ? error.message : "Praxis konnte nicht erstellt werden.",
         variant: "destructive",
       })
     } finally {
@@ -277,270 +180,257 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Neue Praxis erstellen</DialogTitle>
           <DialogDescription>
-            Fuegen Sie eine neue Praxis zu Ihrem Konto hinzu. Sie koennen mehrere Praxen ueber ein Dashboard verwalten.
+            Erstellen Sie eine neue Praxis. Felder mit * sind Pflichtfelder.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
-          {!showAiInput ? (
-            <button
-              type="button"
-              onClick={() => setShowAiInput(true)}
-              className="flex w-full items-center gap-3 text-left group"
-              disabled={isSubmitting}
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <Sparkles className="h-4 w-4 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">KI-Ausfuellung per Website</p>
-                <p className="text-xs text-muted-foreground">
-                  Website-URL eingeben und Formular automatisch ausfuellen lassen
-                </p>
-              </div>
-            </button>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setShowAiInput(false)} className="text-muted-foreground hover:text-foreground">
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-                <p className="text-sm font-medium">Praxis-Website analysieren</p>
-              </div>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Globe className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="www.praxis-beispiel.de"
-                    value={aiUrl}
-                    onChange={(e) => setAiUrl(e.target.value)}
-                    className="pl-8 h-9 text-sm"
-                    disabled={isAiExtracting}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault()
-                        handleAiExtract()
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleAiExtract}
-                  disabled={isAiExtracting || !aiUrl.trim()}
-                  className="h-9 gap-1.5"
-                >
-                  {isAiExtracting ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Analysiere...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Ausfuellen
-                    </>
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Die KI analysiert die oeffentliche Website und fuellt das Formular aus. Bitte Angaben pruefen.
-              </p>
-            </div>
-          )}
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Praxisname *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Praxis Dr. Mueller"
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+          {step === 1 && (
+            <div className="grid gap-4">
+              {/* Practice Name */}
+              <div className="grid gap-2">
+                <Label htmlFor="name">
+                  Praxisname <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="z.B. Praxis Dr. Mueller"
+                  required
+                />
+              </div>
 
-            <div className="grid gap-2">
-              <Label>Praxisart *</Label>
-              <Select
-                value={formData.praxisArt}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, praxisArt: value }))}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Praxisart waehlen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {practiceForms.map((form) => (
-                    <SelectItem key={form.id} value={form.value}>
-                      {form.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              {/* Praxisart */}
+              <div className="grid gap-2">
+                <Label>
+                  Praxisart <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.praxisArt}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, praxisArt: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Praxisart waehlen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {practiceForms.length > 0
+                      ? practiceForms.map((form) => (
+                          <SelectItem key={form.id} value={form.value}>
+                            {form.label}
+                          </SelectItem>
+                        ))
+                      : ["Einzelpraxis", "BAG", "MVZ", "Praxisgemeinschaft", "Facharztpraxis", "Zahnarztpraxis", "Sonstige"].map((type) => (
+                          <SelectItem key={type} value={type.toLowerCase()}>
+                            {type}
+                          </SelectItem>
+                        ))
+                    }
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="grid gap-2">
-              <Label>Fachrichtungen *</Label>
-              <Popover open={typesOpen} onOpenChange={setTypesOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={typesOpen}
-                    className="w-full justify-between h-auto min-h-10 font-normal"
-                    disabled={isLoadingTypes || isSubmitting}
-                  >
-                    {formData.types.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {formData.types.map((t) => (
-                          <Badge key={t} variant="secondary" className="text-xs">
-                            {t}
-                            <button
-                              type="button"
-                              className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  types: prev.types.filter((x) => x !== t),
-                                }))
-                              }}
-                            >
-                              <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        {isLoadingTypes ? "Laden..." : "Fachrichtungen waehlen..."}
-                      </span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-2" align="start">
-                  <div className="max-h-60 overflow-y-auto space-y-1">
-                    {practiceTypes.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-2">Keine Fachrichtung gefunden.</p>
-                    ) : (
-                      practiceTypes.map((type) => (
+              {/* Fachrichtungen Multi-Select */}
+              <div className="grid gap-2">
+                <Label>Fachrichtungen</Label>
+                <Popover open={fachrichtungenOpen} onOpenChange={setFachrichtungenOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={fachrichtungenOpen}
+                      className="w-full justify-between h-auto min-h-10 font-normal"
+                      type="button"
+                    >
+                      {formData.fachrichtungen.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {formData.fachrichtungen.map((f) => (
+                            <Badge key={f} variant="secondary" className="text-xs">
+                              {f}
+                              <button
+                                type="button"
+                                className="ml-1 rounded-full"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    fachrichtungen: prev.fachrichtungen.filter((x) => x !== f),
+                                  }))
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Fachrichtungen auswaehlen...</span>
+                      )}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-2" align="start">
+                    <div className="max-h-60 overflow-y-auto space-y-1">
+                      {PRACTICE_TYPES.map((type) => (
                         <label
-                          key={type.id}
+                          key={type}
                           className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
                         >
                           <Checkbox
-                            checked={formData.types.includes(type.name)}
+                            checked={formData.fachrichtungen.includes(type)}
                             onCheckedChange={(checked) => {
                               setFormData((prev) => ({
                                 ...prev,
-                                types: checked
-                                  ? [...prev.types, type.name]
-                                  : prev.types.filter((t) => t !== type.name),
+                                fachrichtungen: checked
+                                  ? [...prev.fachrichtungen, type]
+                                  : prev.fachrichtungen.filter((t) => t !== type),
                               }))
                             }}
                           />
-                          {type.name}
+                          {type}
                         </label>
-                      ))
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="bundesland">Bundesland *</Label>
-              <Select
-                value={formData.bundesland}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, bundesland: value }))}
-                required
-                disabled={isSubmitting}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Bundesland waehlen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BUNDESLAENDER.map((land) => (
-                    <SelectItem key={land} value={land}>
-                      {land}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Adresse</Label>
-              <AddressInput
-                value={formData.address}
-                onChange={(address) => setFormData((prev) => ({ ...prev, address }))}
-                required={false}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+              {/* Bundesland */}
               <div className="grid gap-2">
-                <Label htmlFor="phone">Telefon</Label>
+                <Label>
+                  Bundesland <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.bundesland}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, bundesland: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Bundesland waehlen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUNDESLAENDER.map((land) => (
+                      <SelectItem key={land} value={land}>
+                        {land}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="grid gap-4">
+              {/* Address */}
+              <div className="grid gap-2">
+                <Label htmlFor="street">Strasse & Hausnummer</Label>
                 <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                  placeholder="030 12345678"
-                  disabled={isSubmitting}
+                  id="street"
+                  value={formData.street}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, street: e.target.value }))}
+                  placeholder="z.B. Hauptstrasse 123"
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="zipCode">PLZ</Label>
+                  <Input
+                    id="zipCode"
+                    value={formData.zipCode}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, zipCode: e.target.value }))}
+                    placeholder="10115"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="city">Stadt</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
+                    placeholder="Berlin"
+                  />
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="phone">Telefon</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                    placeholder="030 12345678"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">E-Mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="info@praxis.de"
+                  />
+                </div>
+              </div>
+
+              {/* Website */}
               <div className="grid gap-2">
-                <Label htmlFor="email">E-Mail</Label>
+                <Label htmlFor="website">Webseite</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder="kontakt@praxis.de"
-                  disabled={isSubmitting}
+                  id="website"
+                  type="url"
+                  value={formData.website}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
+                  placeholder="https://www.praxis.de"
                 />
               </div>
             </div>
+          )}
 
-            <div className="grid gap-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                type="url"
-                value={formData.website}
-                onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
-                placeholder="https://www.praxis.de"
-                disabled={isSubmitting}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="flex gap-2">
+            {step === 2 && (
+              <Button type="button" variant="ghost" onClick={() => setStep(1)} disabled={isSubmitting}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Zurueck
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={!formData.name || !formData.praxisArt || formData.types.length === 0 || !formData.bundesland || isSubmitting || isLoadingTypes}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Praxis erstellen
-            </Button>
+            {step === 1 ? (
+              <Button
+                type="button"
+                onClick={() => setStep(2)}
+                disabled={!formData.name || !formData.praxisArt || !formData.bundesland}
+              >
+                Weiter
+              </Button>
+            ) : (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Wird erstellt...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Praxis erstellen
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   )
 }
-
-export default CreatePracticeDialog

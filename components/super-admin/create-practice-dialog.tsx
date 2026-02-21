@@ -129,7 +129,7 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.name || !formData.type || !formData.bundesland) {
+    if (!formData.name || !formData.praxisArt || !formData.bundesland) {
       toast({
         title: "Fehler",
         description: "Bitte füllen Sie alle Pflichtfelder aus (Name, Typ und Bundesland).",
@@ -447,7 +447,7 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={!formData.name || !formData.type || !formData.bundesland || isSubmitting}>
+            <Button type="submit" disabled={!formData.name || !formData.praxisArt || !formData.bundesland || isSubmitting}>
               {isSubmitting ? "Wird erstellt..." : "Praxis erstellen"}
             </Button>
           </DialogFooter>

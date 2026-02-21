@@ -29,7 +29,7 @@ export function GenerationOverlay({ generatingProfile, generatingImage, generati
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Dies kann einige Sekunden dauern...</span>
         </div>
-        <div className="mt-4 space-y-2 text-left w-full max-w-xs">
+        <div className="mt-4 space-y-3 text-left w-full max-w-xs">
           <StepIndicator
             label="Eingaben analysieren"
             active={generationStep.includes("Analysiere")}
@@ -71,15 +71,31 @@ function StepIndicator({
   done: boolean
   icon: React.ReactNode
 }) {
+  const percentage = done ? 100 : active ? 65 : 0
+
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 text-sm",
-        active ? "text-primary" : done ? "text-muted-foreground" : "text-muted-foreground/50",
-      )}
-    >
-      {active ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <CheckCircle2 className="h-4 w-4" /> : icon}
-      <span>{label}</span>
+    <div className="space-y-1">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-2 text-sm",
+          active ? "text-primary font-medium" : done ? "text-muted-foreground" : "text-muted-foreground/50",
+        )}
+      >
+        <div className="flex items-center gap-2">
+          {active ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <CheckCircle2 className="h-4 w-4" /> : icon}
+          <span>{label}</span>
+        </div>
+        <span className="text-xs tabular-nums">{percentage}%</span>
+      </div>
+      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className={cn(
+            "h-full rounded-full transition-all duration-700 ease-out",
+            done ? "bg-primary/60" : active ? "bg-primary animate-pulse" : "bg-transparent",
+          )}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
     </div>
   )
 }

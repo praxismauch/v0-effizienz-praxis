@@ -39,36 +39,24 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const adminClient = await createAdminClient()
 
-    const isPreview =
-      process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" ||
-      process.env.VERCEL_ENV === "preview" ||
-      !process.env.NEXT_PUBLIC_VERCEL_ENV
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-    let userId: string
-
-    if (isPreview) {
-      // In preview, use a default user ID
-      userId = "36883b61-34e4-4b9e-8a11-eb1a9656d2a0"
-      console.log("[v0] Using preview environment user ID for schedule creation")
-    } else {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
-
-      if (authError || !user) {
-        return NextResponse.json(
-          { error: "Unauthorized" },
-          {
-            status: 401,
-            headers: {
-              "Content-Type": "application/json",
-            },
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
           },
-        )
-      }
-      userId = user.id
+        },
+      )
     }
+    
+    const userId = user.id
 
     const body = await request.json()
 
@@ -86,7 +74,7 @@ export async function POST(request: NextRequest) {
     const nextRunAt = calculateNextRun(scheduleType, timeOfDay, dayOfWeek, dayOfMonth)
 
     const scheduleData = {
-      practice_id: practiceId || null,
+      practice_id: (practiceId && practiceId !== "all") ? practiceId : null,
       schedule_type: scheduleType,
       backup_scope: backupScope,
       time_of_day: timeOfDay,
@@ -156,7 +144,9 @@ export async function PUT(request: NextRequest) {
     }
 
     if (isActive !== undefined) updateData.is_active = isActive
-    if (scheduleData.practiceId !== undefined) updateData.practice_id = scheduleData.practiceId === "all" ? null : scheduleData.practiceId
+    if (scheduleData.practiceId !== undefined) {
+      updateData.practice_id = (scheduleData.practiceId && scheduleData.practiceId !== "all") ? scheduleData.practiceId : null
+    }
     if (scheduleData.scheduleType) updateData.schedule_type = scheduleData.scheduleType
     if (scheduleData.backupScope) updateData.backup_scope = scheduleData.backupScope
     if (scheduleData.timeOfDay) updateData.time_of_day = scheduleData.timeOfDay

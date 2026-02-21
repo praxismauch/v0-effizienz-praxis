@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Plus, Award, Edit, Trash2, Upload, FileText, ImageIcon, X, Loader2, ExternalLink } from "lucide-react"
+import { Plus, Award, Edit, Trash2, Upload, FileText, X, Loader2, ExternalLink } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "sonner"
 import type { Certification } from "../types"
@@ -39,16 +39,16 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string; name: string; type: string; size: number; uploaded_at: string }>>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const ACCEPTED_FILE_TYPES = "image/jpeg,image/png,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  const ACCEPTED_FILE_TYPES = ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files?.length) return
+  const uploadFilesToBlob = async (files: File[]) => {
     setIsUploading(true)
     try {
       const formDataUpload = new FormData()
-      for (const file of Array.from(files)) {
+      for (const file of files) {
         formDataUpload.append("files", file)
       }
       formDataUpload.append("folder", "certifications")
@@ -67,8 +67,22 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
       toast.error("Fehler beim Hochladen der Datei(en)")
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      uploadFilesToBlob(Array.from(e.target.files))
       e.target.value = ""
     }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true) }
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false) }
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation(); setIsDragging(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length) uploadFilesToBlob(files)
   }
 
   const removeFile = async (url: string) => {
@@ -85,8 +99,6 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
-
-  const isImageType = (type: string) => type.startsWith("image/")
   const prevTriggerRef = useRef(createTrigger)
 
   useEffect(() => {
@@ -285,75 +297,75 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
               <Switch checked={formData.is_mandatory} onCheckedChange={(v) => updateField("is_mandatory", v)} />
             </div>
 
-            {/* File Upload Section */}
+            {/* File Upload Section - matching existing upload UI pattern */}
             <div className="space-y-3 pt-2 border-t">
               <Label>Dokumente & Nachweise</Label>
-              <p className="text-xs text-muted-foreground">
-                Laden Sie Vorlagen, Nachweisdokumente oder Bilder hoch (JPG, PNG, PDF, DOC).
-              </p>
-
-              {/* Uploaded files list */}
-              {uploadedFiles.length > 0 && (
-                <div className="space-y-2">
-                  {uploadedFiles.map((file) => (
-                    <div
-                      key={file.url}
-                      className="flex items-center gap-2 rounded-lg border bg-muted/30 p-2"
-                    >
-                      {isImageType(file.type) ? (
-                        <ImageIcon className="h-4 w-4 text-blue-500 shrink-0" />
-                      ) : (
-                        <FileText className="h-4 w-4 text-red-500 shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
-                      </div>
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-foreground shrink-0"
-                        title="Öffnen"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(file.url)}
-                        className="text-muted-foreground hover:text-destructive shrink-0"
-                        title="Entfernen"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Upload button */}
-              <div className="relative">
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                  isDragging ? "border-primary bg-primary/10" : "border-muted-foreground/25"
+                } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <input
+                  ref={fileInputRef}
                   type="file"
                   multiple
                   accept={ACCEPTED_FILE_TYPES}
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  onChange={handleFileSelect}
+                  className="hidden"
                   disabled={isUploading}
                 />
-                <Button type="button" variant="outline" className="w-full" disabled={isUploading}>
+                <label
+                  className="cursor-pointer"
+                  onClick={(e) => { e.preventDefault(); fileInputRef.current?.click() }}
+                >
                   {isUploading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Wird hochgeladen...
-                    </>
+                    <Loader2 className="h-10 w-10 mx-auto mb-3 text-muted-foreground animate-spin" />
                   ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Dateien auswählen
-                    </>
+                    <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
                   )}
-                </Button>
+                  <p className="text-sm font-medium mb-1">
+                    {isUploading ? "Wird hochgeladen..." : "Klicken Sie hier oder ziehen Sie Dateien hierher"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max. 10MB pro Datei)</p>
+                </label>
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {uploadedFiles.map((file) => (
+                      <div key={file.url} className="flex items-center justify-between p-2 bg-muted rounded text-left">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileText className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-sm truncate">{file.name}</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                            ({formatFileSize(file.size)})
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => { e.stopPropagation(); window.open(file.url, "_blank") }}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); removeFile(file.url) }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

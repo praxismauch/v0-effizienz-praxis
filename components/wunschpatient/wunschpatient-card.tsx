@@ -163,7 +163,7 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated, onViewProfile
               variant="secondary"
               size="icon"
               className="h-10 w-10 rounded-full bg-white/90 hover:bg-white text-gray-700 hover:text-primary"
-              onClick={() => onViewProfile ? onViewProfile(profile) : setViewDialogOpen(true)}
+              onClick={() => setViewDialogOpen(true)}
               title="Bearbeiten"
             >
               <Pencil className="h-5 w-5" />

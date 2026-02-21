@@ -1,7 +1,6 @@
 "use client"
-
+// cache-bust v53
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { usePractice } from "@/contexts/practice-context"
@@ -17,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Building2, ChevronDown, Plus, Settings, Shield, Check, ExternalLink } from "lucide-react"
-import { CreatePracticeDialog } from "./create-practice-dialog"
+import { CreatePracticeDialog } from "./practice-dialog-create"
 
 export function PracticeSelector() {
   const { practices, currentPractice, setCurrentPractice, getAllPracticesForSuperAdmin } = usePractice()

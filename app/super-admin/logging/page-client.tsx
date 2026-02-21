@@ -202,7 +202,7 @@ export default function ErrorLogsPageClient() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Error Logging</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Fehlerprotokoll</h1>
           <p className="text-muted-foreground">
             Systemweite Fehlerüberwachung und Analyse
           </p>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search, Users } from "lucide-react"
 import { WunschpatientCard } from "@/components/wunschpatient/wunschpatient-card"
+import { WunschpatientDetailView } from "@/components/wunschpatient/wunschpatient-detail-view"
 import { CreateWunschpatientDialog } from "@/components/wunschpatient/create-wunschpatient-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -20,6 +21,7 @@ export default function PageClient(_props: PageClientProps) {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [selectedProfile, setSelectedProfile] = useState<any | null>(null)
 
   useEffect(() => {
     if (currentPractice?.id) {
@@ -77,6 +79,16 @@ export default function PageClient(_props: PageClientProps) {
     )
   }
 
+  // Show detail view when a profile is selected
+  if (selectedProfile) {
+    return (
+      <WunschpatientDetailView
+        profile={selectedProfile}
+        onBack={() => setSelectedProfile(null)}
+      />
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -111,7 +123,13 @@ export default function PageClient(_props: PageClientProps) {
       ) : filteredProfiles.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredProfiles.map((profile) => (
-            <WunschpatientCard key={profile.id} profile={profile} onDeleted={fetchProfiles} onUpdated={fetchProfiles} />
+            <WunschpatientCard
+              key={profile.id}
+              profile={profile}
+              onDeleted={fetchProfiles}
+              onUpdated={fetchProfiles}
+              onViewProfile={(p) => setSelectedProfile(p)}
+            />
           ))}
         </div>
       ) : (

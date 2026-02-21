@@ -158,7 +158,7 @@ function EditProfileDialog({ member, open, onOpenChange }: EditProfileDialogProp
       onOpenChange(false)
     } catch (error) {
       console.error("[v0] Error updating team member profile:", error)
-      alert("Failed to update profile. Please try again.")
+      alert("Profil konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.")
     }
   }
 

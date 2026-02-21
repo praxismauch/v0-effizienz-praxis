@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { User, Briefcase, CheckCircle, X } from "lucide-react"
+import { User, Briefcase, CheckCircle, X, ArrowLeft } from "lucide-react"
 import { getArchetypeLabel, getArchetypeColor } from "./wunschpatient-labels"
 
 interface ProfileHeaderProps {
@@ -16,14 +16,15 @@ interface ProfileHeaderProps {
     ai_generated_image_url: string
     is_active: boolean
   }
-  onClose: () => void
+  onClose?: () => void
+  onBack?: () => void
 }
 
-export function ProfileHeader({ profile, onClose }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, onClose, onBack }: ProfileHeaderProps) {
   const [imageError, setImageError] = useState(false)
 
   const placeholderQuery = encodeURIComponent(
-    `professionelles Portrait ${profile.gender === "female" ? "Frau" : "Mann"} ${profile.age_range} Jahre ${profile.occupation || "Person"} freundlich lächelnd Fotostudio`,
+    `professionelles Portrait ${profile.gender === "female" ? "Frau" : profile.gender === "diverse" || profile.gender === "any" ? "Person" : "Mann"} ${profile.age_range} Jahre ${profile.occupation || "Person"} freundlich lächelnd Fotostudio`,
   )
 
   const imageUrl = imageError
@@ -34,16 +35,28 @@ export function ProfileHeader({ profile, onClose }: ProfileHeaderProps) {
     <div
       className={`relative ${getArchetypeColor(profile.archetype)} bg-gradient-to-br from-primary/90 to-primary`}
     >
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
-        onClick={onClose}
-      >
-        <X className="h-5 w-5" />
-      </Button>
+      {onBack ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 left-4 text-white hover:bg-white/20 z-10 gap-2"
+          onClick={onBack}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Zurück
+        </Button>
+      ) : onClose ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
+          onClick={onClose}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      ) : null}
 
-      <div className="px-8 py-8 flex items-end gap-6">
+      <div className={`px-8 pb-8 flex items-end gap-6 ${onBack ? "pt-16" : "pt-8"}`}>
         <div className="relative -mb-16 z-10">
           <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-background shadow-xl bg-background">
             <img
@@ -68,7 +81,7 @@ export function ProfileHeader({ profile, onClose }: ProfileHeaderProps) {
             </Badge>
             <span className="text-white/80 text-sm flex items-center gap-1">
               <User className="h-3.5 w-3.5" />
-              {profile.age_range} Jahre, {profile.gender === "female" ? "weiblich" : "männlich"}
+              {profile.age_range === "any" ? "Beliebiges Alter" : `${profile.age_range} Jahre`}, {profile.gender === "female" ? "weiblich" : profile.gender === "diverse" ? "divers" : profile.gender === "any" ? "beliebig" : "männlich"}
             </span>
             {profile.occupation && (
               <span className="text-white/80 text-sm flex items-center gap-1">

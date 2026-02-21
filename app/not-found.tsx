@@ -7,16 +7,76 @@ import { Home, Search, ArrowLeft, Mail } from "lucide-react"
 import { useEffect } from "react"
 
 export default function NotFound() {
-  // Send notification on mount
+  // Send rich context notification on mount
   useEffect(() => {
+    const context = {
+      // Timing
+      timestamp: new Date().toISOString(),
+
+      // URL details
+      url: window.location.href,
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash,
+      origin: window.location.origin,
+      referrer: document.referrer || null,
+
+      // Browser & device
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      languages: navigator.languages ? Array.from(navigator.languages) : [],
+      platform: (navigator as any).userAgentData?.platform || navigator.platform || null,
+      vendor: navigator.vendor || null,
+      cookiesEnabled: navigator.cookieEnabled,
+      online: navigator.onLine,
+      touchPoints: navigator.maxTouchPoints || 0,
+      deviceMemory: (navigator as any).deviceMemory || null,
+      hardwareConcurrency: navigator.hardwareConcurrency || null,
+
+      // Screen & viewport
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio,
+      colorDepth: window.screen.colorDepth,
+      orientation: window.screen.orientation?.type || null,
+
+      // Network
+      connectionType: (navigator as any).connection?.effectiveType || null,
+      connectionDownlink: (navigator as any).connection?.downlink || null,
+
+      // Time & locale
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezoneOffset: new Date().getTimezoneOffset(),
+
+      // Navigation context
+      historyLength: window.history.length,
+
+      // Performance
+      performance: (() => {
+        try {
+          const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined
+          if (nav) {
+            return {
+              type: nav.type,
+              redirectCount: nav.redirectCount,
+              ttfb: Math.round(nav.responseStart - nav.requestStart),
+              domContentLoaded: Math.round(nav.domContentLoadedEventEnd - nav.startTime),
+              loadTime: nav.loadEventEnd > 0 ? Math.round(nav.loadEventEnd - nav.startTime) : null,
+            }
+          }
+          return null
+        } catch {
+          return null
+        }
+      })(),
+    }
+
     fetch("/api/system/404-notification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        url: window.location.href,
-        referrer: document.referrer || "direct",
-      }),
+      body: JSON.stringify(context),
     }).catch(() => {})
   }, [])
 

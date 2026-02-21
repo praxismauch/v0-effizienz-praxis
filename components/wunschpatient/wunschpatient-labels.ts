@@ -1,5 +1,6 @@
 export function getArchetypeLabel(archetype: string) {
   const labels: Record<string, string> = {
+    any: "Beliebig",
     prevention: "Präventionsorientiert",
     chronic: "Chronischer Patient",
     performance: "Leistungsorientiert",
@@ -22,6 +23,7 @@ export function getArchetypeColor(archetype: string) {
 
 export function getFamilyStatusLabel(status: string) {
   const labels: Record<string, string> = {
+    any: "Beliebig",
     single: "Single",
     partnership: "In Partnerschaft",
     married: "Verheiratet",
@@ -33,6 +35,7 @@ export function getFamilyStatusLabel(status: string) {
 
 export function getHealthConsciousnessLabel(level: string) {
   const labels: Record<string, string> = {
+    any: "Beliebig",
     very_high: "Sehr hoch",
     high: "Hoch",
     medium: "Mittel",
@@ -43,6 +46,7 @@ export function getHealthConsciousnessLabel(level: string) {
 
 export function getFinancialWillingnessLabel(level: string) {
   const labels: Record<string, string> = {
+    any: "Beliebig",
     very_high: "Sehr hoch",
     high: "Hoch",
     medium: "Mittel",
@@ -53,6 +57,7 @@ export function getFinancialWillingnessLabel(level: string) {
 
 export function getCommunicationLabel(pref: string) {
   const labels: Record<string, string> = {
+    any: "Beliebig",
     digital: "Digital",
     phone: "Telefon",
     in_person: "Persönlich",
@@ -63,6 +68,7 @@ export function getCommunicationLabel(pref: string) {
 
 export function getTransportLabel(transport: string) {
   const labels: Record<string, string> = {
+    any: "Beliebig",
     car: "Auto",
     public_transport: "ÖPNV",
     bike: "Fahrrad",

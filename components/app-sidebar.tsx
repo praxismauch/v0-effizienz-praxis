@@ -1,4 +1,5 @@
 "use client"
+// cache-bust v53
 /**
  * AppSidebar - Main application sidebar navigation
  * Refactored: preferences/favorites logic in hooks/use-sidebar-preferences.ts
@@ -23,6 +24,7 @@ import {
   SidebarFavorites,
   SidebarNavGroup,
 } from "@/components/sidebar"
+import { BetaNoticeButton } from "@/components/beta-notice-button"
 
 import {
   getNavigationGroups,
@@ -116,6 +118,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
             ))}
           </div>
         </div>
+
+        <BetaNoticeButton sidebarOpen={sidebarOpen} />
       </Sidebar>
     </TooltipProvider>
   )

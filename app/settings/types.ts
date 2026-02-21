@@ -61,6 +61,7 @@ export interface CalendarSettings {
   workEnd: string
   showWeekends: boolean
   showHolidays: boolean
+  showBundeslandHolidays: boolean
   defaultDuration: string
 }
 

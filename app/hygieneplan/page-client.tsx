@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { useUser } from "@/contexts/user-context"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
@@ -32,9 +33,21 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface HygienePlan {
@@ -108,6 +121,15 @@ const CATEGORY_CONFIG = {
   },
 }
 
+const FREQUENCY_LABELS: Record<string, string> = {
+  daily: "Taeglich",
+  weekly: "Woechentlich",
+  monthly: "Monatlich",
+  quarterly: "Vierteljaehrlich",
+  yearly: "Jaehrlich",
+  as_needed: "Bei Bedarf",
+}
+
 const HEADER_STAT_KEYS: (keyof typeof CATEGORY_CONFIG)[] = [
   "infection_control",
   "sterilization",
@@ -124,6 +146,7 @@ const STATUS_CONFIG = {
 
 export default function HygienePlanClient() {
   const { currentUser, currentPractice } = useUser()
+  const router = useRouter()
   const [hygienePlans, setHygienePlans] = useState<HygienePlan[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -133,6 +156,7 @@ export default function HygienePlanClient() {
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<HygienePlan | null>(null)
   const [editingPlan, setEditingPlan] = useState<HygienePlan | null>(null)
+  const [deletingPlan, setDeletingPlan] = useState<HygienePlan | null>(null)
   const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
@@ -387,7 +411,7 @@ export default function HygienePlanClient() {
                   key={plan.id}
                   className="group hover:shadow-lg transition-all duration-200 cursor-pointer"
                   style={{ borderLeftWidth: "6px", borderLeftColor: categoryConfig?.color || "#6b7280" }}
-                  onClick={() => setSelectedPlan(plan)}
+                  onClick={() => router.push(`/hygieneplan/${plan.id}`)}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
@@ -418,7 +442,7 @@ export default function HygienePlanClient() {
                             {plan.frequency && (
                               <div className="flex items-center gap-1">
                                 <Clock className="h-4 w-4" />
-                                <span className="capitalize">{plan.frequency}</span>
+                                <span>{FREQUENCY_LABELS[plan.frequency] || plan.frequency}</span>
                               </div>
                             )}
                             {plan.responsible_role && (
@@ -436,26 +460,33 @@ export default function HygienePlanClient() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedPlan(plan) }}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingPlan(plan) }}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (confirm("Möchten Sie diesen Hygieneplan wirklich löschen?")) {
-                              deletePlan(plan.id)
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="flex h-7 w-7 items-center justify-center rounded-md bg-background/90 border shadow-sm hover:bg-muted transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setEditingPlan(plan) }}
+                              >
+                                <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom"><p>Bearbeiten</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="flex h-7 w-7 items-center justify-center rounded-md bg-background/90 border shadow-sm hover:bg-destructive/10 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setDeletingPlan(plan) }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom"><p>Loeschen</p></TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
                   </CardContent>
@@ -503,10 +534,48 @@ export default function HygienePlanClient() {
             onSave={(updates) => updatePlan(editingPlan.id, updates)}
           />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deletingPlan} onOpenChange={(open) => { if (!open) setDeletingPlan(null) }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hygieneplan loeschen</AlertDialogTitle>
+              <AlertDialogDescription>
+                Moechten Sie den Hygieneplan &quot;{deletingPlan?.title}&quot; wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (deletingPlan) {
+                    deletePlan(deletingPlan.id)
+                    setDeletingPlan(null)
+                  }
+                }}
+              >
+                Loeschen
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   )
 }
+
+// Progress steps for AI generation
+const GENERATION_STEPS = [
+  { at: 0, label: "Vorbereitung..." },
+  { at: 10, label: "RKI-Richtlinien werden analysiert..." },
+  { at: 25, label: "Praxisdaten werden ausgewertet..." },
+  { at: 40, label: "Massnahmen werden erstellt..." },
+  { at: 60, label: "Schritte werden formuliert..." },
+  { at: 75, label: "Qualitaetsindikatoren werden definiert..." },
+  { at: 88, label: "Dokumentation wird finalisiert..." },
+  { at: 95, label: "Fast fertig..." },
+]
 
 // Generate AI Plan Dialog Component
 function GenerateAIPlanDialog({
@@ -522,65 +591,151 @@ function GenerateAIPlanDialog({
 }) {
   const [selectedCategory, setSelectedCategory] = useState("")
   const [customRequirements, setCustomRequirements] = useState("")
+  const [progress, setProgress] = useState(0)
+  const [progressLabel, setProgressLabel] = useState("")
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Simulated progress that advances through realistic stages
+  useEffect(() => {
+    if (generating) {
+      setProgress(0)
+      setProgressLabel(GENERATION_STEPS[0].label)
+      let current = 0
+
+      intervalRef.current = setInterval(() => {
+        current += Math.random() * 3 + 1 // Random increment between 1-4
+        if (current > 95) current = 95 // Cap at 95 until done
+
+        setProgress(Math.round(current))
+
+        // Find the matching step label
+        const step = [...GENERATION_STEPS].reverse().find((s) => current >= s.at)
+        if (step) setProgressLabel(step.label)
+      }, 400)
+    } else {
+      // When done generating, quickly animate to 100%
+      if (progress > 0 && progress < 100) {
+        setProgress(100)
+        setProgressLabel("Fertig!")
+        setTimeout(() => {
+          setProgress(0)
+          setProgressLabel("")
+        }, 800)
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, [generating])
 
   const handleGenerate = () => {
     if (!selectedCategory) {
-      toast.error("Bitte wählen Sie eine Kategorie")
+      toast.error("Bitte waehlen Sie eine Kategorie")
       return
     }
     onGenerate(selectedCategory, customRequirements)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={generating ? undefined : onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-violet-600" />
-            KI-gestützten Hygieneplan generieren
+            KI-gestuetzten Hygieneplan generieren
           </DialogTitle>
           <DialogDescription>
             Erstellen Sie automatisch einen RKI-konformen Hygieneplan basierend auf aktuellen Richtlinien
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Label>Kategorie auswählen</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-                const Icon = config.icon
+
+        {generating ? (
+          <div className="py-8 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Loader2 className="h-6 w-6 animate-spin text-violet-600" />
+                <span className="text-lg font-semibold">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-3 [&>div]:bg-gradient-to-r [&>div]:from-violet-600 [&>div]:to-indigo-600 [&>div]:transition-all [&>div]:duration-300" />
+              <p className="text-sm text-muted-foreground pt-2 animate-pulse">{progressLabel}</p>
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-center text-xs text-muted-foreground">
+              {["Analyse", "Erstellung", "Optimierung", "Finalisierung"].map((phase, i) => {
+                const phaseStart = i * 25
+                const isActive = progress >= phaseStart && progress < phaseStart + 25
+                const isDone = progress >= phaseStart + 25
                 return (
-                  <Card
-                    key={key}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedCategory === key ? "ring-2 ring-primary" : ""
-                    }`}
-                    onClick={() => setSelectedCategory(key)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg" style={{ backgroundColor: config.bgColor }}>
-                          <Icon className="h-5 w-5" style={{ color: config.color }} />
-                        </div>
-                        <span className="font-medium text-sm">{config.label}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div key={phase} className="space-y-1.5">
+                    <div
+                      className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors duration-300 ${
+                        isDone
+                          ? "bg-green-100 text-green-700"
+                          : isActive
+                            ? "bg-violet-100 text-violet-700 ring-2 ring-violet-300"
+                            : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {isDone ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        i + 1
+                      )}
+                    </div>
+                    <p className={isDone ? "text-green-700 font-medium" : isActive ? "text-violet-700 font-medium" : ""}>{phase}</p>
+                  </div>
                 )
               })}
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="requirements">Besondere Anforderungen (optional)</Label>
-            <Textarea
-              id="requirements"
-              placeholder="Z.B. spezielle Geräte, besondere Patientengruppen, zusätzliche Anforderungen..."
-              value={customRequirements}
-              onChange={(e) => setCustomRequirements(e.target.value)}
-              rows={4}
-            />
+        ) : (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Kategorie auswaehlen</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
+                  const Icon = config.icon
+                  return (
+                    <Card
+                      key={key}
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        selectedCategory === key ? "ring-2 ring-primary" : ""
+                      }`}
+                      onClick={() => setSelectedCategory(key)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg" style={{ backgroundColor: config.bgColor }}>
+                            <Icon className="h-5 w-5" style={{ color: config.color }} />
+                          </div>
+                          <span className="font-medium text-sm">{config.label}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="requirements">Besondere Anforderungen (optional)</Label>
+              <Textarea
+                id="requirements"
+                placeholder="Z.B. spezielle Geraete, besondere Patientengruppen, zusaetzliche Anforderungen..."
+                value={customRequirements}
+                onChange={(e) => setCustomRequirements(e.target.value)}
+                rows={4}
+              />
+            </div>
           </div>
-        </div>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating}>
             Abbrechen
@@ -589,7 +744,7 @@ function GenerateAIPlanDialog({
             {generating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Wird generiert...
+                Wird generiert... {progress}%
               </>
             ) : (
               <>
@@ -639,7 +794,7 @@ function PlanDetailDialog({
                   </Badge>
                 )}
                 <Badge>{categoryConfig?.label}</Badge>
-                {plan.frequency && <Badge variant="outline">{plan.frequency}</Badge>}
+                  {plan.frequency && <Badge variant="outline">{FREQUENCY_LABELS[plan.frequency] || plan.frequency}</Badge>}
               </div>
             </div>
           </div>

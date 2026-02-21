@@ -7,9 +7,29 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, Loader2, Save } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Calendar, Loader2, Save, MapPin } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
+
+const BUNDESLAND_CODE_MAP: Record<string, string> = {
+  "Baden-Württemberg": "BW",
+  "Bayern": "BY",
+  "Berlin": "BE",
+  "Brandenburg": "BB",
+  "Bremen": "HB",
+  "Hamburg": "HH",
+  "Hessen": "HE",
+  "Mecklenburg-Vorpommern": "MV",
+  "Niedersachsen": "NI",
+  "Nordrhein-Westfalen": "NW",
+  "Rheinland-Pfalz": "RP",
+  "Saarland": "SL",
+  "Sachsen": "SN",
+  "Sachsen-Anhalt": "ST",
+  "Schleswig-Holstein": "SH",
+  "Thüringen": "TH",
+}
 
 interface CalendarSettings {
   defaultView: string
@@ -19,6 +39,7 @@ interface CalendarSettings {
   defaultDuration: string
   showWeekends: boolean
   showHolidays: boolean
+  showBundeslandHolidays: boolean
 }
 
 export function CalendarSettingsTab() {
@@ -33,6 +54,7 @@ export function CalendarSettingsTab() {
     defaultDuration: "30",
     showWeekends: false,
     showHolidays: true,
+    showBundeslandHolidays: true,
   })
 
   useEffect(() => {
@@ -52,6 +74,7 @@ export function CalendarSettingsTab() {
               defaultDuration: data.defaultDuration || "30",
               showWeekends: data.showWeekends !== false,
               showHolidays: data.showHolidays !== false,
+              showBundeslandHolidays: data.showBundeslandHolidays !== false,
             })
           }
         }
@@ -92,6 +115,9 @@ export function CalendarSettingsTab() {
       setSaving(false)
     }
   }
+  const bundesland = (currentPractice as any)?.bundesland || ""
+  const bundeslandCode = BUNDESLAND_CODE_MAP[bundesland] || ""
+
   return (
     <div className="space-y-4">
       <Card>
@@ -214,6 +240,31 @@ export function CalendarSettingsTab() {
               <Switch
                 checked={settings.showHolidays}
                 onCheckedChange={(checked) =>                 setSettings({ ...settings, showHolidays: checked })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Label>Landesspezifische Feiertage</Label>
+                  {bundesland ? (
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      <MapPin className="h-3 w-3" />
+                      {bundesland}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {bundesland
+                    ? `Zusaetzliche Feiertage fuer ${bundesland} anzeigen (z.B. Fronleichnam, Allerheiligen)`
+                    : "Bitte zuerst ein Bundesland in den Praxis-Einstellungen festlegen"}
+                </p>
+              </div>
+              <Switch
+                checked={settings.showBundeslandHolidays}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, showBundeslandHolidays: checked })
+                }
+                disabled={!bundesland}
               />
             </div>
           </div>

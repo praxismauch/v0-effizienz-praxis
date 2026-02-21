@@ -2,50 +2,17 @@
 
 import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Clock, TrendingUp, TrendingDown, Download, Calendar } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths } from "date-fns"
-import { de } from "date-fns/locale"
-
-interface TeamMemberOvertime {
-  id: string
-  first_name: string
-  last_name: string
-  email: string
-  avatar_url?: string
-  overtime_total_minutes: number
-  overtime_this_week_minutes: number
-  overtime_this_month_minutes: number
-  planned_hours_per_week: number
-  actual_hours_this_week: number
-  actual_hours_this_month: number
-}
+import { Clock, Download } from "lucide-react"
+import { format } from "date-fns"
+import { type TeamMemberOvertime, formatOvertimeMinutes, formatHours } from "./overtime-utils"
+import { OvertimeSummaryCards } from "./overtime-summary-cards"
+import { OvertimeTable } from "./overtime-table"
 
 interface UeberstundenTabProps {
   practiceId: string
   isLoading?: boolean
-}
-
-// Format minutes to hours with sign
-const formatOvertimeMinutes = (minutes: number) => {
-  if (!minutes || isNaN(minutes)) return "0:00"
-  const h = Math.floor(Math.abs(minutes) / 60)
-  const m = Math.abs(minutes) % 60
-  const sign = minutes < 0 ? "-" : minutes > 0 ? "+" : ""
-  return `${sign}${h}:${m.toString().padStart(2, "0")}`
-}
-
-// Format hours decimal to hours:minutes
-const formatHours = (hours: number) => {
-  if (!hours || isNaN(hours)) return "0:00"
-  const h = Math.floor(hours)
-  const m = Math.round((hours - h) * 60)
-  return `${h}:${m.toString().padStart(2, "0")}`
 }
 
 export default function UeberstundenTab({ practiceId, isLoading = false }: UeberstundenTabProps) {
@@ -58,7 +25,6 @@ export default function UeberstundenTab({ practiceId, isLoading = false }: Ueber
   // Fetch team members overtime data
   useState(() => {
     if (!practiceId) return
-
     const fetchOvertimeData = async () => {
       setLoading(true)
       try {
@@ -73,18 +39,14 @@ export default function UeberstundenTab({ practiceId, isLoading = false }: Ueber
         setLoading(false)
       }
     }
-
     fetchOvertimeData()
   }, [practiceId])
 
-  // Sort team members
   const sortedMembers = useMemo(() => {
     const sorted = [...teamMembers]
-
     sorted.sort((a, b) => {
       let aValue: number | string
       let bValue: number | string
-
       switch (sortBy) {
         case "name":
           aValue = `${a.last_name} ${a.first_name}`.toLowerCase()
@@ -106,25 +68,19 @@ export default function UeberstundenTab({ practiceId, isLoading = false }: Ueber
           aValue = a.overtime_total_minutes
           bValue = b.overtime_total_minutes
       }
-
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortOrder === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
       }
-
       return sortOrder === "asc" ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number)
     })
-
     return sorted
   }, [teamMembers, sortBy, sortOrder])
 
-  // Calculate totals
-  const totals = useMemo(() => {
-    return {
-      total: sortedMembers.reduce((sum, m) => sum + m.overtime_total_minutes, 0),
-      week: sortedMembers.reduce((sum, m) => sum + m.overtime_this_week_minutes, 0),
-      month: sortedMembers.reduce((sum, m) => sum + m.overtime_this_month_minutes, 0),
-    }
-  }, [sortedMembers])
+  const totals = useMemo(() => ({
+    total: sortedMembers.reduce((sum, m) => sum + m.overtime_total_minutes, 0),
+    week: sortedMembers.reduce((sum, m) => sum + m.overtime_this_week_minutes, 0),
+    month: sortedMembers.reduce((sum, m) => sum + m.overtime_this_month_minutes, 0),
+  }), [sortedMembers])
 
   const handleSort = (field: typeof sortBy) => {
     if (sortBy === field) {
@@ -136,48 +92,23 @@ export default function UeberstundenTab({ practiceId, isLoading = false }: Ueber
   }
 
   const handleExport = () => {
-    if (!sortedMembers || sortedMembers.length === 0) {
-      console.error("Keine Überstunden-Daten zum Exportieren vorhanden")
-      return
-    }
-
-    // Create CSV content
-    const headers = [
-      "Name",
-      "E-Mail",
-      "Gesamt Überstunden",
-      "Diese Woche",
-      "Dieser Monat",
-      "Soll Std/Woche",
-      "Ist Std diese Woche",
-      "Ist Std dieser Monat",
-    ]
-    
-    const rows = sortedMembers.map((member) => [
-      `${member.first_name} ${member.last_name}`,
-      member.email,
-      formatOvertimeMinutes(member.overtime_total_minutes),
-      formatOvertimeMinutes(member.overtime_this_week_minutes),
-      formatOvertimeMinutes(member.overtime_this_month_minutes),
-      member.planned_hours_per_week || "0",
-      formatHours(member.actual_hours_this_week),
-      formatHours(member.actual_hours_this_month),
+    if (!sortedMembers || sortedMembers.length === 0) return
+    const headers = ["Name", "E-Mail", "Gesamt Überstunden", "Diese Woche", "Dieser Monat", "Soll Std/Woche", "Ist Std diese Woche", "Ist Std dieser Monat"]
+    const rows = sortedMembers.map((m) => [
+      `${m.first_name} ${m.last_name}`, m.email,
+      formatOvertimeMinutes(m.overtime_total_minutes), formatOvertimeMinutes(m.overtime_this_week_minutes),
+      formatOvertimeMinutes(m.overtime_this_month_minutes), String(m.planned_hours_per_week || "0"),
+      formatHours(m.actual_hours_this_week), formatHours(m.actual_hours_this_month),
     ])
-
     const csvContent = [headers.join(";"), ...rows.map((row) => row.join(";"))].join("\n")
-
-    // Create download
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
+    link.setAttribute("href", URL.createObjectURL(blob))
     link.setAttribute("download", `ueberstunden_${format(new Date(), "yyyy-MM-dd")}.csv`)
     link.style.visibility = "hidden"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-
-    console.log(`CSV-Export erfolgreich (${sortedMembers.length} Mitarbeiter)`)
   }
 
   return (
@@ -193,9 +124,7 @@ export default function UeberstundenTab({ practiceId, isLoading = false }: Ueber
           </div>
           <div className="flex items-center gap-2">
             <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as typeof selectedPeriod)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Gesamt</SelectItem>
                 <SelectItem value="month">Dieser Monat</SelectItem>
@@ -210,199 +139,15 @@ export default function UeberstundenTab({ practiceId, isLoading = false }: Ueber
         </div>
       </CardHeader>
       <CardContent>
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Gesamt Überstunden</p>
-                  <p className="text-2xl font-bold">{formatOvertimeMinutes(totals.total)} h</p>
-                </div>
-                <Clock className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Diese Woche</p>
-                  <p className="text-2xl font-bold">{formatOvertimeMinutes(totals.week)} h</p>
-                </div>
-                <Calendar className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Dieser Monat</p>
-                  <p className="text-2xl font-bold">{formatOvertimeMinutes(totals.month)} h</p>
-                </div>
-                <Calendar className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Table */}
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[250px]">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 font-semibold"
-                    onClick={() => handleSort("name")}
-                  >
-                    Mitarbeiter
-                    {sortBy === "name" && (sortOrder === "asc" ? " ↑" : " ↓")}
-                  </Button>
-                </TableHead>
-                <TableHead className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 font-semibold"
-                    onClick={() => handleSort("total")}
-                  >
-                    Gesamt
-                    {sortBy === "total" && (sortOrder === "asc" ? " ↑" : " ↓")}
-                  </Button>
-                </TableHead>
-                <TableHead className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 font-semibold"
-                    onClick={() => handleSort("week")}
-                  >
-                    Diese Woche
-                    {sortBy === "week" && (sortOrder === "asc" ? " ↑" : " ↓")}
-                  </Button>
-                </TableHead>
-                <TableHead className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 font-semibold"
-                    onClick={() => handleSort("month")}
-                  >
-                    Dieser Monat
-                    {sortBy === "month" && (sortOrder === "asc" ? " ↑" : " ↓")}
-                  </Button>
-                </TableHead>
-                <TableHead className="text-right">Soll/Woche</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedMembers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {loading || isLoading ? "Daten werden geladen..." : "Keine Daten verfügbar"}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sortedMembers.map((member) => {
-                  const overtimeValue =
-                    selectedPeriod === "week"
-                      ? member.overtime_this_week_minutes
-                      : selectedPeriod === "month"
-                        ? member.overtime_this_month_minutes
-                        : member.overtime_total_minutes
-
-                  const isPositive = overtimeValue > 0
-                  const isNegative = overtimeValue < 0
-
-                  return (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={member.avatar_url || "/placeholder.svg"} />
-                            <AvatarFallback>
-                              {member.first_name?.[0]}
-                              {member.last_name?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">
-                              {member.first_name} {member.last_name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">{member.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={cn(
-                            "font-semibold",
-                            member.overtime_total_minutes > 0
-                              ? "text-green-600"
-                              : member.overtime_total_minutes < 0
-                                ? "text-red-600"
-                                : "text-muted-foreground",
-                          )}
-                        >
-                          {formatOvertimeMinutes(member.overtime_total_minutes)} h
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={cn(
-                            "font-medium",
-                            member.overtime_this_week_minutes > 0
-                              ? "text-green-600"
-                              : member.overtime_this_week_minutes < 0
-                                ? "text-red-600"
-                                : "text-muted-foreground",
-                          )}
-                        >
-                          {formatOvertimeMinutes(member.overtime_this_week_minutes)} h
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={cn(
-                            "font-medium",
-                            member.overtime_this_month_minutes > 0
-                              ? "text-green-600"
-                              : member.overtime_this_month_minutes < 0
-                                ? "text-red-600"
-                                : "text-muted-foreground",
-                          )}
-                        >
-                          {formatOvertimeMinutes(member.overtime_this_month_minutes)} h
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {formatHours(member.planned_hours_per_week || 40)} h
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge
-                          variant={isPositive ? "default" : isNegative ? "destructive" : "secondary"}
-                          className="gap-1"
-                        >
-                          {isPositive ? (
-                            <TrendingUp className="h-3 w-3" />
-                          ) : isNegative ? (
-                            <TrendingDown className="h-3 w-3" />
-                          ) : null}
-                          {isPositive ? "Über" : isNegative ? "Unter" : "Neutral"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <OvertimeSummaryCards totals={totals} />
+        <OvertimeTable
+          members={sortedMembers}
+          loading={loading || isLoading}
+          selectedPeriod={selectedPeriod}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        />
       </CardContent>
     </Card>
   )

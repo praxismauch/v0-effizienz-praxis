@@ -34,15 +34,17 @@ Erstelle basierend auf den folgenden Eingaben ein detailliertes Wunschpatienten-
 
 Erstelle folgende Inhalte auf Deutsch:
 
-1. **PERSONA_DESCRIPTION**: Eine lebendige, detaillierte Beschreibung dieser Person (2-3 Absätze). Beschreibe den typischen Tagesablauf, Motivationen, Ängste und Wünsche bezüglich Gesundheit.
+1. **PATIENT_STORY**: Eine kurze, persönliche Geschichte (3-5 Sätze) über diese Person. Verwende einen realistischen deutschen Vornamen und Nachnamen (z.B. "Thomas Müller", "Sarah Fischer", "Markus Weber"). Erzähle die Geschichte in der dritten Person und beschreibe, warum diese Person eine Arztpraxis sucht, was sie im Alltag beschäftigt und was ihr bei der Gesundheitsversorgung besonders wichtig ist. Die Geschichte soll sich wie ein echter Mensch anfühlen.
 
-2. **MARKETING_STRATEGY**: Konkrete Marketingstrategien, um diese Person anzusprechen (3-5 Punkte). Welche Kanäle, welche Botschaften, welche Touchpoints?
+2. **PERSONA_DESCRIPTION**: Eine lebendige, detaillierte Beschreibung dieser Person (2-3 Absätze). Beschreibe den typischen Tagesablauf, Motivationen, Ängste und Wünsche bezüglich Gesundheit.
 
-3. **COMMUNICATION_TIPS**: Spezifische Tipps für die Kommunikation mit diesem Patiententyp (3-5 Tipps). Wie sollte das Praxisteam kommunizieren?
+3. **MARKETING_STRATEGY**: Konkrete Marketingstrategien, um diese Person anzusprechen (3-5 Punkte). Welche Kanäle, welche Botschaften, welche Touchpoints?
 
-4. **SERVICE_RECOMMENDATIONS**: 5-7 konkrete Leistungen/Services, die diese Praxis anbieten sollte, um diesen Wunschpatienten anzuziehen.
+4. **COMMUNICATION_TIPS**: Spezifische Tipps für die Kommunikation mit diesem Patiententyp (3-5 Tipps). Wie sollte das Praxisteam kommunizieren?
 
-Formatiere deine Antwort IMMER als valides JSON mit den Feldern: persona_description, marketing_strategy, communication_tips, service_recommendations (als Array von Strings).
+5. **SERVICE_RECOMMENDATIONS**: 5-7 konkrete Leistungen/Services, die diese Praxis anbieten sollte, um diesen Wunschpatienten anzuziehen.
+
+Formatiere deine Antwort IMMER als valides JSON mit den Feldern: patient_story, persona_description, marketing_strategy, communication_tips, service_recommendations (als Array von Strings).
 Gib NUR das JSON zurück, ohne zusätzlichen Text.`
 
     console.log("[v0] Calling AI model...")
@@ -69,6 +71,7 @@ Gib NUR das JSON zurück, ohne zusätzlichen Text.`
       console.log("[v0] Parse error, using fallback:", parseError)
       // Fallback: create structured response from text
       parsedResponse = {
+        patient_story: "",
         persona_description: text.slice(0, 500),
         marketing_strategy: "Digitale Präsenz stärken, Social Media nutzen, persönliche Ansprache betonen.",
         communication_tips: "Empathisch kommunizieren, Zeit nehmen, digitale Optionen anbieten.",

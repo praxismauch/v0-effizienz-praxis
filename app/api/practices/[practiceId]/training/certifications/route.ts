@@ -104,6 +104,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
         color: body.color || "#3B82F6",
         team_id: body.team_id || body.teamId || null,
         created_by: createdBy,
+        default_files: body.default_files || [],
       })
       .select()
       .single()

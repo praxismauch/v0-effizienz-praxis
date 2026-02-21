@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -26,6 +26,7 @@ interface CreateIgelDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  prefillServiceName?: string
 }
 
 interface Cost {
@@ -53,7 +54,7 @@ const IGEL_CATEGORIES = [
   "Sonstiges",
 ]
 
-function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogProps) {
+function CreateIgelDialog({ open, onOpenChange, onSuccess, prefillServiceName }: CreateIgelDialogProps) {
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const { toast } = useToast()
@@ -61,8 +62,14 @@ function CreateIgelDialog({ open, onOpenChange, onSuccess }: CreateIgelDialogPro
   const { currentUser } = useUser()
   const user = currentUser; // Declare the user variable here
 
-  const [serviceName, setServiceName] = useState("")
+  const [serviceName, setServiceName] = useState(prefillServiceName || "")
   const [serviceDescription, setServiceDescription] = useState("")
+
+  useEffect(() => {
+    if (prefillServiceName && open) {
+      setServiceName(prefillServiceName)
+    }
+  }, [prefillServiceName, open])
   const [category, setCategory] = useState("")
 
   const [oneTimeCosts, setOneTimeCosts] = useState<Cost[]>([

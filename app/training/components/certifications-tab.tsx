@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Plus, Award, Edit, Trash2 } from "lucide-react"
+import { Plus, Award, Edit, Trash2, FileText } from "lucide-react"
+import { MultiFileUpload, type UploadedFile } from "@/components/ui/multi-file-upload"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "sonner"
 import type { Certification } from "../types"
@@ -37,14 +38,20 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
   const [editingCert, setEditingCert] = useState<Certification | null>(null)
   const [formData, setFormData] = useState(INITIAL_CERTIFICATION_FORM)
   const [isSaving, setIsSaving] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const prevTriggerRef = useRef(createTrigger)
 
   useEffect(() => {
-    if (createTrigger && createTrigger > 0) openCreate()
+    if (createTrigger && createTrigger > 0 && createTrigger !== prevTriggerRef.current) {
+      openCreate()
+    }
+    prevTriggerRef.current = createTrigger
   }, [createTrigger])
 
   const openCreate = () => {
     setEditingCert(null)
     setFormData(INITIAL_CERTIFICATION_FORM)
+    setUploadedFiles([])
     setIsDialogOpen(true)
   }
 
@@ -61,6 +68,7 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
       icon: cert.icon || "award",
       color: cert.color || "blue",
     })
+    setUploadedFiles((cert as any).default_files || [])
     setIsDialogOpen(true)
   }
 
@@ -71,12 +79,13 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
     }
 
     setIsSaving(true)
+    const payload = { ...formData, default_files: uploadedFiles }
     try {
       if (editingCert) {
         const res = await fetch(`/api/practices/${practiceId}/training/certifications/${editingCert.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error("Update failed")
         const data = await res.json()
@@ -86,7 +95,7 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
         const res = await fetch(`/api/practices/${practiceId}/training/certifications`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formData, created_by: currentUser?.id }),
+          body: JSON.stringify({ ...payload, created_by: currentUser?.id }),
         })
         if (!res.ok) throw new Error("Create failed")
         const data = await res.json()
@@ -121,8 +130,27 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {certifications.map((cert) => (
-            <Card key={cert.id}>
+          {certifications.map((cert) => {
+            const files: UploadedFile[] = (cert as any).default_files || []
+            const previewImage = files.find((f) => f.type?.startsWith("image/"))
+            return (
+            <Card key={cert.id} className="overflow-hidden">
+              {previewImage && (
+                <a href={previewImage.url} target="_blank" rel="noopener noreferrer" className="block">
+                  <div className="relative h-36 w-full bg-muted">
+                    <img
+                      src={previewImage.url}
+                      alt={`Vorschau: ${cert.name}`}
+                      className="h-full w-full object-cover"
+                    />
+                    {files.filter((f) => f.type?.startsWith("image/")).length > 1 && (
+                      <span className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-xs font-medium backdrop-blur-sm">
+                        +{files.filter((f) => f.type?.startsWith("image/")).length - 1}
+                      </span>
+                    )}
+                  </div>
+                </a>
+              )}
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -151,6 +179,12 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
                     <span>{cert.renewal_reminder_days || cert.reminder_days_before || 30} Tage vorher</span>
                   </div>
                 </div>
+                {files.length > 0 && (
+                  <div className="flex items-center gap-1.5 mt-2 text-sm text-muted-foreground">
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>{files.length} Datei(en) angehängt</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t">
                   <Button variant="outline" size="sm" onClick={() => openEdit(cert)}>
                     <Edit className="h-4 w-4 mr-1" />
@@ -167,7 +201,8 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
                 </div>
               </CardContent>
             </Card>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -220,6 +255,19 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
             <div className="flex items-center justify-between">
               <Label>Pflichtzertifizierung</Label>
               <Switch checked={formData.is_mandatory} onCheckedChange={(v) => updateField("is_mandatory", v)} />
+            </div>
+
+            {/* File Upload Section */}
+            <div className="space-y-2 pt-2 border-t">
+              <Label>Dokumente & Nachweise</Label>
+              <MultiFileUpload
+                files={uploadedFiles}
+                onFilesChange={setUploadedFiles}
+                folder="certifications"
+                label="Dateien hochladen"
+                hint="PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max. 10MB)"
+                maxFiles={10}
+              />
             </div>
           </div>
           <DialogFooter>

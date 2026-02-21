@@ -5,7 +5,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 })
 
 /** @type {import('next').NextConfig} */
-// Force Turbopack cache invalidation after revert - v51
+// Force Turbopack cache invalidation - command.tsx fully removed from all files - v53
 const nextConfig = {
   // TypeScript build errors are currently ignored to allow rapid development
   // Enable strict type checking once the codebase matures and types are properly defined
@@ -151,8 +151,26 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { 
+            key: "Content-Security-Policy", 
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js requires unsafe-eval and unsafe-inline for hydration
+              "style-src 'self' 'unsafe-inline'", // Tailwind and CSS-in-JS require unsafe-inline
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://*.supabase.co https://*.vercel-storage.com https://*.vercel.app",
+              "frame-src 'none'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests"
+            ].join("; ")
+          },
         ],
       },
     ]

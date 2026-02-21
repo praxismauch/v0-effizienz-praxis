@@ -53,6 +53,7 @@ interface WunschpatientCardProps {
   profile: WunschpatientProfile
   onDeleted: (id: string) => void
   onUpdated: () => void
+  onViewProfile?: (profile: WunschpatientProfile) => void
 }
 
 const archetypeConfig: Record<string, { label: string; color: string }> = {
@@ -63,7 +64,7 @@ const archetypeConfig: Record<string, { label: string; color: string }> = {
   relationship: { label: "Beziehungstyp", color: "bg-pink-500" },
 }
 
-export function WunschpatientCard({ profile, onDeleted, onUpdated }: WunschpatientCardProps) {
+export function WunschpatientCard({ profile, onDeleted, onUpdated, onViewProfile }: WunschpatientCardProps) {
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -119,7 +120,7 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated }: Wunschpatie
     if (profile.ai_generated_image_url && !imageError) {
       return profile.ai_generated_image_url
     }
-    const gender = profile.gender === "female" ? "Frau" : "Mann"
+    const gender = profile.gender === "female" ? "Frau" : profile.gender === "diverse" ? "Person" : profile.gender === "any" ? "Person" : "Mann"
     const age = profile.age_range || "35-45"
     const occupation = profile.occupation || "Person"
     const query = `professionelles Portrait ${gender} ${age} Jahre ${occupation} freundlich lächelnd Arztpraxis Patient`
@@ -133,7 +134,7 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated }: Wunschpatie
     return null
   }, [profile.values])
 
-  const genderDisplay = profile.gender === "female" ? "weiblich" : "männlich"
+  const genderDisplay = profile.gender === "female" ? "weiblich" : profile.gender === "diverse" ? "divers" : profile.gender === "any" ? "beliebig" : "männlich"
 
   return (
     <>
@@ -192,7 +193,7 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated }: Wunschpatie
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <User className="h-4 w-4" />
             <span>
-              {profile.age_range} Jahre, {genderDisplay}
+              {profile.age_range === "any" ? "Beliebiges Alter" : `${profile.age_range} Jahre`}, {genderDisplay}
             </span>
           </div>
 
@@ -215,7 +216,13 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated }: Wunschpatie
             </div>
           )}
 
-          <Button variant="outline" className="w-full mt-4 bg-transparent" onClick={() => setViewDialogOpen(true)}>
+          {(profile as any).patient_story && (
+            <p className="text-xs text-muted-foreground italic line-clamp-3 mt-2 pt-2 border-t">
+              {(profile as any).patient_story}
+            </p>
+          )}
+
+          <Button variant="outline" className="w-full mt-4 bg-transparent" onClick={() => onViewProfile ? onViewProfile(profile) : setViewDialogOpen(true)}>
             <Eye className="h-4 w-4 mr-2" />
             Vollständiges Profil
           </Button>

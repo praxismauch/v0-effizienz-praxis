@@ -33,6 +33,7 @@ import {
   BriefcaseBusiness,
   Users,
   MessageCircle,
+  MessageSquare,
   Award,
   FolderKanban,
   Contact,
@@ -43,6 +44,10 @@ import {
   Settings,
   HelpCircle,
   LayoutDashboard,
+  BarChart3,
+  GraduationCap,
+  Clipboard,
+  Bug,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -56,11 +61,13 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 
-// All available menu items for favorites
+// All available menu items for favorites - synced with lib/sidebar-navigation.ts
 const ALL_MENU_ITEMS: { href: string; name: string; icon: LucideIcon; group: string }[] = [
   // Übersicht
-  { href: "/cockpit", name: "Cockpit", icon: LayoutDashboard, group: "Übersicht" },
-  { href: "/ki-analyse", name: "KI-Analyse", icon: LineChart, group: "Übersicht" },
+  { href: "/dashboard", name: "Dashboard", icon: LayoutDashboard, group: "Übersicht" },
+  { href: "/analysis", name: "KI-Analyse", icon: BarChart3, group: "Übersicht" },
+  { href: "/academy", name: "Academy", icon: GraduationCap, group: "Übersicht" },
+  { href: "/schwarzes-brett", name: "Schwarzes Brett", icon: Clipboard, group: "Übersicht" },
   // Planung & Organisation
   { href: "/calendar", name: "Kalender", icon: CalendarDays, group: "Planung" },
   { href: "/dienstplan", name: "Dienstplan", icon: CalendarClock, group: "Planung" },
@@ -69,14 +76,15 @@ const ALL_MENU_ITEMS: { href: string; name: string; icon: LucideIcon; group: str
   { href: "/goals", name: "Ziele", icon: Target, group: "Planung" },
   { href: "/workflows", name: "Workflows", icon: Workflow, group: "Planung" },
   { href: "/responsibilities", name: "Zuständigkeiten", icon: ClipboardCheck, group: "Planung" },
+  { href: "/messages", name: "Nachrichten", icon: MessageSquare, group: "Planung" },
   // Daten & Dokumente
-  { href: "/analytics", name: "Auswertung", icon: LineChart, group: "Daten" },
+  { href: "/analytics", name: "Kennzahlen", icon: LineChart, group: "Daten" },
   { href: "/documents", name: "Dokumente", icon: FileText, group: "Daten" },
   { href: "/practice-insights", name: "Journal", icon: TrendingUp, group: "Daten" },
-  { href: "/knowledge", name: "Wissen", icon: BookOpen, group: "Daten" },
   { href: "/protocols", name: "Protokolle", icon: FileCheck, group: "Daten" },
-  { href: "/cirs", name: "Verbesserungsmeldung", icon: Shield, group: "Daten" },
-  // Qualität
+  // Qualitätsmanagement
+  { href: "/knowledge", name: "Wissen", icon: BookOpen, group: "Qualität" },
+  { href: "/cirs", name: "Verbesserungsmeldung", icon: Shield, group: "Qualität" },
   { href: "/hygieneplan", name: "Hygieneplan", icon: Shield, group: "Qualität" },
   // Strategie & Führung
   { href: "/strategy-journey", name: "Strategiepfad", icon: Compass, group: "Strategie" },
@@ -84,7 +92,7 @@ const ALL_MENU_ITEMS: { href: string; name: string; icon: LucideIcon; group: str
   { href: "/wellbeing", name: "Mitarbeiter-Wellbeing", icon: Heart, group: "Strategie" },
   { href: "/leitbild", name: "Leitbild", icon: Sparkles, group: "Strategie" },
   { href: "/roi-analysis", name: "Lohnt-es-sich-Analyse", icon: LineChart, group: "Strategie" },
-  { href: "/igel-analysis", name: "Selbstzahler-Analyse", icon: Lightbulb, group: "Strategie" },
+  { href: "/igel", name: "Selbstzahler-Analyse", icon: Lightbulb, group: "Strategie" },
   { href: "/competitor-analysis", name: "Konkurrenzanalyse", icon: Network, group: "Strategie" },
   { href: "/wunschpatient", name: "Wunschpatient", icon: Target, group: "Strategie" },
   // Team & Personal
@@ -101,11 +109,10 @@ const ALL_MENU_ITEMS: { href: string; name: string; icon: LucideIcon; group: str
   { href: "/arbeitsplaetze", name: "Arbeitsplätze", icon: BriefcaseBusiness, group: "Praxis" },
   { href: "/rooms", name: "Räume", icon: Pin, group: "Praxis" },
   { href: "/arbeitsmittel", name: "Arbeitsmittel", icon: Wrench, group: "Praxis" },
-  { href: "/inventory", name: "Inventar", icon: Package, group: "Praxis" },
-  { href: "/devices", name: "Medizingeräte", icon: Stethoscope, group: "Praxis" },
-  // System
-  { href: "/settings", name: "Einstellungen", icon: Settings, group: "System" },
-  { href: "/support", name: "Support", icon: HelpCircle, group: "System" },
+  { href: "/inventory", name: "Material", icon: Package, group: "Praxis" },
+  { href: "/devices", name: "Geräte", icon: Stethoscope, group: "Praxis" },
+  { href: "/tickets", name: "Meine Tickets", icon: Bug, group: "Praxis" },
+  { href: "/settings", name: "Einstellungen", icon: Settings, group: "Praxis" },
 ]
 
 export function FavoritesManager() {

@@ -43,11 +43,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       // Build prompt for AI extraction
       const extractionPrompt = `
 Du bist ein Experte für die Extraktion von Bewertungsdaten. Analysiere den folgenden Inhalt und extrahiere alle Bewertungen im JSON-Format.
+DATENSCHUTZHINWEIS (DSGVO): Ersetze alle echten Personennamen durch "Anonym". Gib KEINE echten Namen von Bewertenden zurück.
 
 ${textContent ? `Text-Inhalt:\n${textContent}` : `Analysiere das Bild und extrahiere die Bewertungen.`}
 
 Extrahiere jede Bewertung mit folgenden Feldern:
-- reviewer_name: Name des Bewertenden (oder "Anonym" wenn nicht vorhanden)
+- reviewer_name: IMMER "Anonym" setzen (DSGVO-konform, keine echten Namen)
 - rating: Bewertung als Zahl von 1-5 (oder 1-6 für Jameda)
 - review_text: Der vollständige Bewertungstext
 - review_date: Datum der Bewertung im Format YYYY-MM-DD (schätze wenn nicht vorhanden)
@@ -56,7 +57,7 @@ Extrahiere jede Bewertung mit folgenden Feldern:
 Antworte NUR mit einem validen JSON-Array der extrahierten Bewertungen. Beispiel:
 [
   {
-    "reviewer_name": "Max Mustermann",
+    "reviewer_name": "Anonym",
     "rating": 5,
     "review_text": "Sehr zufrieden mit der Behandlung...",
     "review_date": "2024-01-15",

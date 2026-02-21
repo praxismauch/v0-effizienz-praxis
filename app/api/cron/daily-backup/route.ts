@@ -235,13 +235,33 @@ export async function GET(request: NextRequest) {
         .from("backup_schedules")
         .select("*")
         .eq("is_active", true)
+        .is("deleted_at", null)
         .lte("next_run_at", now.toISOString())
 
       if (schedulesError) {
         console.error("[v0] Daily backup cron: Error fetching schedules:", schedulesError)
-        // Continue with fallback instead of throwing
       } else {
         schedules = data || []
+      }
+
+      // Self-healing: Fix any schedules with next_run_at stuck more than 48h in the past
+      if (schedules.length === 0) {
+        const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000)
+        const { data: stuckSchedules } = await supabase
+          .from("backup_schedules")
+          .select("*")
+          .eq("is_active", true)
+          .is("deleted_at", null)
+          .lt("next_run_at", twoDaysAgo.toISOString())
+
+        if (stuckSchedules && stuckSchedules.length > 0) {
+          console.log(`[v0] Daily backup cron: Found ${stuckSchedules.length} stuck schedule(s), resetting...`)
+          for (const stuck of stuckSchedules) {
+            const nextRun = calculateNextRun(stuck.schedule_type, stuck.time_of_day, stuck.day_of_week, stuck.day_of_month)
+            await supabase.from("backup_schedules").update({ next_run_at: now.toISOString(), updated_at: now.toISOString() }).eq("id", stuck.id)
+            schedules.push(stuck)
+          }
+        }
       }
     } catch (err) {
       console.error("[v0] Daily backup cron: backup_schedules table may not exist, using fallback:", err)
@@ -308,14 +328,21 @@ export async function GET(request: NextRequest) {
           try {
             let query = supabase.from(table).select("*")
 
-            // Filter by practice_id for practice-specific tables
+            // Only filter by practice_id if it's set AND this is a practice-specific table
+            // When practice_id is null, we want ALL data (full backup)
             if (schedule.practice_id && !GLOBAL_TABLES.includes(table)) {
               query = query.eq("practice_id", schedule.practice_id)
             }
 
             const { data, error } = await query
 
-            if (!error && data) {
+            if (error) {
+              // Table might not exist yet, skip silently
+              console.warn(`[v0] Skipping table ${table}: ${error.message}`)
+              continue
+            }
+
+            if (data) {
               backupData.tables[table] = data
               backupData.table_row_counts[table] = data.length
               totalRows += data.length
@@ -373,8 +400,8 @@ export async function GET(request: NextRequest) {
 
         if (backupError) throw backupError
 
-        // Update schedule (skip for fallback schedules)
-        if (!schedule._isFallback) {
+        // Always update the schedule's next_run_at so it doesn't get stuck
+        if (!schedule._isFallback && schedule.id) {
           const nextRun = calculateNextRun(
             schedule.schedule_type,
             schedule.time_of_day,
@@ -382,7 +409,9 @@ export async function GET(request: NextRequest) {
             schedule.day_of_month,
           )
 
-          await supabase
+          console.log(`[v0] Updating schedule ${schedule.id}: next_run_at = ${nextRun}`)
+
+          const { error: updateError } = await supabase
             .from("backup_schedules")
             .update({
               last_run_at: now.toISOString(),
@@ -390,6 +419,10 @@ export async function GET(request: NextRequest) {
               updated_at: now.toISOString(),
             })
             .eq("id", schedule.id)
+
+          if (updateError) {
+            console.error(`[v0] Failed to update schedule ${schedule.id}:`, updateError)
+          }
         }
 
         // Clean up old backups based on retention

@@ -6,6 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -19,6 +27,10 @@ import {
   Package,
   InfoIcon,
   Globe,
+  Bug,
+  Construction,
+  MessageSquareHeart,
+  ChevronRight,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -153,6 +165,111 @@ export default function InfoPage() {
             Aktualisieren
           </Button>
         </div>
+
+        {/* Wichtiger Hinweis */}
+        <Dialog>
+          <Card className="mb-6 border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                  <Construction className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-amber-900 dark:text-amber-200">Wichtiger Hinweis</h3>
+                  <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1">
+                    Diese Anwendung befindet sich noch in aktiver Entwicklung. Wir freuen uns auf Ihr Feedback!
+                  </p>
+                </div>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="shrink-0 gap-1.5 border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10">
+                    Mehr erfahren
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </DialogTrigger>
+              </div>
+            </CardContent>
+          </Card>
+
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Construction className="h-5 w-5 text-amber-500" />
+                Wichtiger Hinweis
+              </DialogTitle>
+              <DialogDescription>
+                Informationen zum aktuellen Entwicklungsstand
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-5 py-2">
+              <div className="rounded-lg border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20 p-4">
+                <h4 className="font-medium text-amber-900 dark:text-amber-200 mb-2">Aktive Entwicklungsphase</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Effizienz Praxis befindet sich derzeit noch in der aktiven Entwicklung (Beta-Phase). 
+                  Das bedeutet, dass neue Funktionen laufend hinzukommen, bestehende Features verbessert werden 
+                  und es vereinzelt zu kleineren Fehlern oder unerwarteten Verhaltensweisen kommen kann.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-medium">Was bedeutet das konkret?</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-500 shrink-0" />
+                    <span>Alle Kernfunktionen sind voll nutzbar und werden produktiv eingesetzt</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
+                    <span>Einige Features sind noch in der Optimierung und werden stetig verbessert</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Construction className="h-4 w-4 mt-0.5 text-blue-500 shrink-0" />
+                    <span>Neue Module und Funktionen werden in den kommenden Wochen ausgerollt</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <MessageSquareHeart className="h-4.5 w-4.5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">Ihr Feedback ist uns wichtig!</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Wir laden Sie herzlich ein, uns Ihre Erfahrungen, Verbesserungsvorschläge und 
+                      Fehlermeldungen mitzuteilen. Ihr Feedback hilft uns, Effizienz Praxis noch besser zu machen.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Bug className="h-4.5 w-4.5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">So geben Sie Feedback</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {'Klicken Sie auf das '}
+                      <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                        <Bug className="h-3.5 w-3.5" /> Bug-Icon
+                      </span>
+                      {' in der oberen rechten Ecke der Anwendung (neben Ihrem Profil). '} 
+                      Dort können Sie Fehler melden, Verbesserungsvorschläge einreichen 
+                      oder allgemeines Feedback geben -- gerne auch mit Screenshots.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Vielen Dank, dass Sie Teil dieser Entwicklungsphase sind!
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Last Checked Info */}
         <Card className="mb-6 border-primary/20">

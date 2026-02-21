@@ -58,6 +58,7 @@ export function PracticeSettingsTab() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [specialtyGroups, setSpecialtyGroups] = useState<SpecialtyGroup[]>([])
+  const [practiceForms, setPracticeForms] = useState<{ id: string; value: string; label: string }[]>([])
   const [specialtyOpen, setSpecialtyOpen] = useState(false)
   const [settings, setSettings] = useState<PracticeSettings>({
     name: "",
@@ -117,7 +118,19 @@ export function PracticeSettingsTab() {
         console.error("Error fetching specialty groups:", error)
       }
     }
+    async function fetchPracticeForms() {
+      try {
+        const res = await fetch("/api/practice-forms")
+        if (res.ok) {
+          const data = await res.json()
+          setPracticeForms(data || [])
+        }
+      } catch (error) {
+        console.error("Error fetching practice forms:", error)
+      }
+    }
     fetchSpecialtyGroups()
+    fetchPracticeForms()
   }, [])
 
   const handleSave = async () => {
@@ -201,12 +214,13 @@ onValueChange={(value) => setSettings({ ...settings, type: value })}
                 <SelectTrigger>
                   <SelectValue placeholder="Praxisart auswählen" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="facharzt">Facharztpraxis</SelectItem>
-                  <SelectItem value="zahnarzt">Zahnarztpraxis</SelectItem>
-                  <SelectItem value="mvz">MVZ</SelectItem>
-                  <SelectItem value="other">Sonstige</SelectItem>
-                </SelectContent>
+  <SelectContent>
+  {practiceForms.map((form) => (
+    <SelectItem key={form.id} value={form.value}>
+      {form.label}
+    </SelectItem>
+  ))}
+  </SelectContent>
               </Select>
             </div>
           </div>

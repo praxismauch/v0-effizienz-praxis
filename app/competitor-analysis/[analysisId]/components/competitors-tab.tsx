@@ -4,19 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MapPin, Star, CheckCircle2, Globe, ExternalLink, Users } from "lucide-react"
-import type { CompetitorAnalysis, Competitor } from "../types"
+import type { Competitor } from "../types"
 
 interface CompetitorsTabProps {
-  analysis: CompetitorAnalysis
+  competitors?: Competitor[]
 }
 
-export function CompetitorsTab({ analysis }: CompetitorsTabProps) {
-  if (!analysis.competitors || analysis.competitors.length === 0) {
+export function CompetitorsTab({ competitors }: CompetitorsTabProps) {
+  if (!competitors || competitors.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <Users className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-sm text-muted-foreground">Keine Wettbewerber-Daten verfügbar</p>
+          <p className="text-sm text-muted-foreground">Keine Wettbewerber-Daten verfuegbar</p>
         </CardContent>
       </Card>
     )
@@ -24,7 +24,7 @@ export function CompetitorsTab({ analysis }: CompetitorsTabProps) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {analysis.competitors.map((competitor: Competitor, index: number) => (
+      {competitors.map((competitor: Competitor, index: number) => (
         <Card key={index}>
           <CardHeader>
             <CardTitle className="text-lg">{competitor.name}</CardTitle>

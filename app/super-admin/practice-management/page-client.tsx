@@ -79,7 +79,7 @@ export function PracticeManagementClient() {
       setTeamMembers(teamMembersData.teamMembers || [])
     } catch (error) {
       console.error("Error fetching data:", error)
-      toast.error("Failed to load data")
+      toast.error("Daten konnten nicht geladen werden")
     } finally {
       setLoading(false)
     }

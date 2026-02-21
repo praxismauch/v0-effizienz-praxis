@@ -153,6 +153,31 @@ export function AIPracticeAnalysis({ onScoreUpdate }: { onScoreUpdate?: (score: 
       if (data.overallScore != null && onScoreUpdate) {
         onScoreUpdate(data.overallScore)
       }
+
+      // Save to analysis history for the Verlauf tab
+      try {
+        await fetch("/api/ai-analysis-history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: userId,
+            practice_id: practiceId,
+            analysis_type: "practice",
+            title: `Praxis-Analyse (Score: ${data.overallScore ?? "-"}/100)`,
+            summary: data.summary || "Keine Zusammenfassung verfügbar",
+            full_analysis: data,
+            metadata: {
+              score: data.overallScore,
+              insights_count: data.insights?.length || 0,
+              recommendations_count: data.recommendations?.length || 0,
+              generated_at: data.generatedAt || new Date().toISOString(),
+            },
+          }),
+        })
+      } catch (saveError) {
+        // Non-critical - don't fail the analysis if save fails
+        console.error("[v0] Failed to save analysis to history:", saveError)
+      }
     } catch (error) {
       console.error("Fehler beim Abrufen der KI-Analyse:", error)
       toast({
@@ -367,19 +392,29 @@ export function AIPracticeAnalysis({ onScoreUpdate }: { onScoreUpdate?: (score: 
         </div>
 
         {analysis.recommendations.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-semibold">Empfehlungen</h3>
+          <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Lightbulb className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold">Empfehlungen</h3>
+                <p className="text-xs text-muted-foreground">{analysis.recommendations.length} konkrete Handlungsvorschlaege</p>
+              </div>
             </div>
-            <ul className="space-y-2">
+            <div className="space-y-3">
               {analysis.recommendations.map((recommendation, index) => (
-                <li key={index} className="flex gap-2 text-sm">
-                  <span className="text-primary">•</span>
-                  <span className="text-muted-foreground">{recommendation}</span>
-                </li>
+                <div
+                  key={index}
+                  className="flex items-start gap-3 rounded-lg border bg-background/80 p-3.5 transition-colors hover:bg-background"
+                >
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary mt-0.5">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm leading-relaxed">{recommendation}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
       </CardContent>

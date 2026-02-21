@@ -47,8 +47,8 @@ const SystemChangesTracker = () => {
     } catch (error) {
       console.error("[v0] Fetch error:", error)
       toast({
-        title: "Error",
-        description: "Failed to load system changes",
+        title: "Fehler",
+        description: "Systemaenderungen konnten nicht geladen werden",
         variant: "destructive",
       })
     } finally {

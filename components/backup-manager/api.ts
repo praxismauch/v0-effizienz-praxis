@@ -53,36 +53,43 @@ export async function createScheduleApi(form: ScheduleFormState): Promise<void> 
 
 /** Update an existing schedule */
 export async function updateScheduleApi(scheduleId: string, data: Partial<ScheduleFormState>): Promise<void> {
-  const response = await fetch(`/api/super-admin/backup-schedules/${scheduleId}`, {
-    method: "PATCH",
+  const response = await fetch("/api/super-admin/backup-schedules", {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ id: scheduleId, ...data }),
   })
   if (!response.ok) throw new Error("Failed to update schedule")
 }
 
 /** Toggle schedule active state */
 export async function toggleScheduleApi(scheduleId: string, isActive: boolean): Promise<void> {
-  const response = await fetch(`/api/super-admin/backup-schedules/${scheduleId}`, {
+  const response = await fetch("/api/super-admin/backup-schedules", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ is_active: isActive }),
+    body: JSON.stringify({ id: scheduleId, isActive }),
   })
   if (!response.ok) throw new Error("Failed to toggle schedule")
 }
 
 /** Delete a backup */
 export async function deleteBackupApi(backupId: string): Promise<void> {
-  const response = await fetch(`/api/super-admin/backups/${backupId}`, { method: "DELETE" })
+  const response = await fetch(`/api/super-admin/backups?id=${backupId}`, { method: "DELETE" })
   if (!response.ok) throw new Error("Failed to delete backup")
 }
 
-/** Download a backup */
+/** Download a backup - fetches the file_url from the backup record */
 export async function downloadBackupApi(backupId: string): Promise<{ blob: Blob; filename: string }> {
-  const response = await fetch(`/api/super-admin/backups/${backupId}/download`)
-  if (!response.ok) throw new Error("Failed to download backup")
+  // First get the backup record to find the file URL
+  const backupsResponse = await fetch(`/api/super-admin/backups?limit=100`)
+  if (!backupsResponse.ok) throw new Error("Failed to fetch backup data")
+  const backups = await backupsResponse.json()
+  const backup = backups.find((b: any) => b.id === backupId)
+  if (!backup?.file_url) throw new Error("Backup file URL not found")
+
+  const response = await fetch(backup.file_url)
+  if (!response.ok) throw new Error("Failed to download backup file")
   const blob = await response.blob()
-  const filename = response.headers.get("content-disposition")?.match(/filename="?(.+)"?/)?.[1] || `backup-${backupId}.json`
+  const filename = `backup-${backup.created_at?.split("T")[0] || backupId}.json`
   return { blob, filename }
 }
 
@@ -158,6 +165,16 @@ export async function diagnoseSchedulesApi(): Promise<{ summary?: { stuck: numbe
 export async function fixStuckSchedulesApi(): Promise<{ fixed: number; still_stuck: number }> {
   const response = await fetch("/api/super-admin/backup-schedules/fix-stuck", { method: "POST" })
   if (!response.ok) throw new Error("Failed to fix stuck schedules")
+  return response.json()
+}
+
+/** Trigger the daily backup cron job manually */
+export async function triggerBackupNowApi(): Promise<{ success: boolean; processed: number; results: any[] }> {
+  const response = await fetch("/api/super-admin/trigger-backup", { method: "POST" })
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+    throw new Error(errorData.error || "Backup-Auslösung fehlgeschlagen")
+  }
   return response.json()
 }
 

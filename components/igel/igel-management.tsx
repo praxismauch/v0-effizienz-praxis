@@ -15,13 +15,27 @@ import {
   ClipboardList,
   Clock,
   ThumbsUp,
+  Pencil,
+  Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useToast } from "@/hooks/use-toast"
 import { CreateIgelDialog } from "./create-igel-dialog"
 import { EditIgelDialog } from "./edit-igel-dialog"
-import { useIgelAnalyses } from "@/hooks/use-igel"
+import { useIgelAnalyses, deleteIgelAnalysis } from "@/hooks/use-igel"
 
 interface IgelAnalysis {
   id: string
@@ -42,6 +56,9 @@ export function IgelManagement() {
   const router = useRouter()
   const [createOpen, setCreateOpen] = useState(false)
   const [editAnalysis, setEditAnalysis] = useState<IgelAnalysis | null>(null)
+  const [deleteAnalysis, setDeleteAnalysis] = useState<IgelAnalysis | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const { toast } = useToast()
   const { currentPractice } = usePractice()
 
   const practiceId = currentPractice?.id
@@ -51,6 +68,21 @@ export function IgelManagement() {
     if (recommendation?.includes("Sehr empfehlenswert")) return "default"
     if (recommendation?.includes("Bedingt")) return "secondary"
     return "destructive"
+  }
+
+  const handleDelete = async () => {
+    if (!deleteAnalysis || !practiceId) return
+    setIsDeleting(true)
+    try {
+      await deleteIgelAnalysis(practiceId, deleteAnalysis.id)
+      toast({ title: "Analyse gelöscht", description: `"${deleteAnalysis.service_name}" wurde erfolgreich gelöscht.` })
+      mutateAnalyses()
+    } catch (error: any) {
+      toast({ title: "Fehler", description: error.message || "Analyse konnte nicht gelöscht werden.", variant: "destructive" })
+    } finally {
+      setIsDeleting(false)
+      setDeleteAnalysis(null)
+    }
   }
 
   const getScoreIcon = (score: number) => {
@@ -158,9 +190,45 @@ export function IgelManagement() {
           {analyses.map((analysis) => (
               <Card
                 key={analysis.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="group relative cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => router.push(`/igel/${analysis.id}`)}
               >
+              {/* Hover action buttons */}
+              <div className="absolute top-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex h-7 w-7 items-center justify-center rounded-md bg-background/90 border shadow-sm hover:bg-muted transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditAnalysis(analysis)
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p>Bearbeiten</p></TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex h-7 w-7 items-center justify-center rounded-md bg-background/90 border shadow-sm hover:bg-destructive/10 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDeleteAnalysis(analysis)
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p>Löschen</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -171,7 +239,7 @@ export function IgelManagement() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 mr-8 group-hover:mr-16 transition-all">
                     {getScoreIcon(analysis.profitability_score || 0)}
                     <span className="text-lg font-bold">{analysis.profitability_score || 0}</span>
                   </div>
@@ -287,6 +355,27 @@ export function IgelManagement() {
           }}
         />
       )}
+
+      <AlertDialog open={!!deleteAnalysis} onOpenChange={(open) => { if (!open) setDeleteAnalysis(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Analyse löschen</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie die Analyse &quot;{deleteAnalysis?.service_name}&quot; wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Löscht..." : "Löschen"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

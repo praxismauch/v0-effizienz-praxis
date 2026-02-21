@@ -34,6 +34,8 @@ import {
   TrendingUp,
   FileCheck,
   Clipboard,
+  MessageSquare,
+  Bug,
   type LucideIcon,
 } from "lucide-react"
 
@@ -229,6 +231,12 @@ export function getNavigationGroups(
           key: "responsibilities",
           badge: "responsibilities",
         },
+        {
+          name: t("sidebar.messages", "Nachrichten"),
+          href: "/messages",
+          icon: MessageSquare,
+          key: "messages",
+        },
       ],
     },
     {
@@ -332,7 +340,7 @@ export function getNavigationGroups(
         },
         {
           name: "Selbstzahler-Analyse",
-          href: "/igel-analysis",
+          href: "/igel",
           icon: Lightbulb,
           key: "igel",
         },
@@ -457,6 +465,13 @@ export function getNavigationGroups(
           icon: Stethoscope,
           key: "devices",
           badge: "devices",
+        },
+        {
+          name: t("sidebar.tickets", "Meine Tickets"),
+          href: "/tickets",
+          icon: Bug,
+          key: "tickets",
+          badge: "tickets",
         },
         {
           name: t("sidebar.settings", "Einstellungen"),

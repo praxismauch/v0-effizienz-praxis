@@ -1,4 +1,4 @@
-import { put } from "@vercel/blob"
+import { put, del } from "@vercel/blob"
 import { type NextRequest, NextResponse } from "next/server"
 import sharp from "sharp"
 
@@ -42,28 +42,19 @@ async function compressImageServer(buffer: Buffer, mimeType: string): Promise<Bu
   }
 }
 
+const ALLOWED_DOC_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const file = formData.get("file") as File
-
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 })
-    }
-
-    let fileBuffer = Buffer.from(await file.arrayBuffer())
-    let finalFileName = file.name
-    let finalMimeType = file.type
-
-    if (file.type.startsWith("image/") && file.type !== "image/svg+xml" && file.type !== "image/gif") {
-      fileBuffer = await compressImageServer(fileBuffer, file.type)
-
-      // Convert to jpeg for better compression (except for png with transparency)
-      if (file.type !== "image/png") {
-        finalMimeType = "image/jpeg"
-        finalFileName = file.name.replace(/\.[^/.]+$/, ".jpg")
-      }
-    }
 
     // Check if BLOB_READ_WRITE_TOKEN is set
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
@@ -71,22 +62,87 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Blob storage not configured. Please add the Vercel Blob integration." }, { status: 500 })
     }
 
-    // Upload to Vercel Blob
-    const blob = await put(finalFileName, fileBuffer, {
-      access: "public",
-      contentType: finalMimeType,
-    })
+    // Support both single "file" and multiple "files" field names
+    const singleFile = formData.get("file") as File | null
+    const multipleFiles = formData.getAll("files") as File[]
+    const folder = (formData.get("folder") as string) || "uploads"
 
-    return NextResponse.json({
-      url: blob.url,
-      fileName: finalFileName,
-      fileSize: fileBuffer.length,
-      originalSize: file.size,
-      compressed: fileBuffer.length < file.size,
-    })
+    const filesToProcess = singleFile ? [singleFile] : multipleFiles
+
+    if (!filesToProcess.length || !filesToProcess[0]?.name) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    }
+
+    const results = []
+
+    for (const file of filesToProcess) {
+      if (file.size > MAX_FILE_SIZE) {
+        results.push({ name: file.name, error: `Datei zu groß (max ${MAX_FILE_SIZE / 1024 / 1024}MB)` })
+        continue
+      }
+
+      let fileBuffer = Buffer.from(await file.arrayBuffer())
+      let finalFileName = file.name
+      let finalMimeType = file.type
+
+      // Compress images (but not documents)
+      if (file.type.startsWith("image/") && file.type !== "image/svg+xml" && file.type !== "image/gif") {
+        fileBuffer = await compressImageServer(fileBuffer, file.type)
+        if (file.type !== "image/png") {
+          finalMimeType = "image/jpeg"
+          finalFileName = file.name.replace(/\.[^/.]+$/, ".jpg")
+        }
+      }
+
+      const timestamp = Date.now()
+      const safeName = finalFileName.replace(/[^a-zA-Z0-9._-]/g, "_")
+      const pathname = `${folder}/${timestamp}-${safeName}`
+
+      const blob = await put(pathname, fileBuffer, {
+        access: "public",
+        contentType: finalMimeType,
+      })
+
+      results.push({
+        url: blob.url,
+        name: file.name,
+        type: file.type,
+        size: fileBuffer.length,
+        originalSize: file.size,
+        compressed: fileBuffer.length < file.size,
+        uploaded_at: new Date().toISOString(),
+      })
+    }
+
+    // For single-file backward compatibility, return flat object if only one file
+    if (singleFile && results.length === 1 && !results[0].error) {
+      return NextResponse.json({
+        url: results[0].url,
+        fileName: results[0].name,
+        fileSize: results[0].size,
+        originalSize: results[0].originalSize,
+        compressed: results[0].compressed,
+      })
+    }
+
+    return NextResponse.json({ files: results })
   } catch (error) {
     console.error("[v0] Error uploading file:", error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.json({ error: `Failed to upload file: ${errorMessage}` }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { url } = await request.json()
+    if (!url) {
+      return NextResponse.json({ error: "No URL provided" }, { status: 400 })
+    }
+    await del(url)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("[v0] Error deleting file:", error)
+    return NextResponse.json({ error: "Delete failed" }, { status: 500 })
   }
 }

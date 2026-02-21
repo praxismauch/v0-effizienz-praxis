@@ -96,11 +96,11 @@ export async function requireSuperAdmin(): Promise<AuthResult | AuthError> {
   const adminClient = createAdminClient()
   const { data: profile } = await adminClient
     .from("users")
-    .select("is_super_admin")
+    .select("role")
     .eq("id", auth.user.id)
     .single()
 
-  if (!profile?.is_super_admin) {
+  if (!profile || profile.role !== "superadmin") {
     return {
       response: NextResponse.json(
         { error: "Forbidden" },

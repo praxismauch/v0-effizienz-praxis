@@ -33,6 +33,7 @@ export function BackupManager({ userId, practices }: BackupManagerProps) {
     updateSchedule, toggleSchedule, editingScheduleId, setEditingScheduleId,
     setupAllPracticeSchedules, diagnoseSchedules, fixStuckSchedules,
     connectGoogleDrive, disconnectGoogleDrive, syncToGoogleDrive,
+    triggerBackupNow,
   } = useBackupManager({ userId, practices })
 
   const handleOpenRestoreDialog = (backup: Backup) => {
@@ -104,6 +105,7 @@ export function BackupManager({ userId, practices }: BackupManagerProps) {
             onSetupAllPracticeSchedules={setupAllPracticeSchedules}
             onDiagnoseSchedules={diagnoseSchedules}
             onFixStuckSchedules={fixStuckSchedules}
+            onTriggerBackupNow={triggerBackupNow}
           />
         </TabsContent>
 

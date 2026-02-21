@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        practice:practices!backups_practice_id_fkey(id, name)
+        practice:practices(id, name)
       `,
       )
       .order("created_at", { ascending: false })

@@ -308,6 +308,31 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
     }
   }, [toast, fetchSchedules])
 
+  // --- Trigger backup now ---
+
+  const triggerBackupNow = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await api.triggerBackupNowApi()
+      const successCount = data.results?.filter((r: any) => r.status === "success").length || 0
+      const failCount = data.results?.filter((r: any) => r.status === "failed").length || 0
+      if (failCount > 0) {
+        toast({ title: "Teilweise erfolgreich", description: `${successCount} Backups erstellt, ${failCount} fehlgeschlagen`, variant: "destructive" })
+      } else {
+        toast({ title: "Erfolg", description: `${successCount} automatische(s) Backup(s) erfolgreich erstellt` })
+      }
+      fetchBackups()
+      fetchSchedules()
+      return true
+    } catch (error) {
+      console.error("Error triggering backup:", error)
+      toast({ title: "Fehler", description: error instanceof Error ? error.message : "Backup konnte nicht ausgelöst werden", variant: "destructive" })
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }, [toast, fetchBackups, fetchSchedules])
+
   // --- Google Drive ---
 
   const connectGoogleDrive = useCallback(async () => {
@@ -370,5 +395,6 @@ export function useBackupManager({ userId, practices }: UseBackupManagerProps) {
     restoreBackup, verifyBackup, verifyAllBackups,
     setupAllPracticeSchedules, diagnoseSchedules, fixStuckSchedules,
     connectGoogleDrive, disconnectGoogleDrive, syncToGoogleDrive,
+    triggerBackupNow,
   }
 }

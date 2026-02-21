@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, AlertTriangle, Loader2, ShieldAlert } from "lucide-react"
+import { Plus, Pencil, AlertTriangle, Loader2, ShieldAlert, Play } from "lucide-react"
 import type { BackupSchedule, ScheduleFormState, Practice } from "./types"
 import { formatDateDE, getScheduleTypeLabel } from "./utils"
 
@@ -41,6 +41,7 @@ interface SchedulesTabProps {
   onSetupAllPracticeSchedules: () => void
   onDiagnoseSchedules: () => void
   onFixStuckSchedules: () => void
+  onTriggerBackupNow?: () => Promise<boolean>
 }
 
 export function SchedulesTab({
@@ -64,6 +65,7 @@ export function SchedulesTab({
   onSetupAllPracticeSchedules,
   onDiagnoseSchedules,
   onFixStuckSchedules,
+  onTriggerBackupNow,
 }: SchedulesTabProps) {
   const handleSaveSchedule = async () => {
     let success: boolean
@@ -305,8 +307,18 @@ export function SchedulesTab({
           </div>
         )}
 
-        {/* Diagnose and Repair Button */}
-        <div className="mb-4 flex gap-2">
+        {/* Diagnose, Repair and Trigger buttons */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {onTriggerBackupNow && (
+            <Button onClick={onTriggerBackupNow} disabled={loading}>
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="mr-2 h-4 w-4" />
+              )}
+              Jetzt Backup ausführen
+            </Button>
+          )}
           <Button variant="outline" onClick={onDiagnoseSchedules} disabled={loading}>
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -363,7 +375,7 @@ export function SchedulesTab({
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={schedule.is_active}
-                          onCheckedChange={() => onToggleSchedule(schedule.id, schedule.is_active)}
+                          onCheckedChange={() => onToggleSchedule(schedule.id, !schedule.is_active)}
                         />
                         {schedule.is_active ? (
                           <Badge className="bg-green-500">Aktiv</Badge>

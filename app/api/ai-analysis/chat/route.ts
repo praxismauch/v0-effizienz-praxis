@@ -44,12 +44,10 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (userError || !userData) {
-      if (!isV0Preview) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 })
-      }
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const isSuperAdmin = userData?.role === "superadmin" || isV0Preview
+    const isSuperAdmin = userData?.role === "superadmin"
     const userPracticeId = userData?.practice_id || userData?.default_practice_id
 
     if (!isSuperAdmin && userPracticeId !== practiceId) {

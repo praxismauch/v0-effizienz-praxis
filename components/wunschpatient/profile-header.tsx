@@ -56,7 +56,7 @@ export function ProfileHeader({ profile, onClose, onBack }: ProfileHeaderProps) 
         </Button>
       ) : null}
 
-      <div className="px-8 py-8 flex items-end gap-6">
+      <div className={`px-8 pb-8 flex items-end gap-6 ${onBack ? "pt-16" : "pt-8"}`}>
         <div className="relative -mb-16 z-10">
           <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-background shadow-xl bg-background">
             <img

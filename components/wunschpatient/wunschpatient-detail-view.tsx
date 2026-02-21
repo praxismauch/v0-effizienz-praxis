@@ -3,6 +3,7 @@
 import { ProfileHeader } from "./profile-header"
 import {
   QuickStats,
+  PatientStory,
   PersonaDescription,
   HealthLifestyleCard,
   ValuesExpectationsCard,
@@ -53,6 +54,10 @@ export function WunschpatientDetailView({ profile, onBack }: WunschpatientDetail
 
         <div className="px-6 md:px-8 pt-20 pb-8 space-y-6 bg-background">
           <QuickStats profile={profile} />
+
+          {(profile as any).patient_story && (
+            <PatientStory story={(profile as any).patient_story} />
+          )}
 
           {profile.persona_description && (
             <PersonaDescription description={profile.persona_description} />

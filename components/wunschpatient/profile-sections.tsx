@@ -114,6 +114,25 @@ export function QuickStats({ profile }: { profile: WunschpatientProfile }) {
   )
 }
 
+export function PatientStory({ story }: { story: string }) {
+  if (!story) return null
+  return (
+    <Card className="border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/10 dark:to-orange-900/10">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+            <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          </div>
+          <h3 className="font-semibold">Patientengeschichte</h3>
+        </div>
+        <p className="text-muted-foreground leading-relaxed italic">
+          {story}
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function PersonaDescription({ description }: { description: string }) {
   return (
     <Card className="border-l-4 border-l-primary">

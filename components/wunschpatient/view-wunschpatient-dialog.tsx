@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { ProfileHeader } from "./profile-header"
 import {
   QuickStats,
+  PatientStory,
   PersonaDescription,
   HealthLifestyleCard,
   ValuesExpectationsCard,
@@ -57,6 +58,10 @@ export function ViewWunschpatientDialog({ open, onOpenChange, profile }: ViewWun
         <ScrollArea className="max-h-[calc(95vh-180px)]">
           <div className="px-8 pt-20 pb-8 space-y-6">
             <QuickStats profile={profile} />
+
+            {(profile as any).patient_story && (
+              <PatientStory story={(profile as any).patient_story} />
+            )}
 
             {profile.persona_description && (
               <PersonaDescription description={profile.persona_description} />

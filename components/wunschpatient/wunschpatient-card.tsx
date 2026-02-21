@@ -216,6 +216,12 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated, onViewProfile
             </div>
           )}
 
+          {(profile as any).patient_story && (
+            <p className="text-xs text-muted-foreground italic line-clamp-3 mt-2 pt-2 border-t">
+              {(profile as any).patient_story}
+            </p>
+          )}
+
           <Button variant="outline" className="w-full mt-4 bg-transparent" onClick={() => onViewProfile ? onViewProfile(profile) : setViewDialogOpen(true)}>
             <Eye className="h-4 w-4 mr-2" />
             Vollständiges Profil

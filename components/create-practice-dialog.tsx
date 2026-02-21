@@ -14,9 +14,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { AddressInput } from "@/components/address-input"
 import { toast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import { Loader2, X, Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface CreatePracticeDialogProps {
   open: boolean
@@ -52,9 +56,10 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
   const [isLoadingTypes, setIsLoadingTypes] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [typesOpen, setTypesOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
+    types: [] as string[],
     bundesland: "",
     address: {
       street: "",
@@ -98,25 +103,17 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] CLIENT: handleSubmit called with formData:", formData)
-    console.log("[v0] CLIENT: Validation check - name:", !!formData.name, "type:", !!formData.type, "bundesland:", !!formData.bundesland)
-    
-    if (!formData.name || !formData.type || !formData.bundesland) {
-      console.log("[v0] CLIENT: Validation failed")
+    if (!formData.name || formData.types.length === 0 || !formData.bundesland) {
       toast({
         title: "Validierungsfehler",
-        description: "Bitte füllen Sie alle Pflichtfelder aus (Name, Typ und Bundesland).",
+        description: "Bitte füllen Sie alle Pflichtfelder aus (Name, mind. eine Fachrichtung und Bundesland).",
         variant: "destructive",
       })
       return
     }
-    
-    console.log("[v0] CLIENT: Validation passed, proceeding with fetch")
 
     setIsSubmitting(true)
     try {
-      console.log("[v0] CLIENT: Creating practice with data:", formData)
-      
       const response = await fetch("/api/practices", {
         method: "POST",
         headers: {
@@ -124,7 +121,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         },
         body: JSON.stringify({
           name: formData.name,
-          type: formData.type,
+          type: formData.types.join(", "),
           bundesland: formData.bundesland,
           street: formData.address.street,
           city: formData.address.city,
@@ -136,11 +133,8 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         }),
       })
 
-      console.log("[v0] CLIENT: Response status:", response.status, response.statusText)
-
       if (!response.ok) {
         const errorData = await response.json()
-        console.log("[v0] CLIENT: Error response:", errorData)
         throw new Error(errorData.error || errorData.message || "Fehler beim Erstellen der Praxis")
       }
 
@@ -151,10 +145,10 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         description: `Praxis "${formData.name}" wurde erfolgreich erstellt.`,
       })
 
-      // Reset form
       setFormData({
         name: "",
-        type: "",
+        types: [],
+        bundesland: "",
         address: {
           street: "",
           city: "",
@@ -203,24 +197,78 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="type">Typ *</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
-                required
-                disabled={isLoadingTypes || isSubmitting}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingTypes ? "Laden..." : "Praxistyp wählen"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {practiceTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.name}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Typ / Fachrichtungen *</Label>
+              <Popover open={typesOpen} onOpenChange={setTypesOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={typesOpen}
+                    className="w-full justify-between h-auto min-h-10 font-normal"
+                    disabled={isLoadingTypes || isSubmitting}
+                  >
+                    {formData.types.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {formData.types.map((t) => (
+                          <Badge key={t} variant="secondary" className="text-xs">
+                            {t}
+                            <button
+                              type="button"
+                              className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  types: prev.types.filter((x) => x !== t),
+                                }))
+                              }}
+                            >
+                              <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {isLoadingTypes ? "Laden..." : "Fachrichtungen wählen..."}
+                      </span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Fachrichtung suchen..." />
+                    <CommandList>
+                      <CommandEmpty>Keine Fachrichtung gefunden.</CommandEmpty>
+                      <CommandGroup>
+                        {practiceTypes.map((type) => (
+                          <CommandItem
+                            key={type.id}
+                            value={type.name}
+                            onSelect={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                types: prev.types.includes(type.name)
+                                  ? prev.types.filter((t) => t !== type.name)
+                                  : [...prev.types, type.name],
+                              }))
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.types.includes(type.name) ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            {type.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="grid gap-2">
@@ -296,7 +344,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={!formData.name || !formData.type || !formData.bundesland || isSubmitting || isLoadingTypes}>
+            <Button type="submit" disabled={!formData.name || formData.types.length === 0 || !formData.bundesland || isSubmitting || isLoadingTypes}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Praxis erstellen
             </Button>

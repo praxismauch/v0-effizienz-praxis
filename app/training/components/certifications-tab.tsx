@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Plus, Award, Edit, Trash2 } from "lucide-react"
+import { Plus, Award, Edit, Trash2, Upload, FileText, ImageIcon, X, Loader2, ExternalLink } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "sonner"
 import type { Certification } from "../types"
@@ -37,6 +37,56 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
   const [editingCert, setEditingCert] = useState<Certification | null>(null)
   const [formData, setFormData] = useState(INITIAL_CERTIFICATION_FORM)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string; name: string; type: string; size: number; uploaded_at: string }>>([])
+
+  const ACCEPTED_FILE_TYPES = "image/jpeg,image/png,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files?.length) return
+    setIsUploading(true)
+    try {
+      const formDataUpload = new FormData()
+      for (const file of Array.from(files)) {
+        formDataUpload.append("files", file)
+      }
+      formDataUpload.append("folder", "certifications")
+
+      const res = await fetch("/api/upload", { method: "POST", body: formDataUpload })
+      if (!res.ok) throw new Error("Upload fehlgeschlagen")
+      const data = await res.json()
+
+      const newFiles = data.files
+        ? data.files.filter((f: any) => !f.error)
+        : [{ url: data.url, name: data.fileName, type: "image/jpeg", size: data.fileSize, uploaded_at: new Date().toISOString() }]
+
+      setUploadedFiles((prev) => [...prev, ...newFiles])
+      toast.success(`${newFiles.length} Datei(en) hochgeladen`)
+    } catch {
+      toast.error("Fehler beim Hochladen der Datei(en)")
+    } finally {
+      setIsUploading(false)
+      e.target.value = ""
+    }
+  }
+
+  const removeFile = async (url: string) => {
+    try {
+      await fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) })
+      setUploadedFiles((prev) => prev.filter((f) => f.url !== url))
+    } catch {
+      toast.error("Fehler beim Entfernen der Datei")
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const isImageType = (type: string) => type.startsWith("image/")
 
   useEffect(() => {
     if (createTrigger && createTrigger > 0) openCreate()
@@ -45,6 +95,7 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
   const openCreate = () => {
     setEditingCert(null)
     setFormData(INITIAL_CERTIFICATION_FORM)
+    setUploadedFiles([])
     setIsDialogOpen(true)
   }
 
@@ -61,6 +112,7 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
       icon: cert.icon || "award",
       color: cert.color || "blue",
     })
+    setUploadedFiles((cert as any).default_files || [])
     setIsDialogOpen(true)
   }
 
@@ -71,12 +123,13 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
     }
 
     setIsSaving(true)
+    const payload = { ...formData, default_files: uploadedFiles }
     try {
       if (editingCert) {
         const res = await fetch(`/api/practices/${practiceId}/training/certifications/${editingCert.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error("Update failed")
         const data = await res.json()
@@ -86,7 +139,7 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
         const res = await fetch(`/api/practices/${practiceId}/training/certifications`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formData, created_by: currentUser?.id }),
+          body: JSON.stringify({ ...payload, created_by: currentUser?.id }),
         })
         if (!res.ok) throw new Error("Create failed")
         const data = await res.json()
@@ -151,6 +204,12 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
                     <span>{cert.renewal_reminder_days || cert.reminder_days_before || 30} Tage vorher</span>
                   </div>
                 </div>
+                {((cert as any).default_files?.length > 0) && (
+                  <div className="flex items-center gap-1.5 mt-2 text-sm text-muted-foreground">
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>{(cert as any).default_files.length} Datei(en) angehängt</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t">
                   <Button variant="outline" size="sm" onClick={() => openEdit(cert)}>
                     <Edit className="h-4 w-4 mr-1" />
@@ -220,6 +279,78 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
             <div className="flex items-center justify-between">
               <Label>Pflichtzertifizierung</Label>
               <Switch checked={formData.is_mandatory} onCheckedChange={(v) => updateField("is_mandatory", v)} />
+            </div>
+
+            {/* File Upload Section */}
+            <div className="space-y-3 pt-2 border-t">
+              <Label>Dokumente & Nachweise</Label>
+              <p className="text-xs text-muted-foreground">
+                Laden Sie Vorlagen, Nachweisdokumente oder Bilder hoch (JPG, PNG, PDF, DOC).
+              </p>
+
+              {/* Uploaded files list */}
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-2">
+                  {uploadedFiles.map((file) => (
+                    <div
+                      key={file.url}
+                      className="flex items-center gap-2 rounded-lg border bg-muted/30 p-2"
+                    >
+                      {isImageType(file.type) ? (
+                        <ImageIcon className="h-4 w-4 text-blue-500 shrink-0" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-red-500 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                      </div>
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-foreground shrink-0"
+                        title="Öffnen"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(file.url)}
+                        className="text-muted-foreground hover:text-destructive shrink-0"
+                        title="Entfernen"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload button */}
+              <div className="relative">
+                <input
+                  type="file"
+                  multiple
+                  accept={ACCEPTED_FILE_TYPES}
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  disabled={isUploading}
+                />
+                <Button type="button" variant="outline" className="w-full" disabled={isUploading}>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Wird hochgeladen...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Dateien auswählen
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter>

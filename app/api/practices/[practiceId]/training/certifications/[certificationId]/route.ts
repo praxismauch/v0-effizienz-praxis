@@ -26,6 +26,7 @@ export async function PATCH(
       // Client sends reminder_days_before, DB column is renewal_reminder_days
       reminder_days_before: "renewal_reminder_days",
       renewal_reminder_days: "renewal_reminder_days",
+      default_files: "default_files",
     }
 
     const updateData: Record<string, unknown> = {}

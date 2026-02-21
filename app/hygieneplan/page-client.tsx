@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useUser } from "@/contexts/user-context"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,7 @@ import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface HygienePlan {
@@ -508,6 +509,18 @@ export default function HygienePlanClient() {
   )
 }
 
+// Progress steps for AI generation
+const GENERATION_STEPS = [
+  { at: 0, label: "Vorbereitung..." },
+  { at: 10, label: "RKI-Richtlinien werden analysiert..." },
+  { at: 25, label: "Praxisdaten werden ausgewertet..." },
+  { at: 40, label: "Massnahmen werden erstellt..." },
+  { at: 60, label: "Schritte werden formuliert..." },
+  { at: 75, label: "Qualitaetsindikatoren werden definiert..." },
+  { at: 88, label: "Dokumentation wird finalisiert..." },
+  { at: 95, label: "Fast fertig..." },
+]
+
 // Generate AI Plan Dialog Component
 function GenerateAIPlanDialog({
   open,
@@ -522,65 +535,151 @@ function GenerateAIPlanDialog({
 }) {
   const [selectedCategory, setSelectedCategory] = useState("")
   const [customRequirements, setCustomRequirements] = useState("")
+  const [progress, setProgress] = useState(0)
+  const [progressLabel, setProgressLabel] = useState("")
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Simulated progress that advances through realistic stages
+  useEffect(() => {
+    if (generating) {
+      setProgress(0)
+      setProgressLabel(GENERATION_STEPS[0].label)
+      let current = 0
+
+      intervalRef.current = setInterval(() => {
+        current += Math.random() * 3 + 1 // Random increment between 1-4
+        if (current > 95) current = 95 // Cap at 95 until done
+
+        setProgress(Math.round(current))
+
+        // Find the matching step label
+        const step = [...GENERATION_STEPS].reverse().find((s) => current >= s.at)
+        if (step) setProgressLabel(step.label)
+      }, 400)
+    } else {
+      // When done generating, quickly animate to 100%
+      if (progress > 0 && progress < 100) {
+        setProgress(100)
+        setProgressLabel("Fertig!")
+        setTimeout(() => {
+          setProgress(0)
+          setProgressLabel("")
+        }, 800)
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, [generating])
 
   const handleGenerate = () => {
     if (!selectedCategory) {
-      toast.error("Bitte wählen Sie eine Kategorie")
+      toast.error("Bitte waehlen Sie eine Kategorie")
       return
     }
     onGenerate(selectedCategory, customRequirements)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={generating ? undefined : onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-violet-600" />
-            KI-gestützten Hygieneplan generieren
+            KI-gestuetzten Hygieneplan generieren
           </DialogTitle>
           <DialogDescription>
             Erstellen Sie automatisch einen RKI-konformen Hygieneplan basierend auf aktuellen Richtlinien
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Label>Kategorie auswählen</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-                const Icon = config.icon
+
+        {generating ? (
+          <div className="py-8 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Loader2 className="h-6 w-6 animate-spin text-violet-600" />
+                <span className="text-lg font-semibold">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-3 [&>div]:bg-gradient-to-r [&>div]:from-violet-600 [&>div]:to-indigo-600 [&>div]:transition-all [&>div]:duration-300" />
+              <p className="text-sm text-muted-foreground pt-2 animate-pulse">{progressLabel}</p>
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-center text-xs text-muted-foreground">
+              {["Analyse", "Erstellung", "Optimierung", "Finalisierung"].map((phase, i) => {
+                const phaseStart = i * 25
+                const isActive = progress >= phaseStart && progress < phaseStart + 25
+                const isDone = progress >= phaseStart + 25
                 return (
-                  <Card
-                    key={key}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedCategory === key ? "ring-2 ring-primary" : ""
-                    }`}
-                    onClick={() => setSelectedCategory(key)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg" style={{ backgroundColor: config.bgColor }}>
-                          <Icon className="h-5 w-5" style={{ color: config.color }} />
-                        </div>
-                        <span className="font-medium text-sm">{config.label}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div key={phase} className="space-y-1.5">
+                    <div
+                      className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors duration-300 ${
+                        isDone
+                          ? "bg-green-100 text-green-700"
+                          : isActive
+                            ? "bg-violet-100 text-violet-700 ring-2 ring-violet-300"
+                            : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {isDone ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        i + 1
+                      )}
+                    </div>
+                    <p className={isDone ? "text-green-700 font-medium" : isActive ? "text-violet-700 font-medium" : ""}>{phase}</p>
+                  </div>
                 )
               })}
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="requirements">Besondere Anforderungen (optional)</Label>
-            <Textarea
-              id="requirements"
-              placeholder="Z.B. spezielle Geräte, besondere Patientengruppen, zusätzliche Anforderungen..."
-              value={customRequirements}
-              onChange={(e) => setCustomRequirements(e.target.value)}
-              rows={4}
-            />
+        ) : (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Kategorie auswaehlen</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
+                  const Icon = config.icon
+                  return (
+                    <Card
+                      key={key}
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        selectedCategory === key ? "ring-2 ring-primary" : ""
+                      }`}
+                      onClick={() => setSelectedCategory(key)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg" style={{ backgroundColor: config.bgColor }}>
+                            <Icon className="h-5 w-5" style={{ color: config.color }} />
+                          </div>
+                          <span className="font-medium text-sm">{config.label}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="requirements">Besondere Anforderungen (optional)</Label>
+              <Textarea
+                id="requirements"
+                placeholder="Z.B. spezielle Geraete, besondere Patientengruppen, zusaetzliche Anforderungen..."
+                value={customRequirements}
+                onChange={(e) => setCustomRequirements(e.target.value)}
+                rows={4}
+              />
+            </div>
           </div>
-        </div>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating}>
             Abbrechen
@@ -589,7 +688,7 @@ function GenerateAIPlanDialog({
             {generating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Wird generiert...
+                Wird generiert... {progress}%
               </>
             ) : (
               <>

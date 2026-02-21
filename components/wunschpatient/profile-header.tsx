@@ -81,7 +81,7 @@ export function ProfileHeader({ profile, onClose, onBack }: ProfileHeaderProps) 
             </Badge>
             <span className="text-white/80 text-sm flex items-center gap-1">
               <User className="h-3.5 w-3.5" />
-              {profile.age_range} Jahre, {profile.gender === "female" ? "weiblich" : profile.gender === "diverse" ? "divers" : profile.gender === "any" ? "beliebig" : "männlich"}
+              {profile.age_range === "any" ? "Beliebiges Alter" : `${profile.age_range} Jahre`}, {profile.gender === "female" ? "weiblich" : profile.gender === "diverse" ? "divers" : profile.gender === "any" ? "beliebig" : "männlich"}
             </span>
             {profile.occupation && (
               <span className="text-white/80 text-sm flex items-center gap-1">

@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Checkbox } from "@/components/ui/checkbox"
 import { AddressInput } from "@/components/address-input"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/hooks/use-toast"
@@ -299,37 +299,32 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Fachrichtung suchen..." />
-                    <CommandList>
-                      <CommandEmpty>Keine Fachrichtung gefunden.</CommandEmpty>
-                      <CommandGroup>
-                        {practiceTypes.map((type) => (
-                          <CommandItem
-                            key={type.id}
-                            value={type.name}
-                            onSelect={() => {
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-2" align="start">
+                  <div className="max-h-60 overflow-y-auto space-y-1">
+                    {practiceTypes.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-2">Keine Fachrichtung gefunden.</p>
+                    ) : (
+                      practiceTypes.map((type) => (
+                        <label
+                          key={type.id}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
+                        >
+                          <Checkbox
+                            checked={formData.fachrichtungen.includes(type.name)}
+                            onCheckedChange={(checked) => {
                               setFormData((prev) => ({
                                 ...prev,
-                                fachrichtungen: prev.fachrichtungen.includes(type.name)
-                                  ? prev.fachrichtungen.filter((t) => t !== type.name)
-                                  : [...prev.fachrichtungen, type.name],
+                                fachrichtungen: checked
+                                  ? [...prev.fachrichtungen, type.name]
+                                  : prev.fachrichtungen.filter((t) => t !== type.name),
                               }))
                             }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.fachrichtungen.includes(type.name) ? "opacity-100" : "opacity-0",
-                              )}
-                            />
-                            {type.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
+                          />
+                          {type.name}
+                        </label>
+                      ))
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>

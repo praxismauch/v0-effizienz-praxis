@@ -23,6 +23,7 @@ import {
   SidebarFavorites,
   SidebarNavGroup,
 } from "@/components/sidebar"
+import { BetaNoticeButton } from "@/components/beta-notice-button"
 
 import {
   getNavigationGroups,
@@ -116,6 +117,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
             ))}
           </div>
         </div>
+
+        <BetaNoticeButton sidebarOpen={sidebarOpen} />
       </Sidebar>
     </TooltipProvider>
   )

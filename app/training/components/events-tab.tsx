@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -38,9 +38,13 @@ export function EventsTab({ events, courses, practiceId, onEventsChange, onDelet
   const [editingEvent, setEditingEvent] = useState<TrainingEvent | null>(null)
   const [formData, setFormData] = useState(INITIAL_EVENT_FORM)
   const [isSaving, setIsSaving] = useState(false)
+  const prevTriggerRef = useRef(createTrigger)
 
   useEffect(() => {
-    if (createTrigger && createTrigger > 0) openCreate()
+    if (createTrigger && createTrigger > 0 && createTrigger !== prevTriggerRef.current) {
+      openCreate()
+    }
+    prevTriggerRef.current = createTrigger
   }, [createTrigger])
 
   const openCreate = () => {

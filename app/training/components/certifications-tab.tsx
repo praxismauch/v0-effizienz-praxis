@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -87,9 +87,13 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
   }
 
   const isImageType = (type: string) => type.startsWith("image/")
+  const prevTriggerRef = useRef(createTrigger)
 
   useEffect(() => {
-    if (createTrigger && createTrigger > 0) openCreate()
+    if (createTrigger && createTrigger > 0 && createTrigger !== prevTriggerRef.current) {
+      openCreate()
+    }
+    prevTriggerRef.current = createTrigger
   }, [createTrigger])
 
   const openCreate = () => {

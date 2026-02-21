@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -64,9 +64,13 @@ export function BudgetsTab({ budgets, practiceId, onBudgetsChange, createTrigger
   const [formData, setFormData] = useState<BudgetFormState>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<TrainingBudget | null>(null)
+  const prevTriggerRef = useRef(createTrigger)
 
   useEffect(() => {
-    if (createTrigger && createTrigger > 0) openCreate()
+    if (createTrigger && createTrigger > 0 && createTrigger !== prevTriggerRef.current) {
+      openCreate()
+    }
+    prevTriggerRef.current = createTrigger
   }, [createTrigger])
 
   const openCreate = () => {

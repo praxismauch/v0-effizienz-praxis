@@ -46,6 +46,12 @@ export default function TrainingPageClient() {
   const [isLoading, setIsLoading] = useState(true)
   const [createTrigger, setCreateTrigger] = useState(0)
 
+  // Reset createTrigger when switching tabs so the new tab doesn't auto-open its dialog
+  const handleTabChange = (tab: string) => {
+    setCreateTrigger(0)
+    setActiveTab(tab)
+  }
+
   // Data states - using useState with functional updates
   const [courses, setCourses] = useState<TrainingCourse[]>([])
   const [events, setEvents] = useState<TrainingEvent[]>([])
@@ -246,7 +252,7 @@ export default function TrainingPageClient() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <div className="space-y-3 mb-4">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
             <TabsTrigger value="courses">

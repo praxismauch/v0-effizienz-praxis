@@ -60,6 +60,7 @@ export function DemografieTab({ formData, onChange }: TabProps) {
           <Select value={formData.age_range} onValueChange={(value) => onChange({ ...formData, age_range: value })}>
             <SelectTrigger><SelectValue placeholder="Alter wählen" /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="any">Beliebig</SelectItem>
               <SelectItem value="18-25">18-25 Jahre</SelectItem>
               <SelectItem value="26-35">26-35 Jahre</SelectItem>
               <SelectItem value="36-45">36-45 Jahre</SelectItem>
@@ -74,10 +75,10 @@ export function DemografieTab({ formData, onChange }: TabProps) {
           <Select value={formData.gender} onValueChange={(value) => onChange({ ...formData, gender: value })}>
             <SelectTrigger><SelectValue placeholder="Geschlecht wählen" /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="any">Beliebig</SelectItem>
               <SelectItem value="male">Männlich</SelectItem>
               <SelectItem value="female">Weiblich</SelectItem>
               <SelectItem value="diverse">Divers</SelectItem>
-              <SelectItem value="any">Beliebig</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -95,6 +96,7 @@ export function DemografieTab({ formData, onChange }: TabProps) {
           <Select value={formData.family_status} onValueChange={(value) => onChange({ ...formData, family_status: value })}>
             <SelectTrigger><SelectValue placeholder="Status wählen" /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="any">Beliebig</SelectItem>
               <SelectItem value="single">Single</SelectItem>
               <SelectItem value="partnership">In Partnerschaft</SelectItem>
               <SelectItem value="married">Verheiratet</SelectItem>
@@ -118,6 +120,7 @@ export function DemografieTab({ formData, onChange }: TabProps) {
         <Select value={formData.archetype} onValueChange={(value) => onChange({ ...formData, archetype: value })}>
           <SelectTrigger><SelectValue placeholder="Archetyp wählen" /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="any">Beliebig</SelectItem>
             <SelectItem value="prevention">Der Präventionsorientierte</SelectItem>
             <SelectItem value="chronic">Der chronische Patient</SelectItem>
             <SelectItem value="performance">{"Der Leistungsorientierte (Sport, Business, Biohacker)"}</SelectItem>
@@ -153,6 +156,7 @@ export function GesundheitTab({ formData, onChange }: TabProps) {
           <Select value={formData.health_consciousness} onValueChange={(value) => onChange({ ...formData, health_consciousness: value })}>
             <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="any">Beliebig</SelectItem>
               <SelectItem value="very_high">{"Sehr hoch (aktiv, informiert)"}</SelectItem>
               <SelectItem value="high">{"Hoch (interessiert)"}</SelectItem>
               <SelectItem value="medium">{"Mittel (bei Bedarf)"}</SelectItem>
@@ -165,6 +169,7 @@ export function GesundheitTab({ formData, onChange }: TabProps) {
           <Select value={formData.prevention_vs_acute} onValueChange={(value) => onChange({ ...formData, prevention_vs_acute: value })}>
             <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="any">Beliebig</SelectItem>
               <SelectItem value="prevention_focused">Stark präventionsorientiert</SelectItem>
               <SelectItem value="balanced">Ausgeglichen</SelectItem>
               <SelectItem value="acute_focused">Primär bei Beschwerden</SelectItem>
@@ -207,6 +212,7 @@ export function VerhaltenTab({ formData, onChange }: TabProps) {
           <Select value={formData.communication_preference} onValueChange={(value) => onChange({ ...formData, communication_preference: value })}>
             <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="any">Beliebig</SelectItem>
               <SelectItem value="digital">{"Digital (App, E-Mail, Chat)"}</SelectItem>
               <SelectItem value="phone">Telefon</SelectItem>
               <SelectItem value="in_person">Persönlich vor Ort</SelectItem>
@@ -228,6 +234,7 @@ export function VerhaltenTab({ formData, onChange }: TabProps) {
         <Select value={formData.financial_willingness} onValueChange={(value) => onChange({ ...formData, financial_willingness: value })}>
           <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="any">Beliebig</SelectItem>
             <SelectItem value="very_high">{"Sehr hoch (investiert gerne in Gesundheit)"}</SelectItem>
             <SelectItem value="high">{"Hoch (bei klarem Nutzen)"}</SelectItem>
             <SelectItem value="medium">{"Mittel (selektiv)"}</SelectItem>

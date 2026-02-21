@@ -1,8 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient, createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth/require-auth"
 
 export async function GET() {
   try {
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const supabase = await createAdminClient()
 
     const { data, error } = await supabase
@@ -36,27 +40,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const adminClient = await createAdminClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        {
-          status: 401,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      )
-    }
-    
-    const userId = user.id
+    const userId = auth.user.id
 
     const body = await request.json()
 
@@ -111,6 +99,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const supabase = await createAdminClient()
     const body = await request.json()
     const { id, isActive, ...scheduleData } = body
@@ -189,6 +180,9 @@ export async function PUT(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const supabase = await createAdminClient()
     const body = await request.json()
     const { id, isActive } = body

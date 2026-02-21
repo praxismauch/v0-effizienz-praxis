@@ -2,10 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateObject } from "ai"
 import { z } from "zod"
 import { createServerClient, createAdminClient } from "@/lib/supabase/server"
+import { requireAuth } from "@/lib/auth/require-auth"
 import { applyRateLimit, RATE_LIMITS } from "@/lib/api/rate-limit"
-
-const isV0Preview =
-  process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting for AI operations
@@ -15,23 +13,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const auth = await requireAuth()
+    if ("response" in auth) return auth.response
+
     const authSupabase = await createServerClient()
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await authSupabase.auth.getUser()
-
-    if (!isV0Preview && (authError || !authUser)) {
-      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 })
-    }
-
     const { fileUrls, practiceId, abrechnungId } = await request.json()
 
-    if (practiceId && authUser) {
+    if (practiceId) {
       const { data: userData } = await authSupabase
         .from("users")
         .select("role, practice_id, default_practice_id")
-        .eq("id", authUser.id)
+        .eq("id", auth.user.id)
         .maybeSingle()
 
       const isSuperAdmin = userData?.role === "superadmin"

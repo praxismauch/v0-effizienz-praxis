@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient, createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth/require-auth"
 import { put } from "@vercel/blob"
 
 const PRACTICE_TABLES = [
@@ -107,8 +108,10 @@ const GLOBAL_TABLES = ["users", "practices", "practice_types", "specialty_groups
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createAdminClient()
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
 
+    const supabase = await createAdminClient()
     const searchParams = request.nextUrl.searchParams
     const practiceId = searchParams.get("practiceId")
     const backupType = searchParams.get("backupType")
@@ -139,49 +142,31 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data || [])
   } catch (error: any) {
-    console.error("[v0] Error fetching backups:", error)
+    console.error("Error fetching backups:", error)
     return NextResponse.json({ error: error.message || "Failed to fetch backups" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const adminClient = await createAdminClient()
-
-    const isPreview =
-      process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" ||
-      process.env.VERCEL_ENV === "preview" ||
-      !process.env.NEXT_PUBLIC_VERCEL_ENV
-
-    let userId: string
-
-    if (isPreview) {
-      userId = "36883b61-34e4-4b9e-8a11-eb1a9656d2a0"
-      console.log("[v0] Using preview environment user ID")
-    } else {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
-
-      if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-      userId = user.id
-    }
+    const userId = auth.user.id
 
     const body = await request.json()
     const { practiceId, backupType = "manual", backupScope = "full", notes } = body
 
-    console.log("[v0] Creating backup:", { practiceId, backupType, backupScope, userId })
+    // Convert "all" or empty practiceId to null for DB FK constraint
+    const safePracticeId = (practiceId && practiceId !== "all") ? practiceId : null
 
     const tablesToBackup = backupScope === "full" ? [...GLOBAL_TABLES, ...PRACTICE_TABLES] : PRACTICE_TABLES
 
     const backupData: any = {
       version: "2.0",
       created_at: new Date().toISOString(),
-      practice_id: practiceId,
+      practice_id: safePracticeId,
       backup_scope: backupScope,
       backup_type: backupType,
       tables: {},
@@ -195,23 +180,23 @@ export async function POST(request: NextRequest) {
         let query = adminClient.from(table).select("*")
 
         // Filter by practice_id for practice-specific tables
-        if (practiceId && !GLOBAL_TABLES.includes(table)) {
-          query = query.eq("practice_id", practiceId)
+        if (safePracticeId && !GLOBAL_TABLES.includes(table)) {
+          query = query.eq("practice_id", safePracticeId)
         }
 
         const { data, error } = await query
 
         if (error) {
-          console.error(`[v0] Error backing up table ${table}:`, error)
+          console.error(`Error backing up table ${table}:`, error)
           continue
         }
 
         backupData.tables[table] = data || []
         backupData.table_row_counts[table] = (data || []).length
         totalRows += (data || []).length
-        console.log(`[v0] Backed up ${(data || []).length} rows from ${table}`)
+
       } catch (error: any) {
-        console.error(`[v0] Error accessing table ${table}:`, error)
+        console.error(`Error accessing table ${table}:`, error)
       }
     }
 
@@ -221,16 +206,16 @@ export async function POST(request: NextRequest) {
     const backupBlob = new Blob([backupJson], { type: "application/json" })
 
     const dateStr = new Date().toISOString().split("T")[0]
-    const filename = `backup-${dateStr}-${practiceId || "full"}-${Date.now()}.json`
+    const filename = `backup-${dateStr}-${safePracticeId || "full"}-${Date.now()}.json`
     const blobResult = await put(filename, backupBlob, {
       access: "public",
       addRandomSuffix: true,
     })
 
-    console.log("[v0] Uploaded backup to Blob:", blobResult.url)
+
 
     const backupRecord = {
-      practice_id: practiceId || null,
+      practice_id: safePracticeId,
       backup_type: backupType,
       backup_scope: backupScope,
       file_url: blobResult.url,
@@ -254,21 +239,18 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error
 
-    console.log(
-      "[v0] Backup created successfully:",
-      data.id,
-      `with ${totalRows} rows in ${tablesToBackup.length} tables`,
-    )
-
     return NextResponse.json(data)
   } catch (error: any) {
-    console.error("[v0] Error creating backup:", error)
+    console.error("Error creating backup:", error)
     return NextResponse.json({ error: error.message || "Failed to create backup" }, { status: 500 })
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const supabase = await createAdminClient()
     const { searchParams } = request.nextUrl
     const backupId = searchParams.get("id")
@@ -277,15 +259,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Backup ID is required" }, { status: 400 })
     }
 
-    console.log("[v0] Deleting backup:", backupId)
-
     const { error } = await supabase.from("backups").delete().eq("id", backupId)
 
     if (error) throw error
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error("[v0] Error deleting backup:", error)
+    console.error("Error deleting backup:", error)
     return NextResponse.json({ error: error.message || "Failed to delete backup" }, { status: 500 })
   }
 }

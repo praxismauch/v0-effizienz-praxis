@@ -1,12 +1,13 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
-
-const isV0Preview =
-  process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
+import { requireAuth } from "@/lib/auth/require-auth"
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAuth()
+    if ("response" in auth) return auth.response
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
     const practiceId = searchParams.get("practiceId")

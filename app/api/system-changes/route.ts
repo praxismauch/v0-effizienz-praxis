@@ -1,50 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient, getServiceRoleClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import { isSuperAdminRole } from "@/lib/auth-utils"
+import { getServiceRoleClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth/require-auth"
 
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies()
-
   try {
-    console.log("[v0] GET /api/system-changes - Starting request")
-
-    const supabase = await createServerClient()
-
-    const isV0Preview = process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "preview"
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    console.log("[v0] GET /api/system-changes - Auth check:", {
-      hasUser: !!user,
-      isV0Preview,
-    })
-
-    if (!user && !isV0Preview) {
-      console.log("[v0] GET /api/system-changes - No user authenticated")
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    if (user) {
-      console.log("[v0] GET /api/system-changes - User ID:", user.id)
-
-      const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
-
-      if (!isSuperAdminRole(userData?.role)) {
-        console.log("[v0] GET /api/system-changes - User is not super admin, role:", userData?.role)
-        return NextResponse.json({ error: "Forbidden: Super admin access required" }, { status: 403 })
-      }
-    }
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
 
     const { searchParams } = new URL(request.url)
     const includeAggregated = searchParams.get("includeAggregated") === "true"
     const changeType = searchParams.get("changeType")
     const startDate = searchParams.get("startDate")
     const endDate = searchParams.get("endDate")
-
-    console.log("[v0] GET /api/system-changes - Query params:", { includeAggregated, changeType, startDate, endDate })
 
     const serviceClient = getServiceRoleClient()
 
@@ -69,38 +36,22 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error("[v0] Error fetching system changes:", error)
+      console.error("Error fetching system changes:", error)
       return NextResponse.json({ error: "Failed to fetch system changes" }, { status: 500 })
     }
 
-    console.log("[v0] GET /api/system-changes - Successfully fetched", data?.length || 0, "changes")
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] System changes error:", error)
+    console.error("System changes error:", error)
     const errorMessage = error instanceof Error ? error.message : "Internal server error"
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies()
-
   try {
-    const supabase = await createServerClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
-
-    if (!isSuperAdminRole(userData?.role)) {
-      return NextResponse.json({ error: "Forbidden: Super admin access required" }, { status: 403 })
-    }
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
 
     const body = await request.json()
     const { changeIds, version } = body
@@ -117,7 +68,7 @@ export async function POST(request: NextRequest) {
       .in("id", changeIds)
 
     if (fetchError) {
-      console.error("[v0] Error fetching changes:", fetchError)
+      console.error("Error fetching changes:", fetchError)
       return NextResponse.json({ error: "Failed to fetch changes" }, { status: 500 })
     }
 
@@ -147,7 +98,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (createError) {
-      console.error("[v0] Error creating changelog:", createError)
+      console.error("Error creating changelog:", createError)
       return NextResponse.json({ error: "Failed to create changelog" }, { status: 500 })
     }
 
@@ -157,52 +108,25 @@ export async function POST(request: NextRequest) {
       .in("id", changeIds)
 
     if (updateError) {
-      console.error("[v0] Error marking changes as aggregated:", updateError)
+      console.error("Error marking changes as aggregated:", updateError)
     }
 
     return NextResponse.json({ success: true, message: "Changelog created successfully" })
   } catch (error) {
-    console.error("[v0] System changes error:", error)
+    console.error("System changes error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    console.log("[v0] DELETE /api/system-changes - Starting request")
-
-    const supabase = await createServerClient()
-
-    const isV0Preview = process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "preview"
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    console.log("[v0] DELETE /api/system-changes - Auth check:", {
-      hasUser: !!user,
-      isV0Preview,
-    })
-
-    if (!user && !isV0Preview) {
-      console.log("[v0] DELETE /api/system-changes - No user authenticated")
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    if (user) {
-      const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
-
-      if (!isSuperAdminRole(userData?.role)) {
-        console.log("[v0] DELETE /api/system-changes - User is not super admin")
-        return NextResponse.json({ error: "Forbidden: Super admin access required" }, { status: 403 })
-      }
-    }
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
 
     const { searchParams } = new URL(request.url)
     const changeIds = searchParams.get("changeIds")
 
     if (!changeIds) {
-      console.log("[v0] DELETE /api/system-changes - No change IDs provided")
       return NextResponse.json({ error: "Change IDs required" }, { status: 400 })
     }
 
@@ -211,14 +135,13 @@ export async function DELETE(request: NextRequest) {
     const { error: deleteError } = await serviceClient.from("system_changes").delete().in("id", changeIds.split(","))
 
     if (deleteError) {
-      console.error("[v0] Error deleting system changes:", deleteError)
+      console.error("Error deleting system changes:", deleteError)
       return NextResponse.json({ error: "Failed to delete system changes" }, { status: 500 })
     }
 
-    console.log("[v0] DELETE /api/system-changes - Successfully deleted changes")
     return NextResponse.json({ success: true, message: "Changes deleted successfully" })
   } catch (error) {
-    console.error("[v0] System changes error:", error)
+    console.error("System changes error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

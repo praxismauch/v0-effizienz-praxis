@@ -1,29 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import { trackSystemChange } from "@/lib/track-system-change"
-import { isSuperAdminRole } from "@/lib/auth-utils"
+import { requireSuperAdmin } from "@/lib/auth/require-auth"
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const supabase = await createServerClient()
-
-    const isV0Preview = process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "preview"
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user && !isV0Preview) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    if (user) {
-      const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
-
-      if (!isSuperAdminRole(userData?.role)) {
-        return NextResponse.json({ error: "Forbidden: Super admin access required" }, { status: 403 })
-      }
-    }
+    const user = auth.user
 
     const body = await request.json()
     const { backupId, backupData, restoreMode, selectedPracticeIds, selectedTables } = body

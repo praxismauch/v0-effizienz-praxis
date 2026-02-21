@@ -7,7 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Plus, Search, Filter, X, ClipboardList, AlertTriangle, ShieldAlert, Flame } from "lucide-react"
+import { Shield, Plus, Search, Filter, X, ClipboardList, AlertTriangle, ShieldAlert, Flame, Loader2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -36,6 +46,10 @@ export default function CIRSPageClient() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterSeverity, setFilterSeverity] = useState("all")
   const [filterCategory, setFilterCategory] = useState("all")
+  const [editIncident, setEditIncident] = useState<CIRSIncident | null>(null)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [deleteIncident, setDeleteIncident] = useState<CIRSIncident | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (currentPractice?.id) fetchIncidents()
@@ -115,6 +129,62 @@ export default function CIRSPageClient() {
         description: "Vorfall konnte nicht gemeldet werden. Bitte versuchen Sie es erneut.",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleEditIncident = async (data: Record<string, unknown>) => {
+    if (!currentPractice?.id || !editIncident) return
+    try {
+      const response = await fetch(
+        `/api/practices/${currentPractice.id}/cirs/${editIncident.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      )
+      if (response.ok) {
+        toast({ title: "Vorfall aktualisiert", description: "Die Aenderungen wurden gespeichert." })
+        setShowEditDialog(false)
+        setEditIncident(null)
+        fetchIncidents()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast({
+          title: "Fehler",
+          description: errorData.error || "Vorfall konnte nicht aktualisiert werden.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({ title: "Fehler", description: "Vorfall konnte nicht aktualisiert werden.", variant: "destructive" })
+    }
+  }
+
+  const handleDeleteIncident = async () => {
+    if (!currentPractice?.id || !deleteIncident) return
+    setIsDeleting(true)
+    try {
+      const response = await fetch(
+        `/api/practices/${currentPractice.id}/cirs/${deleteIncident.id}`,
+        { method: "DELETE" }
+      )
+      if (response.ok) {
+        toast({ title: "Vorfall geloescht", description: `"${deleteIncident.title}" wurde entfernt.` })
+        fetchIncidents()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast({
+          title: "Fehler",
+          description: errorData.error || "Vorfall konnte nicht geloescht werden.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({ title: "Fehler", description: "Vorfall konnte nicht geloescht werden.", variant: "destructive" })
+    } finally {
+      setIsDeleting(false)
+      setDeleteIncident(null)
     }
   }
 
@@ -264,6 +334,11 @@ export default function CIRSPageClient() {
                       setSelectedIncident(incident)
                       setShowDetailDialog(true)
                     }}
+                    onEdit={(inc) => {
+                      setEditIncident(inc)
+                      setShowEditDialog(true)
+                    }}
+                    onDelete={(inc) => setDeleteIncident(inc)}
                   />
                 ))}
               </div>
@@ -282,6 +357,44 @@ export default function CIRSPageClient() {
           onOpenChange={setShowDetailDialog}
           incident={selectedIncident}
         />
+
+        {/* Edit dialog */}
+        <ReportDialog
+          open={showEditDialog}
+          onOpenChange={(open) => {
+            setShowEditDialog(open)
+            if (!open) setEditIncident(null)
+          }}
+          editIncident={editIncident}
+          onSubmit={handleEditIncident}
+        />
+
+        {/* Delete confirmation */}
+        <AlertDialog open={!!deleteIncident} onOpenChange={(open) => { if (!open) setDeleteIncident(null) }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Vorfall loeschen</AlertDialogTitle>
+              <AlertDialogDescription>
+                Moechten Sie den Vorfall &quot;{deleteIncident?.title}&quot; wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteIncident}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loescht...
+                  </>
+                ) : "Loeschen"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   )

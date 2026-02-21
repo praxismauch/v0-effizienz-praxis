@@ -1,8 +1,9 @@
 "use client"
 
-import { AlertTriangle, Shield, TrendingUp, Clock, MessageSquare, EyeOff, Sparkles } from "lucide-react"
+import { AlertTriangle, Shield, TrendingUp, Clock, MessageSquare, EyeOff, Sparkles, Pencil, Trash2 } from "lucide-react"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatDateDE } from "@/lib/utils"
 import type { CIRSIncident } from "./cirs-constants"
 import { getSeverityColor, getSeverityLabel, getTypeLabel, getCategoryLabel } from "./cirs-constants"
@@ -23,14 +24,58 @@ function getTypeIcon(type: string) {
 interface IncidentCardProps {
   incident: CIRSIncident
   onClick: () => void
+  onEdit?: (incident: CIRSIncident) => void
+  onDelete?: (incident: CIRSIncident) => void
 }
 
-export function IncidentCard({ incident, onClick }: IncidentCardProps) {
+export function IncidentCard({ incident, onClick, onEdit, onDelete }: IncidentCardProps) {
   return (
     <Card
-      className="hover:shadow-md transition-shadow cursor-pointer"
+      className="group relative hover:shadow-md transition-shadow cursor-pointer"
       onClick={onClick}
     >
+      {/* Hover action buttons */}
+      {(onEdit || onDelete) && (
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <TooltipProvider delayDuration={200}>
+            {onEdit && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-7 w-7 items-center justify-center rounded-md bg-background/90 border shadow-sm hover:bg-muted transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onEdit(incident)
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>Bearbeiten</p></TooltipContent>
+              </Tooltip>
+            )}
+            {onDelete && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-7 w-7 items-center justify-center rounded-md bg-background/90 border shadow-sm hover:bg-destructive/10 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDelete(incident)
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>Loeschen</p></TooltipContent>
+              </Tooltip>
+            )}
+          </TooltipProvider>
+        </div>
+      )}
+
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -57,7 +102,7 @@ export function IncidentCard({ incident, onClick }: IncidentCardProps) {
             <CardTitle className="text-lg mb-1">{incident.title}</CardTitle>
             <CardDescription className="line-clamp-2">{incident.description}</CardDescription>
           </div>
-          <div className="text-right text-sm text-muted-foreground">
+          <div className="text-right text-sm text-muted-foreground mr-0 group-hover:mr-16 transition-all">
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {formatDateDE(incident.created_at)}

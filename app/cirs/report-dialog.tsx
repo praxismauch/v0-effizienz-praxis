@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Eye, EyeOff, Sparkles, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,9 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { categories } from "./cirs-constants"
 
+import type { CIRSIncident } from "./cirs-constants"
+
 interface ReportDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  editIncident?: CIRSIncident | null
   onSubmit: (data: {
     incident_type: string
     severity: string
@@ -29,7 +32,7 @@ interface ReportDialogProps {
   }) => Promise<void>
 }
 
-export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps) {
+export function ReportDialog({ open, onOpenChange, onSubmit, editIncident }: ReportDialogProps) {
   const [incidentType, setIncidentType] = useState<"error" | "near_error" | "adverse_event">("near_error")
   const [severity, setSeverity] = useState<"low" | "medium" | "high" | "critical">("medium")
   const [category, setCategory] = useState("medication")
@@ -41,6 +44,22 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
   const [generateAISuggestions, setGenerateAISuggestions] = useState(true)
   const [addToKnowledge, setAddToKnowledge] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Pre-fill form when editing an existing incident
+  useEffect(() => {
+    if (editIncident && open) {
+      setIncidentType((editIncident.incident_type as any) || "near_error")
+      setSeverity((editIncident.severity as any) || "medium")
+      setCategory(editIncident.category || "medication")
+      setTitle(editIncident.title || "")
+      setDescription(editIncident.description || "")
+      setContributingFactors(editIncident.contributing_factors || "")
+      setImmediateActions(editIncident.immediate_actions || "")
+      setIsAnonymous(editIncident.is_anonymous || false)
+    } else if (!editIncident && open) {
+      resetForm()
+    }
+  }, [editIncident, open])
 
   const resetForm = () => {
     setIncidentType("near_error")
@@ -80,9 +99,11 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Vorfall melden</DialogTitle>
+          <DialogTitle>{editIncident ? "Vorfall bearbeiten" : "Vorfall melden"}</DialogTitle>
           <DialogDescription>
-            Melden Sie Fehler, Beinahe-Fehler oder unerwunschte Ereignisse. Ihre Meldung hilft, die Patientensicherheit zu verbessern.
+            {editIncident
+              ? "Bearbeiten Sie die Details dieses Vorfalls."
+              : "Melden Sie Fehler, Beinahe-Fehler oder unerwunschte Ereignisse. Ihre Meldung hilft, die Patientensicherheit zu verbessern."}
           </DialogDescription>
         </DialogHeader>
 

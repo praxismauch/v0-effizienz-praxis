@@ -45,6 +45,7 @@ import {
   ExternalLink,
   AlertTriangle,
   HardDrive,
+  MailCheck,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -838,6 +839,12 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
           label: "Systemverwaltung",
           icon: Settings,
           href: "/super-admin/system",
+        },
+        {
+          id: "email",
+          label: "E-Mail Verwaltung",
+          icon: MailCheck,
+          href: "/super-admin/email",
         },
         {
           id: "backups",

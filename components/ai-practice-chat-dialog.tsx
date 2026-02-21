@@ -93,7 +93,7 @@ export function AIPracticeChatDialog({
               Frag die KI über Ihre Praxis
             </DialogTitle>
             <DialogDescription>
-              Stellen Sie Fragen zu Ihrer Praxisleistung, KPIs, Team oder Workflows. Die KI hat Zugriff auf alle Ihre Praxisdaten.
+              Stellen Sie Fragen zu Ihrer Praxisleistung, KPIs, Team oder Workflows. Die KI hat Zugriff auf alle Ihre Praxisdaten - ausser personenbezogene Daten.
               {typeof window !== "undefined" && window.location.hostname.includes("v0.app") && (
                 <span className="block mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
                   Hinweis: KI-Chat funktioniert nur in der Produktionsumgebung. In der Vorschau ist dieser Service nicht verfügbar.

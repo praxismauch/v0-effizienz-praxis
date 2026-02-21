@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Loader2, MapPin, Briefcase, Search, Sparkles, Brain, CheckCircle2, BarChart3, FileText } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Loader2, MapPin, Briefcase, Search, Sparkles, Brain, CheckCircle2, BarChart3, FileText, X, Check, ChevronsUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useUser } from "@/contexts/user-context"
@@ -56,14 +59,44 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generationStep, setGenerationStep] = useState<string>("")
+  const [specialtyOpen, setSpecialtyOpen] = useState(false)
+
+  // Parse practice data for defaults
+  const practiceCity = (() => {
+    if (!currentPractice) return ""
+    const addr = (currentPractice as any).address || ""
+    const parts = addr.split(", ")
+    // address format: "street, city, zip" or "street, zip city"
+    return parts[1] || ""
+  })()
+
+  const practiceSpecializations = (() => {
+    if (!currentPractice) return [] as string[]
+    const raw = (currentPractice as any).specialization || ""
+    return raw
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean)
+  })()
 
   const [formData, setFormData] = useState({
     location: "",
-    specialty: "",
+    specialties: [] as string[],
     radius_km: 10,
     additional_keywords: "",
     title: "",
   })
+
+  // Pre-fill defaults from practice settings when dialog opens
+  useEffect(() => {
+    if (open && currentPractice) {
+      setFormData((prev) => ({
+        ...prev,
+        location: prev.location || practiceCity,
+        specialties: prev.specialties.length === 0 ? practiceSpecializations : prev.specialties,
+      }))
+    }
+  }, [open, currentPractice])
 
   const handleSubmit = async (generateNow: boolean) => {
     if (!formData.location.trim()) {
@@ -75,10 +108,10 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
       return
     }
 
-    if (!formData.specialty) {
+    if (formData.specialties.length === 0) {
       toast({
         title: "Fehler",
-        description: "Bitte wählen Sie eine Fachrichtung aus",
+        description: "Bitte waehlen Sie mindestens eine Fachrichtung aus",
         variant: "destructive",
       })
       return
@@ -105,12 +138,14 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
+          location: formData.location,
+          specialty: formData.specialties.join(", "),
+          radius_km: formData.radius_km,
           created_by: currentUser?.id,
           additional_keywords: formData.additional_keywords
             ? formData.additional_keywords.split(",").map((k) => k.trim())
             : [],
-          title: formData.title || `Konkurrenzanalyse ${formData.location} - ${formData.specialty}`,
+          title: formData.title || `Konkurrenzanalyse ${formData.location} - ${formData.specialties.join(", ")}`,
         }),
       })
 
@@ -151,8 +186,8 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
 
       // Reset form
       setFormData({
-        location: "",
-        specialty: "",
+        location: practiceCity,
+        specialties: practiceSpecializations,
         radius_km: 10,
         additional_keywords: "",
         title: "",
@@ -281,26 +316,96 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="specialty" className="flex items-center gap-1">
+              <Label className="flex items-center gap-1">
                 <Briefcase className="h-4 w-4" />
                 Fachrichtung *
               </Label>
-              <Select
-                value={formData.specialty}
-                onValueChange={(value) => setFormData({ ...formData, specialty: value })}
-                disabled={loading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Fachrichtung wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SPECIALTIES.map((specialty) => (
-                    <SelectItem key={specialty} value={specialty}>
-                      {specialty}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={specialtyOpen} onOpenChange={setSpecialtyOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={specialtyOpen}
+                    className="w-full justify-between font-normal h-auto min-h-10"
+                    disabled={loading}
+                  >
+                    {formData.specialties.length > 0 ? (
+                      <span className="flex flex-wrap gap-1">
+                        {formData.specialties.map((spec) => (
+                          <Badge key={spec} variant="secondary" className="text-xs">
+                            {spec}
+                            <button
+                              type="button"
+                              className="ml-1 rounded-full hover:bg-destructive/20"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setFormData({
+                                  ...formData,
+                                  specialties: formData.specialties.filter((s) => s !== spec),
+                                })
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Fachrichtungen waehlen...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <div className="max-h-60 overflow-y-auto p-2 space-y-1">
+                    {practiceSpecializations.length > 0 && (
+                      <>
+                        <p className="text-xs font-medium text-muted-foreground px-2 py-1">Praxis-Fachrichtungen</p>
+                        {practiceSpecializations.map((spec: string) => (
+                          <label
+                            key={`practice-${spec}`}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
+                          >
+                            <Checkbox
+                              checked={formData.specialties.includes(spec)}
+                              onCheckedChange={(checked) => {
+                                setFormData({
+                                  ...formData,
+                                  specialties: checked
+                                    ? [...formData.specialties, spec]
+                                    : formData.specialties.filter((s) => s !== spec),
+                                })
+                              }}
+                            />
+                            <span className="font-medium">{spec}</span>
+                          </label>
+                        ))}
+                        <div className="border-t my-1" />
+                        <p className="text-xs font-medium text-muted-foreground px-2 py-1">Weitere Fachrichtungen</p>
+                      </>
+                    )}
+                    {SPECIALTIES.filter((s) => !practiceSpecializations.includes(s)).map((spec) => (
+                      <label
+                        key={spec}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
+                      >
+                        <Checkbox
+                          checked={formData.specialties.includes(spec)}
+                          onCheckedChange={(checked) => {
+                            setFormData({
+                              ...formData,
+                              specialties: checked
+                                ? [...formData.specialties, spec]
+                                : formData.specialties.filter((s) => s !== spec),
+                            })
+                          }}
+                        />
+                        {spec}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -371,13 +476,13 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
           <Button
             variant="secondary"
             onClick={() => handleSubmit(false)}
-            disabled={loading || !formData.location.trim() || !formData.specialty}
+            disabled={loading || !formData.location.trim() || formData.specialties.length === 0}
           >
             Als Entwurf speichern
           </Button>
           <Button
             onClick={() => handleSubmit(true)}
-            disabled={loading || !formData.location.trim() || !formData.specialty}
+            disabled={loading || !formData.location.trim() || formData.specialties.length === 0}
           >
             {generating ? (
               <>

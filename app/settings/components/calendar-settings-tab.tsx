@@ -1,12 +1,34 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
-import { Calendar, Loader2, Save } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Calendar, Loader2, Save, MapPin } from "lucide-react"
+import { usePractice } from "@/contexts/practice-context"
 import type { CalendarSettings } from "../types"
+
+const BUNDESLAND_CODE_MAP: Record<string, string> = {
+  "Baden-Württemberg": "BW",
+  "Bayern": "BY",
+  "Berlin": "BE",
+  "Brandenburg": "BB",
+  "Bremen": "HB",
+  "Hamburg": "HH",
+  "Hessen": "HE",
+  "Mecklenburg-Vorpommern": "MV",
+  "Niedersachsen": "NI",
+  "Nordrhein-Westfalen": "NW",
+  "Rheinland-Pfalz": "RP",
+  "Saarland": "SL",
+  "Sachsen": "SN",
+  "Sachsen-Anhalt": "ST",
+  "Schleswig-Holstein": "SH",
+  "Thüringen": "TH",
+}
 
 interface CalendarSettingsTabProps {
   settings: CalendarSettings
@@ -16,6 +38,9 @@ interface CalendarSettingsTabProps {
 }
 
 export function CalendarSettingsTab({ settings, onSettingsChange, onSave, saving }: CalendarSettingsTabProps) {
+  const { currentPractice } = usePractice()
+  const bundesland = (currentPractice as any)?.bundesland || ""
+  const bundeslandCode = BUNDESLAND_CODE_MAP[bundesland] || ""
   return (
     <Card>
       <CardHeader>
@@ -140,6 +165,31 @@ export function CalendarSettingsTab({ settings, onSettingsChange, onSave, saving
             <Switch
               checked={settings.showHolidays}
               onCheckedChange={(checked) => onSettingsChange({ ...settings, showHolidays: checked })}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <Label>Landesspezifische Feiertage</Label>
+                {bundesland ? (
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <MapPin className="h-3 w-3" />
+                    {bundesland}
+                  </Badge>
+                ) : null}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {bundesland
+                  ? `Feiertage fuer ${bundesland} zusaetzlich anzeigen (z.B. Fronleichnam, Allerheiligen)`
+                  : "Bitte zuerst ein Bundesland in den Praxis-Einstellungen festlegen"}
+              </p>
+            </div>
+            <Switch
+              checked={settings.showBundeslandHolidays ?? true}
+              onCheckedChange={(checked) =>
+                onSettingsChange({ ...settings, showBundeslandHolidays: checked })
+              }
+              disabled={!bundesland}
             />
           </div>
         </div>

@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { AddressInput } from "@/components/address-input"
 import { toast } from "@/hooks/use-toast"
-import { Loader2, X, Check, ChevronsUpDown, Globe, Sparkles, ArrowLeft } from "lucide-react"
+import { Loader2, X, ChevronsUpDown, Globe, Sparkles, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface CreatePracticeDialogProps {
@@ -33,7 +33,7 @@ interface PracticeType {
 }
 
 const BUNDESLAENDER = [
-  "Baden-Württemberg",
+  "Baden-Wuerttemberg",
   "Bayern",
   "Berlin",
   "Brandenburg",
@@ -48,7 +48,7 @@ const BUNDESLAENDER = [
   "Sachsen",
   "Sachsen-Anhalt",
   "Schleswig-Holstein",
-  "Thüringen",
+  "Thueringen",
 ]
 
 export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialogProps) {
@@ -111,7 +111,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
       console.error("Error loading practice types:", error)
       toast({
         title: "Warnung",
-        description: "Praxistypen konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
+        description: "Praxistypen konnten nicht geladen werden. Bitte versuchen Sie es spaeter erneut.",
         variant: "destructive",
       })
       setPracticeTypes([])
@@ -145,7 +145,6 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         throw new Error("Keine Daten von der KI-Analyse erhalten")
       }
 
-      // Match extracted fachrichtungen against available practice types
       const matchedTypes: string[] = []
       if (data.fachrichtungen && Array.isArray(data.fachrichtungen)) {
         for (const fach of data.fachrichtungen) {
@@ -191,7 +190,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
       toast({
         title: "KI-Analyse abgeschlossen",
-        description: `${filledFields.length} Felder ausgefüllt: ${filledFields.join(", ")}. Bitte prüfen Sie die Angaben.`,
+        description: `${filledFields.length} Felder ausgefuellt: ${filledFields.join(", ")}. Bitte pruefen Sie die Angaben.`,
       })
     } catch (error: any) {
       toast({
@@ -209,7 +208,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
     if (!formData.name || !formData.praxisArt || formData.types.length === 0 || !formData.bundesland) {
       toast({
         title: "Validierungsfehler",
-        description: "Bitte füllen Sie alle Pflichtfelder aus (Name, Praxisart, mind. eine Fachrichtung und Bundesland).",
+        description: "Bitte fuellen Sie alle Pflichtfelder aus (Name, Praxisart, mind. eine Fachrichtung und Bundesland).",
         variant: "destructive",
       })
       return
@@ -241,8 +240,6 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         const errorData = await response.json()
         throw new Error(errorData.error || errorData.message || "Fehler beim Erstellen der Praxis")
       }
-
-      const newPractice = await response.json()
 
       toast({
         title: "Erfolg",
@@ -284,11 +281,10 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         <DialogHeader>
           <DialogTitle>Neue Praxis erstellen</DialogTitle>
           <DialogDescription>
-            Fügen Sie eine neue Praxis zu Ihrem Konto hinzu. Sie können mehrere Praxen über ein Dashboard verwalten.
+            Fuegen Sie eine neue Praxis zu Ihrem Konto hinzu. Sie koennen mehrere Praxen ueber ein Dashboard verwalten.
           </DialogDescription>
         </DialogHeader>
 
-        {/* AI Extraction Section */}
         <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
           {!showAiInput ? (
             <button
@@ -301,9 +297,9 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
                 <Sparkles className="h-4 w-4 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium">KI-Ausfüllung per Website</p>
+                <p className="text-sm font-medium">KI-Ausfuellung per Website</p>
                 <p className="text-xs text-muted-foreground">
-                  Website-URL eingeben und Formular automatisch ausfüllen lassen
+                  Website-URL eingeben und Formular automatisch ausfuellen lassen
                 </p>
               </div>
             </button>
@@ -347,13 +343,13 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
                   ) : (
                     <>
                       <Sparkles className="h-3.5 w-3.5" />
-                      Ausfüllen
+                      Ausfuellen
                     </>
                   )}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Die KI analysiert die öffentliche Website und füllt das Formular aus. Bitte Angaben prüfen.
+                Die KI analysiert die oeffentliche Website und fuellt das Formular aus. Bitte Angaben pruefen.
               </p>
             </div>
           )}
@@ -367,7 +363,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Praxis Dr. Müller"
+                placeholder="Praxis Dr. Mueller"
                 required
                 disabled={isSubmitting}
               />
@@ -381,7 +377,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
                 disabled={isSubmitting}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Praxisart wählen" />
+                  <SelectValue placeholder="Praxisart waehlen" />
                 </SelectTrigger>
                 <SelectContent>
                   {practiceForms.map((form) => (
@@ -427,7 +423,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
                       </div>
                     ) : (
                       <span className="text-muted-foreground">
-                        {isLoadingTypes ? "Laden..." : "Fachrichtungen wählen..."}
+                        {isLoadingTypes ? "Laden..." : "Fachrichtungen waehlen..."}
                       </span>
                     )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -472,7 +468,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
                 disabled={isSubmitting}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Bundesland wählen" />
+                  <SelectValue placeholder="Bundesland waehlen" />
                 </SelectTrigger>
                 <SelectContent>
                   {BUNDESLAENDER.map((land) => (

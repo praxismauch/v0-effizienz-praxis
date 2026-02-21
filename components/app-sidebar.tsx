@@ -1,4 +1,5 @@
 "use client"
+// cache-bust v53
 /**
  * AppSidebar - Main application sidebar navigation
  * Refactored: preferences/favorites logic in hooks/use-sidebar-preferences.ts

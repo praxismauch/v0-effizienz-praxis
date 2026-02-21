@@ -17,7 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Plus, Award, Edit, Trash2, Upload, FileText, X, Loader2, ExternalLink } from "lucide-react"
+import { Plus, Award, Edit, Trash2, FileText } from "lucide-react"
+import { MultiFileUpload, type UploadedFile } from "@/components/ui/multi-file-upload"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "sonner"
 import type { Certification } from "../types"
@@ -37,68 +38,7 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
   const [editingCert, setEditingCert] = useState<Certification | null>(null)
   const [formData, setFormData] = useState(INITIAL_CERTIFICATION_FORM)
   const [isSaving, setIsSaving] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string; name: string; type: string; size: number; uploaded_at: string }>>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const ACCEPTED_FILE_TYPES = ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
-
-  const uploadFilesToBlob = async (files: File[]) => {
-    setIsUploading(true)
-    try {
-      const formDataUpload = new FormData()
-      for (const file of files) {
-        formDataUpload.append("files", file)
-      }
-      formDataUpload.append("folder", "certifications")
-
-      const res = await fetch("/api/upload", { method: "POST", body: formDataUpload })
-      if (!res.ok) throw new Error("Upload fehlgeschlagen")
-      const data = await res.json()
-
-      const newFiles = data.files
-        ? data.files.filter((f: any) => !f.error)
-        : [{ url: data.url, name: data.fileName, type: "image/jpeg", size: data.fileSize, uploaded_at: new Date().toISOString() }]
-
-      setUploadedFiles((prev) => [...prev, ...newFiles])
-      toast.success(`${newFiles.length} Datei(en) hochgeladen`)
-    } catch {
-      toast.error("Fehler beim Hochladen der Datei(en)")
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      uploadFilesToBlob(Array.from(e.target.files))
-      e.target.value = ""
-    }
-  }
-
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true) }
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false) }
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); e.stopPropagation(); setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length) uploadFilesToBlob(files)
-  }
-
-  const removeFile = async (url: string) => {
-    try {
-      await fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) })
-      setUploadedFiles((prev) => prev.filter((f) => f.url !== url))
-    } catch {
-      toast.error("Fehler beim Entfernen der Datei")
-    }
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const prevTriggerRef = useRef(createTrigger)
 
   useEffect(() => {
@@ -297,76 +237,17 @@ export function CertificationsTab({ certifications, practiceId, onCertifications
               <Switch checked={formData.is_mandatory} onCheckedChange={(v) => updateField("is_mandatory", v)} />
             </div>
 
-            {/* File Upload Section - matching existing upload UI pattern */}
-            <div className="space-y-3 pt-2 border-t">
+            {/* File Upload Section */}
+            <div className="space-y-2 pt-2 border-t">
               <Label>Dokumente & Nachweise</Label>
-              <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                  isDragging ? "border-primary bg-primary/10" : "border-muted-foreground/25"
-                } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept={ACCEPTED_FILE_TYPES}
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  disabled={isUploading}
-                />
-                <label
-                  className="cursor-pointer"
-                  onClick={(e) => { e.preventDefault(); fileInputRef.current?.click() }}
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-10 w-10 mx-auto mb-3 text-muted-foreground animate-spin" />
-                  ) : (
-                    <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                  )}
-                  <p className="text-sm font-medium mb-1">
-                    {isUploading ? "Wird hochgeladen..." : "Klicken Sie hier oder ziehen Sie Dateien hierher"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max. 10MB pro Datei)</p>
-                </label>
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {uploadedFiles.map((file) => (
-                      <div key={file.url} className="flex items-center justify-between p-2 bg-muted rounded text-left">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <FileText className="h-4 w-4 flex-shrink-0" />
-                          <span className="text-sm truncate">{file.name}</span>
-                          <span className="text-xs text-muted-foreground flex-shrink-0">
-                            ({formatFileSize(file.size)})
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => { e.stopPropagation(); window.open(file.url, "_blank") }}
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 hover:text-destructive"
-                            onClick={(e) => { e.stopPropagation(); removeFile(file.url) }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <MultiFileUpload
+                files={uploadedFiles}
+                onFilesChange={setUploadedFiles}
+                folder="certifications"
+                label="Dateien hochladen"
+                hint="PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max. 10MB)"
+                maxFiles={10}
+              />
             </div>
           </div>
           <DialogFooter>

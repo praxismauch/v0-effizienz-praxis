@@ -3,121 +3,21 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
 import { useUser } from "./user-context"
 import { usePractice } from "./practice-context"
-import Logger from "@/lib/logger"
+import type { OnboardingStep, PainPoint, OnboardingContextType } from "./onboarding-types"
+import { ONBOARDING_STEPS, DEFAULT_PAIN_POINTS } from "./onboarding-types"
+import {
+  loadProgressFromApi,
+  saveProgressToApi,
+  loadPainPointsFromApi,
+  savePainPointsToApi,
+  awardWelcomeBadge,
+  saveToLocalStorage,
+  loadFromLocalStorage,
+} from "./onboarding-api"
 
-interface OnboardingStep {
-  id: string
-  title: string
-  description: string
-  completed: boolean
-}
-
-interface PainPoint {
-  id: string
-  title: string
-  description: string
-}
-
-interface OnboardingProgress {
-  id?: string
-  currentStep: number
-  steps: OnboardingStep[]
-  isCompleted: boolean
-  completedAt?: string
-  teamSize?: number
-  practiceGoals?: string[]
-  practiceType?: string
-  painPoints: PainPoint[]
-  skippedSteps?: string[]
-  timeSpentSeconds?: number
-  interactionsCount?: number
-}
-
-interface OnboardingContextType {
-  isOnboardingOpen: boolean
-  setIsOnboardingOpen: (open: boolean) => void
-  currentStep: number
-  setCurrentStep: (step: number) => void
-  steps: OnboardingStep[]
-  completeStep: (stepId: string) => void
-  isNewPractice: boolean
-  daysRemaining: number
-  hasCompletedOnboarding: boolean
-  markOnboardingComplete: () => void
-  resetOnboarding: () => void
-  shouldShowOnboarding: boolean
-  painPoints: PainPoint[]
-  setPainPoints: (points: PainPoint[]) => void
-  savePainPoints: (createGoals?: boolean) => Promise<{ goalsCreated: number } | null>
-  loadPainPoints: () => Promise<void>
-  teamSize: number | undefined
-  setTeamSize: (size: number) => void
-  practiceGoals: string[]
-  setPracticeGoals: (goals: string[]) => void
-  practiceType: string | undefined
-  setPracticeType: (type: string) => void
-  saveProgress: () => Promise<void>
-  isLoading: boolean
-}
+export type { OnboardingStep, PainPoint, OnboardingContextType } from "./onboarding-types"
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined)
-
-const ONBOARDING_STEPS: OnboardingStep[] = [
-  {
-    id: "welcome",
-    title: "Willkommen bei Effizienz Praxis",
-    description: "Ihr intelligenter Assistent für die Praxisverwaltung",
-    completed: false,
-  },
-  {
-    id: "pain-points",
-    title: "Ihre größten Herausforderungen",
-    description: "Teilen Sie uns Ihre 3 größten Probleme mit",
-    completed: false,
-  },
-  {
-    id: "practice-setup",
-    title: "Praxis einrichten",
-    description: "Grundlegende Informationen zu Ihrer Praxis",
-    completed: false,
-  },
-  {
-    id: "team",
-    title: "Team verwalten",
-    description: "Fügen Sie Teammitglieder hinzu und weisen Sie Rollen zu",
-    completed: false,
-  },
-  {
-    id: "calendar",
-    title: "Kalender & Termine",
-    description: "Planen und organisieren Sie Ihre Termine",
-    completed: false,
-  },
-  {
-    id: "tasks",
-    title: "Aufgaben & Workflows",
-    description: "Erstellen Sie Aufgaben und automatisieren Sie Abläufe",
-    completed: false,
-  },
-  {
-    id: "documents",
-    title: "Dokumente & Protokolle",
-    description: "Verwalten Sie Ihre Praxisdokumentation",
-    completed: false,
-  },
-  {
-    id: "ai-features",
-    title: "KI-Funktionen",
-    description: "Nutzen Sie intelligente Analysen und Empfehlungen",
-    completed: false,
-  },
-  {
-    id: "complete",
-    title: "Los geht's!",
-    description: "Sie sind bereit, Effizienz Praxis zu nutzen",
-    completed: false,
-  },
-]
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useUser()
@@ -130,137 +30,81 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [isNewPractice, setIsNewPractice] = useState(false)
   const [daysRemaining, setDaysRemaining] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [painPoints, setPainPoints] = useState<PainPoint[]>([
-    { id: "1", title: "", description: "" },
-    { id: "2", title: "", description: "" },
-    { id: "3", title: "", description: "" },
-  ])
+  const [painPoints, setPainPoints] = useState<PainPoint[]>(DEFAULT_PAIN_POINTS)
   const [teamSize, setTeamSize] = useState<number | undefined>(undefined)
   const [practiceGoals, setPracticeGoals] = useState<string[]>([])
   const [practiceType, setPracticeType] = useState<string | undefined>(undefined)
 
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasLoadedFromDb = useRef(false)
+  const practiceId = currentPractice?.id || "1"
 
-  // Check if practice is within 7 days of creation
+  // Check if practice is within 7 days
   useEffect(() => {
     if (currentPractice?.createdAt) {
-      const createdDate = new Date(currentPractice.createdAt)
-      const now = new Date()
-      const diffTime = now.getTime() - createdDate.getTime()
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
+      const diffDays = Math.floor((Date.now() - new Date(currentPractice.createdAt).getTime()) / (1000 * 60 * 60 * 24))
       setIsNewPractice(diffDays <= 7)
       setDaysRemaining(Math.max(0, 7 - diffDays))
     }
   }, [currentPractice?.createdAt])
 
-  const practiceId = currentPractice?.id || "1"
-
+  // Load progress from DB
   const loadProgressFromDb = useCallback(async () => {
     if (!currentUser?.id || hasLoadedFromDb.current) return
-
+    setIsLoading(true)
     try {
-      setIsLoading(true)
-      const response = await fetch(`/api/practices/${practiceId}/onboarding-progress`, {
-        credentials: "include",
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.progress) {
+      const result = await loadProgressFromApi(practiceId)
+      if (result) {
+        hasLoadedFromDb.current = true
+        setCurrentStep(result.currentStep)
+        setSteps(result.steps)
+        setHasCompletedOnboarding(result.isCompleted)
+        setTeamSize(result.teamSize)
+        setPracticeGoals(result.practiceGoals)
+        setPracticeType(result.practiceType)
+        if (result.painPoints.length > 0) setPainPoints(result.painPoints)
+      } else {
+        // Try localStorage migration
+        const localData = loadFromLocalStorage(practiceId)
+        if (localData) {
+          setHasCompletedOnboarding(localData.completed || false)
+          setSteps(localData.steps || ONBOARDING_STEPS)
+          setCurrentStep(localData.currentStep || 0)
+          if (localData.painPoints) setPainPoints(localData.painPoints)
           hasLoadedFromDb.current = true
-          setCurrentStep(data.progress.current_step || 0)
-          setSteps(data.progress.steps || ONBOARDING_STEPS)
-          setHasCompletedOnboarding(data.progress.is_completed || false)
-          setTeamSize(data.progress.team_size)
-          setPracticeGoals(data.progress.practice_goals || [])
-          setPracticeType(data.progress.practice_type)
-          if (data.progress.pain_points && data.progress.pain_points.length > 0) {
-            const loadedPoints = data.progress.pain_points.slice(0, 3)
-            while (loadedPoints.length < 3) {
-              loadedPoints.push({ id: String(loadedPoints.length + 1), title: "", description: "" })
-            }
-            setPainPoints(loadedPoints)
-          }
-        } else {
-          // No progress found - check localStorage for migration
-          try {
-            const storageKey = `onboarding_${practiceId}`
-            const stored = localStorage.getItem(storageKey)
-            if (stored) {
-              const localData = JSON.parse(stored)
-              setHasCompletedOnboarding(localData.completed || false)
-              setSteps(localData.steps || ONBOARDING_STEPS)
-              setCurrentStep(localData.currentStep || 0)
-              if (localData.painPoints) {
-                setPainPoints(localData.painPoints)
-              }
-              // Migrate to database
-              hasLoadedFromDb.current = true
-              await saveProgressToDb({
-                currentStep: localData.currentStep || 0,
-                steps: localData.steps || ONBOARDING_STEPS,
-                isCompleted: localData.completed || false,
-                painPoints: localData.painPoints || [],
-              })
-            }
-          } catch {
-            // localStorage may not be available or parse failed
-          }
+          await saveProgressToApi(practiceId, {
+            currentStep: localData.currentStep || 0,
+            steps: localData.steps || ONBOARDING_STEPS,
+            isCompleted: localData.completed || false,
+            painPoints: localData.painPoints || [],
+          })
         }
       }
-    } catch (error) {
-      Logger.warn("context", "Error loading onboarding progress", { error })
     } finally {
       setIsLoading(false)
     }
   }, [practiceId, currentUser?.id])
 
-  const saveProgressToDb = useCallback(
-    async (progress?: Partial<OnboardingProgress>) => {
-      try {
-        const payload = progress || {
-          currentStep,
-          steps,
-          isCompleted: hasCompletedOnboarding,
-          teamSize,
-          practiceGoals,
-          practiceType,
-          painPoints: painPoints.filter((p) => p.title.trim()),
-        }
-
-        await fetch(`/api/practices/${practiceId}/onboarding-progress`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          credentials: "include",
-        })
-
-        // Also save to localStorage as backup
-        try {
-          const storageKey = `onboarding_${practiceId}`
-          localStorage.setItem(
-            storageKey,
-            JSON.stringify({
-              completed: hasCompletedOnboarding,
-              steps,
-              currentStep,
-              painPoints,
-              teamSize,
-              practiceGoals,
-              practiceType,
-            }),
-          )
-        } catch {
-          // localStorage may not be available
-        }
-      } catch (error) {
-        Logger.warn("context", "Error saving onboarding progress", { error })
-      }
-    },
-    [practiceId, currentStep, steps, hasCompletedOnboarding, teamSize, practiceGoals, practiceType, painPoints],
-  )
+  const saveProgressToDb = useCallback(async () => {
+    const payload = {
+      currentStep,
+      steps,
+      isCompleted: hasCompletedOnboarding,
+      teamSize,
+      practiceGoals,
+      practiceType,
+      painPoints: painPoints.filter((p) => p.title.trim()),
+    }
+    await saveProgressToApi(practiceId, payload)
+    saveToLocalStorage(practiceId, {
+      completed: hasCompletedOnboarding,
+      steps,
+      currentStep,
+      painPoints,
+      teamSize,
+      practiceGoals,
+      practiceType,
+    })
+  }, [practiceId, currentStep, steps, hasCompletedOnboarding, teamSize, practiceGoals, practiceType, painPoints])
 
   const completeStep = useCallback((stepId: string) => {
     setSteps((prev) => prev.map((step) => (step.id === stepId ? { ...step, completed: true } : step)))
@@ -270,99 +114,33 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     await saveProgressToDb()
   }, [saveProgressToDb])
 
-  // Auto-save when state changes
+  // Auto-save on state changes
   useEffect(() => {
-    if (hasLoadedFromDb.current) {
-      saveProgress()
-    }
+    if (hasLoadedFromDb.current) saveProgress()
   }, [currentStep, steps, hasCompletedOnboarding, teamSize, practiceGoals, practiceType, saveProgress, practiceId])
 
   const loadPainPoints = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/practices/${practiceId}/pain-points`, {
-        credentials: "include",
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.painPoints && data.painPoints.length > 0) {
-          const loadedPoints = data.painPoints.slice(0, 3)
-          while (loadedPoints.length < 3) {
-            loadedPoints.push({ id: String(loadedPoints.length + 1), title: "", description: "" })
-          }
-          setPainPoints(loadedPoints)
-        }
-      }
-    } catch (error) {
-      Logger.warn("context", "Error loading pain points", { error })
-    }
+    const result = await loadPainPointsFromApi(practiceId)
+    if (result) setPainPoints(result)
   }, [practiceId])
 
   const savePainPoints = useCallback(
-    async (createGoals = true): Promise<{ goalsCreated: number } | null> => {
-      try {
-        const response = await fetch(`/api/practices/${practiceId}/pain-points`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            painPoints: painPoints.filter((p) => p.title.trim()),
-            createGoals,
-          }),
-          credentials: "include",
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to save pain points")
-        }
-
-        const result = await response.json()
-
-        await saveProgressToDb({ painPoints: painPoints.filter((p) => p.title.trim()) })
-
-        return { goalsCreated: result.goalsCreated || 0 }
-      } catch (error) {
-        Logger.error("context", "Error saving pain points", error)
-        return null
-      }
+    async (createGoals = true) => {
+      const result = await savePainPointsToApi(practiceId, painPoints, createGoals)
+      if (result) await saveProgressToApi(practiceId, { painPoints: painPoints.filter((p) => p.title.trim()) })
+      return result
     },
-    [practiceId, painPoints, saveProgressToDb],
+    [practiceId, painPoints],
   )
 
   const markOnboardingComplete = useCallback(async () => {
     setHasCompletedOnboarding(true)
     setIsOnboardingOpen(false)
-    setSteps((prev) => prev.map((step) => ({ ...step, completed: true })))
-
-    await saveProgressToDb({
-      isCompleted: true,
-      steps: steps.map((s) => ({ ...s, completed: true })),
-    })
-
-    // Award "Welcome Tour" badge
-    if (currentUser?.id && practiceId) {
-      try {
-        const badgeResponse = await fetch("/api/badges/award", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: currentUser.id,
-            practiceId,
-            badgeId: "welcome_tour",
-          }),
-        })
-        if (badgeResponse.ok) {
-          const badgeData = await badgeResponse.json()
-          if (badgeData.success && !badgeData.alreadyEarned) {
-            Logger.info("onboarding", "Welcome Tour badge awarded", { userId: currentUser.id })
-          }
-        } else {
-          Logger.warn("onboarding", "Badge award failed", { status: badgeResponse.status })
-        }
-      } catch (error) {
-        Logger.warn("onboarding", "Badge award request failed", { error })
-      }
-    }
-  }, [saveProgressToDb, steps, currentUser?.id, practiceId])
+    const completedSteps = steps.map((s) => ({ ...s, completed: true }))
+    setSteps(completedSteps)
+    await saveProgressToApi(practiceId, { isCompleted: true, steps: completedSteps })
+    if (currentUser?.id) await awardWelcomeBadge(currentUser.id, practiceId)
+  }, [steps, currentUser?.id, practiceId])
 
   const resetOnboarding = useCallback(async () => {
     setHasCompletedOnboarding(false)
@@ -370,43 +148,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setCurrentStep(0)
     setIsOnboardingOpen(true)
     hasLoadedFromDb.current = false
-
-    await saveProgressToDb({
-      currentStep: 0,
-      steps: ONBOARDING_STEPS,
-      isCompleted: false,
-    })
-  }, [saveProgressToDb])
-
-  const shouldShowOnboarding = isNewPractice || !hasCompletedOnboarding
+    await saveProgressToApi(practiceId, { currentStep: 0, steps: ONBOARDING_STEPS, isCompleted: false })
+  }, [practiceId])
 
   return (
     <OnboardingContext.Provider
       value={{
-        isOnboardingOpen,
-        setIsOnboardingOpen,
-        currentStep,
-        setCurrentStep,
-        steps,
-        completeStep,
-        isNewPractice,
-        daysRemaining,
-        hasCompletedOnboarding,
-        markOnboardingComplete,
-        resetOnboarding,
-        shouldShowOnboarding,
-        painPoints,
-        setPainPoints,
-        savePainPoints,
-        loadPainPoints,
-        teamSize,
-        setTeamSize,
-        practiceGoals,
-        setPracticeGoals,
-        practiceType,
-        setPracticeType,
-        saveProgress,
-        isLoading,
+        isOnboardingOpen, setIsOnboardingOpen, currentStep, setCurrentStep, steps, completeStep,
+        isNewPractice, daysRemaining, hasCompletedOnboarding, markOnboardingComplete, resetOnboarding,
+        shouldShowOnboarding: isNewPractice || !hasCompletedOnboarding,
+        painPoints, setPainPoints, savePainPoints, loadPainPoints,
+        teamSize, setTeamSize, practiceGoals, setPracticeGoals, practiceType, setPracticeType,
+        saveProgress, isLoading,
       }}
     >
       {children}
@@ -417,11 +170,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 export function useOnboarding() {
   const context = useContext(OnboardingContext)
   if (context === undefined) {
-    // During SSR or when provider isn't available, return null instead of throwing
-    // This allows components to safely check for null and render fallback
-    if (typeof window === "undefined") {
-      return null
-    }
+    if (typeof window === "undefined") return null
     throw new Error("useOnboarding must be used within an OnboardingProvider")
   }
   return context

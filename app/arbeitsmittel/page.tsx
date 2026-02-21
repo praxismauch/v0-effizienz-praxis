@@ -3,28 +3,11 @@
 import { AppLayout } from "@/components/app-layout"
 import { useState, useMemo } from "react"
 import useSWR from "swr"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  Plus,
-  Search,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Key,
-  Laptop,
-  Smartphone,
-  ShirtIcon,
-  Package,
-  AlertCircle,
-} from "lucide-react"
+import { Plus, AlertCircle } from "lucide-react"
 import CreateArbeitsmittelDialog from "@/components/arbeitsmittel/create-arbeitsmittel-dialog"
 import EditArbeitsmittelDialog from "@/components/arbeitsmittel/edit-arbeitsmittel-dialog"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useToast } from "@/hooks/use-toast"
@@ -41,28 +24,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { SWR_KEYS } from "@/lib/swr-keys"
-
-const typeIcons: Record<string, any> = {
-  Schlüssel: Key,
-  Dienstkleidung: ShirtIcon,
-  "Dienst Handy": Smartphone,
-  "Dienst Laptop": Laptop,
-  Sonstiges: Package,
-}
-
-const statusColors: Record<string, string> = {
-  available: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  assigned: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  maintenance: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  retired: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-}
-
-const statusLabels: Record<string, string> = {
-  available: "Verfügbar",
-  assigned: "Zugewiesen",
-  maintenance: "Wartung",
-  retired: "Ausgemustert",
-}
+import { ArbeitsmittelStats } from "./components/arbeitsmittel-stats"
+import { ArbeitsmittelTable } from "./components/arbeitsmittel-table"
 
 export default function ArbeitsmittelPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -71,7 +34,6 @@ export default function ArbeitsmittelPage() {
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
-  const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { currentPractice, isLoading: practiceLoading } = usePractice()
   const { toast } = useToast()
@@ -95,12 +57,9 @@ export default function ArbeitsmittelPage() {
     const response = await fetch(url)
     if (!response.ok) throw new Error("Failed to fetch team members")
     const data = await response.json()
-    // API returns { teamMembers: [...] } - extract the array
     const members = data?.teamMembers || data
     return Array.isArray(members) ? members : []
   })
-
-  
 
   const filteredItems = useMemo(() => {
     if (!arbeitsmittel) return []
@@ -126,9 +85,7 @@ export default function ArbeitsmittelPage() {
   const error = arbeitsmittelError || teamMembersError
   const isInitializing = (authLoading || practiceLoading) && !currentPractice?.id
 
-  if (!user && !authLoading) {
-    return null // Will redirect to login
-  }
+  if (!user && !authLoading) return null
 
   if (!currentPractice?.id && !practiceLoading) {
     return (
@@ -154,43 +111,22 @@ export default function ArbeitsmittelPage() {
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete || !currentPractice?.id) return
-
     try {
-      await mutateArbeitsmittel((current) => current?.filter((item: any) => item.id !== itemToDelete), {
-        revalidate: false,
-      })
-
-      const response = await fetch(`/api/practices/${currentPractice.id}/arbeitsmittel/${itemToDelete}`, {
-        method: "DELETE",
-      })
-
+      await mutateArbeitsmittel((current) => current?.filter((item: any) => item.id !== itemToDelete), { revalidate: false })
+      const response = await fetch(`/api/practices/${currentPractice.id}/arbeitsmittel/${itemToDelete}`, { method: "DELETE" })
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to delete")
+        const err = await response.json()
+        throw new Error(err.error || "Failed to delete")
       }
-
-      toast({
-        title: "Gelöscht",
-        description: "Arbeitsmittel wurde erfolgreich gelöscht.",
-      })
-
+      toast({ title: "Gelöscht", description: "Arbeitsmittel wurde erfolgreich gelöscht." })
       await mutateArbeitsmittel()
-    } catch (error: any) {
+    } catch (err: any) {
       await mutateArbeitsmittel()
-      toast({
-        title: "Fehler",
-        description: error?.message || "Fehler beim Löschen des Arbeitsmittels",
-        variant: "destructive",
-      })
+      toast({ title: "Fehler", description: err?.message || "Fehler beim Löschen des Arbeitsmittels", variant: "destructive" })
     } finally {
       setDeleteDialogOpen(false)
       setItemToDelete(null)
     }
-  }
-
-  const handleDeleteClick = (id: string) => {
-    setItemToDelete(id)
-    setDeleteDialogOpen(true)
   }
 
   return (
@@ -205,6 +141,7 @@ export default function ArbeitsmittelPage() {
           Arbeitsmittel hinzufügen
         </Button>
       </div>
+
       <div className="space-y-4">
         {error && (
           <Alert variant="destructive">
@@ -250,177 +187,30 @@ export default function ArbeitsmittelPage() {
           </>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Gesamt</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.total}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Verfügbar</CardTitle>
-                  <Badge className="bg-emerald-500">{stats.available}</Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.available}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Zugewiesen</CardTitle>
-                  <Badge className="bg-blue-500">{stats.assigned}</Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.assigned}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Wartung</CardTitle>
-                  <Badge className="bg-amber-500">{stats.maintenance}</Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.maintenance}</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle>Arbeitsmittel-Liste</CardTitle>
-                    <CardDescription>Alle Arbeitsmittel Ihrer Praxis</CardDescription>
-                  </div>
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Suchen..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8"
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto -mx-6 px-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[100px]">Typ</TableHead>
-                        <TableHead className="min-w-[120px]">Name</TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
-                        <TableHead className="min-w-[140px]">Zugewiesen an</TableHead>
-                        <TableHead className="text-right min-w-[80px]">Aktionen</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredItems.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground">
-                            Keine Arbeitsmittel gefunden
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredItems.map((item) => {
-                          const Icon = typeIcons[item.type] || Package
-                          const assignedMember = item.assigned_to && Array.isArray(teamMembers)
-                            ? teamMembers.find((m) => m.id === item.assigned_to || m.user_id === item.assigned_to)
-                            : null
-                          return (
-                            <TableRow
-                              key={item.id}
-                              className="group cursor-pointer hover:bg-muted/50"
-                              onClick={() => router.push(`/arbeitsmittel/${item.id}`)}
-                            >
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                  <span className="whitespace-nowrap">{item.type}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="font-medium">{item.name}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={statusColors[item.status]}>
-                                  {statusLabels[item.status]}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "-"}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 px-2"
-                                    onClick={() => {
-                                      setSelectedItem(item)
-                                      setEditDialogOpen(true)
-                                    }}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    onClick={() => handleDeleteClick(item.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <ArbeitsmittelStats stats={stats} />
+            <ArbeitsmittelTable
+              items={filteredItems}
+              teamMembers={teamMembers || []}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onEdit={(item) => { setSelectedItem(item); setEditDialogOpen(true) }}
+              onDelete={(id) => { setItemToDelete(id); setDeleteDialogOpen(true) }}
+            />
           </>
         )}
 
-        <CreateArbeitsmittelDialog
-          open={createDialogOpen}
-          onOpenChange={setCreateDialogOpen}
-          onSuccess={() => mutateArbeitsmittel()}
-          teamMembers={teamMembers || []}
-        />
-
-        {selectedItem && (
-          <EditArbeitsmittelDialog
-            open={editDialogOpen}
-            onOpenChange={setEditDialogOpen}
-            onSuccess={() => mutateArbeitsmittel()}
-            item={selectedItem}
-            teamMembers={teamMembers || []}
-          />
-        )}
+        <CreateArbeitsmittelDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onSuccess={() => mutateArbeitsmittel()} teamMembers={teamMembers || []} />
+        {selectedItem && <EditArbeitsmittelDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} onSuccess={() => mutateArbeitsmittel()} item={selectedItem} teamMembers={teamMembers || []} />}
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Arbeitsmittel löschen?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Möchten Sie dieses Arbeitsmittel wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
-              </AlertDialogDescription>
+              <AlertDialogDescription>Möchten Sie dieses Arbeitsmittel wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteConfirm}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Löschen
-              </AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Löschen</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

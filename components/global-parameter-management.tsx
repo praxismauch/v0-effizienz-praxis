@@ -632,10 +632,6 @@ export function GlobalParameterManagement() {
           const data = await response.json()
           console.error("[v0] Delete failed:", data)
           alert(data.error || "Kennzahl konnte nicht geloescht werden")
-        } else {
-          const data = await response.json()
-          console.error("[v0] Delete failed:", data)
-          alert(data.error || "Kennzahl konnte nicht geloescht werden")
         }
       } catch (error) {
         console.error("[v0] Error deleting parameter:", error)

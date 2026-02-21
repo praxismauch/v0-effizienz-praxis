@@ -15,7 +15,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FolderPlus, Plus, Pencil, Trash2, GripVertical, Sparkles, RefreshCw } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { FolderPlus, Plus, Pencil, Trash2, GripVertical, Sparkles, RefreshCw, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
@@ -33,6 +44,7 @@ export function OrgaCategoriesManager() {
   const [editingCategory, setEditingCategory] = useState<OrgaCategory | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isRestoring, setIsRestoring] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
 
   // Form state
@@ -189,6 +201,32 @@ export function OrgaCategoriesManager() {
     }
   }
 
+  const restoreDefaults = async () => {
+    if (!practiceId || isRestoring) return
+
+    setIsRestoring(true)
+    try {
+      const response = await fetch(`/api/practices/${practiceId}/orga-categories/restore-defaults`, {
+        method: "POST",
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success("Standard-Kategorien wurden wiederhergestellt")
+        await fetchCategories()
+      } else {
+        console.error("[v0] OrgaCategoriesManager - Restore failed:", data)
+        toast.error(data.error || "Fehler beim Wiederherstellen der Kategorien")
+      }
+    } catch (error) {
+      console.error("[v0] OrgaCategoriesManager - Restore error:", error)
+      toast.error("Fehler beim Wiederherstellen der Kategorien")
+    } finally {
+      setIsRestoring(false)
+    }
+  }
+
   if (isLoading || practiceLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -260,10 +298,46 @@ export function OrgaCategoriesManager() {
           <h2 className="text-lg font-semibold">Organisationskategorien</h2>
           <p className="text-sm text-muted-foreground">Verwalten Sie Ihre Aufgabenkategorien</p>
         </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neue Kategorie
-        </Button>
+        <div className="flex items-center gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isRestoring}>
+                {isRestoring ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current mr-2" />
+                    Wird wiederhergestellt...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="h-3.5 w-3.5 mr-2" />
+                    Standard wiederherstellen
+                  </>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Standard-Kategorien wiederherstellen</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Alle aktuellen Kategorien werden geloescht und durch die Standard-Vorlage ersetzt. Diese Aktion kann nicht rueckgaengig gemacht werden. Individuell erstellte Kategorien gehen verloren.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={restoreDefaults}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Wiederherstellen
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Button onClick={openCreateDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            Neue Kategorie
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-2">

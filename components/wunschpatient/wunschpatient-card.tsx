@@ -120,7 +120,7 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated, onViewProfile
     if (profile.ai_generated_image_url && !imageError) {
       return profile.ai_generated_image_url
     }
-    const gender = profile.gender === "female" ? "Frau" : "Mann"
+    const gender = profile.gender === "female" ? "Frau" : profile.gender === "diverse" ? "Person" : profile.gender === "any" ? "Person" : "Mann"
     const age = profile.age_range || "35-45"
     const occupation = profile.occupation || "Person"
     const query = `professionelles Portrait ${gender} ${age} Jahre ${occupation} freundlich lächelnd Arztpraxis Patient`
@@ -134,7 +134,7 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated, onViewProfile
     return null
   }, [profile.values])
 
-  const genderDisplay = profile.gender === "female" ? "weiblich" : "männlich"
+  const genderDisplay = profile.gender === "female" ? "weiblich" : profile.gender === "diverse" ? "divers" : profile.gender === "any" ? "beliebig" : "männlich"
 
   return (
     <>

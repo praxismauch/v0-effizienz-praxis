@@ -24,7 +24,7 @@ export function ProfileHeader({ profile, onClose, onBack }: ProfileHeaderProps) 
   const [imageError, setImageError] = useState(false)
 
   const placeholderQuery = encodeURIComponent(
-    `professionelles Portrait ${profile.gender === "female" ? "Frau" : "Mann"} ${profile.age_range} Jahre ${profile.occupation || "Person"} freundlich lächelnd Fotostudio`,
+    `professionelles Portrait ${profile.gender === "female" ? "Frau" : profile.gender === "diverse" || profile.gender === "any" ? "Person" : "Mann"} ${profile.age_range} Jahre ${profile.occupation || "Person"} freundlich lächelnd Fotostudio`,
   )
 
   const imageUrl = imageError
@@ -81,7 +81,7 @@ export function ProfileHeader({ profile, onClose, onBack }: ProfileHeaderProps) 
             </Badge>
             <span className="text-white/80 text-sm flex items-center gap-1">
               <User className="h-3.5 w-3.5" />
-              {profile.age_range} Jahre, {profile.gender === "female" ? "weiblich" : "männlich"}
+              {profile.age_range} Jahre, {profile.gender === "female" ? "weiblich" : profile.gender === "diverse" ? "divers" : profile.gender === "any" ? "beliebig" : "männlich"}
             </span>
             {profile.occupation && (
               <span className="text-white/80 text-sm flex items-center gap-1">

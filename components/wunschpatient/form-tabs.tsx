@@ -77,6 +77,7 @@ export function DemografieTab({ formData, onChange }: TabProps) {
               <SelectItem value="male">Männlich</SelectItem>
               <SelectItem value="female">Weiblich</SelectItem>
               <SelectItem value="diverse">Divers</SelectItem>
+              <SelectItem value="any">Beliebig</SelectItem>
             </SelectContent>
           </Select>
         </div>

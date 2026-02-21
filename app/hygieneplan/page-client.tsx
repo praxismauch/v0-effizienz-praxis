@@ -121,6 +121,15 @@ const CATEGORY_CONFIG = {
   },
 }
 
+const FREQUENCY_LABELS: Record<string, string> = {
+  daily: "Taeglich",
+  weekly: "Woechentlich",
+  monthly: "Monatlich",
+  quarterly: "Vierteljaehrlich",
+  yearly: "Jaehrlich",
+  as_needed: "Bei Bedarf",
+}
+
 const HEADER_STAT_KEYS: (keyof typeof CATEGORY_CONFIG)[] = [
   "infection_control",
   "sterilization",
@@ -433,7 +442,7 @@ export default function HygienePlanClient() {
                             {plan.frequency && (
                               <div className="flex items-center gap-1">
                                 <Clock className="h-4 w-4" />
-                                <span className="capitalize">{plan.frequency}</span>
+                                <span>{FREQUENCY_LABELS[plan.frequency] || plan.frequency}</span>
                               </div>
                             )}
                             {plan.responsible_role && (
@@ -785,7 +794,7 @@ function PlanDetailDialog({
                   </Badge>
                 )}
                 <Badge>{categoryConfig?.label}</Badge>
-                {plan.frequency && <Badge variant="outline">{plan.frequency}</Badge>}
+                  {plan.frequency && <Badge variant="outline">{FREQUENCY_LABELS[plan.frequency] || plan.frequency}</Badge>}
               </div>
             </div>
           </div>

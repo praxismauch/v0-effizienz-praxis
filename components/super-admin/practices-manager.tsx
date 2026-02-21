@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CreatePracticeDialog } from "@/components/practice-dialog-create"
+import { CreatePracticeDialog } from "@/components/new-practice-dialog"
 import { EditPracticeDialog } from "@/components/edit-practice-dialog"
 import { useSuperAdminPractices, type Practice } from "@/lib/hooks/use-super-admin-practices"
 

@@ -22,8 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       throw err
     }
 
-    // TODO: skill_definitions table doesn't exist yet
-    // Return empty array until table is created
+    // Return skills from skill_definitions table
     const { data, error } = await supabase.from("skill_definitions").select()
 
     if (error) {

@@ -79,15 +79,14 @@ export async function PUT(
 
 Erstelle eine professionelle, empathische und persönliche Antwort auf folgende Patientenbewertung:
 
-Bewertung von: ${reviewerName || "Anonym"}
 Sternebewertung: ${rating}/5
 Bewertungstext: "${reviewText}"
 
 ${sentimentContext}
 
 Wichtige Richtlinien:
+- DSGVO: Verwende KEINE echten Personennamen in der Antwort. Schreibe stattdessen "Liebe/r Bewertende/r" oder "Sehr geehrte/r Patient/in"
 - Schreibe auf Deutsch in einem professionellen aber warmherzigen Ton
-- Sprich den Reviewer wenn möglich mit Namen an
 - Bedanke dich für das Feedback
 - Gehe konkret auf erwähnte Punkte ein
 - Bei Kritik: zeige Verständnis und biete Lösungen an

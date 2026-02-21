@@ -132,9 +132,13 @@ Lies den Text auf dem Bild sorgfältig und vollständig aus.`,
 
     let aiResponse
     try {
+      // DSGVO: This route processes personal data for the sole purpose of structured extraction.
+      // Data is processed transiently and not used for AI training.
+      // The extracted data is returned to the client and stored only in the practice's own database.
       aiResponse = await generateText({
         model: "anthropic/claude-sonnet-4-20250514",
         prompt: `Du bist ein KI-Assistent, der Kandidateninformationen aus Bewerbungsunterlagen extrahiert.
+DATENSCHUTZHINWEIS: Diese Daten werden ausschließlich zur einmaligen Strukturierung verwendet und dürfen nicht gespeichert oder für Training genutzt werden.
 
 Analysiere den folgenden Text aus Bewerbungsdokumenten und extrahiere alle verfügbaren Informationen über den Kandidaten.
 

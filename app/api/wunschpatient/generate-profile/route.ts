@@ -34,7 +34,7 @@ Erstelle basierend auf den folgenden Eingaben ein detailliertes Wunschpatienten-
 
 Erstelle folgende Inhalte auf Deutsch:
 
-1. **PATIENT_STORY**: Eine kurze, persönliche Geschichte (3-5 Sätze) über diese Person. Verwende einen realistischen deutschen Vornamen und Nachnamen (z.B. "Thomas Müller", "Sarah Fischer", "Markus Weber"). Erzähle die Geschichte in der dritten Person und beschreibe, warum diese Person eine Arztpraxis sucht, was sie im Alltag beschäftigt und was ihr bei der Gesundheitsversorgung besonders wichtig ist. Die Geschichte soll sich wie ein echter Mensch anfühlen.
+1. **PATIENT_STORY**: Eine kurze, persönliche Geschichte (3-5 Sätze) über diese Person. Verwende KEINE echten Namen (DSGVO). Schreibe stattdessen in der dritten Person ohne Namen (z.B. "Diese Person...", "Der/Die Patient/in..."). Beschreibe, warum diese Person eine Arztpraxis sucht, was sie im Alltag beschäftigt und was ihr bei der Gesundheitsversorgung besonders wichtig ist. Die Geschichte soll sich wie ein echter Mensch anfühlen.
 
 2. **PERSONA_DESCRIPTION**: Eine lebendige, detaillierte Beschreibung dieser Person (2-3 Absätze). Beschreibe den typischen Tagesablauf, Motivationen, Ängste und Wünsche bezüglich Gesundheit.
 

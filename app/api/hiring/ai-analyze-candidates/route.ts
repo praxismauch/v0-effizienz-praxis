@@ -145,9 +145,11 @@ Verantwortlichkeiten: ${jobPosting.responsibilities || "Nicht angegeben"}
             ? documents.map((doc: any) => `${doc.type || "Dokument"}: ${doc.name || "Unbenannt"}`).join(", ")
             : "Keine Dokumente"
 
+        // DSGVO: Anonymize personal data before sending to AI
+        // Use candidate number instead of real name, omit email/phone/address
         return {
           nummer: index + 1,
-          name: `${c.first_name} ${c.last_name}`,
+          kennung: `Kandidat-${(index + 1).toString().padStart(2, "0")}`,
           alter: c.date_of_birth ? calculateAge(c.date_of_birth) : "n/a",
           position: c.current_position || "n/a",
           erfahrung: c.years_of_experience ? `${c.years_of_experience} Jahre` : "n/a",
@@ -156,33 +158,36 @@ Verantwortlichkeiten: ${jobPosting.responsibilities || "Nicht angegeben"}
           notizen: c.notes || "Keine",
           dokumente: documentList,
           dokumentInhalt: documentContent,
-          email: c.email,
-          telefon: c.phone || c.mobile || "n/a",
           verfügbarkeit: c.availability_date || "n/a",
           gehaltsvorstellung: c.salary_expectation ? `${c.salary_expectation} €` : "n/a",
           wochenStunden: c.weekly_hours || "n/a",
           skills: c.skills ? JSON.stringify(c.skills) : "n/a",
           sprachen: c.languages ? JSON.stringify(c.languages) : "n/a",
-          anschreiben: c.cover_letter || "",
+          anschreiben: c.cover_letter ? c.cover_letter.replace(/(?:Herr|Frau|Dr\.|Prof\.)\s+[A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*/g, "[Name entfernt]") : "",
+          // Store real ID mapping locally for result matching (never sent to AI)
+          _realId: c.id,
         }
       }),
     )
 
+    // DSGVO: Strip _realId from data sent to AI
+    const sanitizedSummary = candidatesSummary.map(({ _realId, ...rest }) => rest)
+
     const prompt = `Du bist ein erfahrener HR-Experte und sollst eine professionelle Analyse von Bewerbern durchführen.
+WICHTIG: Die Kandidaten sind aus Datenschutzgründen (DSGVO) anonymisiert. Verwende ausschließlich die Kennungen (z.B. "Kandidat-01") in deiner Analyse.
 
 ${jobPostingDetails ? `STELLENAUSSCHREIBUNG:\n${jobPostingDetails}` : ""}
 
 KANDIDATEN (${candidates.length} insgesamt):
-${candidatesSummary
+${sanitizedSummary
   .map(
-    (c) => `
-Kandidat ${c.nummer}: ${c.name}
+    (c: any) => `
+${c.kennung}:
 - Alter: ${c.alter}
 - Aktuelle Position: ${c.position}
 - Berufserfahrung: ${c.erfahrung}
 - Ausbildung: ${c.ausbildung}
 - Status: ${c.status}
-- Kontakt: ${c.email}, ${c.telefon}
 - Verfügbarkeit: ${c.verfügbarkeit}
 - Gehaltsvorstellung: ${c.gehaltsvorstellung}
 - Wochenstunden: ${c.wochenStunden}
@@ -191,7 +196,7 @@ Kandidat ${c.nummer}: ${c.name}
 - Dokumente: ${c.dokumente}
 - Notizen: ${c.notizen}
 
-${c.anschreiben ? `ANSCHREIBEN:\n${c.anschreiben}\n` : ""}
+${c.anschreiben ? `ANSCHREIBEN (anonymisiert):\n${c.anschreiben}\n` : ""}
 ${c.dokumentInhalt ? `HOCHGELADENE DOKUMENTE:\n${c.dokumentInhalt}` : ""}
 `,
   )

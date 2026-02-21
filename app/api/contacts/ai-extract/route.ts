@@ -12,7 +12,8 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] AI extract: Processing image URL:", imageUrl.substring(0, 80))
 
-    // Use AI to extract contact information from the image
+    // DSGVO: Business card OCR - data is processed transiently for structured extraction only.
+    // Extracted data is stored only in the practice's own database.
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
       messages: [
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: "text",
-              text: "Extrahiere alle Kontaktinformationen von dieser Visitenkarte im JSON-Format. Gib folgende Felder zurück: salutation, title, first_name, last_name, company, position, email, phone, mobile, fax, website, street, house_number, postal_code, city, country. Wenn ein Feld nicht vorhanden ist, gib null zurück. Gib nur das JSON zurück, keine zusätzlichen Erklärungen.",
+              text: "DATENSCHUTZHINWEIS: Diese Daten werden ausschließlich zur einmaligen Strukturierung verwendet.\n\nExtrahiere alle Kontaktinformationen von dieser Visitenkarte im JSON-Format. Gib folgende Felder zurück: salutation, title, first_name, last_name, company, position, email, phone, mobile, fax, website, street, house_number, postal_code, city, country. Wenn ein Feld nicht vorhanden ist, gib null zurück. Gib nur das JSON zurück, keine zusätzlichen Erklärungen.",
             },
             {
               type: "image",

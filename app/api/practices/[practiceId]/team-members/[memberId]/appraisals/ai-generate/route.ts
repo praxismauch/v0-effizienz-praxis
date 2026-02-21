@@ -18,13 +18,13 @@ export async function POST(
     const systemPrompt = `Du bist ein erfahrener HR-Experte und Coach für Mitarbeitergespräche in medizinischen Praxen.
 Du gibst professionelle, konstruktive und motivierende Empfehlungen.
 Antworte immer auf Deutsch und in einem professionellen aber freundlichen Ton.
-Gib strukturierte, konkrete und umsetzbare Empfehlungen.`
+Gib strukturierte, konkrete und umsetzbare Empfehlungen.
+DSGVO-HINWEIS: Verwende KEINE echten Personennamen. Schreibe stattdessen "der/die Mitarbeiter/in" oder "die betreffende Person".`
 
     switch (action) {
       case "generate_summary":
         prompt = `Erstelle eine professionelle Zusammenfassung für ein Mitarbeitergespräch basierend auf folgenden Informationen:
 
-Mitarbeiter: ${context.memberName}
 Position: ${context.position || "Nicht angegeben"}
 Gesprächsart: ${context.appraisalType}
 Zeitraum: ${context.periodStart || "N/A"} bis ${context.periodEnd || "N/A"}
@@ -47,9 +47,8 @@ Antworte NUR mit der Zusammenfassung, ohne zusätzliche Erklärungen.`
         break
 
       case "suggest_goals":
-        prompt = `Basierend auf den Kompetenzlücken und der aktuellen Leistung, schlage 3-5 SMART-Ziele für den Mitarbeiter vor:
+        prompt = `Basierend auf den Kompetenzlücken und der aktuellen Leistung, schlage 3-5 SMART-Ziele für den/die Mitarbeiter/in vor:
 
-Mitarbeiter: ${context.memberName}
 Position: ${context.position || "Nicht angegeben"}
 
 Kompetenzlücken (Differenz zwischen Ziel und Ist):

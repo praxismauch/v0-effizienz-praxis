@@ -65,19 +65,45 @@ export async function POST(request: Request) {
     const questionnaires = questionnairesRes.ok ? await questionnairesRes.json() : []
     const recruitingFields = recruitingFieldsRes.ok ? await recruitingFieldsRes.json() : []
 
+    // DSGVO: Anonymize all personal data before sending to AI
+    const anonymizedCandidates = (Array.isArray(candidates) ? candidates : []).map((c: any, i: number) => ({
+      kennung: `Kandidat-${(i + 1).toString().padStart(2, "0")}`,
+      position: c.current_position || "n/a",
+      erfahrung: c.years_of_experience ? `${c.years_of_experience} Jahre` : "n/a",
+      ausbildung: c.education || "n/a",
+      status: c.status,
+      skills: c.skills || [],
+      sprachen: c.languages || [],
+    }))
+    
+    const anonymizedApplications = (Array.isArray(applications) ? applications : []).map((a: any, i: number) => ({
+      kennung: `Bewerbung-${(i + 1).toString().padStart(2, "0")}`,
+      status: a.status,
+      created_at: a.created_at,
+      job_posting_title: a.job_posting?.title || "n/a",
+    }))
+
+    const anonymizedInterviews = (Array.isArray(interviews) ? interviews : []).map((iv: any, i: number) => ({
+      kennung: `Interview-${(i + 1).toString().padStart(2, "0")}`,
+      status: iv.status,
+      scheduled_at: iv.scheduled_at,
+      type: iv.type || "n/a",
+    }))
+
     const prompt = `Analysiere die gesamten Recruiting-Daten einer medizinischen Praxis und erstelle einen umfassenden Bericht auf Deutsch.
+WICHTIG: Alle Personendaten sind aus DSGVO-Gründen anonymisiert. Verwende nur die Kennungen.
 
 STELLENAUSSCHREIBUNGEN (${jobPostings.length} gesamt):
 ${JSON.stringify(jobPostings, null, 2)}
 
-KANDIDATEN (${candidates.length} gesamt):
-${JSON.stringify(candidates, null, 2)}
+KANDIDATEN (${anonymizedCandidates.length} gesamt, anonymisiert):
+${JSON.stringify(anonymizedCandidates, null, 2)}
 
-BEWERBUNGEN (${applications.length} gesamt):
-${JSON.stringify(applications, null, 2)}
+BEWERBUNGEN (${anonymizedApplications.length} gesamt, anonymisiert):
+${JSON.stringify(anonymizedApplications, null, 2)}
 
-INTERVIEWS (${interviews.length} gesamt):
-${JSON.stringify(interviews, null, 2)}
+INTERVIEWS (${anonymizedInterviews.length} gesamt, anonymisiert):
+${JSON.stringify(anonymizedInterviews, null, 2)}
 
 PIPELINE-PHASEN (${pipelineStages.length} gesamt):
 ${JSON.stringify(pipelineStages, null, 2)}

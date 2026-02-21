@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth/require-auth"
 import * as fs from "fs"
 import * as path from "path"
 
@@ -527,10 +528,14 @@ function deduplicateFindings(findings: ReviewFinding[]): ReviewFinding[] {
 
 // Accept both GET and POST - POST carries custom rules
 export async function GET() {
+  const auth = await requireSuperAdmin()
+  if ("response" in auth) return auth.response
   return runCodeReview([])
 }
 
 export async function POST(request: Request) {
+  const auth = await requireSuperAdmin()
+  if ("response" in auth) return auth.response
   try {
     const body = await request.json().catch(() => ({}))
     const customRules = body.customRules || []

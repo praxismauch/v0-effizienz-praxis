@@ -4,18 +4,18 @@ import { checkAIEnabled } from "@/lib/check-ai-enabled"
 import { getAIContextFromDonatedData } from "@/lib/anonymize-practice-data"
 import { isRateLimitError } from "@/lib/supabase/safe-query"
 import { getTicketStatuses, getTicketPriorities } from "@/lib/tickets/config"
-
-const isV0Preview =
-  process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
+import { requireAuth } from "@/lib/auth/require-auth"
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth()
+    if ("response" in auth) return auth.response
+
     let supabase
     try {
       supabase = await createServerClient()
     } catch (clientError) {
       if (isRateLimitError(clientError)) {
-        console.warn("[v0] AI Analysis - Rate limited creating server client")
         return new Response(
           JSON.stringify({
             error: "Service vorübergehend nicht verfügbar. Bitte versuchen Sie es in einigen Sekunden erneut.",
@@ -29,30 +29,8 @@ export async function POST(request: Request) {
       throw clientError
     }
 
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser()
-
     const body = await request.json()
-
-    let userId = authUser?.id
-    if (!userId && isV0Preview && body.userId) {
-      userId = body.userId
-    }
-
-    if (!userId) {
-      console.error("[v0] AI Analysis - No authenticated user")
-      return new Response(
-        JSON.stringify({
-          error: "Nicht authentifiziert. Bitte melden Sie sich an.",
-        }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        },
-      )
-    }
+    const userId = auth.user.id
 
     let userData, userError
     try {
@@ -957,7 +935,7 @@ DATENSPENDE-KONTEXT:
 ${datenspendeContext}
 
 ANALYSEANFORDERUNGEN:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━��━���━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Erstelle eine JSON-Antwort mit folgendem Format (KOMPAKT, keine langen Texte):
 {

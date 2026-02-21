@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { createClient, createAdminClient } from "@/lib/supabase/server"
-import { isSuperAdminRole } from "@/lib/auth-utils"
+import { createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth/require-auth"
 import type { NormalizedRoleKey } from "@/lib/roles"
 
 // All 7 roles from the role configuration
@@ -126,35 +126,8 @@ const permissionDefinitions: PermissionDef[] = [
 
 export async function POST() {
   try {
-    const supabase = await createClient()
-
-    const isPreview =
-      process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" ||
-      process.env.VERCEL_ENV === "preview" ||
-      process.env.NODE_ENV === "development"
-
-    if (!isPreview) {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
-
-      if (authError || !user) {
-        console.error("No authenticated user found")
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single()
-
-      if (userError || !isSuperAdminRole(userData?.role)) {
-        console.error("User is not a super admin")
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-      }
-    }
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
 
     const adminClient = await createAdminClient()
 

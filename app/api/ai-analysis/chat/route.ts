@@ -3,25 +3,16 @@ import { createServerClient } from "@/lib/supabase/server"
 import { generateText } from "ai"
 import { checkAIEnabled } from "@/lib/check-ai-enabled"
 import { getAIContextFromDonatedData } from "@/lib/anonymize-practice-data"
+import { requireAuth } from "@/lib/auth/require-auth"
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAuth()
+    if ("response" in auth) return auth.response
+
     const body = await request.json()
     const supabase = await createServerClient()
-
-    const isV0Preview = process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV === "development"
-
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    let userId = authUser?.id
-    if (isV0Preview && !authUser && body.userId) {
-      userId = body.userId
-    } else if (!isV0Preview && (authError || !authUser)) {
-      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 })
-    }
+    const userId = auth.user.id
 
     const { practiceId, message, history, imageUrl } = body
 

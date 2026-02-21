@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import { generateText } from "ai"
-
-const isV0Preview =
-  process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" || process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN === "true"
+import { requireAuth } from "@/lib/auth/require-auth"
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAuth()
+    if ("response" in auth) return auth.response
+
     const { practiceId, jobPostingId } = await request.json()
 
     if (!practiceId) {
@@ -15,28 +16,17 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerClient()
 
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { data: userData } = await supabase
+      .from("users")
+      .select("role, practice_id, default_practice_id")
+      .eq("id", auth.user.id)
+      .maybeSingle()
 
-    if (!isV0Preview && (authError || !authUser)) {
-      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 })
-    }
+    const isSuperAdmin = userData?.role === "superadmin"
+    const userPracticeId = userData?.practice_id || userData?.default_practice_id
 
-    if (authUser) {
-      const { data: userData } = await supabase
-        .from("users")
-        .select("role, practice_id, default_practice_id")
-        .eq("id", authUser.id)
-        .maybeSingle()
-
-      const isSuperAdmin = userData?.role === "superadmin"
-      const userPracticeId = userData?.practice_id || userData?.default_practice_id
-
-      if (!isSuperAdmin && userPracticeId !== practiceId) {
-        return NextResponse.json({ error: "Forbidden - No access to this practice" }, { status: 403 })
-      }
+    if (!isSuperAdmin && userPracticeId !== practiceId) {
+      return NextResponse.json({ error: "Forbidden - No access to this practice" }, { status: 403 })
     }
 
     const query = supabase

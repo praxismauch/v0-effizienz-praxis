@@ -1,33 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient, createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth/require-auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const adminClient = await createAdminClient()
-
-    const isPreview =
-      process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" ||
-      process.env.VERCEL_ENV === "preview" ||
-      !process.env.NEXT_PUBLIC_VERCEL_ENV
-
-    let userId: string
-
-    if (isPreview) {
-      userId = "36883b61-34e4-4b9e-8a11-eb1a9656d2a0"
-    } else {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
-
-      if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-      userId = user.id
-    }
-
-    console.log("[v0] Setting up daily backup schedules for all practices...")
+    const userId = auth.user.id
 
     // Get all active practices
     const { data: practices, error: practicesError } = await adminClient

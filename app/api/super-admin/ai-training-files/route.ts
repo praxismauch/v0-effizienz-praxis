@@ -1,9 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth/require-auth"
 import { put } from "@vercel/blob"
 import type { NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
+
     const supabase = await createAdminClient()
 
     const { data: files, error } = await supabase
@@ -25,8 +29,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createAdminClient()
+    const auth = await requireSuperAdmin()
+    if ("response" in auth) return auth.response
 
+    const supabase = await createAdminClient()
     const formData = await request.formData()
     const file = formData.get("file") as File
     const description = formData.get("description") as string
@@ -41,8 +47,6 @@ export async function POST(request: NextRequest) {
       access: "public",
     })
 
-    const userId = "36883b61-34e4-4b9e-8a11-eb1a9656d2a0" // Default super admin ID
-
     // Save file metadata to database
     const { data, error } = await supabase
       .from("ai_training_files")
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
         file_type: file.type,
         description: description || null,
         category: category || "general",
-        uploaded_by: userId,
+        uploaded_by: auth.user.id,
       })
       .select()
       .single()

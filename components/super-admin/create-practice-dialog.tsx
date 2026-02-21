@@ -73,11 +73,23 @@ const BUNDESLAENDER = [
   "Thüringen",
 ]
 
+const PRAXIS_ARTEN = [
+  { value: "einzelpraxis", label: "Einzelpraxis" },
+  { value: "bag", label: "Berufsausübungsgemeinschaft (BAG)" },
+  { value: "mvz", label: "Medizinisches Versorgungszentrum (MVZ)" },
+  { value: "praxisgemeinschaft", label: "Praxisgemeinschaft" },
+  { value: "facharzt", label: "Facharztpraxis" },
+  { value: "zahnarzt", label: "Zahnarztpraxis" },
+  { value: "other", label: "Sonstige" },
+]
+
 export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePracticeDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fachrichtungenOpen, setFachrichtungenOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
+    praxisArt: "",
+    fachrichtungen: [] as string[],
     bundesland: "",
     street: "",
     city: "",
@@ -93,7 +105,8 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
   const resetForm = () => {
     setFormData({
       name: "",
-      type: "",
+      praxisArt: "",
+      fachrichtungen: [],
       bundesland: "",
       street: "",
       city: "",
@@ -128,10 +141,15 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
     setIsSubmitting(true)
 
     try {
+      const { praxisArt, fachrichtungen, ...rest } = formData
       const response = await fetch("/api/practices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...rest,
+          type: praxisArt,
+          specialization: fachrichtungen.join(", "),
+        }),
       })
 
       if (!response.ok) {
@@ -186,26 +204,102 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
               />
             </div>
 
-            {/* Practice Type */}
+            {/* Praxisart */}
             <div className="grid gap-2">
-              <Label htmlFor="type">
-                Fachrichtung <span className="text-destructive">*</span>
+              <Label>
+                Praxisart <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
+                value={formData.praxisArt}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, praxisArt: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Fachrichtung wählen" />
+                  <SelectValue placeholder="Praxisart wählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRACTICE_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
+                  {PRAXIS_ARTEN.map((art) => (
+                    <SelectItem key={art.value} value={art.value}>
+                      {art.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Fachrichtungen Multi-Select */}
+            <div className="grid gap-2">
+              <Label>
+                Fachrichtungen <span className="text-destructive">*</span>
+              </Label>
+              <Popover open={fachrichtungenOpen} onOpenChange={setFachrichtungenOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={fachrichtungenOpen}
+                    className="w-full justify-between h-auto min-h-10 font-normal"
+                    type="button"
+                  >
+                    {formData.fachrichtungen.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {formData.fachrichtungen.map((f) => (
+                          <Badge key={f} variant="secondary" className="text-xs">
+                            {f}
+                            <button
+                              type="button"
+                              className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  fachrichtungen: prev.fachrichtungen.filter((x) => x !== f),
+                                }))
+                              }}
+                            >
+                              <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Fachrichtungen wählen...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Fachrichtung suchen..." />
+                    <CommandList>
+                      <CommandEmpty>Keine Fachrichtung gefunden.</CommandEmpty>
+                      <CommandGroup>
+                        {PRACTICE_TYPES.map((type) => (
+                          <CommandItem
+                            key={type}
+                            value={type}
+                            onSelect={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                fachrichtungen: prev.fachrichtungen.includes(type)
+                                  ? prev.fachrichtungen.filter((t) => t !== type)
+                                  : [...prev.fachrichtungen, type],
+                              }))
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.fachrichtungen.includes(type) ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            {type}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Bundesland */}

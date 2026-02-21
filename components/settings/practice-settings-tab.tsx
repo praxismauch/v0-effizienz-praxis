@@ -201,12 +201,15 @@ onValueChange={(value) => setSettings({ ...settings, type: value })}
                 <SelectTrigger>
                   <SelectValue placeholder="Praxisart auswählen" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="facharzt">Facharztpraxis</SelectItem>
-                  <SelectItem value="zahnarzt">Zahnarztpraxis</SelectItem>
-                  <SelectItem value="mvz">MVZ</SelectItem>
-                  <SelectItem value="other">Sonstige</SelectItem>
-                </SelectContent>
+  <SelectContent>
+  <SelectItem value="einzelpraxis">Einzelpraxis</SelectItem>
+  <SelectItem value="bag">Berufsausübungsgemeinschaft (BAG)</SelectItem>
+  <SelectItem value="mvz">Medizinisches Versorgungszentrum (MVZ)</SelectItem>
+  <SelectItem value="praxisgemeinschaft">Praxisgemeinschaft</SelectItem>
+  <SelectItem value="facharzt">Facharztpraxis</SelectItem>
+  <SelectItem value="zahnarzt">Zahnarztpraxis</SelectItem>
+  <SelectItem value="other">Sonstige</SelectItem>
+  </SelectContent>
               </Select>
             </div>
           </div>

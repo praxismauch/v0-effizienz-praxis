@@ -59,6 +59,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
   const [typesOpen, setTypesOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
+    praxisArt: "",
     types: [] as string[],
     bundesland: "",
     address: {
@@ -103,10 +104,10 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || formData.types.length === 0 || !formData.bundesland) {
+    if (!formData.name || !formData.praxisArt || formData.types.length === 0 || !formData.bundesland) {
       toast({
         title: "Validierungsfehler",
-        description: "Bitte füllen Sie alle Pflichtfelder aus (Name, mind. eine Fachrichtung und Bundesland).",
+        description: "Bitte füllen Sie alle Pflichtfelder aus (Name, Praxisart, mind. eine Fachrichtung und Bundesland).",
         variant: "destructive",
       })
       return
@@ -121,7 +122,8 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
         },
         body: JSON.stringify({
           name: formData.name,
-          type: formData.types.join(", "),
+          type: formData.praxisArt,
+          specialization: formData.types.join(", "),
           bundesland: formData.bundesland,
           street: formData.address.street,
           city: formData.address.city,
@@ -147,6 +149,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
       setFormData({
         name: "",
+        praxisArt: "",
         types: [],
         bundesland: "",
         address: {
@@ -197,7 +200,29 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
             </div>
 
             <div className="grid gap-2">
-              <Label>Typ / Fachrichtungen *</Label>
+              <Label>Praxisart *</Label>
+              <Select
+                value={formData.praxisArt}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, praxisArt: value }))}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Praxisart wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="einzelpraxis">Einzelpraxis</SelectItem>
+                  <SelectItem value="bag">Berufsausübungsgemeinschaft (BAG)</SelectItem>
+                  <SelectItem value="mvz">Medizinisches Versorgungszentrum (MVZ)</SelectItem>
+                  <SelectItem value="praxisgemeinschaft">Praxisgemeinschaft</SelectItem>
+                  <SelectItem value="facharzt">Facharztpraxis</SelectItem>
+                  <SelectItem value="zahnarzt">Zahnarztpraxis</SelectItem>
+                  <SelectItem value="other">Sonstige</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Fachrichtungen *</Label>
               <Popover open={typesOpen} onOpenChange={setTypesOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -344,7 +369,7 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={!formData.name || formData.types.length === 0 || !formData.bundesland || isSubmitting || isLoadingTypes}>
+            <Button type="submit" disabled={!formData.name || !formData.praxisArt || formData.types.length === 0 || !formData.bundesland || isSubmitting || isLoadingTypes}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Praxis erstellen
             </Button>

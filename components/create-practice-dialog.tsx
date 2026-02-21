@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { AddressInput } from "@/components/address-input"
 import { toast } from "@/hooks/use-toast"
-import { Loader2, X, Check, ChevronsUpDown } from "lucide-react"
+import { Loader2, X, Check, ChevronsUpDown, Globe, Sparkles, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface CreatePracticeDialogProps {
@@ -55,6 +55,10 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
   const [practiceTypes, setPracticeTypes] = useState<PracticeType[]>([])
   const [isLoadingTypes, setIsLoadingTypes] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [showAiInput, setShowAiInput] = useState(false)
+  const [aiUrl, setAiUrl] = useState("")
+  const [isAiExtracting, setIsAiExtracting] = useState(false)
 
   const [typesOpen, setTypesOpen] = useState(false)
   const [formData, setFormData] = useState({
@@ -99,6 +103,90 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
       setPracticeTypes([])
     } finally {
       setIsLoadingTypes(false)
+    }
+  }
+
+  const handleAiExtract = async () => {
+    if (!aiUrl.trim()) {
+      toast({ title: "Bitte geben Sie eine URL ein.", variant: "destructive" })
+      return
+    }
+
+    setIsAiExtracting(true)
+    try {
+      const response = await fetch("/api/practices/ai-extract-from-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: aiUrl.trim() }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "Fehler bei der KI-Analyse")
+      }
+
+      const data = result.data
+      if (!data) {
+        throw new Error("Keine Daten von der KI-Analyse erhalten")
+      }
+
+      // Match extracted fachrichtungen against available practice types
+      const matchedTypes: string[] = []
+      if (data.fachrichtungen && Array.isArray(data.fachrichtungen)) {
+        for (const fach of data.fachrichtungen) {
+          const match = practiceTypes.find(
+            (pt) =>
+              pt.name.toLowerCase() === fach.toLowerCase() ||
+              pt.name.toLowerCase().includes(fach.toLowerCase()) ||
+              fach.toLowerCase().includes(pt.name.toLowerCase()),
+          )
+          if (match && !matchedTypes.includes(match.name)) {
+            matchedTypes.push(match.name)
+          }
+        }
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        name: data.name || prev.name,
+        praxisArt: data.praxisArt || prev.praxisArt,
+        types: matchedTypes.length > 0 ? matchedTypes : prev.types,
+        bundesland: data.bundesland || prev.bundesland,
+        address: {
+          street: data.street || prev.address.street,
+          city: data.city || prev.address.city,
+          zipCode: data.zipCode || prev.address.zipCode,
+        },
+        phone: data.phone || prev.phone,
+        email: data.email || prev.email,
+        website: data.website || result.websiteUrl || prev.website,
+      }))
+
+      setShowAiInput(false)
+
+      const filledFields = [
+        data.name && "Name",
+        data.praxisArt && "Praxisart",
+        matchedTypes.length > 0 && "Fachrichtungen",
+        data.bundesland && "Bundesland",
+        (data.street || data.city) && "Adresse",
+        data.phone && "Telefon",
+        data.email && "E-Mail",
+      ].filter(Boolean)
+
+      toast({
+        title: "KI-Analyse abgeschlossen",
+        description: `${filledFields.length} Felder ausgefüllt: ${filledFields.join(", ")}. Bitte prüfen Sie die Angaben.`,
+      })
+    } catch (error: any) {
+      toast({
+        title: "Fehler bei der KI-Analyse",
+        description: error.message || "Die Website konnte nicht analysiert werden.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsAiExtracting(false)
     }
   }
 
@@ -178,13 +266,85 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Neue Praxis erstellen</DialogTitle>
           <DialogDescription>
             Fügen Sie eine neue Praxis zu Ihrem Konto hinzu. Sie können mehrere Praxen über ein Dashboard verwalten.
           </DialogDescription>
         </DialogHeader>
+
+        {/* AI Extraction Section */}
+        <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
+          {!showAiInput ? (
+            <button
+              type="button"
+              onClick={() => setShowAiInput(true)}
+              className="flex w-full items-center gap-3 text-left group"
+              disabled={isSubmitting}
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">KI-Ausfüllung per Website</p>
+                <p className="text-xs text-muted-foreground">
+                  Website-URL eingeben und Formular automatisch ausfüllen lassen
+                </p>
+              </div>
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setShowAiInput(false)} className="text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <p className="text-sm font-medium">Praxis-Website analysieren</p>
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Globe className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="www.praxis-beispiel.de"
+                    value={aiUrl}
+                    onChange={(e) => setAiUrl(e.target.value)}
+                    className="pl-8 h-9 text-sm"
+                    disabled={isAiExtracting}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        handleAiExtract()
+                      }
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleAiExtract}
+                  disabled={isAiExtracting || !aiUrl.trim()}
+                  className="h-9 gap-1.5"
+                >
+                  {isAiExtracting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Analysiere...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Ausfüllen
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Die KI analysiert die öffentliche Website und füllt das Formular aus. Bitte Angaben prüfen.
+              </p>
+            </div>
+          )}
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4">
             <div className="grid gap-2">

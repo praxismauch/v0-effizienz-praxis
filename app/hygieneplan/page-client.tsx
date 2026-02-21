@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { useUser } from "@/contexts/user-context"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
@@ -125,6 +126,7 @@ const STATUS_CONFIG = {
 
 export default function HygienePlanClient() {
   const { currentUser, currentPractice } = useUser()
+  const router = useRouter()
   const [hygienePlans, setHygienePlans] = useState<HygienePlan[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -388,7 +390,7 @@ export default function HygienePlanClient() {
                   key={plan.id}
                   className="group hover:shadow-lg transition-all duration-200 cursor-pointer"
                   style={{ borderLeftWidth: "6px", borderLeftColor: categoryConfig?.color || "#6b7280" }}
-                  onClick={() => setSelectedPlan(plan)}
+                  onClick={() => router.push(`/hygieneplan/${plan.id}`)}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
@@ -438,7 +440,7 @@ export default function HygienePlanClient() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedPlan(plan) }}>
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.push(`/hygieneplan/${plan.id}`) }}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingPlan(plan) }}>

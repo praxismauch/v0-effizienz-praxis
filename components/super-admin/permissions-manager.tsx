@@ -406,7 +406,7 @@ export default function PermissionsManager() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={exportToCSV}>
                   <Download className="h-4 w-4 mr-2" />
-                  CSV Export
+                  CSV-Export
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleInitialize} disabled={isInitializing}>
                   <Settings2 className="h-4 w-4 mr-2" />

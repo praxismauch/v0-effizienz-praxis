@@ -631,11 +631,15 @@ export function GlobalParameterManagement() {
         } else {
           const data = await response.json()
           console.error("[v0] Delete failed:", data)
-          alert(data.error || "Failed to delete parameter")
+          alert(data.error || "Kennzahl konnte nicht geloescht werden")
+        } else {
+          const data = await response.json()
+          console.error("[v0] Delete failed:", data)
+          alert(data.error || "Kennzahl konnte nicht geloescht werden")
         }
       } catch (error) {
         console.error("[v0] Error deleting parameter:", error)
-        alert("Error deleting parameter")
+        alert("Fehler beim Loeschen der Kennzahl")
       }
     },
     [groups, parameters],
@@ -1080,7 +1084,7 @@ export function GlobalParameterManagement() {
                           id="global-param-description"
                           value={newParameter.description || ""} // Ensure value is never null
                           onChange={(e) => setNewParameter({ ...newParameter, description: e.target.value })}
-                          placeholder="Standard description for this parameter..."
+                          placeholder="Standardbeschreibung fuer diese Kennzahl..."
                           rows={3}
                         />
                       </div>
@@ -1216,7 +1220,7 @@ export function GlobalParameterManagement() {
                       <Button variant="outline" onClick={() => setIsCreateParameterOpen(false)}>
                         Cancel
                       </Button>
-                      <Button onClick={handleCreateParameter}>Create Global KPI Template</Button>
+                      <Button onClick={handleCreateParameter}>Globale KPI-Vorlage erstellen</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -1482,7 +1486,7 @@ export function GlobalParameterManagement() {
                   id="edit-param-description"
                   value={newParameter.description || ""} // Ensure value is never null
                   onChange={(e) => setNewParameter({ ...newParameter, description: e.target.value })}
-                  placeholder="Standard description for this parameter..."
+                  placeholder="Standardbeschreibung fuer diese Kennzahl..."
                   rows={3}
                 />
               </div>
@@ -1579,7 +1583,7 @@ export function GlobalParameterManagement() {
               <Button variant="outline" onClick={() => setIsEditParameterOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdateParameter}>Update Parameter</Button>
+              <Button onClick={handleUpdateParameter}>Kennzahl aktualisieren</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1686,7 +1690,7 @@ export function GlobalParameterManagement() {
                   id="value"
                   value={newValue.value}
                   onChange={(e) => setNewValue({ ...newValue, value: e.target.value })}
-                  placeholder="Enter value"
+                  placeholder="Wert eingeben"
                 />
               </div>
               <div>
@@ -1704,7 +1708,7 @@ export function GlobalParameterManagement() {
                   id="notes"
                   value={newValue.notes}
                   onChange={(e) => setNewValue({ ...newValue, notes: e.target.value })}
-                  placeholder="Add any relevant notes..."
+                  placeholder="Relevante Notizen hinzufuegen..."
                   rows={3}
                 />
               </div>

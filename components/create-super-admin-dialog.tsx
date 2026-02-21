@@ -39,12 +39,12 @@ export function CreateSuperAdminDialog({ open, onOpenChange }: CreateSuperAdminD
     e.preventDefault()
 
     if (!formData.name.trim() || !formData.email.trim()) {
-      alert("Please fill in all required fields")
+      alert("Bitte fuelleen Sie alle Pflichtfelder aus")
       return
     }
 
     if (!formData.email.includes("@")) {
-      alert("Please enter a valid email address")
+      alert("Bitte geben Sie eine gueltige E-Mail-Adresse ein")
       return
     }
 
@@ -64,10 +64,10 @@ export function CreateSuperAdminDialog({ open, onOpenChange }: CreateSuperAdminD
       setFormData({ name: "", email: "", defaultPracticeId: "none" })
       onOpenChange(false)
 
-      alert(`Super admin "${formData.name}" has been created successfully!`)
+      alert(`Super-Admin "${formData.name}" wurde erfolgreich erstellt!`)
     } catch (error) {
       console.error("Error creating super admin:", error)
-      alert("Failed to create super admin. Please try again.")
+      alert("Super-Admin konnte nicht erstellt werden. Bitte versuchen Sie es erneut.")
     } finally {
       setIsLoading(false)
     }
@@ -84,41 +84,40 @@ export function CreateSuperAdminDialog({ open, onOpenChange }: CreateSuperAdminD
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            Create Super Administrator
+            Super-Administrator erstellen
           </DialogTitle>
           <DialogDescription>
-            Create a new system administrator with full access to all practices and settings.
+            Erstellen Sie einen neuen Systemadministrator mit vollem Zugriff auf alle Praxen und Einstellungen.
           </DialogDescription>
         </DialogHeader>
 
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Super administrators have unrestricted access to all system functions, practices, and user data. Only create
-            super admin accounts for trusted personnel.
+            Super-Administratoren haben uneingeschraenkten Zugriff auf alle Systemfunktionen, Praxen und Benutzerdaten. Erstellen Sie Super-Admin-Konten nur fuer vertrauenswuerdiges Personal.
           </AlertDescription>
         </Alert>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name *</Label>
+            <Label htmlFor="name">Vollstaendiger Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter full name"
+              placeholder="Vollstaendigen Namen eingeben"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
+            <Label htmlFor="email">E-Mail-Adresse *</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-              placeholder="Enter email address"
+              placeholder="E-Mail-Adresse eingeben"
               required
             />
           </div>
@@ -146,10 +145,10 @@ export function CreateSuperAdminDialog({ open, onOpenChange }: CreateSuperAdminD
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancel
+              Abbrechen
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Super Admin"}
+              {isLoading ? "Wird erstellt..." : "Super-Admin erstellen"}
             </Button>
           </DialogFooter>
         </form>

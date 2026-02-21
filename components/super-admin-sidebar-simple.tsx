@@ -578,7 +578,7 @@ export function SuperAdminSidebarSimple() {
         },
         {
           id: "error-logs",
-          label: "Error Logging",
+          label: "Fehlerprotokoll",
           icon: AlertTriangle,
           href: "/super-admin/logging",
           badge: true,

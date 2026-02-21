@@ -138,9 +138,9 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
       console.log("[v0] Referral: API response status", response.status)
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        const errorData = await response.json().catch(() => ({ error: "Unbekannter Fehler" }))
         console.error("[v0] Referral: API error", errorData)
-        throw new Error(errorData.error || "Failed to send invite")
+        throw new Error(errorData.error || "Einladung konnte nicht gesendet werden")
       }
 
       const result = await response.json()

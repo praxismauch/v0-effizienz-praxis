@@ -168,7 +168,7 @@ export function ReportDetailDialog({
                   onClick={() => onExportCSV(report)}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  CSV Export
+                  CSV-Export
                 </Button>
                 <Button
                   variant="outline"
@@ -184,7 +184,7 @@ export function ReportDetailDialog({
                   ) : (
                     <>
                       <FileText className="h-4 w-4 mr-2" />
-                      PDF Export
+                      PDF-Export
                     </>
                   )}
                 </Button>

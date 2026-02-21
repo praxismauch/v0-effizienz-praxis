@@ -217,7 +217,7 @@ export default function WaitlistPageClient() {
               ) : (
                 <>
                   <Download className="mr-2 h-4 w-4" />
-                  CSV Export
+                  CSV-Export
                 </>
               )}
             </Button>

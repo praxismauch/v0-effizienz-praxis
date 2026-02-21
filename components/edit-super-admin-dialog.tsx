@@ -55,12 +55,12 @@ export function EditSuperAdminDialog({ open, onOpenChange, superAdmin }: EditSup
     if (!superAdmin) return
 
     if (!formData.name.trim() || !formData.email.trim()) {
-      alert("Please fill in all required fields")
+      alert("Bitte fuellen Sie alle Pflichtfelder aus")
       return
     }
 
     if (!formData.email.includes("@")) {
-      alert("Please enter a valid email address")
+      alert("Bitte geben Sie eine gueltige E-Mail-Adresse ein")
       return
     }
 
@@ -75,10 +75,10 @@ export function EditSuperAdminDialog({ open, onOpenChange, superAdmin }: EditSup
       })
 
       onOpenChange(false)
-      alert(`Super admin "${formData.name}" has been updated successfully!`)
+      alert(`Super-Admin "${formData.name}" wurde erfolgreich aktualisiert!`)
     } catch (error) {
       console.error("Error updating super admin:", error)
-      alert("Failed to update super admin. Please try again.")
+      alert("Super-Admin konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.")
     } finally {
       setIsLoading(false)
     }
@@ -104,40 +104,40 @@ export function EditSuperAdminDialog({ open, onOpenChange, superAdmin }: EditSup
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            Edit Super Administrator
+            Super-Administrator bearbeiten
           </DialogTitle>
-          <DialogDescription>Update super administrator details and permissions.</DialogDescription>
+          <DialogDescription>Details und Berechtigungen des Super-Administrators aktualisieren.</DialogDescription>
         </DialogHeader>
 
         {isCurrentUser && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              You are editing your own account. Be careful when changing your status or permissions.
+              Sie bearbeiten Ihr eigenes Konto. Seien Sie vorsichtig beim Aendern Ihres Status oder Ihrer Berechtigungen.
             </AlertDescription>
           </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-name">Full Name *</Label>
+            <Label htmlFor="edit-name">Vollstaendiger Name *</Label>
             <Input
               id="edit-name"
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter full name"
+              placeholder="Vollstaendigen Namen eingeben"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-email">Email Address *</Label>
+            <Label htmlFor="edit-email">E-Mail-Adresse *</Label>
             <Input
               id="edit-email"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-              placeholder="Enter email address"
+              placeholder="E-Mail-Adresse eingeben"
               required
             />
           </div>
@@ -165,9 +165,9 @@ export function EditSuperAdminDialog({ open, onOpenChange, superAdmin }: EditSup
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="edit-active">Account Status</Label>
+              <Label htmlFor="edit-active">Kontostatus</Label>
               <div className="text-sm text-muted-foreground">
-                {formData.isActive ? "Account is active" : "Account is inactive"}
+                {formData.isActive ? "Konto ist aktiv" : "Konto ist inaktiv"}
               </div>
             </div>
             <Switch
@@ -181,16 +181,16 @@ export function EditSuperAdminDialog({ open, onOpenChange, superAdmin }: EditSup
           {isCurrentUser && !formData.isActive && (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>You cannot deactivate your own account while logged in.</AlertDescription>
+              <AlertDescription>Sie koennen Ihr eigenes Konto nicht deaktivieren, waehrend Sie angemeldet sind.</AlertDescription>
             </Alert>
           )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancel
+              Abbrechen
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Updating..." : "Update Super Admin"}
+              {isLoading ? "Wird aktualisiert..." : "Super-Admin aktualisieren"}
             </Button>
           </DialogFooter>
         </form>

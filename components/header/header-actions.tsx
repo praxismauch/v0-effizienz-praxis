@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -83,11 +84,9 @@ export function HeaderActions({ unreadMessagesCount }: HeaderActionsProps) {
         {isTimerActive && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 gap-1.5 px-2.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 relative"
-                onClick={() => router.push("/zeiterfassung")}
+              <Link
+                href="/zeiterfassung"
+                className="inline-flex items-center h-9 gap-1.5 px-2.5 rounded-md text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:underline underline-offset-4 decoration-emerald-500/40 transition-all relative"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -102,10 +101,10 @@ export function HeaderActions({ unreadMessagesCount }: HeaderActionsProps) {
                 {status === "break" && (
                   <span className="text-[10px] font-medium text-amber-500 hidden sm:inline">Pause</span>
                 )}
-              </Button>
+              </Link>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Zeiterfassung aktiv{status === "break" ? " (Pause)" : ""} {elapsed ? `- ${elapsed}` : ""}</p>
+              <p>Zeiterfassung anzeigen{status === "break" ? " (Pause)" : ""} {elapsed ? `- ${elapsed}` : ""}</p>
             </TooltipContent>
           </Tooltip>
         )}

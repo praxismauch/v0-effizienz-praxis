@@ -34,7 +34,8 @@ import { createClient } from "@/lib/supabase/client"
 import { useTranslation } from "@/contexts/translation-context"
 import { useUser } from "@/contexts/user-context"
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
+import useSWR from "swr"
 import { formatRelativeTimeDE } from "@/lib/utils"
 import AIPracticeChatDialog from "@/components/ai-practice-chat-dialog"
 import CreateTodoDialog from "@/components/create-todo-dialog"
@@ -73,6 +74,25 @@ export function MedicalHeader({ hidePracticeInfo = false }: MedicalHeaderProps) 
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
+
+  // Fetch overtime data for current user
+  const practiceId = currentPractice?.id
+  const { data: overtimeData } = useSWR(
+    practiceId ? `/api/practices/${practiceId}/overtime` : null,
+    async (url: string) => {
+      const res = await fetch(url)
+      if (!res.ok) return null
+      return res.json()
+    },
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
+  )
+
+  const userOvertime = useMemo(() => {
+    if (!overtimeData?.members || !currentUser) return null
+    return overtimeData.members.find(
+      (m: any) => m.user_id === currentUser.id || m.email === currentUser.email
+    )
+  }, [overtimeData, currentUser])
 
   const fetchNotifications = async () => {
     if (!currentUser) {
@@ -457,7 +477,25 @@ export function MedicalHeader({ hidePracticeInfo = false }: MedicalHeaderProps) 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>{t("header.myAccount", "My Account")}</DropdownMenuLabel>
+                <DropdownMenuLabel>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium leading-none">{currentUser?.name || "User"}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span title="Soll Arbeitsstunden pro Woche">
+                        Soll: {userOvertime?.planned_hours_per_week ?? "–"} h/Wo
+                      </span>
+                      <span title="Überstunden" className={
+                        userOvertime?.overtime_total_minutes > 0 ? "text-amber-600 font-medium" : 
+                        userOvertime?.overtime_total_minutes < 0 ? "text-red-500 font-medium" : ""
+                      }>
+                        {"Überstd: "}
+                        {userOvertime?.overtime_total_minutes != null
+                          ? `${userOvertime.overtime_total_minutes > 0 ? "+" : ""}${(userOvertime.overtime_total_minutes / 60).toFixed(1)} h`
+                          : "–"}
+                      </span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push("/profile")}>
                   <User className="mr-2 h-4 w-4" />

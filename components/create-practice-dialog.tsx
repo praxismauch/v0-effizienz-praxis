@@ -53,6 +53,7 @@ const BUNDESLAENDER = [
 
 export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialogProps) {
   const [practiceTypes, setPracticeTypes] = useState<PracticeType[]>([])
+  const [practiceForms, setPracticeForms] = useState<{ id: string; value: string; label: string }[]>([])
   const [isLoadingTypes, setIsLoadingTypes] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -80,8 +81,21 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
   useEffect(() => {
     if (open) {
       loadPracticeTypes()
+      loadPracticeForms()
     }
   }, [open])
+
+  const loadPracticeForms = async () => {
+    try {
+      const response = await fetch("/api/practice-forms")
+      if (response.ok) {
+        const data = await response.json()
+        setPracticeForms(data || [])
+      }
+    } catch (error) {
+      console.error("Error loading practice forms:", error)
+    }
+  }
 
   const loadPracticeTypes = async () => {
     setIsLoadingTypes(true)
@@ -370,13 +384,11 @@ export function CreatePracticeDialog({ open, onOpenChange }: CreatePracticeDialo
                   <SelectValue placeholder="Praxisart wählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="einzelpraxis">Einzelpraxis</SelectItem>
-                  <SelectItem value="bag">Berufsausübungsgemeinschaft (BAG)</SelectItem>
-                  <SelectItem value="mvz">Medizinisches Versorgungszentrum (MVZ)</SelectItem>
-                  <SelectItem value="praxisgemeinschaft">Praxisgemeinschaft</SelectItem>
-                  <SelectItem value="facharzt">Facharztpraxis</SelectItem>
-                  <SelectItem value="zahnarzt">Zahnarztpraxis</SelectItem>
-                  <SelectItem value="other">Sonstige</SelectItem>
+                  {practiceForms.map((form) => (
+                    <SelectItem key={form.id} value={form.value}>
+                      {form.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

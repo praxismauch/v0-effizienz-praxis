@@ -23,16 +23,6 @@ import { toast } from "@/hooks/use-toast"
 import { X, Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const PRAXIS_ARTEN = [
-  { value: "einzelpraxis", label: "Einzelpraxis" },
-  { value: "bag", label: "Berufsausübungsgemeinschaft (BAG)" },
-  { value: "mvz", label: "Medizinisches Versorgungszentrum (MVZ)" },
-  { value: "praxisgemeinschaft", label: "Praxisgemeinschaft" },
-  { value: "facharzt", label: "Facharztpraxis" },
-  { value: "zahnarzt", label: "Zahnarztpraxis" },
-  { value: "other", label: "Sonstige" },
-]
-
 interface Practice {
   id: string
   name: string
@@ -89,6 +79,16 @@ export function EditPracticeSuperAdminDialog({
 }: EditPracticeSuperAdminDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fachrichtungenOpen, setFachrichtungenOpen] = useState(false)
+  const [practiceForms, setPracticeForms] = useState<{ id: string; value: string; label: string }[]>([])
+
+  useEffect(() => {
+    if (open) {
+      fetch("/api/practice-forms")
+        .then((r) => r.json())
+        .then((data) => setPracticeForms(data || []))
+        .catch(() => {})
+    }
+  }, [open])
   const [formData, setFormData] = useState({
     name: "",
     praxisArt: "",
@@ -214,9 +214,9 @@ export function EditPracticeSuperAdminDialog({
                   <SelectValue placeholder="Praxisart wählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRAXIS_ARTEN.map((art) => (
-                    <SelectItem key={art.value} value={art.value}>
-                      {art.label}
+                  {practiceForms.map((form) => (
+                    <SelectItem key={form.id} value={form.value}>
+                      {form.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

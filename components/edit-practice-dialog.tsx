@@ -60,6 +60,7 @@ interface PracticeType {
 
 export function EditPracticeDialog({ open, onOpenChange, practice }: EditPracticeDialogProps) {
   const [practiceTypes, setPracticeTypes] = useState<PracticeType[]>([])
+  const [practiceForms, setPracticeForms] = useState<{ id: string; value: string; label: string }[]>([])
   const [isLoadingTypes, setIsLoadingTypes] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fachrichtungenOpen, setFachrichtungenOpen] = useState(false)
@@ -82,8 +83,21 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
   useEffect(() => {
     if (open) {
       loadPracticeTypes()
+      loadPracticeForms()
     }
   }, [open])
+
+  const loadPracticeForms = async () => {
+    try {
+      const response = await fetch("/api/practice-forms")
+      if (response.ok) {
+        const data = await response.json()
+        setPracticeForms(data || [])
+      }
+    } catch (error) {
+      console.error("Error loading practice forms:", error)
+    }
+  }
 
   const loadPracticeTypes = async () => {
     setIsLoadingTypes(true)
@@ -245,9 +259,9 @@ export function EditPracticeDialog({ open, onOpenChange, practice }: EditPractic
                   <SelectValue placeholder="Praxisart wählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRAXIS_ARTEN.map((art) => (
-                    <SelectItem key={art.value} value={art.value}>
-                      {art.label}
+                  {practiceForms.map((form) => (
+                    <SelectItem key={form.id} value={form.value}>
+                      {form.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

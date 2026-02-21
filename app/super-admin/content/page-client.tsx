@@ -1,7 +1,7 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Workflow, CheckSquare, FolderOpen, UsersRound, Calendar, BookOpen } from "lucide-react"
+import { Workflow, CheckSquare, FolderOpen, UsersRound, Calendar, BookOpen, Building2 } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
@@ -52,6 +52,15 @@ const EventTypesManager = dynamic(() => import("@/components/event-types-manager
   ssr: false,
 })
 
+const PraxisartenManager = dynamic(() => import("@/components/praxisarten-manager"), {
+  loading: () => (
+    <div className="flex items-center justify-center p-8">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  ),
+  ssr: false,
+})
+
 const BlogManager = dynamic(() => import("@/components/super-admin/blog-manager"), {
   loading: () => (
     <div className="flex items-center justify-center p-8">
@@ -80,7 +89,7 @@ function ContentManagementContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="workflows" className="gap-2">
             <Workflow className="h-4 w-4" />
             Workflows
@@ -100,6 +109,10 @@ function ContentManagementContent() {
           <TabsTrigger value="event-types" className="gap-2">
             <Calendar className="h-4 w-4" />
             Event-Typen
+          </TabsTrigger>
+          <TabsTrigger value="praxisarten" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Praxisarten
           </TabsTrigger>
           <TabsTrigger value="blog" className="gap-2">
             <BookOpen className="h-4 w-4" />
@@ -125,6 +138,10 @@ function ContentManagementContent() {
 
         <TabsContent value="event-types" className="mt-6 space-y-4">
           <EventTypesManager />
+        </TabsContent>
+
+        <TabsContent value="praxisarten" className="mt-6 space-y-4">
+          <PraxisartenManager />
         </TabsContent>
 
         <TabsContent value="blog" className="mt-6 space-y-4">

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { User, Briefcase, CheckCircle, X } from "lucide-react"
+import { User, Briefcase, CheckCircle, X, ArrowLeft } from "lucide-react"
 import { getArchetypeLabel, getArchetypeColor } from "./wunschpatient-labels"
 
 interface ProfileHeaderProps {
@@ -16,10 +16,11 @@ interface ProfileHeaderProps {
     ai_generated_image_url: string
     is_active: boolean
   }
-  onClose: () => void
+  onClose?: () => void
+  onBack?: () => void
 }
 
-export function ProfileHeader({ profile, onClose }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, onClose, onBack }: ProfileHeaderProps) {
   const [imageError, setImageError] = useState(false)
 
   const placeholderQuery = encodeURIComponent(
@@ -34,14 +35,26 @@ export function ProfileHeader({ profile, onClose }: ProfileHeaderProps) {
     <div
       className={`relative ${getArchetypeColor(profile.archetype)} bg-gradient-to-br from-primary/90 to-primary`}
     >
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
-        onClick={onClose}
-      >
-        <X className="h-5 w-5" />
-      </Button>
+      {onBack ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 left-4 text-white hover:bg-white/20 z-10 gap-2"
+          onClick={onBack}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Zurück
+        </Button>
+      ) : onClose ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
+          onClick={onClose}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      ) : null}
 
       <div className="px-8 py-8 flex items-end gap-6">
         <div className="relative -mb-16 z-10">

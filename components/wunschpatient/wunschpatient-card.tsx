@@ -53,6 +53,7 @@ interface WunschpatientCardProps {
   profile: WunschpatientProfile
   onDeleted: (id: string) => void
   onUpdated: () => void
+  onViewProfile?: (profile: WunschpatientProfile) => void
 }
 
 const archetypeConfig: Record<string, { label: string; color: string }> = {
@@ -63,7 +64,7 @@ const archetypeConfig: Record<string, { label: string; color: string }> = {
   relationship: { label: "Beziehungstyp", color: "bg-pink-500" },
 }
 
-export function WunschpatientCard({ profile, onDeleted, onUpdated }: WunschpatientCardProps) {
+export function WunschpatientCard({ profile, onDeleted, onUpdated, onViewProfile }: WunschpatientCardProps) {
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -162,7 +163,7 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated }: Wunschpatie
               variant="secondary"
               size="icon"
               className="h-10 w-10 rounded-full bg-white/90 hover:bg-white text-gray-700 hover:text-primary"
-              onClick={() => setViewDialogOpen(true)}
+              onClick={() => onViewProfile ? onViewProfile(profile) : setViewDialogOpen(true)}
               title="Bearbeiten"
             >
               <Pencil className="h-5 w-5" />
@@ -215,7 +216,7 @@ export function WunschpatientCard({ profile, onDeleted, onUpdated }: Wunschpatie
             </div>
           )}
 
-          <Button variant="outline" className="w-full mt-4 bg-transparent" onClick={() => setViewDialogOpen(true)}>
+          <Button variant="outline" className="w-full mt-4 bg-transparent" onClick={() => onViewProfile ? onViewProfile(profile) : setViewDialogOpen(true)}>
             <Eye className="h-4 w-4 mr-2" />
             Vollständiges Profil
           </Button>

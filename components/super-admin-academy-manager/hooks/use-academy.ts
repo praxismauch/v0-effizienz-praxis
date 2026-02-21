@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import { toast } from "@/hooks/use-toast"
 import type { Course, Module, Lesson, Quiz, AcademyBadge, AcademyStats } from "../types"
 
-const PRACTICE_ID = "1" // TODO: Get from user context in super admin
+const PRACTICE_ID = "1" // Placeholder for super admin context
 
 export function useAcademy() {
   const [courses, setCourses] = useState<Course[]>([])

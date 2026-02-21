@@ -21,8 +21,7 @@ export async function GET(
       throw err
     }
 
-    // TODO: skill_definitions table doesn't exist yet
-    // Return 404 until table is created
+    // Fetch skill from skill_definitions table
     const { data, error } = await supabase
       .from("skill_definitions")
       .select()

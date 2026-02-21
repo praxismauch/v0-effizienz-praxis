@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Building2, ChevronDown, Plus, Settings, Shield, Check, ExternalLink } from "lucide-react"
-import { CreatePracticeDialog } from "./practice-dialog-create"
+import { CreatePracticeDialog } from "./new-practice-dialog"
 
 export function PracticeSelector() {
   const { practices, currentPractice, setCurrentPractice, getAllPracticesForSuperAdmin } = usePractice()

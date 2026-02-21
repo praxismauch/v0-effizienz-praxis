@@ -36,7 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import EditArbeitsmittelDialog from "@/components/arbeitsmittel/edit-arbeitsmittel-dialog"
+import { EditArbeitsmittelDialog } from "@/components/arbeitsmittel/edit-arbeitsmittel-dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { usePractice } from "@/contexts/practice-context"
 import { useToast } from "@/hooks/use-toast"

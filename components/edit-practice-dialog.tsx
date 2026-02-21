@@ -37,16 +37,6 @@ interface Practice {
   isActive: boolean
 }
 
-const PRAXIS_ARTEN = [
-  { value: "einzelpraxis", label: "Einzelpraxis" },
-  { value: "bag", label: "Berufsausübungsgemeinschaft (BAG)" },
-  { value: "mvz", label: "Medizinisches Versorgungszentrum (MVZ)" },
-  { value: "praxisgemeinschaft", label: "Praxisgemeinschaft" },
-  { value: "facharzt", label: "Facharztpraxis" },
-  { value: "zahnarzt", label: "Zahnarztpraxis" },
-  { value: "other", label: "Sonstige" },
-]
-
 interface EditPracticeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void

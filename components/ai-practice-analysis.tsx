@@ -153,6 +153,31 @@ export function AIPracticeAnalysis({ onScoreUpdate }: { onScoreUpdate?: (score: 
       if (data.overallScore != null && onScoreUpdate) {
         onScoreUpdate(data.overallScore)
       }
+
+      // Save to analysis history for the Verlauf tab
+      try {
+        await fetch("/api/ai-analysis-history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: userId,
+            practice_id: practiceId,
+            analysis_type: "practice",
+            title: `Praxis-Analyse (Score: ${data.overallScore ?? "-"}/100)`,
+            summary: data.summary || "Keine Zusammenfassung verfügbar",
+            full_analysis: data,
+            metadata: {
+              score: data.overallScore,
+              insights_count: data.insights?.length || 0,
+              recommendations_count: data.recommendations?.length || 0,
+              generated_at: data.generatedAt || new Date().toISOString(),
+            },
+          }),
+        })
+      } catch (saveError) {
+        // Non-critical - don't fail the analysis if save fails
+        console.error("[v0] Failed to save analysis to history:", saveError)
+      }
     } catch (error) {
       console.error("Fehler beim Abrufen der KI-Analyse:", error)
       toast({

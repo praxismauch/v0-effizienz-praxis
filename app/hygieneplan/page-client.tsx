@@ -33,6 +33,17 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { StatCard, statCardColors } from "@/components/ui/stat-card"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -136,6 +147,7 @@ export default function HygienePlanClient() {
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<HygienePlan | null>(null)
   const [editingPlan, setEditingPlan] = useState<HygienePlan | null>(null)
+  const [deletingPlan, setDeletingPlan] = useState<HygienePlan | null>(null)
   const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
@@ -439,26 +451,33 @@ export default function HygienePlanClient() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.push(`/hygieneplan/${plan.id}`) }}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingPlan(plan) }}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (confirm("Möchten Sie diesen Hygieneplan wirklich löschen?")) {
-                              deletePlan(plan.id)
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="flex h-7 w-7 items-center justify-center rounded-md bg-background/90 border shadow-sm hover:bg-muted transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setEditingPlan(plan) }}
+                              >
+                                <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom"><p>Bearbeiten</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="flex h-7 w-7 items-center justify-center rounded-md bg-background/90 border shadow-sm hover:bg-destructive/10 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setDeletingPlan(plan) }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom"><p>Loeschen</p></TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
                   </CardContent>
@@ -506,6 +525,32 @@ export default function HygienePlanClient() {
             onSave={(updates) => updatePlan(editingPlan.id, updates)}
           />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deletingPlan} onOpenChange={(open) => { if (!open) setDeletingPlan(null) }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hygieneplan loeschen</AlertDialogTitle>
+              <AlertDialogDescription>
+                Moechten Sie den Hygieneplan &quot;{deletingPlan?.title}&quot; wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (deletingPlan) {
+                    deletePlan(deletingPlan.id)
+                    setDeletingPlan(null)
+                  }
+                }}
+              >
+                Loeschen
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   )

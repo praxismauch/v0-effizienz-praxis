@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, AlertCircle, Euro, Target, Edit, Trash2, Loader2, Sparkles, ArrowLeft } from "lucide-react"
+import { TrendingUp, TrendingDown, AlertCircle, Euro, Target, Edit, Trash2, Loader2, Sparkles, ArrowLeft, Clock } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import {
   AlertDialog,
@@ -149,8 +149,41 @@ export function IgelAnalysisView({ analysisId }: IgelAnalysisViewProps) {
         </div>
       </Card>
 
-      {/* Key Metrics - 3 Column Grid */}
-      <div className="grid gap-6 md:grid-cols-3">
+      {/* Key Metrics Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Honorarstundensatz Arzt */}
+        {(() => {
+          const arztMinutes = analysis.arzt_minutes
+          const price = analysis.pricing_scenarios?.[1]?.price
+          if (arztMinutes && arztMinutes > 0 && price) {
+            const hourlyRate = (price * 60) / arztMinutes
+            const targetRate = analysis.honorar_goal || 500
+            const meetsGoal = hourlyRate >= targetRate
+            return (
+              <Card className={`border-2 transition-colors ${meetsGoal ? "border-green-500/50 bg-green-50/30 dark:bg-green-950/10" : "border-amber-500/50 bg-amber-50/30 dark:bg-amber-950/10"}`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`p-3 rounded-xl ${meetsGoal ? "bg-green-100 dark:bg-green-900/30" : "bg-amber-100 dark:bg-amber-900/30"}`}>
+                      <Clock className={`h-6 w-6 ${meetsGoal ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`} />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Honorarstundensatz Arzt</p>
+                  </div>
+                  <p className={`text-4xl font-bold ${meetsGoal ? "text-green-600" : "text-amber-600"}`}>
+                    {hourlyRate.toFixed(0)} <span className="text-xl">€/Std</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Ziel: {targetRate} €/Std
+                    <span className={`ml-1 font-medium ${meetsGoal ? "text-green-600" : "text-red-600"}`}>
+                      ({meetsGoal ? "+" : ""}{(hourlyRate - targetRate).toFixed(0)} €)
+                    </span>
+                  </p>
+                </CardContent>
+              </Card>
+            )
+          }
+          return null
+        })()}
+
         <Card className="border-2 hover:border-primary/50 transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">

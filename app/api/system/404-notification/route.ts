@@ -13,7 +13,47 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { timestamp, url, referrer } = body
+    const {
+      timestamp,
+      url,
+      pathname,
+      search,
+      hash,
+      origin,
+      referrer,
+      userAgent,
+      language,
+      languages,
+      platform,
+      vendor,
+      cookiesEnabled,
+      online,
+      touchPoints,
+      deviceMemory,
+      hardwareConcurrency,
+      screenWidth,
+      screenHeight,
+      viewportWidth,
+      viewportHeight,
+      devicePixelRatio,
+      colorDepth,
+      orientation,
+      connectionType,
+      connectionDownlink,
+      timezone,
+      timezoneOffset,
+      historyLength,
+      performance: perfData,
+    } = body
+
+    // Also capture server-side request info
+    const forwardedFor = request.headers.get("x-forwarded-for")
+    const realIp = request.headers.get("x-real-ip")
+    const cfCountry = request.headers.get("cf-ipcountry")
+    const cfRay = request.headers.get("cf-ray")
+    const acceptLanguage = request.headers.get("accept-language")
+    const serverUserAgent = request.headers.get("user-agent")
+    const refererHeader = request.headers.get("referer")
 
     // Get super admin emails from the users table
     const supabase = await createClient()
@@ -40,12 +80,32 @@ export async function POST(request: NextRequest) {
       timeStyle: "long",
       timeZone: "Europe/Berlin",
     })
-    const formattedDate = dateFormatter.format(new Date(timestamp))
+    const formattedDate = dateFormatter.format(new Date(timestamp || Date.now()))
+
+    // Detect device type from touch and screen
+    const isMobile = (touchPoints || 0) > 0 && (screenWidth || 0) < 768
+    const isTablet = (touchPoints || 0) > 0 && (screenWidth || 0) >= 768
+    const deviceType = isMobile ? "Mobil" : isTablet ? "Tablet" : "Desktop"
+
+    // Parse browser from user agent
+    const ua = userAgent || serverUserAgent || ""
+    let browser = "Unbekannt"
+    if (ua.includes("Firefox/")) browser = "Firefox"
+    else if (ua.includes("Edg/")) browser = "Edge"
+    else if (ua.includes("Chrome/") && !ua.includes("Edg/")) browser = "Chrome"
+    else if (ua.includes("Safari/") && !ua.includes("Chrome/")) browser = "Safari"
+    else if (ua.includes("Opera/") || ua.includes("OPR/")) browser = "Opera"
+
+    // Build detail row helper
+    const row = (label: string, value: string | number | null | undefined) =>
+      value != null && value !== ""
+        ? `<tr><td style="padding:6px 12px;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:6px 12px;word-break:break-all;">${value}</td></tr>`
+        : ""
 
     // Send email notification
     const emailResult = await sendEmail({
       to: adminEmails,
-      subject: "🚨 404-Fehler auf Effizienz-Praxis",
+      subject: `404-Fehler: ${pathname || url || "Unbekannte Seite"} | Effizienz-Praxis`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -53,40 +113,123 @@ export async function POST(request: NextRequest) {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
-          <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-              <h1 style="margin: 0; font-size: 28px;">🚨 404-Fehler erkannt</h1>
-              <p style="margin: 10px 0 0 0; opacity: 0.9;">Ein Benutzer hat eine nicht existierende Seite aufgerufen</p>
+          <body style="font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 680px; margin: 0 auto; padding: 20px; background: #f5f5f5;">
+            
+            <div style="background: #dc2626; color: white; padding: 24px 30px; border-radius: 12px 12px 0 0;">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 700;">404 Seite nicht gefunden</h1>
+              <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px;">${formattedDate}</p>
             </div>
             
-            <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
-              <h2 style="color: #667eea; margin-top: 0;">Fehlerdetails</h2>
+            <div style="background: #ffffff; border: 1px solid #e5e5e5; border-top: none; border-radius: 0 0 12px 12px; overflow: hidden;">
               
-              <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p style="margin: 0 0 10px 0;"><strong>🕐 Zeitpunkt:</strong><br/>${formattedDate}</p>
-                ${url ? `<p style="margin: 10px 0;"><strong>🔗 Aufgerufene URL:</strong><br/><code style="background: #fff; padding: 5px 10px; border-radius: 3px; display: inline-block; word-break: break-all;">${url}</code></p>` : ""}
-                ${referrer ? `<p style="margin: 10px 0 0 0;"><strong>📍 Referrer:</strong><br/><code style="background: #fff; padding: 5px 10px; border-radius: 3px; display: inline-block; word-break: break-all;">${referrer}</code></p>` : ""}
+              <!-- URL Details -->
+              <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
+                <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #dc2626;">Aufgerufene URL</h2>
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 13px; word-break: break-all;">
+                  ${url || "Unbekannt"}
+                </div>
+                <table style="width:100%; border-collapse:collapse; margin-top:12px; font-size:13px;">
+                  ${row("Pfad", pathname)}
+                  ${row("Query", search)}
+                  ${row("Hash", hash)}
+                  ${row("Origin", origin)}
+                  ${row("Referrer", referrer || refererHeader)}
+                </table>
+              </div>
+              
+              <!-- Browser & Device -->
+              <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
+                <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #2563eb;">Browser & Geraet</h2>
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                  ${row("Browser", browser)}
+                  ${row("Geraetetyp", deviceType)}
+                  ${row("Plattform", platform)}
+                  ${row("Sprache", language)}
+                  ${row("Sprachen", Array.isArray(languages) && languages.length > 0 ? languages.join(", ") : null)}
+                  ${row("Cookies aktiv", cookiesEnabled != null ? (cookiesEnabled ? "Ja" : "Nein") : null)}
+                  ${row("Online", online != null ? (online ? "Ja" : "Nein") : null)}
+                  ${row("Touch-Punkte", touchPoints)}
+                </table>
               </div>
 
-              <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; color: #856404;"><strong>⚠️ Empfohlene Maßnahmen:</strong></p>
-                <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #856404;">
-                  <li>Prüfen Sie, ob wichtige Links defekt sind</li>
-                  <li>Überprüfen Sie Navigation und Menüs</li>
-                  <li>Aktualisieren Sie die Sitemap falls nötig</li>
-                  <li>Erstellen Sie ggf. eine Weiterleitung</li>
-                </ul>
+              <!-- Screen -->
+              <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
+                <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #7c3aed;">Bildschirm & Viewport</h2>
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                  ${row("Bildschirm", screenWidth && screenHeight ? `${screenWidth} x ${screenHeight} px` : null)}
+                  ${row("Viewport", viewportWidth && viewportHeight ? `${viewportWidth} x ${viewportHeight} px` : null)}
+                  ${row("Pixel Ratio", devicePixelRatio)}
+                  ${row("Farbtiefe", colorDepth ? `${colorDepth} bit` : null)}
+                  ${row("Orientierung", orientation)}
+                </table>
               </div>
 
-              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-                <p style="color: #666; font-size: 14px; margin: 0;">
-                  Diese Benachrichtigung wurde automatisch vom Effizienz-Praxis System generiert.
+              <!-- Hardware & Network -->
+              <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
+                <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #059669;">Hardware & Netzwerk</h2>
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                  ${row("CPU-Kerne", hardwareConcurrency)}
+                  ${row("Geraete-RAM", deviceMemory ? `${deviceMemory} GB` : null)}
+                  ${row("Verbindung", connectionType)}
+                  ${row("Download", connectionDownlink ? `${connectionDownlink} Mbps` : null)}
+                  ${row("Zeitzone", timezone)}
+                  ${row("UTC-Offset", timezoneOffset != null ? `UTC${timezoneOffset > 0 ? "-" : "+"}${Math.abs(timezoneOffset / 60)}` : null)}
+                </table>
+              </div>
+
+              <!-- Server-side Info -->
+              <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
+                <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #d97706;">Server-Kontext</h2>
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                  ${row("IP (forwarded)", forwardedFor)}
+                  ${row("IP (real)", realIp)}
+                  ${row("Land (CF)", cfCountry)}
+                  ${row("CF-Ray", cfRay)}
+                  ${row("Accept-Language", acceptLanguage)}
+                  ${row("History-Laenge", historyLength)}
+                </table>
+              </div>
+
+              <!-- Performance -->
+              ${perfData ? `
+              <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
+                <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #0891b2;">Performance</h2>
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                  ${row("Navigation-Typ", perfData.type)}
+                  ${row("Redirects", perfData.redirectCount)}
+                  ${row("TTFB", perfData.ttfb != null ? `${perfData.ttfb} ms` : null)}
+                  ${row("DOM Content Loaded", perfData.domContentLoaded != null ? `${perfData.domContentLoaded} ms` : null)}
+                  ${row("Ladezeit", perfData.loadTime != null ? `${perfData.loadTime} ms` : null)}
+                </table>
+              </div>
+              ` : ""}
+
+              <!-- Raw User Agent -->
+              <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
+                <h2 style="margin: 0 0 12px 0; font-size: 16px; color: #6b7280;">User Agent (roh)</h2>
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; font-family: monospace; font-size: 11px; word-break: break-all; color: #6b7280;">
+                  ${ua || "Nicht verfuegbar"}
+                </div>
+              </div>
+
+              <!-- Recommendations -->
+              <div style="padding: 24px 30px;">
+                <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0;">
+                  <p style="margin: 0 0 8px 0; font-weight: 600; color: #92400e;">Empfohlene Massnahmen</p>
+                  <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 13px;">
+                    <li>Pruefen Sie, ob wichtige Links defekt sind</li>
+                    <li>Ueberpruefen Sie Navigation und Menues</li>
+                    <li>Erstellen Sie ggf. eine Weiterleitung (Redirect)</li>
+                    <li>Aktualisieren Sie die Sitemap falls noetig</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div style="text-align: center; padding: 16px 30px 24px; border-top: 1px solid #f0f0f0;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  Automatisch generiert von Effizienz-Praxis &bull; ${new Date().getFullYear()}
                 </p>
               </div>
-            </div>
-            
-            <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} Effizienz-Praxis • Ihr System für effiziente Praxisverwaltung</p>
             </div>
           </body>
         </html>

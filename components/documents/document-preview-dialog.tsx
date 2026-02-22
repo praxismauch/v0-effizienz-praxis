@@ -226,7 +226,7 @@ export function DocumentPreviewDialog({
               disabled={!isAiEnabled}
             >
               <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              {t("documents.analyze", "Analyzieren")}
+              {t("documents.analyze", "Analysieren")}
             </Button>
           </div>
           <Button variant="default" size="sm" onClick={() => onOpenChange(false)}>

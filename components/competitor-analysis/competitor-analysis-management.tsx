@@ -217,51 +217,61 @@ export function CompetitorAnalysisManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
-      <Card className="bg-card border-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Konkurrenzanalyse mit KI
-          </CardTitle>
+      {/* Header with title */}
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold">Konkurrenzanalyse</h1>
+        <p className="text-muted-foreground">
+          Analysieren Sie Ihre Wettbewerber und entdecken Sie Marktchancen in Ihrer Region
+        </p>
+      </div>
+
+      {/* Professional info card - blue design matching Selbstzahler-Analyse */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">KI-gestützte Wettbewerbsanalyse</CardTitle>
+            </div>
+            <Button onClick={() => setCreateOpen(true)} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Neue Analyse
+            </Button>
+          </div>
           <CardDescription>
-            Analysieren Sie Ihre Wettbewerber und entdecken Sie Marktchancen in Ihrer Region
+            Finden Sie heraus, wie Sie sich im regionalen Wettbewerb optimal positionieren
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="pt-2">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <MapPin className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-background rounded">
+                <MapPin className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">Regionale Analyse</h4>
-                <p className="text-sm text-muted-foreground">Wettbewerber in Ihrer Umgebung identifizieren</p>
+                <h4 className="font-medium text-sm">Regionale Analyse</h4>
+                <p className="text-xs text-muted-foreground">Wettbewerber in Ihrer Umgebung identifizieren</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-background rounded">
+                <TrendingUp className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">Marktchancen</h4>
-                <p className="text-sm text-muted-foreground">Ungenutzte Potenziale und Nischen entdecken</p>
+                <h4 className="font-medium text-sm">Marktchancen</h4>
+                <p className="text-xs text-muted-foreground">Ungenutzte Potenziale und Nischen entdecken</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-muted rounded">
-                <Lightbulb className="h-5 w-5 text-muted-foreground" />
+              <div className="p-2 bg-background rounded">
+                <Lightbulb className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium">Strategische Empfehlungen</h4>
-                <p className="text-sm text-muted-foreground">KI-gestützte Handlungsempfehlungen</p>
+                <h4 className="font-medium text-sm">Strategische Empfehlungen</h4>
+                <p className="text-xs text-muted-foreground">KI-gestützte Handlungsempfehlungen</p>
               </div>
             </div>
           </div>
-          <Button onClick={() => setCreateOpen(true)} className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            Neue Konkurrenzanalyse erstellen
-          </Button>
         </CardContent>
       </Card>
 

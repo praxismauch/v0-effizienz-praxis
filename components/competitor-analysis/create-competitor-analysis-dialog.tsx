@@ -180,6 +180,20 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
             title: "Erfolg",
             description: "Konkurrenzanalyse wurde erstellt und generiert",
           })
+
+          // Auto-generate cover image in background (non-blocking)
+          setGenerationStep("Erstelle Titelbild...")
+          fetch(`/api/practices/${currentPractice.id}/competitor-analysis/generate-image`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              analysisId: analysis.id,
+              location: formData.location,
+              specialty: formData.specialties.join(", "),
+            }),
+          }).catch(() => {
+            // Image generation is non-critical, ignore errors
+          })
         }
       } else {
         toast({

@@ -83,8 +83,8 @@ export function PracticeSettingsTab() {
       const zip = addressParts[2] || ""
       const zipCity = [zip, city].filter(Boolean).join(" ")
 
-      // Parse specialization: stored as comma-separated string in DB
-      const rawSpec = currentPractice.specialization || ""
+      // Parse specialty: stored as comma-separated string in DB (column is "specialty")
+      const rawSpec = currentPractice.specialty || currentPractice.specialization || ""
       const specs = rawSpec
         .split(",")
         .map((s: string) => s.trim())
@@ -145,7 +145,7 @@ export function PracticeSettingsTab() {
       const address = [settings.street, city, zip].filter(Boolean).join(", ")
 
       const { street, zipCity, specializations, bundesland, ...rest } = settings
-      const payload = { ...rest, address, street: settings.street, zip_code: zip, city, bundesland, specialization: specializations.join(", ") }
+      const payload = { ...rest, address, street: settings.street, zip_code: zip, city, bundesland, specialty: specializations.join(", ") }
 
       const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
         method: "PATCH",

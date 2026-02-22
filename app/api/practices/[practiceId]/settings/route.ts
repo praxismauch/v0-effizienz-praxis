@@ -130,10 +130,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const updatePayload: Record<string, any> = {
       updated_at: new Date().toISOString(),
     }
-    const allowedFields = ["name", "address", "phone", "fax", "email", "website", "description", "type", "specialization", "logo_url", "street", "city", "zip_code", "bundesland"]
+    const allowedFields = ["name", "address", "phone", "fax", "email", "website", "description", "type", "specialty", "logo_url", "street", "city", "zip_code", "bundesland"]
+    // Map frontend field names to DB column names
+    const fieldMapping: Record<string, string> = { specialization: "specialty" }
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         updatePayload[field] = body[field]
+      }
+    }
+    // Also handle mapped fields from frontend
+    for (const [frontendField, dbField] of Object.entries(fieldMapping)) {
+      if (body[frontendField] !== undefined) {
+        updatePayload[dbField] = body[frontendField]
       }
     }
 

@@ -13,14 +13,22 @@ export async function GET(
       .from("practice_integrations")
       .select("*")
       .eq("practice_id", practiceId)
-      .eq("integration_type", "google_business")
+      .eq("provider", "google_business")
       .maybeSingle()
 
-    if (error) throw error
-    return NextResponse.json(data || { is_connected: false })
+    if (error) {
+      // If table/column doesn't exist, return default state instead of error
+      if (error.code === "42703" || error.code === "42P01" || error.code === "PGRST204") {
+        return NextResponse.json({ is_connected: false, is_active: false, settings: {} })
+      }
+      throw error
+    }
+    // Map DB field names to what the frontend expects
+    const result = data ? { ...data, is_connected: data.is_active } : { is_connected: false, is_active: false }
+    return NextResponse.json(result)
   } catch (error) {
     console.error("Error fetching Google Business settings:", error)
-    return NextResponse.json({ error: "Fehler beim Laden" }, { status: 500 })
+    return NextResponse.json({ is_connected: false, is_active: false, settings: {} })
   }
 }
 
@@ -37,10 +45,11 @@ export async function POST(
       .from("practice_integrations")
       .upsert({
         practice_id: practiceId,
-        integration_type: "google_business",
+        provider: "google_business",
         settings: body,
+        is_active: true,
         updated_at: new Date().toISOString(),
-      }, { onConflict: "practice_id,integration_type" })
+      }, { onConflict: "practice_id,provider" })
       .select()
       .single()
 

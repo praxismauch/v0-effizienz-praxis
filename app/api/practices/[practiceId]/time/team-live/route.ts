@@ -82,16 +82,8 @@ export async function GET(
       // Map to the shape expected by TeamLiveTab
       const currentStatus = activeBreak ? "break" : activeBlock ? "working" : "absent"
 
-      // Provide clock_in_time as a proper ISO timestamp so the client can compute a live counter
-      let clockInTime: string | null = null
-      if (activeBlock?.start_time && activeBlock?.date) {
-        // Build ISO string and convert to UTC so client gets a timezone-safe value
-        const localStr = `${activeBlock.date}T${activeBlock.start_time}`
-        const localDate = new Date(localStr)
-        if (!isNaN(localDate.getTime())) {
-          clockInTime = localDate.toISOString()
-        }
-      }
+      // start_time is already stored as a full ISO timestamp (e.g. "2026-02-22T16:43:00.000Z")
+      const clockInTime = activeBlock?.start_time || null
 
       return {
         id: member.id,

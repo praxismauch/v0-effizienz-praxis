@@ -66,7 +66,6 @@ export function DocumentPreviewDialog({
   onDownload,
 }: DocumentPreviewDialogProps) {
   const { t } = useTranslation()
-  const [iframeLoading, setIframeLoading] = useState(true)
   const [iframeError, setIframeError] = useState(false)
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [blobLoading, setBlobLoading] = useState(false)
@@ -75,57 +74,64 @@ export function DocumentPreviewDialog({
   const docFileType = document?.file_type
   const docName = document?.name
 
-  // Fetch PDF as blob to bypass X-Frame-Options / CORS restrictions
+  // Build a proxy URL to fetch document server-side (avoids CORS/X-Frame-Options)
+  const getProxyUrl = useCallback((url: string) => {
+    return `/api/documents/proxy?url=${encodeURIComponent(url)}`
+  }, [])
+
+  // Fetch PDF via server-side proxy to bypass CORS restrictions
   useEffect(() => {
-    if (!open || !docFileUrl || !docName) {
-      return
-    }
+    if (!open || !docFileUrl || !docName) return
 
     const docIsPdf = isPdf(docFileType || "", docName)
-    const docIsImage = isImage(docFileType || "", docName)
-    const docIsOffice = isOfficeDoc(docName)
-    console.log("[v0] Preview dialog opened:", { docName, docFileType, docFileUrl: docFileUrl?.substring(0, 80), docIsPdf, docIsImage, docIsOffice })
-    
-    if (!docIsPdf) {
-      console.log("[v0] Not a PDF, skipping blob fetch. Will use:", docIsImage ? "image preview" : docIsOffice ? "office preview" : "fallback")
-      return
-    }
+    if (!docIsPdf) return
 
     let cancelled = false
     setBlobLoading(true)
     setIframeError(false)
 
-    fetch(docFileUrl)
+    const proxyUrl = getProxyUrl(docFileUrl)
+
+    fetch(proxyUrl)
       .then((res) => {
-        console.log("[v0] PDF fetch response:", res.status, res.headers.get("content-type"))
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        if (!res.ok) throw new Error(`Proxy returned ${res.status}`)
         return res.blob()
       })
       .then((blob) => {
         if (cancelled) return
-        console.log("[v0] PDF blob created:", blob.size, "bytes, type:", blob.type)
         const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
         setBlobUrl(url)
         setBlobLoading(false)
       })
-      .catch((err) => {
+      .catch(() => {
         if (cancelled) return
-        console.error("[v0] PDF fetch failed:", err.message)
-        setBlobLoading(false)
-        setIframeError(true)
+        // Fallback: try direct fetch (works if same-origin or CORS allowed)
+        fetch(docFileUrl)
+          .then((res) => {
+            if (!res.ok) throw new Error(`Direct fetch ${res.status}`)
+            return res.blob()
+          })
+          .then((blob) => {
+            if (cancelled) return
+            const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
+            setBlobUrl(url)
+            setBlobLoading(false)
+          })
+          .catch(() => {
+            if (cancelled) return
+            setBlobLoading(false)
+            // Don't set iframeError - let the Google Docs viewer fallback try
+          })
       })
 
-    return () => {
-      cancelled = true
-    }
-  }, [open, docFileUrl, docFileType, docName])
+    return () => { cancelled = true }
+  }, [open, docFileUrl, docFileType, docName, getProxyUrl])
 
   // Cleanup blob URL when dialog closes
   useEffect(() => {
     if (!open && blobUrl) {
       URL.revokeObjectURL(blobUrl)
       setBlobUrl(null)
-      setIframeLoading(true)
       setIframeError(false)
     }
   }, [open, blobUrl])
@@ -192,57 +198,50 @@ export function DocumentPreviewDialog({
                 src={document.file_url || "/placeholder.svg"}
                 alt={document.name}
                 className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  // Retry via proxy if direct image load fails
+                  const img = e.currentTarget
+                  if (!img.src.includes("/api/documents/proxy")) {
+                    img.src = getProxyUrl(document.file_url)
+                  }
+                }}
               />
             </div>
-          ) : canPreviewPdf && !iframeError ? (
+          ) : canPreviewPdf ? (
             <div className="relative w-full h-full">
-              {(blobLoading || (iframeLoading && (blobUrl || document.file_url))) && (
+              {blobLoading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-muted/20 z-10">
                   <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
                   <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
                 </div>
               )}
               {blobUrl ? (
-                <object
-                  data={`${blobUrl}#toolbar=1&navpanes=1`}
-                  type="application/pdf"
-                  className="w-full h-full border-0"
-                  onLoad={() => setIframeLoading(false)}
-                >
-                  <iframe
-                    src={`${blobUrl}#toolbar=1`}
-                    title={document.name}
-                    className="w-full h-full border-0"
-                    onLoad={() => setIframeLoading(false)}
-                    onError={() => { setIframeLoading(false); setIframeError(true) }}
-                  />
-                </object>
-              ) : !blobLoading ? (
-                /* Fallback: try Google Docs viewer for public URLs */
+                /* Strategy 1: Render from local blob URL (no CORS issues) */
                 <iframe
-                  src={`https://docs.google.com/gview?url=${encodeURIComponent(document.file_url)}&embedded=true`}
+                  src={`${blobUrl}#toolbar=1&navpanes=1&view=FitH`}
                   title={document.name}
                   className="w-full h-full border-0"
-                  onLoad={() => setIframeLoading(false)}
-                  onError={() => { setIframeLoading(false); setIframeError(true) }}
+                  style={{ minHeight: "100%" }}
+                />
+              ) : !blobLoading ? (
+                /* Strategy 2: Use server-side proxy URL directly in iframe */
+                <iframe
+                  src={getProxyUrl(document.file_url)}
+                  title={document.name}
+                  className="w-full h-full border-0"
+                  style={{ minHeight: "100%" }}
                 />
               ) : null}
             </div>
           ) : canPreviewOffice && !iframeError ? (
             /* Use Microsoft Office Online viewer for Office docs */
             <div className="relative w-full h-full">
-              {iframeLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-muted/20 z-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
-                  <p className="text-sm text-muted-foreground">Dokument wird geladen...</p>
-                </div>
-              )}
               <iframe
                 src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(document.file_url)}`}
                 title={document.name}
                 className="w-full h-full border-0"
-                onLoad={() => setIframeLoading(false)}
-                onError={() => { setIframeLoading(false); setIframeError(true) }}
+                onError={() => setIframeError(true)}
               />
             </div>
           ) : (

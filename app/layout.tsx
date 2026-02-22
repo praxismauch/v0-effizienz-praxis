@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { Providers } from "@/components/providers"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { getCurrentUserProfile } from "@/lib/auth/get-current-user"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -251,6 +252,7 @@ export default async function RootLayout({
             </SidebarProvider>
           </ThemeProvider>
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   )

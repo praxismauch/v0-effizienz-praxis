@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Settings, Plus, Star, LayoutDashboard, Sparkles, Loader2, SquareStack } from "lucide-react"
+import { Settings, Plus, Star, Sparkles, Loader2 } from "lucide-react"
 import { AnalyticsCustomizer, type AnalyticsItem, type AnalyticsTab } from "@/components/analytics-customizer"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTranslation } from "@/contexts/translation-context"
@@ -344,7 +344,7 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all" className="gap-2">
             {t("analytics.categories.all", "Alle")}
             <Badge variant="secondary" className="ml-1">{allDiagrams.length}</Badge>
@@ -353,16 +353,6 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
             <Star className="h-4 w-4" />
             {t("analytics.categories.favorites", "Favoriten")}
             {favoriteDiagrams.length > 0 && <Badge variant="secondary" className="ml-1">{favoriteDiagrams.length}</Badge>}
-          </TabsTrigger>
-          <TabsTrigger value="dashboard" className="gap-2">
-            <LayoutDashboard className="h-4 w-4" />
-            {t("analytics.categories.dashboard", "Dashboard")}
-            {(dashboardDiagrams.length + dashboardTiles.length) > 0 && <Badge variant="secondary" className="ml-1">{dashboardDiagrams.length + dashboardTiles.length}</Badge>}
-          </TabsTrigger>
-          <TabsTrigger value="tiles" className="gap-2">
-            <SquareStack className="h-4 w-4" />
-            Kacheln
-            <Badge variant="secondary" className="ml-1">{tiles.length}</Badge>
           </TabsTrigger>
         </TabsList>
 
@@ -434,74 +424,7 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
           )}
         </TabsContent>
 
-        <TabsContent value="dashboard" className="space-y-6">
-          {dashboardTiles.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Kacheln im Dashboard</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {dashboardTiles.map((t) => (
-                  <TileCard key={t.id} tile={t} onEdit={(tile) => { setEditingTile(tile); setShowTileDialog(true) }} onDelete={deleteTile} onToggleDashboard={toggleTileDashboard} />
-                ))}
-              </div>
-            </div>
-          )}
-          {dashboardDiagrams.length > 0 ? (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Diagramme im Dashboard</h3>
-              <div className="space-y-6">
-                {dashboardDiagrams.map((d) => (
-                  <DiagramCard key={d.id} diagram={d} isCustom={d.component === "CustomChart"} onToggleFavorite={toggleFavorite} onToggleDashboard={toggleDashboard} onDelete={d.component === "CustomChart" ? deleteCustomDiagram : undefined} />
-                ))}
-              </div>
-            </div>
-          ) : dashboardTiles.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <LayoutDashboard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">{t("analytics.noDashboard", "Keine Dashboard-Elemente")}</h3>
-                <p className="text-sm text-muted-foreground">Fügen Sie Diagramme oder Kacheln zum Dashboard hinzu</p>
-              </CardContent>
-            </Card>
-          ) : null}
-        </TabsContent>
-
-        <TabsContent value="tiles" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Dashboard-Kacheln</h3>
-              <p className="text-sm text-muted-foreground">Erstellen und verwalten Sie Kacheln</p>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white border-0" onClick={() => { setAiMode("tile"); setShowAIDialog(true) }}>
-                <Sparkles className="h-4 w-4" />Mit KI erstellen
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2 bg-transparent" onClick={() => setShowTileDialog(true)}>
-                <Plus className="h-4 w-4" />Kachel hinzufügen
-              </Button>
-            </div>
-          </div>
-          {tiles.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {tiles.map((t) => (
-                <TileCard key={t.id} tile={t} onEdit={(tile) => { setEditingTile(tile); setShowTileDialog(true) }} onDelete={deleteTile} onToggleDashboard={toggleTileDashboard} />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <SquareStack className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Keine Kacheln vorhanden</h3>
-                <p className="text-sm text-muted-foreground mb-4">Erstellen Sie Kacheln mit KI oder manuell</p>
-                <div className="flex justify-center gap-2">
-                  <Button className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white border-0" onClick={() => { setAiMode("tile"); setShowAIDialog(true) }}>
-                    <Sparkles className="h-4 w-4" />Mit KI erstellen
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowTileDialog(true)}>
-                    <Plus className="h-4 w-4 mr-2" />Manuell erstellen
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Dashboard and Kacheln tabs removed */
           )}
         </TabsContent>
       </Tabs>

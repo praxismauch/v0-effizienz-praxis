@@ -217,14 +217,7 @@ export function CompetitorAnalysisManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header with title */}
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold">Konkurrenzanalyse</h1>
-        <p className="text-muted-foreground">
-          Analysieren Sie Ihre Wettbewerber und entdecken Sie Marktchancen in Ihrer Region
-        </p>
-      </div>
-
+  
       {/* Professional info card - blue design matching Selbstzahler-Analyse */}
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader className="pb-2">

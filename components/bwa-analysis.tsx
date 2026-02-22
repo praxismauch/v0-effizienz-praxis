@@ -36,6 +36,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
 import { useTranslation } from "@/contexts/translation-context"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BWADataTab } from "@/components/bwa-data-tab"
 
 // BWA standard line items (German accounting standard)
 const BWA_CATEGORIES = {
@@ -136,7 +137,7 @@ export function BWAAnalysis() {
   const [uploadingMonth, setUploadingMonth] = useState<{ year: number; month: number } | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState<{ year: number; month: number } | null>(null)
-  const [detailTab, setDetailTab] = useState("overview")
+  const [detailTab, setDetailTab] = useState("data")
   const [previewFile, setPreviewFile] = useState<string | null>(null)
   const [showAllYears, setShowAllYears] = useState(false)
 
@@ -424,12 +425,30 @@ export function BWAAnalysis() {
 
         {/* Tabs */}
         <Tabs value={detailTab} onValueChange={setDetailTab}>
-          <TabsList>
-            <TabsTrigger value="overview">Übersicht</TabsTrigger>
-            <TabsTrigger value="files">Dateien ({files.length})</TabsTrigger>
-            <TabsTrigger value="analysis">KI-Analyse</TabsTrigger>
-            <TabsTrigger value="details">Kostenstruktur</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="data" className="gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5" />
+              Daten
+              {ext && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">BWA</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="analysis" className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Analyse
+            </TabsTrigger>
+            <TabsTrigger value="files" className="gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              Dateien ({files.length})
+            </TabsTrigger>
+            <TabsTrigger value="overview" className="gap-1.5">
+              <Euro className="h-3.5 w-3.5" />
+              Positionen
+            </TabsTrigger>
           </TabsList>
+
+          {/* Data Tab - Sophisticated BWA Dashboard */}
+          <TabsContent value="data" className="space-y-4">
+            <BWADataTab ext={ext} monthLabel={monthInfo?.fullLabel || ""} year={selectedMonth.year} />
+          </TabsContent>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4">

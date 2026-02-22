@@ -634,7 +634,14 @@ export function BWAAnalysis() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setPreviewFile(file.url)}
+                            onClick={() => {
+                              const url = file.url
+                              if (url?.toLowerCase().endsWith(".pdf") || file.file_name?.toLowerCase().endsWith(".pdf")) {
+                                window.open(`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`, "_blank", "noopener,noreferrer")
+                              } else {
+                                window.open(url, "_blank", "noopener,noreferrer")
+                              }
+                            }}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>

@@ -435,8 +435,8 @@ export function KVAbrechnungUnified() {
                   <div>
                     <input
                       type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx"
                       multiple
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
                       id="upload-files"
                       className="hidden"
                       onChange={(e) => {
@@ -485,7 +485,18 @@ export function KVAbrechnungUnified() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setPreviewImage(file.url)}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const url = file.url
+                              if (url?.toLowerCase().endsWith(".pdf") || file.file_name?.toLowerCase().endsWith(".pdf")) {
+                                window.open(`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`, "_blank", "noopener,noreferrer")
+                              } else {
+                                window.open(url, "_blank", "noopener,noreferrer")
+                              }
+                            }}
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             Vorschau
                           </Button>

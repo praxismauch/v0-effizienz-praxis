@@ -424,9 +424,6 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
           )}
         </TabsContent>
 
-        {/* Dashboard and Kacheln tabs removed */
-          )}
-        </TabsContent>
       </Tabs>
 
       {/* Dialogs */}

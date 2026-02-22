@@ -1,9 +1,32 @@
+export type DiagramComponent =
+  | "AnalyticsOverview"
+  | "PerformanceMetrics"
+  | "KpiTrendsChart"
+  | "CustomChart"
+  | "SickDaysChart"
+  | "RevenueMonthlyChart"
+  | "PatientFlowChart"
+  | "AppointmentAnalysisChart"
+  | "CostBreakdownChart"
+  | "TeamWorkloadChart"
+  | "WaitTimeChart"
+  | "TreatmentMixChart"
+  | "MonthlyComparisonChart"
+  | "CancellationRateChart"
+  | "NewVsReturningChart"
+  | "RevenuePerDoctorChart"
+  | "SeasonalPatternsChart"
+  | "InsuranceMixChart"
+  | "EmployeeAbsenceChart"
+  | "PatientSatisfactionChart"
+  | "CapacityUtilizationChart"
+
 export interface SystemDiagram {
   id: string
   title: string
   description: string
-  component: "AnalyticsOverview" | "PerformanceMetrics" | "KpiTrendsChart" | "CustomChart" | "SickDaysChart"
-  category: "overview" | "performance" | "trends" | "custom"
+  component: DiagramComponent
+  category: "overview" | "performance" | "trends" | "custom" | "financial" | "patients" | "team" | "operations"
   isFavorite: boolean
   showOnDashboard: boolean
   chartType?: "area" | "line" | "bar" | "pie"
@@ -29,38 +52,146 @@ export interface DashboardTile {
 
 export const defaultSystemDiagrams: SystemDiagram[] = [
   {
-    id: "analytics-overview",
-    title: "Praxiswachstum & Übersicht",
-    description: "Wachstumstrends, Aufgabenverteilung und Teamzufriedenheit",
-    component: "AnalyticsOverview",
-    category: "overview",
+    id: "revenue-monthly",
+    title: "Umsatzentwicklung",
+    description: "Monatliche Umsatzentwicklung mit Vorjahresvergleich und Trendlinie",
+    component: "RevenueMonthlyChart",
+    category: "financial",
+    isFavorite: true,
+    showOnDashboard: true,
+  },
+  {
+    id: "patient-flow",
+    title: "Patientenaufkommen",
+    description: "Tages- und Wochenverlauf der Patientenfrequenz",
+    component: "PatientFlowChart",
+    category: "patients",
+    isFavorite: true,
+    showOnDashboard: true,
+  },
+  {
+    id: "appointment-analysis",
+    title: "Terminauslastung",
+    description: "Terminslots vs. tatsachliche Termine und Auslastungsgrad",
+    component: "AppointmentAnalysisChart",
+    category: "operations",
     isFavorite: false,
     showOnDashboard: false,
   },
   {
-    id: "performance-metrics",
-    title: "Leistungskennzahlen",
-    description: "Effizienz- und Qualitätsmetriken der Praxis",
-    component: "PerformanceMetrics",
+    id: "cost-breakdown",
+    title: "Kostenstruktur",
+    description: "Aufschlusselung der Praxiskosten nach Kategorien",
+    component: "CostBreakdownChart",
+    category: "financial",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "team-workload",
+    title: "Team-Auslastung",
+    description: "Arbeitsbelastung und Aufgabenverteilung im Team",
+    component: "TeamWorkloadChart",
+    category: "team",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "wait-time",
+    title: "Wartezeiten-Analyse",
+    description: "Durchschnittliche Wartezeiten nach Tageszeit und Wochentag",
+    component: "WaitTimeChart",
+    category: "operations",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "treatment-mix",
+    title: "Leistungsmix",
+    description: "Verteilung der erbrachten Leistungen nach Art und Vergutung",
+    component: "TreatmentMixChart",
     category: "performance",
     isFavorite: false,
     showOnDashboard: false,
   },
   {
-    id: "kpi-trends",
-    title: "KPI Trends",
-    description: "Zeitliche Entwicklung Ihrer wichtigsten Kennzahlen",
-    component: "KpiTrendsChart",
-    category: "trends",
+    id: "monthly-comparison",
+    title: "Monatsvergleich",
+    description: "Kennzahlen-Vergleich der letzten 12 Monate",
+    component: "MonthlyComparisonChart",
+    category: "overview",
+    isFavorite: true,
+    showOnDashboard: false,
+  },
+  {
+    id: "cancellation-rate",
+    title: "Absage-Quote",
+    description: "Terminabsagen und No-Shows im Zeitverlauf",
+    component: "CancellationRateChart",
+    category: "operations",
     isFavorite: false,
     showOnDashboard: false,
   },
   {
-    id: "sick-days",
-    title: "Kranktage Übersicht",
-    description: "Verteilung der Kranktage nach Monat und Mitarbeiter",
-    component: "SickDaysChart",
-    category: "overview",
+    id: "new-vs-returning",
+    title: "Neue vs. Bestandspatienten",
+    description: "Verhaltnis Neupatientengewinnung zu Bestandspatienten",
+    component: "NewVsReturningChart",
+    category: "patients",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "revenue-per-doctor",
+    title: "Umsatz pro Behandler",
+    description: "Umsatzverteilung nach Behandler mit Durchschnittswerten",
+    component: "RevenuePerDoctorChart",
+    category: "financial",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "seasonal-patterns",
+    title: "Saisonale Muster",
+    description: "Erkennbare Muster im Patientenaufkommen uber das Jahr",
+    component: "SeasonalPatternsChart",
+    category: "patients",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "insurance-mix",
+    title: "Kassenart-Verteilung",
+    description: "Verteilung GKV, PKV und Selbstzahler mit Umsatzanteilen",
+    component: "InsuranceMixChart",
+    category: "financial",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "employee-absence",
+    title: "Abwesenheiten & Kranktage",
+    description: "Krankheits- und Urlaubstage nach Mitarbeiter und Monat",
+    component: "EmployeeAbsenceChart",
+    category: "team",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "patient-satisfaction",
+    title: "Patientenzufriedenheit",
+    description: "Bewertungsverlauf und Zufriedenheitsindex uber alle Plattformen",
+    component: "PatientSatisfactionChart",
+    category: "patients",
+    isFavorite: false,
+    showOnDashboard: false,
+  },
+  {
+    id: "capacity-utilization",
+    title: "Kapazitatsauslastung",
+    description: "Raumauslastung und Geratenutzung nach Tageszeit",
+    component: "CapacityUtilizationChart",
+    category: "operations",
     isFavorite: false,
     showOnDashboard: false,
   },

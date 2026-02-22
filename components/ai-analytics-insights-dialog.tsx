@@ -43,7 +43,8 @@ export function AIAnalyticsInsightsDialog() {
       <DialogTrigger asChild>
         <Button
           onClick={generateInsights}
-          className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white shadow-md hover:shadow-lg transition-all border-0"
+          variant="ghost"
+          className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md hover:shadow-lg hover:text-white transition-all border-0"
         >
           <Sparkles className="h-4 w-4" />
           KI-Analyse

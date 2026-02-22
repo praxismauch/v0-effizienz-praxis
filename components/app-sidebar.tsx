@@ -76,7 +76,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   return (
     <TooltipProvider>
-      <Sidebar className={cn("border-r border-sidebar-border", className)}>
+      <Sidebar collapsible="icon" className={cn("border-r border-sidebar-border", className)}>
         <AppSidebarHeader
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}

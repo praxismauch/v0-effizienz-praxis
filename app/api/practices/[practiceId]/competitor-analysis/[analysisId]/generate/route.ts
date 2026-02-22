@@ -163,7 +163,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
               `${i + 1}. "${p.name}" - ${p.formatted_address}${p.rating ? ` - Google ${p.rating}/5 (${p.user_ratings_total || 0} Bewertungen)` : ""}`,
           )
           .join("\n")}\n\nWICHTIG: Verwende exakt die oben genannten echten Praxisnamen und Adressen! Ergänze die Daten mit deiner Analyse (Stärken, Schwächen, etc.) aber erfinde KEINE neuen Praxisnamen.`
-      : `\nHINWEIS: Es stehen keine Google-Places-Daten zur Verfügung. Generiere realistische Wettbewerber basierend auf typischen Praxen in ${analysis.location}. Markiere diese als geschätzte Daten.`
+      : `\nHINWEIS: Es stehen KEINE Google-Places-Daten zur Verfügung. Du darfst KEINE fiktiven Wettbewerber erfinden! Setze "competitors" auf ein leeres Array []. Erstelle NUR die Marktanalyse, SWOT, Empfehlungen und Service-Vergleich basierend auf allgemeinem Marktwissen für ${analysis.location}.`
 
     const prompt = `Du bist ein Experte für Marktanalysen im deutschen Gesundheitswesen. Erstelle eine detaillierte und professionelle Konkurrenzanalyse für eine Arztpraxis.
 
@@ -307,12 +307,12 @@ Erstelle eine umfassende Konkurrenzanalyse im folgenden JSON-Format. Alle Texte 
 }
 
 WICHTIG:
-- Generiere 5-8 realistische Konkurrenten basierend auf typischen Praxen in ${analysis.location}
-- Die Google-Bewertungen sollten realistisch sein (typisch 3.5-4.8 Sterne, 20-200 Bewertungen)
-- Jameda verwendet eine Notenskala von 1.0 (beste) bis 6.0 (schlechteste) - generiere realistische Werte
-- Sanego verwendet eine Skala von 1-5 Sternen
+- Wenn ECHTE Wettbewerber-Daten von Google Places vorliegen: Verwende NUR diese echten Daten. Erfinde KEINE zusätzlichen Praxen.
+- Wenn KEINE Google-Places-Daten vorliegen: Setze "competitors" auf ein LEERES Array []. Erfinde NIEMALS fiktive Praxisnamen, Adressen oder Bewertungen!
+- Die Google-Bewertungen (nur bei echten Daten) sollten die realen Werte verwenden (typisch 3.5-4.8 Sterne)
+- Jameda verwendet eine Notenskala von 1.0 (beste) bis 6.0 (schlechteste)
 - Alle Analysen müssen spezifisch für die Fachrichtung "${analysis.specialty}" sein
-- Gib konkrete, umsetzbare Empfehlungen
+- Gib konkrete, umsetzbare Empfehlungen auch wenn keine Wettbewerber-Daten vorliegen
 - Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text`
 
     const { text } = await generateText({
@@ -335,6 +335,13 @@ WICHTIG:
       console.error("Error parsing AI response:", parseError)
       await supabase.from("competitor_analyses").update({ status: "error" }).eq("id", id)
       return NextResponse.json({ error: "Failed to parse AI response" }, { status: 500 })
+    }
+
+    // SAFETY: If no real Google Places data, force competitors to empty array
+    // to prevent AI from hallucinating fake practices
+    if (dataSource !== "google-places") {
+      aiAnalysis.competitors = []
+      console.log("[v0] No Google Places data - cleared AI-generated competitors to prevent hallucination")
     }
 
     // Update the analysis with the AI-generated content

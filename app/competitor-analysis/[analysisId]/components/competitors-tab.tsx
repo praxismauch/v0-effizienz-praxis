@@ -120,9 +120,10 @@ export function CompetitorsTab({ competitors, dataSource }: CompetitorsTabProps)
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <Users className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Keine Wettbewerber-Daten verfügbar</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Starten Sie eine KI-Analyse, um Wettbewerber zu identifizieren
+          <p className="font-medium text-muted-foreground">Keine Wettbewerber-Daten verfügbar</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-md text-center">
+            Echte Wettbewerber werden nur angezeigt, wenn ein Google Places API-Key hinterlegt ist.
+            Gehen Sie zu den Einstellungen, um Ihren API-Key einzutragen, und starten Sie die Analyse erneut.
           </p>
         </CardContent>
       </Card>

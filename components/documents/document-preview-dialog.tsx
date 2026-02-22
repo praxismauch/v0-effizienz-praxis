@@ -22,27 +22,27 @@ interface DocumentPreviewDialogProps {
   onDownload: (doc: Document) => void
 }
 
-function getFileIcon(fileType: string, fileName: string) {
+function getFileIcon(fileType: string | undefined | null, fileName: string | undefined | null) {
   const ext = fileName?.toLowerCase().split(".").pop() || ""
-  if (fileType.startsWith("image/")) return FileImage
+  if (fileType?.startsWith("image/")) return FileImage
   if (ext === "xls" || ext === "xlsx" || ext === "csv") return FileSpreadsheet
   if (fileType === "application/pdf" || ext === "pdf") return FileText
   return File
 }
 
-function isPdf(fileType: string, fileName: string) {
+function isPdf(fileType: string | undefined | null, fileName: string | undefined | null) {
   return fileType === "application/pdf" || 
     fileType?.includes("pdf") || 
     fileName?.toLowerCase().endsWith(".pdf")
 }
 
-function isImage(fileType: string, fileName?: string) {
+function isImage(fileType: string | undefined | null, fileName?: string | null) {
   if (fileType?.startsWith("image/")) return true
   const ext = fileName?.toLowerCase().split(".").pop() || ""
   return ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico"].includes(ext)
 }
 
-function isOfficeDoc(fileName: string) {
+function isOfficeDoc(fileName: string | undefined | null) {
   const ext = fileName?.toLowerCase().split(".").pop() || ""
   return ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext)
 }
@@ -276,7 +276,7 @@ export function DocumentPreviewDialog({
                 <span className="text-xs text-muted-foreground">{formatFileSize(document.file_size)}</span>
                 <span className="text-xs text-muted-foreground">{'|'}</span>
                 <span className="text-xs text-muted-foreground uppercase">
-                  {document.category || document.name?.split(".").pop() || document.file_type.split("/").pop()}
+                  {document.category || document.name?.split(".").pop() || document.file_type?.split("/").pop() || "Datei"}
                 </span>
                 {document.ai_analysis && (
                   <Badge variant="secondary" className="gap-1 h-5 text-[10px]">

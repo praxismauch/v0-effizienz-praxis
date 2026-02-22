@@ -426,7 +426,7 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
 
       </Tabs>
 
-      {/* Dialogs */}
+      {/* Dialog Components */}
       <AIGenerationDialog
         open={showAIDialog}
         onOpenChange={setShowAIDialog}

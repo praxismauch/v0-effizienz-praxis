@@ -48,12 +48,12 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
             <TooltipTrigger asChild>
               <button
                 onClick={() => setOpen(true)}
-                className="group flex w-full items-center justify-center rounded-lg bg-gradient-to-b from-amber-500/20 to-orange-500/20 border border-amber-500/30 p-2 transition-all duration-300 hover:from-amber-500/30 hover:to-orange-500/30 hover:border-amber-400/50 hover:shadow-md hover:shadow-amber-500/10"
+                className="flex w-full items-center justify-center p-1.5 transition-colors hover:opacity-70"
               >
-                <Construction className="h-4 w-4 text-amber-400 group-hover:text-amber-300 transition-colors" />
+                <Construction className="h-4 w-4 text-amber-500" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">Wichtiger Hinweis</TooltipContent>
+            <TooltipContent side="right">Beta-Hinweis</TooltipContent>
           </Tooltip>
         )}
       </div>

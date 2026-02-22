@@ -1764,7 +1764,7 @@ export function DocumentsManager() {
                                   }}
                                   disabled={!isAiEnabled}
                                 >
-                                  {t("documents.analyze", "Analyzieren")}
+                                  {t("documents.analyze", "Analysieren")}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -1865,7 +1865,7 @@ export function DocumentsManager() {
                                 disabled={!isAiEnabled}
                               >
                                 <Sparkles className="h-4 w-4 mr-2" />
-                                {t("documents.analyze", "Analyzieren")}
+                                {t("documents.analyze", "Analysieren")}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem

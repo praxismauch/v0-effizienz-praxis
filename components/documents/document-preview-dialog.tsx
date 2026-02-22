@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -59,6 +59,57 @@ export function DocumentPreviewDialog({
   const { t } = useTranslation()
   const [iframeLoading, setIframeLoading] = useState(true)
   const [iframeError, setIframeError] = useState(false)
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [blobLoading, setBlobLoading] = useState(false)
+
+  const docFileUrl = document?.file_url
+  const docFileType = document?.file_type
+  const docName = document?.name
+
+  // Fetch PDF as blob to bypass X-Frame-Options / CORS restrictions
+  useEffect(() => {
+    if (!open || !docFileUrl || !docName) {
+      return
+    }
+
+    const shouldFetchBlob = isPdf(docFileType || "", docName)
+    if (!shouldFetchBlob) return
+
+    let cancelled = false
+    setBlobLoading(true)
+    setIframeError(false)
+
+    fetch(docFileUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.blob()
+      })
+      .then((blob) => {
+        if (cancelled) return
+        const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
+        setBlobUrl(url)
+        setBlobLoading(false)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setBlobLoading(false)
+        setIframeError(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, docFileUrl, docFileType, docName])
+
+  // Cleanup blob URL when dialog closes
+  useEffect(() => {
+    if (!open && blobUrl) {
+      URL.revokeObjectURL(blobUrl)
+      setBlobUrl(null)
+      setIframeLoading(true)
+      setIframeError(false)
+    }
+  }, [open, blobUrl])
 
   if (!document) return null
 
@@ -67,7 +118,7 @@ export function DocumentPreviewDialog({
   const canPreviewOffice = isOfficeDoc(document.name)
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setIframeLoading(true); setIframeError(false) } }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b px-6 py-4">
@@ -125,29 +176,29 @@ export function DocumentPreviewDialog({
               />
             </div>
           ) : canPreviewPdf && !iframeError ? (
-            /* Use browser's native PDF viewer - works directly with Blob URLs */
             <div className="relative w-full h-full">
-              {iframeLoading && (
+              {(blobLoading || (iframeLoading && blobUrl)) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-muted/20 z-10">
                   <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
                   <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
                 </div>
               )}
-              <object
-                data={`${document.file_url}#toolbar=1&navpanes=1`}
-                type="application/pdf"
-                className="w-full h-full border-0"
-                onLoad={() => setIframeLoading(false)}
-              >
-                {/* Fallback if object tag fails */}
-                <iframe
-                  src={`${document.file_url}#toolbar=1`}
-                  title={document.name}
+              {blobUrl && (
+                <object
+                  data={`${blobUrl}#toolbar=1&navpanes=1`}
+                  type="application/pdf"
                   className="w-full h-full border-0"
                   onLoad={() => setIframeLoading(false)}
-                  onError={() => { setIframeLoading(false); setIframeError(true) }}
-                />
-              </object>
+                >
+                  <iframe
+                    src={`${blobUrl}#toolbar=1`}
+                    title={document.name}
+                    className="w-full h-full border-0"
+                    onLoad={() => setIframeLoading(false)}
+                    onError={() => { setIframeLoading(false); setIframeError(true) }}
+                  />
+                </object>
+              )}
             </div>
           ) : canPreviewOffice && !iframeError ? (
             /* Use Microsoft Office Online viewer for Office docs */

@@ -32,26 +32,28 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
 
   return (
     <>
-      <div className="px-3 py-1.5">
+      <div className="px-3 py-1">
         {sidebarOpen ? (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setOpen(true)}
-            className="group flex w-full items-center gap-2 px-1 py-1 text-left transition-colors hover:opacity-80"
+            className="w-full justify-start gap-2 h-8 border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50"
           >
-            <Construction className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-            <span className="text-xs text-amber-500/80 hover:text-amber-400 underline underline-offset-2 decoration-amber-500/30 transition-colors truncate">
-              Beta-Hinweis
-            </span>
-          </button>
+            <Construction className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-xs font-medium truncate">Beta-Hinweis</span>
+          </Button>
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => setOpen(true)}
-                className="flex w-full items-center justify-center p-1.5 transition-colors hover:opacity-70"
+                className="w-full h-8 border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50"
               >
-                <Construction className="h-4 w-4 text-amber-500" />
-              </button>
+                <Construction className="h-4 w-4" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="right">Beta-Hinweis</TooltipContent>
           </Tooltip>

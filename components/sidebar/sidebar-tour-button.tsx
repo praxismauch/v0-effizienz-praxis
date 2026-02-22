@@ -1,6 +1,7 @@
 "use client"
 
 import { Calendar } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useOnboarding } from "@/contexts/onboarding-context"
 
@@ -17,15 +18,17 @@ export function SidebarTourButton({ sidebarOpen }: SidebarTourButtonProps) {
 
   if (!sidebarOpen) {
     return (
-      <div className="px-2 py-1.5 shrink-0">
+      <div className="px-2 py-1 shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setIsOnboardingOpen(true)}
-              className="flex w-full items-center justify-center p-1.5 transition-colors hover:opacity-70"
+              className="w-full h-8 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary hover:border-primary/50"
             >
-              <Calendar className="h-4 w-4 text-primary" />
-            </button>
+              <Calendar className="h-4 w-4" />
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>
@@ -39,19 +42,21 @@ export function SidebarTourButton({ sidebarOpen }: SidebarTourButtonProps) {
   }
 
   return (
-    <div className="px-3 py-1.5 shrink-0">
-      <button
+    <div className="px-3 py-1 shrink-0">
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => setIsOnboardingOpen(true)}
-        className="group flex w-full items-center gap-2 px-1 py-1 text-left transition-colors hover:opacity-80"
+        className="w-full justify-start gap-2 h-8 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary hover:border-primary/50"
       >
-        <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
-        <span className="text-xs text-primary/80 hover:text-primary underline underline-offset-2 decoration-primary/30 transition-colors truncate">
+        <Calendar className="h-3.5 w-3.5 shrink-0" />
+        <span className="text-xs font-medium truncate">
           Tour starten
           {isNewPractice && daysRemaining > 0 && (
-            <span className="ml-1 no-underline opacity-70">({daysRemaining}d)</span>
+            <span className="ml-1 opacity-70">({daysRemaining}d)</span>
           )}
         </span>
-      </button>
+      </Button>
     </div>
   )
 }

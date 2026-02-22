@@ -54,7 +54,7 @@ interface SpecialtyGroup {
 
 export function PracticeSettingsTab() {
   const { toast } = useToast()
-  const { currentPractice, refreshPractice } = usePractice()
+  const { currentPractice, refreshPractices } = usePractice()
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [specialtyGroups, setSpecialtyGroups] = useState<SpecialtyGroup[]>([])
@@ -145,7 +145,7 @@ export function PracticeSettingsTab() {
       const address = [settings.street, city, zip].filter(Boolean).join(", ")
 
       const { street, zipCity, specializations, bundesland, ...rest } = settings
-      const payload = { ...rest, address, street: settings.street, zip_code: zip, city, bundesland, specialty: specializations.join(", ") }
+      const payload = { ...rest, address, street: settings.street, zip_code: zip, city, bundesland, specialization: specializations.join(", ") }
 
       const response = await fetch(`/api/practices/${currentPractice.id}/settings`, {
         method: "PATCH",
@@ -159,7 +159,7 @@ export function PracticeSettingsTab() {
         throw new Error(error.error || "Failed to update settings")
       }
 
-      await refreshPractice?.()
+      await refreshPractices()
       toast({
         title: "Gespeichert",
         description: "Die Praxiseinstellungen wurden erfolgreich gespeichert.",

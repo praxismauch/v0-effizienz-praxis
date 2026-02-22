@@ -10,6 +10,11 @@ export interface Practice {
   id: string
   name: string
   type: string
+  specialization?: string
+  description?: string
+  fax?: string
+  bundesland?: string
+  logo_url?: string | null
   street: string
   city: string
   zipCode: string

@@ -144,7 +144,7 @@ export default function CIRSPageClient() {
         }
       )
       if (response.ok) {
-        toast({ title: "Vorfall aktualisiert", description: "Die Aenderungen wurden gespeichert." })
+        toast({ title: "Vorfall aktualisiert", description: "Die Änderungen wurden gespeichert." })
         setShowEditDialog(false)
         setEditIncident(null)
         fetchIncidents()
@@ -373,9 +373,9 @@ export default function CIRSPageClient() {
         <AlertDialog open={!!deleteIncident} onOpenChange={(open) => { if (!open) setDeleteIncident(null) }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Vorfall loeschen</AlertDialogTitle>
+              <AlertDialogTitle>Vorfall löschen</AlertDialogTitle>
               <AlertDialogDescription>
-                Moechten Sie den Vorfall &quot;{deleteIncident?.title}&quot; wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.
+                Möchten Sie den Vorfall &quot;{deleteIncident?.title}&quot; wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -390,7 +390,7 @@ export default function CIRSPageClient() {
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Loescht...
                   </>
-                ) : "Loeschen"}
+                ) : "Löschen"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

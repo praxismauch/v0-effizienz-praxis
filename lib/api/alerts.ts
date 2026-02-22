@@ -151,7 +151,7 @@ export async function alertRLSViolation(table: string, details: string): Promise
   await sendSecurityAlert({
     severity: "critical",
     title: "RLS-Richtlinienverletzung",
-    message: `Mogliche RLS-Verletzung bei Tabelle "${table}"`,
+    message: `Mögliche RLS-Verletzung bei Tabelle "${table}"`,
     details: { table, details },
   })
 }

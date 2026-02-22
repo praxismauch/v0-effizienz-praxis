@@ -103,7 +103,7 @@ export function HygienePage() {
           products_used: Array.isArray(data.products_used) ? data.products_used.join(", ") : (data.products_used || prev.products_used),
           rki_reference: data.rki_reference || prev.rki_reference,
         }))
-        toast({ title: "RKI-Richtlinien geladen", description: "Der Plan wurde mit RKI-Empfehlungen ausgefuellt." })
+        toast({ title: "RKI-Richtlinien geladen", description: "Der Plan wurde mit RKI-Empfehlungen ausgefüllt." })
       } else {
         const errorData = await res.json().catch(() => ({ error: "Unbekannter Fehler" }))
         console.error("[v0] AI generation error:", errorData)

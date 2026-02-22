@@ -69,7 +69,7 @@ export function IncidentCard({ incident, onClick, onEdit, onDelete }: IncidentCa
                     <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom"><p>Loeschen</p></TooltipContent>
+                <TooltipContent side="bottom"><p>Löschen</p></TooltipContent>
               </Tooltip>
             )}
           </TooltipProvider>

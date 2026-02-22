@@ -105,7 +105,7 @@ export default function ProtocolPopupPage() {
       console.log("[v0] Popup: getUserMedia available:", !!navigator.mediaDevices?.getUserMedia)
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Ihr Browser unterstuetzt keine Audio-Aufnahme. Bitte verwenden Sie die Datei-Upload-Option.")
+        throw new Error("Ihr Browser unterstützt keine Audio-Aufnahme. Bitte verwenden Sie die Datei-Upload-Option.")
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })

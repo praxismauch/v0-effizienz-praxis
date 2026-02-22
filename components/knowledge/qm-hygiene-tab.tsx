@@ -34,11 +34,11 @@ interface HygienePlan {
 }
 
 const frequencyLabels: Record<string, string> = {
-  daily: "Taglich",
-  weekly: "Wochentlich",
+  daily: "Täglich",
+  weekly: "Wöchentlich",
   monthly: "Monatlich",
   quarterly: "Quartalsweise",
-  yearly: "Jahrlich",
+  yearly: "Jährlich",
   as_needed: "Bei Bedarf",
 }
 

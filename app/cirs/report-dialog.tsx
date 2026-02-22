@@ -196,7 +196,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit, editIncident }: Rep
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="contributing_factors">{"Mogliche Ursachen / Beitragende Faktoren"}</Label>
+            <Label htmlFor="contributing_factors">{"Mögliche Ursachen / Beitragende Faktoren"}</Label>
             <Textarea
               id="contributing_factors"
               placeholder="Was konnte zu diesem Vorfall beigetragen haben?"
@@ -207,10 +207,10 @@ export function ReportDialog({ open, onOpenChange, onSubmit, editIncident }: Rep
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="immediate_actions">{"Sofortmassnahmen"}</Label>
+            <Label htmlFor="immediate_actions">{"Sofortmaßnahmen"}</Label>
             <Textarea
               id="immediate_actions"
-              placeholder="Welche Massnahmen wurden unmittelbar ergriffen?"
+              placeholder="Welche Maßnahmen wurden unmittelbar ergriffen?"
               value={immediateActions}
               onChange={(e) => setImmediateActions(e.target.value)}
               rows={3}

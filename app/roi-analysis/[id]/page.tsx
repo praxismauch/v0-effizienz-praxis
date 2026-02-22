@@ -142,9 +142,9 @@ export default function RoiAnalysisDetailPage({ params }: { params: Promise<{ id
             </Button>
             <DeleteIconButton
               onDelete={handleDelete}
-              tooltip="Analyse loeschen"
-              confirmTitle="Analyse loeschen?"
-              confirmDescription={`Moechten Sie die Analyse "${analysis.service_name}" wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.`}
+              tooltip="Analyse löschen"
+              confirmTitle="Analyse löschen?"
+              confirmDescription={`Möchten Sie die Analyse "${analysis.service_name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
               disabled={deleting}
             />
           </div>

@@ -631,11 +631,11 @@ export function GlobalParameterManagement() {
         } else {
           const data = await response.json()
           console.error("[v0] Delete failed:", data)
-          alert(data.error || "Kennzahl konnte nicht geloescht werden")
+          alert(data.error || "Kennzahl konnte nicht gelöscht werden")
         }
       } catch (error) {
         console.error("[v0] Error deleting parameter:", error)
-        alert("Fehler beim Loeschen der Kennzahl")
+        alert("Fehler beim Löschen der Kennzahl")
       }
     },
     [groups, parameters],

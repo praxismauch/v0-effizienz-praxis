@@ -146,10 +146,10 @@ export function LogsTab() {
         <CardContent>
           <div className="grid sm:grid-cols-2 gap-4">
             {[
-              { title: "E-Mails werden nicht gesendet", solution: "Pruefen Sie die SMTP-Konfiguration unter dem Tab 'Diagnose'. Stellen Sie sicher, dass Host, Port und Zugangsdaten korrekt sind." },
-              { title: "E-Mails landen im Spam", solution: "Stellen Sie sicher, dass SPF, DKIM und DMARC DNS-Eintraege korrekt gesetzt sind. Verwenden Sie eine authentifizierte Domain." },
-              { title: "Verbindung timeout", solution: "Port 465 benoetigt SSL, Port 587 benoetigt STARTTLS. Pruefen Sie die Firewall-Einstellungen." },
-              { title: "Authentifizierung fehlgeschlagen", solution: "Pruefen Sie Benutzername und Passwort. Bei Gmail/Google muss ein App-Passwort verwendet werden." },
+              { title: "E-Mails werden nicht gesendet", solution: "Prüfen Sie die SMTP-Konfiguration unter dem Tab 'Diagnose'. Stellen Sie sicher, dass Host, Port und Zugangsdaten korrekt sind." },
+              { title: "E-Mails landen im Spam", solution: "Stellen Sie sicher, dass SPF, DKIM und DMARC DNS-Einträge korrekt gesetzt sind. Verwenden Sie eine authentifizierte Domain." },
+              { title: "Verbindung timeout", solution: "Port 465 benötigt SSL, Port 587 benötigt STARTTLS. Prüfen Sie die Firewall-Einstellungen." },
+              { title: "Authentifizierung fehlgeschlagen", solution: "Prüfen Sie Benutzername und Passwort. Bei Gmail/Google muss ein App-Passwort verwendet werden." },
             ].map((item) => (
               <div key={item.title} className="p-4 rounded-lg bg-muted/50">
                 <p className="text-sm font-medium mb-1">{item.title}</p>

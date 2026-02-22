@@ -113,7 +113,7 @@ export function EditSuperAdminDialog({ open, onOpenChange, superAdmin }: EditSup
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Sie bearbeiten Ihr eigenes Konto. Seien Sie vorsichtig beim Aendern Ihres Status oder Ihrer Berechtigungen.
+              Sie bearbeiten Ihr eigenes Konto. Seien Sie vorsichtig beim Ändern Ihres Status oder Ihrer Berechtigungen.
             </AlertDescription>
           </Alert>
         )}
@@ -181,7 +181,7 @@ export function EditSuperAdminDialog({ open, onOpenChange, superAdmin }: EditSup
           {isCurrentUser && !formData.isActive && (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>Sie koennen Ihr eigenes Konto nicht deaktivieren, waehrend Sie angemeldet sind.</AlertDescription>
+              <AlertDescription>Sie können Ihr eigenes Konto nicht deaktivieren, während Sie angemeldet sind.</AlertDescription>
             </Alert>
           )}
 

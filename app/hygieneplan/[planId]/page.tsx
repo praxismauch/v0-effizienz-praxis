@@ -71,15 +71,15 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   active: { label: "Aktiv", color: "#10b981" },
   draft: { label: "Entwurf", color: "#6b7280" },
   archived: { label: "Archiviert", color: "#9ca3af" },
-  needs_review: { label: "Ueberpruefung noetig", color: "#f59e0b" },
+  needs_review: { label: "Überprüfung nötig", color: "#f59e0b" },
 }
 
 const FREQUENCY_LABELS: Record<string, string> = {
-  daily: "Taeglich",
-  weekly: "Woechentlich",
+  daily: "Täglich",
+  weekly: "Wöchentlich",
   monthly: "Monatlich",
-  quarterly: "Vierteljaehrlich",
-  yearly: "Jaehrlich",
+  quarterly: "Vierteljährlich",
+  yearly: "Jährlich",
   as_needed: "Bei Bedarf",
 }
 
@@ -135,7 +135,7 @@ export default function HygienePlanDetailPage() {
           <p className="text-lg text-muted-foreground">{error || "Hygieneplan nicht gefunden"}</p>
           <Button variant="outline" onClick={() => router.push("/hygieneplan")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Zurueck zur Uebersicht
+            Zurück zur Übersicht
           </Button>
         </div>
       </AppLayout>
@@ -155,7 +155,7 @@ export default function HygienePlanDetailPage() {
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => router.push("/hygieneplan")} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Zurueck zur Uebersicht
+            Zurück zur Übersicht
           </Button>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">

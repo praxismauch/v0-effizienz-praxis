@@ -122,11 +122,11 @@ const CATEGORY_CONFIG = {
 }
 
 const FREQUENCY_LABELS: Record<string, string> = {
-  daily: "Taeglich",
-  weekly: "Woechentlich",
+  daily: "Täglich",
+  weekly: "Wöchentlich",
   monthly: "Monatlich",
-  quarterly: "Vierteljaehrlich",
-  yearly: "Jaehrlich",
+  quarterly: "Vierteljährlich",
+  yearly: "Jährlich",
   as_needed: "Bei Bedarf",
 }
 
@@ -484,7 +484,7 @@ export default function HygienePlanClient() {
                                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom"><p>Loeschen</p></TooltipContent>
+                            <TooltipContent side="bottom"><p>Löschen</p></TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </div>
@@ -539,9 +539,9 @@ export default function HygienePlanClient() {
         <AlertDialog open={!!deletingPlan} onOpenChange={(open) => { if (!open) setDeletingPlan(null) }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Hygieneplan loeschen</AlertDialogTitle>
+              <AlertDialogTitle>Hygieneplan löschen</AlertDialogTitle>
               <AlertDialogDescription>
-                Moechten Sie den Hygieneplan &quot;{deletingPlan?.title}&quot; wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.
+                Möchten Sie den Hygieneplan &quot;{deletingPlan?.title}&quot; wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -555,7 +555,7 @@ export default function HygienePlanClient() {
                   }
                 }}
               >
-                Loeschen
+                Löschen
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -570,7 +570,7 @@ const GENERATION_STEPS = [
   { at: 0, label: "Vorbereitung..." },
   { at: 10, label: "RKI-Richtlinien werden analysiert..." },
   { at: 25, label: "Praxisdaten werden ausgewertet..." },
-  { at: 40, label: "Massnahmen werden erstellt..." },
+  { at: 40, label: "Maßnahmen werden erstellt..." },
   { at: 60, label: "Schritte werden formuliert..." },
   { at: 75, label: "Qualitaetsindikatoren werden definiert..." },
   { at: 88, label: "Dokumentation wird finalisiert..." },
@@ -650,7 +650,7 @@ function GenerateAIPlanDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-violet-600" />
-            KI-gestuetzten Hygieneplan generieren
+            KI-gestützten Hygieneplan generieren
           </DialogTitle>
           <DialogDescription>
             Erstellen Sie automatisch einen RKI-konformen Hygieneplan basierend auf aktuellen Richtlinien
@@ -727,7 +727,7 @@ function GenerateAIPlanDialog({
               <Label htmlFor="requirements">Besondere Anforderungen (optional)</Label>
               <Textarea
                 id="requirements"
-                placeholder="Z.B. spezielle Geraete, besondere Patientengruppen, zusaetzliche Anforderungen..."
+                placeholder="Z.B. spezielle Geräte, besondere Patientengruppen, zusätzliche Anforderungen..."
                 value={customRequirements}
                 onChange={(e) => setCustomRequirements(e.target.value)}
                 rows={4}

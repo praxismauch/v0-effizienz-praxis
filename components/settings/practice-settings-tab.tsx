@@ -335,12 +335,12 @@ onValueChange={(value) => setSettings({ ...settings, type: value })}
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="street">Strasse und Hausnummer</Label>
+              <Label htmlFor="street">Straße und Hausnummer</Label>
               <Input
                 id="street"
                 value={settings.street}
                 onChange={(e) => setSettings({ ...settings, street: e.target.value })}
-                placeholder="Musterstrasse 12"
+                placeholder="Musterstraße 12"
               />
             </div>
             <div className="space-y-2">

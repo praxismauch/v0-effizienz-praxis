@@ -29,7 +29,7 @@ import { PermissionsLoading, PermissionsError, PermissionsEmpty } from "./user-r
 import React from "react"
 
 const categoryIcons: Record<string, React.ReactNode> = {
-  "Uebersicht": <BarChart className="h-4 w-4" />,
+  "Übersicht": <BarChart className="h-4 w-4" />,
   Praxismanagement: <Building className="h-4 w-4" />,
   "Team & Personal": <Users className="h-4 w-4" />,
   "Planung & Organisation": <FileText className="h-4 w-4" />,
@@ -53,7 +53,7 @@ const actions = [
   { key: "can_view", label: "Ansehen", icon: Eye },
   { key: "can_create", label: "Erstellen", icon: Plus },
   { key: "can_edit", label: "Bearbeiten", icon: Edit },
-  { key: "can_delete", label: "Loeschen", icon: Trash },
+  { key: "can_delete", label: "Löschen", icon: Trash },
 ] as const
 
 export function UserRightsManager() {
@@ -196,7 +196,7 @@ export function UserRightsManager() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Berechtigungs-Matrix</h2>
-          <p className="text-muted-foreground text-sm">Konfigurieren Sie die Berechtigungen fuer alle 7 Benutzerrollen</p>
+          <p className="text-muted-foreground text-sm">Konfigurieren Sie die Berechtigungen für alle 7 Benutzerrollen</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={loadPermissions} variant="outline" size="sm">
@@ -213,7 +213,7 @@ export function UserRightsManager() {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Aenderungen an Benutzerrechten werden sofort nach dem Speichern aktiv. Super Admin-Berechtigungen koennen nicht geaendert werden.
+          Änderungen an Benutzerrechten werden sofort nach dem Speichern aktiv. Super Admin-Berechtigungen können nicht geändert werden.
         </AlertDescription>
       </Alert>
 

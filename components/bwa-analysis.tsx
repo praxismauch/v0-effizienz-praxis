@@ -670,6 +670,38 @@ export function BWAAnalysis() {
                 )}
               </CardContent>
             </Card>
+
+            {/* KI-Analyse CTA when files are present */}
+            {files.length > 0 && selectedMonthData && (
+              <Card className="border-purple-500/20 bg-gradient-to-r from-purple-500/5 to-indigo-500/5">
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500">
+                      <Sparkles className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">KI-Analyse starten</p>
+                      <p className="text-xs text-muted-foreground">
+                        {files.length} {files.length === 1 ? "Datei" : "Dateien"} automatisch auswerten lassen
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => handleAnalyze(selectedMonthData)}
+                    disabled={analyzing}
+                    variant="ghost"
+                    className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white hover:text-white border-0"
+                  >
+                    {analyzing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    {analyzing ? "Wird analysiert..." : "Jetzt analysieren"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Analysis Tab */}

@@ -1421,7 +1421,7 @@ export function DocumentsManager() {
                               </Badge>
                             )}
                             <span>{formatFileSize(doc.file_size)}</span>
-                            <span className="w-20 text-right">{new Date(doc.created_by_at).toLocaleDateString("de-DE")}</span>
+                            <span className="w-20 text-right">{doc.created_at ? new Date(doc.created_at).toLocaleDateString("de-DE") : "-"}</span>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0">

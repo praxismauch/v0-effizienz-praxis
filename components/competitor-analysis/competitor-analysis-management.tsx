@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, MapPin, Briefcase, TrendingUp, Lightbulb, Users, Loader2, Trash2, Eye, Edit } from "lucide-react"
+import { Plus, Search, MapPin, Briefcase, TrendingUp, Lightbulb, Users, Loader2, Trash2, Eye, Edit, ImagePlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -57,6 +57,7 @@ export function CompetitorAnalysisManagement() {
   const [editAnalysis, setEditAnalysis] = useState<CompetitorAnalysis | null>(null)
   const [deleteAnalysis, setDeleteAnalysis] = useState<CompetitorAnalysis | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null)
   const router = useRouter()
 
   const loadAnalyses = useCallback(async () => {
@@ -134,6 +135,34 @@ export function CompetitorAnalysisManagement() {
       await loadAnalyses()
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleGenerateImage = async (analysis: CompetitorAnalysis) => {
+    if (!currentPractice?.id) return
+    setGeneratingImageFor(analysis.id)
+    try {
+      const response = await fetch(`/api/practices/${currentPractice.id}/competitor-analysis/generate-image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analysisId: analysis.id,
+          location: analysis.location,
+          specialty: analysis.specialty,
+        }),
+      })
+      if (response.ok) {
+        toast({ title: "Bild generiert", description: "Das Titelbild wurde erfolgreich erstellt." })
+        await loadAnalyses()
+      } else {
+        const err = await response.json().catch(() => ({}))
+        toast({ title: "Fehler", description: err.error || "Bild konnte nicht generiert werden", variant: "destructive" })
+      }
+    } catch (error) {
+      console.error("Error generating image:", error)
+      toast({ title: "Fehler", description: "Bild konnte nicht generiert werden", variant: "destructive" })
+    } finally {
+      setGeneratingImageFor(null)
     }
   }
 
@@ -262,33 +291,64 @@ export function CompetitorAnalysisManagement() {
                 className="hover:shadow-lg transition-all duration-300 group overflow-hidden relative"
               >
                 {/* Visual header with gradient background and illustration */}
-                <div className="relative h-32 overflow-hidden border-b">
-                  {/* AI-generated image if available, otherwise fallback to placeholder */}
+                <div className="relative h-36 overflow-hidden border-b">
+                  {/* AI-generated image if available, otherwise styled gradient placeholder */}
                   {analysis.ai_analysis?.generated_image_url ? (
                     <img
-                      src={analysis.ai_analysis.generated_image_url || "/placeholder.svg"}
+                      src={analysis.ai_analysis.generated_image_url}
                       alt={`${analysis.location} - ${analysis.specialty}`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
+                        // Hide broken image, show gradient fallback
                         const target = e.target as HTMLImageElement
-                        target.src = `/aerial-view-medical-clinic-.jpg?height=128&width=400&query=aerial view medical clinic ${encodeURIComponent(analysis.location)} ${encodeURIComponent(analysis.specialty)}`
+                        target.style.display = "none"
+                        const fallback = target.nextElementSibling as HTMLElement
+                        if (fallback) fallback.style.display = "flex"
                       }}
                     />
-                  ) : (
-                    <img
-                      src={`/aerial-view-medical-clinic-.jpg?key=8kl3h&height=128&width=400&query=aerial view medical clinic ${encodeURIComponent(analysis.location || "city")} ${encodeURIComponent(analysis.specialty || "healthcare")}`}
-                      alt={`${analysis.location} - ${analysis.specialty}`}
-                      className="w-full h-full object-cover"
-                    />
+                  ) : null}
+                  {/* Gradient placeholder (visible when no image or image fails) */}
+                  <div
+                    className={`absolute inset-0 flex flex-col items-center justify-center ${analysis.ai_analysis?.generated_image_url ? "hidden" : "flex"}`}
+                    style={{
+                      background: `linear-gradient(135deg, 
+                        ${getCompetitorCount(analysis) > 6 ? "#fecaca 0%, #fca5a5 50%, #f87171 100%" :
+                          getCompetitorCount(analysis) > 3 ? "#fef3c7 0%, #fde68a 50%, #fbbf24 100%" :
+                          getCompetitorCount(analysis) > 0 ? "#dbeafe 0%, #93c5fd 50%, #3b82f6 100%" :
+                          "#d1fae5 0%, #6ee7b7 50%, #10b981 100%"}`
+                    }}
+                  >
+                    <div className="bg-white/30 backdrop-blur-sm rounded-2xl p-3">
+                      <MapPin className="h-8 w-8 text-white drop-shadow-sm" />
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-white/90 drop-shadow-sm tracking-wide uppercase">
+                      {analysis.location}
+                    </p>
+                  </div>
+
+                  {/* Generate image button on placeholder */}
+                  {!analysis.ai_analysis?.generated_image_url && analysis.status === "completed" && (
+                    <button
+                      className="absolute top-3 left-3 z-10 bg-white/80 backdrop-blur-sm hover:bg-white/95 rounded-lg p-1.5 shadow-sm transition-colors"
+                      onClick={(e) => { e.stopPropagation(); handleGenerateImage(analysis) }}
+                      disabled={generatingImageFor === analysis.id}
+                      title="KI-Bild generieren"
+                    >
+                      {generatingImageFor === analysis.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      ) : (
+                        <ImagePlus className="h-4 w-4 text-primary" />
+                      )}
+                    </button>
                   )}
 
-                  {/* Gradient overlay for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+                  {/* Gradient overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent pointer-events-none" />
 
                   {/* Status badge */}
                   <div className="absolute top-3 right-3 z-10">{getStatusBadge(analysis.status)}</div>
 
-                  {/* Optional: Competitor count indicator overlay */}
+                  {/* Competitor count indicator */}
                   {analysis.status === "completed" && (
                     <div className="absolute bottom-3 left-3 flex items-center gap-2 z-10">
                       <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2 shadow-sm">

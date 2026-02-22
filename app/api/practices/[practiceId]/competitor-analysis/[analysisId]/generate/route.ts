@@ -265,6 +265,23 @@ WICHTIG:
 
     if (updateError) throw updateError
 
+    // Trigger cover image generation in the background (non-blocking)
+    try {
+      const baseUrl = request.nextUrl.origin
+      fetch(`${baseUrl}/api/practices/${practiceId}/competitor-analysis/generate-image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analysisId: id,
+          location: analysis.location,
+          specialty: analysis.specialty,
+        }),
+      }).catch((err) => console.error("Background image generation failed:", err))
+    } catch (imgErr) {
+      // Non-critical - don't fail the analysis if image gen fails
+      console.error("Error triggering image generation:", imgErr)
+    }
+
     return NextResponse.json(updatedAnalysis)
   } catch (error) {
     console.error("Error generating competitor analysis:", error)

@@ -25,8 +25,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const cityName = location || "German city"
     const specialtyName = specialty || "medical practice"
 
-    // Create a unique prompt for each analysis based on its characteristics
-    const prompt = `Photorealistic image of a modern ${specialtyName} medical clinic exterior in ${cityName}, Germany. Professional healthcare building with clean architecture, glass entrance, medical cross or health symbol visible, beautiful landscaping, sunny day, high quality architectural photography, 8k resolution, professional lighting`
+    // Map German specialties to English for better image generation
+    const specialtyMap: Record<string, string> = {
+      "Allgemeinmedizin": "general medicine family practice",
+      "Innere Medizin": "internal medicine",
+      "Kardiologie": "cardiology heart clinic",
+      "Orthopädie": "orthopedic clinic",
+      "Dermatologie": "dermatology skin clinic",
+      "Gynäkologie": "gynecology womens health",
+      "Pädiatrie": "pediatric childrens clinic",
+      "Zahnmedizin": "dental practice",
+      "Augenheilkunde": "ophthalmology eye clinic",
+      "HNO": "ENT ear nose throat clinic",
+      "Neurologie": "neurology clinic",
+      "Psychiatrie": "psychiatry mental health",
+      "Urologie": "urology clinic",
+      "Chirurgie": "surgery clinic",
+    }
+
+    // Try to match specialty
+    let englishSpecialty = "healthcare medical"
+    for (const [de, en] of Object.entries(specialtyMap)) {
+      if (specialtyName.toLowerCase().includes(de.toLowerCase())) {
+        englishSpecialty = en
+        break
+      }
+    }
+
+    // Create a prompt that avoids text generation (which causes garbled artifacts)
+    const prompt = `Aerial drone photograph of a modern medical clinic building in a small German city, ${englishSpecialty} facility, contemporary European architecture with white and glass facade, surrounded by green trees and parking area, warm golden hour sunlight, no text no letters no words no signs no logos, clean minimalist design, professional architectural photography, sharp focus, 8k ultra high resolution`
 
     // Generate image using fal.ai flux/schnell
     const result = await fal.subscribe("fal-ai/flux/schnell", {

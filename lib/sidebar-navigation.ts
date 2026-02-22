@@ -461,13 +461,7 @@ export function getNavigationGroups(
           key: "devices",
           badge: "devices",
         },
-        {
-          name: t("sidebar.tickets", "Meine Tickets"),
-          href: "/tickets",
-          icon: Bug,
-          key: "tickets",
-          badge: "tickets",
-        },
+
         {
           name: t("sidebar.settings", "Einstellungen"),
           href: "/settings",

@@ -28,10 +28,8 @@ import { toast } from "sonner"
 interface GoogleBusinessSettings {
   id?: string
   practice_id: number
-  client_id: string
-  client_secret_encrypted: string
-  account_id: string
-  location_id: string
+  api_key: string
+  place_id: string
   location_name: string
   is_connected: boolean
   last_sync_at: string | null
@@ -39,6 +37,8 @@ interface GoogleBusinessSettings {
   last_sync_error: string | null
   auto_sync_enabled: boolean
   sync_frequency_hours: number
+  average_rating: number | null
+  total_reviews: number | null
 }
 
 export function InterfacesTab() {
@@ -49,14 +49,12 @@ export function InterfacesTab() {
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
-  const [showClientSecret, setShowClientSecret] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   const [settings, setSettings] = useState<GoogleBusinessSettings>({
     practice_id: practiceId || 0,
-    client_id: "",
-    client_secret_encrypted: "",
-    account_id: "",
-    location_id: "",
+    api_key: "",
+    place_id: "",
     location_name: "",
     is_connected: false,
     last_sync_at: null,
@@ -64,6 +62,8 @@ export function InterfacesTab() {
     last_sync_error: null,
     auto_sync_enabled: false,
     sync_frequency_hours: 24,
+    average_rating: null,
+    total_reviews: null,
   })
 
   useEffect(() => {
@@ -97,7 +97,12 @@ export function InterfacesTab() {
       const response = await fetch(`/api/practices/${practiceId}/integrations/google-business`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({
+          api_key: settings.api_key,
+          place_id: settings.place_id,
+          auto_sync_enabled: settings.auto_sync_enabled,
+          sync_frequency_hours: settings.sync_frequency_hours,
+        }),
       })
 
       if (!response.ok) {
@@ -120,33 +125,40 @@ export function InterfacesTab() {
   }
 
   const handleTestConnection = async () => {
-    if (!practiceId) return
+    if (!settings.api_key || !settings.place_id) {
+      toast.error("Bitte geben Sie API Key und Place ID ein.")
+      return
+    }
     setIsTesting(true)
     try {
-      const response = await fetch(`/api/practices/${practiceId}/integrations/google-business/test`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+      // Test directly with Google Places API
+      const url = `https://places.googleapis.com/v1/places/${settings.place_id}?languageCode=de&key=${settings.api_key}`
+      const response = await fetch(url, {
+        headers: {
+          "X-Goog-FieldMask": "displayName,rating,userRatingCount",
+        },
       })
 
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        toast.success("Verbindung erfolgreich", {
-          description: `Verbunden mit: ${data.locationName || settings.location_name}`,
-        })
-        setSettings((prev) => ({
-          ...prev,
-          is_connected: true,
-          location_name: data.locationName || prev.location_name,
-        }))
-      } else {
-        throw new Error(data.error || "Connection test failed")
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error?.message || `API Fehler (${response.status})`)
       }
+
+      const data = await response.json()
+      toast.success("Verbindung erfolgreich", {
+        description: `Gefunden: ${data.displayName?.text || "Standort"} (${data.rating || "?"} Sterne, ${data.userRatingCount || 0} Bewertungen)`,
+      })
+      setSettings((prev) => ({
+        ...prev,
+        is_connected: true,
+        location_name: data.displayName?.text || prev.location_name,
+        average_rating: data.rating || null,
+        total_reviews: data.userRatingCount || 0,
+      }))
     } catch (error: any) {
       console.error("Error testing connection:", error)
       toast.error("Verbindung fehlgeschlagen", {
-        description: error.message || "Die Verbindung konnte nicht hergestellt werden.",
+        description: error.message || "Die Verbindung konnte nicht hergestellt werden. Pruefen Sie API Key und Place ID.",
       })
       setSettings((prev) => ({ ...prev, is_connected: false }))
     } finally {
@@ -158,13 +170,19 @@ export function InterfacesTab() {
     if (!practiceId) return
     setIsSyncing(true)
     try {
+      if (!settings.api_key || !settings.place_id) {
+        toast.error("Konfiguration fehlt", {
+          description: "Bitte geben Sie zuerst den API Key und die Place ID ein und speichern Sie.",
+        })
+        return
+      }
+
       const response = await fetch(`/api/practices/${practiceId}/reviews/import/google-business`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          accessToken: settings.client_secret_encrypted, // This should be the actual access token
-          accountId: settings.account_id,
-          locationId: settings.location_id,
+          apiKey: settings.api_key,
+          placeId: settings.place_id,
         }),
       })
 
@@ -172,8 +190,9 @@ export function InterfacesTab() {
 
       if (response.ok && data.success) {
         toast.success("Bewertungen synchronisiert", {
-          description: `${data.imported} neue Bewertungen importiert, ${data.skipped} übersprungen.`,
+          description: `${data.imported} neue Bewertungen importiert, ${data.skipped} uebersprungen. Gesamt bei Google: ${data.totalReviews || "?"}`,
         })
+        setSettings((prev) => ({ ...prev, is_connected: true }))
         await fetchSettings()
       } else {
         throw new Error(data.error || "Sync failed")
@@ -273,95 +292,63 @@ export function InterfacesTab() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Einrichtungsanleitung</AlertTitle>
             <AlertDescription className="mt-2 space-y-2">
-              <p>Um die Google Business Profile API zu nutzen, folgen Sie diesen Schritten:</p>
+              <p>Um Google Bewertungen automatisch abzurufen, brauchen Sie nur 2 Dinge:</p>
               <ol className="list-decimal list-inside space-y-1 text-sm">
-                <li>Erstellen Sie ein Projekt in der Google Cloud Console</li>
-                <li>Aktivieren Sie die "Google My Business API"</li>
-                <li>Erstellen Sie OAuth 2.0 Anmeldedaten (Web-Anwendung)</li>
-                <li>Tragen Sie die Client ID und das Client Secret hier ein</li>
-                <li>Ermitteln Sie Ihre Account ID und Location ID aus Ihrem Google Business Profil</li>
+                <li>Erstellen Sie einen API Key in der <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Console</a></li>
+                <li>Aktivieren Sie die <strong>Places API (New)</strong> in Ihrem Projekt</li>
+                <li>Suchen Sie Ihre <strong>Place ID</strong> auf <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="text-primary underline">Place ID Finder</a></li>
               </ol>
             </AlertDescription>
           </Alert>
 
           <Separator />
 
-          {/* OAuth Credentials */}
+          {/* API Key */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">OAuth 2.0 Anmeldedaten</h3>
+            <h3 className="text-sm font-medium">Google API Zugangsdaten</h3>
             
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="client_id">Client ID</Label>
+            <div className="space-y-2">
+              <Label htmlFor="api_key">API Key</Label>
+              <div className="relative">
                 <Input
-                  id="client_id"
-                  placeholder="xxxxxx.apps.googleusercontent.com"
-                  value={settings.client_id}
-                  onChange={(e) => setSettings({ ...settings, client_id: e.target.value })}
+                  id="api_key"
+                  type={showApiKey ? "text" : "password"}
+                  placeholder="AIzaSy..."
+                  value={settings.api_key}
+                  onChange={(e) => setSettings({ ...settings, api_key: e.target.value })}
+                  className="pr-10"
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                >
+                  {showApiKey ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="client_secret">Client Secret</Label>
-                <div className="relative">
-                  <Input
-                    id="client_secret"
-                    type={showClientSecret ? "text" : "password"}
-                    placeholder="GOCSPX-xxxxxxx"
-                    value={settings.client_secret_encrypted}
-                    onChange={(e) => setSettings({ ...settings, client_secret_encrypted: e.target.value })}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3"
-                    onClick={() => setShowClientSecret(!showClientSecret)}
-                  >
-                    {showClientSecret ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Erstellt in der Google Cloud Console unter APIs & Dienste &gt; Anmeldedaten
+              </p>
             </div>
-          </div>
 
-          <Separator />
-
-          {/* Account & Location IDs */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Google Business Profil</h3>
-            
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="account_id">Account ID</Label>
-                <Input
-                  id="account_id"
-                  placeholder="accounts/123456789"
-                  value={settings.account_id}
-                  onChange={(e) => setSettings({ ...settings, account_id: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Die Account ID finden Sie in der URL Ihres Google Business Profils
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="location_id">Location ID</Label>
-                <Input
-                  id="location_id"
-                  placeholder="locations/123456789"
-                  value={settings.location_id}
-                  onChange={(e) => setSettings({ ...settings, location_id: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Die Location ID finden Sie in den Standort-Einstellungen
-                </p>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="place_id">Place ID</Label>
+              <Input
+                id="place_id"
+                placeholder="ChIJ..."
+                value={settings.place_id}
+                onChange={(e) => setSettings({ ...settings, place_id: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Die eindeutige Google Place ID Ihrer Praxis. Finden Sie diese im{" "}
+                <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="text-primary underline">Place ID Finder</a>.
+              </p>
             </div>
 
             {settings.location_name && (
@@ -369,6 +356,11 @@ export function InterfacesTab() {
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
                   Verbundener Standort: <strong>{settings.location_name}</strong>
+                  {settings.average_rating && (
+                    <span className="ml-2 text-muted-foreground">
+                      ({settings.average_rating} Sterne, {settings.total_reviews} Bewertungen)
+                    </span>
+                  )}
                 </span>
               </div>
             )}
@@ -455,7 +447,7 @@ export function InterfacesTab() {
             <Button 
               variant="outline" 
               onClick={handleTestConnection} 
-              disabled={isTesting || !settings.client_id || !settings.account_id || !settings.location_id}
+              disabled={isTesting || !settings.api_key || !settings.place_id}
             >
               {isTesting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Verbindung testen
@@ -464,7 +456,7 @@ export function InterfacesTab() {
             <Button 
               variant="secondary" 
               onClick={handleSyncReviews} 
-              disabled={isSyncing || !settings.is_connected}
+              disabled={isSyncing || !settings.api_key || !settings.place_id}
             >
               {isSyncing ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

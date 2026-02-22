@@ -60,6 +60,7 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
   const [generating, setGenerating] = useState(false)
   const [generationStep, setGenerationStep] = useState<string>("")
   const [specialtyOpen, setSpecialtyOpen] = useState(false)
+  const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   // Parse practice data for defaults
   const practiceCity = (() => {
@@ -111,7 +112,7 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
     if (formData.specialties.length === 0) {
       toast({
         title: "Fehler",
-        description: "Bitte waehlen Sie mindestens eine Fachrichtung aus",
+        description: "Bitte wählen Sie mindestens eine Fachrichtung aus",
         variant: "destructive",
       })
       return
@@ -126,6 +127,8 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
       return
     }
 
+    const controller = new AbortController()
+    setAbortController(controller)
     setLoading(true)
     if (generateNow) {
       setGenerating(true)
@@ -137,6 +140,7 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
       const createResponse = await fetch(`/api/practices/${currentPractice.id}/competitor-analysis`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           location: formData.location,
           specialty: formData.specialties.join(", "),
@@ -162,7 +166,7 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
         // Start generating
         const generateResponse = await fetch(
           `/api/practices/${currentPractice.id}/competitor-analysis/${analysis.id}/generate`,
-          { method: "POST" },
+          { method: "POST", signal: controller.signal },
         )
 
         if (!generateResponse.ok) {
@@ -195,16 +199,24 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
 
       onSuccess()
     } catch (error) {
-      console.error("Error creating competitor analysis:", error)
-      toast({
-        title: "Fehler",
-        description: error instanceof Error ? error.message : "Analyse konnte nicht erstellt werden",
-        variant: "destructive",
-      })
+      if (error instanceof DOMException && error.name === "AbortError") {
+        toast({
+          title: "Abgebrochen",
+          description: "Die Analyse-Erstellung wurde abgebrochen.",
+        })
+      } else {
+        console.error("Error creating competitor analysis:", error)
+        toast({
+          title: "Fehler",
+          description: error instanceof Error ? error.message : "Analyse konnte nicht erstellt werden",
+          variant: "destructive",
+        })
+      }
     } finally {
       setLoading(false)
       setGenerating(false)
       setGenerationStep("")
+      setAbortController(null)
     }
   }
 
@@ -283,6 +295,17 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
                   <span>Empfehlungen generieren</span>
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => {
+                  abortController?.abort()
+                }}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Abbrechen
+              </Button>
             </div>
           </div>
         )}
@@ -351,7 +374,7 @@ export function CreateCompetitorAnalysisDialog({ open, onOpenChange, onSuccess }
                         ))}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">Fachrichtungen waehlen...</span>
+                      <span className="text-muted-foreground">Fachrichtungen wählen...</span>
                     )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>

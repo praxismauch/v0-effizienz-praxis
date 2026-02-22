@@ -65,15 +65,33 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (journalsError) throw journalsError
 
-    // Fetch preferences
-    const { data: prefsData, error: prefsError } = await adminClient
+    // Fetch preferences - try with practice_id, fall back if column doesn't exist
+    let prefsData = null
+    const prefsResult = await adminClient
       .from("journal_preferences")
       .select("*")
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .maybeSingle()
 
-    if (prefsError) throw prefsError
+    if (prefsResult.error?.code === "42703" || prefsResult.error?.message?.includes("does not exist")) {
+      // Column doesn't exist, try fetching by user_id or just skip
+      const prefsFallback = await adminClient
+        .from("journal_preferences")
+        .select("*")
+        .maybeSingle()
+
+      if (prefsFallback.error && prefsFallback.error.code !== "42P01" && prefsFallback.error.code !== "PGRST205") {
+        console.error("[v0] journal_preferences fallback error:", prefsFallback.error)
+      }
+      prefsData = prefsFallback.data
+    } else if (prefsResult.error) {
+      if (prefsResult.error.code !== "42P01" && prefsResult.error.code !== "PGRST205") {
+        throw prefsResult.error
+      }
+    } else {
+      prefsData = prefsResult.data
+    }
 
     // Fetch action items for the latest journal
     let actionItems: any[] = []

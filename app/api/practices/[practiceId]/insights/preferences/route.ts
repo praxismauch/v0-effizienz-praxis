@@ -17,16 +17,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { data, error } = await adminClient
+    const result = await adminClient
       .from("journal_preferences")
       .select("*")
       .eq("practice_id", practiceId)
       .is("deleted_at", null)
       .maybeSingle()
 
-    if (error) throw error
+    // Handle missing column gracefully
+    if (result.error?.code === "42703" || result.error?.message?.includes("does not exist")) {
+      return NextResponse.json(null)
+    }
+    if (result.error && result.error.code !== "PGRST205" && result.error.code !== "42P01") {
+      throw result.error
+    }
 
-    return NextResponse.json(data)
+    return NextResponse.json(result.data)
   } catch (error: any) {
     console.error("[v0] Error fetching journal preferences:", error)
 

@@ -37,6 +37,7 @@ import { Progress } from "@/components/ui/progress"
 import { useTranslation } from "@/contexts/translation-context"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BWADataTab } from "@/components/bwa-data-tab"
+import { BWAAuswertungTab } from "@/components/bwa-auswertung-tab"
 
 // BWA standard line items (German accounting standard)
 const BWA_CATEGORIES = {
@@ -423,190 +424,40 @@ export function BWAAnalysis() {
           </div>
         )}
 
-        {/* Tabs */}
+        {/* Two Main Tabs: Daten + Auswertung */}
         <Tabs value={detailTab} onValueChange={setDetailTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="data" className="gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5" />
+          <TabsList className="grid w-full grid-cols-2 h-11">
+            <TabsTrigger value="data" className="gap-2 text-sm">
+              <FileText className="h-4 w-4" />
               Daten
-              {ext && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">BWA</Badge>}
+              {(files.length > 0 || ext) && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] font-medium">
+                  {files.length > 0 ? `${files.length} Dateien` : "BWA"}
+                </Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="analysis" className="gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" />
-              Analyse
-            </TabsTrigger>
-            <TabsTrigger value="files" className="gap-1.5">
-              <FileText className="h-3.5 w-3.5" />
-              Dateien ({files.length})
-            </TabsTrigger>
-            <TabsTrigger value="overview" className="gap-1.5">
-              <Euro className="h-3.5 w-3.5" />
-              Positionen
+            <TabsTrigger value="auswertung" className="gap-2 text-sm">
+              <BarChart3 className="h-4 w-4" />
+              Auswertung
+              {ext && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] font-medium bg-primary/10 text-primary">
+                  Bereit
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
-          {/* Data Tab - Sophisticated BWA Dashboard */}
+          {/* DATEN TAB - Files, KI-Analyse Action, Extracted Data Table */}
           <TabsContent value="data" className="space-y-4">
-            <BWADataTab ext={ext} monthLabel={monthInfo?.fullLabel || ""} year={selectedMonth.year} />
-          </TabsContent>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
-            {ext ? (
-              <>
-                {/* Revenue Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Euro className="h-5 w-5 text-green-500" />
-                      Erlöse
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {BWA_CATEGORIES.revenue.items.map((item) => (
-                        <div key={item.key} className="flex items-center justify-between py-2 border-b last:border-0">
-                          <span className="text-sm text-muted-foreground">{item.label}</span>
-                          <span className="text-sm font-semibold">{formatCurrency(ext[item.key])}</span>
-                        </div>
-                      ))}
-                      <div className="flex items-center justify-between py-2 bg-green-50 dark:bg-green-950/20 rounded-lg px-3 -mx-3">
-                        <span className="text-sm font-bold">Gesamterlöse</span>
-                        <span className="text-lg font-bold text-green-600">{formatCurrency(ext.gesamterloese)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Costs Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingDown className="h-5 w-5 text-red-500" />
-                      Kosten
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {BWA_CATEGORIES.costs.items.map((item) => {
-                        const value = ext[item.key]
-                        const percentage = ext.umsatzerloese > 0 ? ((value || 0) / ext.umsatzerloese) * 100 : 0
-                        return (
-                          <div key={item.key} className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">{item.label}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</span>
-                                <span className="text-sm font-semibold w-28 text-right">{formatCurrency(value)}</span>
-                              </div>
-                            </div>
-                            <Progress value={Math.min(percentage, 100)} className="h-1.5" />
-                          </div>
-                        )
-                      })}
-                      <div className="flex items-center justify-between py-2 bg-red-50 dark:bg-red-950/20 rounded-lg px-3 -mx-3 mt-2">
-                        <span className="text-sm font-bold">Gesamtkosten</span>
-                        <span className="text-lg font-bold text-red-600">{formatCurrency(ext.gesamtkosten)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Results Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-primary" />
-                      Ergebnisse
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {BWA_CATEGORIES.results.items.map((item) => {
-                        const value = ext[item.key]
-                        return (
-                          <div key={item.key} className="flex items-center justify-between py-3 border-b last:border-0">
-                            <span className="text-sm font-medium">{item.label}</span>
-                            <span className={`text-lg font-bold ${(value || 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
-                              {formatCurrency(value)}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Key Ratios */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5 text-primary" />
-                      Kennzahlen
-                    </CardTitle>
-                    <CardDescription>Wichtige betriebswirtschaftliche Kennzahlen auf einen Blick</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div className="p-4 rounded-lg border bg-card">
-                        <p className="text-sm text-muted-foreground mb-1">Personalquote</p>
-                        <p className="text-2xl font-bold">{ext.personalquote?.toFixed(1)}%</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {ext.personalquote < 35 ? "Sehr gut" : ext.personalquote < 45 ? "Normal" : "Erhöht"}
-                        </p>
-                        <Progress
-                          value={Math.min(ext.personalquote, 100)}
-                          className={`h-2 mt-2 ${ext.personalquote < 35 ? "[&>div]:bg-green-500" : ext.personalquote < 45 ? "[&>div]:bg-amber-500" : "[&>div]:bg-red-500"}`}
-                        />
-                      </div>
-                      <div className="p-4 rounded-lg border bg-card">
-                        <p className="text-sm text-muted-foreground mb-1">Materialeinsatzquote</p>
-                        <p className="text-2xl font-bold">{ext.materialeinsatzquote?.toFixed(1)}%</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {ext.materialeinsatzquote < 10 ? "Sehr gut" : ext.materialeinsatzquote < 15 ? "Normal" : "Erhöht"}
-                        </p>
-                        <Progress
-                          value={Math.min(ext.materialeinsatzquote * 3, 100)}
-                          className={`h-2 mt-2 ${ext.materialeinsatzquote < 10 ? "[&>div]:bg-green-500" : ext.materialeinsatzquote < 15 ? "[&>div]:bg-amber-500" : "[&>div]:bg-red-500"}`}
-                        />
-                      </div>
-                      <div className="p-4 rounded-lg border bg-card">
-                        <p className="text-sm text-muted-foreground mb-1">Umsatzrendite</p>
-                        <p className={`text-2xl font-bold ${ext.umsatzrendite >= 0 ? "text-green-600" : "text-red-600"}`}>
-                          {ext.umsatzrendite?.toFixed(1)}%
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {ext.umsatzrendite > 20 ? "Exzellent" : ext.umsatzrendite > 10 ? "Gut" : ext.umsatzrendite > 0 ? "Ausbaufähig" : "Defizitär"}
-                        </p>
-                        <Progress
-                          value={Math.min(Math.max(ext.umsatzrendite + 10, 0), 100)}
-                          className={`h-2 mt-2 ${ext.umsatzrendite > 20 ? "[&>div]:bg-green-500" : ext.umsatzrendite > 10 ? "[&>div]:bg-amber-500" : "[&>div]:bg-red-500"}`}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">Noch keine Analyse vorhanden</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Laden Sie zuerst eine BWA hoch und starten Sie die KI-Analyse
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Files Tab */}
-          <TabsContent value="files" className="space-y-4">
+            {/* File Upload Section */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Hochgeladene Dateien</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Upload className="h-5 w-5 text-primary" />
+                      Hochgeladene Dateien
+                    </CardTitle>
                     <CardDescription>BWA-Dokumente für {monthInfo?.fullLabel} {selectedMonth.year}</CardDescription>
                   </div>
                   <label>
@@ -655,14 +506,7 @@ export function BWAAnalysis() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => {
-                              const url = file.url
-                              if (url?.toLowerCase().endsWith(".pdf") || file.file_name?.toLowerCase().endsWith(".pdf")) {
-                                window.open(`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`, "_blank", "noopener,noreferrer")
-                              } else {
-                                window.open(url, "_blank", "noopener,noreferrer")
-                              }
-                            }}
+                            onClick={() => window.open(file.url, "_blank", "noopener,noreferrer")}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -690,7 +534,7 @@ export function BWAAnalysis() {
               </CardContent>
             </Card>
 
-            {/* KI-Analyse CTA when files are present */}
+            {/* KI-Analyse CTA */}
             {files.length > 0 && selectedMonthData && (
               <Card className="border-purple-500/20 bg-gradient-to-r from-purple-500/5 to-indigo-500/5">
                 <CardContent className="flex items-center justify-between p-4">
@@ -699,7 +543,7 @@ export function BWAAnalysis() {
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">KI-Analyse starten</p>
+                      <p className="text-sm font-semibold">{ext ? "Erneut analysieren" : "KI-Analyse starten"}</p>
                       <p className="text-xs text-muted-foreground">
                         {files.length} {files.length === 1 ? "Datei" : "Dateien"} automatisch auswerten lassen
                       </p>
@@ -721,130 +565,50 @@ export function BWAAnalysis() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
 
-          {/* Analysis Tab */}
-          <TabsContent value="analysis" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>KI-Analyse</CardTitle>
-                    <CardDescription>
-                      Automatische Extraktion und Auswertung Ihrer BWA-Daten
-                    </CardDescription>
-                  </div>
-                  {selectedMonthData && files.length > 0 && (
-                    <Button
-                      onClick={() => selectedMonthData && handleAnalyze(selectedMonthData)}
-                      disabled={analyzing}
-                      className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white"
-                    >
-                      {analyzing ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4 mr-2" />
-                      )}
-                      {ext ? "Erneut analysieren" : "Analyse starten"}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {ext ? (
-                  <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <div className="flex items-start gap-3">
-                      <Sparkles className="h-5 w-5 text-purple-500 mt-0.5" />
-                      <div className="flex-1 space-y-3">
-                        <p className="font-medium text-purple-900 dark:text-purple-100">KI-Zusammenfassung</p>
-                        <div className="grid gap-2 text-sm text-purple-800 dark:text-purple-200">
-                          <p>
-                            Die BWA zeigt einen Umsatz von <strong>{formatCurrency(ext.umsatzerloese)}</strong> mit
-                            einem Betriebsergebnis von{" "}
-                            <strong className={ext.betriebsergebnis >= 0 ? "text-green-700" : "text-red-700"}>
-                              {formatCurrency(ext.betriebsergebnis)}
-                            </strong>.
-                          </p>
-                          <p>
-                            Die Personalquote liegt bei <strong>{ext.personalquote?.toFixed(1)}%</strong>
-                            {ext.personalquote < 35
-                              ? " und ist damit auf einem sehr guten Niveau."
-                              : ext.personalquote < 45
-                                ? " und liegt im normalen Bereich für eine Praxis."
-                                : " und ist erhöht. Eine Optimierung sollte geprüft werden."}
-                          </p>
-                          <p>
-                            Die Umsatzrendite beträgt{" "}
-                            <strong className={ext.umsatzrendite >= 0 ? "text-green-700" : "text-red-700"}>
-                              {ext.umsatzrendite?.toFixed(1)}%
-                            </strong>
-                            {ext.umsatzrendite > 20
-                              ? " - ein exzellentes Ergebnis."
-                              : ext.umsatzrendite > 10
-                                ? " - ein gutes Ergebnis."
-                                : ext.umsatzrendite > 0
-                                  ? " - hier besteht Optimierungspotenzial."
-                                  : " - die Praxis arbeitet aktuell defizitär."}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Sparkles className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                    <p className="text-muted-foreground">Noch keine Analyse durchgeführt</p>
-                    <p className="text-sm text-muted-foreground">
-                      {files.length > 0
-                        ? "Klicken Sie auf 'Analyse starten' um die BWA-Daten zu extrahieren"
-                        : "Laden Sie zuerst BWA-Dateien hoch"}
+            {/* KI Summary */}
+            {ext && (
+              <Card className="border-purple-200 dark:border-purple-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Sparkles className="h-5 w-5 text-purple-500" />
+                    KI-Zusammenfassung
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-lg space-y-2 text-sm text-purple-800 dark:text-purple-200">
+                    <p>
+                      Die BWA zeigt einen Umsatz von <strong>{formatCurrency(ext.umsatzerloese)}</strong> mit
+                      einem Betriebsergebnis von{" "}
+                      <strong className={ext.betriebsergebnis >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>
+                        {formatCurrency(ext.betriebsergebnis)}
+                      </strong>.
+                    </p>
+                    <p>
+                      Die Personalquote liegt bei <strong>{ext.personalquote?.toFixed(1)}%</strong>
+                      {ext.personalquote < 35
+                        ? " und ist damit auf einem sehr guten Niveau."
+                        : ext.personalquote < 45
+                          ? " und liegt im normalen Bereich."
+                          : " und ist erhöht."}
+                      {" "}Die Umsatzrendite beträgt{" "}
+                      <strong className={ext.umsatzrendite >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>
+                        {ext.umsatzrendite?.toFixed(1)}%
+                      </strong>
+                      {ext.umsatzrendite > 20 ? " - exzellent." : ext.umsatzrendite > 10 ? " - gut." : ext.umsatzrendite > 0 ? " - ausbaufähig." : " - defizitär."}
                     </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Extracted BWA Data Table */}
+            <BWADataTab ext={ext} monthLabel={monthInfo?.fullLabel || ""} year={selectedMonth.year} />
           </TabsContent>
 
-          {/* Cost Structure Tab */}
-          <TabsContent value="details" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Detaillierte Kostenstruktur</CardTitle>
-                <CardDescription>Alle extrahierten BWA-Positionen im Überblick</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {ext ? (
-                  <ScrollArea className="h-[500px]">
-                    <div className="space-y-6">
-                      {Object.entries(BWA_CATEGORIES).map(([catKey, category]) => (
-                        <div key={catKey}>
-                          <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">
-                            {category.label}
-                          </h4>
-                          <div className="space-y-1">
-                            {category.items.map((item) => (
-                              <div
-                                key={item.key}
-                                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50"
-                              >
-                                <span className="text-sm">{item.label}</span>
-                                <span className="text-sm font-semibold tabular-nums">
-                                  {formatCurrency(ext[item.key])}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p>Keine Daten verfügbar. Führen Sie zuerst eine Analyse durch.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          {/* AUSWERTUNG TAB - Charts, Diagrams, Visual Analysis */}
+          <TabsContent value="auswertung" className="space-y-4">
+            <BWAAuswertungTab ext={ext} monthLabel={monthInfo?.fullLabel || ""} year={selectedMonth.year} />
           </TabsContent>
         </Tabs>
 

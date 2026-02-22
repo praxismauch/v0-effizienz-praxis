@@ -20,12 +20,6 @@ import { useAnalyticsData } from "@/contexts/analytics-data-context"
 export function AnalyticsOverview() {
   const { practiceGrowthData, taskCategoryData, teamSatisfactionData } = useAnalyticsData()
 
-  console.log("[v0] AnalyticsOverview data:", {
-    growthCount: practiceGrowthData?.length,
-    categoryCount: taskCategoryData?.length,
-    satisfactionCount: teamSatisfactionData?.length,
-  })
-
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {/* Practice Growth */}

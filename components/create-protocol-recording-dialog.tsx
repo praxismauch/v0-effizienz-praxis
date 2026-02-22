@@ -110,7 +110,6 @@ export default function CreateProtocolRecordingDialog({
 
   const transcribeLiveChunks = async () => {
     if (audioChunksRef.current.length === 0) {
-      console.log("[v0] No new audio chunks to transcribe, skipping this interval")
       return
     }
 
@@ -122,11 +121,8 @@ export default function CreateProtocolRecordingDialog({
       const audioBlob = new Blob(chunksToTranscribe, { type: "audio/webm" })
 
       if (audioBlob.size < 1000) {
-        console.log("[v0] Audio blob too small:", audioBlob.size, "bytes, skipping")
         return // Skip very small chunks
       }
-
-      console.log("[v0] Transcribing audio chunk:", audioBlob.size, "bytes")
 
       const formData = new FormData()
       formData.append("audio", audioBlob, "chunk.webm")
@@ -139,11 +135,9 @@ export default function CreateProtocolRecordingDialog({
 
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Transcription response received:", data.text?.substring(0, 50))
         if (data.text && data.text.trim()) {
           setLiveTranscript((prev) => {
             const newText = prev ? `${prev} ${data.text}` : data.text
-            console.log("[v0] Updated live transcript, length:", newText.length)
             return newText
           })
         }
@@ -159,7 +153,6 @@ export default function CreateProtocolRecordingDialog({
   }
 
   const startRecording = async () => {
-    console.log("[v0] Dialog: Starting recording...")
     setIsStarting(true)
     setError(null)
     setLiveTranscript("")
@@ -170,9 +163,7 @@ export default function CreateProtocolRecordingDialog({
         throw new Error("Ihr Browser unterstützt keine Audio-Aufnahme")
       }
 
-      console.log("[v0] Dialog: Requesting microphone access...")
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      console.log("[v0] Dialog: Microphone access granted")
 
       setAudioStream(stream)
 
@@ -182,8 +173,6 @@ export default function CreateProtocolRecordingDialog({
           ? "audio/webm"
           : "audio/mp4"
 
-      console.log("[v0] Dialog: Using mime type:", mimeType)
-
       const mediaRecorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = mediaRecorder
       audioChunksRef.current = []
@@ -191,11 +180,9 @@ export default function CreateProtocolRecordingDialog({
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          console.log("[v0] Audio chunk received:", event.data.size, "bytes, type:", event.data.type)
           audioChunksRef.current.push(event.data)
           allAudioChunksRef.current.push(event.data)
         } else {
-          console.log("[v0] Empty audio chunk received (silence or no input)")
         }
       }
 
@@ -205,12 +192,10 @@ export default function CreateProtocolRecordingDialog({
       }
 
       mediaRecorder.start(1000)
-      console.log("[v0] Dialog: MediaRecorder started, state:", mediaRecorder.state)
 
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       if (isUnmountingRef.current) {
-        console.log("[v0] Dialog: Component unmounting, stopping recorder")
         mediaRecorder.stop()
         stream.getTracks().forEach((track) => track.stop())
         return
@@ -260,7 +245,6 @@ export default function CreateProtocolRecordingDialog({
   }
 
   const stopRecording = async () => {
-    console.log("[v0] Dialog: Stopping recording...")
 
     if (timerRef.current) {
       clearInterval(timerRef.current)
@@ -310,10 +294,8 @@ export default function CreateProtocolRecordingDialog({
 
   const transcribeAudio = async () => {
     try {
-      console.log("[v0] Dialog: Transcribing full audio...")
       setIsTranscribing(true)
       const audioBlob = new Blob(allAudioChunksRef.current, { type: "audio/webm" })
-      console.log("[v0] Dialog: Audio blob size:", audioBlob.size, "bytes")
 
       const formData = new FormData()
       formData.append("audio", audioBlob, "recording.webm")
@@ -326,7 +308,6 @@ export default function CreateProtocolRecordingDialog({
 
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Dialog: Transcription complete:", data.text?.substring(0, 100))
 
         if (data.text && onTranscriptComplete) {
           onTranscriptComplete(

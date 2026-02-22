@@ -177,9 +177,7 @@ export default function SchwarzesBrettClient() {
   const [formData, setFormData] = useState(defaultFormData)
 
   const fetchPosts = useCallback(async () => {
-  console.log("[v0] fetchPosts called, practiceId=", practiceId, "activeTab=", activeTab)
   if (!practiceId) {
-  console.log("[v0] fetchPosts: no practiceId, aborting")
   return
   }
   try {
@@ -193,11 +191,9 @@ export default function SchwarzesBrettClient() {
       params.set("archived", activeTab === "archiv" ? "true" : "false")
 
   const url = `/api/practices/${practiceId}/bulletin?${params}`
-  console.log("[v0] fetchPosts: calling", url)
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
   const data = await res.json()
-  console.log("[v0] fetchPosts: got", (data.posts || []).length, "posts")
   setPosts(data.posts || [])
 
       // Fetch counts for both tabs
@@ -221,11 +217,9 @@ export default function SchwarzesBrettClient() {
 
   useEffect(() => {
   if (practiceId) {
-  console.log("[v0] SchwarzesBrett: triggering fetchPosts, practiceId=", practiceId)
   setIsLoading(true)
   fetchPosts()
   } else {
-  console.log("[v0] SchwarzesBrett: no practiceId yet, skipping fetch")
   }
   }, [fetchPosts, practiceId])
 

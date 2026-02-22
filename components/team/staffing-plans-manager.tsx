@@ -155,7 +155,6 @@ export function StaffingPlansManager({
 
   const onEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
-    console.log("[v0] Edit clicked")
     const plan = plans.find((p) => p.id === selectedPlanId)
     if (plan) {
       handleOpenDialog(plan)
@@ -164,7 +163,6 @@ export function StaffingPlansManager({
 
   const onDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
-    console.log("[v0] Delete clicked")
     setPlanToDelete(selectedPlanId)
     setIsDeleteDialogOpen(true)
   }

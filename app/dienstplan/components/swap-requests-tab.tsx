@@ -23,7 +23,6 @@ export default function SwapRequestsTab({ swapRequests, onApprove, onReject, isL
     if (typeof onApprove === "function") {
       onApprove(id)
     } else {
-      console.log("[v0] Approve swap clicked - handler not provided:", id)
     }
   }
 
@@ -31,7 +30,6 @@ export default function SwapRequestsTab({ swapRequests, onApprove, onReject, isL
     if (typeof onReject === "function") {
       onReject(id)
     } else {
-      console.log("[v0] Reject swap clicked - handler not provided:", id)
     }
   }
   const pendingRequests = (swapRequests || []).filter((r) => r.status === "pending")

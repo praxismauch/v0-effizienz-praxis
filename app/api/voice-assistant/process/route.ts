@@ -9,8 +9,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid command" }, { status: 400 })
     }
 
-    console.log("[v0] Processing voice command:", command)
-
     // Use AI to interpret the command
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
@@ -37,8 +35,6 @@ Antworte NUR mit einem JSON-Objekt in diesem Format:
 }`,
       prompt: `Befehl: "${command}"`,
     })
-
-    console.log("[v0] AI response:", text)
 
     // Parse the AI response
     const commandData = JSON.parse(text)

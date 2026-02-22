@@ -21,7 +21,6 @@ export async function GET() {
     const cached = await getCached<{ openCount: number }>(cacheKey)
 
     if (cached) {
-      console.log(`[v0] Cache hit for ticket stats: ${user.id}`)
       return NextResponse.json(cached)
     }
 

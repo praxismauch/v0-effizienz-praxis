@@ -96,16 +96,11 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
   }
 
   const handleSave = async () => {
-    console.log("[v0] ROI Edit - Starting save")
     
     if (!serviceName.trim()) {
-      console.log("[v0] ROI Edit - Validation failed: empty service name")
       alert("Bitte geben Sie einen Namen für die Leistung ein.")
       return
     }
-
-    console.log("[v0] ROI Edit - Analysis ID:", analysisId)
-    console.log("[v0] ROI Edit - Service name:", serviceName)
 
     setSaving(true)
     try {
@@ -127,19 +122,14 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
         demand_optimistic: Number(demandOptimistic) || 0,
       }
 
-      console.log("[v0] ROI Edit - Payload:", payload)
-
       const response = await fetch(`/api/roi-analysis/${analysisId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
 
-      console.log("[v0] ROI Edit - Response status:", response.status)
-
       if (response.ok) {
         const updatedAnalysis = await response.json()
-        console.log("[v0] ROI Edit - Success, updated analysis:", updatedAnalysis)
         setAnalysis(updatedAnalysis)
         setIsEditing(false)
         onUpdated()
@@ -153,7 +143,6 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
       console.error("[v0] ROI Edit - Exception:", error)
       alert("Fehler beim Speichern: " + (error instanceof Error ? error.message : String(error)))
     } finally {
-      console.log("[v0] ROI Edit - Save completed, setSaving(false)")
       setSaving(false)
     }
   }

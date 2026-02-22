@@ -13,8 +13,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Backup ID is required" }, { status: 400 })
     }
 
-    console.log("[v0] Downloading backup:", backupId)
-
     const { data: backup, error: backupError } = await supabase
       .from("backups")
       .select("*")

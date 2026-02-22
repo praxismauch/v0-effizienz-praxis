@@ -9,8 +9,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { searchParams } = new URL(request.url)
     const limit = Number.parseInt(searchParams.get("limit") || "52")
 
-    console.log("[v0] GET self-checks for userId:", userId)
-
     const { data, error } = await supabase
       .from("user_self_checks")
       .select("*")
@@ -24,7 +22,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message, details: error }, { status: 500 })
     }
 
-    console.log("[v0] Fetched self-checks count:", data?.length || 0)
     return NextResponse.json(data || [])
   } catch (error) {
     console.error("[v0] Error in self-checks GET:", error)
@@ -37,9 +34,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { userId } = await params
     const body = await request.json()
     const supabase = await createAdminClient()
-
-    console.log("[v0] POST self-check for userId:", userId)
-    console.log("[v0] Request body:", JSON.stringify(body, null, 2))
 
     // Calculate overall score
     const dimensions = [
@@ -63,8 +57,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .eq("assessment_date", assessmentDate)
       .maybeSingle()
 
-    console.log("[v0] Existing record:", existing)
-
     const practiceIdInt = body.practice_id ? Number.parseInt(String(body.practice_id), 10) : null
 
     const recordData = {
@@ -86,12 +78,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let data, error
 
     if (existing?.id) {
-      console.log("[v0] Updating existing record:", existing.id)
       const result = await supabase.from("user_self_checks").update(recordData).eq("id", existing.id).select().single()
       data = result.data
       error = result.error
     } else {
-      console.log("[v0] Inserting new record")
       const result = await supabase.from("user_self_checks").insert(recordData).select().single()
       data = result.data
       error = result.error
@@ -113,7 +103,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
-    console.log("[v0] Successfully saved self-check:", data?.id)
     return NextResponse.json(data)
   } catch (error) {
     console.error("[v0] Error in self-checks POST:", error)

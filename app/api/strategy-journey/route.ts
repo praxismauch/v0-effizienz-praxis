@@ -387,8 +387,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { practiceId, stepKey, status, notes, progressData } = body
 
-    console.log("[v0] Strategy journey update request:", { practiceId, stepKey, status })
-
     if (!practiceId || !stepKey) {
       return NextResponse.json({ error: "Practice ID and step key required" }, { status: 400 })
     }
@@ -398,19 +396,14 @@ export async function POST(req: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      console.log("[v0] No user found in session")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    console.log("[v0] User authenticated:", user.id)
 
     const { data: userCheck, error: userError } = await supabase
       .from("users")
       .select("practice_id, role")
       .eq("id", user.id)
       .single()
-
-    console.log("[v0] User check result:", { userCheck, userError })
 
     if (userError || !userCheck) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -421,7 +414,6 @@ export async function POST(req: NextRequest) {
     }
 
     const serviceSupabase = createServiceClient()
-    console.log("[v0] Using service role client for upsert")
 
     const stepNumber = STRATEGY_STEPS.find((s) => s.key === stepKey)?.number || 0
 
@@ -437,8 +429,6 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
-    console.log("[v0] Upserting with data:", upsertData)
-
     const { data, error } = await serviceSupabase
       .from("strategy_journey_progress")
       .upsert(upsertData, {
@@ -450,8 +440,6 @@ export async function POST(req: NextRequest) {
       console.error("[v0] Supabase upsert error:", error)
       throw error
     }
-
-    console.log("[v0] Upsert successful:", data)
 
     return NextResponse.json({ progress: data?.[0] || data })
   } catch (error: any) {

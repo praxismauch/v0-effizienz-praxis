@@ -125,38 +125,30 @@ export function OrgaCategoriesManager() {
 
   useEffect(() => {
     if (practiceId && !practiceLoading) {
-      console.log("[v0] OrgaCategoriesManager - Fetching categories for practice:", practiceId)
       fetchCategories()
     } else if (!practiceLoading && !practiceId) {
-      console.log("[v0] OrgaCategoriesManager - No practice ID available")
       setIsLoading(false)
     }
   }, [practiceId, practiceLoading])
 
   const fetchCategories = async () => {
     if (!practiceId) {
-      console.log("[v0] OrgaCategoriesManager - No practiceId, skipping fetch")
       setIsLoading(false)
       return
     }
 
-    console.log("[v0] OrgaCategoriesManager - Fetching categories from API")
     setIsLoading(true)
     setFetchError(null)
     try {
       const url = `/api/practices/${practiceId}/orga-categories`
-      console.log("[v0] OrgaCategoriesManager - Fetch URL:", url)
       
       const response = await fetch(url)
-      console.log("[v0] OrgaCategoriesManager - Response status:", response.status)
       
       if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`)
       }
       
       const data = await response.json()
-      console.log("[v0] OrgaCategoriesManager - Received data:", data)
-      console.log("[v0] OrgaCategoriesManager - Categories count:", data.categories?.length || 0)
       
       setCategories(data.categories || [])
     } catch (error) {
@@ -176,7 +168,6 @@ export function OrgaCategoriesManager() {
       return
     }
 
-    console.log("[v0] OrgaCategoriesManager - Initializing default categories")
     setIsInitializing(true)
     try {
       const response = await fetch(`/api/practices/${practiceId}/orga-categories/init-defaults`, {
@@ -186,7 +177,6 @@ export function OrgaCategoriesManager() {
       const data = await response.json()
 
       if (response.ok) {
-        console.log("[v0] OrgaCategoriesManager - Initialization success:", data)
         toast.success("Standard-Kategorien wurden erstellt")
         await fetchCategories() // Reload categories
       } else {

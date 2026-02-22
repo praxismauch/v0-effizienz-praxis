@@ -61,7 +61,6 @@ export async function apiClient<T = any>(
       if (response.status === 401) {
         // If this is the last attempt or retry is disabled, redirect to login
         if (attempt === maxRetries || skipRetry) {
-          console.log("[v0] API Client: Max retries reached for 401, redirecting to login")
           // Only redirect on client side
           if (typeof window !== "undefined") {
             const currentPath = window.location.pathname
@@ -72,7 +71,6 @@ export async function apiClient<T = any>(
 
         // Wait before retrying with exponential backoff
         const delay = retryDelay * Math.pow(2, attempt)
-        console.log(`[v0] API Client: 401 on attempt ${attempt + 1}, retrying in ${delay}ms`)
         await new Promise((resolve) => setTimeout(resolve, delay))
         continue
       }

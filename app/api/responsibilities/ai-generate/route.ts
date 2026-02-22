@@ -8,11 +8,6 @@ export async function POST(request: NextRequest) {
     let responsibilitiesData
 
     try {
-      console.log("[v0] Attempting AI responsibilities generation with:", {
-        practiceType,
-        teamSize,
-        hasContext: !!context,
-      })
 
       const prompt = `Du bist ein Experte für Praxismanagement und Aufgabenverteilung in medizinischen Einrichtungen.
 
@@ -40,15 +35,11 @@ Antworte ausschließlich mit einem JSON-Array von Zuständigkeiten in folgendem 
         maxOutputTokens: 2000,
       })
 
-      console.log("[v0] AI generation successful, parsing response")
-
       const cleanedText = text.trim().replace(/```json\n?|\n?```/g, "")
       responsibilitiesData = JSON.parse(cleanedText)
 
-      console.log("[v0] Responsibilities data parsed successfully:", responsibilitiesData.length, "responsibilities")
     } catch (aiError) {
       const errorMessage = aiError instanceof Error ? aiError.message : String(aiError)
-      console.log("[v0] AI generation failed, using intelligent fallback. Reason:", errorMessage)
 
       const fallbackResponsibilities = [
         {
@@ -90,7 +81,6 @@ Antworte ausschließlich mit einem JSON-Array von Zuständigkeiten in folgendem 
       ]
 
       responsibilitiesData = fallbackResponsibilities
-      console.log("[v0] Using fallback responsibilities:", responsibilitiesData.length, "responsibilities")
     }
 
     return NextResponse.json({ responsibilities: responsibilitiesData })

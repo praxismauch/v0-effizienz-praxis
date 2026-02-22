@@ -4,7 +4,6 @@ import { getApiClient } from "@/lib/supabase/admin"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] GET hygiene-plans for practice:", practiceId)
     const supabase = await getApiClient()
 
     const { data: hygienePlans, error } = await supabase
@@ -25,7 +24,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       category: plan.area || "",
     }))
 
-    console.log("[v0] Successfully fetched", mappedPlans.length, "hygiene plans")
     return NextResponse.json({ hygienePlans: mappedPlans })
   } catch (error) {
     console.error("[v0] Error in hygiene plans GET:", error)
@@ -62,7 +60,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Created hygiene plan:", hygienePlan.id)
     return NextResponse.json({ hygienePlan }, { status: 201 })
   } catch (error) {
     console.error("[v0] Error in hygiene plans POST:", error)

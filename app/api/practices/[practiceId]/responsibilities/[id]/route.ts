@@ -16,7 +16,6 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, delay = 500): 
         throw error
       }
 
-      console.log(`[v0] Retry ${i + 1}/${maxRetries} after error:`, error)
       await new Promise((resolve) => setTimeout(resolve, delay * Math.pow(2, i)))
     }
   }
@@ -26,8 +25,6 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, delay = 500): 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ practiceId: string; id: string }> }) {
   try {
     const { practiceId, id } = await params
-
-    console.log("[v0] Updating responsibility:", { practiceId, id })
 
     if (!practiceId || !id) {
       console.error("[v0] Missing required params:", { practiceId, id })
@@ -79,8 +76,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Name is required" }, { status: 400 })
     }
 
-    console.log("[v0] Updating with data:", { name, responsible_user_id, suggested_hours_per_week })
-
     const { data, error } = await withRetry(async () => {
       return supabase
         .from("responsibilities")
@@ -120,8 +115,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       console.error("[v0] Responsibility not found:", { practiceId, id })
       return NextResponse.json({ error: "Responsibility not found" }, { status: 404 })
     }
-
-    console.log("[v0] Responsibility updated successfully:", data.id)
 
     const enrichedData = {
       ...data,

@@ -11,8 +11,6 @@ export async function POST(request: NextRequest) {
     // Get the base URL from the request
     const url = new URL("/api/cron/daily-backup", request.url)
 
-    console.log("[v0] Manually triggering daily backup cron at:", url.toString())
-
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
@@ -31,7 +29,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("[v0] Trigger backup completed:", result)
     return NextResponse.json(result)
   } catch (error: any) {
     console.error("[v0] Error triggering backup:", error)

@@ -5,14 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin"
 export async function GET(request: Request, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] Arbeitsplaetze API - GET called with practiceId:", practiceId)
 
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
-
-    console.log("[v0] Arbeitsplaetze API - user:", user?.id)
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -28,8 +25,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .is("deleted_at", null)
       .eq("is_active", true)
       .order("name")
-
-    console.log("[v0] Arbeitsplaetze API - fetched count:", arbeitsplaetzeData?.length, "error:", error)
 
     if (error) {
       console.error("Error fetching arbeitsplaetze:", error)
@@ -62,8 +57,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       ...arbeitsplatz,
       room: arbeitsplatz.raum_id ? roomsMap[arbeitsplatz.raum_id] || null : null,
     })) || []
-
-    console.log("[v0] Arbeitsplaetze API - enriched with rooms, final count:", data.length)
 
     return NextResponse.json({ arbeitsplaetze: data })
   } catch (error: any) {

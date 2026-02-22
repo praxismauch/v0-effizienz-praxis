@@ -67,8 +67,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       created_by: user.id,
     }
 
-    console.log("[v0] Creating contact with data:", JSON.stringify(contactData))
-
     const { data: contact, error } = await supabase.from("contacts").insert(contactData).select().single()
 
     if (error) {

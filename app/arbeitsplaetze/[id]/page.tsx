@@ -143,12 +143,6 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
 
     setSaving(true)
     try {
-      console.log("[v0] Creating anweisung with:", {
-        practiceId,
-        arbeitsplatzId: resolvedParams.id,
-        title: formData.title,
-        content: formData.content,
-      })
 
       const response = await fetch(`/api/practices/${practiceId}/arbeitsplaetze/${resolvedParams.id}/anweisungen`, {
         method: "POST",
@@ -161,7 +155,6 @@ export default function ArbeitsplatzDetailPage({ params }: { params: Promise<{ i
       })
 
       const result = await response.json()
-      console.log("[v0] Create anweisung response:", response.status, result)
 
       if (!response.ok) {
         throw new Error(result.error || "Failed to create")

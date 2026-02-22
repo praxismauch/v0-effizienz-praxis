@@ -177,9 +177,6 @@ Antworte auf Deutsch, präzise und hilfreich. Verwende die verfügbaren Daten, u
         messages.push({ role: "user", content: message })
       }
 
-      console.log("[v0] AI Chat - Generating response with model: anthropic/claude-sonnet-4-20250514")
-      console.log("[v0] AI Chat - Messages count:", messages.length)
-      
       const result = await generateText({
         model: "anthropic/claude-sonnet-4-20250514",
         messages,
@@ -187,7 +184,6 @@ Antworte auf Deutsch, präzise und hilfreich. Verwende die verfügbaren Daten, u
         temperature: 0.7,
       })
       
-      console.log("[v0] AI Chat - Response generated successfully")
       text = result.text
     } catch (aiError) {
       console.error("[v0] AI Chat - AI generation error:", aiError)

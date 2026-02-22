@@ -3,7 +3,6 @@
  */
 
 export function validatePracticeId(practiceId: string | number | null | undefined, source = "Unknown"): string {
-  console.log(`[v0] Validating practiceId from ${source}:`, practiceId)
 
   if (!practiceId || practiceId === "" || practiceId === "0" || practiceId === "undefined" || practiceId === "null") {
     const error = `Invalid or missing practice ID from ${source}: ${practiceId}`

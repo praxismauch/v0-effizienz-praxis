@@ -5,8 +5,6 @@ export async function POST(request: NextRequest) {
   try {
     const { existingCategories } = await request.json()
 
-    console.log("[v0] Generating AI suggestions for testing categories, existing:", existingCategories)
-
     const prompt = `Du bist ein Experte für Softwaretest-Management. 
 
 Bestehende Test-Kategorien: ${existingCategories.length > 0 ? existingCategories.join(", ") : "Keine"}
@@ -44,8 +42,6 @@ WICHTIG: Gib NUR das JSON-Array zurück, ohne zusätzlichen Text oder Markdown-F
       prompt,
     })
 
-    console.log("[v0] AI response received, length:", text.length)
-
     let suggestions
     try {
       // Try to parse the entire text as JSON first
@@ -72,8 +68,6 @@ WICHTIG: Gib NUR das JSON-Array zurück, ohne zusätzlichen Text oder Markdown-F
       console.error("[v0] No valid suggestions found")
       throw new Error("Keine gültigen Vorschläge erhalten")
     }
-
-    console.log("[v0] Successfully generated", validSuggestions.length, "suggestions")
 
     return NextResponse.json({ suggestions: validSuggestions })
   } catch (error) {

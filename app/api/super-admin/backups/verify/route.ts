@@ -97,8 +97,6 @@ export async function GET(request: NextRequest) {
       throw backupsError
     }
 
-    console.log(`[v0] Batch verifying ${backups?.length || 0} backups...`)
-
     const results = []
 
     for (const backup of backups || []) {
@@ -180,7 +178,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Keine Backup-URL vorhanden" }, { status: 400 })
     }
 
-    console.log(`[v0] Verifying backup ${backupId}...`)
     const verification = await verifyBackupFile(backup.file_url)
 
     // Update backup with verification results

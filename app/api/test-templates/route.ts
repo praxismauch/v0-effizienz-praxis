@@ -31,13 +31,10 @@ export async function POST(request: Request) {
     const supabase = await createAdminClient()
     const body = await request.json()
 
-    console.log("[v0] Creating test template with body:", body)
-
     if (body.category_id && typeof body.category_id === "string") {
       // Check if it's a UUID format, if not try to find the category by name
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
       if (!uuidRegex.test(body.category_id)) {
-        console.log("[v0] category_id is not a UUID, attempting to find category by name:", body.category_id)
         const { data: category, error: categoryError } = await supabase
           .from("testing_categories")
           .select("id")
@@ -50,7 +47,6 @@ export async function POST(request: Request) {
         }
 
         body.category_id = category.id
-        console.log("[v0] Resolved category_id to UUID:", category.id)
       }
     }
 
@@ -69,7 +65,6 @@ export async function POST(request: Request) {
       throw error
     }
 
-    console.log("[v0] Successfully created test template:", data)
     return NextResponse.json(data)
   } catch (error) {
     console.error("[v0] Error creating test template:", error)

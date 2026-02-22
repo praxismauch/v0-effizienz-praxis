@@ -93,8 +93,6 @@ const SEOKeywordsManagerComponent = () => {
         target_position: formData.target_position ? Number.parseInt(formData.target_position) : null,
       }
 
-      console.log("[v0] Submitting keyword:", payload)
-
       if (editingKeyword) {
         // Update
         const response = await fetch(`/api/super-admin/seo/keywords/manage/${editingKeyword.id}`, {

@@ -27,8 +27,6 @@ export async function POST(request: NextRequest) {
       aiReasoning,
     } = body
 
-    console.log("[v0] Saving roadmap idea feedback:", feedbackType, "for:", ideaTitle)
-
     const practiceIdInt = practiceId ? Number.parseInt(String(practiceId), 10) : null
 
     const result = await sql`

@@ -23,12 +23,6 @@ export class PerformanceTracker {
   end() {
     const totalTime = Date.now() - this.startTime
 
-    console.log(`[v0] Performance: ${this.operationName} took ${totalTime}ms`, {
-      operation: this.operationName,
-      totalTime,
-      checkpoints: Object.fromEntries(this.metrics),
-    })
-
     // Alert on slow operations (>2s)
     if (totalTime > 2000) {
       console.warn(`[v0] SLOW OPERATION: ${this.operationName} took ${totalTime}ms`)

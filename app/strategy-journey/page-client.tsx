@@ -49,11 +49,9 @@ export default function PageClient({ practiceId }: PageClientProps) {
         return
       }
 
-      console.log("[v0] Fetching strategy journey steps for practice:", id)
       const response = await fetch(`/api/strategy-journey?practiceId=${id}`)
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Strategy journey data:", data)
         setSteps(data.steps || [])
         setSummary(data.summary || {})
       } else {
@@ -82,7 +80,6 @@ export default function PageClient({ practiceId }: PageClientProps) {
       const id = practiceId || currentPractice?.id
       if (!id) return
 
-      console.log("[v0] Starting step:", stepKey)
       const response = await fetch("/api/strategy-journey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,7 +91,6 @@ export default function PageClient({ practiceId }: PageClientProps) {
       })
 
       if (response.ok) {
-        console.log("[v0] Step started successfully")
         toast.success("Schritt gestartet")
         await fetchSteps()
         setDialogOpen(false)
@@ -114,7 +110,6 @@ export default function PageClient({ practiceId }: PageClientProps) {
       const id = practiceId || currentPractice?.id
       if (!id) return
 
-      console.log("[v0] Marking step as complete:", stepKey)
       const response = await fetch("/api/strategy-journey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,7 +121,6 @@ export default function PageClient({ practiceId }: PageClientProps) {
       })
 
       if (response.ok) {
-        console.log("[v0] Step marked as complete")
         toast.success("Schritt als erledigt markiert!")
         await fetchSteps()
         setDialogOpen(false)
@@ -148,7 +142,6 @@ export default function PageClient({ practiceId }: PageClientProps) {
       const id = practiceId || currentPractice?.id
       if (!id) return
 
-      console.log("[v0] Saving notes for step:", selectedStep.key)
       const response = await fetch("/api/strategy-journey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

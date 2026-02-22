@@ -3,10 +3,8 @@ import { createAdminClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("[v0] Email config API called")
 
     const supabase = await createAdminClient()
-    console.log("[v0] Supabase admin client created")
 
     // Check if SMTP settings exist in database
     const { data: smtpSettings, error } = await supabase.from("smtp_settings").select("*").limit(1).maybeSingle()
@@ -21,7 +19,6 @@ export async function GET(request: NextRequest) {
       apiKeyPrefix: hasSmtpConfig ? "SMTP konfiguriert" : null,
     }
 
-    console.log("[v0] Returning email config result (SMTP-based)")
     return NextResponse.json(result, {
       headers: {
         "Content-Type": "application/json",

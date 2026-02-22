@@ -4,11 +4,6 @@ import { generateText } from "ai"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    console.log("[v0] AI suggest templates request:", {
-      existingCount: body.existingTemplates?.length,
-      categoriesCount: body.categories?.length,
-      hasCustomPrompt: !!body.customPrompt,
-    })
 
     const { existingTemplates = [], categories = [], customPrompt } = body
 
@@ -75,14 +70,10 @@ Gib die Antwort als JSON-Array zurück mit diesem Format:
 Verteile die Test-Items sinnvoll auf verschiedene Kategorien.`
     }
 
-    console.log("[v0] Generating AI suggestions with prompt length:", prompt.length)
-
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
       prompt,
     })
-
-    console.log("[v0] AI response received, length:", text.length)
 
     // Parse JSON from response
     const jsonMatch = text.match(/\[[\s\S]*\]/)
@@ -92,7 +83,6 @@ Verteile die Test-Items sinnvoll auf verschiedene Kategorien.`
     }
 
     const suggestions = JSON.parse(jsonMatch[0])
-    console.log("[v0] Parsed AI suggestions:", suggestions.length)
 
     return NextResponse.json(
       { suggestions },

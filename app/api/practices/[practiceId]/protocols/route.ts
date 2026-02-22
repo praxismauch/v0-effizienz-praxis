@@ -38,8 +38,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const access = await requirePracticeAccess(practiceId)
     const supabase = access.adminClient
 
-    console.log("[v0] Creating protocol for practice:", practiceId, "by user:", access.user.id)
-
     const { title, description, content, category, status, protocol_date, action_items, attendees } = body
 
     if (!title?.trim()) {
@@ -75,7 +73,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Failed to create protocol" }, { status: 500 })
     }
 
-    console.log("[v0] Protocol created successfully:", protocol?.id)
     return NextResponse.json(protocol)
   } catch (error: any) {
     if (error.message?.includes("Not authenticated") || error.message?.includes("Access denied")) {

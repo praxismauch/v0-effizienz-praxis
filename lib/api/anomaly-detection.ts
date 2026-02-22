@@ -191,7 +191,6 @@ export async function blockIP(
       JSON.stringify({ reason, expiresAt, blockedAt: Date.now() })
     )
 
-    console.log(`[v0] Blocked IP ${ip} for ${durationSeconds}s: ${reason}`)
   } catch (error) {
     console.error("[v0] Failed to block IP:", error)
   }

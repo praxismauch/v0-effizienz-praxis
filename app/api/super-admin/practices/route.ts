@@ -40,8 +40,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: practicesError.message }, { status: 500 })
     }
 
-    console.log("[v0] Super admin practices fetched:", practices?.length || 0)
-
     const { data: practiceUsersData, error: practiceUsersError } = await supabase
       .from("practice_users")
       .select("practice_id, role, status")

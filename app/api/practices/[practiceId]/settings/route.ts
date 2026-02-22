@@ -111,7 +111,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { practiceId: rawPracticeId } = await params
     const practiceId = getEffectivePracticeId(rawPracticeId)
-    console.log("[v0] PATCH settings route hit, practiceId:", practiceId)
 
     let access
     try {
@@ -124,8 +123,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const body = await request.json()
 
-    console.log("[v0] Updating practice info for practice:", practiceId, "body keys:", Object.keys(body))
-
     // Only include defined fields to avoid Supabase rejecting undefined values
     const updatePayload: Record<string, any> = {
       updated_at: new Date().toISOString(),
@@ -136,8 +133,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         updatePayload[field] = body[field]
       }
     }
-
-    console.log("[v0] Update payload fields:", Object.keys(updatePayload))
 
     const { data, error } = await supabase
       .from("practices")
@@ -178,8 +173,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = access.adminClient
 
     const body = await request.json()
-
-    console.log("[v0] Updating practice settings for practice:", practiceId, "by user:", access.user.id)
 
     const { data: existingSettings } = await supabase
       .from("practice_settings")

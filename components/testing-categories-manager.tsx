@@ -141,7 +141,6 @@ function TestingCategoriesManager() {
   const handleAiSuggest = async () => {
     setIsAiSuggesting(true)
     try {
-      console.log("[v0] Requesting AI suggestions for testing categories")
 
       const response = await fetch("/api/testing-categories/ai-suggest", {
         method: "POST",
@@ -156,7 +155,6 @@ function TestingCategoriesManager() {
       }
 
       const data = await response.json()
-      console.log("[v0] Received AI suggestions:", data.suggestions?.length, "items")
 
       if (!data.suggestions || data.suggestions.length === 0) {
         throw new Error("Keine Vorschläge erhalten")

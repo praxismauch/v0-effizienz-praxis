@@ -55,7 +55,6 @@ export function UserApprovalList() {
       if (!response.ok) throw new Error("Failed to fetch users")
 
       const data = await response.json()
-      console.log(`[v0] Fetched users for ${status}:`, data.users?.length || 0)
       setUsers(data.users || [])
     } catch (error) {
       console.error("[v0] Error fetching users:", error)

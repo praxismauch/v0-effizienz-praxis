@@ -9,7 +9,6 @@ fal.config({
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    console.log("[v0] Generate profile request body:", body)
 
     const prompt = `Du bist ein Experte für Praxismarketing und Patientenprofilierung für medizinische Praxen in Deutschland.
 
@@ -47,14 +46,10 @@ Erstelle folgende Inhalte auf Deutsch:
 Formatiere deine Antwort IMMER als valides JSON mit den Feldern: patient_story, persona_description, marketing_strategy, communication_tips, service_recommendations (als Array von Strings).
 Gib NUR das JSON zurück, ohne zusätzlichen Text.`
 
-    console.log("[v0] Calling AI model...")
-
     const { text } = await generateText({
       model: "anthropic/claude-sonnet-4-20250514",
       prompt,
     })
-
-    console.log("[v0] AI response received, length:", text.length)
 
     // Parse the response
     let parsedResponse
@@ -63,12 +58,10 @@ Gib NUR das JSON zurück, ohne zusätzlichen Text.`
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         parsedResponse = JSON.parse(jsonMatch[0])
-        console.log("[v0] Successfully parsed AI response")
       } else {
         throw new Error("No JSON found in response")
       }
     } catch (parseError) {
-      console.log("[v0] Parse error, using fallback:", parseError)
       // Fallback: create structured response from text
       parsedResponse = {
         patient_story: "",
@@ -111,8 +104,6 @@ Gib NUR das JSON zurück, ohne zusätzlichen Text.`
 
       const imagePrompt = `Professional headshot portrait photograph of a ${ageDescription} ${genderWord}, ${occupationContext}, ${traits}. Natural lighting, clean background, high quality DSLR photography, sharp focus on face, warm and inviting expression, looking at camera. Photorealistic, professional portrait photography style.`
 
-      console.log("[v0] Generating image with fal AI, prompt:", imagePrompt)
-
       const result = (await fal.subscribe("fal-ai/flux/schnell", {
         input: {
           prompt: imagePrompt,
@@ -125,9 +116,7 @@ Gib NUR das JSON zurück, ohne zusätzlichen Text.`
       imageUrl = result.images?.[0]?.url || ""
 
       if (imageUrl) {
-        console.log("[v0] Successfully generated image:", imageUrl)
       } else {
-        console.log("[v0] No image URL in response")
       }
     } catch (imageError) {
       console.error("[v0] Error generating image with fal:", imageError)
@@ -136,8 +125,6 @@ Gib NUR das JSON zurück, ohne zusätzlichen Text.`
       const imageQuery = `professional ${genderWord} ${body.age_range} years old ${body.occupation || "professional"} portrait photo friendly medical patient`
       imageUrl = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(imageQuery)}`
     }
-
-    console.log("[v0] Returning profile with image URL:", imageUrl)
 
     return NextResponse.json({
       ...parsedResponse,

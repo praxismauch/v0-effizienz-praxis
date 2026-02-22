@@ -117,13 +117,11 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
 
   const sendEmailInvite = async () => {
     if (!email || !referralCode) {
-      console.log("[v0] Referral: Email or referral code missing", { email, referralCode })
       return
     }
 
     setLoading(true)
     try {
-      console.log("[v0] Referral: Sending invite to", email)
       const response = await fetch("/api/referrals/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -135,8 +133,6 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
         }),
       })
 
-      console.log("[v0] Referral: API response status", response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unbekannter Fehler" }))
         console.error("[v0] Referral: API error", errorData)
@@ -144,7 +140,6 @@ export function ReferralDialog({ open, onOpenChange }: ReferralDialogProps) {
       }
 
       const result = await response.json()
-      console.log("[v0] Referral: API success", result)
 
       if (!result.emailSent && result.emailError) {
         toast({

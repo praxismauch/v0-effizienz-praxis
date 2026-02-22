@@ -51,8 +51,6 @@ export async function PUT(
     const body = await request.json()
     const supabase = await getApiClient()
 
-    console.log("[v0] Updating course:", courseId)
-
     const updateData = {
       ...body,
       updated_at: new Date().toISOString(),
@@ -77,7 +75,6 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Course updated:", course.id)
     return NextResponse.json(course)
   } catch (error: any) {
     console.error("[v0] Error in PUT /academy/courses/:id:", error)
@@ -99,8 +96,6 @@ export async function DELETE(
 
     const supabase = await getApiClient()
 
-    console.log("[v0] Soft deleting course:", courseId)
-
     const { error } = await supabase
       .from("academy_courses")
       .update({ deleted_at: new Date().toISOString() })
@@ -113,7 +108,6 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Course deleted:", courseId)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error("[v0] Error in DELETE /academy/courses/:id:", error)

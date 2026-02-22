@@ -71,7 +71,6 @@ function ConvertToTeamMemberDialog({ open, onOpenChange, candidate, onSuccess }:
     setLoading(true)
 
     try {
-      console.log("[v0] Converting candidate:", candidate.id)
 
       // Call API to convert candidate to team member
       const response = await fetch(`/api/hiring/candidates/${candidate.id}/convert-to-team`, {
@@ -87,16 +86,11 @@ function ConvertToTeamMemberDialog({ open, onOpenChange, candidate, onSuccess }:
         }),
       })
 
-      console.log("[v0] Response status:", response.status)
-      console.log("[v0] Response ok:", response.ok)
-      console.log("[v0] Response content-type:", response.headers.get("content-type"))
-
       let result
       const contentType = response.headers.get("content-type")
 
       if (contentType && contentType.includes("application/json")) {
         result = await response.json()
-        console.log("[v0] Response data:", result)
       } else {
         const text = await response.text()
         console.error("[v0] Non-JSON response:", text.substring(0, 200))

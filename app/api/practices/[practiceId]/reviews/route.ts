@@ -22,7 +22,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .then((res) => {
           // Handle table not existing (42P01 error code)
           if (res.error?.code === "42P01") {
-            console.log("[v0] google_ratings table does not exist")
             return { data: [], error: null }
           }
           return res
@@ -35,7 +34,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .order("review_date", { ascending: false })
         .then((res) => {
           if (res.error?.code === "42P01") {
-            console.log("[v0] jameda_ratings table does not exist")
             return { data: [], error: null }
           }
           return res
@@ -48,7 +46,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .order("review_date", { ascending: false })
         .then((res) => {
           if (res.error?.code === "42P01") {
-            console.log("[v0] sanego_ratings table does not exist")
             return { data: [], error: null }
           }
           return res

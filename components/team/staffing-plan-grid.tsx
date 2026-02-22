@@ -175,14 +175,6 @@ export function StaffingPlanGrid({
     setSelectedDay(day)
     setSelectedSlot(slot)
     if (entry) {
-      console.log("[v0] Opening dialog with entry data:", {
-        id: entry.id,
-        name: entry.name,
-        calculate_from_timespan: entry.calculate_from_timespan,
-        start_time: entry.start_time,
-        end_time: entry.end_time,
-        hours: entry.hours,
-      })
 
       setEditingEntry(entry)
       setSelectedTeam(entry.team_id || "")
@@ -192,12 +184,6 @@ export function StaffingPlanGrid({
       const useCalc = entry.calculate_from_timespan ?? false
       const startT = entry.start_time ?? "08:00"
       const endT = entry.end_time ?? "16:00"
-
-      console.log("[v0] Setting form values:", {
-        useTimeCalculation: useCalc,
-        startTime: startT,
-        endTime: endT,
-      })
 
       setUseTimeCalculation(useCalc)
       setStartTime(startT)

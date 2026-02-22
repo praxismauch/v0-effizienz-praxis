@@ -221,12 +221,10 @@ export function useInventory() {
       
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text()
-        console.log("[v0] Upload API error:", uploadResponse.status, errorText)
         throw new Error(`Datei-Upload fehlgeschlagen: ${errorText}`)
       }
       
       const blob = await uploadResponse.json()
-      console.log("[v0] Upload successful:", blob.url)
 
       // Create bill record
       const response = await fetch(`/api/practices/${practiceId}/inventory/bills`, {
@@ -253,7 +251,6 @@ export function useInventory() {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.log("[v0] Bills API error:", response.status, errorText)
         throw new Error(`Upload fehlgeschlagen: ${errorText}`)
       }
 

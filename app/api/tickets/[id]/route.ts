@@ -118,8 +118,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params
     const body = await request.json()
 
-    console.log("[v0] PATCH ticket:", id, body)
-
     // Fetch existing ticket to check if it exists and get current status
     const { data: existingTicket, error: fetchError } = await supabase
       .from("tickets")
@@ -158,8 +156,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       updateData.assigned_to = body.assigned_to
     }
 
-    console.log("[v0] Updating ticket with data:", updateData)
-
     const { data, error } = await supabase.from("tickets").update(updateData).eq("id", id).select().maybeSingle()
 
     if (error) {
@@ -171,8 +167,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!data) {
       return NextResponse.json({ error: "Ticket not found after update" }, { status: 404 })
     }
-
-    console.log("[v0] Ticket updated successfully:", data)
 
     // Send notification and internal message if status changed
     if (body.status && existingTicket.status !== body.status && existingTicket.user_id) {
@@ -216,8 +210,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const supabase = await createClient()
     const { id } = await params
 
-    console.log("[v0] DELETE ticket:", id)
-
     const {
       data: { user },
       error: authError,
@@ -260,16 +252,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const isTicketOwner = ticket.user_id === user.id
     const samePractice = userData?.practice_id === ticket.practice_id
 
-    console.log("[v0] DELETE ticket permission check:", {
-      userId: user.id,
-      userRole: userData?.role,
-      normalizedRole,
-      ticketUserId: ticket.user_id,
-      isSuperAdmin,
-      isTicketOwner,
-      samePractice,
-    })
-
     if (!isSuperAdmin && !(isTicketOwner && samePractice)) {
       console.error("[v0] Permission denied: user not authorized to delete ticket")
       return NextResponse.json({ error: "You do not have permission to delete this ticket" }, { status: 403 })
@@ -283,7 +265,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: errorMessage }, { status: 500 })
     }
 
-    console.log("[v0] Ticket deleted successfully:", id)
     return NextResponse.json({ success: true, id })
   } catch (error) {
     console.error("[v0] DELETE ticket error:", error)

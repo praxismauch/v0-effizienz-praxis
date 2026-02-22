@@ -44,8 +44,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { category, practiceType, customRequirements, userId } = body
 
-    console.log("[v0] Generating hygiene plan for category:", category)
-
     // Generate AI-based hygiene plan using RKI guidelines
     const prompt = `Erstelle basierend auf den Richtlinien des Robert Koch-Instituts (RKI) für medizinische Praxen in Deutschland einen umfassenden Hygieneplan für folgende Anforderungen:
 
@@ -92,8 +90,6 @@ Stelle sicher, dass der Plan:
       maxOutputTokens: 2000,
     })
 
-    console.log("[v0] AI generated hygiene plan")
-
     // Parse the AI response
     let parsedPlan
     try {
@@ -110,7 +106,6 @@ Stelle sicher, dass der Plan:
     }
 
     // Save the generated plan to the database
-    console.log("[v0] Saving AI-generated hygiene plan to DB for practice:", practiceId)
     const insertPayload = {
       practice_id: practiceId,
       title: parsedPlan.title,
@@ -123,7 +118,6 @@ Stelle sicher, dass der Plan:
       generated_at: new Date().toISOString(),
       products_used: parsedPlan.content?.materials ? JSON.stringify(parsedPlan.content.materials) : null,
     }
-    console.log("[v0] Insert payload:", JSON.stringify(insertPayload))
 
     const { data: hygienePlan, error } = await supabase
       .from("hygiene_plans")
@@ -137,7 +131,6 @@ Stelle sicher, dass der Plan:
     }
 
     if (!hygienePlan) {
-      console.log("[v0] DB insert returned no data, returning AI plan directly")
       const fallbackPlan = {
         id: crypto.randomUUID(),
         ...insertPayload,

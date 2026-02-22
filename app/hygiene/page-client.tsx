@@ -86,16 +86,13 @@ export function HygienePage() {
   const handleGenerateWithAI = async () => {
     setIsGenerating(true)
     try {
-      console.log("[v0] Starting AI hygiene plan generation for:", formData.plan_type, formData.area)
       const res = await fetch(`/api/practices/${practiceId}/hygiene/generate-rki`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_type: formData.plan_type, area: formData.area }),
       })
-      console.log("[v0] AI generation response status:", res.status)
       if (res.ok) {
         const data = await res.json()
-        console.log("[v0] AI generation response data keys:", Object.keys(data))
         setFormData((prev) => ({
           ...prev,
           title: data.title || prev.title,

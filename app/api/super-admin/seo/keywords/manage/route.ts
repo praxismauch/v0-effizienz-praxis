@@ -25,8 +25,6 @@ export async function POST(req: NextRequest) {
     const userSupabase = await createClient()
     const body = await req.json()
 
-    console.log("[v0] Creating SEO keyword with data:", body)
-
     let userId = null
     try {
       const {
@@ -53,7 +51,6 @@ export async function POST(req: NextRequest) {
       throw error
     }
 
-    console.log("[v0] Successfully created keyword:", keyword?.id)
     return NextResponse.json({ keyword })
   } catch (error: any) {
     console.error("[v0] Error creating SEO keyword:", error)

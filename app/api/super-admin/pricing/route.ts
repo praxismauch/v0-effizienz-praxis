@@ -41,16 +41,12 @@ export async function PUT(request: NextRequest) {
     const supabase = await createClient()
     const body = await request.json()
 
-    console.log("[v0] PUT /api/super-admin/pricing - Received body:", JSON.stringify(body, null, 2))
-
     const { planId, updates } = body
 
     if (!planId) {
-      console.log("[v0] ERROR: Missing planId")
       return NextResponse.json({ error: "Plan ID ist erforderlich" }, { status: 400 })
     }
 
-    console.log("[v0] Checking if plan exists:", planId)
     const adminClient = await createAdminClient()
 
     const { data: existingPlan } = await adminClient
@@ -64,23 +60,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Plan nicht gefunden" }, { status: 404 })
     }
 
-    console.log("[v0] Found existing plan:", JSON.stringify(existingPlan))
-
     if (!updates) {
-      console.log("[v0] ERROR: Missing updates")
       return NextResponse.json({ error: "Updates erforderlich" }, { status: 400 })
     }
 
     const parsePrice = (value: any): number | null => {
-      console.log("[v0] Parsing price value:", value, "type:", typeof value)
       if (value === undefined || value === null || value === "") {
         return null
       }
       const parsed = typeof value === "string" ? Number.parseFloat(value) : Number(value)
-      console.log("[v0] Parsed price (in euros):", parsed)
       // Convert euros to cents by multiplying by 100, then round to nearest cent
       const priceInCents = Math.round(parsed * 100)
-      console.log("[v0] Price in cents:", priceInCents)
       return Number.isNaN(priceInCents) ? null : priceInCents
     }
 
@@ -110,9 +100,6 @@ export async function PUT(request: NextRequest) {
     if (updates.features !== undefined) dbUpdates.features = updates.features
     if (updates.displayOrder !== undefined) dbUpdates.display_order = updates.displayOrder
 
-    console.log("[v0] Transformed dbUpdates (snake_case):", JSON.stringify(dbUpdates, null, 2))
-    console.log("[v0] Updating plan with ID:", planId)
-
     const camelCaseKeys = Object.keys(dbUpdates).filter((key) => /[A-Z]/.test(key))
     if (camelCaseKeys.length > 0) {
       console.error("[v0] WARNING: Found camelCase keys in dbUpdates:", camelCaseKeys)
@@ -141,7 +128,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const updatedPlan = updatedPlans[0]
-    console.log("[v0] Successfully updated plan:", updatedPlan.id)
 
     return NextResponse.json({ plan: updatedPlan })
   } catch (error) {
@@ -166,16 +152,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Plan-ID erforderlich" }, { status: 400 })
     }
 
-    console.log("[v0] Deleting pricing plan:", planId)
-
     const { error } = await supabase.from("subscription_plans").delete().eq("id", planId)
 
     if (error) {
       console.error("[v0] Error deleting plan:", error)
       throw error
     }
-
-    console.log("[v0] Successfully deleted plan:", planId)
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -12,8 +12,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const url = new URL(request.url)
     const userId = url.searchParams.get("userId")
 
-    console.log("[v0] Fetching user badges for practice:", effectivePracticeId, "user:", userId)
-
     let query = supabase
       .from("academy_user_badges")
       .select(`
@@ -33,7 +31,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log("[v0] Found user badges:", userBadges?.length || 0)
     return NextResponse.json(userBadges || [])
   } catch (error: any) {
     console.error("[v0] Error fetching user badges:", error)
@@ -56,8 +53,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "userId and badgeId are required" }, { status: 400 })
     }
 
-    console.log("[v0] Awarding badge to user:", { userId, badgeId, practiceId: effectivePracticeId })
-
     // Check if badge already earned
     const { data: existing } = await supabase
       .from("academy_user_badges")
@@ -68,7 +63,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single()
 
     if (existing) {
-      console.log("[v0] Badge already earned")
       return NextResponse.json({ message: "Badge already earned", userBadge: existing })
     }
 
@@ -91,7 +85,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log("[v0] Badge awarded:", userBadge.id)
     return NextResponse.json(userBadge)
   } catch (error: any) {
     console.error("[v0] Error awarding badge:", error)

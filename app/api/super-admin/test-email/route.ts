@@ -4,15 +4,12 @@ import { sendEmail } from "@/lib/email/send-email"
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Test email API called")
 
     const { recipient } = await request.json()
 
     if (!recipient || !recipient.includes("@")) {
       return NextResponse.json({ error: "Ungültige E-Mail-Adresse" }, { status: 400 })
     }
-
-    console.log("[v0] Sending test email to:", recipient)
 
     // Send test email
     const result = await sendEmail({
@@ -40,8 +37,6 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       )
     }
-
-    console.log("[v0] Test email sent successfully to:", recipient)
 
     // Added await to createAdminClient
     const adminSupabase = await createAdminClient()

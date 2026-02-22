@@ -74,7 +74,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         // If sort_order column doesn't exist, just skip reordering
         if (error && (error.code === 'PGRST204' || error.code === '42703')) {
-          console.log("[v0] sort_order column not found, skipping reorder")
           return NextResponse.json({ success: true, action: "reordered", useLocalStorage: true })
         }
         

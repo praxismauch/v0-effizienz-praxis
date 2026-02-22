@@ -238,7 +238,6 @@ export default function HygienePlanClient() {
   const generateAIPlan = async (category: string, customRequirements: string) => {
     setGenerating(true)
     try {
-      console.log("[v0] Generating AI hygiene plan for:", category, "practice:", currentPractice?.id)
       const response = await fetch(`/api/practices/${currentPractice?.id}/hygiene-plans/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -249,10 +248,8 @@ export default function HygienePlanClient() {
           userId: currentUser?.id,
         }),
       })
-      console.log("[v0] AI hygiene plan response status:", response.status, response.statusText)
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] AI hygiene plan created:", data.hygienePlan?.id, "title:", data.hygienePlan?.title)
         toast.success("KI-Hygieneplan erfolgreich erstellt")
         // Map DB 'area' to 'category' for UI
         const newPlan = { ...data.hygienePlan, category: data.hygienePlan?.category || data.hygienePlan?.area || category }

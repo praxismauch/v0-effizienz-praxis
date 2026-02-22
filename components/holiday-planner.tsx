@@ -192,11 +192,6 @@ export function HolidayPlanner() {
   const teamMembers = contextTeamMembers?.length > 0 ? contextTeamMembers : localTeamMembers
 
   useEffect(() => {
-    console.log("[v0] teamMembers:", teamMembers)
-    console.log("[v0] contextTeamMembers:", contextTeamMembers)
-    console.log("[v0] localTeamMembers:", localTeamMembers)
-    console.log("[v0] teamLoading:", teamLoading)
-    console.log("[v0] filtered active members:", teamMembers?.filter(isActiveMember))
   }, [teamMembers, contextTeamMembers, localTeamMembers, teamLoading])
 
   const isAdmin = isPracticeAdminRole(currentUser?.role) || isSuperAdminRole(currentUser?.role)

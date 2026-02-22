@@ -86,11 +86,8 @@ export function RoleColorManager() {
     try {
       const roleData = roleColors.find((rc) => rc.role === role)
       if (!roleData) {
-        console.log("[v0] Role not found in local state:", role)
         throw new Error("Role not found")
       }
-
-      console.log("[v0] Updating role color:", { role, updates })
 
       const response = await fetch("/api/system/role-colors", {
         method: "PUT",
@@ -116,7 +113,6 @@ export function RoleColorManager() {
         throw new Error(errorData.details || errorData.error || "Failed to update")
       }
 
-      console.log("[v0] Role color updated successfully")
       await fetchRoleColors()
       toast({
         title: "Gespeichert",

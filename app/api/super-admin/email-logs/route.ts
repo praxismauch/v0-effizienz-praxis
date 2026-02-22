@@ -3,11 +3,9 @@ import { createAdminClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("[v0] Email logs API called")
 
     // Fetch email-related logs from system_logs
     const adminSupabase = await createAdminClient()
-    console.log("[v0] Admin client created for logs query")
 
     const { data: logs, error } = await adminSupabase
       .from("system_logs")
@@ -28,7 +26,6 @@ export async function GET(request: NextRequest) {
       message: log.message,
     }))
 
-    console.log("[v0] Returning email logs, count:", formattedLogs.length)
     return NextResponse.json({ logs: formattedLogs })
   } catch (error) {
     console.error("[v0] Error in email logs endpoint:", error)

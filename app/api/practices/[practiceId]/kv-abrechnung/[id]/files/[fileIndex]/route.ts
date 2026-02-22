@@ -10,8 +10,6 @@ export async function DELETE(
     const { practiceId, id, fileIndex } = await params
     const index = Number.parseInt(fileIndex)
 
-    console.log("[v0] Deleting file from KV Abrechnung:", { practiceId, id, fileIndex: index })
-
     const { data: existing, error: fetchError } = await supabase
       .from("kv_abrechnung")
       .select("*")

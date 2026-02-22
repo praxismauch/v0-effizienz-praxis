@@ -7,8 +7,6 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient()
     const { keyword, currentContent, targetUrl } = await req.json()
 
-    console.log("[v0] Generating AI SEO optimization for keyword:", keyword)
-
     // Get blog posts and landing page content for context
     const { data: blogPosts } = await supabase
       .from("blog_posts")
@@ -80,8 +78,6 @@ Formatiere die Antwort als JSON mit folgender Struktur:
         difficulty: "mittel",
       }
     }
-
-    console.log("[v0] AI optimization generated successfully")
 
     return NextResponse.json({ optimization })
   } catch (error: any) {

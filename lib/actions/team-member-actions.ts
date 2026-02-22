@@ -7,8 +7,6 @@ export async function updateTeamMember(memberId: string, data: any) {
   try {
     const supabase = await createServerClient()
     
-    console.log("[v0] Updating team member:", memberId, "with data:", data)
-    
     const { data: updated, error } = await supabase
       .from("team_members")
       .update(data)
@@ -21,8 +19,6 @@ export async function updateTeamMember(memberId: string, data: any) {
       return { success: false, error: error.message }
     }
 
-    console.log("[v0] Team member updated successfully")
-    
     // Revalidate relevant paths
     revalidatePath("/team")
     revalidatePath(`/team/${memberId}`)
@@ -39,8 +35,6 @@ export async function deleteTeamMember(memberId: string) {
   try {
     const supabase = await createServerClient()
     
-    console.log("[v0] Deleting team member:", memberId)
-    
     const { error } = await supabase
       .from("team_members")
       .delete()
@@ -51,8 +45,6 @@ export async function deleteTeamMember(memberId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log("[v0] Team member deleted successfully")
-    
     // Revalidate team page
     revalidatePath("/team")
     

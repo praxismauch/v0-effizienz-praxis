@@ -220,8 +220,6 @@ export function KVAbrechnungManager() {
     try {
       setUploadingQuarter({ year, quarter })
 
-
-
       // Show initial toast
       toast({
         title: "Upload gestartet",
@@ -233,7 +231,6 @@ export function KVAbrechnungManager() {
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
 
-
         try {
           const blob = await put(
             `kv-abrechnung/${currentPractice.id}/${year}-Q${quarter}-${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split(".").pop()}`,
@@ -243,8 +240,6 @@ export function KVAbrechnungManager() {
               token: process.env.BLOB_READ_WRITE_TOKEN,
             },
           )
-
-
 
           // Save to database
           const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung`, {
@@ -457,7 +452,6 @@ export function KVAbrechnungManager() {
       const needsManualSelection = results.find((r: any) => r.needs_manual_selection && r.year && r.blob_url)
 
       if (needsManualSelection) {
-        console.log("[v0] Smart upload - File needs manual quarter selection:", needsManualSelection.filename)
 
         const fileIndex = results.findIndex((r: any) => r.filename === needsManualSelection.filename)
         const originalFile = files[fileIndex]
@@ -515,7 +509,6 @@ export function KVAbrechnungManager() {
   }
 
   const handleFileSelection = (files: FileList) => {
-    console.log("[v0] KV - File selection started, files:", files.length)
     const fileArray = Array.from(files)
     const acceptedFiles = fileArray.filter((file) => {
       const isImage = file.type.startsWith("image/")
@@ -534,17 +527,14 @@ export function KVAbrechnungManager() {
       }
       return true
     })
-    console.log("[v0] KV - Accepted files:", acceptedFiles.length)
     setSelectedFiles((prev) => [...prev, ...acceptedFiles])
   }
 
   const removeSelectedFile = (index: number) => {
-    console.log("[v0] KV - Removing file at index:", index)
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const startAnalysis = () => {
-    console.log("[v0] KV - Starting analysis with", selectedFiles.length, "files")
 
     if (selectedFiles.length === 0) {
       toast({
@@ -597,21 +587,11 @@ export function KVAbrechnungManager() {
 
   const saveManualSelection = async () => {
     if (!manualQuarterSelection || !selectedQuarter || !currentPractice?.id || !currentUser?.id) {
-      console.log("[v0] Manual selection - Missing required data:", {
-        hasManualSelection: !!manualQuarterSelection,
-        selectedQuarter,
-        practiceId: currentPractice?.id,
-        userId: currentUser?.id,
-      })
       return
     }
 
     try {
       const { file, blob, year } = manualQuarterSelection
-
-      console.log(`[v0] Manual selection - Saving ${file.name} to ${year} Q${selectedQuarter}`)
-      console.log(`[v0] Manual selection - Practice ID: ${currentPractice.id}`)
-      console.log(`[v0] Manual selection - User ID: ${currentUser.id}`)
 
       const response = await fetch(`/api/practices/${currentPractice.id}/kv-abrechnung`, {
         method: "POST",
@@ -638,7 +618,6 @@ export function KVAbrechnungManager() {
       }
 
       const savedData = await response.json()
-      console.log("[v0] Manual selection - Saved successfully:", savedData)
 
       if (smartUploadProgress) {
         const updatedResults = [...smartUploadProgress.results]
@@ -758,7 +737,6 @@ export function KVAbrechnungManager() {
 
     setAnalyzing(true)
     try {
-      console.log("[v0] Analyzing KV Abrechnung with", filesToAnalyze.length, "files:", abrechnung.id)
 
       const response = await fetch("/api/ai/analyze-kv-abrechnung", {
         method: "POST",
@@ -769,8 +747,6 @@ export function KVAbrechnungManager() {
           abrechnungId: abrechnung.id,
         }),
       })
-
-      console.log("[v0] Analysis response status:", response.status)
 
       if (!response.ok) {
         let errorData: any = {}
@@ -785,7 +761,6 @@ export function KVAbrechnungManager() {
       }
 
       const result = await response.json()
-      console.log("[v0] Analysis result:", result)
 
       toast({
         title: "Analyse abgeschlossen",
@@ -1074,7 +1049,6 @@ export function KVAbrechnungManager() {
                     console.error("[v0] KV Preview - PDF failed to load:", previewImage)
                   }}
                   onLoad={() => {
-                    console.log("[v0] KV Preview - PDF loaded successfully:", previewImage)
                   }}
                 />
               ) : (
@@ -1087,7 +1061,6 @@ export function KVAbrechnungManager() {
                     console.error("[v0] KV Preview - Image failed to load:", previewImage)
                   }}
                   onLoad={() => {
-                    console.log("[v0] KV Preview - Image loaded successfully:", previewImage)
                   }}
                 />
               )}
@@ -1135,7 +1108,6 @@ export function KVAbrechnungManager() {
                 id="smart-upload-input"
                 className="hidden"
                 onChange={(e) => {
-                  console.log("[v0] KV - File input changed")
                   if (e.target.files && e.target.files.length > 0) {
                     handleFileSelection(e.target.files)
                     e.target.value = ""
@@ -1151,7 +1123,6 @@ export function KVAbrechnungManager() {
                 onDrop={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  console.log("[v0] KV - Files dropped")
                   if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                     handleFileSelection(e.dataTransfer.files)
                   }
@@ -1183,7 +1154,6 @@ export function KVAbrechnungManager() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        console.log("[v0] KV - Clearing all files")
                         setSelectedFiles([])
                       }}
                     >
@@ -1220,7 +1190,6 @@ export function KVAbrechnungManager() {
 
                   <Button
                     onClick={() => {
-                      console.log("[v0] KV - Analyse button clicked")
                       startAnalysis()
                     }}
                     className="w-full h-12 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all"

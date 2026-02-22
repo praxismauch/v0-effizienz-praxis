@@ -4,7 +4,6 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
-    console.log("[v0] PREFERENCES PARAMS:", JSON.stringify({ params, url: request.nextUrl.pathname }))
     const { userId: paramUserId } = await params
     let userId = paramUserId
 
@@ -12,7 +11,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!userId) {
       const urlParts = request.nextUrl.pathname.split("/")
       userId = urlParts[urlParts.indexOf("users") + 1]
-      console.log("[v0] PREFERENCES FALLBACK userId:", userId)
     }
 
     if (!userId || userId === "undefined") {

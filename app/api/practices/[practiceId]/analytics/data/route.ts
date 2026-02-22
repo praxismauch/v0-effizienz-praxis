@@ -34,8 +34,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const sixMonthsAgo = sub(new Date(), { months: 6 })
     const fourWeeksAgo = sub(new Date(), { weeks: 4 })
 
-    console.log("[v0] Analytics: Starting parallel queries for practice", practiceId)
-
     // OPTIMIZATION: Fetch ALL todos once instead of 30+ separate queries
     const [
       { data: allTodos },
@@ -78,8 +76,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .eq("practice_id", practiceId)
         .eq("is_active", true),
     ])
-
-    console.log("[v0] Analytics: Parallel queries completed, processing data...")
 
     // Calculate practice growth data (last 6 months) from fetched todos
     const practiceGrowthData = []
@@ -281,8 +277,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         updatedAt: new Date(),
       })
     }
-
-    console.log("[v0] Analytics: All data processed successfully")
 
     return NextResponse.json({
       practiceGrowthData,

@@ -100,7 +100,6 @@ function SecurityPermissionsManager() {
 
   const loadSecuritySettings = async () => {
     if (!currentPractice?.id) {
-      console.log("[v0] SecurityPermissionsManager: Skipping settings load - no practice selected")
       setLoading(false)
       return
     }
@@ -122,7 +121,6 @@ function SecurityPermissionsManager() {
 
   const loadUsers = async () => {
     if (!currentPractice?.id) {
-      console.log("[v0] SecurityPermissionsManager: Skipping users load - no practice selected")
       return
     }
 

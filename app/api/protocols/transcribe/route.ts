@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
-  console.log("[v0] ===== Transcription API Called =====")
 
   try {
     const groqApiKey = process.env.GROQ_API_KEY
@@ -26,8 +25,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    console.log("[v0] Using transcription service:", useGroq ? "Groq" : "OpenAI")
-
     const formData = await req.formData()
     const audioFile = formData.get("audio") as File | null
 
@@ -37,11 +34,6 @@ export async function POST(req: NextRequest) {
     }
 
     const language = (formData.get("language") as string) || "de"
-
-    console.log("[v0] Audio file name:", audioFile.name)
-    console.log("[v0] Audio file size:", audioFile.size, "bytes")
-    console.log("[v0] Audio file type:", audioFile.type)
-    console.log("[v0] Language:", language)
 
     if (audioFile.size > 25 * 1024 * 1024) {
       console.error("[v0] Audio file too large:", audioFile.size, "bytes")
@@ -80,7 +72,6 @@ export async function POST(req: NextRequest) {
 
       // Try fallback to OpenAI if Groq fails and OpenAI key exists
       if (useGroq && openaiApiKey && (response.status === 401 || response.status === 500)) {
-        console.log("[v0] Groq failed, trying OpenAI as fallback...")
 
         const fallbackFormData = new FormData()
         fallbackFormData.append("file", audioFile, audioFile.name || "audio.webm")
@@ -99,7 +90,6 @@ export async function POST(req: NextRequest) {
         if (fallbackResponse.ok) {
           const result = await fallbackResponse.json()
           const transcribedText = result.text || ""
-          console.log("[v0] Transcription successful via OpenAI fallback, length:", transcribedText.length, "chars")
           return NextResponse.json({ text: transcribedText })
         }
       }
@@ -130,8 +120,6 @@ export async function POST(req: NextRequest) {
 
     const result = await response.json()
     const transcribedText = result.text || ""
-
-    console.log("[v0] Transcription successful, length:", transcribedText.length, "chars")
 
     return NextResponse.json({ text: transcribedText })
   } catch (error) {

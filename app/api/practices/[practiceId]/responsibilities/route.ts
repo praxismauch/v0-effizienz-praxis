@@ -16,7 +16,6 @@ function isRateLimitError(error: any): boolean {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
   try {
     const { practiceId } = await params
-    console.log("[v0] Fetching responsibilities for practice:", practiceId)
 
     let supabase
     try {
@@ -53,8 +52,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       console.warn("[v0] Responsibilities: Query failed:", queryError?.message)
       return NextResponse.json({ responsibilities: [] })
     }
-
-    console.log("[v0] Found", responsibilities?.length || 0, "responsibilities")
 
     if (responsibilities && responsibilities.length > 0) {
       const userIds = new Set<string>()

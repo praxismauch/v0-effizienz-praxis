@@ -17,8 +17,6 @@ export async function POST(request: Request) {
     const today = new Date()
     const todayStr = today.toISOString().split("T")[0]
 
-    console.log("[v0] Generating recurring todos for date:", todayStr)
-
     // Find all recurring todos that need new instances generated
     const { data: recurringTodos, error } = await supabase
       .from("todos")
@@ -32,14 +30,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log(`[v0] Found ${recurringTodos?.length || 0} recurring todos to process`)
-
     let generatedCount = 0
 
     for (const todo of recurringTodos || []) {
       // Check if recurrence has ended
       if (todo.recurrence_end_date && todo.recurrence_end_date < todayStr) {
-        console.log(`[v0] Skipping todo ${todo.id}: recurrence ended`)
         continue
       }
 
@@ -49,7 +44,6 @@ export async function POST(request: Request) {
 
       // Only generate if next due date is today or in the past
       if (nextDueDate > today) {
-        console.log(`[v0] Skipping todo ${todo.id}: next due date is in the future`)
         continue
       }
 
@@ -78,10 +72,7 @@ export async function POST(request: Request) {
       await supabase.from("todos").update({ last_generated_date: todayStr }).eq("id", todo.id)
 
       generatedCount++
-      console.log(`[v0] Generated instance for todo ${todo.id}`)
     }
-
-    console.log(`[v0] Successfully generated ${generatedCount} recurring todo instances`)
 
     return NextResponse.json({
       success: true,

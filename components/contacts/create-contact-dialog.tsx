@@ -59,10 +59,6 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess, defaultCate
     try {
       const practiceId = currentPractice?.id || currentUser?.practice_id
 
-      console.log("[v0] Creating contact - practiceId:", practiceId)
-      console.log("[v0] Creating contact - currentUser:", currentUser?.id)
-      console.log("[v0] Creating contact - formData:", formData)
-
       if (!practiceId) {
         toast({
           title: "Fehler",
@@ -91,8 +87,6 @@ export function CreateContactDialog({ open, onOpenChange, onSuccess, defaultCate
           created_by: currentUser?.id || null,
         }),
       })
-
-      console.log("[v0] Create contact response status:", response.status)
 
       if (!response.ok) {
         const data = await response.json()

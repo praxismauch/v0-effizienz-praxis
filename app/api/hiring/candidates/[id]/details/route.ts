@@ -23,8 +23,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createAdminClient()
     const { id } = await params
 
-    console.log("[v0] Fetching candidate details for ID:", id)
-
     const { data: candidate, error: candidateError } = await withRetry(() =>
       supabase.from("candidates").select("*").eq("id", id).is("deleted_at", null).maybeSingle(),
     )
@@ -38,11 +36,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     if (!candidate) {
-      console.log("[v0] Candidate not found for ID:", id)
       return NextResponse.json({ error: "Candidate not found" }, { status: 404 })
     }
-
-    console.log("[v0] Found candidate:", candidate.first_name, candidate.last_name || candidate.id)
 
     // Fetch applications for this candidate
     const { data: applications, error: applicationsError } = await withRetry(() =>
@@ -65,8 +60,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (applicationsError) {
       console.error("[v0] Error fetching applications:", applicationsError)
     }
-
-    console.log("[v0] Found applications:", applications?.length || 0)
 
     // Interviews functionality can be added later when the interviews table is created
 

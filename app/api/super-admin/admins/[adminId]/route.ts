@@ -7,8 +7,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { adminId } = await params
     const body = await request.json()
 
-    console.log("[v0] Patching super admin:", adminId, body)
-
     // Build update object
     const updateData: any = {}
 
@@ -39,8 +37,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       throw error
     }
 
-    console.log("[v0] Super admin patched successfully")
-
     return NextResponse.json({ admin: data })
   } catch (error: any) {
     console.error("[v0] Error in PATCH /api/super-admin/admins/[adminId]:", error)
@@ -53,8 +49,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createClient()
     const { adminId } = await params
     const body = await request.json()
-
-    console.log("[v0] Updating super admin:", adminId, body)
 
     const updateData: any = {
       is_active: body.is_active,
@@ -78,8 +72,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       throw error
     }
 
-    console.log("[v0] Super admin updated successfully")
-
     return NextResponse.json({ admin: data })
   } catch (error: any) {
     console.error("[v0] Error in PUT /api/super-admin/admins/[adminId]:", error)
@@ -91,8 +83,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const supabase = await createClient()
     const { adminId } = await params
-
-    console.log("[v0] Deleting super admin:", adminId)
 
     const { data: admins, error: countError } = await supabase.from("users").select("id").eq("role", "superadmin")
 
@@ -114,8 +104,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       console.error("[v0] Error deleting super admin:", error)
       throw error
     }
-
-    console.log("[v0] Super admin deleted successfully")
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

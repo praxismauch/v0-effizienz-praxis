@@ -84,6 +84,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
           pathname={pathname}
         />
 
+        <BetaNoticeButton sidebarOpen={sidebarOpen} />
+
         <SidebarTourButton sidebarOpen={sidebarOpen} />
 
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto sidebar-scrollbar">
@@ -118,8 +120,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
             ))}
           </div>
         </div>
-
-        <BetaNoticeButton sidebarOpen={sidebarOpen} />
       </Sidebar>
     </TooltipProvider>
   )

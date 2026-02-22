@@ -32,7 +32,7 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
 
   return (
     <>
-      <div className="border-t border-sidebar-border px-3 py-3">
+      <div className="border-b border-sidebar-border px-3 py-3">
         {sidebarOpen ? (
           <Button
             variant="ghost"

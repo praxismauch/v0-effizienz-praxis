@@ -29,7 +29,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { usePractice } from "@/contexts/practice-context"
 import { useUser } from "@/contexts/user-context"
-import { put } from "@vercel/blob"
+// Blob uploads go through /api/upload server route
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -164,23 +164,24 @@ export function BWAAnalysis() {
       setUploadingMonth({ year, month })
       toast({ title: "Upload gestartet", description: `${files.length} Datei(en) werden hochgeladen...` })
 
-      const uploadedFiles: BWAFile[] = []
-
+      const formData = new FormData()
       for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        const blob = await put(
-          `bwa/${currentPractice.id}/${year}-${String(month).padStart(2, "0")}-${Date.now()}.${file.name.split(".").pop()}`,
-          file,
-          { access: "public" }
-        )
-
-        uploadedFiles.push({
-          url: blob.url,
-          uploaded_at: new Date().toISOString(),
-          file_name: file.name,
-          file_size: file.size,
-        })
+        formData.append("files", files[i])
       }
+      formData.append("folder", `bwa/${currentPractice.id}/${year}-${String(month).padStart(2, "0")}`)
+
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Upload fehlgeschlagen" }))
+        throw new Error(err.error || `Upload fehlgeschlagen (${res.status})`)
+      }
+      const result = await res.json()
+      const uploadedFiles: BWAFile[] = (result.files || [result]).map((f: any) => ({
+        url: f.url,
+        uploaded_at: f.uploaded_at || new Date().toISOString(),
+        file_name: f.name || f.fileName || "Datei",
+        file_size: f.size || f.fileSize || 0,
+      }))
 
       // Update local state
       setData((prev) => {
@@ -209,9 +210,9 @@ export function BWAAnalysis() {
       })
 
       toast({ title: "Upload erfolgreich", description: `${uploadedFiles.length} Datei(en) hochgeladen` })
-    } catch (error) {
-      console.error("BWA Upload error:", error)
-      toast({ title: "Fehler", description: "Upload fehlgeschlagen", variant: "destructive" })
+    } catch (error: any) {
+      console.error("[v0] BWA Upload error:", error?.message || error, JSON.stringify(error))
+      toast({ title: "Fehler", description: `Upload fehlgeschlagen: ${error?.message || "Unbekannter Fehler"}`, variant: "destructive" })
     } finally {
       setUploadingMonth(null)
     }
@@ -885,7 +886,7 @@ export function BWAAnalysis() {
             {displayYears.map((year) => (
               <div key={year} className="space-y-3">
                 <h3 className="text-lg font-semibold">{year}</h3>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 lg:grid-cols-13 gap-2" style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))" }}>
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2">
                   {MONTHS.map(({ value: month, label }) => {
                     const monthData = getMonthData(year, month)
                     const hasData = !!monthData

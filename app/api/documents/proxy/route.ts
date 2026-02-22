@@ -12,20 +12,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing url parameter" }, { status: 400 })
   }
 
-  // Validate URL - only allow blob.vercel-storage.com and known safe origins
-  const allowedHosts = [
-    "blob.vercel-storage.com",
-    "public.blob.vercel-storage.com",
-    "hebbkx1anhila5yf.public.blob.vercel-storage.com",
-  ]
-
+  // Validate URL - only allow Vercel Blob storage domains
   try {
     const parsedUrl = new URL(url)
-    const isAllowed = allowedHosts.some(
-      (host) => parsedUrl.hostname === host || parsedUrl.hostname.endsWith(`.${host}`)
-    )
-
-    if (!isAllowed) {
+    const hostname = parsedUrl.hostname
+    
+    // Allow any *.blob.vercel-storage.com or *.public.blob.vercel-storage.com subdomain
+    const isVercelBlob = hostname.endsWith(".blob.vercel-storage.com") || 
+                         hostname === "blob.vercel-storage.com"
+    // Also allow Supabase storage
+    const isSupabaseStorage = hostname.endsWith(".supabase.co") || 
+                              hostname.endsWith(".supabase.in")
+    
+    if (!isVercelBlob && !isSupabaseStorage) {
       return NextResponse.json(
         { error: "URL host not allowed" },
         { status: 403 }

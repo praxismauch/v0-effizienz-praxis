@@ -1,17 +1,13 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog"
-import { FileText, Sparkles, Download, ExternalLink, FileImage, FileSpreadsheet, File, Loader2 } from "lucide-react"
+import { FileText, Sparkles, Download, ExternalLink, FileImage, FileSpreadsheet, File, Loader2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react"
 import { useTranslation } from "@/contexts/translation-context"
 import type { Document } from "./types"
 import { formatFileSize } from "./utils"
@@ -51,9 +47,195 @@ function isOfficeDoc(fileName: string) {
   return ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext)
 }
 
-function isTextFile(fileName: string) {
-  const ext = fileName?.toLowerCase().split(".").pop() || ""
-  return ["txt", "csv", "json", "xml", "html", "htm", "md"].includes(ext)
+/**
+ * PDF Canvas Renderer using PDF.js via CDN
+ * Renders PDF pages to canvas elements - works on all browsers including mobile
+ */
+function PdfCanvasViewer({ url }: { url: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const [scale, setScale] = useState(1.0)
+  const pdfDocRef = useRef<any>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const renderTaskRef = useRef<any>(null)
+
+  // Load PDF.js from CDN
+  useEffect(() => {
+    const loadPdfJs = async () => {
+      if ((window as any).pdfjsLib) return (window as any).pdfjsLib
+      
+      return new Promise((resolve, reject) => {
+        const script = window.document.createElement("script")
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs"
+        script.type = "module"
+        
+        // Use a different approach - fetch as text and eval
+        fetch("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs")
+          .then(() => {
+            // Fallback: use the classic UMD build
+            const s = window.document.createElement("script")
+            s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js"
+            s.onload = () => resolve((window as any).pdfjsLib)
+            s.onerror = reject
+            window.document.head.appendChild(s)
+          })
+          .catch(() => {
+            // Direct UMD fallback
+            const s = window.document.createElement("script")
+            s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js"
+            s.onload = () => resolve((window as any).pdfjsLib)
+            s.onerror = reject
+            window.document.head.appendChild(s)
+          })
+      })
+    }
+
+    let cancelled = false
+
+    const init = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const pdfjsLib = await loadPdfJs()
+        if (cancelled) return
+        
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js"
+
+        const loadingTask = pdfjsLib.getDocument(url)
+        const pdf = await loadingTask.promise
+        if (cancelled) return
+        
+        pdfDocRef.current = pdf
+        setTotalPages(pdf.numPages)
+        setCurrentPage(1)
+        setLoading(false)
+      } catch (err: any) {
+        if (cancelled) return
+        console.error("[v0] PDF.js load error:", err)
+        setError(err?.message || "PDF konnte nicht geladen werden")
+        setLoading(false)
+      }
+    }
+
+    init()
+    return () => { cancelled = true }
+  }, [url])
+
+  // Render current page
+  useEffect(() => {
+    if (!pdfDocRef.current || !canvasRef.current || loading) return
+
+    const renderPage = async () => {
+      try {
+        // Cancel any ongoing render
+        if (renderTaskRef.current) {
+          try { renderTaskRef.current.cancel() } catch {}
+        }
+
+        const page = await pdfDocRef.current.getPage(currentPage)
+        const canvas = canvasRef.current
+        if (!canvas) return
+
+        const viewport = page.getViewport({ scale: scale * 1.5 }) // 1.5x for crisp rendering
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return
+
+        canvas.height = viewport.height
+        canvas.width = viewport.width
+        canvas.style.width = `${viewport.width / 1.5}px`
+        canvas.style.height = `${viewport.height / 1.5}px`
+
+        const renderTask = page.render({ canvasContext: ctx, viewport })
+        renderTaskRef.current = renderTask
+        await renderTask.promise
+      } catch (err: any) {
+        if (err?.name !== "RenderingCancelledException") {
+          console.error("[v0] PDF render error:", err)
+        }
+      }
+    }
+
+    renderPage()
+  }, [currentPage, scale, loading])
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
+        <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 p-6">
+        <FileText className="h-12 w-12 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground">PDF-Vorschau fehlgeschlagen</p>
+        <p className="text-xs text-muted-foreground/70 max-w-sm text-center">{error}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* PDF toolbar */}
+      <div className="flex items-center justify-center gap-2 px-4 py-2 border-b bg-background/80 backdrop-blur-sm">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          disabled={currentPage <= 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="text-xs text-muted-foreground min-w-[80px] text-center">
+          Seite {currentPage} / {totalPages}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          disabled={currentPage >= totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-4 bg-border mx-1" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setScale((s) => Math.max(0.5, s - 0.25))}
+          disabled={scale <= 0.5}
+        >
+          <ZoomOut className="h-3.5 w-3.5" />
+        </Button>
+        <span className="text-xs text-muted-foreground min-w-[40px] text-center">
+          {Math.round(scale * 100)}%
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setScale((s) => Math.min(3, s + 0.25))}
+          disabled={scale >= 3}
+        >
+          <ZoomIn className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      {/* Canvas area */}
+      <div ref={containerRef} className="flex-1 overflow-auto flex justify-center p-4 bg-muted/30">
+        <canvas ref={canvasRef} className="shadow-lg rounded" />
+      </div>
+    </div>
+  )
 }
 
 export function DocumentPreviewDialog({
@@ -67,74 +249,11 @@ export function DocumentPreviewDialog({
 }: DocumentPreviewDialogProps) {
   const { t } = useTranslation()
   const [iframeError, setIframeError] = useState(false)
-  const [blobUrl, setBlobUrl] = useState<string | null>(null)
-  const [blobLoading, setBlobLoading] = useState(false)
-
-  const docFileUrl = document?.file_url
-  const docFileType = document?.file_type
-  const docName = document?.name
 
   // Build a proxy URL to fetch document server-side (avoids CORS/X-Frame-Options)
   const getProxyUrl = useCallback((url: string) => {
     return `/api/documents/proxy?url=${encodeURIComponent(url)}`
   }, [])
-
-  // Fetch PDF via server-side proxy to bypass CORS restrictions
-  useEffect(() => {
-    if (!open || !docFileUrl || !docName) return
-
-    const docIsPdf = isPdf(docFileType || "", docName)
-    if (!docIsPdf) return
-
-    let cancelled = false
-    setBlobLoading(true)
-    setIframeError(false)
-
-    const proxyUrl = getProxyUrl(docFileUrl)
-
-    fetch(proxyUrl)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Proxy returned ${res.status}`)
-        return res.blob()
-      })
-      .then((blob) => {
-        if (cancelled) return
-        const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
-        setBlobUrl(url)
-        setBlobLoading(false)
-      })
-      .catch(() => {
-        if (cancelled) return
-        // Fallback: try direct fetch (works if same-origin or CORS allowed)
-        fetch(docFileUrl)
-          .then((res) => {
-            if (!res.ok) throw new Error(`Direct fetch ${res.status}`)
-            return res.blob()
-          })
-          .then((blob) => {
-            if (cancelled) return
-            const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
-            setBlobUrl(url)
-            setBlobLoading(false)
-          })
-          .catch(() => {
-            if (cancelled) return
-            setBlobLoading(false)
-            // Don't set iframeError - let the Google Docs viewer fallback try
-          })
-      })
-
-    return () => { cancelled = true }
-  }, [open, docFileUrl, docFileType, docName, getProxyUrl])
-
-  // Cleanup blob URL when dialog closes
-  useEffect(() => {
-    if (!open && blobUrl) {
-      URL.revokeObjectURL(blobUrl)
-      setBlobUrl(null)
-      setIframeError(false)
-    }
-  }, [open, blobUrl])
 
   if (!document) return null
 
@@ -157,7 +276,7 @@ export function DocumentPreviewDialog({
                 <span className="text-xs text-muted-foreground">{formatFileSize(document.file_size)}</span>
                 <span className="text-xs text-muted-foreground">{'|'}</span>
                 <span className="text-xs text-muted-foreground uppercase">
-                  {document.name?.split(".").pop() || document.file_type.split("/").pop()}
+                  {document.category || document.name?.split(".").pop() || document.file_type.split("/").pop()}
                 </span>
                 {document.ai_analysis && (
                   <Badge variant="secondary" className="gap-1 h-5 text-[10px]">
@@ -200,7 +319,6 @@ export function DocumentPreviewDialog({
                 className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
                 crossOrigin="anonymous"
                 onError={(e) => {
-                  // Retry via proxy if direct image load fails
                   const img = e.currentTarget
                   if (!img.src.includes("/api/documents/proxy")) {
                     img.src = getProxyUrl(document.file_url)
@@ -209,33 +327,9 @@ export function DocumentPreviewDialog({
               />
             </div>
           ) : canPreviewPdf ? (
-            <div className="relative w-full h-full">
-              {blobLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-muted/20 z-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
-                  <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
-                </div>
-              )}
-              {blobUrl ? (
-                /* Strategy 1: Render from local blob URL (no CORS issues) */
-                <iframe
-                  src={`${blobUrl}#toolbar=1&navpanes=1&view=FitH`}
-                  title={document.name}
-                  className="w-full h-full border-0"
-                  style={{ minHeight: "100%" }}
-                />
-              ) : !blobLoading ? (
-                /* Strategy 2: Use server-side proxy URL directly in iframe */
-                <iframe
-                  src={getProxyUrl(document.file_url)}
-                  title={document.name}
-                  className="w-full h-full border-0"
-                  style={{ minHeight: "100%" }}
-                />
-              ) : null}
-            </div>
+            /* PDF.js canvas-based renderer - works on all browsers */
+            <PdfCanvasViewer url={getProxyUrl(document.file_url)} />
           ) : canPreviewOffice && !iframeError ? (
-            /* Use Microsoft Office Online viewer for Office docs */
             <div className="relative w-full h-full">
               <iframe
                 src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(document.file_url)}`}

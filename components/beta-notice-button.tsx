@@ -38,7 +38,7 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
             variant="outline"
             size="sm"
             onClick={() => setOpen(true)}
-            className="w-full justify-start gap-2 h-8 border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50"
+            className="w-full justify-start gap-2 h-8 border-amber-500/50 bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 hover:border-amber-400/60 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400 dark:hover:bg-amber-400/20"
           >
             <Construction className="h-3.5 w-3.5 shrink-0" />
             <span className="text-xs font-medium truncate">Beta-Hinweis</span>
@@ -50,7 +50,7 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
                 variant="outline"
                 size="icon"
                 onClick={() => setOpen(true)}
-                className="w-full h-8 border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400 hover:border-amber-500/50"
+                className="w-full h-8 border-amber-500/50 bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 hover:border-amber-400/60 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-400 dark:hover:bg-amber-400/20"
               >
                 <Construction className="h-4 w-4" />
               </Button>

@@ -25,7 +25,7 @@ export function SidebarTourButton({ sidebarOpen }: SidebarTourButtonProps) {
               variant="outline"
               size="icon"
               onClick={() => setIsOnboardingOpen(true)}
-              className="w-full h-8 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary hover:border-primary/50"
+              className="w-full h-8 border-blue-500/50 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 hover:text-blue-300 hover:border-blue-400/60 dark:border-blue-400/40 dark:bg-blue-400/10 dark:text-blue-400 dark:hover:bg-blue-400/20"
             >
               <Calendar className="h-4 w-4" />
             </Button>
@@ -47,7 +47,7 @@ export function SidebarTourButton({ sidebarOpen }: SidebarTourButtonProps) {
         variant="outline"
         size="sm"
         onClick={() => setIsOnboardingOpen(true)}
-        className="w-full justify-start gap-2 h-8 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary hover:border-primary/50"
+        className="w-full justify-start gap-2 h-8 border-blue-500/50 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 hover:text-blue-300 hover:border-blue-400/60 dark:border-blue-400/40 dark:bg-blue-400/10 dark:text-blue-400 dark:hover:bg-blue-400/20"
       >
         <Calendar className="h-3.5 w-3.5 shrink-0" />
         <span className="text-xs font-medium truncate">

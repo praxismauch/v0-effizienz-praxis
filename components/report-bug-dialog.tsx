@@ -84,6 +84,13 @@ function ReportBugDialog({
   const { toast } = useToast()
   const { currentUser } = useUser()
 
+  // Pre-fill reportedBy with logged-in user's name
+  useEffect(() => {
+    if (currentUser?.name && !reportedBy) {
+      setReportedBy(currentUser.name)
+    }
+  }, [currentUser?.name])
+
   const { types, priorities, isLoading: configLoading } = useTicketConfig()
 
   const typeOptions = types ? typesToOptions(types) : []
@@ -281,12 +288,6 @@ function ReportBugDialog({
       window.dispatchEvent(new CustomEvent("ticketCreated", { detail: data.ticket }))
 
       onTicketCreated?.()
-
-      // Auto-generate AI action item for v0 chat
-      const createdTicket = data.ticket
-      if (createdTicket?.id) {
-        generateAiAction(createdTicket.id, title, description, type, priority)
-      }
 
       setOpen?.(false)
       setTitle("")

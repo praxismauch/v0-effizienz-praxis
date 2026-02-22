@@ -227,7 +227,10 @@ export default function CompetitorAnalysisDetailClient({ analysisId }: Competito
           </TabsContent>
 
           <TabsContent value="competitors" className="mt-6">
-            <CompetitorsTab competitors={analysis.competitors || []} />
+            <CompetitorsTab
+              competitors={analysis.competitors || []}
+              dataSource={(analysis.ai_analysis as Record<string, unknown>)?.data_source as string | undefined}
+            />
           </TabsContent>
 
           <TabsContent value="swot" className="mt-6">

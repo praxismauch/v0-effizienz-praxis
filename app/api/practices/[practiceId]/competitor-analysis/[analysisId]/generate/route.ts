@@ -2,39 +2,109 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { generateText } from "ai"
 
-async function searchGoogleRatings(
-  practiceName: string,
+interface GooglePlace {
+  name: string
+  formatted_address: string
+  rating?: number
+  user_ratings_total?: number
+  place_id: string
+  business_status?: string
+  types?: string[]
+  geometry?: { location: { lat: number; lng: number } }
+  opening_hours?: { open_now: boolean }
+}
+
+// Search for real medical practices using Google Places API
+async function searchRealCompetitors(
   location: string,
   specialty: string,
-): Promise<{ rating: number | null; reviewCount: number | null; placeId: string | null }> {
+  radiusKm: number,
+  apiKey: string,
+): Promise<GooglePlace[]> {
   try {
-    // Use AI to search and extract real Google ratings
-    const { text } = await generateText({
-      model: "anthropic/claude-sonnet-4-20250514",
-      prompt: `Search for the Google rating of this medical practice in Germany:
-Practice: ${practiceName}
-Location: ${location}
-Specialty: ${specialty}
+    // First geocode the location to get coordinates
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location + ", Deutschland")}&key=${apiKey}`
+    const geocodeRes = await fetch(geocodeUrl)
+    const geocodeData = await geocodeRes.json()
 
-If you can find real information, respond with JSON:
-{"rating": 4.5, "reviewCount": 123, "found": true}
-
-If you cannot find real information, respond with:
-{"rating": null, "reviewCount": null, "found": false}
-
-Only respond with the JSON, nothing else.`,
-      maxOutputTokens: 100,
-    })
-
-    const result = JSON.parse(text)
-    return {
-      rating: result.rating,
-      reviewCount: result.reviewCount,
-      placeId: null,
+    if (!geocodeData.results?.length) {
+      console.log("[v0] Geocoding failed for location:", location)
+      return []
     }
-  } catch {
-    return { rating: null, reviewCount: null, placeId: null }
+
+    const { lat, lng } = geocodeData.results[0].geometry.location
+    console.log(`[v0] Geocoded ${location} to ${lat}, ${lng}`)
+
+    // Map German specialties to search terms
+    const searchTerms: Record<string, string> = {
+      "Allgemeinmedizin": "Hausarzt Allgemeinmedizin",
+      "Innere Medizin": "Internist Innere Medizin",
+      "Kardiologie": "Kardiologe",
+      "Orthopädie": "Orthopäde",
+      "Dermatologie": "Hautarzt Dermatologe",
+      "Gynäkologie": "Frauenarzt Gynäkologe",
+      "Pädiatrie": "Kinderarzt",
+      "Zahnmedizin": "Zahnarzt",
+      "Augenheilkunde": "Augenarzt",
+      "HNO": "HNO Arzt",
+      "Neurologie": "Neurologe",
+      "Urologie": "Urologe",
+      "Chirurgie": "Chirurg",
+    }
+
+    // Build search query
+    let searchQuery = specialty
+    for (const [de, term] of Object.entries(searchTerms)) {
+      if (specialty.toLowerCase().includes(de.toLowerCase())) {
+        searchQuery = term
+        break
+      }
+    }
+
+    // Search for nearby practices
+    const radiusMeters = radiusKm * 1000
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery + " " + location)}&location=${lat},${lng}&radius=${radiusMeters}&type=doctor&language=de&key=${apiKey}`
+
+    const searchRes = await fetch(searchUrl)
+    const searchData = await searchRes.json()
+
+    if (searchData.status === "OK" && searchData.results) {
+      console.log(`[v0] Found ${searchData.results.length} real competitors via Google Places`)
+      return searchData.results.slice(0, 10) // Limit to 10
+    }
+
+    console.log("[v0] Google Places search status:", searchData.status)
+    return []
+  } catch (error) {
+    console.error("[v0] Google Places search error:", error)
+    return []
   }
+}
+
+// Get the Google Places API key from practice settings or environment
+async function getGoogleApiKey(supabase: ReturnType<typeof createAdminClient> extends Promise<infer T> ? T : never, practiceId: string): Promise<string | null> {
+  // Try practice-level key first
+  const { data: settings } = await supabase
+    .from("practice_settings")
+    .select("system_settings")
+    .eq("practice_id", practiceId)
+    .single()
+
+  const practiceKey = settings?.system_settings?.google_places_api_key
+  if (practiceKey) return practiceKey
+
+  // Try super-admin API keys
+  const { data: apiKeys } = await supabase
+    .from("api_keys")
+    .select("key_value")
+    .eq("key_name", "google_places_api_key")
+    .eq("is_active", true)
+    .single()
+
+  if (apiKeys?.key_value) return apiKeys.key_value
+
+  // Fall back to environment variable
+  return process.env.GOOGLE_PLACES_API_KEY || null
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ practiceId: string; analysisId: string }> }) {
@@ -64,6 +134,37 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .eq("id", practiceId)
       .single()
 
+    // Try to fetch real competitor data from Google Places API
+    const googleApiKey = await getGoogleApiKey(supabase, practiceId)
+    let realCompetitors: GooglePlace[] = []
+    let dataSource = "ai-generated"
+
+    if (googleApiKey) {
+      console.log("[v0] Google API key found, searching for real competitors...")
+      realCompetitors = await searchRealCompetitors(
+        analysis.location,
+        analysis.specialty,
+        analysis.radius_km || 10,
+        googleApiKey,
+      )
+      if (realCompetitors.length > 0) {
+        dataSource = "google-places"
+        console.log(`[v0] Using ${realCompetitors.length} real competitors from Google Places`)
+      }
+    } else {
+      console.log("[v0] No Google API key found, using AI-only generation")
+    }
+
+    // Build real competitor context for the prompt
+    const realCompetitorContext = realCompetitors.length > 0
+      ? `\n\nECHTE WETTBEWERBER (von Google Places API - verwende diese ECHTEN Daten als Basis):\n${realCompetitors
+          .map(
+            (p, i) =>
+              `${i + 1}. "${p.name}" - ${p.formatted_address}${p.rating ? ` - Google ${p.rating}/5 (${p.user_ratings_total || 0} Bewertungen)` : ""}`,
+          )
+          .join("\n")}\n\nWICHTIG: Verwende exakt die oben genannten echten Praxisnamen und Adressen! Ergänze die Daten mit deiner Analyse (Stärken, Schwächen, etc.) aber erfinde KEINE neuen Praxisnamen.`
+      : `\nHINWEIS: Es stehen keine Google-Places-Daten zur Verfügung. Generiere realistische Wettbewerber basierend auf typischen Praxen in ${analysis.location}. Markiere diese als geschätzte Daten.`
+
     const prompt = `Du bist ein Experte für Marktanalysen im deutschen Gesundheitswesen. Erstelle eine detaillierte und professionelle Konkurrenzanalyse für eine Arztpraxis.
 
 PRAXIS-KONTEXT:
@@ -76,8 +177,7 @@ SUCHKRITERIEN:
 - Fachrichtung: ${analysis.specialty}
 - Suchradius: ${analysis.radius_km} km
 ${analysis.additional_keywords?.length > 0 ? `- Zusätzliche Keywords: ${analysis.additional_keywords.join(", ")}` : ""}
-
-WICHTIG: Für jeden Konkurrenten musst du realistische Google-Bewertungen generieren. Recherchiere typische Praxen in ${analysis.location} im Bereich ${analysis.specialty} und generiere realistische Daten basierend auf echten Marktgegebenheiten.
+${realCompetitorContext}
 
 Erstelle eine umfassende Konkurrenzanalyse im folgenden JSON-Format. Alle Texte MÜSSEN auf Deutsch sein:
 
@@ -256,6 +356,8 @@ WICHTIG:
         ai_analysis: {
           ...aiAnalysis,
           ratings_summary: aiAnalysis.ratings_summary,
+          data_source: dataSource,
+          real_competitor_count: realCompetitors.length,
         },
         updated_at: new Date().toISOString(),
       })

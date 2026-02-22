@@ -62,7 +62,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .eq("practice_id", practiceId)
         .is("deleted_at", null)
         .order("review_date", { ascending: false })
-        .limit(10)
 
       if (localError) {
         return NextResponse.json({
@@ -110,7 +109,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           .eq("practice_id", practiceId)
           .is("deleted_at", null)
           .order("review_date", { ascending: false })
-          .limit(10)
 
         const count = localRatings?.length || 0
         const sum = localRatings?.reduce((acc, r) => acc + (r.rating || 0), 0) || 0
@@ -150,9 +148,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         }
       }
 
+      // After sync, return ALL locally stored reviews (not just the 5 from Google API)
+      const { data: allLocalReviews } = await adminClient
+        .from("google_ratings")
+        .select("*")
+        .eq("practice_id", practiceId)
+        .is("deleted_at", null)
+        .order("review_date", { ascending: false })
+
       return NextResponse.json({
-        reviews: placeData.reviews || [],
-        totalReviews: placeData.userRatingCount || 0,
+        reviews: allLocalReviews || placeData.reviews || [],
+        totalReviews: placeData.userRatingCount || allLocalReviews?.length || 0,
         averageRating: placeData.rating || 0,
         placeName: placeData.displayName?.text || practice.name,
         source: "google_api",
@@ -166,7 +172,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .eq("practice_id", practiceId)
         .is("deleted_at", null)
         .order("review_date", { ascending: false })
-        .limit(10)
 
       const count = localRatings?.length || 0
       const sum = localRatings?.reduce((acc, r) => acc + (r.rating || 0), 0) || 0

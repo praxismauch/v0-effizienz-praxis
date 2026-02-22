@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
     doc.setFontSize(12)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(...MED_GRAY)
-    doc.text("Qualitaetsmanagement-Dokumentation", PAGE_WIDTH / 2, y, {
+    doc.text("Qualitätsmanagement-Dokumentation", PAGE_WIDTH / 2, y, {
       align: "center",
     })
     y += 15
@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
         if (article.version) metaParts.push(`Version ${article.version}`)
         if (article.updated_at)
           metaParts.push(new Date(article.updated_at).toLocaleDateString("de-DE"))
-        if (article.status === "published") metaParts.push("Veroeffentlicht")
+        if (article.status === "published") metaParts.push("Veröffentlicht")
 
         doc.setFontSize(8)
         doc.setFont("helvetica", "italic")
@@ -441,7 +441,7 @@ export async function POST(request: NextRequest) {
           doc.setFontSize(7.5)
           doc.setFont("helvetica", "italic")
           doc.setTextColor(...MED_GRAY)
-          doc.text(`Schlagwoerter: ${article.tags.join(", ")}`, MARGIN_LEFT, y)
+          doc.text(`Schlagwörter: ${article.tags.join(", ")}`, MARGIN_LEFT, y)
           y += 8
         }
 

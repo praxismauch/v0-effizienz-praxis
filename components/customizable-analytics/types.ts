@@ -72,7 +72,7 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   {
     id: "appointment-analysis",
     title: "Terminauslastung",
-    description: "Terminslots vs. tatsachliche Termine und Auslastungsgrad",
+    description: "Terminslots vs. tatsächliche Termine und Auslastungsgrad",
     component: "AppointmentAnalysisChart",
     category: "operations",
     isFavorite: false,
@@ -81,7 +81,7 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   {
     id: "cost-breakdown",
     title: "Kostenstruktur",
-    description: "Aufschlusselung der Praxiskosten nach Kategorien",
+    description: "Aufschlüsselung der Praxiskosten nach Kategorien",
     component: "CostBreakdownChart",
     category: "financial",
     isFavorite: false,
@@ -108,7 +108,7 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   {
     id: "treatment-mix",
     title: "Leistungsmix",
-    description: "Verteilung der erbrachten Leistungen nach Art und Vergutung",
+    description: "Verteilung der erbrachten Leistungen nach Art und Vergütung",
     component: "TreatmentMixChart",
     category: "performance",
     isFavorite: false,
@@ -135,7 +135,7 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   {
     id: "new-vs-returning",
     title: "Neue vs. Bestandspatienten",
-    description: "Verhaltnis Neupatientengewinnung zu Bestandspatienten",
+    description: "Verhältnis Neupatientengewinnung zu Bestandspatienten",
     component: "NewVsReturningChart",
     category: "patients",
     isFavorite: false,
@@ -153,7 +153,7 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   {
     id: "seasonal-patterns",
     title: "Saisonale Muster",
-    description: "Erkennbare Muster im Patientenaufkommen uber das Jahr",
+    description: "Erkennbare Muster im Patientenaufkommen über das Jahr",
     component: "SeasonalPatternsChart",
     category: "patients",
     isFavorite: false,
@@ -180,7 +180,7 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   {
     id: "patient-satisfaction",
     title: "Patientenzufriedenheit",
-    description: "Bewertungsverlauf und Zufriedenheitsindex uber alle Plattformen",
+    description: "Bewertungsverlauf und Zufriedenheitsindex über alle Plattformen",
     component: "PatientSatisfactionChart",
     category: "patients",
     isFavorite: false,
@@ -188,8 +188,8 @@ export const defaultSystemDiagrams: SystemDiagram[] = [
   },
   {
     id: "capacity-utilization",
-    title: "Kapazitatsauslastung",
-    description: "Raumauslastung und Geratenutzung nach Tageszeit",
+    title: "Kapazitätsauslastung",
+    description: "Raumauslastung und Gerätenutzung nach Tageszeit",
     component: "CapacityUtilizationChart",
     category: "operations",
     isFavorite: false,

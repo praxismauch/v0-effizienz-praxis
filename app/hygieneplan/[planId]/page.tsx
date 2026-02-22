@@ -69,7 +69,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; icon: typeof Shield; colo
   cleaning: { label: "Reinigung", icon: Sparkles, color: "#10b981", bgColor: "#d1fae5" },
   waste_management: { label: "Abfallmanagement", icon: Trash, color: "#f59e0b", bgColor: "#fef3c7" },
   occupational_safety: { label: "Arbeitsschutz", icon: HardHat, color: "#ef4444", bgColor: "#fee2e2" },
-  quality_management: { label: "Qualitaetsmanagement", icon: Target, color: "#6366f1", bgColor: "#e0e7ff" },
+  quality_management: { label: "Qualitätsmanagement", icon: Target, color: "#6366f1", bgColor: "#e0e7ff" },
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -426,7 +426,7 @@ export default function HygienePlanDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Target className="h-5 w-5 text-primary" />
-                  Qualitaetsindikatoren
+                  Qualitätsindikatoren
                 </CardTitle>
               </CardHeader>
               <CardContent>

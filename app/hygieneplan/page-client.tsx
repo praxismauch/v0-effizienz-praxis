@@ -572,7 +572,7 @@ const GENERATION_STEPS = [
   { at: 25, label: "Praxisdaten werden ausgewertet..." },
   { at: 40, label: "Maßnahmen werden erstellt..." },
   { at: 60, label: "Schritte werden formuliert..." },
-  { at: 75, label: "Qualitaetsindikatoren werden definiert..." },
+  { at: 75, label: "Qualitätsindikatoren werden definiert..." },
   { at: 88, label: "Dokumentation wird finalisiert..." },
   { at: 95, label: "Fast fertig..." },
 ]
@@ -638,7 +638,7 @@ function GenerateAIPlanDialog({
 
   const handleGenerate = () => {
     if (!selectedCategory) {
-      toast.error("Bitte waehlen Sie eine Kategorie")
+      toast.error("Bitte wählen Sie eine Kategorie")
       return
     }
     onGenerate(selectedCategory, customRequirements)

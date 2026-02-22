@@ -28,13 +28,13 @@ function stripHtml(html: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&auml;/g, "ae")
-    .replace(/&ouml;/g, "oe")
-    .replace(/&uuml;/g, "ue")
-    .replace(/&Auml;/g, "Ae")
-    .replace(/&Ouml;/g, "Oe")
-    .replace(/&Uuml;/g, "Ue")
-    .replace(/&szlig;/g, "ss")
+    .replace(/&auml;/g, "ä")
+    .replace(/&ouml;/g, "ö")
+    .replace(/&uuml;/g, "ü")
+    .replace(/&Auml;/g, "Ä")
+    .replace(/&Ouml;/g, "Ö")
+    .replace(/&Uuml;/g, "Ü")
+    .replace(/&szlig;/g, "ß")
     .replace(/\s+/g, " ")
     .trim()
 }
@@ -280,7 +280,7 @@ export async function POST(request: NextRequest) {
       new Paragraph({
         children: [
           new TextRun({
-            text: "Qualitaetsmanagement-Dokumentation",
+            text: "Qualitätsmanagement-Dokumentation",
             font: "Calibri",
             size: 28, // 14pt
             color: MED_GRAY,
@@ -475,7 +475,7 @@ export async function POST(request: NextRequest) {
         if (article.version) metaParts.push(`Version ${article.version}`)
         if (article.updated_at)
           metaParts.push(new Date(article.updated_at).toLocaleDateString("de-DE"))
-        if (article.status === "published") metaParts.push("Veroeffentlicht")
+        if (article.status === "published") metaParts.push("Veröffentlicht")
 
         children.push(
           new Paragraph({
@@ -502,7 +502,7 @@ export async function POST(request: NextRequest) {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: "Schlagwoerter: ",
+                  text: "Schlagwörter: ",
                   font: "Calibri",
                   size: 18,
                   bold: true,

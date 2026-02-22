@@ -34,7 +34,7 @@ import {
   TrendingUp,
   FileCheck,
   Clipboard,
-  MessageSquare,
+
   Bug,
   type LucideIcon,
 } from "lucide-react"
@@ -231,12 +231,7 @@ export function getNavigationGroups(
           key: "responsibilities",
           badge: "responsibilities",
         },
-        {
-          name: t("sidebar.messages", "Nachrichten"),
-          href: "/messages",
-          icon: MessageSquare,
-          key: "messages",
-        },
+
       ],
     },
     {

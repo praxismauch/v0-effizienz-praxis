@@ -65,31 +65,31 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (journalsError) throw journalsError
 
-    // Fetch preferences - try with practice_id, fall back if column doesn't exist
+    // Fetch preferences - gracefully handle missing table or columns
     let prefsData = null
-    const prefsResult = await adminClient
-      .from("journal_preferences")
-      .select("*")
-      .eq("practice_id", practiceId)
-      .maybeSingle()
-
-    if (prefsResult.error?.code === "42703" || prefsResult.error?.message?.includes("does not exist")) {
-      // Column doesn't exist, try fetching by user_id or just skip
-      const prefsFallback = await adminClient
+    try {
+      const prefsResult = await adminClient
         .from("journal_preferences")
         .select("*")
+        .eq("practice_id", practiceId)
         .maybeSingle()
 
-      if (prefsFallback.error && prefsFallback.error.code !== "42P01" && prefsFallback.error.code !== "PGRST205") {
-        console.error("[v0] journal_preferences fallback error:", prefsFallback.error)
+      if (prefsResult.error) {
+        // If column or table doesn't exist, just skip silently
+        const ignoreCodes = ["42703", "42P01", "PGRST205", "PGRST204"]
+        if (!ignoreCodes.includes(prefsResult.error.code || "") && !prefsResult.error.message?.includes("does not exist")) {
+          // Try without practice_id filter
+          const fallback = await adminClient
+            .from("journal_preferences")
+            .select("*")
+            .maybeSingle()
+          prefsData = fallback.data || null
+        }
+      } else {
+        prefsData = prefsResult.data
       }
-      prefsData = prefsFallback.data
-    } else if (prefsResult.error) {
-      if (prefsResult.error.code !== "42P01" && prefsResult.error.code !== "PGRST205") {
-        throw prefsResult.error
-      }
-    } else {
-      prefsData = prefsResult.data
+    } catch {
+      // journal_preferences not available - silently continue
     }
 
     // Fetch action items for the latest journal

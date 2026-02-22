@@ -1,61 +1,84 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Briefcase, DollarSign, Clock } from "lucide-react"
-import type { CompetitorAnalysis, Service } from "../types"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Briefcase, DollarSign } from "lucide-react"
+import type { ServiceComparison, PricingComparison } from "../types"
 
 interface ServicesTabProps {
-  analysis: CompetitorAnalysis
+  serviceComparison?: ServiceComparison | null
+  pricingComparison?: PricingComparison | null
 }
 
-export function ServicesTab({ analysis }: ServicesTabProps) {
-  const services: Service[] = analysis.services || []
+export function ServicesTab({ serviceComparison, pricingComparison }: ServicesTabProps) {
+  const services = serviceComparison?.services || []
+  const hasData = services.length > 0 || pricingComparison
 
-  if (services.length === 0) {
+  if (!hasData) {
     return (
       <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
-          Keine Dienstleistungen erfasst
+        <CardContent className="py-12 text-center">
+          <Briefcase className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+          <p className="text-muted-foreground">Keine Dienstleistungen erfasst</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Starten Sie eine KI-Analyse, um Dienstleistungsvergleiche zu generieren
+          </p>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {services.map((service, index) => (
-        <Card key={index} className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <div className="flex items-start justify-between">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Briefcase className="h-5 w-5 text-primary" />
-              </div>
-              {service.isPopular && (
-                <Badge variant="secondary">Beliebt</Badge>
-              )}
-            </div>
-            <CardTitle className="text-lg mt-2">{service.name}</CardTitle>
-            {service.description && (
-              <CardDescription>{service.description}</CardDescription>
-            )}
+    <div className="space-y-6">
+      {/* Pricing Overview */}
+      {pricingComparison && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Preisvergleich
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {service.price && (
-              <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span>{service.price}</span>
+          <CardContent className="space-y-3">
+            {pricingComparison.average_consultation_fee && (
+              <div>
+                <p className="text-sm font-medium">Durchschnittliche Beratungsgebühr</p>
+                <p className="text-lg font-bold text-primary">{pricingComparison.average_consultation_fee}</p>
               </div>
             )}
-            {service.duration && (
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{service.duration}</span>
+            {pricingComparison.price_positioning && (
+              <div>
+                <p className="text-sm font-medium">Preispositionierung</p>
+                <p className="text-sm text-muted-foreground">{pricingComparison.price_positioning}</p>
               </div>
             )}
           </CardContent>
         </Card>
-      ))}
+      )}
+
+      {/* Services List */}
+      {services.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Angebotene Leistungen im Markt
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {services.map((service, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 p-3 border rounded-lg text-sm"
+                >
+                  <span className="shrink-0 h-2 w-2 rounded-full bg-primary" />
+                  {service}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

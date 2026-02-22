@@ -34,25 +34,32 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
     <>
       <div className="border-b border-sidebar-border px-3 py-3">
         {sidebarOpen ? (
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-700 dark:hover:text-amber-300 h-9"
+          <button
             onClick={() => setOpen(true)}
+            className="group relative w-full overflow-hidden rounded-lg bg-gradient-to-r from-amber-500/20 via-amber-400/15 to-orange-500/20 border border-amber-500/30 px-3 py-2.5 text-left transition-all duration-300 hover:from-amber-500/30 hover:via-amber-400/25 hover:to-orange-500/30 hover:border-amber-400/50 hover:shadow-md hover:shadow-amber-500/10"
           >
-            <Construction className="h-4 w-4 shrink-0" />
-            <span className="truncate text-sm">Wichtiger Hinweis</span>
-          </Button>
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/5 to-orange-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-center gap-2.5">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-amber-500/20 group-hover:bg-amber-500/30 transition-colors">
+                <Construction className="h-4 w-4 text-amber-400" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-amber-300 group-hover:text-amber-200 transition-colors truncate">
+                  Wichtiger Hinweis
+                </span>
+                <span className="text-[10px] text-amber-500/70 leading-tight">Beta-Phase aktiv</span>
+              </div>
+            </div>
+          </button>
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-full text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+              <button
                 onClick={() => setOpen(true)}
+                className="group flex w-full items-center justify-center rounded-lg bg-gradient-to-b from-amber-500/20 to-orange-500/20 border border-amber-500/30 p-2 transition-all duration-300 hover:from-amber-500/30 hover:to-orange-500/30 hover:border-amber-400/50 hover:shadow-md hover:shadow-amber-500/10"
               >
-                <Construction className="h-4 w-4" />
-              </Button>
+                <Construction className="h-4 w-4 text-amber-400 group-hover:text-amber-300 transition-colors" />
+              </button>
             </TooltipTrigger>
             <TooltipContent side="right">Wichtiger Hinweis</TooltipContent>
           </Tooltip>

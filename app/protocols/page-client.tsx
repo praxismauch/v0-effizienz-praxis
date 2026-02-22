@@ -347,11 +347,14 @@ export default function PageClient(_props: PageClientProps) {
         subtitle="Nehmen Sie Meetings auf und erstellen Sie automatisch Protokolle"
         actions={
           <>
-            <Button variant="outline" onClick={() => setRecordingDialogOpen(true)}>
-              <Mic className="mr-2 h-4 w-4" />
+            <Button
+              onClick={() => setRecordingDialogOpen(true)}
+              className="bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-200"
+            >
+              <Mic className="mr-2 h-4 w-4 animate-pulse" />
               Neue Aufnahme
             </Button>
-            <Button onClick={() => setCreateDialogOpen(true)}>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Manuell erstellen
             </Button>

@@ -35,16 +35,25 @@ function getFileIcon(fileType: string, fileName: string) {
 }
 
 function isPdf(fileType: string, fileName: string) {
-  return fileType === "application/pdf" || fileName?.toLowerCase().endsWith(".pdf")
+  return fileType === "application/pdf" || 
+    fileType?.includes("pdf") || 
+    fileName?.toLowerCase().endsWith(".pdf")
 }
 
-function isImage(fileType: string) {
-  return fileType?.startsWith("image/")
+function isImage(fileType: string, fileName?: string) {
+  if (fileType?.startsWith("image/")) return true
+  const ext = fileName?.toLowerCase().split(".").pop() || ""
+  return ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico"].includes(ext)
 }
 
 function isOfficeDoc(fileName: string) {
   const ext = fileName?.toLowerCase().split(".").pop() || ""
   return ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext)
+}
+
+function isTextFile(fileName: string) {
+  const ext = fileName?.toLowerCase().split(".").pop() || ""
+  return ["txt", "csv", "json", "xml", "html", "htm", "md"].includes(ext)
 }
 
 export function DocumentPreviewDialog({
@@ -72,8 +81,15 @@ export function DocumentPreviewDialog({
       return
     }
 
-    const shouldFetchBlob = isPdf(docFileType || "", docName)
-    if (!shouldFetchBlob) return
+    const docIsPdf = isPdf(docFileType || "", docName)
+    const docIsImage = isImage(docFileType || "", docName)
+    const docIsOffice = isOfficeDoc(docName)
+    console.log("[v0] Preview dialog opened:", { docName, docFileType, docFileUrl: docFileUrl?.substring(0, 80), docIsPdf, docIsImage, docIsOffice })
+    
+    if (!docIsPdf) {
+      console.log("[v0] Not a PDF, skipping blob fetch. Will use:", docIsImage ? "image preview" : docIsOffice ? "office preview" : "fallback")
+      return
+    }
 
     let cancelled = false
     setBlobLoading(true)
@@ -81,17 +97,20 @@ export function DocumentPreviewDialog({
 
     fetch(docFileUrl)
       .then((res) => {
+        console.log("[v0] PDF fetch response:", res.status, res.headers.get("content-type"))
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.blob()
       })
       .then((blob) => {
         if (cancelled) return
+        console.log("[v0] PDF blob created:", blob.size, "bytes, type:", blob.type)
         const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
         setBlobUrl(url)
         setBlobLoading(false)
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return
+        console.error("[v0] PDF fetch failed:", err.message)
         setBlobLoading(false)
         setIframeError(true)
       })
@@ -167,7 +186,7 @@ export function DocumentPreviewDialog({
 
         {/* Preview Area */}
         <div className="flex-1 overflow-hidden bg-muted/20 relative">
-          {isImage(document.file_type) ? (
+          {isImage(document.file_type, document.name) ? (
             <div className="flex items-center justify-center h-full p-6">
               <img
                 src={document.file_url || "/placeholder.svg"}
@@ -177,13 +196,13 @@ export function DocumentPreviewDialog({
             </div>
           ) : canPreviewPdf && !iframeError ? (
             <div className="relative w-full h-full">
-              {(blobLoading || (iframeLoading && blobUrl)) && (
+              {(blobLoading || (iframeLoading && (blobUrl || document.file_url))) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-muted/20 z-10">
                   <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
                   <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
                 </div>
               )}
-              {blobUrl && (
+              {blobUrl ? (
                 <object
                   data={`${blobUrl}#toolbar=1&navpanes=1`}
                   type="application/pdf"
@@ -198,7 +217,16 @@ export function DocumentPreviewDialog({
                     onError={() => { setIframeLoading(false); setIframeError(true) }}
                   />
                 </object>
-              )}
+              ) : !blobLoading ? (
+                /* Fallback: try Google Docs viewer for public URLs */
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(document.file_url)}&embedded=true`}
+                  title={document.name}
+                  className="w-full h-full border-0"
+                  onLoad={() => setIframeLoading(false)}
+                  onError={() => { setIframeLoading(false); setIframeError(true) }}
+                />
+              ) : null}
             </div>
           ) : canPreviewOffice && !iframeError ? (
             /* Use Microsoft Office Online viewer for Office docs */

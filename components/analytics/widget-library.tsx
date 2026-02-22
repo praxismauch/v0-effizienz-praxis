@@ -67,6 +67,26 @@ const categoryColors: Record<string, string> = {
   team: "bg-pink-100 text-pink-700",
 }
 
+const categoryLabels: Record<string, string> = {
+  overview: "Übersicht",
+  financial: "Finanzen",
+  patients: "Patienten",
+  operations: "Betrieb",
+  team: "Team",
+}
+
+const typeLabels: Record<string, string> = {
+  chart: "Diagramm",
+  stat: "Statistik",
+  table: "Tabelle",
+  custom: "Benutzerdefiniert",
+  bar: "Balken",
+  line: "Linie",
+  pie: "Kreis",
+  area: "Fläche",
+  radar: "Radar",
+}
+
 export function WidgetLibrary({
   widgets,
   onEdit,
@@ -135,7 +155,7 @@ export function WidgetLibrary({
               onClick={() => setSelectedCategory(category)}
               size="sm"
             >
-              {category}
+              {categoryLabels[category] || category}
             </Button>
           ))}
         </div>
@@ -213,10 +233,10 @@ export function WidgetLibrary({
               <CardContent className="pb-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className={`text-xs ${categoryColors[widget.category] || ""}`}>
-                    {widget.category}
+                    {categoryLabels[widget.category] || widget.category}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    {widget.type === "chart" ? widget.chartType : widget.type}
+                    {widget.type === "chart" ? (typeLabels[widget.chartType || ""] || widget.chartType) : (typeLabels[widget.type] || widget.type)}
                   </Badge>
                   {widget.enabled && (
                     <Badge variant="default" className="text-xs bg-green-100 text-green-700 hover:bg-green-100">

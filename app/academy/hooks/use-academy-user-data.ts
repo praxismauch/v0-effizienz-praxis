@@ -65,13 +65,13 @@ export function useAcademyUserData({ practiceId, userId, isAuthenticated, hasPra
         if (data && data.length > 0 && !pendingBadge) {
           const firstBadge = data[0]
           setPendingBadge({
-            id: firstBadge.badge?.badge_id,
+            id: firstBadge.badge?.badge_id || firstBadge.badge?.id,
             name: firstBadge.badge?.name,
             description: firstBadge.badge?.description,
             icon_name: firstBadge.badge?.icon_name,
             color: firstBadge.badge?.color,
-            rarity: firstBadge.badge?.rarity,
-            points: firstBadge.badge?.points,
+            rarity: firstBadge.badge?.rarity || "common",
+            points: firstBadge.badge?.xp_reward || firstBadge.badge?.points || 0,
             userBadgeId: firstBadge.id,
           })
         }

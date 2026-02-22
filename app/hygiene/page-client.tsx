@@ -36,6 +36,8 @@ export function HygienePage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<HygienePlan | null>(null)
   const [detailPlan, setDetailPlan] = useState<HygienePlan | null>(null)
+  const [editingPlan, setEditingPlan] = useState<HygienePlan | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterArea, setFilterArea] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
@@ -143,6 +145,60 @@ export function HygienePage() {
       }
     } catch {
       toast({ title: "Fehler", description: "Übertragung fehlgeschlagen.", variant: "destructive" })
+    }
+  }
+
+  const handleEditPlan = (plan: HygienePlan) => {
+    setEditingPlan(plan)
+    setFormData({
+      title: plan.title,
+      description: plan.description || "",
+      plan_type: plan.plan_type,
+      area: plan.area,
+      frequency: plan.frequency,
+      procedure: plan.procedure,
+      responsible_role: plan.responsible_role || "",
+      products_used: plan.products_used?.join(", ") || "",
+      documentation_required: plan.documentation_required,
+      rki_reference: plan.rki_reference || "",
+    })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdatePlan = async () => {
+    if (!editingPlan) return
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/hygiene/${editingPlan.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          products_used: formData.products_used.split(",").map((p) => p.trim()).filter(Boolean),
+          status: editingPlan.status,
+        }),
+      })
+      if (res.ok) {
+        toast({ title: "Hygieneplan aktualisiert", description: "Die Änderungen wurden gespeichert." })
+        setIsEditDialogOpen(false)
+        setEditingPlan(null)
+        setFormData(EMPTY_FORM_DATA)
+        loadPlans()
+      } else { throw new Error("Failed to update plan") }
+    } catch {
+      toast({ title: "Fehler", description: "Hygieneplan konnte nicht aktualisiert werden.", variant: "destructive" })
+    }
+  }
+
+  const handleDeletePlan = async (plan: HygienePlan) => {
+    if (!confirm(`Möchten Sie den Hygieneplan "${plan.title}" wirklich löschen?`)) return
+    try {
+      const res = await fetch(`/api/practices/${practiceId}/hygiene/${plan.id}`, { method: "DELETE" })
+      if (res.ok) {
+        toast({ title: "Hygieneplan gelöscht", description: "Der Hygieneplan wurde entfernt." })
+        loadPlans()
+      } else { throw new Error("Failed to delete plan") }
+    } catch {
+      toast({ title: "Fehler", description: "Hygieneplan konnte nicht gelöscht werden.", variant: "destructive" })
     }
   }
 
@@ -265,6 +321,8 @@ export function HygienePage() {
           onExecute={(plan) => { setSelectedPlan(plan); setIsExecuteDialogOpen(true) }}
           onAddToKnowledge={handleAddToKnowledge}
           onViewDetail={(plan) => setDetailPlan(plan)}
+          onEdit={handleEditPlan}
+          onDelete={handleDeletePlan}
         />
       </div>
 
@@ -297,6 +355,22 @@ export function HygienePage() {
           setIsExecuteDialogOpen(true)
         }}
         onAddToKnowledge={handleAddToKnowledge}
+        onEdit={handleEditPlan}
+      />
+
+      {/* Edit Dialog - reuses CreateHygienePlanDialog in edit mode */}
+      <CreateHygienePlanDialog
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open)
+          if (!open) { setEditingPlan(null); setFormData(EMPTY_FORM_DATA) }
+        }}
+        formData={formData}
+        onFormChange={setFormData}
+        onSubmit={handleUpdatePlan}
+        onGenerateAI={handleGenerateWithAI}
+        isGenerating={isGenerating}
+        editMode
       />
     </AppLayout>
   )

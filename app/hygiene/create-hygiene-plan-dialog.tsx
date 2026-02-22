@@ -24,6 +24,7 @@ interface CreateHygienePlanDialogProps {
   onSubmit: () => void
   onGenerateAI: () => void
   isGenerating: boolean
+  editMode?: boolean
 }
 
 export function CreateHygienePlanDialog({
@@ -34,14 +35,15 @@ export function CreateHygienePlanDialog({
   onSubmit,
   onGenerateAI,
   isGenerating,
+  editMode = false,
 }: CreateHygienePlanDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Neuen Hygieneplan erstellen</DialogTitle>
+          <DialogTitle>{editMode ? "Hygieneplan bearbeiten" : "Neuen Hygieneplan erstellen"}</DialogTitle>
           <DialogDescription>
-            Erstellen Sie einen neuen Hygieneplan basierend auf RKI-Empfehlungen
+            {editMode ? "Bearbeiten Sie die Details dieses Hygieneplans" : "Erstellen Sie einen neuen Hygieneplan basierend auf RKI-Empfehlungen"}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,7 +133,9 @@ export function CreateHygienePlanDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-          <Button onClick={onSubmit} disabled={!formData.title || !formData.procedure}>Hygieneplan erstellen</Button>
+          <Button onClick={onSubmit} disabled={!formData.title || !formData.procedure}>
+            {editMode ? "Speichern" : "Hygieneplan erstellen"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

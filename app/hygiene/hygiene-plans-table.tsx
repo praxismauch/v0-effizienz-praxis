@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Shield, Plus, CheckCircle2, BookOpen, Eye } from "lucide-react"
+import { Shield, Plus, CheckCircle2, BookOpen, Eye, Pencil, Trash2 } from "lucide-react"
 import { PLAN_TYPES, AREAS, FREQUENCIES, STATUS_OPTIONS, type HygienePlan } from "./hygiene-constants"
 
 interface HygienePlansTableProps {
@@ -21,6 +21,8 @@ interface HygienePlansTableProps {
   onExecute: (plan: HygienePlan) => void
   onAddToKnowledge: (plan: HygienePlan) => void
   onViewDetail: (plan: HygienePlan) => void
+  onEdit: (plan: HygienePlan) => void
+  onDelete: (plan: HygienePlan) => void
 }
 
 export function HygienePlansTable({
@@ -30,6 +32,8 @@ export function HygienePlansTable({
   onExecute,
   onAddToKnowledge,
   onViewDetail,
+  onEdit,
+  onDelete,
 }: HygienePlansTableProps) {
   if (plans.length === 0) {
     return (
@@ -107,16 +111,22 @@ export function HygienePlansTable({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onViewDetail(plan) }}>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onViewDetail(plan) }} title="Anzeigen">
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(plan) }} title="Bearbeiten">
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onExecute(plan) }}>
                       <CheckCircle2 className="h-4 w-4 mr-1" />
                       Durchführen
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onAddToKnowledge(plan) }}>
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onAddToKnowledge(plan) }} title="Zur Wissensdatenbank">
                       <BookOpen className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(plan) }} title="Löschen">
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>

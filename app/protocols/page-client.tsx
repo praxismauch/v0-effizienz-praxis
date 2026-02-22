@@ -349,7 +349,7 @@ export default function PageClient(_props: PageClientProps) {
           <>
             <Button
               onClick={() => setRecordingDialogOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-200"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-200"
             >
               <Mic className="mr-2 h-4 w-4 animate-pulse" />
               Neue Aufnahme

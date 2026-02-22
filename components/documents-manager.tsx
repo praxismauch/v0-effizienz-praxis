@@ -250,7 +250,7 @@ export function DocumentsManager() {
 
   const [fileTypeFilter, setFileTypeFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("name-asc")
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "finder">("grid")
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "finder">("finder")
 
   const [hasCheckedDefaultFolders, setHasCheckedDefaultFolders] = useState(false)
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { TrendingUp, Calendar, Euro, Pencil } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,8 +16,9 @@ interface RoiAnalysisCardProps {
 }
 
 export function RoiAnalysisCard({ analysis, onDeleted, onUpdated }: RoiAnalysisCardProps) {
+  const router = useRouter()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   const handleDelete = async () => {
@@ -61,7 +63,7 @@ export function RoiAnalysisCard({ analysis, onDeleted, onUpdated }: RoiAnalysisC
 
   return (
     <>
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setViewDialogOpen(true)}>
+      <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push(`/roi-analysis/${analysis.id}`)}>
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -77,7 +79,7 @@ export function RoiAnalysisCard({ analysis, onDeleted, onUpdated }: RoiAnalysisC
                 className="h-8 w-8"
                 onClick={(e) => {
                   e.stopPropagation()
-                  setViewDialogOpen(true)
+                  setEditDialogOpen(true)
                 }}
               >
                 <Pencil className="h-4 w-4 text-muted-foreground" />
@@ -145,12 +147,13 @@ export function RoiAnalysisCard({ analysis, onDeleted, onUpdated }: RoiAnalysisC
         </CardContent>
       </Card>
 
-      {/* View Dialog */}
+      {/* Edit Dialog */}
       <ViewRoiAnalysisDialog
-        open={viewDialogOpen}
-        onOpenChange={setViewDialogOpen}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
         analysisId={analysis.id}
         onUpdated={onUpdated}
+        initialEditMode
       />
     </>
   )

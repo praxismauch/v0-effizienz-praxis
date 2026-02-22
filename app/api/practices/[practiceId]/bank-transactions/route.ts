@@ -14,6 +14,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ prac
       .order("transaction_date", { ascending: false })
 
     if (error) {
+      // Table does not exist yet - return empty array gracefully
+      if (error.code === "PGRST205" || error.message?.includes("Could not find the table")) {
+        return NextResponse.json([])
+      }
+
       console.error("Bank transactions GET - Database error:", error)
 
       if (error.message?.includes("Too Many Requests") || error.message?.includes("rate limit")) {

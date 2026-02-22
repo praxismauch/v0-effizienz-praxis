@@ -32,24 +32,16 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
 
   return (
     <>
-      <div className="border-b border-sidebar-border px-3 py-3">
+      <div className="px-3 py-1.5">
         {sidebarOpen ? (
           <button
             onClick={() => setOpen(true)}
-            className="group relative w-full overflow-hidden rounded-lg bg-gradient-to-r from-amber-500/20 via-amber-400/15 to-orange-500/20 border border-amber-500/30 px-3 py-2.5 text-left transition-all duration-300 hover:from-amber-500/30 hover:via-amber-400/25 hover:to-orange-500/30 hover:border-amber-400/50 hover:shadow-md hover:shadow-amber-500/10"
+            className="group flex w-full items-center gap-2 px-1 py-1 text-left transition-colors hover:opacity-80"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/5 to-orange-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex items-center gap-2.5">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-amber-500/20 group-hover:bg-amber-500/30 transition-colors">
-                <Construction className="h-4 w-4 text-amber-400" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-amber-300 group-hover:text-amber-200 transition-colors truncate">
-                  Wichtiger Hinweis
-                </span>
-                <span className="text-[10px] text-amber-500/70 leading-tight">Beta-Phase aktiv</span>
-              </div>
-            </div>
+            <Construction className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            <span className="text-xs text-amber-500/80 hover:text-amber-400 underline underline-offset-2 decoration-amber-500/30 transition-colors truncate">
+              Beta-Hinweis
+            </span>
           </button>
         ) : (
           <Tooltip>
@@ -67,7 +59,7 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Construction className="h-5 w-5 text-amber-500" />
@@ -76,70 +68,59 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
             <DialogDescription>Informationen zum aktuellen Entwicklungsstand</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5 py-2">
-            <div className="rounded-lg border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20 p-4">
-              <h4 className="font-medium text-amber-900 dark:text-amber-200 mb-2">Aktive Entwicklungsphase</h4>
+          <div className="space-y-4 py-1">
+            <div className="rounded-lg border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+              <h4 className="font-medium text-amber-900 dark:text-amber-200 text-sm mb-1">Aktive Entwicklungsphase</h4>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Effizienz Praxis befindet sich derzeit noch in der aktiven Entwicklung (Beta-Phase). Das bedeutet, dass
-                neue Funktionen laufend hinzukommen, bestehende Features verbessert werden und es vereinzelt zu kleineren
-                Fehlern oder unerwarteten Verhaltensweisen kommen kann.
+                Effizienz Praxis befindet sich in der aktiven Entwicklung (Beta-Phase). Neue Funktionen kommen laufend hinzu und bestehende Features werden stetig verbessert.
               </p>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="font-medium">Was bedeutet das konkret?</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-500 shrink-0" />
-                  <span>Alle Kernfunktionen sind voll nutzbar und werden produktiv eingesetzt</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
-                  <span>Einige Features sind noch in der Optimierung und werden stetig verbessert</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Construction className="h-4 w-4 mt-0.5 text-blue-500 shrink-0" />
-                  <span>Neue Module und Funktionen werden in den kommenden Wochen ausgerollt</span>
-                </li>
-              </ul>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="flex items-start gap-2 rounded-lg border bg-muted/20 p-2.5">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-500 shrink-0" />
+                <span className="text-xs text-muted-foreground">Kernfunktionen voll nutzbar und produktiv</span>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border bg-muted/20 p-2.5">
+                <AlertCircle className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
+                <span className="text-xs text-muted-foreground">Einige Features in Optimierung</span>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border bg-muted/20 p-2.5">
+                <Construction className="h-4 w-4 mt-0.5 text-blue-500 shrink-0" />
+                <span className="text-xs text-muted-foreground">Neue Module kommen in den nächsten Wochen</span>
+              </div>
             </div>
 
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <MessageSquareHeart className="h-4 w-4 text-primary" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="flex items-start gap-2.5">
+                  <MessageSquareHeart className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-sm mb-0.5">Ihr Feedback ist uns wichtig!</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Teilen Sie uns Ihre Erfahrungen, Verbesserungsvorschläge und Fehlermeldungen mit.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium mb-1">Ihr Feedback ist uns wichtig!</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Wir laden Sie herzlich ein, uns Ihre Erfahrungen, Verbesserungsvorschlaege und Fehlermeldungen
-                    mitzuteilen. Ihr Feedback hilft uns, Effizienz Praxis noch besser zu machen.
-                  </p>
+              </div>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <div className="flex items-start gap-2.5">
+                  <Bug className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-sm mb-0.5">So geben Sie Feedback</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {"Klicken Sie auf das "}
+                      <span className="inline-flex items-center gap-0.5 font-medium text-foreground">
+                        <Bug className="h-3 w-3" /> Bug-Icon
+                      </span>
+                      {" oben rechts neben Ihrem Profil."}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Bug className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-medium mb-1">So geben Sie Feedback</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {"Klicken Sie auf das "}
-                    <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                      <Bug className="h-3.5 w-3.5" /> Bug-Icon
-                    </span>
-                    {" in der oberen rechten Ecke der Anwendung (neben Ihrem Profil). "}
-                    Dort können Sie Fehler melden, Verbesserungsvorschläge einreichen oder allgemeines Feedback geben
-                    -- gerne auch mit Screenshots.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs text-muted-foreground text-center pt-1">
               Vielen Dank, dass Sie Teil dieser Entwicklungsphase sind!
             </p>
           </div>

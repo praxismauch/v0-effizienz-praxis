@@ -57,7 +57,6 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Updated hygiene plan:", planId)
     return NextResponse.json({ hygienePlan })
   } catch (error) {
     console.error("[v0] Error in hygiene plan PATCH:", error)
@@ -80,7 +79,6 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Deleted hygiene plan:", planId)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Error in hygiene plan DELETE:", error)

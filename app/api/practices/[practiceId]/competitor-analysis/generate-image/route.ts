@@ -45,7 +45,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const imageUrl = result.data.images[0].url
-    console.log("[v0] Generated image URL:", imageUrl)
 
     // Update the competitor analysis with the generated image
     const supabase = await createAdminClient()

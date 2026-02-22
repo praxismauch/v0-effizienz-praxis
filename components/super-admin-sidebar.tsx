@@ -176,7 +176,6 @@ export function SuperAdminSidebar({}: SuperAdminSidebarProps) {
             }
           }
         } catch (error) {
-          console.debug("[v0] Error loading super admin sidebar state from API:", error)
         }
       }
     }

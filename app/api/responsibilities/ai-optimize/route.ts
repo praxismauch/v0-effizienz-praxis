@@ -4,10 +4,8 @@ import { createServerClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
   try {
-    console.log("[v0] AI Optimize API called")
 
     const body = await request.json()
-    console.log("[v0] Request body:", JSON.stringify(body, null, 2))
 
     const {
       name,
@@ -21,7 +19,6 @@ export async function POST(request: Request) {
     } = body
 
     if (!name) {
-      console.log("[v0] Missing name field")
       return NextResponse.json({ error: "Name ist erforderlich" }, { status: 400 })
     }
 
@@ -38,7 +35,6 @@ export async function POST(request: Request) {
     // Get practice context if practice_id is provided
     let practiceContext = ""
     if (practice_id) {
-      console.log("[v0] Fetching practice context for:", practice_id)
       const supabase = await createServerClient()
       
       // Try to get practice with description, fallback without if column doesn't exist
@@ -59,13 +55,11 @@ export async function POST(request: Request) {
           .single()
         practice = fallbackResult.data
       } else if (result.error) {
-        console.log("[v0] Practice fetch error:", result.error)
       } else {
         practice = result.data
       }
 
       if (practice) {
-        console.log("[v0] Practice found:", practice.name)
         practiceContext = `
 Praxiskontext:
 - Name: ${practice.name}
@@ -103,8 +97,6 @@ Bitte gib 3-5 konkrete Optimierungsvorschläge, die helfen:
 
 Formatiere deine Antwort als nummerierte Liste mit klaren, umsetzbaren Vorschlägen. Sei spezifisch und praxisnah.`
 
-    console.log("[v0] Generating AI text with model: anthropic/claude-sonnet-4-20250514")
-
     try {
       const { text } = await generateText({
         model: "anthropic/claude-sonnet-4-20250514",
@@ -112,7 +104,6 @@ Formatiere deine Antwort als nummerierte Liste mit klaren, umsetzbaren Vorschlä
         maxOutputTokens: 1000,
       })
 
-      console.log("[v0] AI text generated successfully, length:", text.length)
       return NextResponse.json({ suggestions: text })
     } catch (aiError) {
       console.error("[v0] AI generation error:", aiError)

@@ -7,8 +7,6 @@ export async function POST(req: NextRequest) {
     const supabase = await createAdminClient()
     const { currentKeywords, topPages, technicalIssues } = await req.json()
 
-    console.log("[v0] Generating AI SEO assistant recommendations")
-
     const { data: blogPosts } = await supabase
       .from("blog_posts")
       .select("title, seo_title, seo_description, tags, content")
@@ -158,8 +156,6 @@ Gib die Antwort als JSON zurück:
           "Fokussieren Sie sich auf Long-Tail-Keywords im Bereich Praxissoftware, um spezifische Nutzeranfragen zu bedienen. Erstellen Sie umfassende Content-Hubs zu Kernthemen wie DSGVO, Digitalisierung und Praxismanagement. Bauen Sie Ihre Autorität durch regelmäßige Blog-Posts und Fallstudien aus. Nutzen Sie lokale SEO-Strategien, um Praxen in bestimmten Regionen anzusprechen.",
       }
     }
-
-    console.log("[v0] AI recommendations generated successfully")
 
     return NextResponse.json({ recommendations })
   } catch (error: any) {

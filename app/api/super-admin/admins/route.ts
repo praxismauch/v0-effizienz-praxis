@@ -34,8 +34,6 @@ export async function GET(request: NextRequest) {
       defaultPracticeId: admin.default_practice_id,
     }))
 
-    console.log("[v0] Fetched super admins from database:", transformedAdmins.length)
-
     return NextResponse.json({ admins: transformedAdmins })
   } catch (error: any) {
     console.error("[v0] Error in GET /api/super-admin/admins:", error)

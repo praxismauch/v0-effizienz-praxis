@@ -11,7 +11,6 @@ export async function GET(request: Request) {
     const supabase = await createAdminClient()
 
     // Fetch users based on approval status
-    console.log(`[v0] Fetching users with status: ${status}`)
 
     const { data: users, error } = await supabase
       .from("users")
@@ -25,8 +24,6 @@ export async function GET(request: Request) {
       console.error("[v0] Error fetching users by status:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    console.log(`[v0] Fetched ${users?.length || 0} users with status: ${status}`)
 
     if (users && users.length > 0) {
       users.forEach((user) => {

@@ -13,8 +13,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
     }
 
-    console.log("[v0] Fetching academy enrollments for practice:", effectivePracticeId)
-
     const url = new URL(request.url)
     const userId = url.searchParams.get("userId")
     const courseId = url.searchParams.get("courseId")
@@ -44,7 +42,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log("[v0] Found enrollments:", enrollments?.length || 0)
     return NextResponse.json(enrollments || [])
   } catch (error: any) {
     console.error("[v0] Error fetching enrollments:", error)
@@ -70,8 +67,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "userId and courseId are required" }, { status: 400 })
     }
 
-    console.log("[v0] Enrolling user in course:", { userId, courseId, practiceId: effectivePracticeId })
-
     // Check if already enrolled
     const { data: existing } = await supabase
       .from("academy_enrollments")
@@ -83,7 +78,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single()
 
     if (existing) {
-      console.log("[v0] User already enrolled")
       return NextResponse.json({ message: "Already enrolled", enrollment: existing })
     }
 
@@ -118,7 +112,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
       .catch(console.error)
 
-    console.log("[v0] Enrollment created:", enrollment.id)
     return NextResponse.json(enrollment)
   } catch (error: any) {
     console.error("[v0] Error creating enrollment:", error)

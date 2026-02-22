@@ -3,11 +3,9 @@ import { createClient } from "@/lib/supabase/server"
 
 // GET /api/practices/[practiceId]/parameter-groups - Fetch practice-specific parameter groups
 export async function GET(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
-  console.log("[v0] GET /api/practices/[practiceId]/parameter-groups called")
   try {
     const supabase = await createClient()
     const { practiceId } = await params
-    console.log("[v0] Fetching categories for practice:", practiceId)
 
     const { data: categories, error } = await supabase
       .from("global_parameter_groups")
@@ -19,8 +17,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       console.error("[v0] Error fetching practice categories:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    console.log("[v0] Successfully fetched", categories?.length || 0, "practice-specific categories")
 
     return NextResponse.json({ categories: categories || [] })
   } catch (error) {
@@ -80,14 +76,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 // DELETE /api/practices/[practiceId]/parameter-groups?id=<categoryId>
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ practiceId: string }> }) {
-  console.log("[v0] DELETE /api/practices/[practiceId]/parameter-groups called")
   try {
     const supabase = await createClient()
     const { practiceId } = await params
     const { searchParams } = new URL(request.url)
     const categoryId = searchParams.get("id")
-
-    console.log("[v0] DELETE params:", { practiceId, categoryId })
 
     if (!categoryId) {
       console.error("[v0] Missing category ID in query parameters")
@@ -106,7 +99,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Successfully deleted category:", categoryId)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Error in DELETE /api/practices/[practiceId]/parameter-groups:", error)

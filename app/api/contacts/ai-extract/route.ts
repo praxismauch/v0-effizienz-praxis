@@ -10,8 +10,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kein Bild-URL angegeben" }, { status: 400 })
     }
 
-    console.log("[v0] AI extract: Processing image URL:", imageUrl.substring(0, 80))
-
     // DSGVO: Business card OCR - data is processed transiently for structured extraction only.
     // Extracted data is stored only in the practice's own database.
     const { text } = await generateText({
@@ -32,8 +30,6 @@ export async function POST(request: NextRequest) {
         },
       ],
     })
-
-    console.log("[v0] AI extract: Raw response:", text.substring(0, 200))
 
     // Parse the AI response - handle markdown code blocks
     const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim()

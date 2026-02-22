@@ -104,7 +104,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
     }
 
     // Use admin client (bypasses RLS) with fallback to session client
-    console.log("[v0] Holiday POST: creating request for practice=", practiceId, "user=", teamMemberId || userId, "dates=", startDate, "->", endDate)
     const client = await getApiClient()
 
     const { data, error } = await client

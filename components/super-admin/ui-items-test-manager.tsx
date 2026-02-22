@@ -267,13 +267,10 @@ export default function UIItemsTestManager() {
   // Fetch fresh UI items from API
   const fetchUIItems = useCallback(async () => {
     try {
-      console.log("[v0] Fetching UI items from API...")
       const response = await fetch("/api/super-admin/ui-items")
-      console.log("[v0] UI items response status:", response.status)
 
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] UI items loaded:", data.categories?.length, "categories")
         setUiItemsData(data)
         // Expand all categories by default
         setExpandedCategories(data.categories.map((c: UICategory) => c.id))
@@ -340,29 +337,18 @@ export default function UIItemsTestManager() {
 
   // Start a new test
   const startNewTest = async () => {
-    console.log("[v0] startNewTest function called")
-    console.log("[v0] Current state - isStartingNewTest:", isStartingNewTest)
     setIsStartingNewTest(true)
-    console.log("[v0] Set isStartingNewTest to true")
 
     try {
-      console.log("[v0] About to fetch fresh UI items...")
       // Fetch fresh UI items to ensure we have the latest
       const data = await fetchUIItems()
-      console.log("[v0] Fetch completed, data:", data ? "exists" : "null")
 
       if (data) {
-        console.log("[v0] Initializing test items from", data.categories?.length, "categories")
         initializeTestItems(data)
-        console.log("[v0] Test items initialized")
         setSelectedTestRun(null)
-        console.log("[v0] Selected test run cleared")
         setCurrentTestName("")
-        console.log("[v0] Current test name cleared")
         setActiveTab("current")
-        console.log("[v0] Active tab set to current")
         toast.success("Neuer Test gestartet mit aktueller UI-Items Liste")
-        console.log("[v0] Success toast shown")
       } else {
         console.error("[v0] Failed to fetch UI items for new test - data is null")
         toast.error("Konnte UI-Items nicht laden")
@@ -372,11 +358,8 @@ export default function UIItemsTestManager() {
       console.error("[v0] Error details:", error instanceof Error ? error.message : String(error))
       toast.error("Fehler beim Starten des neuen Tests")
     } finally {
-      console.log("[v0] Finally block - setting isStartingNewTest to false")
       setIsStartingNewTest(false)
-      console.log("[v0] Closing create dialog")
       setIsCreateDialogOpen(false)
-      console.log("[v0] startNewTest function completed")
     }
   }
 

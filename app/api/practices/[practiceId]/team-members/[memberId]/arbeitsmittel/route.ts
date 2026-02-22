@@ -20,8 +20,6 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    console.log("[v0] Fetching arbeitsmittel for member:", memberId, "in practice:", practiceId)
-
     // Fetch assignments
     const { data: assignmentsData, error: assignmentsError } = await adminClient
       .from("team_member_arbeitsmittel")
@@ -81,8 +79,6 @@ export async function POST(
     }
 
     const body = await request.json()
-
-    console.log("[v0] Creating arbeitsmittel assignment for member:", memberId)
 
     const { data, error } = await adminClient
       .from("team_member_arbeitsmittel")

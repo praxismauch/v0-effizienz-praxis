@@ -20,8 +20,6 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    console.log("[v0] Fetching responsibilities for member:", memberId, "in practice:", practiceId)
-
     // Get team member's user_id
     const { data: teamMemberData, error: memberError } = await adminClient
       .from("team_members")
@@ -35,7 +33,6 @@ export async function GET(
     }
 
     const authUserId = teamMemberData?.user_id
-    console.log("[v0] Team member ID:", memberId, "Auth user ID:", authUserId)
     let memberTeamIds: string[] = []
 
     // Get team assignments
@@ -75,16 +72,10 @@ export async function GET(
     
     // Filter responsibilities assigned to this member
     // responsible_user_id can be either team_member.id OR auth.user_id depending on how it was saved
-    console.log("[v0] Checking responsibilities for member. Member ID:", memberId, "Auth User ID:", authUserId)
-    console.log("[v0] Member team IDs:", memberTeamIds)
-    console.log("[v0] Total responsibilities to check:", allResponsibilities?.length || 0)
-    console.log("[v0] Team member lookup map size:", allTeamMembers?.length || 0)
     
     // Debug: Log first 5 responsibilities to see what IDs they contain
     if (allResponsibilities && allResponsibilities.length > 0) {
-      console.log("[v0] Sample responsibilities:")
       allResponsibilities.slice(0, 5).forEach((r: any, i: number) => {
-        console.log(`[v0]   ${i+1}. "${r.name}" - responsible_user_id: ${r.responsible_user_id}, deputy: ${r.deputy_user_id}, team_member_ids: ${JSON.stringify(r.team_member_ids)}`)
       })
     }
     
@@ -129,16 +120,12 @@ export async function GET(
       
       if (isDirectResponsible) {
         assignmentType = "direct"
-        console.log(`[v0] MATCH (direct): "${resp.name}" - respUserId=${respUserId} matches memberId=${memberId} or authUserId=${authUserId}`)
       } else if (isInTeamMembers) {
         assignmentType = "team_member"
-        console.log(`[v0] MATCH (team_member): "${resp.name}"`)
       } else if (isInTeam) {
         assignmentType = "team"
-        console.log(`[v0] MATCH (team): "${resp.name}"`)
       } else if (isDeputy) {
         assignmentType = "deputy"
-        console.log(`[v0] MATCH (deputy): "${resp.name}"`)
       }
 
       return {
@@ -148,8 +135,6 @@ export async function GET(
       }
     }).filter((resp: any) => resp.assignment_type)
     
-    console.log("[v0] Final matched responsibilities count:", responsibilities.length, "for member", memberId)
-
     return NextResponse.json(responsibilities)
   } catch (error: any) {
     console.error("[v0] Error fetching team member responsibilities:", error)

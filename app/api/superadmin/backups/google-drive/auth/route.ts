@@ -9,7 +9,6 @@ const GOOGLE_REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL + "/api/superadmin/b
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("[v0] Google Drive auth request received")
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
       console.error(
@@ -39,8 +38,6 @@ export async function GET(request: NextRequest) {
       prompt: "consent",
     }).toString()}`
 
-    console.log("[v0] Auth URL generated successfully")
-
     return NextResponse.json({ authUrl })
   } catch (error) {
     console.error("[v0] Google Drive auth error:", error)
@@ -51,7 +48,6 @@ export async function GET(request: NextRequest) {
 // Function to handle Google Drive OAuth callback
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Google Drive OAuth callback received")
 
     const { code, state } = await request.json()
 
@@ -59,8 +55,6 @@ export async function POST(request: NextRequest) {
       console.error("[v0] Missing code or state in callback")
       return NextResponse.json({ error: "Missing code or state" }, { status: 400 })
     }
-
-    console.log("[v0] Code and state received successfully")
 
     // Exchange code for access token and refresh token
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
@@ -84,8 +78,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: tokens.error }, { status: 500 })
     }
 
-    console.log("[v0] Tokens received successfully")
-
     // Store tokens in Supabase for the user
     const supabase = await createAdminClient()
 
@@ -98,8 +90,6 @@ export async function POST(request: NextRequest) {
       console.error("[v0] Error updating user tokens:", updateError)
       return NextResponse.json({ error: "Failed to update user tokens" }, { status: 500 })
     }
-
-    console.log("[v0] User tokens updated successfully")
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -149,10 +149,7 @@ export function RecruitingSettings() {
   }
 
   const handleFieldClick = (fieldId: string) => {
-    console.log("[v0] Field clicked:", fieldId)
-    console.log("[v0] Current selectedFieldId:", selectedFieldId)
     setSelectedFieldId(fieldId)
-    console.log("[v0] After setState - selectedFieldId should now be:", fieldId)
   }
 
   const renderPreviewField = (field: FormField) => {

@@ -81,14 +81,12 @@ export function SEOAnalyticsDashboard() {
           fetch(endpoint.url, {
             credentials: "include", // Send cookies for authentication
           }).then(async (res) => {
-            console.log(`[v0] ${endpoint.name} response status:`, res.status)
             if (!res.ok) {
               const text = await res.text()
               console.error(`[v0] ${endpoint.name} error response:`, text)
               throw new Error(`${endpoint.name} failed with status ${res.status}`)
             }
             const text = await res.text()
-            console.log(`[v0] ${endpoint.name} raw response:`, text.substring(0, 200))
             try {
               return { name: endpoint.name, data: JSON.parse(text) }
             } catch (e) {

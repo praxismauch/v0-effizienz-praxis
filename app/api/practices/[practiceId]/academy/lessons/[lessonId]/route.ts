@@ -20,11 +20,6 @@ export async function GET(
   try {
     const { practiceId, lessonId } = await params
 
-    console.log("[v0] GET /api/practices/[practiceId]/academy/lessons/[lessonId]", {
-      practiceId,
-      lessonId,
-    })
-
     const { data: lesson, error } = await supabaseAdmin
       .from("academy_lessons")
       .select("*")
@@ -41,8 +36,6 @@ export async function GET(
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 })
     }
 
-    console.log("[v0] Lesson fetched successfully:", lesson.id)
-
     return NextResponse.json({ lesson })
   } catch (error) {
     console.error("[v0] Error in GET lesson:", error)
@@ -57,12 +50,6 @@ export async function PUT(
   try {
     const { practiceId, lessonId } = await params
     const body = await request.json()
-
-    console.log("[v0] PUT /api/practices/[practiceId]/academy/lessons/[lessonId]", {
-      practiceId,
-      lessonId,
-      body,
-    })
 
     // Prepare update data
     const updateData: any = {
@@ -106,8 +93,6 @@ export async function PUT(
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 })
     }
 
-    console.log("[v0] Lesson updated successfully:", lesson.id)
-
     return NextResponse.json({ lesson })
   } catch (error) {
     console.error("[v0] Error in PUT lesson:", error)
@@ -121,11 +106,6 @@ export async function DELETE(
 ) {
   try {
     const { practiceId, lessonId } = await params
-
-    console.log("[v0] DELETE /api/practices/[practiceId]/academy/lessons/[lessonId]", {
-      practiceId,
-      lessonId,
-    })
 
     // Soft delete by setting deleted_at
     const { data: lesson, error } = await supabaseAdmin
@@ -144,8 +124,6 @@ export async function DELETE(
     if (!lesson) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 })
     }
-
-    console.log("[v0] Lesson soft deleted successfully:", lesson.id)
 
     return NextResponse.json({ message: "Lesson deleted successfully" })
   } catch (error) {

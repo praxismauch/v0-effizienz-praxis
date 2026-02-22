@@ -23,7 +23,6 @@ export default function ShiftTypesTab({ shiftTypes: shiftTypesProp, onAdd, onEdi
     if (typeof onAdd === "function") {
       onAdd()
     } else {
-      console.log("[v0] Add shift type clicked - handler not provided")
     }
   }
 
@@ -31,7 +30,6 @@ export default function ShiftTypesTab({ shiftTypes: shiftTypesProp, onAdd, onEdi
     if (typeof onEdit === "function") {
       onEdit(shiftType)
     } else {
-      console.log("[v0] Edit shift type clicked:", shiftType.id)
     }
   }
 
@@ -39,7 +37,6 @@ export default function ShiftTypesTab({ shiftTypes: shiftTypesProp, onAdd, onEdi
     if (typeof onDelete === "function") {
       onDelete(id)
     } else {
-      console.log("[v0] Delete shift type clicked:", id)
     }
   }
   if (isLoading) {

@@ -67,7 +67,6 @@ export function AIAnalysisHistoryTable({ userId, practiceId, limit }: AIAnalysis
   const loadAnalyses = async () => {
     try {
       setIsLoading(true)
-      console.log("[v0] Loading AI analyses for user:", userId)
 
       if (!userId) {
         console.error("[v0] No userId provided")
@@ -80,7 +79,6 @@ export function AIAnalysisHistoryTable({ userId, practiceId, limit }: AIAnalysis
       if (limit) queryParams.append('limit', limit.toString())
       
       const response = await fetch(`/api/ai-analysis-history?${queryParams}`)
-      console.log("[v0] AI analyses response status:", response.status)
 
       if (response.status === 503) {
         // Service unavailable - rate limiting
@@ -107,10 +105,8 @@ export function AIAnalysisHistoryTable({ userId, practiceId, limit }: AIAnalysis
 
       // Even if response wasn't ok, we might have analyses array
       if (data.analyses) {
-        console.log("[v0] Loaded analyses:", data.analyses.length)
         setAnalyses(data.analyses)
       } else {
-        console.log("[v0] No analyses in response")
         setAnalyses([])
       }
     } catch (error) {

@@ -49,7 +49,6 @@ export default function ProtocolPopupPage() {
   const transcribeLiveChunks = async () => {
     if (audioChunksRef.current.length === 0 || isPaused) {
       if (audioChunksRef.current.length === 0) {
-        console.log("[v0] Popup: No new audio chunks to transcribe, skipping")
       }
       return
     }
@@ -62,11 +61,8 @@ export default function ProtocolPopupPage() {
       const audioBlob = new Blob(chunksToTranscribe, { type: "audio/webm" })
 
       if (audioBlob.size < 1000) {
-        console.log("[v0] Popup: Audio blob too small:", audioBlob.size, "bytes, skipping")
         return
       }
-
-      console.log("[v0] Popup: Transcribing audio chunk:", audioBlob.size, "bytes")
 
       const formData = new FormData()
       formData.append("audio", audioBlob, "chunk.webm")
@@ -79,11 +75,9 @@ export default function ProtocolPopupPage() {
 
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Popup: Transcription response received:", data.text?.substring(0, 50))
         if (data.text && data.text.trim()) {
           setLiveTranscript((prev) => {
             const newText = prev ? `${prev} ${data.text}` : data.text
-            console.log("[v0] Popup: Updated live transcript, length:", newText.length)
             return newText
           })
         }
@@ -100,16 +94,12 @@ export default function ProtocolPopupPage() {
 
   const startRecording = async () => {
     try {
-      console.log("[v0] Popup: Starting recording...")
-      console.log("[v0] Popup: navigator.mediaDevices available:", !!navigator.mediaDevices)
-      console.log("[v0] Popup: getUserMedia available:", !!navigator.mediaDevices?.getUserMedia)
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("Ihr Browser unterstuetzt keine Audio-Aufnahme. Bitte verwenden Sie die Datei-Upload-Option.")
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      console.log("[v0] Popup: Microphone access granted, tracks:", stream.getAudioTracks().length)
 
       setAudioStream(stream)
 
@@ -126,11 +116,9 @@ export default function ProtocolPopupPage() {
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          console.log("[v0] Popup: Audio chunk received:", event.data.size, "bytes, type:", event.data.type)
           audioChunksRef.current.push(event.data)
           allAudioChunksRef.current.push(event.data)
         } else {
-          console.log("[v0] Popup: Empty audio chunk received (silence or no input)")
         }
       }
 
@@ -179,7 +167,6 @@ export default function ProtocolPopupPage() {
   }
 
   const pauseRecording = () => {
-    console.log("[v0] Popup: Pausing recording...")
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.pause()
     }
@@ -195,7 +182,6 @@ export default function ProtocolPopupPage() {
   }
 
   const resumeRecording = () => {
-    console.log("[v0] Popup: Resuming recording...")
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
       mediaRecorderRef.current.resume()
     }
@@ -209,7 +195,6 @@ export default function ProtocolPopupPage() {
   }
 
   const stopRecording = async () => {
-    console.log("[v0] Popup: Stopping recording...")
 
     if (timerRef.current) {
       clearInterval(timerRef.current)
@@ -278,9 +263,7 @@ export default function ProtocolPopupPage() {
     setIsProcessing(true)
 
     try {
-      console.log("[v0] Popup: Creating audio blob from", allAudioChunksRef.current.length, "chunks")
       const audioBlob = new Blob(allAudioChunksRef.current, { type: "audio/webm" })
-      console.log("[v0] Popup: Audio blob size:", audioBlob.size, "bytes")
 
       if (audioBlob.size === 0) {
         throw new Error("Audio recording is empty")
@@ -290,7 +273,6 @@ export default function ProtocolPopupPage() {
       formData.append("audio", audioBlob, "recording.webm")
       formData.append("language", "de")
 
-      console.log("[v0] Popup: Sending to transcription API...")
       const response = await fetch("/api/protocols/transcribe", {
         method: "POST",
         body: formData,
@@ -321,13 +303,11 @@ export default function ProtocolPopupPage() {
       }
 
       const data = await response.json()
-      console.log("[v0] Popup: Transcription response:", data)
 
       if (data.text) {
         setTranscript(data.text)
 
         if (window.opener) {
-          console.log("[v0] Popup: Sending transcript to parent window")
           window.opener.postMessage(
             {
               type: "TRANSCRIPT_UPDATE",

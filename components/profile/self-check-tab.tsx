@@ -259,7 +259,6 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
   }, [loadHistory])
 
   const handleSave = async () => {
-    console.log("[v0] handleSave called", { userId, practiceId })
 
     // Check if at least one dimension is filled
     const hasData = Object.values(currentAssessment).some((v) => v !== null)
@@ -279,10 +278,6 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
         ...currentAssessment,
         notes,
       }
-      console.log("[v0] Sending POST request", {
-        url: `/api/users/${userId}/self-checks`,
-        payload,
-      })
 
       const response = await fetch(`/api/users/${userId}/self-checks`, {
         method: "POST",
@@ -290,14 +285,7 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
         body: JSON.stringify(payload),
       })
 
-      console.log("[v0] Response received", {
-        status: response.status,
-        ok: response.ok,
-        statusText: response.statusText,
-      })
-
       const responseData = await response.json()
-      console.log("[v0] Response data", responseData)
 
       if (!response.ok) {
         console.error("[v0] Save failed", responseData)
@@ -322,7 +310,6 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
       })
     } finally {
       setIsSaving(false)
-      console.log("[v0] handleSave completed")
     }
   }
 
@@ -961,7 +948,6 @@ export function SelfCheckTab({ userId, practiceId }: SelfCheckTabProps) {
             </Card>
           )}
         </TabsContent>
-
 
       </Tabs>
     </div>

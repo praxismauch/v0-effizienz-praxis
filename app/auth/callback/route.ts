@@ -13,13 +13,11 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.session) {
-      console.log("[v0] [auth/callback] Successfully exchanged code for session, user:", data.user?.email)
       
       // Verify the session was actually established by checking the user
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        console.log("[v0] [auth/callback] Session verified, redirecting to:", redirectTo)
         return NextResponse.redirect(`${origin}${redirectTo}`)
       } else {
         console.error("[v0] [auth/callback] Session created but user not found")

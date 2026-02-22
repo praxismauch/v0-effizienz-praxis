@@ -32,10 +32,7 @@ export async function PUT(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    console.log("[v0] Role color update - User ID:", user?.id)
-
     if (!user) {
-      console.log("[v0] Role color update - No user found")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -45,22 +42,17 @@ export async function PUT(request: NextRequest) {
       .eq("id", user.id)
       .single()
 
-    console.log("[v0] Role color update - Current user role:", currentUser?.role)
-
     if (userError) {
       console.error("[v0] Role color update - Error fetching user:", userError)
       return NextResponse.json({ error: "Failed to verify user role" }, { status: 500 })
     }
 
     if (!currentUser || !isSuperAdminRole(currentUser.role)) {
-      console.log("[v0] Role color update - User is not super admin")
       return NextResponse.json({ error: "Forbidden - Super admin access required" }, { status: 403 })
     }
 
     const body = await request.json()
     const { role, color, label, description } = body
-
-    console.log("[v0] Role color update - Request body:", { role, color, label, description })
 
     if (!role) {
       return NextResponse.json({ error: "Role is required" }, { status: 400 })
@@ -84,7 +76,6 @@ export async function PUT(request: NextRequest) {
       throw error
     }
 
-    console.log("[v0] Role color update - Success:", data)
     return NextResponse.json(data)
   } catch (error: any) {
     console.error("[API] Failed to update role color:", error)

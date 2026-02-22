@@ -63,8 +63,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    console.log("[v0] Badge award request:", { userId, practiceId, badgeId })
-
     // Get the badge by id first, then fallback to criteria_type
     let badge: any = null
 
@@ -89,7 +87,6 @@ export async function POST(request: NextRequest) {
 
     // If badge not found, auto-create it if it's a known system badge
     if (!badge && SYSTEM_BADGES[badgeId]) {
-      console.log("[v0] Auto-creating system badge:", badgeId)
       const systemBadge = SYSTEM_BADGES[badgeId]
       const { data: newBadge, error: createError } = await supabase
         .from("academy_badges")
@@ -112,7 +109,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Failed to create system badge" }, { status: 500 })
       }
       badge = newBadge
-      console.log("[v0] System badge created:", badge.id)
     }
 
     if (!badge) {
@@ -129,7 +125,6 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (existingBadge) {
-      console.log("[v0] Badge already earned:", badge.name)
       return NextResponse.json({
         message: "Badge already earned",
         badge,
@@ -154,7 +149,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to award badge" }, { status: 500 })
     }
 
-    console.log("[v0] Badge awarded successfully:", badge.name, "to user:", userId)
     return NextResponse.json({
       success: true,
       badge,

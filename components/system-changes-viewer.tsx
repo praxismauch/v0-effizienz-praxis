@@ -55,11 +55,7 @@ function SystemChangesViewer() {
       if (filterType !== "all") params.append("changeType", filterType)
       params.append("includeAggregated", showAggregated.toString())
 
-      console.log("[v0] Fetching system changes with params:", params.toString())
-
       const response = await fetch(`/api/system-changes?${params}`)
-
-      console.log("[v0] Response status:", response.status, response.statusText)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -68,7 +64,6 @@ function SystemChangesViewer() {
       }
 
       const data = await response.json()
-      console.log("[v0] Fetched changes count:", data?.length || 0)
       setChanges(data || [])
     } catch (error) {
       console.error("[v0] Error fetching changes:", error)

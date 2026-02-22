@@ -87,7 +87,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ events: allEvents })
   } catch (error: any) {
-    console.log("[v0] calendar-events GET error:", error.message, error.status)
     return handleApiError(error)
   }
 }

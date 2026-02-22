@@ -12,19 +12,6 @@ export async function GET() {
       supabase.from("users").select("id", { count: "exact", head: true }).eq("approval_status", "rejected"),
     ])
 
-    console.log("[v0] Pending users counts API - Pending:", {
-      count: pendingResult.count,
-      error: pendingResult.error,
-    })
-    console.log("[v0] Pending users counts API - Approved:", {
-      count: approvedResult.count,
-      error: approvedResult.error,
-    })
-    console.log("[v0] Pending users counts API - Rejected:", {
-      count: rejectedResult.count,
-      error: rejectedResult.error,
-    })
-
     return NextResponse.json({
       counts: {
         pending: pendingResult.count || 0,

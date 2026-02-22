@@ -68,18 +68,14 @@ export function CalendarSubscriptionDialog({ open, onOpenChange }: CalendarSubsc
       return
     }
 
-    console.log("[v0] Generating subscription link for practice:", currentPractice.id)
     setGenerating(true)
     try {
       const response = await fetch(`/api/practices/${currentPractice.id}/calendar/subscription-token`, {
         method: "POST",
       })
 
-      console.log("[v0] Subscription token API response:", response.status)
-
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Subscription token generated:", data.token)
         setSubscriptionToken(data.token)
         toast.success("Kalender-Abonnement-Link erstellt")
       } else {

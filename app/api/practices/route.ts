@@ -140,9 +140,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] POST /api/practices - Request received")
     const body = await request.json()
-    console.log("[v0] POST /api/practices - Body:", { ...body, bundesland: body.bundesland })
     const { name, type, specialization, street, city, zipCode, phone, email, website, timezone, currency, isActive, bundesland } = body
 
     // Use admin client to bypass RLS - this route is already protected by the proxy

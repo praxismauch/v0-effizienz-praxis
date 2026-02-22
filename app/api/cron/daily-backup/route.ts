@@ -223,8 +223,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    console.log("[v0] Daily backup cron: Starting backup job...")
-
     const supabase = await createAdminClient()
     const now = new Date()
 
@@ -255,7 +253,6 @@ export async function GET(request: NextRequest) {
           .lt("next_run_at", twoDaysAgo.toISOString())
 
         if (stuckSchedules && stuckSchedules.length > 0) {
-          console.log(`[v0] Daily backup cron: Found ${stuckSchedules.length} stuck schedule(s), resetting...`)
           for (const stuck of stuckSchedules) {
             const nextRun = calculateNextRun(stuck.schedule_type, stuck.time_of_day, stuck.day_of_week, stuck.day_of_month)
             await supabase.from("backup_schedules").update({ next_run_at: now.toISOString(), updated_at: now.toISOString() }).eq("id", stuck.id)
@@ -269,7 +266,6 @@ export async function GET(request: NextRequest) {
 
     // Fallback: If no schedules are due, create a default full backup
     if (schedules.length === 0) {
-      console.log("[v0] Daily backup cron: No schedules due. Creating fallback full backup...")
       // Get all active practices
       const { data: practices } = await supabase
         .from("practices")
@@ -300,9 +296,7 @@ export async function GET(request: NextRequest) {
           _isFallback: true,
         })
       }
-      console.log(`[v0] Daily backup cron: Created ${schedules.length} fallback schedule(s)`)
     } else {
-      console.log(`[v0] Daily backup cron: Found ${schedules.length} schedules due to run`)
     }
 
     const results = []
@@ -409,8 +403,6 @@ export async function GET(request: NextRequest) {
             schedule.day_of_month,
           )
 
-          console.log(`[v0] Updating schedule ${schedule.id}: next_run_at = ${nextRun}`)
-
           const { error: updateError } = await supabase
             .from("backup_schedules")
             .update({
@@ -460,9 +452,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`[v0] Daily backup cron: Completed. Processed ${schedules?.length || 0} schedules.`, 
-      JSON.stringify(results.map(r => ({ schedule_id: r.schedule_id, status: r.status }))))
-
     return NextResponse.json({
       success: true,
       processed: schedules?.length || 0,
@@ -502,6 +491,5 @@ function calculateNextRun(
     nextRun.setDate(nextRun.getDate() + 1)
   }
 
-  console.log(`[v0] Daily backup cron: Next run calculated: ${nextRun.toISOString()} for ${scheduleType} schedule`)
   return nextRun.toISOString()
 }

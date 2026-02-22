@@ -230,16 +230,6 @@ function ResponsibilityFormDialog({
 
     setIsGeneratingOptimization(true)
     try {
-      console.log("[v0] Calling AI optimize API with data:", {
-        name: formData.name,
-        description: formData.description,
-        group_name: formData.group_name,
-        suggested_hours_per_week: formData.suggested_hours_per_week,
-        estimated_time_amount: formData.estimated_time_amount,
-        estimated_time_period: formData.estimated_time_period,
-        cannot_complete_during_consultation: formData.cannot_complete_during_consultation,
-        practice_id: currentPractice?.id,
-      })
 
       const response = await fetch("/api/responsibilities/ai-optimize", {
         method: "POST",
@@ -256,8 +246,6 @@ function ResponsibilityFormDialog({
         }),
       })
 
-      console.log("[v0] API response status:", response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         console.error("[v0] API error response:", errorData)
@@ -265,7 +253,6 @@ function ResponsibilityFormDialog({
       }
 
       const data = await response.json()
-      console.log("[v0] AI suggestions received, length:", data.suggestions?.length || 0)
 
       setFormData({
         ...formData,
@@ -784,10 +771,8 @@ function ResponsibilityFormDialog({
                   value={timeAmountDisplay}
                   onChange={(e) => {
                     const inputValue = e.target.value
-                    console.log("[v0] Input onChange - Raw value:", inputValue)
                     setTimeAmountDisplay(inputValue)
                     const val = parseGermanNumber(inputValue)
-                    console.log("[v0] Input onChange - Parsed value:", val)
 
                     const hasValue = val !== null && val > 0
 
@@ -799,7 +784,6 @@ function ResponsibilityFormDialog({
                   }}
                   onBlur={(e) => {
                     const val = parseGermanNumber(e.target.value)
-                    console.log("[v0] Input onBlur - Parsed value:", val)
                     if (val !== null && val > 0) {
                       setTimeAmountDisplay(formatGermanNumber(val))
                     }

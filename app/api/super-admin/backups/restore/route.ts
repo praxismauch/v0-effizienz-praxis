@@ -22,8 +22,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Backup ID or backup data required" }, { status: 400 })
     }
 
-    console.log("[v0] Starting backup restoration:", backupId, "mode:", restoreMode || "full")
-
     let backupContent: any
 
     if (backupData) {
@@ -39,7 +37,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Backup not found" }, { status: 404 })
       }
 
-      console.log("[v0] Downloading backup from:", backup.file_url)
       const response = await fetch(backup.file_url)
       if (!response.ok) {
         throw new Error("Failed to download backup file from Blob storage")
@@ -61,7 +58,6 @@ export async function POST(request: NextRequest) {
     if (mode === "tables" && selectedTables && selectedTables.length > 0) {
       // Only restore selected tables
       tablesToRestore = tablesToRestore.filter((t) => selectedTables.includes(t))
-      console.log("[v0] Restoring only selected tables:", tablesToRestore)
     }
 
     for (const tableName of tablesToRestore) {
@@ -76,21 +72,17 @@ export async function POST(request: NextRequest) {
           
           if (hasPracticeId) {
             tableRows = tableRows.filter((row) => selectedPracticeIds.includes(row.practice_id))
-            console.log(`[v0] Filtered ${tableName} to ${tableRows.length} rows for selected practices`)
           } else if (tableName === "practices") {
             // Filter practices table by id
             tableRows = tableRows.filter((row) => selectedPracticeIds.includes(row.id))
           }
           // Tables without practice_id are skipped in practices mode (except for practices table)
           if (!hasPracticeId && tableName !== "practices") {
-            console.log(`[v0] Skipping ${tableName} - no practice_id column`)
             continue
           }
         }
 
         if (tableRows.length === 0) continue
-
-        console.log(`[v0] Restoring ${tableRows.length} rows to ${tableName}`)
 
         // Delete existing data based on restore mode
         if (mode === "practices" && selectedPracticeIds && selectedPracticeIds.length > 0) {
@@ -160,8 +152,6 @@ export async function POST(request: NextRequest) {
         practice_id: backupContent.practice_id,
       },
     })
-
-    console.log("[v0] Backup restored successfully:", totalRowsRestored, "rows in", restoredTables.length, "tables")
 
     return NextResponse.json({
       success: true,

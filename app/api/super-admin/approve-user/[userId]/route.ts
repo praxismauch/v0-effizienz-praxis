@@ -30,7 +30,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ use
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
-      console.log(`[v0] User ${userId} approved by ${currentUserId}`)
       return NextResponse.json({ success: true, message: "User approved" })
     } else {
       const { error } = await supabase
@@ -48,7 +47,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ use
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
-      console.log(`[v0] User ${userId} rejected by ${currentUserId}`)
       return NextResponse.json({ success: true, message: "User rejected" })
     }
   } catch (error) {

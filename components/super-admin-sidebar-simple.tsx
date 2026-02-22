@@ -184,7 +184,6 @@ export function SuperAdminSidebarSimple() {
             }
           }
         } catch (error) {
-          console.debug("[v0] Error loading super admin sidebar state:", error)
         }
       }
     }
@@ -342,7 +341,6 @@ export function SuperAdminSidebarSimple() {
           }),
         })
       } catch (error) {
-        console.debug("[v0] Error saving super admin sidebar collapsed state:", error)
       }
     } else if (mounted) {
       localStorage.setItem("superAdminSidebarCollapsed", String(newCollapsed))
@@ -366,7 +364,6 @@ export function SuperAdminSidebarSimple() {
           }),
         })
       } catch (error) {
-        console.debug("[v0] Error saving super admin sidebar sections state:", error)
       }
     } else if (mounted) {
       localStorage.setItem("superAdminSidebarSections", JSON.stringify(newSections))
@@ -390,7 +387,6 @@ export function SuperAdminSidebarSimple() {
           }),
         })
       } catch (error) {
-        console.debug("[v0] Error saving super admin expanded items state:", error)
       }
     } else if (mounted) {
       localStorage.setItem("superAdminExpandedItems", JSON.stringify(newExpandedItems))
@@ -421,7 +417,6 @@ export function SuperAdminSidebarSimple() {
           }),
         })
       } catch (error) {
-        console.debug("[v0] Error saving super admin favorites:", error)
       }
     }
   }

@@ -39,14 +39,10 @@ export async function POST(
     const extension = file.name.split(".").pop() || "jpg"
     const filename = `team-members/practice-${practiceId}/${memberId}-${timestamp}.${extension}`
 
-    console.log("[v0] Uploading profile picture for member:", memberId)
-
     // Upload to Vercel Blob
     const blob = await put(filename, file, {
       access: "public",
     })
-
-    console.log("[v0] Profile picture uploaded successfully:", blob.url)
 
     return NextResponse.json({
       url: blob.url,

@@ -10,8 +10,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const year = searchParams.get("year")
     const parameterId = searchParams.get("parameterId")
 
-    console.log("[v0] Fetching parameter values for practice:", practiceId, "parameterId:", parameterId)
-
     let query = supabase
       .from("parameter_values")
       .select(
@@ -73,8 +71,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { practiceId } = await params
     const body = await request.json()
 
-    console.log("[v0] Creating parameter value:", { practiceId, body })
-
     const recordedBy = body.userId || body.user_id || body.recordedBy || body.recorded_by
 
     if (!recordedBy) {
@@ -103,8 +99,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       recorded_by: recordedBy,
       notes: body.notes || null,
     }
-
-    console.log("[v0] Inserting parameter value:", insertData)
 
     const { data, error } = await supabase
       .from("parameter_values")

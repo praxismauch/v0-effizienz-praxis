@@ -26,7 +26,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Found courses:", courses?.length || 0)
     return NextResponse.json(courses || [])
   } catch (error: any) {
     console.error("[v0] Error fetching academy courses:", error)
@@ -60,7 +59,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Course created:", course.id)
     return NextResponse.json(course)
   } catch (error: any) {
     console.error("[v0] Error in POST /academy/courses:", error)

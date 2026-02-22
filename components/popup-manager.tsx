@@ -106,8 +106,6 @@ function PopupManager() {
       const url = editingPopup ? `/api/popups/${editingPopup.id}` : "/api/popups"
       const method = editingPopup ? "PUT" : "POST"
 
-      console.log("[v0] Saving popup:", { url, method, formData })
-
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },

@@ -182,9 +182,7 @@ function TeamMenuBar({
                     variant={viewMode === "list" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => {
-                      console.log("[v0] List button clicked, current viewMode:", viewMode)
                       onViewModeChange("list")
-                      console.log("[v0] Called onViewModeChange with 'list'")
                     }}
                     className="rounded-r-none"
                   >
@@ -199,9 +197,7 @@ function TeamMenuBar({
                     variant={viewMode === "grid" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => {
-                      console.log("[v0] Grid button clicked, current viewMode:", viewMode)
                       onViewModeChange("grid")
-                      console.log("[v0] Called onViewModeChange with 'grid'")
                     }}
                     className="rounded-l-none"
                   >

@@ -9,8 +9,6 @@ export async function DELETE(
     const supabase = await createAdminClient()
     const { practiceId, id } = await params
 
-    console.log("[v0] Deleting KV Abrechnung:", { practiceId, id })
-
     // Verify the KV Abrechnung exists and belongs to the practice
     const { data: existing, error: fetchError } = await supabase
       .from("kv_abrechnung")
@@ -38,7 +36,6 @@ export async function DELETE(
       throw error
     }
 
-    console.log("[v0] Successfully deleted KV Abrechnung:", id)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Error deleting KV Abrechnung:", error)

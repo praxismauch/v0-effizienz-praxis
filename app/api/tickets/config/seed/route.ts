@@ -9,7 +9,6 @@ import { NextResponse } from "next/server"
  */
 export async function POST(request: Request) {
   try {
-    console.log("[v0] POST /api/tickets/config/seed - Starting seed operation")
 
     // Check authentication
     const supabase = await createClient()
@@ -18,7 +17,6 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      console.log("[v0] Seed rejected - No authenticated user")
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
@@ -34,11 +32,8 @@ export async function POST(request: Request) {
     const isSuperAdmin = userRole === "superadmin"
 
     if (!isSuperAdmin) {
-      console.log("[v0] Seed rejected - User is not super admin:", { role: userData.role })
       return NextResponse.json({ error: "Insufficient permissions. Super admin access required." }, { status: 403 })
     }
-
-    console.log("[v0] Super admin verified - proceeding with seed")
 
     // Use admin client to bypass RLS
     const adminClient = await createAdminClient()
@@ -190,8 +185,6 @@ export async function POST(request: Request) {
       console.error("[v0] Error seeding types:", typesResult.error)
       return NextResponse.json({ error: "Failed to seed types", details: typesResult.error.message }, { status: 500 })
     }
-
-    console.log("[v0] Seed operation completed successfully")
 
     return NextResponse.json({
       success: true,

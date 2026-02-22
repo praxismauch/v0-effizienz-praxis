@@ -181,10 +181,8 @@ export function useDashboardOverview({
         if (preferences?.config) {
           const savedWidgets = preferences.config.widgets || preferences.config
           const mergedWidgets = { ...DEFAULT_WIDGETS, ...savedWidgets }
-          console.log("[v0] Loaded dashboard config: widgetOrder=", mergedWidgets.widgetOrder?.slice(0, 5), "columnSpans=", mergedWidgets.columnSpans)
           setDashboardConfig({ widgets: mergedWidgets })
         } else {
-          console.log("[v0] No saved dashboard config found, using defaults")
         }
       } catch (err) {
         console.error("[v0] Error fetching dashboard preferences:", err)
@@ -273,14 +271,11 @@ export function useDashboardOverview({
         flatWidgets = { ...DEFAULT_WIDGETS }
       }
 
-      console.log("[v0] handleSaveConfig: saving widgetOrder=", flatWidgets.widgetOrder?.slice(0, 5), "linebreaks=", flatWidgets.linebreaks, "columnSpans=", flatWidgets.columnSpans)
-
       setDashboardConfig({ widgets: flatWidgets })
 
       if (practiceId && userId) {
         try {
           const payload = { userId, config: { widgets: flatWidgets } }
-          console.log("[v0] handleSaveConfig: POSTing to API, practiceId=", practiceId)
           const response = await fetch(`/api/practices/${practiceId}/dashboard-preferences`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -292,7 +287,6 @@ export function useDashboardOverview({
             toast({ title: "Fehler", description: "Dashboard-Einstellungen konnten nicht gespeichert werden.", variant: "destructive" })
           } else {
             const result = await response.json()
-            console.log("[v0] handleSaveConfig: saved successfully, result=", result?.success)
             toast({ title: "Gespeichert", description: "Dashboard-Einstellungen wurden erfolgreich gespeichert." })
           }
         } catch (err) {
@@ -308,7 +302,6 @@ export function useDashboardOverview({
 
   const handleEditModeSave = useCallback(
     (updatedWidgets: WidgetConfig) => {
-      console.log("[v0] handleEditModeSave called, widgetOrder=", updatedWidgets.widgetOrder?.slice(0, 5), "columnSpans=", updatedWidgets.columnSpans)
       setIsEditMode(false)
       handleSaveConfig({ widgets: updatedWidgets })
     },

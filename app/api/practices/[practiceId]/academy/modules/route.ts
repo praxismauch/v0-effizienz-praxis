@@ -22,8 +22,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
     const practiceIdStr = String(practiceId)
 
-
-
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get("course_id")
 
@@ -35,7 +33,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (courseId) {
       query = query.eq("course_id", courseId)
-      console.log("[v0] Filtering by course_id:", courseId)
     }
 
     const { data, error } = await query
@@ -44,8 +41,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       console.error("[v0] Error fetching modules:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    console.log("[v0] Fetched modules:", data?.length || 0)
 
     return NextResponse.json({ modules: data || [] })
   } catch (error: any) {
@@ -85,8 +80,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       console.error("[v0] Error creating module:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    console.log("[v0] Module created successfully:", data.id)
 
     return NextResponse.json({ module: data }, { status: 201 })
   } catch (error: any) {

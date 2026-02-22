@@ -154,7 +154,6 @@ function EditProfileDialog({ member, open, onOpenChange }: EditProfileDialogProp
         })
       }
 
-      console.log("[v0] Team member profile updated successfully:", formData.name)
       onOpenChange(false)
     } catch (error) {
       console.error("[v0] Error updating team member profile:", error)

@@ -49,8 +49,6 @@ export async function POST(request: NextRequest) {
 
     const adminClient = await createAdminClient()
 
-    console.log(`[v0] Seeding ${translations.length} translations...`)
-
     let successCount = 0
     let errorCount = 0
 
@@ -74,8 +72,6 @@ export async function POST(request: NextRequest) {
         successCount++
       }
     }
-
-    console.log(`[v0] Translation seeding complete! Success: ${successCount}, Errors: ${errorCount}`)
 
     return NextResponse.json({
       success: true,

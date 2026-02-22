@@ -20,12 +20,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const moduleId = searchParams.get("module_id")
     const courseId = searchParams.get("course_id")
 
-    console.log("[v0] GET /api/practices/[practiceId]/academy/lessons", {
-      practiceId,
-      moduleId,
-      courseId,
-    })
-
     // Build query
     let query = supabaseAdmin
       .from("academy_lessons")
@@ -50,8 +44,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Lessons fetched successfully:", lessons?.length)
-
     return NextResponse.json({
       lessons: lessons || [],
       total: lessons?.length || 0,
@@ -66,11 +58,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { practiceId } = await params
     const body = await request.json()
-
-    console.log("[v0] POST /api/practices/[practiceId]/academy/lessons", {
-      practiceId,
-      body,
-    })
 
     // Prepare lesson data
     const lessonData = {
@@ -99,8 +86,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       console.error("[v0] Error creating lesson:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    console.log("[v0] Lesson created successfully:", lesson.id)
 
     return NextResponse.json({ lesson }, { status: 201 })
   } catch (error) {

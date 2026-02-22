@@ -16,8 +16,6 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
     }
 
-    console.log("[v0] Fetching enrollment:", enrollmentId)
-
     const { data: enrollment, error } = await supabase
       .from("academy_enrollments")
       .select(`
@@ -57,8 +55,6 @@ export async function PUT(
 
     const body = await request.json()
 
-    console.log("[v0] Updating enrollment:", enrollmentId)
-
     // Handle progress update
     const updateData: any = {
       ...body,
@@ -85,7 +81,6 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log("[v0] Enrollment updated:", enrollment.id)
     return NextResponse.json(enrollment)
   } catch (error: any) {
     console.error("[v0] Error updating enrollment:", error)
@@ -106,8 +101,6 @@ export async function DELETE(
     if (!effectivePracticeId) {
       return NextResponse.json({ error: "Unauthorized or invalid practice" }, { status: 401 })
     }
-
-    console.log("[v0] Soft deleting enrollment:", enrollmentId)
 
     const { error } = await supabase
       .from("academy_enrollments")

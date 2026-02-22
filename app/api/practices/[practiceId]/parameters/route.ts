@@ -77,9 +77,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = await createAdminClient()
     const body = await request.json()
 
-    console.log("[v0] Creating parameter for practice:", practiceId)
-    console.log("[v0] Parameter data:", body)
-
     const parameterId = `param-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 
     const { data: newParameter, error: insertError } = await supabase
@@ -113,8 +110,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         { status: 500 },
       )
     }
-
-    console.log("[v0] Successfully created parameter:", newParameter?.id)
 
     return NextResponse.json({
       parameter: {

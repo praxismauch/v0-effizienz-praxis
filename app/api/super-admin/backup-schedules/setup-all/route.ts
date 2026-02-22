@@ -69,8 +69,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[v0] Created ${created.length} backup schedules, skipped ${skipped.length}`)
-
     return NextResponse.json({
       success: true,
       created_count: created.length,

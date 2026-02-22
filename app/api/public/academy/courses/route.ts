@@ -8,8 +8,6 @@ export async function GET() {
 
     const { count } = await supabase.from("academy_courses").select("*", { count: "exact", head: true })
 
-    console.log("[v0] Total academy_courses in DB:", count)
-
     const { data: courses, error } = await supabase
       .from("academy_courses")
       .select("*")
@@ -22,8 +20,6 @@ export async function GET() {
       // Return empty array instead of error for public endpoint
       return NextResponse.json([])
     }
-
-    console.log("[v0] Fetched courses count:", courses?.length || 0)
 
     return NextResponse.json(courses || [])
   } catch (error) {

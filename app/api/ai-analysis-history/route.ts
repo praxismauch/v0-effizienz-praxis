@@ -50,7 +50,6 @@ export async function GET(request: Request) {
     // If table doesn't exist, return empty array gracefully
     if (error) {
       if (error.code === "42P01" || error.code === "PGRST204" || error.message?.includes("does not exist")) {
-        console.log("[v0] roi_analyses table does not exist, returning empty array")
         return NextResponse.json({ analyses: [] })
       }
       console.error("[v0] Error fetching AI analyses:", error)

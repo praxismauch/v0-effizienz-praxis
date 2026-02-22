@@ -43,17 +43,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     if (!data) {
-      console.log("[v0] No user found in database for userId:", userId)
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    console.log("[v0] User fetched successfully:", {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      practice_id: data.practice_id,
-      default_practice_id: data.default_practice_id,
-    })
     return NextResponse.json({ user: data })
   } catch (error) {
     if (isRateLimitError(error)) {
@@ -71,8 +63,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createAdminClient()
     const body = await request.json()
 
-    console.log("[v0] PUT /api/users/[userId] - userId:", userId, "body:", body)
-
     const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
@@ -85,8 +75,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (body.specialization !== undefined) updateData.specialization = body.specialization
     if (body.preferred_language !== undefined) updateData.preferred_language = body.preferred_language
 
-    console.log("[v0] Updating user with data:", updateData)
-
     // Update user in database
     const { data, error } = await supabase.from("users").update(updateData).eq("id", userId).select().single()
 
@@ -95,7 +83,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] User updated successfully:", data)
     return NextResponse.json({ user: data, message: "Profile updated successfully" })
   } catch (error) {
     console.error("[v0] Error in PUT user:", error)

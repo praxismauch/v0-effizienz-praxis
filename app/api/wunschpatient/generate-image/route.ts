@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
 
     const prompt = `Professional portrait photograph of a ${ageText} year old German ${genderText}, ${occupationText}, ${archetypeDesc}. ${lifestyleContext ? `Lifestyle: ${lifestyleContext}.` : ""} Natural lighting, medical practice waiting room background, warm and welcoming atmosphere, high quality DSLR photograph, sharp focus, professional headshot style, neutral background, looking at camera with a gentle smile. Photorealistic, 4k quality.`
 
-    console.log("[v0] Generating wunschpatient image with prompt:", prompt)
-
     // Generate image using fal.ai flux schnell model
     const result = (await fal.subscribe("fal-ai/flux/schnell", {
       input: {
@@ -57,8 +55,6 @@ export async function POST(request: NextRequest) {
       console.error("[v0] No image generated from fal.ai")
       return NextResponse.json({ error: "No image generated" }, { status: 500 })
     }
-
-    console.log("[v0] Generated image URL:", imageUrl)
 
     // Update the wunschpatient profile with the generated image URL
     const supabase = await createAdminClient()

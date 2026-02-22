@@ -397,7 +397,6 @@ export function DocumentsManager() {
       const response = await fetch(`/api/practices/${currentPractice!.id}/documents?${params}`)
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] All documents loaded for file count:", data.length)
         setAllDocuments(data)
       } else {
         throw new Error(`Failed to fetch all documents: ${response.statusText}`)
@@ -415,11 +414,9 @@ export function DocumentsManager() {
         practiceId: currentPractice!.id,
         ...(currentFolderId && { parentId: currentFolderId }),
       })
-      console.log("[v0] Fetching folders with params:", params.toString(), "currentFolderId:", currentFolderId)
       const response = await fetch(`/api/practices/${currentPractice!.id}/document-folders?${params}`)
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Fetched folders:", data.length, "folders for parentId:", currentFolderId || "root")
         // Augment data with created_by_name
         const foldersWithNames = await Promise.all(
           data.map(async (folder: DocumentFolder) => {
@@ -754,13 +751,11 @@ export function DocumentsManager() {
   }
 
   const handleNavigateToFolder = (folder: DocumentFolder) => {
-    console.log("[v0] Navigating to folder:", folder.name, "ID:", folder.id)
     setFolderPath([...folderPath, folder])
     setCurrentFolderId(folder.id)
   }
 
   const handleNavigateToRoot = () => {
-    console.log("[v0] Navigating to root")
     setFolderPath([])
     setCurrentFolderId(null)
   }
@@ -789,7 +784,6 @@ export function DocumentsManager() {
   }
 
   const handleNavigateToPathFolder = (index: number) => {
-    console.log("[v0] Navigating to path index:", index)
     const newPath = folderPath.slice(0, index + 1)
     setFolderPath(newPath)
     setCurrentFolderId(newPath[newPath.length - 1]?.id || null)
@@ -839,7 +833,6 @@ export function DocumentsManager() {
     })
 
   const handleOpenUploadDialog = () => {
-    console.log("[v0] Opening upload dialog with currentFolderId:", currentFolderId)
     setUploadFormData({
       name: "",
       description: "",
@@ -904,7 +897,6 @@ export function DocumentsManager() {
     toast.info(t("documents.analyze.starting", "KI-Analyse wird gestartet..."))
 
     try {
-      console.log("[v0] Client - Starting AI analysis for:", doc.name)
 
       const analysisResponse = await fetch("/api/analyze-document", {
         method: "POST",
@@ -916,8 +908,6 @@ export function DocumentsManager() {
         }),
       })
 
-      console.log("[v0] Client - AI analysis response status:", analysisResponse.status)
-
       if (!analysisResponse.ok) {
         const errorText = await analysisResponse.text() // Use analysisResponse here, not response
         console.error("[v0] Client - AI analysis failed:", errorText)
@@ -925,7 +915,6 @@ export function DocumentsManager() {
       }
 
       const aiAnalysis = await analysisResponse.json()
-      console.log("[v0] Client - AI analysis result:", aiAnalysis)
 
       const result = {
         documentId: doc.id,
@@ -1125,7 +1114,6 @@ export function DocumentsManager() {
           })
         }
       }
-      console.log("[v0] Default folders created/verified successfully")
       await fetchFolders()
     } catch (error) {
       console.error("[v0] Error creating default folders:", error)
@@ -1149,7 +1137,6 @@ export function DocumentsManager() {
       setHasCheckedDefaultFolders(true)
 
       try {
-        console.log("[v0] Checking and creating default folders for practice")
         await createDefaultFolders()
       } catch (error) {
         console.error("[v0] Error checking for default folders:", error)

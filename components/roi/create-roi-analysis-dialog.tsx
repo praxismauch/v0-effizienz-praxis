@@ -105,10 +105,6 @@ export function CreateRoiAnalysisDialog({
   }
 
   const handleSubmit = async () => {
-    console.log("[v0] ROI Dialog - Submit started")
-    console.log("[v0] ROI Dialog - Service name:", serviceName)
-    console.log("[v0] ROI Dialog - Practice ID:", practiceId)
-    console.log("[v0] ROI Dialog - User ID:", userId)
 
     if (!serviceName.trim()) {
       console.error("[v0] ROI Dialog - Missing service name")
@@ -143,20 +139,15 @@ export function CreateRoiAnalysisDialog({
         demand_optimistic: demandOptimistic,
       }
 
-      console.log("[v0] ROI Dialog - Sending payload:", payload)
-
       const response = await fetch("/api/roi-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
 
-      console.log("[v0] ROI Dialog - Response status:", response.status)
       const responseData = await response.json()
-      console.log("[v0] ROI Dialog - Response data:", responseData)
 
       if (response.ok) {
-        console.log("[v0] ROI Dialog - Analysis created successfully")
         onSuccess()
         resetForm()
       } else {

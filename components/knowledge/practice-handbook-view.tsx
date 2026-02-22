@@ -144,7 +144,6 @@ function useChapterData(chapterId: string, practiceId: string | undefined) {
         }
 
         if (chapterId === "leitbild") {
-          console.log("[v0] Handbook: Fetching leitbild from", endpoint)
         }
 
         const response = await fetch(endpoint)
@@ -159,7 +158,6 @@ function useChapterData(chapterId: string, practiceId: string | undefined) {
         const result = await response.json()
 
         if (chapterId === "leitbild") {
-          console.log("[v0] Handbook: Leitbild response:", result)
         }
 
         setData(result)

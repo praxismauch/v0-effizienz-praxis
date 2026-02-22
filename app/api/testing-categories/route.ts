@@ -24,8 +24,6 @@ export async function POST(request: Request) {
     const supabase = await createAdminClient()
     const body = await request.json()
 
-    console.log("[v0] Creating testing category:", body)
-
     const { data, error } = await supabase
       .from("testing_categories")
       .insert({
@@ -41,7 +39,6 @@ export async function POST(request: Request) {
       throw error
     }
 
-    console.log("[v0] Successfully created testing category:", data)
     return NextResponse.json(data)
   } catch (error) {
     console.error("[v0] Error creating testing category:", error)

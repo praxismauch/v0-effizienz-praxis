@@ -92,7 +92,6 @@ export function InterviewTemplatesManager({ candidateData }: InterviewTemplatesM
   }
 
   const handleSave = async () => {
-    console.log("[v0] handleSave called with formData:", formData)
 
     try {
       if (!formData.name || !formData.content) {
@@ -119,18 +118,11 @@ export function InterviewTemplatesManager({ candidateData }: InterviewTemplatesM
         ? `/api/practices/${currentPractice?.id}/interview-templates/${editingTemplate.id}`
         : `/api/practices/${currentPractice?.id}/interview-templates`
 
-      console.log("[v0] Sending request to:", url)
-      console.log("[v0] Request method:", editingTemplate ? "PATCH" : "POST")
-      console.log("[v0] Request body:", formData)
-
       const response = await fetch(url, {
         method: editingTemplate ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
-
-      console.log("[v0] Response status:", response.status)
-      console.log("[v0] Response ok:", response.ok)
 
       if (response.ok) {
         toast({

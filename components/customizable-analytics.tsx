@@ -1,6 +1,5 @@
 "use client"
 
-// Customizable Analytics Dashboard
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,8 +46,6 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
 
   const [hasMounted, setHasMounted] = useState(false)
   const [isLoadingSettings, setIsLoadingSettings] = useState(true)
-
-  // --- Load settings ---
 
   useEffect(() => {
     setHasMounted(true)
@@ -110,8 +107,6 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
     fetchParameters()
   }, [practice?.id, practiceId])
 
-  // --- Save helpers ---
-
   const saveDiagramSettings = async (system: SystemDiagram[], custom: SystemDiagram[]) => {
     localStorage.setItem("system-diagrams-settings", JSON.stringify({ system, custom }))
     if (user?.id) {
@@ -143,8 +138,6 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
       }
     }
   }
-
-  // --- Diagram handlers ---
 
   const toggleFavorite = (diagramId: string, isCustom: boolean) => {
     if (isCustom) {
@@ -194,8 +187,6 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
     saveDiagramSettings(systemDiagrams, updated)
   }
 
-  // --- Tile handlers ---
-
   const handleTileSubmit = (data: { title: string; description: string; type: DashboardTile["type"]; color: DashboardTile["color"]; size: DashboardTile["size"]; value: string; unit: string }) => {
     if (editingTile) {
       const updated = tiles.map((t) => (t.id === editingTile.id ? { ...t, ...data } : t))
@@ -217,7 +208,7 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
     const updated = tiles.filter((t) => t.id !== tileId)
     setTiles(updated)
     saveTilesSettings(updated)
-    toast.success("Kachel gelöscht")
+    toast.success("Kachel geloscht")
   }
 
   const toggleTileDashboard = (tileId: string) => {
@@ -225,8 +216,6 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
     setTiles(updated)
     saveTilesSettings(updated)
   }
-
-  // --- AI Generation ---
 
   const generateWithAI = async () => {
     if (!aiPrompt.trim()) return
@@ -290,12 +279,8 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
     }
   }
 
-  // --- Computed values ---
-
   const allDiagrams = [...systemDiagrams, ...customDiagrams]
   const favoriteDiagrams = allDiagrams.filter((d) => d.isFavorite)
-  const dashboardDiagrams = allDiagrams.filter((d) => d.showOnDashboard)
-  const dashboardTiles = tiles.filter((t) => t.showOnDashboard)
 
   if (!hasMounted) return null
 
@@ -315,9 +300,15 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
             <h2 className="text-2xl font-bold text-foreground">{t("analytics.customizer.configureTitle", "Analytics konfigurieren")}</h2>
             <p className="text-muted-foreground">{t("analytics.customizer.configureSubtitle", "Passen Sie Ihre Analytics-Ansicht an")}</p>
           </div>
-          <Button variant="outline" onClick={() => setShowCustomizer(false)}>{t("analytics.customizer.backToAnalytics", "Zuruck zu Analytics")}</Button>
+          <Button variant="outline" onClick={() => setShowCustomizer(false)}>
+            {t("analytics.customizer.backToAnalytics", "Zuruck zu Analytics")}
+          </Button>
         </div>
-        <AnalyticsCustomizer onItemsChange={setAnalyticsItems} onTabsChange={setAnalyticsTabs} onSaved={() => setShowCustomizer(false)} />
+        <AnalyticsCustomizer
+          onItemsChange={setAnalyticsItems}
+          onTabsChange={setAnalyticsTabs}
+          onSaved={() => setShowCustomizer(false)}
+        />
       </div>
     )
   }
@@ -353,7 +344,9 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
           <TabsTrigger value="favorites" className="gap-2">
             <Star className="h-4 w-4" />
             {t("analytics.categories.favorites", "Favoriten")}
-            {favoriteDiagrams.length > 0 && <Badge variant="secondary" className="ml-1">{favoriteDiagrams.length}</Badge>}
+            {favoriteDiagrams.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{favoriteDiagrams.length}</Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -361,30 +354,55 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">System-Diagramme</h3>
-              <Badge variant="outline">{systemDiagrams.length} verfügbar</Badge>
+              <Badge variant="outline">{systemDiagrams.length} verfugbar</Badge>
             </div>
             <div className="space-y-6">
               {systemDiagrams.map((d) => (
-                <DiagramCard key={d.id} diagram={d} isCustom={false} onToggleFavorite={toggleFavorite} onToggleDashboard={toggleDashboard} />
+                <DiagramCard
+                  key={d.id}
+                  diagram={d}
+                  isCustom={false}
+                  onToggleFavorite={toggleFavorite}
+                  onToggleDashboard={toggleDashboard}
+                />
               ))}
             </div>
           </div>
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Benutzerdefinierte Diagramme</h3>
               <div className="flex gap-2">
-                <Button size="sm" className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white border-0" onClick={() => { setAiMode("diagram"); setShowAIDialog(true) }}>
-                  <Sparkles className="h-4 w-4" />Mit KI erstellen
+                <Button
+                  size="sm"
+                  className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white border-0"
+                  onClick={() => { setAiMode("diagram"); setShowAIDialog(true) }}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Mit KI erstellen
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2 bg-transparent" onClick={() => setShowAddCustomDialog(true)}>
-                  <Plus className="h-4 w-4" />Manuell erstellen
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 bg-transparent"
+                  onClick={() => setShowAddCustomDialog(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Manuell erstellen
                 </Button>
               </div>
             </div>
             {customDiagrams.length > 0 ? (
               <div className="space-y-6">
                 {customDiagrams.map((d) => (
-                  <DiagramCard key={d.id} diagram={d} isCustom onToggleFavorite={toggleFavorite} onToggleDashboard={toggleDashboard} onDelete={deleteCustomDiagram} />
+                  <DiagramCard
+                    key={d.id}
+                    diagram={d}
+                    isCustom
+                    onToggleFavorite={toggleFavorite}
+                    onToggleDashboard={toggleDashboard}
+                    onDelete={deleteCustomDiagram}
+                  />
                 ))}
               </div>
             ) : (
@@ -392,13 +410,20 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
                 <CardContent className="py-12 text-center">
                   <Plus className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">Keine benutzerdefinierten Diagramme</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Erstellen Sie eigene Diagramme mit KI oder wahlen Sie KPI-Parameter manuell</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Erstellen Sie eigene Diagramme mit KI oder wahlen Sie KPI-Parameter manuell
+                  </p>
                   <div className="flex justify-center gap-2">
-                    <Button className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white border-0" onClick={() => { setAiMode("diagram"); setShowAIDialog(true) }}>
-                      <Sparkles className="h-4 w-4" />Mit KI erstellen
+                    <Button
+                      className="gap-2 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 text-white border-0"
+                      onClick={() => { setAiMode("diagram"); setShowAIDialog(true) }}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Mit KI erstellen
                     </Button>
                     <Button variant="outline" onClick={() => setShowAddCustomDialog(true)}>
-                      <Plus className="h-4 w-4 mr-2" />Manuell erstellen
+                      <Plus className="h-4 w-4 mr-2" />
+                      Manuell erstellen
                     </Button>
                   </div>
                 </CardContent>
@@ -411,23 +436,32 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
           {favoriteDiagrams.length > 0 ? (
             <div className="space-y-6">
               {favoriteDiagrams.map((d) => (
-                <DiagramCard key={d.id} diagram={d} isCustom={d.component === "CustomChart"} onToggleFavorite={toggleFavorite} onToggleDashboard={toggleDashboard} onDelete={d.component === "CustomChart" ? deleteCustomDiagram : undefined} />
+                <DiagramCard
+                  key={d.id}
+                  diagram={d}
+                  isCustom={d.component === "CustomChart"}
+                  onToggleFavorite={toggleFavorite}
+                  onToggleDashboard={toggleDashboard}
+                  onDelete={d.component === "CustomChart" ? deleteCustomDiagram : undefined}
+                />
               ))}
             </div>
           ) : (
             <Card>
               <CardContent className="py-12 text-center">
                 <Star className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">{t("analytics.noFavorites", "Keine Favoriten")}</h3>
-                <p className="text-sm text-muted-foreground">Markieren Sie Diagramme als Favoriten</p>
+                <h3 className="text-lg font-semibold mb-2">
+                  {t("analytics.noFavorites", "Keine Favoriten")}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Markieren Sie Diagramme als Favoriten
+                </p>
               </CardContent>
             </Card>
           )}
         </TabsContent>
-
       </Tabs>
 
-      {/* Dialog Components */}
       <AIGenerationDialog
         open={showAIDialog}
         onOpenChange={setShowAIDialog}
@@ -447,7 +481,12 @@ export function CustomizableAnalytics({ practiceId }: CustomizableAnalyticsProps
       />
       <TileDialog
         open={showTileDialog || !!editingTile}
-        onOpenChange={(open) => { if (!open) { setShowTileDialog(false); setEditingTile(null) } }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowTileDialog(false)
+            setEditingTile(null)
+          }
+        }}
         editingTile={editingTile}
         onSubmit={handleTileSubmit}
       />

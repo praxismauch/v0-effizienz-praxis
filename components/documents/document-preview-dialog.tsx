@@ -63,10 +63,8 @@ export function DocumentPreviewDialog({
   if (!document) return null
 
   const IconComponent = getFileIcon(document.file_type, document.name)
-  const canEmbed = isPdf(document.file_type, document.name) || isOfficeDoc(document.name)
-  const googleViewerUrl = canEmbed
-    ? `https://docs.google.com/gview?url=${encodeURIComponent(document.file_url)}&embedded=true`
-    : null
+  const canPreviewPdf = isPdf(document.file_type, document.name)
+  const canPreviewOffice = isOfficeDoc(document.name)
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setIframeLoading(true); setIframeError(false) } }}>
@@ -126,7 +124,33 @@ export function DocumentPreviewDialog({
                 className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
               />
             </div>
-          ) : canEmbed && googleViewerUrl && !iframeError ? (
+          ) : canPreviewPdf && !iframeError ? (
+            /* Use browser's native PDF viewer - works directly with Blob URLs */
+            <div className="relative w-full h-full">
+              {iframeLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-muted/20 z-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
+                  <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
+                </div>
+              )}
+              <object
+                data={`${document.file_url}#toolbar=1&navpanes=1`}
+                type="application/pdf"
+                className="w-full h-full border-0"
+                onLoad={() => setIframeLoading(false)}
+              >
+                {/* Fallback if object tag fails */}
+                <iframe
+                  src={`${document.file_url}#toolbar=1`}
+                  title={document.name}
+                  className="w-full h-full border-0"
+                  onLoad={() => setIframeLoading(false)}
+                  onError={() => { setIframeLoading(false); setIframeError(true) }}
+                />
+              </object>
+            </div>
+          ) : canPreviewOffice && !iframeError ? (
+            /* Use Microsoft Office Online viewer for Office docs */
             <div className="relative w-full h-full">
               {iframeLoading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-muted/20 z-10">
@@ -135,7 +159,7 @@ export function DocumentPreviewDialog({
                 </div>
               )}
               <iframe
-                src={googleViewerUrl}
+                src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(document.file_url)}`}
                 title={document.name}
                 className="w-full h-full border-0"
                 onLoad={() => setIframeLoading(false)}

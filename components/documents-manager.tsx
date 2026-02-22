@@ -47,6 +47,7 @@ import {
   Columns3,
   X,
   Clock,
+  ExternalLink,
 } from "lucide-react"
 import { toast } from "sonner"
 import { DocumentPermissionsDialog } from "@/components/document-permissions-dialog"
@@ -861,18 +862,22 @@ export function DocumentsManager() {
     setIsUploadDialogOpen(true)
   }
 
+  const isDocPdf = (doc: Document) => {
+    return doc.file_type === "application/pdf" || doc.name?.toLowerCase().endsWith(".pdf") || doc.file_url?.toLowerCase().includes(".pdf")
+  }
+
   const handlePreviewDocument = async (doc: Document) => {
     setPreviewDocument(doc)
     setPreviewBlobUrl(null)
     setIsPreviewDialogOpen(true)
 
     // Fetch PDF/document as blob to bypass X-Frame-Options restrictions
-    if (doc.file_type === "application/pdf" && doc.file_url) {
+    if (isDocPdf(doc) && doc.file_url) {
       setIsLoadingPreview(true)
       try {
         const response = await fetch(doc.file_url)
         const blob = await response.blob()
-        const blobUrl = URL.createObjectURL(blob)
+        const blobUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
         setPreviewBlobUrl(blobUrl)
       } catch (error) {
         console.error("Error loading preview:", error)
@@ -1963,7 +1968,7 @@ export function DocumentsManager() {
           <div className="flex-1 overflow-hidden rounded-lg border bg-muted/30">
             {previewDocument && (
               <>
-                {previewDocument.file_type.startsWith("image/") ? (
+                {previewDocument.file_type?.startsWith("image/") && !isDocPdf(previewDocument) ? (
                   <div className="flex items-center justify-center h-full p-4">
                     <img
                       src={previewDocument.file_url || "/placeholder.svg"}
@@ -1971,22 +1976,34 @@ export function DocumentsManager() {
                       className="max-w-full max-h-full object-contain rounded"
                     />
                   </div>
-                ) : previewDocument.file_type === "application/pdf" ? (
+                ) : isDocPdf(previewDocument) ? (
                   isLoadingPreview ? (
                     <div className="flex flex-col items-center justify-center h-full gap-4">
                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                      <p className="text-sm text-muted-foreground">Vorschau wird geladen...</p>
+                      <p className="text-sm text-muted-foreground">PDF wird geladen...</p>
                     </div>
                   ) : previewBlobUrl ? (
-                    <iframe src={previewBlobUrl} className="w-full h-full" title={previewDocument.name} />
+                    <object
+                      data={previewBlobUrl}
+                      type="application/pdf"
+                      className="w-full h-full"
+                    >
+                      <iframe src={previewBlobUrl} className="w-full h-full border-0" title={previewDocument.name} />
+                    </object>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full gap-4">
                       <FileText className="h-16 w-16 text-muted-foreground" />
-                      <p className="text-muted-foreground">Vorschau konnte nicht geladen werden</p>
-                      <Button onClick={() => handleDownloadDocument(previewDocument)}>
-                        <Download className="mr-2 h-4 w-4" />
-                        {t("documents.download", "Herunterladen")}
-                      </Button>
+                      <p className="text-muted-foreground">PDF-Vorschau konnte nicht geladen werden</p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => window.open(previewDocument.file_url, "_blank", "noopener,noreferrer")}>
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          In neuem Tab öffnen
+                        </Button>
+                        <Button onClick={() => handleDownloadDocument(previewDocument)}>
+                          <Download className="mr-2 h-4 w-4" />
+                          {t("documents.download", "Herunterladen")}
+                        </Button>
+                      </div>
                     </div>
                   )
                 ) : (
@@ -1995,10 +2012,16 @@ export function DocumentsManager() {
                     <p className="text-muted-foreground">
                       {t("documents.previewNotAvailable", "Vorschau für diesen Dateityp nicht verfügbar")}
                     </p>
-                    <Button onClick={() => handleDownloadDocument(previewDocument)}>
-                      <Download className="mr-2 h-4 w-4" />
-                      {t("documents.download", "Herunterladen")}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => window.open(previewDocument.file_url, "_blank", "noopener,noreferrer")}>
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        In neuem Tab öffnen
+                      </Button>
+                      <Button onClick={() => handleDownloadDocument(previewDocument)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        {t("documents.download", "Herunterladen")}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </>

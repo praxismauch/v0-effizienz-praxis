@@ -268,13 +268,14 @@ export function DocumentPreviewDialog({
               </Button>
             )}
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => {
                 onOpenChange(false)
                 onAnalyze(document)
               }}
               disabled={!isAiEnabled}
+              className="gap-1.5 bg-gradient-to-r from-purple-500/90 to-indigo-500/90 hover:from-purple-600 hover:to-indigo-600 text-white hover:text-white border-0"
             >
               <Sparkles className="mr-1.5 h-3.5 w-3.5" />
               {t("documents.analyze", "Analysieren")}

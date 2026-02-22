@@ -4,7 +4,17 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, FileText, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  Sparkles,
+  Table2,
+  ArrowRight,
+} from "lucide-react"
 import type { CSVMapping, UploadStats } from "./types"
 
 interface UploadTabProps {
@@ -19,6 +29,29 @@ interface UploadTabProps {
   onUpload: () => void
 }
 
+// Maps field keys to German labels
+const FIELD_LABELS: Record<string, { label: string; description: string }> = {
+  dateIndex: { label: "Datum", description: "Buchungsdatum der Transaktion" },
+  categoryIndex: { label: "Kategorie", description: "Art der Buchung" },
+  senderIndex: { label: "Name", description: "Auftraggeber / Empfänger" },
+  descriptionIndex: { label: "Verwendungszweck", description: "Buchungstext / Referenz" },
+  amountIndex: { label: "Betrag", description: "Transaktionsbetrag" },
+}
+
+// Check if a mapping field was likely auto-detected (header matches known patterns)
+function isAutoDetected(headers: string[], index: number, fieldKey: string): boolean {
+  if (!headers[index]) return false
+  const h = headers[index].toLowerCase().trim()
+  const patterns: Record<string, string[]> = {
+    dateIndex: ["buchungstag", "buchungsdatum", "datum", "date", "valuta", "wertstellung"],
+    amountIndex: ["betrag", "amount", "umsatz", "soll/haben", "soll", "haben", "buchungsbetrag"],
+    senderIndex: ["empfänger", "empfaenger", "auftraggeber", "beguenstigter", "begünstigter", "name", "kontoname"],
+    descriptionIndex: ["verwendungszweck", "buchungstext", "beschreibung", "text", "zahlungsgrund"],
+    categoryIndex: ["kategorie", "category", "buchungsart", "art", "typ", "umsatzart"],
+  }
+  return (patterns[fieldKey] || []).some((p) => h.includes(p))
+}
+
 export function UploadTab({
   file,
   previewData,
@@ -30,11 +63,24 @@ export function UploadTab({
   onFileChange,
   onUpload,
 }: UploadTabProps) {
+  const headers = previewData[0] || []
+  const dataRows = previewData.slice(1, 4) // Show 3 data rows
+
+  // Which column indices are mapped
+  const mappedIndices = new Set([
+    mapping.dateIndex,
+    mapping.categoryIndex,
+    mapping.senderIndex,
+    mapping.descriptionIndex,
+    mapping.amountIndex,
+  ])
+
   return (
     <Card>
       <CardContent className="pt-6">
         {!uploadStats ? (
           <div className="space-y-4">
+            {/* Drop zone */}
             <div className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-muted/50 transition-colors">
               <Input
                 type="file"
@@ -59,97 +105,144 @@ export function UploadTab({
             </div>
 
             {file && previewData.length > 0 && (
-              <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+              <div className="space-y-5 border rounded-lg p-5 bg-muted/30">
+                {/* File info header */}
                 <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                  <FileText className="h-6 w-6 text-primary" />
-                  <div>
+                  <FileText className="h-6 w-6 text-primary shrink-0" />
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs text-muted-foreground font-medium">Vorschau:</p>
-                    <h3 className="text-lg font-semibold text-foreground">{file.name}</h3>
+                    <h3 className="text-lg font-semibold text-foreground truncate">{file.name}</h3>
+                  </div>
+                  <Badge variant="outline" className="shrink-0 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Auto-Mapping
+                  </Badge>
+                </div>
+
+                {/* Column mapping section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <ArrowRight className="h-4 w-4 text-primary" />
+                    Spaltenzuordnung
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {(Object.keys(FIELD_LABELS) as Array<keyof typeof FIELD_LABELS>).map((fieldKey) => {
+                      const { label, description } = FIELD_LABELS[fieldKey]
+                      const mappingKey = fieldKey as keyof CSVMapping
+                      const value = mapping[mappingKey]
+                      const autoDetected = isAutoDetected(headers, value, fieldKey)
+
+                      return (
+                        <div
+                          key={fieldKey}
+                          className={`space-y-1.5 p-3 rounded-lg border transition-colors ${
+                            autoDetected
+                              ? "bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-800"
+                              : "bg-background border-border"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium">{label}</Label>
+                            {autoDetected && (
+                              <span className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400 font-medium">
+                                <CheckCircle2 className="h-3 w-3" />
+                                erkannt
+                              </span>
+                            )}
+                          </div>
+                          <select
+                            className="w-full p-2 border rounded-md bg-background text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                            value={value}
+                            onChange={(e) =>
+                              setMapping({ ...mapping, [mappingKey]: Number(e.target.value) })
+                            }
+                          >
+                            {headers.map((header, i) => (
+                              <option key={i} value={i}>
+                                {header} (Spalte {i + 1})
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-[10px] text-muted-foreground">{description}</p>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <Label>Spalte Datum</Label>
-                    <select
-                      className="w-full p-2 border rounded bg-background text-sm"
-                      value={mapping.dateIndex}
-                      onChange={(e) => setMapping({ ...mapping, dateIndex: Number(e.target.value) })}
-                    >
-                      {previewData[0]?.map((header, i) => (
-                        <option key={i} value={i}>
-                          {header} (Spalte {i + 1})
-                        </option>
-                      ))}
-                    </select>
+                {/* Data preview table */}
+                {dataRows.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Table2 className="h-4 w-4 text-primary" />
+                      Datenvorschau ({dataRows.length} von {previewData.length - 1} Zeilen)
+                    </div>
+                    <div className="overflow-x-auto border rounded-lg">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-muted/60">
+                            {headers.map((header, i) => (
+                              <th
+                                key={i}
+                                className={`px-3 py-2 text-left font-medium whitespace-nowrap border-b ${
+                                  mappedIndices.has(i)
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="truncate max-w-[120px]">{header}</span>
+                                  {mappedIndices.has(i) && (
+                                    <span className="text-[9px] font-normal opacity-75">
+                                      {Object.entries(mapping).find(
+                                        ([, val]) => val === i,
+                                      )?.[0]
+                                        ? FIELD_LABELS[
+                                            Object.entries(mapping).find(
+                                              ([, val]) => val === i,
+                                            )![0]
+                                          ]?.label
+                                        : ""}
+                                    </span>
+                                  )}
+                                </div>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dataRows.map((row, rowIndex) => (
+                            <tr
+                              key={rowIndex}
+                              className={rowIndex % 2 === 0 ? "bg-background" : "bg-muted/20"}
+                            >
+                              {headers.map((_, colIndex) => (
+                                <td
+                                  key={colIndex}
+                                  className={`px-3 py-1.5 border-b whitespace-nowrap max-w-[150px] truncate ${
+                                    mappedIndices.has(colIndex)
+                                      ? "bg-primary/5 font-medium"
+                                      : "text-muted-foreground"
+                                  }`}
+                                  title={row[colIndex] || ""}
+                                >
+                                  {row[colIndex] || "-"}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
+                )}
 
-                  <div className="space-y-2">
-                    <Label>Spalte Kategorie</Label>
-                    <select
-                      className="w-full p-2 border rounded bg-background text-sm"
-                      value={mapping.categoryIndex}
-                      onChange={(e) => setMapping({ ...mapping, categoryIndex: Number(e.target.value) })}
-                    >
-                      {previewData[0]?.map((header, i) => (
-                        <option key={i} value={i}>
-                          {header} (Spalte {i + 1})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Spalte Name</Label>
-                    <select
-                      className="w-full p-2 border rounded bg-background text-sm"
-                      value={mapping.senderIndex}
-                      onChange={(e) => setMapping({ ...mapping, senderIndex: Number(e.target.value) })}
-                    >
-                      {previewData[0]?.map((header, i) => (
-                        <option key={i} value={i}>
-                          {header} (Spalte {i + 1})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Spalte Verwendungszweck</Label>
-                    <select
-                      className="w-full p-2 border rounded bg-background text-sm"
-                      value={mapping.descriptionIndex}
-                      onChange={(e) => setMapping({ ...mapping, descriptionIndex: Number(e.target.value) })}
-                    >
-                      {previewData[0]?.map((header, i) => (
-                        <option key={i} value={i}>
-                          {header} (Spalte {i + 1})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Spalte Betrag</Label>
-                    <select
-                      className="w-full p-2 border rounded bg-background text-sm"
-                      value={mapping.amountIndex}
-                      onChange={(e) => setMapping({ ...mapping, amountIndex: Number(e.target.value) })}
-                    >
-                      {previewData[0]?.map((header, i) => (
-                        <option key={i} value={i}>
-                          {header} (Spalte {i + 1})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
+                {/* Import button */}
                 <Button onClick={onUpload} disabled={uploading} className="w-full" size="lg">
                   {uploading ? (
                     <>
                       <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                      Wird hochgeladen...
+                      Wird importiert...
                     </>
                   ) : (
                     <>
@@ -162,6 +255,7 @@ export function UploadTab({
             )}
           </div>
         ) : (
+          /* Upload complete stats */
           <div className="text-center py-12 space-y-6">
             <div className="flex justify-center">
               <div className="bg-green-100 dark:bg-green-900/30 rounded-full p-4">

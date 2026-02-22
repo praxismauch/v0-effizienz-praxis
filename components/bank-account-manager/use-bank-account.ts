@@ -257,15 +257,36 @@ export function useBankAccount(practiceId: string) {
       setPreviewData(preview)
 
       if (preview.length > 0) {
-        const headers = preview[0].map((h) => h.toLowerCase())
-        const newMapping = { ...mapping }
+        const headers = preview[0].map((h) => h.toLowerCase().trim())
+        const newMapping: CSVMapping = {
+          dateIndex: 0,
+          categoryIndex: 2,
+          senderIndex: 3,
+          descriptionIndex: 4,
+          amountIndex: 7,
+        }
+
+        // Smart auto-mapping for German banking CSV formats
+        const datePatterns = ["buchungstag", "buchungsdatum", "datum", "date", "valuta", "wertstellung", "wertstellungstag"]
+        const amountPatterns = ["betrag", "amount", "umsatz", "soll/haben", "soll", "haben", "wert", "buchungsbetrag"]
+        const senderPatterns = [
+          "empfänger", "empfaenger", "auftraggeber", "beguenstigter", "begünstigter",
+          "name", "kontoname", "zahlungsempfänger", "zahlungspflichtiger",
+          "auftraggeber/empfänger", "auftraggeber / empfänger",
+        ]
+        const descriptionPatterns = [
+          "verwendungszweck", "buchungstext", "beschreibung", "description",
+          "purpose", "text", "info", "zahlungsgrund", "kundenreferenz",
+          "primanota", "vorgang",
+        ]
+        const categoryPatterns = ["kategorie", "category", "buchungsart", "art", "typ", "transaktionstyp", "umsatzart"]
 
         headers.forEach((h, i) => {
-          if (h.includes("datum") || h.includes("date")) newMapping.dateIndex = i
-          else if (h.includes("kategorie") || h.includes("category")) newMapping.categoryIndex = i
-          else if (h.includes("betrag") || h.includes("amount") || h.includes("umsatz")) newMapping.amountIndex = i
-          else if (h.includes("empfänger") || h.includes("auftraggeber") || h.includes("name")) newMapping.senderIndex = i
-          else if (h.includes("verwendungszweck") || h.includes("buchungstext")) newMapping.descriptionIndex = i
+          if (datePatterns.some((p) => h.includes(p))) newMapping.dateIndex = i
+          else if (amountPatterns.some((p) => h.includes(p))) newMapping.amountIndex = i
+          else if (senderPatterns.some((p) => h.includes(p))) newMapping.senderIndex = i
+          else if (descriptionPatterns.some((p) => h.includes(p))) newMapping.descriptionIndex = i
+          else if (categoryPatterns.some((p) => h.includes(p))) newMapping.categoryIndex = i
         })
         setMapping(newMapping)
       }

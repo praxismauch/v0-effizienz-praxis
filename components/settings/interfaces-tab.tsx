@@ -243,16 +243,28 @@ export function InterfacesTab() {
                 </CardDescription>
               </div>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <a
-                href="https://console.cloud.google.com/apis/credentials"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Google Cloud Console
-              </a>
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <a
+                  href="https://business.google.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Google Business Profil
+                </a>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Cloud Console
+                </a>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

@@ -448,13 +448,13 @@ function ReportBugDialog({
       <Dialog open={open} onOpenChange={setOpen}>
         {trigger ? (
           <DialogTrigger asChild>{trigger}</DialogTrigger>
-        ) : (
+        ) : !isControlled ? (
           <DialogTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <Bug className="h-4 w-4" />
             </Button>
           </DialogTrigger>
-        )}
+        ) : null}
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Bug oder Problem melden</DialogTitle>

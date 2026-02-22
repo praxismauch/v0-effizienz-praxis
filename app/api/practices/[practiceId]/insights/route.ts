@@ -71,7 +71,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("journal_preferences")
       .select("*")
       .eq("practice_id", practiceId)
-      .is("deleted_at", null)
       .maybeSingle()
 
     if (prefsResult.error?.code === "42703" || prefsResult.error?.message?.includes("does not exist")) {

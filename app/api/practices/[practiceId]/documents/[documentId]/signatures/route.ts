@@ -14,7 +14,6 @@ export async function GET(
       .select("*")
       .eq("document_id", documentId)
       .eq("practice_id", practiceId)
-      .is("deleted_at", null)
       .order("signed_at", { ascending: false })
 
     if (error) {

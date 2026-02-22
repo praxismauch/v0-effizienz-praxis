@@ -21,6 +21,7 @@ import {
   MoreVertical,
   Plus,
   Sparkles,
+  Lock,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -29,6 +30,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { WIDGET_DEFINITIONS } from "@/components/dashboard/editor-constants"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export interface WidgetItem {
   id: string
@@ -162,17 +165,23 @@ export function WidgetLibrary({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{widgets.length}</div>
+            <div className="text-2xl font-bold">{widgets.length + WIDGET_DEFINITIONS.length}</div>
             <p className="text-sm text-muted-foreground">Gesamt Widgets</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">{widgets.filter((w) => w.enabled).length}</div>
-            <p className="text-sm text-muted-foreground">Aktiv</p>
+            <p className="text-sm text-muted-foreground">Diagramme aktiv</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-blue-600">{WIDGET_DEFINITIONS.length}</div>
+            <p className="text-sm text-muted-foreground">Cockpit-Widgets</p>
           </CardContent>
         </Card>
         <Card>
@@ -253,7 +262,7 @@ export function WidgetLibrary({
         })}
       </div>
 
-      {filteredWidgets.length === 0 && (
+      {filteredWidgets.length === 0 && !searchQuery && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Activity className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -261,6 +270,57 @@ export function WidgetLibrary({
             <p className="text-sm text-muted-foreground mt-1">Versuchen Sie eine andere Suche oder Kategorie</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Dashboard Widgets (read-only) */}
+      {!selectedCategory && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Cockpit-Widgets</h3>
+              <p className="text-sm text-muted-foreground">
+                Diese Widgets werden im Cockpit-Dashboard angezeigt. Konfiguration erfolgt im Cockpit-Bearbeitungsmodus.
+              </p>
+            </div>
+            <Badge variant="outline" className="gap-1.5">
+              <Lock className="h-3 w-3" />
+              Nur Ansicht
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <TooltipProvider>
+              {WIDGET_DEFINITIONS.filter((w) =>
+                !searchQuery ||
+                w.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                w.description.toLowerCase().includes(searchQuery.toLowerCase())
+              ).map((widget) => {
+                const Icon = widget.icon
+                return (
+                  <Tooltip key={widget.id}>
+                    <TooltipTrigger asChild>
+                      <Card className="relative overflow-hidden border-muted-foreground/10 bg-muted/20 cursor-default">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                              <Icon className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{widget.label}</p>
+                              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{widget.description}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Konfiguration im Cockpit unter &quot;Layout anpassen&quot;</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              })}
+            </TooltipProvider>
+          </div>
+        </div>
       )}
     </div>
   )

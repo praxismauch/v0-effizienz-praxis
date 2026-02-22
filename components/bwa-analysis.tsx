@@ -138,6 +138,7 @@ export function BWAAnalysis() {
   const [detailTab, setDetailTab] = useState("overview")
   const [previewFile, setPreviewFile] = useState<string | null>(null)
   const [showAllYears, setShowAllYears] = useState(false)
+  const [uploadingYear, setUploadingYear] = useState<number | null>(null)
 
   const { toast } = useToast()
   const { currentPractice } = usePractice()
@@ -273,6 +274,68 @@ export function BWAAnalysis() {
       )
     )
     toast({ title: "Datei entfernt" })
+  }
+
+  const handleYearUpload = async (year: number, files: FileList) => {
+    if (!currentPractice?.id || !currentUser?.id || files.length === 0) return
+
+    try {
+      setUploadingYear(year)
+      toast({ title: "Jahres-BWA Upload", description: `${files.length} Datei(en) werden hochgeladen und auf 12 Monate verteilt...` })
+
+      const uploadedFiles: BWAFile[] = []
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const blob = await put(
+          `bwa/${currentPractice.id}/${year}-annual-${Date.now()}.${file.name.split(".").pop()}`,
+          file,
+          { access: "public" }
+        )
+
+        uploadedFiles.push({
+          url: blob.url,
+          uploaded_at: new Date().toISOString(),
+          file_name: file.name,
+          file_size: file.size,
+        })
+      }
+
+      // Associate the uploaded files with all 12 months
+      setData((prev) => {
+        const updated = [...prev]
+        for (let month = 1; month <= 12; month++) {
+          const existingIndex = updated.findIndex((d) => d.year === year && d.month === month)
+          if (existingIndex >= 0) {
+            updated[existingIndex] = {
+              ...updated[existingIndex],
+              files: [...updated[existingIndex].files, ...uploadedFiles],
+              updated_at: new Date().toISOString(),
+            }
+          } else {
+            updated.push({
+              id: `bwa-${year}-${month}-${Date.now()}`,
+              practice_id: String(currentPractice.id),
+              year,
+              month,
+              files: [...uploadedFiles],
+              extracted_data: null,
+              created_by: currentUser.id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+          }
+        }
+        return updated
+      })
+
+      toast({ title: "Upload erfolgreich", description: `Jahres-BWA ${year} wurde allen 12 Monaten zugeordnet` })
+    } catch (error) {
+      console.error("BWA Year Upload error:", error)
+      toast({ title: "Fehler", description: "Upload fehlgeschlagen", variant: "destructive" })
+    } finally {
+      setUploadingYear(null)
+    }
   }
 
   // Generate demo extraction data for testing
@@ -883,7 +946,36 @@ export function BWAAnalysis() {
           <div className="space-y-8">
             {displayYears.map((year) => (
               <div key={year} className="space-y-3">
-                <h3 className="text-lg font-semibold">{year}</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">{year}</h3>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingYear === year}
+                      onClick={() => {
+                        const input = document.createElement("input")
+                        input.type = "file"
+                        input.accept = ".pdf,.xlsx,.xls,.csv,.jpg,.jpeg,.png"
+                        input.multiple = true
+                        input.onchange = (e) => {
+                          const target = e.target as HTMLInputElement
+                          if (target.files && target.files.length > 0) {
+                            handleYearUpload(year, target.files)
+                          }
+                        }
+                        input.click()
+                      }}
+                    >
+                      {uploadingYear === year ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Calendar className="h-4 w-4 mr-2" />
+                      )}
+                      Ganzes Jahr hochladen
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
                   {MONTHS.map(({ value: month, label, fullLabel }) => {
                     const monthData = getMonthData(year, month)

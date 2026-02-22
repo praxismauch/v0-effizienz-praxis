@@ -89,36 +89,40 @@ function ContentManagementContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="workflows" className="gap-2">
-            <Workflow className="h-4 w-4" />
-            Workflows
-          </TabsTrigger>
-          <TabsTrigger value="checklisten" className="gap-2">
-            <CheckSquare className="h-4 w-4" />
-            Checklisten
-          </TabsTrigger>
-          <TabsTrigger value="dokumente" className="gap-2">
-            <FolderOpen className="h-4 w-4" />
-            Ordner-Vorlagen
-          </TabsTrigger>
-          <TabsTrigger value="teams" className="gap-2">
-            <UsersRound className="h-4 w-4" />
-            Team-Vorlagen
-          </TabsTrigger>
-          <TabsTrigger value="event-types" className="gap-2">
-            <Calendar className="h-4 w-4" />
-            Event-Typen
-          </TabsTrigger>
-          <TabsTrigger value="praxisarten" className="gap-2">
-            <Building2 className="h-4 w-4" />
-            Praxisarten
-          </TabsTrigger>
-          <TabsTrigger value="blog" className="gap-2">
-            <BookOpen className="h-4 w-4" />
-            Blog / Insights
-          </TabsTrigger>
-        </TabsList>
+        <div className="space-y-1">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="workflows" className="gap-2">
+              <Workflow className="h-4 w-4" />
+              Workflows
+            </TabsTrigger>
+            <TabsTrigger value="checklisten" className="gap-2">
+              <CheckSquare className="h-4 w-4" />
+              Checklisten
+            </TabsTrigger>
+            <TabsTrigger value="dokumente" className="gap-2">
+              <FolderOpen className="h-4 w-4" />
+              Ordner-Vorlagen
+            </TabsTrigger>
+            <TabsTrigger value="teams" className="gap-2">
+              <UsersRound className="h-4 w-4" />
+              Team-Vorlagen
+            </TabsTrigger>
+          </TabsList>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="event-types" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Event-Typen
+            </TabsTrigger>
+            <TabsTrigger value="praxisarten" className="gap-2">
+              <Building2 className="h-4 w-4" />
+              Praxisarten
+            </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              Blog / Insights
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="workflows" className="mt-6 space-y-4">
           <WorkflowsPage />

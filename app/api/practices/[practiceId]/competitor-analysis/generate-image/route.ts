@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/server"
-import { fal } from "@fal-ai/client"
+import * as fal from "@fal-ai/serverless-client"
 
 // Configure fal client
 fal.config({
@@ -21,12 +21,55 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "analysisId ist erforderlich" }, { status: 400 })
     }
 
-    // Build a photorealistic prompt based on location and specialty
+    // Build a photorealistic prompt based on actual location and specialty
     const cityName = location || "German city"
     const specialtyName = specialty || "medical practice"
 
-    // Create a unique prompt for each analysis based on its characteristics
-    const prompt = `Photorealistic image of a modern ${specialtyName} medical clinic exterior in ${cityName}, Germany. Professional healthcare building with clean architecture, glass entrance, medical cross or health symbol visible, beautiful landscaping, sunny day, high quality architectural photography, 8k resolution, professional lighting`
+    // Map German specialties to English visual descriptions
+    const specialtyMap: Record<string, { english: string, visual: string }> = {
+      "Allgemeinmedizin": { english: "general practice", visual: "warm welcoming family doctor office with a cozy waiting room" },
+      "Innere Medizin": { english: "internal medicine", visual: "modern internal medicine clinic with diagnostic equipment" },
+      "Kardiologie": { english: "cardiology", visual: "high-tech cardiology center with heart monitors" },
+      "Orthopädie": { english: "orthopedics", visual: "bright orthopedic rehabilitation clinic with exercise equipment" },
+      "Dermatologie": { english: "dermatology", visual: "clean bright dermatology clinic with modern treatment rooms" },
+      "Gynäkologie": { english: "gynecology", visual: "modern womens health clinic with soft pastel interior" },
+      "Pädiatrie": { english: "pediatrics", visual: "colorful friendly childrens medical practice" },
+      "Kinderheilkunde": { english: "pediatrics", visual: "colorful friendly childrens medical practice" },
+      "Zahnmedizin": { english: "dentistry", visual: "sleek modern dental practice with treatment chairs" },
+      "Kieferorthopädie": { english: "orthodontics", visual: "modern orthodontic practice with bright interior" },
+      "Augenheilkunde": { english: "ophthalmology", visual: "high-tech eye clinic with advanced diagnostic equipment" },
+      "HNO": { english: "ENT", visual: "ear nose and throat specialist clinic" },
+      "Neurologie": { english: "neurology", visual: "neurology center with brain imaging technology" },
+      "Psychiatrie": { english: "psychiatry", visual: "calm peaceful mental health clinic with natural light" },
+      "Psychotherapie": { english: "psychotherapy", visual: "comfortable psychotherapy practice with relaxing interior" },
+      "Urologie": { english: "urology", visual: "modern urology clinic" },
+      "Chirurgie": { english: "surgery", visual: "surgical center with operating room" },
+      "Radiologie": { english: "radiology", visual: "radiology center with MRI and CT scanners" },
+      "Physiotherapie": { english: "physiotherapy", visual: "bright physiotherapy practice with exercise equipment" },
+      "Hausarztpraxis": { english: "family medicine", visual: "welcoming family doctor office in a traditional building" },
+      "MVZ": { english: "multi-specialty medical center", visual: "large modern multi-specialty medical center" },
+    }
+
+    // Match specialties (can be comma-separated)
+    const specialties = specialtyName.split(",").map((s: string) => s.trim())
+    let matchedVisual = "modern medical practice building"
+    let matchedEnglish = "medical practice"
+    for (const spec of specialties) {
+      for (const [de, info] of Object.entries(specialtyMap)) {
+        if (spec.toLowerCase().includes(de.toLowerCase())) {
+          matchedVisual = info.visual
+          matchedEnglish = info.english
+          break
+        }
+      }
+    }
+
+    // Determine regional character based on city name
+    const isSmallTown = cityName.length > 0
+    const regionHint = `in the Bavarian town of ${cityName}` // Default to Bavarian since practice is in Marktoberdorf area
+
+    // Create a rich, location-specific prompt
+    const prompt = `Professional photograph of a ${matchedVisual} ${regionHint}, Germany. The building has a modern European architectural style with large windows, set against a backdrop of the local townscape with traditional German buildings and green Alps foothills visible in the distance. Golden hour warm sunlight, autumn trees nearby, clean sidewalk with flower boxes. No text no letters no words no signs no logos no watermarks. Photorealistic architectural photography, shallow depth of field, 8k resolution`
 
     // Generate image using fal.ai flux/schnell
     const result = await fal.subscribe("fal-ai/flux/schnell", {
@@ -39,12 +82,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     })
 
-    if (!result.data?.images?.[0]?.url) {
+    const images = (result as any).images || (result as any).data?.images
+    if (!images?.[0]?.url) {
       console.error("[v0] No image generated from fal.ai")
       return NextResponse.json({ error: "Bild konnte nicht generiert werden" }, { status: 500 })
     }
 
-    const imageUrl = result.data.images[0].url
+    const imageUrl = images[0].url
     console.log("[v0] Generated image URL:", imageUrl)
 
     // Update the competitor analysis with the generated image

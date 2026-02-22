@@ -104,7 +104,7 @@ export default function WellbeingPageClient() {
       <div className="container mx-auto py-6 space-y-6">
         <PageHeader
           title="Mitarbeiter-Wellbeing"
-          subtitle="Burnout-Praevention, anonyme Stimmungsumfragen und Peer-Recognition"
+          subtitle="Burnout-Prävention, anonyme Stimmungsumfragen und Peer-Recognition"
           icon={<Heart className="h-8 w-8 text-pink-500" />}
           actions={
             <div className="flex gap-2">

@@ -32,14 +32,42 @@ export default function AuswertungTab({
   const monthEnd = endOfMonth(selectedMonth)
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
+  // Extract HH:mm from either a time string ("08:30:00") or ISO timestamp ("2026-02-22T08:30:00.000Z")
+  const extractTime = (timeStr: string | null | undefined): string => {
+    if (!timeStr) return ""
+    // Full ISO timestamp (contains "T")
+    if (timeStr.includes("T")) {
+      const d = new Date(timeStr)
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", hour12: false })
+      }
+    }
+    // Already a time string like "08:30:00" or "08:30"
+    return timeStr.slice(0, 5)
+  }
+
+  // Parse a time value to a Date object for calculation
+  const parseTimeToDate = (timeStr: string, dateStr?: string): Date | null => {
+    if (!timeStr) return null
+    // Full ISO timestamp
+    if (timeStr.includes("T")) {
+      const d = new Date(timeStr)
+      return isNaN(d.getTime()) ? null : d
+    }
+    // Time-only string
+    const base = dateStr || "2000-01-01"
+    const d = new Date(`${base}T${timeStr}`)
+    return isNaN(d.getTime()) ? null : d
+  }
+
   // Safely extract net minutes from a block
   const getBlockMinutes = (block: TimeBlock): number => {
     if (typeof block.net_minutes === "number" && !isNaN(block.net_minutes)) return block.net_minutes
     // Fallback: calculate from start_time / end_time
     if (block.start_time && block.end_time) {
-      const start = new Date(`2000-01-01T${block.start_time}`)
-      const end = new Date(`2000-01-01T${block.end_time}`)
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+      const start = parseTimeToDate(block.start_time, block.date)
+      const end = parseTimeToDate(block.end_time, block.date)
+      if (start && end) {
         const minutes = (end.getTime() - start.getTime()) / 60000
         return Math.max(0, minutes - (block.break_minutes || 0))
       }
@@ -255,7 +283,7 @@ export default function AuswertungTab({
               {blocks
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                 .map((block) => {
-                  const netMin = block.net_minutes || 0
+                  const netMin = getBlockMinutes(block)
                   return (
                     <div key={block.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div>
@@ -263,7 +291,7 @@ export default function AuswertungTab({
                           {format(new Date(block.date), "EEEE, dd.MM.yyyy", { locale: de })}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {block.start_time?.slice(0, 5)} - {block.end_time ? block.end_time.slice(0, 5) : "offen"}
+                          {extractTime(block.start_time) || "--:--"} - {block.end_time ? extractTime(block.end_time) : "offen"}
                           {block.break_minutes ? ` (${block.break_minutes} Min. Pause)` : ""}
                         </p>
                       </div>

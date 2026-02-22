@@ -116,11 +116,17 @@ Stelle sicher, dass der Plan:
       title: parsedPlan.title,
       description: parsedPlan.description || "",
       area: parsedPlan.category || category,
+      category: parsedPlan.category || category,
       frequency: parsedPlan.frequency || "daily",
       responsible_user_id: userId || null,
+      responsible_role: parsedPlan.responsible_role || null,
       status: "active",
       ai_generated: true,
+      is_rki_template: false,
       generated_at: new Date().toISOString(),
+      content: parsedPlan.content || {},
+      tags: parsedPlan.tags || [],
+      rki_reference_url: parsedPlan.rki_reference_url || null,
       products_used: parsedPlan.content?.materials ? JSON.stringify(parsedPlan.content.materials) : null,
     }
     console.log("[v0] Insert payload:", JSON.stringify(insertPayload))

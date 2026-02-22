@@ -1,21 +1,22 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Lightbulb, CheckCircle, AlertCircle, Info } from "lucide-react"
-import type { CompetitorAnalysis, Insight } from "../types"
+import { Lightbulb, AlertCircle, Info, CheckCircle, ListChecks, DollarSign } from "lucide-react"
+import type { Recommendation } from "../types"
+import { getPriorityColor } from "../types"
 
 interface InsightsTabProps {
-  analysis: CompetitorAnalysis
+  recommendations?: Recommendation[]
 }
 
-export function InsightsTab({ analysis }: InsightsTabProps) {
-  const insights: Insight[] = analysis.insights || []
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
+export function InsightsTab({ recommendations = [] }: InsightsTabProps) {
+  const getPriorityIcon = (priority?: string) => {
+    switch (priority?.toLowerCase()) {
+      case "hoch":
       case "high":
         return <AlertCircle className="h-4 w-4 text-red-500" />
+      case "mittel":
       case "medium":
         return <Info className="h-4 w-4 text-yellow-500" />
       default:
@@ -23,28 +24,14 @@ export function InsightsTab({ analysis }: InsightsTabProps) {
     }
   }
 
-  const getPriorityBadge = (priority: string) => {
-    const variants: Record<string, "destructive" | "default" | "secondary"> = {
-      high: "destructive",
-      medium: "default",
-      low: "secondary",
-    }
-    const labels: Record<string, string> = {
-      high: "Hoch",
-      medium: "Mittel",
-      low: "Niedrig",
-    }
-    return <Badge variant={variants[priority] || "secondary"}>{labels[priority] || priority}</Badge>
-  }
-
-  if (insights.length === 0) {
+  if (recommendations.length === 0) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
           <Lightbulb className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground">Keine Erkenntnisse erfasst</p>
+          <p className="text-muted-foreground">Keine Empfehlungen vorhanden</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Führen Sie eine AI-Analyse durch, um Erkenntnisse zu generieren
+            Starten Sie eine KI-Analyse, um Empfehlungen zu generieren
           </p>
         </CardContent>
       </Card>
@@ -53,27 +40,47 @@ export function InsightsTab({ analysis }: InsightsTabProps) {
 
   return (
     <div className="space-y-4">
-      {insights.map((insight, index) => (
+      {recommendations.map((rec, index) => (
         <Card key={index} className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
-                {getPriorityIcon(insight.priority || "low")}
-                <CardTitle className="text-base">{insight.title}</CardTitle>
+                {getPriorityIcon(rec.priority)}
+                <CardTitle className="text-base">{rec.title}</CardTitle>
               </div>
-              {getPriorityBadge(insight.priority || "low")}
+              <div className="flex items-center gap-2">
+                {rec.category && (
+                  <Badge variant="outline">{rec.category}</Badge>
+                )}
+                {rec.priority && (
+                  <Badge className={getPriorityColor(rec.priority)}>{rec.priority}</Badge>
+                )}
+              </div>
             </div>
-            {insight.category && (
-              <Badge variant="outline" className="w-fit mt-1">{insight.category}</Badge>
-            )}
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{insight.description}</p>
-            {insight.recommendation && (
-              <div className="mt-3 p-3 bg-primary/5 rounded-lg">
-                <p className="text-sm font-medium">Empfehlung:</p>
-                <p className="text-sm text-muted-foreground">{insight.recommendation}</p>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">{rec.description}</p>
+            {rec.expected_impact && (
+              <div className="p-3 bg-primary/5 rounded-lg">
+                <p className="text-sm"><strong>Erwartete Wirkung:</strong> {rec.expected_impact}</p>
               </div>
+            )}
+            {rec.implementation_steps && rec.implementation_steps.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium flex items-center gap-1">
+                  <ListChecks className="h-4 w-4" /> Umsetzungsschritte:
+                </p>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground pl-1">
+                  {rec.implementation_steps.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {rec.estimated_cost && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <DollarSign className="h-3 w-3" /> Geschätzte Kosten: {rec.estimated_cost}
+              </p>
             )}
           </CardContent>
         </Card>

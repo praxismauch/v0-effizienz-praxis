@@ -9,17 +9,40 @@ export async function GET(
     const { practiceId, documentId } = await params
     const supabase = await createClient()
 
-    const { data: signatures, error } = await supabase
+    // Try with practice_id first, fall back to document_id only if column doesn't exist
+    let signatures
+    const result = await supabase
       .from("document_signatures")
       .select("*")
       .eq("document_id", documentId)
       .eq("practice_id", practiceId)
-      .is("deleted_at", null)
       .order("signed_at", { ascending: false })
 
-    if (error) {
-      console.error("Error fetching signatures:", error)
+    if (result.error?.code === "42703" || result.error?.message?.includes("does not exist")) {
+      // Column doesn't exist, query without it
+      const fallback = await supabase
+        .from("document_signatures")
+        .select("*")
+        .eq("document_id", documentId)
+        .order("signed_at", { ascending: false })
+
+      if (fallback.error) {
+        // Table may not exist at all
+        if (fallback.error.code === "PGRST205" || fallback.error.code === "42P01") {
+          return NextResponse.json([])
+        }
+        console.error("Error fetching signatures:", fallback.error)
+        return NextResponse.json({ error: "Failed to fetch signatures" }, { status: 500 })
+      }
+      signatures = fallback.data
+    } else if (result.error) {
+      if (result.error.code === "PGRST205" || result.error.code === "42P01") {
+        return NextResponse.json([])
+      }
+      console.error("Error fetching signatures:", result.error)
       return NextResponse.json({ error: "Failed to fetch signatures" }, { status: 500 })
+    } else {
+      signatures = result.data
     }
 
     return NextResponse.json(signatures || [])

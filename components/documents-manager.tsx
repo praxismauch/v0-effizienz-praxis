@@ -47,9 +47,11 @@ import {
   Columns3,
   X,
   Clock,
+  ExternalLink,
 } from "lucide-react"
 import { toast } from "sonner"
 import { DocumentPermissionsDialog } from "@/components/document-permissions-dialog"
+import { DocumentPreviewDialog } from "@/components/documents/document-preview-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AIFolderAnalysisDialog } from "@/components/ai-folder-analysis-dialog"
 import { useAiEnabled } from "@/lib/hooks/use-ai-enabled"
@@ -131,8 +133,6 @@ export function DocumentsManager() {
 
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null)
-  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false)
   const [analyzingDocumentId, setAnalyzingDocumentId] = useState<string | null>(null) // Added state for tracking AI analysis
   const [isAIResultDialogOpen, setIsAIResultDialogOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -250,7 +250,7 @@ export function DocumentsManager() {
 
   const [fileTypeFilter, setFileTypeFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("name-asc")
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "finder">("grid")
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "finder">("finder")
 
   const [hasCheckedDefaultFolders, setHasCheckedDefaultFolders] = useState(false)
 
@@ -861,34 +861,14 @@ export function DocumentsManager() {
     setIsUploadDialogOpen(true)
   }
 
-  const handlePreviewDocument = async (doc: Document) => {
-    setPreviewDocument(doc)
-    setPreviewBlobUrl(null)
-    setIsPreviewDialogOpen(true)
-
-    // Fetch PDF/document as blob to bypass X-Frame-Options restrictions
-    if (doc.file_type === "application/pdf" && doc.file_url) {
-      setIsLoadingPreview(true)
-      try {
-        const response = await fetch(doc.file_url)
-        const blob = await response.blob()
-        const blobUrl = URL.createObjectURL(blob)
-        setPreviewBlobUrl(blobUrl)
-      } catch (error) {
-        console.error("Error loading preview:", error)
-      } finally {
-        setIsLoadingPreview(false)
-      }
-    }
+  const isDocPdf = (doc: Document) => {
+    return doc.file_type === "application/pdf" || doc.name?.toLowerCase().endsWith(".pdf") || doc.file_url?.toLowerCase().includes(".pdf")
   }
 
-  // Cleanup blob URLs when preview closes
-  useEffect(() => {
-    if (!isPreviewDialogOpen && previewBlobUrl) {
-      URL.revokeObjectURL(previewBlobUrl)
-      setPreviewBlobUrl(null)
-    }
-  }, [isPreviewDialogOpen, previewBlobUrl])
+  const handlePreviewDocument = (doc: Document) => {
+    setPreviewDocument(doc)
+    setIsPreviewDialogOpen(true)
+  }
 
   const handleAnalyzeDocument = async (doc: Document) => {
     if (!currentPractice?.id) {
@@ -1421,7 +1401,7 @@ export function DocumentsManager() {
                               </Badge>
                             )}
                             <span>{formatFileSize(doc.file_size)}</span>
-                            <span className="w-20 text-right">{new Date(doc.created_by_at).toLocaleDateString("de-DE")}</span>
+                            <span className="w-20 text-right">{doc.created_at ? new Date(doc.created_at).toLocaleDateString("de-DE") : "-"}</span>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
@@ -1784,7 +1764,7 @@ export function DocumentsManager() {
                                   }}
                                   disabled={!isAiEnabled}
                                 >
-                                  {t("documents.analyze", "Analyzieren")}
+                                  {t("documents.analyze", "Analysieren")}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -1885,7 +1865,7 @@ export function DocumentsManager() {
                                 disabled={!isAiEnabled}
                               >
                                 <Sparkles className="h-4 w-4 mr-2" />
-                                {t("documents.analyze", "Analyzieren")}
+                                {t("documents.analyze", "Analysieren")}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -1943,105 +1923,15 @@ export function DocumentsManager() {
         </>
       )}
 
-      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-        <DialogContent className="max-w-6xl h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <FileText className="h-5 w-5" />
-              {previewDocument?.name}
-            </DialogTitle>
-            <DialogDescription className="flex items-center gap-4">
-              <span>{previewDocument && formatFileSize(previewDocument.file_size)}</span>
-              {previewDocument?.ai_analysis && (
-                <Badge variant="secondary" className="gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  {t("documents.analyzed", "KI-analysiert")}
-                </Badge>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden rounded-lg border bg-muted/30">
-            {previewDocument && (
-              <>
-                {previewDocument.file_type.startsWith("image/") ? (
-                  <div className="flex items-center justify-center h-full p-4">
-                    <img
-                      src={previewDocument.file_url || "/placeholder.svg"}
-                      alt={previewDocument.name}
-                      className="max-w-full max-h-full object-contain rounded"
-                    />
-                  </div>
-                ) : previewDocument.file_type === "application/pdf" ? (
-                  isLoadingPreview ? (
-                    <div className="flex flex-col items-center justify-center h-full gap-4">
-                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                      <p className="text-sm text-muted-foreground">Vorschau wird geladen...</p>
-                    </div>
-                  ) : previewBlobUrl ? (
-                    <iframe src={previewBlobUrl} className="w-full h-full" title={previewDocument.name} />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full gap-4">
-                      <FileText className="h-16 w-16 text-muted-foreground" />
-                      <p className="text-muted-foreground">Vorschau konnte nicht geladen werden</p>
-                      <Button onClick={() => handleDownloadDocument(previewDocument)}>
-                        <Download className="mr-2 h-4 w-4" />
-                        {t("documents.download", "Herunterladen")}
-                      </Button>
-                    </div>
-                  )
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full gap-4">
-                    <FileText className="h-16 w-16 text-muted-foreground" />
-                    <p className="text-muted-foreground">
-                      {t("documents.previewNotAvailable", "Vorschau für diesen Dateityp nicht verfügbar")}
-                    </p>
-                    <Button onClick={() => handleDownloadDocument(previewDocument)}>
-                      <Download className="mr-2 h-4 w-4" />
-                      {t("documents.download", "Herunterladen")}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          <DialogFooter className="flex justify-between">
-            <div className="flex gap-2">
-              {previewDocument?.ai_analysis && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsPreviewDialogOpen(false)
-                    handleViewAIAnalysis(previewDocument)
-                  }}
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  {t("documents.viewAIAnalysis", "KI-Analyse anzeigen")}
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (previewDocument) {
-                    setIsPreviewDialogOpen(false)
-                    handleAnalyzeDocument(previewDocument)
-                  }
-                }}
-                disabled={!isAiEnabled}
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                {t("documents.analyze", "Mit KI analysieren")}
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => previewDocument && handleDownloadDocument(previewDocument)}>
-                <Download className="mr-2 h-4 w-4" />
-                {t("documents.download", "Herunterladen")}
-              </Button>
-              <Button onClick={() => setIsPreviewDialogOpen(false)}>{t("common.close", "Schließen")}</Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DocumentPreviewDialog
+        open={isPreviewDialogOpen}
+        onOpenChange={setIsPreviewDialogOpen}
+        document={previewDocument}
+        isAiEnabled={isAiEnabled}
+        onViewAIAnalysis={(doc) => handleViewAIAnalysis(doc)}
+        onAnalyze={(doc) => handleAnalyzeDocument(doc)}
+        onDownload={(doc) => handleDownloadDocument(doc)}
+      />
 
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
         <DialogContent className="max-w-2xl">

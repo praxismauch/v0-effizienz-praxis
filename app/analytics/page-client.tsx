@@ -4,7 +4,7 @@ import PageHeader from "@/components/page-header"
 import CustomizableAnalytics from "@/components/customizable-analytics"
 import ReportsGenerator from "@/components/reports-generator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, FileText, Receipt, Building2, Table2, BarChart3, Layout, Star, PieChart } from "lucide-react"
+import { TrendingUp, FileText, Receipt, Building2, Table2, BarChart3, Layout, Star, PieChart, ClipboardList } from "lucide-react"
 import ExcelUploadAnalyzer from "@/components/excel-upload-analyzer"
 import AnalyticsDataManager from "@/components/analytics-data-manager"
 import { usePersistedTab } from "@/hooks/use-persisted-tab"
@@ -14,6 +14,7 @@ import { KVAbrechnungUnified } from "@/components/kv-abrechnung-unified"
 import { BankAccountManager } from "@/components/bank-account-manager"
 import ReviewsManager from "@/components/reviews-manager"
 import { DiagrammeTab } from "@/components/analytics/diagramme-tab"
+import { BWAAnalysis } from "@/components/bwa-analysis"
 import { useUser } from "@/contexts/user-context"
 
 export default function AnalyticsPageClient() {
@@ -32,64 +33,75 @@ export default function AnalyticsPageClient() {
       </div>
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto gap-1">
-            <TabsTrigger
-              value="analytics"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <TrendingUp className="h-4 w-4" />
-              {t("analytics.tabs.analytics", "Auswertung")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="data"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <BarChart3 className="h-4 w-4" />
-              {t("analytics.tabs.data", "Kennzahlen")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="reviews"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <Star className="h-4 w-4" />
-              {t("analytics.tabs.reviews", "Bewertungen")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="kv-abrechnung"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <Receipt className="h-4 w-4" />
-              {t("analytics.tabs.kv", "KV-Abrechnung")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="reports"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <FileText className="h-4 w-4" />
-              {t("analytics.tabs.reports", "Berichte")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="bank"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <Building2 className="h-4 w-4" />
-              {t("analytics.tabs.bank", "Bankkonten")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="excel"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <Table2 className="h-4 w-4" />
-              {t("analytics.tabs.excel", "Excel")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="widgets"
-              className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
-            >
-              <Layout className="h-4 w-4" />
-              {t("analytics.tabs.widgets", "Widgets")}
-            </TabsTrigger>
-          </TabsList>
+          <div className="space-y-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+              <TabsTrigger
+                value="analytics"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <TrendingUp className="h-4 w-4" />
+                {t("analytics.tabs.analytics", "Auswertung")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="data"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <BarChart3 className="h-4 w-4" />
+                {t("analytics.tabs.data", "Kennzahlen")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="reviews"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <Star className="h-4 w-4" />
+                {t("analytics.tabs.reviews", "Bewertungen")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="kv-abrechnung"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <Receipt className="h-4 w-4" />
+                {t("analytics.tabs.kv", "KV-Abrechnung")}
+              </TabsTrigger>
+            </TabsList>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto gap-1">
+              <TabsTrigger
+                value="bwa"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <ClipboardList className="h-4 w-4" />
+                {t("analytics.tabs.bwa", "BWA")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="reports"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <FileText className="h-4 w-4" />
+                {t("analytics.tabs.reports", "Berichte")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="bank"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <Building2 className="h-4 w-4" />
+                {t("analytics.tabs.bank", "Bankkonten")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="excel"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <Table2 className="h-4 w-4" />
+                {t("analytics.tabs.excel", "Excel")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="widgets"
+                className="gap-2 hover:bg-muted/80 hover:border-2 hover:border-foreground/20 transition-all duration-200"
+              >
+                <Layout className="h-4 w-4" />
+                {t("analytics.tabs.widgets", "Widgets")}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="analytics" className="space-y-4">
             <CustomizableAnalytics />
@@ -109,6 +121,10 @@ export default function AnalyticsPageClient() {
 
           <TabsContent value="kv-abrechnung" className="space-y-4">
             <KVAbrechnungUnified />
+          </TabsContent>
+
+          <TabsContent value="bwa" className="space-y-4">
+            <BWAAnalysis />
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-4">

@@ -1,7 +1,6 @@
 "use client"
 
 import { Calendar } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useOnboarding } from "@/contexts/onboarding-context"
@@ -11,47 +10,30 @@ interface SidebarTourButtonProps {
 }
 
 export function SidebarTourButton({ sidebarOpen }: SidebarTourButtonProps) {
-  // Use the hook which safely returns null during SSR
   const onboarding = useOnboarding()
   
-  // Return null if provider isn't available (SSR) or shouldn't show
   if (!onboarding || !onboarding.shouldShowOnboarding) return null
   
   const { isNewPractice, daysRemaining, setIsOnboardingOpen } = onboarding
 
-  const buttonContent = (
-    <Button
-      variant="outline"
-      size={sidebarOpen ? "default" : "icon"}
-      onClick={() => setIsOnboardingOpen(true)}
-      className={cn(
-        "w-full gap-2 bg-gradient-to-r from-primary/10 to-primary/5",
-        "border-primary/20 hover:border-primary/40 hover:bg-primary/15",
-        "text-primary transition-all duration-200",
-        !sidebarOpen && "h-10 w-10 p-0"
-      )}
-    >
-      <Calendar className="h-4 w-4" />
-      {sidebarOpen && (
-        <span className="flex-1 text-left">
-          Tour starten
-          {isNewPractice && daysRemaining > 0 && (
-            <span className="ml-1 text-xs opacity-70">({daysRemaining} Tage)</span>
-          )}
-        </span>
-      )}
-    </Button>
-  )
-
   if (!sidebarOpen) {
     return (
-      <div className="px-2 py-2 border-b border-sidebar-border/30 shrink-0">
+      <div className="px-2 py-1 shrink-0">
         <Tooltip>
-          <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsOnboardingOpen(true)}
+              className="w-full h-8 border-blue-500/50 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 hover:text-blue-300 hover:border-blue-400/60 dark:border-blue-400/40 dark:bg-blue-400/10 dark:text-blue-400 dark:hover:bg-blue-400/20"
+            >
+              <Calendar className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
           <TooltipContent side="right">
             <p>
               Tour starten
-              {isNewPractice && daysRemaining > 0 && ` (${daysRemaining} Tage übrig)`}
+              {isNewPractice && daysRemaining > 0 && ` (${daysRemaining} Tage)`}
             </p>
           </TooltipContent>
         </Tooltip>
@@ -60,8 +42,21 @@ export function SidebarTourButton({ sidebarOpen }: SidebarTourButtonProps) {
   }
 
   return (
-    <div className="px-3 py-2 border-b border-sidebar-border/30 shrink-0">
-      {buttonContent}
+    <div className="px-3 py-1 shrink-0">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsOnboardingOpen(true)}
+        className="w-full justify-start gap-2 h-8 border-blue-500/50 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 hover:text-blue-300 hover:border-blue-400/60 dark:border-blue-400/40 dark:bg-blue-400/10 dark:text-blue-400 dark:hover:bg-blue-400/20"
+      >
+        <Calendar className="h-3.5 w-3.5 shrink-0" />
+        <span className="text-xs font-medium truncate">
+          Tour starten
+          {isNewPractice && daysRemaining > 0 && (
+            <span className="ml-1 opacity-70">({daysRemaining}d)</span>
+          )}
+        </span>
+      </Button>
     </div>
   )
 }

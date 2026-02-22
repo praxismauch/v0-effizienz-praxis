@@ -243,8 +243,8 @@ export function DienstplanSettingsTab() {
             Dienstplan-Verantwortliche
           </CardTitle>
           <CardDescription>
-            Bestimmen Sie, welche Teammitglieder den Dienstplan bearbeiten und verwalten duerfen.
-            Diese Personen koennen Schichten erstellen, bearbeiten und Mitarbeitern zuweisen.
+            Bestimmen Sie, welche Teammitglieder den Dienstplan bearbeiten und verwalten dürfen.
+            Diese Personen können Schichten erstellen, bearbeiten und Mitarbeitern zuweisen.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -252,7 +252,7 @@ export function DienstplanSettingsTab() {
           {selectedAdmins.length > 0 && (
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">
-                Aktuell ausgewaehlt ({selectedAdmins.length})
+                Aktuell ausgewählt ({selectedAdmins.length})
               </Label>
               <div className="flex flex-wrap gap-2">
                 {selectedAdmins.map((admin) => (
@@ -350,7 +350,7 @@ export function DienstplanSettingsTab() {
 
           {selectedAdmins.length === 0 && (
             <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-              Noch keine Verantwortlichen ausgewaehlt. Ohne Zuweisung koennen nur Admins und Praxisinhaber den Dienstplan bearbeiten.
+              Noch keine Verantwortlichen ausgewählt. Ohne Zuweisung können nur Admins und Praxisinhaber den Dienstplan bearbeiten.
             </p>
           )}
         </CardContent>

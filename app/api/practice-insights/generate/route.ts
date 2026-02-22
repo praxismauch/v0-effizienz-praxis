@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 
     // Build report structure
     const reportSections = [
-      "1. ZUSAMMENFASSUNG (2-3 Satze Gesamtueberblick)",
+      "1. ZUSAMMENFASSUNG (2-3 Sätze Gesamtüberblick)",
       "2. ERFOLGE (3-5 positive Entwicklungen)",
       "3. HERAUSFORDERUNGEN (2-4 Bereiche mit Verbesserungspotential)",
     ]

@@ -39,12 +39,13 @@ interface ViewRoiAnalysisDialogProps {
   onOpenChange: (open: boolean) => void
   analysisId: string
   onUpdated: () => void
+  initialEditMode?: boolean
 }
 
-export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdated }: ViewRoiAnalysisDialogProps) {
+export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdated, initialEditMode = false }: ViewRoiAnalysisDialogProps) {
   const [analysis, setAnalysis] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(initialEditMode)
   const [saving, setSaving] = useState(false)
 
   // Edit form state
@@ -65,9 +66,10 @@ export function ViewRoiAnalysisDialog({ open, onOpenChange, analysisId, onUpdate
 
   useEffect(() => {
     if (open && analysisId) {
+      setIsEditing(initialEditMode)
       fetchAnalysis()
     }
-  }, [open, analysisId])
+  }, [open, analysisId, initialEditMode])
 
   const fetchAnalysis = async () => {
     setLoading(true)

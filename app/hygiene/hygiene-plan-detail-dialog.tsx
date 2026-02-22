@@ -24,6 +24,7 @@ import {
   ClipboardList,
   AlertTriangle,
   Printer,
+  Pencil,
 } from "lucide-react"
 import {
   type HygienePlan,
@@ -39,6 +40,7 @@ interface HygienePlanDetailDialogProps {
   onOpenChange: (open: boolean) => void
   onExecute: (plan: HygienePlan) => void
   onAddToKnowledge: (plan: HygienePlan) => void
+  onEdit: (plan: HygienePlan) => void
 }
 
 export function HygienePlanDetailDialog({
@@ -47,6 +49,7 @@ export function HygienePlanDetailDialog({
   onOpenChange,
   onExecute,
   onAddToKnowledge,
+  onEdit,
 }: HygienePlanDetailDialogProps) {
   if (!plan) return null
 
@@ -246,6 +249,10 @@ export function HygienePlanDetailDialog({
         <DialogFooter className="mt-4 gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Schließen
+          </Button>
+          <Button variant="outline" onClick={() => { onEdit(plan); onOpenChange(false) }}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Bearbeiten
           </Button>
           <Button variant="outline" onClick={() => window.print()}>
             <Printer className="h-4 w-4 mr-2" />

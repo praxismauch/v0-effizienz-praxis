@@ -12,47 +12,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createAdminClient()
 
     // Fetch all reviews from all platforms in parallel with error handling
+    // Use explicit high limit to ensure ALL reviews are returned (Supabase default is 1000)
+    const fetchPlatform = (table: string) =>
+      supabase
+        .from(table)
+        .select("*", { count: "exact" })
+        .eq("practice_id", String(practiceId))
+        .is("deleted_at", null)
+        .order("review_date", { ascending: false })
+        .limit(5000)
+        .then((res) => {
+          if (res.error?.code === "42P01") {
+            return { data: [], error: null, count: 0 }
+          }
+          return res
+        })
+
     const [googleResult, jamedaResult, sanegoResult] = await Promise.all([
-      supabase
-        .from("google_ratings")
-        .select("*")
-        .eq("practice_id", String(practiceId))
-        .is("deleted_at", null)
-        .order("review_date", { ascending: false })
-        .then((res) => {
-          // Handle table not existing (42P01 error code)
-          if (res.error?.code === "42P01") {
-            console.log("[v0] google_ratings table does not exist")
-            return { data: [], error: null }
-          }
-          return res
-        }),
-      supabase
-        .from("jameda_ratings")
-        .select("*")
-        .eq("practice_id", String(practiceId))
-        .is("deleted_at", null)
-        .order("review_date", { ascending: false })
-        .then((res) => {
-          if (res.error?.code === "42P01") {
-            console.log("[v0] jameda_ratings table does not exist")
-            return { data: [], error: null }
-          }
-          return res
-        }),
-      supabase
-        .from("sanego_ratings")
-        .select("*")
-        .eq("practice_id", String(practiceId))
-        .is("deleted_at", null)
-        .order("review_date", { ascending: false })
-        .then((res) => {
-          if (res.error?.code === "42P01") {
-            console.log("[v0] sanego_ratings table does not exist")
-            return { data: [], error: null }
-          }
-          return res
-        }),
+      fetchPlatform("google_ratings"),
+      fetchPlatform("jameda_ratings"),
+      fetchPlatform("sanego_ratings"),
     ])
 
     // Log errors for debugging

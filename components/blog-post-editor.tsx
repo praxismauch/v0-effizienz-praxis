@@ -230,7 +230,7 @@ function BlogPostEditor({ post, open, onOpenChange, onSave }: BlogPostEditorProp
               <TabsContent value="preview" className="mt-2">
                 <div
                   className="min-h-[200px] max-h-[400px] overflow-y-auto rounded-md border p-4 prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: formData.content || "<p class='text-muted-foreground'>Keine Vorschau verfuegbar</p>" }}
+                  dangerouslySetInnerHTML={{ __html: formData.content || "<p class='text-muted-foreground'>Keine Vorschau verfügbar</p>" }}
                 />
               </TabsContent>
             </Tabs>
@@ -308,7 +308,7 @@ function BlogPostEditor({ post, open, onOpenChange, onSave }: BlogPostEditorProp
               checked={formData.is_published}
               onCheckedChange={(checked) => setFormData({ ...formData, is_published: checked })}
             />
-            <Label htmlFor="is_published">Veroeffentlicht</Label>
+            <Label htmlFor="is_published">Veröffentlicht</Label>
           </div>
 
           <DialogFooter>

@@ -16,10 +16,11 @@ import { BadgeVisibilitySettings } from "@/components/profile/badge-visibility-s
 import { FavoritesManager } from "@/components/profile/favorites-manager"
 import { useToast } from "@/hooks/use-toast"
 import { useRoleColors } from "@/lib/use-role-colors"
-import { User, Settings, Monitor, Lock, Database, PanelLeft } from "lucide-react"
+import { User, Settings, Monitor, Lock, Database, PanelLeft, Bug } from "lucide-react"
 import { ProfileFormTab } from "./profile-form-tab"
 import { NotificationsTab } from "./notifications-tab"
 import { SecuritySection } from "./security-section"
+import { ProfileTicketsTab } from "./profile-tickets-tab"
 
 export default function ProfilePageClient() {
   const { currentUser, setCurrentUser } = useUser()
@@ -125,10 +126,14 @@ export default function ProfilePageClient() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto gap-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto gap-1">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profil</span>
+            </TabsTrigger>
+            <TabsTrigger value="tickets" className="gap-2">
+              <Bug className="h-4 w-4" />
+              <span className="hidden sm:inline">Tickets</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
@@ -155,6 +160,10 @@ export default function ProfilePageClient() {
               onSave={handleSaveProfile}
               isLoading={isLoading}
             />
+          </TabsContent>
+
+          <TabsContent value="tickets" className="space-y-4">
+            <ProfileTicketsTab />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">

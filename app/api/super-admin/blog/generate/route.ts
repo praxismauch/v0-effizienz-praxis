@@ -37,14 +37,14 @@ export async function POST(request: NextRequest) {
 
       const { text } = await generateText({
         model: "groq/llama-3.3-70b-versatile",
-        prompt: `Du bist ein Content-Stratege fuer eine Praxismanagement-Software fuer Arztpraxen in Deutschland.
+        prompt: `Du bist ein Content-Stratege für eine Praxismanagement-Software für Arztpraxen in Deutschland.
 
 Bestehende Blog-Posts: ${existingTitles}
 Bestehende Kategorien: ${existingCategories}
 
-Generiere genau 8 frische, relevante Blog-Themen fuer die Zielgruppe "Aerzte und MFAs in deutschen Arztpraxen". 
-Die Themen sollen sich auf Praxiseffizienz, Digitalisierung, QM, Teamfuehrung, Patientenzufriedenheit und Best Practices fokussieren.
-Vermeide Ueberschneidungen mit bestehenden Posts.
+Generiere genau 8 frische, relevante Blog-Themen für die Zielgruppe "Ärzte und MFAs in deutschen Arztpraxen". 
+Die Themen sollen sich auf Praxiseffizienz, Digitalisierung, QM, Teamführung, Patientenzufriedenheit und Best Practices fokussieren.
+Vermeide Überschneidungen mit bestehenden Posts.
 
 Antworte NUR als JSON-Array mit Objekten: [{"topic": "...", "category": "...", "description": "..."}]
 Keine andere Ausgabe, kein Markdown, nur reines JSON.`,
@@ -66,23 +66,23 @@ Keine andere Ausgabe, kein Markdown, nur reines JSON.`,
 
     const toneMap: Record<string, string> = {
       professional: "professionell und fachlich fundiert",
-      informative: "informativ und leicht verstaendlich",
+      informative: "informativ und leicht verständlich",
       practical: "praxisnah mit konkreten Tipps und Beispielen",
     }
 
     const lengthMap: Record<string, string> = {
-      short: "ca. 500 Woerter",
-      medium: "ca. 1000 Woerter",
-      long: "ca. 2000 Woerter",
+      short: "ca. 500 Wörter",
+      medium: "ca. 1000 Wörter",
+      long: "ca. 2000 Wörter",
     }
 
     const toneInstruction = toneMap[tone] || toneMap.professional
     const lengthInstruction = lengthMap[targetLength] || lengthMap.medium
-    const keywordInstruction = keywords?.length ? `\nIntegriere folgende Keywords natuerlich: ${keywords.join(", ")}` : ""
+    const keywordInstruction = keywords?.length ? `\nIntegriere folgende Keywords natürlich: ${keywords.join(", ")}` : ""
 
     const { text } = await generateText({
       model: "groq/llama-3.3-70b-versatile",
-      prompt: `Du bist ein erfahrener Fachautor fuer Praxismanagement und Gesundheitswesen in Deutschland.
+      prompt: `Du bist ein erfahrener Fachautor für Praxismanagement und Gesundheitswesen in Deutschland.
 
 AUFGABE: Schreibe einen hochwertigen Blog-Post zum Thema "${topic}".
 
@@ -91,16 +91,16 @@ LAENGE: ${lengthInstruction}
 KATEGORIE: ${category || "Best Practices"}
 ${keywordInstruction}
 
-ZIELGRUPPE: Aerzte, MFAs und Praxismanager in deutschen Arztpraxen.
+ZIELGRUPPE: Ärzte, MFAs und Praxismanager in deutschen Arztpraxen.
 
 ANFORDERUNGEN:
 - Professioneller, einladender Titel
 - Einleitung die das Problem/Thema skizziert
-- Gut strukturierte Abschnitte mit Zwischenueberschriften (H2, H3)
+- Gut strukturierte Abschnitte mit Zwischenüberschriften (H2, H3)
 - Konkrete, umsetzbare Tipps und Empfehlungen
 - Praxisbeispiele wo sinnvoll
 - Fazit mit Zusammenfassung der wichtigsten Punkte
-- Kein generischer Content, sondern spezifisch fuer Arztpraxen
+- Kein generischer Content, sondern spezifisch für Arztpraxen
 
 FORMAT: Antworte NUR als JSON-Objekt:
 {

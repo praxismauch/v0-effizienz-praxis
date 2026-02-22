@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Filter, X, Plus } from "lucide-react"
-import { getTypeLabel } from "@/lib/tickets/utils"
+
 
 interface FilterOption {
   value: string
@@ -24,7 +24,7 @@ interface TicketFiltersProps {
   onSortOrderChange: (value: string) => void
   statusOptions: FilterOption[]
   priorityOptions: FilterOption[]
-  types: string[] | undefined
+  types: Array<{ value: string; label_de: string }> | undefined
   onCreateTicket: () => void
 }
 
@@ -99,8 +99,8 @@ export function TicketFilters({
             <SelectContent>
               <SelectItem value="all">Alle Typen</SelectItem>
               {types?.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {getTypeLabel(type)}
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label_de}
                 </SelectItem>
               ))}
             </SelectContent>

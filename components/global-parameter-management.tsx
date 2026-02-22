@@ -631,11 +631,11 @@ export function GlobalParameterManagement() {
         } else {
           const data = await response.json()
           console.error("[v0] Delete failed:", data)
-          alert(data.error || "Kennzahl konnte nicht geloescht werden")
+          alert(data.error || "Kennzahl konnte nicht gelöscht werden")
         }
       } catch (error) {
         console.error("[v0] Error deleting parameter:", error)
-        alert("Fehler beim Loeschen der Kennzahl")
+        alert("Fehler beim Löschen der Kennzahl")
       }
     },
     [groups, parameters],
@@ -1080,7 +1080,7 @@ export function GlobalParameterManagement() {
                           id="global-param-description"
                           value={newParameter.description || ""} // Ensure value is never null
                           onChange={(e) => setNewParameter({ ...newParameter, description: e.target.value })}
-                          placeholder="Standardbeschreibung fuer diese Kennzahl..."
+                          placeholder="Standardbeschreibung für diese Kennzahl..."
                           rows={3}
                         />
                       </div>
@@ -1482,7 +1482,7 @@ export function GlobalParameterManagement() {
                   id="edit-param-description"
                   value={newParameter.description || ""} // Ensure value is never null
                   onChange={(e) => setNewParameter({ ...newParameter, description: e.target.value })}
-                  placeholder="Standardbeschreibung fuer diese Kennzahl..."
+                  placeholder="Standardbeschreibung für diese Kennzahl..."
                   rows={3}
                 />
               </div>

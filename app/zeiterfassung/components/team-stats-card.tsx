@@ -24,7 +24,7 @@ export function TeamStatsCard({ teamStats }: TeamStatsCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Team-Uebersicht</CardTitle>
+        <CardTitle>Team-Übersicht</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -33,7 +33,7 @@ export function TeamStatsCard({ teamStats }: TeamStatsCardProps) {
               <TableHead>Team</TableHead>
               <TableHead>Aktive Mitarbeiter</TableHead>
               <TableHead>Gesamt Arbeitszeit</TableHead>
-              <TableHead>Ueberstunden</TableHead>
+              <TableHead>Überstunden</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

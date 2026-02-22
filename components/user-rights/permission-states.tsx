@@ -75,7 +75,7 @@ export function PermissionsEmpty({ onInitialize, initializing }: PermissionsEmpt
             <AlertDescription>
               <p className="font-semibold">Keine Benutzerrechte vorhanden</p>
               <p className="text-sm mt-2">
-                Klicken Sie auf die Schaltflaeche unten, um die Standard-Berechtigungen fuer alle 7 Rollen (Super Admin,
+                Klicken Sie auf die Schaltfläche unten, um die Standard-Berechtigungen für alle 7 Rollen (Super Admin,
                 Praxis Admin, Admin, Manager, Mitglied, Betrachter, Extern) zu initialisieren.
               </p>
             </AlertDescription>

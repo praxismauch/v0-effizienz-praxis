@@ -5,6 +5,24 @@ import { PerformanceMetrics } from "@/components/performance-metrics"
 import { KpiTrendsChart } from "@/components/kpi-trends-chart"
 import { CustomAnalyticsChart } from "@/components/custom-analytics-chart"
 import { SickDaysChart } from "@/components/sick-days-chart"
+import {
+  RevenueMonthlyChart,
+  PatientFlowChart,
+  AppointmentAnalysisChart,
+  CostBreakdownChart,
+  TeamWorkloadChart,
+  WaitTimeChart,
+  TreatmentMixChart,
+  MonthlyComparisonChart,
+  CancellationRateChart,
+  NewVsReturningChart,
+  RevenuePerDoctorChart,
+  SeasonalPatternsChart,
+  InsuranceMixChart,
+  EmployeeAbsenceChart,
+  PatientSatisfactionChart,
+  CapacityUtilizationChart,
+} from "./practice-charts"
 import { Button } from "@/components/ui/button"
 import { Star, StarOff, LayoutDashboard, Trash2 } from "lucide-react"
 import type { SystemDiagram } from "./types"
@@ -27,6 +45,38 @@ function renderDiagram(diagram: SystemDiagram) {
       return <KpiTrendsChart key={diagram.id} />
     case "SickDaysChart":
       return <SickDaysChart key={diagram.id} />
+    case "RevenueMonthlyChart":
+      return <RevenueMonthlyChart key={diagram.id} />
+    case "PatientFlowChart":
+      return <PatientFlowChart key={diagram.id} />
+    case "AppointmentAnalysisChart":
+      return <AppointmentAnalysisChart key={diagram.id} />
+    case "CostBreakdownChart":
+      return <CostBreakdownChart key={diagram.id} />
+    case "TeamWorkloadChart":
+      return <TeamWorkloadChart key={diagram.id} />
+    case "WaitTimeChart":
+      return <WaitTimeChart key={diagram.id} />
+    case "TreatmentMixChart":
+      return <TreatmentMixChart key={diagram.id} />
+    case "MonthlyComparisonChart":
+      return <MonthlyComparisonChart key={diagram.id} />
+    case "CancellationRateChart":
+      return <CancellationRateChart key={diagram.id} />
+    case "NewVsReturningChart":
+      return <NewVsReturningChart key={diagram.id} />
+    case "RevenuePerDoctorChart":
+      return <RevenuePerDoctorChart key={diagram.id} />
+    case "SeasonalPatternsChart":
+      return <SeasonalPatternsChart key={diagram.id} />
+    case "InsuranceMixChart":
+      return <InsuranceMixChart key={diagram.id} />
+    case "EmployeeAbsenceChart":
+      return <EmployeeAbsenceChart key={diagram.id} />
+    case "PatientSatisfactionChart":
+      return <PatientSatisfactionChart key={diagram.id} />
+    case "CapacityUtilizationChart":
+      return <CapacityUtilizationChart key={diagram.id} />
     case "CustomChart":
       return (
         <CustomAnalyticsChart

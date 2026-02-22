@@ -76,13 +76,15 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   return (
     <TooltipProvider>
-      <Sidebar className={cn("border-r border-sidebar-border", className)}>
+      <Sidebar collapsible="icon" className={cn("border-r border-sidebar-border", className)}>
         <AppSidebarHeader
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           isSuperAdmin={isSuperAdmin}
           pathname={pathname}
         />
+
+        <BetaNoticeButton sidebarOpen={sidebarOpen} />
 
         <SidebarTourButton sidebarOpen={sidebarOpen} />
 
@@ -118,8 +120,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
             ))}
           </div>
         </div>
-
-        <BetaNoticeButton sidebarOpen={sidebarOpen} />
       </Sidebar>
     </TooltipProvider>
   )

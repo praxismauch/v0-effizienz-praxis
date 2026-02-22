@@ -82,9 +82,9 @@ export function CreateArbeitsmittelDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Arbeitsmittel hinzufuegen</DialogTitle>
+          <DialogTitle>Arbeitsmittel hinzufügen</DialogTitle>
           <DialogDescription>
-            Fuegen Sie ein neues Arbeitsmittel wie Schluessel, Dienstkleidung oder Geraete hinzu
+            Fügen Sie ein neues Arbeitsmittel wie Schlüssel, Dienstkleidung oder Geräte hinzu
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

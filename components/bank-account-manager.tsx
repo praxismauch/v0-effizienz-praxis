@@ -143,7 +143,7 @@ export function BankAccountManager({ practiceId }: BankAccountManagerProps) {
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="flex items-center justify-between mb-4">
-              <TabsList>
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="transactions">Transaktionen</TabsTrigger>
                 <TabsTrigger value="categories">Kategorien</TabsTrigger>
                 <TabsTrigger value="upload">CSV Import</TabsTrigger>

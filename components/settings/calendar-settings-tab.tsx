@@ -255,7 +255,7 @@ export function CalendarSettingsTab() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {bundesland
-                    ? `Zusaetzliche Feiertage fuer ${bundesland} anzeigen (z.B. Fronleichnam, Allerheiligen)`
+                    ? `Zusätzliche Feiertage für ${bundesland} anzeigen (z.B. Fronleichnam, Allerheiligen)`
                     : "Bitte zuerst ein Bundesland in den Praxis-Einstellungen festlegen"}
                 </p>
               </div>

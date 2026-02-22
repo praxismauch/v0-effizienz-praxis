@@ -415,7 +415,7 @@ export function ReviewTab({
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Dateien mit den meisten Findings</CardTitle>
-            <CardDescription>Diese Dateien sollten priorisiert ueberarbeitet werden</CardDescription>
+            <CardDescription>Diese Dateien sollten priorisiert überarbeitet werden</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

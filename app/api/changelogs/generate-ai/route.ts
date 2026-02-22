@@ -10,19 +10,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No changes provided" }, { status: 400 })
     }
 
-    const prompt = `Du bist ein technischer Redakteur fuer ein medizinisches Praxis-Management-SaaS namens "Effizienz Praxis".
-Analysiere die folgenden Aenderungen und erstelle einen professionellen, strukturierten Changelog-Eintrag auf Deutsch.
+    const prompt = `Du bist ein technischer Redakteur für ein medizinisches Praxis-Management-SaaS namens "Effizienz Praxis".
+Analysiere die folgenden Änderungen und erstelle einen professionellen, strukturierten Changelog-Eintrag auf Deutsch.
 
 Aktuelle Version: ${currentVersion || "nicht angegeben"}
 
-Rohe Aenderungsliste:
+Rohe Änderungsliste:
 ${changeList.map((change: string, idx: number) => `${idx + 1}. ${change}`).join("\n")}
 
 Regeln:
-- Kategorisiere jede Aenderung in die passende Kategorie: "Neue Funktionen", "Verbesserungen", "Fehlerbehebungen", "Sicherheit", oder "Sonstiges"
-- Formuliere jede Aenderung professionell und klar verstaendlich fuer Praxis-Mitarbeiter
-- Der Titel soll kurz und praegnant sein (z.B. "Optimiertes Dashboard & neue KI-Funktionen")
-- Die Beschreibung soll 2-3 Saetze lang sein und den Mehrwert fuer den Nutzer hervorheben
+- Kategorisiere jede Änderung in die passende Kategorie: "Neue Funktionen", "Verbesserungen", "Fehlerbehebungen", "Sicherheit", oder "Sonstiges"
+- Formuliere jede Änderung professionell und klar verständlich für Praxis-Mitarbeiter
+- Der Titel soll kurz und prägnant sein (z.B. "Optimiertes Dashboard & neue KI-Funktionen")
+- Die Beschreibung soll 2-3 Sätze lang sein und den Mehrwert für den Nutzer hervorheben
 - Schlage eine passende Versionsnummer vor (semver)
 - Bestimme ob es major/minor/patch ist
 

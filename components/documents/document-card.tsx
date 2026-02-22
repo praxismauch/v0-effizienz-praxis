@@ -41,8 +41,8 @@ interface DocumentCardProps {
 }
 
 // Get file icon and color based on file type
-function getFileTypeInfo(fileName: string) {
-  const ext = fileName.split(".").pop()?.toLowerCase() || ""
+function getFileTypeInfo(fileName: string | undefined | null) {
+  const ext = (fileName || "").split(".").pop()?.toLowerCase() || ""
 
   if (["pdf"].includes(ext)) {
     return { icon: FileText, color: "#ef4444", bgColor: "#fef2f2" }
@@ -77,7 +77,7 @@ export function DocumentCard({
   const { t } = useTranslation()
   const fileInfo = getFileTypeInfo(doc.name)
   const FileIcon = fileInfo.icon
-  const fileExt = doc.name.split(".").pop()?.toUpperCase() || "FILE"
+  const fileExt = (doc.name || "").split(".").pop()?.toUpperCase() || "FILE"
 
   const DocumentDropdownMenu = () => (
     <DropdownMenu>

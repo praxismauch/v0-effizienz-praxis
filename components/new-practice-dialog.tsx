@@ -190,7 +190,7 @@ export function CreatePracticeDialog({ open, onOpenChange, onSuccess }: CreatePr
             <AddressInput
               value={formData.address}
               onChange={(value) => setFormData({ ...formData, address: value })}
-              placeholder="Strasse, Hausnummer, PLZ Stadt"
+              placeholder="Straße, Hausnummer, PLZ Stadt"
             />
           </div>
 

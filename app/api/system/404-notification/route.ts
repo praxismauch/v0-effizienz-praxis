@@ -139,10 +139,10 @@ export async function POST(request: NextRequest) {
               
               <!-- Browser & Device -->
               <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
-                <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #2563eb;">Browser & Geraet</h2>
+                <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #2563eb;">Browser & Gerät</h2>
                 <table style="width:100%; border-collapse:collapse; font-size:13px;">
                   ${row("Browser", browser)}
-                  ${row("Geraetetyp", deviceType)}
+                  ${row("Gerätetyp", deviceType)}
                   ${row("Plattform", platform)}
                   ${row("Sprache", language)}
                   ${row("Sprachen", Array.isArray(languages) && languages.length > 0 ? languages.join(", ") : null)}
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
                 <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #059669;">Hardware & Netzwerk</h2>
                 <table style="width:100%; border-collapse:collapse; font-size:13px;">
                   ${row("CPU-Kerne", hardwareConcurrency)}
-                  ${row("Geraete-RAM", deviceMemory ? `${deviceMemory} GB` : null)}
+                  ${row("Geräte-RAM", deviceMemory ? `${deviceMemory} GB` : null)}
                   ${row("Verbindung", connectionType)}
                   ${row("Download", connectionDownlink ? `${connectionDownlink} Mbps` : null)}
                   ${row("Zeitzone", timezone)}
@@ -208,19 +208,19 @@ export async function POST(request: NextRequest) {
               <div style="padding: 24px 30px; border-bottom: 1px solid #f0f0f0;">
                 <h2 style="margin: 0 0 12px 0; font-size: 16px; color: #6b7280;">User Agent (roh)</h2>
                 <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; font-family: monospace; font-size: 11px; word-break: break-all; color: #6b7280;">
-                  ${ua || "Nicht verfuegbar"}
+                  ${ua || "Nicht verfügbar"}
                 </div>
               </div>
 
               <!-- Recommendations -->
               <div style="padding: 24px 30px;">
                 <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0;">
-                  <p style="margin: 0 0 8px 0; font-weight: 600; color: #92400e;">Empfohlene Massnahmen</p>
+                  <p style="margin: 0 0 8px 0; font-weight: 600; color: #92400e;">Empfohlene Maßnahmen</p>
                   <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 13px;">
-                    <li>Pruefen Sie, ob wichtige Links defekt sind</li>
-                    <li>Ueberpruefen Sie Navigation und Menues</li>
+                    <li>Prüfen Sie, ob wichtige Links defekt sind</li>
+                    <li>Überprüfen Sie Navigation und Menüs</li>
                     <li>Erstellen Sie ggf. eine Weiterleitung (Redirect)</li>
-                    <li>Aktualisieren Sie die Sitemap falls noetig</li>
+                    <li>Aktualisieren Sie die Sitemap falls nötig</li>
                   </ul>
                 </div>
               </div>

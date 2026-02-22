@@ -25,7 +25,7 @@ export function WeeklyStatsCard({ weeklyStats }: WeeklyStatsCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Wochenuebersicht</CardTitle>
+        <CardTitle>Wochenübersicht</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -34,7 +34,7 @@ export function WeeklyStatsCard({ weeklyStats }: WeeklyStatsCardProps) {
               <TableHead>Woche</TableHead>
               <TableHead>Arbeitstage</TableHead>
               <TableHead>Gesamt Arbeitszeit</TableHead>
-              <TableHead>Ueberstunden</TableHead>
+              <TableHead>Überstunden</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

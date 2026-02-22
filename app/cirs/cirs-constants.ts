@@ -52,7 +52,7 @@ export function getTypeLabel(type: string) {
   const labels: Record<string, string> = {
     error: "Fehler",
     near_error: "Beinahe-Fehler",
-    adverse_event: "Unerwunschtes Ereignis",
+    adverse_event: "Unerwünschtes Ereignis",
   }
   return labels[type] || type
 }

@@ -15,14 +15,30 @@ export async function GET() {
   try {
     const supabase = await createAdminClient()
 
-    const { data, error } = await supabase
+    // First try with display_order, fall back to created_at if column doesn't exist
+    let data, error
+    const result = await supabase
       .from("practice_forms")
       .select("*")
       .eq("is_active", true)
       .order("display_order", { ascending: true })
 
+    if (result.error?.message?.includes("display_order")) {
+      // Column doesn't exist, try without ordering by display_order
+      const fallback = await supabase
+        .from("practice_forms")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: true })
+      data = fallback.data
+      error = fallback.error
+    } else {
+      data = result.data
+      error = result.error
+    }
+
     if (error) {
-      if (error.code === "42P01" || error.message.includes("Could not find the table")) {
+      if (error.code === "42P01" || error.code === "PGRST205" || error.message?.includes("Could not find the table")) {
         return NextResponse.json(DEFAULT_PRACTICE_FORMS)
       }
       console.error("Error fetching practice forms:", error.message)

@@ -228,10 +228,10 @@ export function TodoListView({
               {todo.recurrence_type && todo.recurrence_type !== "none" && (
                 <Badge variant="outline" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">
                   <Clock className="h-3 w-3" />
-                  {todo.recurrence_type === "daily" && "Taglich"}
-                  {todo.recurrence_type === "weekly" && "Wochentlich"}
+                  {todo.recurrence_type === "daily" && "Täglich"}
+                  {todo.recurrence_type === "weekly" && "Wöchentlich"}
                   {todo.recurrence_type === "monthly" && "Monatlich"}
-                  {todo.recurrence_type === "yearly" && "Jahrlich"}
+                  {todo.recurrence_type === "yearly" && "Jährlich"}
                 </Badge>
               )}
 

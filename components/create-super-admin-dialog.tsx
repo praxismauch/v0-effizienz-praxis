@@ -94,7 +94,7 @@ export function CreateSuperAdminDialog({ open, onOpenChange }: CreateSuperAdminD
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Super-Administratoren haben uneingeschraenkten Zugriff auf alle Systemfunktionen, Praxen und Benutzerdaten. Erstellen Sie Super-Admin-Konten nur fuer vertrauenswuerdiges Personal.
+            Super-Administratoren haben uneingeschränkten Zugriff auf alle Systemfunktionen, Praxen und Benutzerdaten. Erstellen Sie Super-Admin-Konten nur für vertrauenswürdiges Personal.
           </AlertDescription>
         </Alert>
 

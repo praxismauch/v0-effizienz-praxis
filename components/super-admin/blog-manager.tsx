@@ -81,8 +81,8 @@ const CATEGORIES = [
   "Best Practices",
   "Digitalisierung",
   "Praxismanagement",
-  "Qualitaetsmanagement",
-  "Teamfuehrung",
+  "Qualitätsmanagement",
+  "Teamführung",
   "Patientenzufriedenheit",
   "Effizienz",
   "Recht & Compliance",
@@ -157,7 +157,7 @@ export default function BlogManager() {
       })
       if (!response.ok) throw new Error("Failed")
       toast({
-        title: newStatus ? "Veroeffentlicht" : "Entwurf",
+        title: newStatus ? "Veröffentlicht" : "Entwurf",
         description: newStatus ? "Blog-Post ist jetzt live." : "Blog-Post ist jetzt ein Entwurf.",
       })
     } catch {
@@ -309,7 +309,7 @@ export default function BlogManager() {
             </div>
             <div>
               <p className="text-2xl font-bold">{publishedCount}</p>
-              <p className="text-sm text-muted-foreground">Veroeffentlicht</p>
+              <p className="text-sm text-muted-foreground">Veröffentlicht</p>
             </div>
           </CardContent>
         </Card>
@@ -382,7 +382,7 @@ export default function BlogManager() {
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Noch keine Blog-Posts</h3>
               <p className="text-muted-foreground mb-4">
-                Erstellen Sie Ihren ersten Blog-Post mit KI-Unterstuetzung.
+                Erstellen Sie Ihren ersten Blog-Post mit KI-Unterstützung.
               </p>
               <Button onClick={() => setGenerateOpen(true)} className="gap-2">
                 <Sparkles className="h-4 w-4" />
@@ -453,7 +453,7 @@ export default function BlogManager() {
                             setPostToDelete(post.id)
                             setDeleteDialogOpen(true)
                           }}
-                          title="Loeschen"
+                          title="Löschen"
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -488,7 +488,7 @@ export default function BlogManager() {
             </div>
           ) : suggestions.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">Keine Vorschlaege verfuegbar.</p>
+              <p className="text-muted-foreground mb-4">Keine Vorschläge verfügbar.</p>
               <Button onClick={handleFetchSuggestions} variant="outline" className="gap-2">
                 <RefreshCw className="h-4 w-4" />
                 Erneut versuchen
@@ -711,15 +711,15 @@ export default function BlogManager() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Blog-Post loeschen?</AlertDialogTitle>
+            <AlertDialogTitle>Blog-Post löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Aktion kann nicht rueckgaengig gemacht werden. Der Blog-Post wird dauerhaft geloescht.
+              Diese Aktion kann nicht rückgängig gemacht werden. Der Blog-Post wird dauerhaft gelöscht.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Loeschen
+              Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

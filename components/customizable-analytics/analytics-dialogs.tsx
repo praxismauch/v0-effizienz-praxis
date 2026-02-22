@@ -83,7 +83,7 @@ export function AIGenerationDialog({
               placeholder={
                 aiMode === "diagram"
                   ? "z.B. Zeige mir die Entwicklung der Patientenzahlen als Liniendiagramm"
-                  : "z.B. Erstelle eine Kachel fur den aktuellen Tagesumsatz in grun"
+                  : "z.B. Erstelle eine Kachel für den aktuellen Tagesumsatz in grün"
               }
               rows={4}
             />
@@ -242,7 +242,7 @@ export function TileDialog({ open, onOpenChange, editingTile, onSubmit }: TileDi
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{editingTile ? "Kachel bearbeiten" : "Neue Kachel erstellen"}</DialogTitle>
-          <DialogDescription>{editingTile ? "Bearbeiten Sie die Eigenschaften der Kachel" : "Erstellen Sie eine neue Kachel fur Ihr Dashboard"}</DialogDescription>
+          <DialogDescription>{editingTile ? "Bearbeiten Sie die Eigenschaften der Kachel" : "Erstellen Sie eine neue Kachel für Ihr Dashboard"}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="grid gap-2">

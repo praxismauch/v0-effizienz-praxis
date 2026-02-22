@@ -15,7 +15,6 @@ import {
   getPriorityIcon,
   getTypeLabel,
 } from "@/lib/tickets/utils"
-import { TicketAIAction } from "@/components/ticket-ai-action"
 import { TicketStatusIndicator } from "./ticket-status-indicator"
 
 interface FilterOption {
@@ -188,19 +187,7 @@ export function TicketCard({
               </div>
             )}
 
-            <div className="pt-4 border-t">
-              <TicketAIAction
-                ticketId={ticket.id}
-                title={ticket.title}
-                description={ticket.description}
-                type={ticket.type}
-                priority={ticket.priority}
-                screenshots={ticket.screenshot_urls}
-                autoGenerate={true}
-              />
-            </div>
-
-            <div className="flex items-center gap-4 text-sm pt-2 border-t">
+            <div className="flex items-center gap-4 text-sm pt-4 border-t">
               <TicketStatusIndicator status={ticket.status} updatedAt={ticket.updated_at} />
             </div>
           </div>

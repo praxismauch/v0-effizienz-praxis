@@ -29,7 +29,7 @@ export const EQUIPMENT_TYPES = ["Schluessel", "Dienstkleidung", "Dienst Handy", 
 export const CONDITIONS = ["Neu", "Gut", "Gebraucht", "Defekt"]
 
 export const STATUSES = [
-  { value: "available", label: "Verfuegbar" },
+  { value: "available", label: "Verfügbar" },
   { value: "assigned", label: "Zugewiesen" },
   { value: "maintenance", label: "Wartung" },
   { value: "retired", label: "Ausgemustert" },

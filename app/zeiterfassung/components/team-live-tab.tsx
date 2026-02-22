@@ -59,6 +59,7 @@ function useLiveMinutes(members: TeamMember[]) {
 
 export default function TeamLiveTab({ teamMembers, teamFilter, setTeamFilter }: TeamLiveTabProps) {
   const getLiveMinutes = useLiveMinutes(teamMembers)
+
   return (
     <Card>
       <CardHeader>

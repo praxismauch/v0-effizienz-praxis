@@ -65,15 +65,32 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (journalsError) throw journalsError
 
-    // Fetch preferences
-    const { data: prefsData, error: prefsError } = await adminClient
-      .from("journal_preferences")
-      .select("*")
-      .eq("practice_id", practiceId)
-      .is("deleted_at", null)
-      .maybeSingle()
+    // Fetch preferences - gracefully handle missing table or columns
+    let prefsData = null
+    try {
+      const prefsResult = await adminClient
+        .from("journal_preferences")
+        .select("*")
+        .eq("practice_id", practiceId)
+        .maybeSingle()
 
-    if (prefsError) throw prefsError
+      if (prefsResult.error) {
+        // If column or table doesn't exist, just skip silently
+        const ignoreCodes = ["42703", "42P01", "PGRST205", "PGRST204"]
+        if (!ignoreCodes.includes(prefsResult.error.code || "") && !prefsResult.error.message?.includes("does not exist")) {
+          // Try without practice_id filter
+          const fallback = await adminClient
+            .from("journal_preferences")
+            .select("*")
+            .maybeSingle()
+          prefsData = fallback.data || null
+        }
+      } else {
+        prefsData = prefsResult.data
+      }
+    } catch {
+      // journal_preferences not available - silently continue
+    }
 
     // Fetch action items for the latest journal
     let actionItems: any[] = []

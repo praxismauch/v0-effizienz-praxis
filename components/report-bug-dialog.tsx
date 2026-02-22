@@ -84,6 +84,13 @@ function ReportBugDialog({
   const { toast } = useToast()
   const { currentUser } = useUser()
 
+  // Pre-fill reportedBy with logged-in user's name
+  useEffect(() => {
+    if (currentUser?.name && !reportedBy) {
+      setReportedBy(currentUser.name)
+    }
+  }, [currentUser?.name])
+
   const { types, priorities, isLoading: configLoading } = useTicketConfig()
 
   const typeOptions = types ? typesToOptions(types) : []
@@ -282,12 +289,6 @@ function ReportBugDialog({
 
       onTicketCreated?.()
 
-      // Auto-generate AI action item for v0 chat
-      const createdTicket = data.ticket
-      if (createdTicket?.id) {
-        generateAiAction(createdTicket.id, title, description, type, priority)
-      }
-
       setOpen?.(false)
       setTitle("")
       setDescription("")
@@ -447,13 +448,13 @@ function ReportBugDialog({
       <Dialog open={open} onOpenChange={setOpen}>
         {trigger ? (
           <DialogTrigger asChild>{trigger}</DialogTrigger>
-        ) : (
+        ) : !isControlled ? (
           <DialogTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <Bug className="h-4 w-4" />
             </Button>
           </DialogTrigger>
-        )}
+        ) : null}
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Bug oder Problem melden</DialogTitle>

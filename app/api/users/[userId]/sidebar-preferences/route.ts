@@ -44,7 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!adminClient) {
       return NextResponse.json({
         preferences: {
-          expanded_groups: ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
+          expanded_groups: ["overview", "planning", "data", "quality-management", "strategy", "team-personal", "praxis-einstellungen"],
           expanded_items: {},
           is_collapsed: false,
           favorites: [],
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             single_group_mode: data.single_group_mode ?? true,
           }
         : {
-            expanded_groups: ["overview", "planning", "data", "strategy", "team-personal", "praxis-einstellungen"],
+            expanded_groups: ["overview", "planning", "data", "quality-management", "strategy", "team-personal", "praxis-einstellungen"],
             expanded_items: {},
             is_collapsed: false,
             favorites: [],

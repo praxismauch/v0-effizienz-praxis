@@ -141,7 +141,16 @@ export function useSidebarPreferences() {
 
         // Expanded groups
         if (data.preferences.expanded_groups && Array.isArray(data.preferences.expanded_groups)) {
-          setExpandedGroups(data.preferences.expanded_groups)
+          // Auto-expand the group containing the current page
+          const navGroups = getNavigationGroups(t)
+          const activeGroup = navGroups.find((g) =>
+            g.items.some((item) => pathname.startsWith(item.href)),
+          )
+          if (activeGroup && !data.preferences.expanded_groups.includes(activeGroup.id)) {
+            setExpandedGroups([...data.preferences.expanded_groups, activeGroup.id])
+          } else {
+            setExpandedGroups(data.preferences.expanded_groups)
+          }
         } else {
           setExpandedGroups(DEFAULT_EXPANDED_GROUPS)
         }

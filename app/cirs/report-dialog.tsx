@@ -103,7 +103,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit, editIncident }: Rep
           <DialogDescription>
             {editIncident
               ? "Bearbeiten Sie die Details dieses Vorfalls."
-              : "Melden Sie Fehler, Beinahe-Fehler oder unerwunschte Ereignisse. Ihre Meldung hilft, die Patientensicherheit zu verbessern."}
+              : "Melden Sie Fehler, Beinahe-Fehler oder unerwünschte Ereignisse. Ihre Meldung hilft, die Patientensicherheit zu verbessern."}
           </DialogDescription>
         </DialogHeader>
 
@@ -137,7 +137,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit, editIncident }: Rep
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="adverse_event" id="adverse_event" />
                 <Label htmlFor="adverse_event" className="font-normal cursor-pointer">
-                  Unerwunschtes Ereignis
+                  Unerwünschtes Ereignis
                 </Label>
               </div>
             </RadioGroup>
@@ -199,7 +199,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit, editIncident }: Rep
             <Label htmlFor="contributing_factors">{"Mögliche Ursachen / Beitragende Faktoren"}</Label>
             <Textarea
               id="contributing_factors"
-              placeholder="Was konnte zu diesem Vorfall beigetragen haben?"
+              placeholder="Was könnte zu diesem Vorfall beigetragen haben?"
               value={contributingFactors}
               onChange={(e) => setContributingFactors(e.target.value)}
               rows={3}
@@ -221,8 +221,8 @@ export function ReportDialog({ open, onOpenChange, onSubmit, editIncident }: Rep
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-purple-600" />
               <div>
-                <Label className="font-medium">{"KI-basierte Vorschlage"}</Label>
-                <p className="text-sm text-muted-foreground">{"Automatische Analyse und Praventionsvorschlage generieren"}</p>
+                <Label className="font-medium">{"KI-basierte Vorschläge"}</Label>
+                <p className="text-sm text-muted-foreground">{"Automatische Analyse und Präventionsvorschläge generieren"}</p>
               </div>
             </div>
             <Switch checked={generateAISuggestions} onCheckedChange={setGenerateAISuggestions} />

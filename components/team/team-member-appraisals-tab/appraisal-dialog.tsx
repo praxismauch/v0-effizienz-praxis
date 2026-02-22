@@ -394,16 +394,16 @@ export function AppraisalDialog({
                 )}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label>Entwicklungsmassnahmen</Label>
+                    <Label>Entwicklungsmaßnahmen</Label>
                     <Button variant="ghost" size="sm" onClick={() => setFormData((prev) => ({ ...prev, development_plan: [...(prev.development_plan || []), { title: "", description: "", type: "training", status: "planned" }] }))}>
-                      <Plus className="w-4 h-4 mr-1" />Massnahme hinzufuegen
+                      <Plus className="w-4 h-4 mr-1" />Maßnahme hinzufügen
                     </Button>
                   </div>
                   {Array.isArray(formData.development_plan) && formData.development_plan.map((item, idx) => (
                     <Card key={idx}>
                       <CardContent className="pt-4 space-y-3">
                         <div className="flex items-start justify-between">
-                          <Input placeholder="Massnahme" value={item.title || ""} onChange={(e) => {
+                          <Input placeholder="Maßnahme" value={item.title || ""} onChange={(e) => {
                             const updated = [...(Array.isArray(formData.development_plan) ? formData.development_plan : [])]
                             updated[idx] = { ...updated[idx], title: e.target.value }
                             setFormData((prev) => ({ ...prev, development_plan: updated }))

@@ -319,7 +319,7 @@ export function OrgaCategoriesManager() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Standard-Kategorien wiederherstellen</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Alle aktuellen Kategorien werden geloescht und durch die Standard-Vorlage ersetzt. Diese Aktion kann nicht rueckgaengig gemacht werden. Individuell erstellte Kategorien gehen verloren.
+                  Alle aktuellen Kategorien werden gelöscht und durch die Standard-Vorlage ersetzt. Diese Aktion kann nicht rückgängig gemacht werden. Individuell erstellte Kategorien gehen verloren.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

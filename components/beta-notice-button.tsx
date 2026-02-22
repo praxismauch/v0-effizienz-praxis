@@ -132,7 +132,7 @@ export function BetaNoticeButton({ sidebarOpen }: BetaNoticeButtonProps) {
                       <Bug className="h-3.5 w-3.5" /> Bug-Icon
                     </span>
                     {" in der oberen rechten Ecke der Anwendung (neben Ihrem Profil). "}
-                    Dort koennen Sie Fehler melden, Verbesserungsvorschlaege einreichen oder allgemeines Feedback geben
+                    Dort können Sie Fehler melden, Verbesserungsvorschläge einreichen oder allgemeines Feedback geben
                     -- gerne auch mit Screenshots.
                   </p>
                 </div>

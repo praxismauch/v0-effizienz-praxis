@@ -713,7 +713,7 @@ export default function BlogManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>Blog-Post löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Aktion kann nicht rueckgaengig gemacht werden. Der Blog-Post wird dauerhaft geloescht.
+              Diese Aktion kann nicht rückgängig gemacht werden. Der Blog-Post wird dauerhaft gelöscht.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

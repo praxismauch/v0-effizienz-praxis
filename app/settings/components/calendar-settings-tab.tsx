@@ -180,7 +180,7 @@ export function CalendarSettingsTab({ settings, onSettingsChange, onSave, saving
               </div>
               <p className="text-sm text-muted-foreground">
                 {bundesland
-                  ? `Feiertage fuer ${bundesland} zusaetzlich anzeigen (z.B. Fronleichnam, Allerheiligen)`
+                  ? `Feiertage für ${bundesland} zusätzlich anzeigen (z.B. Fronleichnam, Allerheiligen)`
                   : "Bitte zuerst ein Bundesland in den Praxis-Einstellungen festlegen"}
               </p>
             </div>

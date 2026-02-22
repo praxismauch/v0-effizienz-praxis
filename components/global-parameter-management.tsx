@@ -1080,7 +1080,7 @@ export function GlobalParameterManagement() {
                           id="global-param-description"
                           value={newParameter.description || ""} // Ensure value is never null
                           onChange={(e) => setNewParameter({ ...newParameter, description: e.target.value })}
-                          placeholder="Standardbeschreibung fuer diese Kennzahl..."
+                          placeholder="Standardbeschreibung für diese Kennzahl..."
                           rows={3}
                         />
                       </div>
@@ -1482,7 +1482,7 @@ export function GlobalParameterManagement() {
                   id="edit-param-description"
                   value={newParameter.description || ""} // Ensure value is never null
                   onChange={(e) => setNewParameter({ ...newParameter, description: e.target.value })}
-                  placeholder="Standardbeschreibung fuer diese Kennzahl..."
+                  placeholder="Standardbeschreibung für diese Kennzahl..."
                   rows={3}
                 />
               </div>

@@ -140,12 +140,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ pra
       incidentData.reported_by = user.id
     }
 
-    const { data: incident, error } = await queryClient.from("cirs_incidents").insert([incidentData]).select().single()
+    // Use insert without .single() to avoid "Cannot coerce" errors when RLS blocks the select
+    const { data: insertedRows, error } = await queryClient.from("cirs_incidents").insert([incidentData]).select()
 
     if (error) {
       console.error("Error creating CIRS incident:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    const incident = insertedRows?.[0] || null
 
     // Build a safe base URL for internal API calls (avoid SSL issues with self-fetch)
     const origin = request.headers.get("origin") 

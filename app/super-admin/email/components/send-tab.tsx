@@ -212,7 +212,7 @@ export function SendTab({ prefillHtml, prefillSubject }: SendTabProps) {
     <h1 style="color:#fff;margin:0;">Willkommen!</h1>
   </div>
   <div style="padding:32px;background:#fff;border:1px solid #e2e8f0;">
-    <p>Vielen Dank fuer Ihre Registrierung.</p>
+    <p>Vielen Dank für Ihre Registrierung.</p>
     <p>Ihr Account wurde erfolgreich erstellt.</p>
     <div style="text-align:center;margin:24px 0;">
       <a href="#" style="background:#3b82f6;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;">Jetzt einloggen</a>
@@ -231,9 +231,9 @@ export function SendTab({ prefillHtml, prefillSubject }: SendTabProps) {
           <div className="pt-4 border-t">
             <h4 className="text-sm font-medium mb-2">Hinweise</h4>
             <ul className="text-xs text-muted-foreground space-y-1">
-              <li>- "System-Test" sendet eine einfache Bestaetigungs-Mail</li>
+              <li>- "System-Test" sendet eine einfache Bestätigungs-Mail</li>
               <li>- "Custom E-Mail" sendet den eingegebenen HTML-Inhalt</li>
-              <li>- Nutzen Sie den Template-Designer fuer komplexe Layouts</li>
+              <li>- Nutzen Sie den Template-Designer für komplexe Layouts</li>
               <li>- Testen Sie immer zuerst mit Ihrer eigenen Adresse</li>
             </ul>
           </div>

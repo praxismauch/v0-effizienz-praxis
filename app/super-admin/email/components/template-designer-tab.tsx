@@ -75,7 +75,7 @@ const DEFAULT_CONFIG: TemplateConfig = {
   templateId: "custom",
   subject: "Betreff der E-Mail",
   headerText: "Willkommen bei Effizienz Praxis",
-  bodyContent: "Vielen Dank, dass Sie sich registriert haben.\n\nWir freuen uns, Sie in unserem Team willkommen zu heissen. Hier finden Sie alle wichtigen Informationen fuer den Einstieg.",
+  bodyContent: "Vielen Dank, dass Sie sich registriert haben.\n\nWir freuen uns, Sie in unserem Team willkommen zu heißen. Hier finden Sie alle wichtigen Informationen für den Einstieg.",
   ctaText: "Zum Dashboard",
   ctaUrl: "https://effizienz-praxis.de/dashboard",
   footerText: "Effizienz Praxis GmbH | Diese E-Mail wurde automatisch versendet.",
